@@ -75,6 +75,8 @@ public:
 
   using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type,
 					    global_ordinal_type, node_type>;
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+					    global_ordinal_type, node_type>;
 
   // device typedefs
   typedef typename MatrixType::node_type::device_type device_type;
@@ -82,8 +84,6 @@ public:
   typedef typename MatrixType::local_inds_device_view_type local_inds_device_view_type;
   typedef typename MatrixType::global_inds_device_view_type global_inds_device_view_type;
   typedef typename MatrixType::values_device_view_type values_device_view_type;
-
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::OverlappingRowMatrix: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
@@ -350,12 +350,14 @@ public:
 
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
 
-  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+  Teuchos::RCP<const crs_matrix_type> getUnderlyingMatrix() const;
 
-  const typename crs_matrix_type::local_matrix_device_type getExtMatrix() const;
+  Teuchos::RCP<const crs_matrix_type> getExtMatrix() const;
 
   Kokkos::View<size_t*, typename OverlappingRowMatrix<MatrixType>::device_type> getExtHaloStarts() const;
   typename Kokkos::View<size_t*, typename OverlappingRowMatrix<MatrixType>::device_type>::HostMirror getExtHaloStartsHost() const;
+
+  void doExtImport();
 
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
@@ -378,7 +380,7 @@ private:
   Teuchos::RCP<const import_type> Importer_;
 
   //! The matrix containing only the overlap rows.
-  Teuchos::RCP<const crs_matrix_type> ExtMatrix_;
+  Teuchos::RCP<crs_matrix_type> ExtMatrix_;
   Teuchos::RCP<const map_type>        ExtMap_;
   Teuchos::RCP<const import_type>     ExtImporter_;
   Kokkos::View<size_t*, device_type>  ExtHaloStarts_;

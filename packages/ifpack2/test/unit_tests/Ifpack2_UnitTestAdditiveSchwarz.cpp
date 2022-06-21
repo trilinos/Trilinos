@@ -133,9 +133,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   params.set ("schwarz: combine mode", "Zero");
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  std::cout << "Test0: Enabling reordering!\n";
   params.set ("schwarz: use reordering", true);
   params.set ("schwarz: reordering list", zlist);
 #else
+  std::cout << "Test0: NOT enabling reordering!\n";
   params.set ("schwarz: use reordering", false);
 #endif
 

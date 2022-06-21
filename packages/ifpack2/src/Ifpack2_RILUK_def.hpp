@@ -430,6 +430,7 @@ RILUK<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A
   // directly.
   if (A->getRowMap ()->getComm ()->getSize () == 1 ||
       A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
+    std::cout << "RILUK: using input A directly because it's already local.\n";
     return A;
   }
 
@@ -535,6 +536,10 @@ void RILUK<MatrixType>::initialize ()
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      else
+      {
+        std::cout << "RILUK initialize: not creating A_local_crs here because A is already a CrsMatrix.\n";
       }
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs->getCrsGraph (),
                                                                            LevelOfFill_, 0, Overalloc_));
@@ -929,6 +934,10 @@ void RILUK<MatrixType>::compute ()
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      else
+      {
+        std::cout << "RILUK compute: not creating A_local_crs here because A is already a CrsMatrix.\n";
       }
       auto lclMtx = A_local_crs->getLocalMatrixDevice();
       A_local_rowmap_  = lclMtx.graph.row_map;

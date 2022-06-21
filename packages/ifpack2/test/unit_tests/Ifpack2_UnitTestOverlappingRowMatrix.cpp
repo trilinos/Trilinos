@@ -228,7 +228,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
     throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
   auto undA_lcl = undA->getLocalMatrixDevice ();
-  auto extA_lcl = A.getExtMatrix();
+  auto extA_lcl = A.getExtMatrix()->getLocalMatrixDevice();
   auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
@@ -242,7 +242,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
     int yrange = hstarts[overlapLevel];
     auto Y_ext = Kokkos::subview(Y_lcl,std::make_pair(numLocalRows,numLocalRows+yrange),Kokkos::ALL());
     
-    int xlimit = ( (overlapLevel == hstarts.size()-1) ? X_lcl.extent(0) : numLocalRows+hstarts[overlapLevel+1] );
+    int xlimit = ( (overlapLevel == (int) hstarts.size()-1) ? X_lcl.extent(0) : numLocalRows+hstarts[overlapLevel+1] );
     auto X_ext = Kokkos::subview(X_lcl,std::make_pair(0,xlimit),Kokkos::ALL());
     
     localReducedMatvec(extA_lcl,X_ext,yrange,Y_ext);

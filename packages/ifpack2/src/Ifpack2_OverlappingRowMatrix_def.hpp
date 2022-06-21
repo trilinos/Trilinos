@@ -115,6 +115,10 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     Array<global_ordinal_type> mylist (size);
     size_t count = 0;
 
+    {
+
+      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("OverlappingRowMatrix n^2 loop??"));
+
     // define the set of rows that are in ColMap but not in RowMap
     for (local_ordinal_type i = 0 ; (size_t) i < ColMap->getLocalNumElements() ; ++i) {
       const global_ordinal_type GID = ColMap->getGlobalElement (i);
@@ -128,6 +132,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
           ++count;
         }
       }
+    }
     }
 
     // On last import round, TmpMap, TmpGraph, and TmpImporter are unneeded,
@@ -174,11 +179,9 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   ExtImporter_ = rcp (new import_type (A_->getRowMap (), ExtMap_));
 
   {
-    RCP<crs_matrix_type> ExtMatrix_nc =
-      rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
-    ExtMatrix_nc->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
-    ExtMatrix_nc->fillComplete (A_->getDomainMap (), RowMap_);
-    ExtMatrix_ = ExtMatrix_nc; // we only need the const version after here
+    ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+    ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+    ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
   }
 
   // fix indices for overlapping matrix
@@ -801,17 +804,17 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
 }
 
 template<class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
+Teuchos::RCP<const Tpetra::CrsMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
 {
   return A_;
 }
 
 template<class MatrixType>
-const typename OverlappingRowMatrix<MatrixType>::crs_matrix_type::local_matrix_device_type
+Teuchos::RCP<const Tpetra::CrsMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getExtMatrix() const
 {
-  return ExtMatrix_->getLocalMatrixDevice();
+  return ExtMatrix_;
 }
 
 template<class MatrixType>
@@ -826,6 +829,14 @@ typename Kokkos::View<size_t*, typename OverlappingRowMatrix<MatrixType>::device
 OverlappingRowMatrix<MatrixType>::getExtHaloStartsHost() const
 {
   return ExtHaloStarts_h;
+}
+
+template<class MatrixType>
+void OverlappingRowMatrix<MatrixType>::doExtImport()
+{
+  ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+  ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+  ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
 }
 
 } // namespace Ifpack2

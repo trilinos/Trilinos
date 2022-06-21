@@ -1326,7 +1326,7 @@ public:
     ///
     /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
-    /// \pre <tt>rowPointers.size() != getLocalNumRows()+1</tt>
+    /// \pre <tt>rowPointers.size() == getLocalNumRows()+1</tt>
     /// \pre No insert routines have been called.
     ///
     /// \warning This method is intended for expert developer use
@@ -1339,7 +1339,7 @@ public:
     ///
     /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
-    /// \pre <tt>rowPointers.size() != getLocalNumRows()+1</tt>
+    /// \pre <tt>rowPointers.size() == getLocalNumRows()+1</tt>
     /// \pre No insert routines have been called.
     ///
     /// \warning This method is intended for expert developer use

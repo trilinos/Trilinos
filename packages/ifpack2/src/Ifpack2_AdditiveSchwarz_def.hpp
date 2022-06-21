@@ -69,11 +69,11 @@
 #endif
 
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
-#include "Ifpack2_LocalFilter.hpp"
-#include "Ifpack2_OverlappingRowMatrix.hpp"
 #include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_ReorderFilter.hpp"
 #include "Ifpack2_SingletonFilter.hpp"
+#include "Ifpack2_Details_AdditiveSchwarzFilter.hpp"
 
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -463,24 +463,14 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 #endif // HAVE_IFPACK2_DEBUG
       }
 
-      typedef OverlappingRowMatrix<row_matrix_type> overlap_mat_type;
-      RCP<overlap_mat_type> overlapMatrix;
-      if (IsOverlapping_) {
-        overlapMatrix = rcp_dynamic_cast<overlap_mat_type> (OverlappingMatrix_);
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (overlapMatrix.is_null (), std::logic_error, prefix <<
-           "IsOverlapping_ is true, but OverlappingMatrix_, while nonnull, is "
-           "not an OverlappingRowMatrix<row_matrix_type>.  Please report this "
-           "bug to the Ifpack2 developers.");
-      }
-
       // do communication if necessary
       if (IsOverlapping_) {
         TEUCHOS_TEST_FOR_EXCEPTION
-          (overlapMatrix.is_null (), std::logic_error, prefix
-           << "overlapMatrix is null when it shouldn't be.  "
-           "Please report this bug to the Ifpack2 developers.");
-        overlapMatrix->importMultiVector (*R, *OverlappingB, Tpetra::INSERT);
+          (OverlappingMatrix_.is_null (), std::logic_error, prefix <<
+           "IsOverlapping_ is true, but OverlappingMatrix_, while nonnull, is "
+           "not an OverlappingRowMatrix<row_matrix_type>.  Please report this "
+           "bug to the Ifpack2 developers.");
+        OverlappingMatrix_->importMultiVector (*R, *OverlappingB, Tpetra::INSERT);
 
         //JJH We don't need to import the solution Y we are always solving AY=R with initial guess zero
         //if (ZeroStartingSolution_ == false)
@@ -556,10 +546,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // do communication if necessary
       if (IsOverlapping_) {
         TEUCHOS_TEST_FOR_EXCEPTION
-          (overlapMatrix.is_null (), std::logic_error, prefix
-           << "overlapMatrix is null when it shouldn't be.  "
+          (OverlappingMatrix_.is_null (), std::logic_error, prefix
+           << "OverlappingMatrix_ is null when it shouldn't be.  "
            "Please report this bug to the Ifpack2 developers.");
-        overlapMatrix->exportMultiVector (*OverlappingY, *C, CombineMode_);
+        OverlappingMatrix_->exportMultiVector (*OverlappingY, *C, CombineMode_);
       }
       else {
         // mfh 16 Apr 2014: Make a view of Y with the same Map as
@@ -630,63 +620,83 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
   using Teuchos::rcp_dynamic_cast;
 
   const size_t numVectors = OverlappingB.getNumVectors ();
-  if (FilterSingletons_) {
-    // process singleton filter
-    MV ReducedB (SingletonMatrix_->getRowMap (), numVectors);
-    MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
 
-    RCP<SingletonFilter<row_matrix_type> > singletonFilter =
-      rcp_dynamic_cast<SingletonFilter<row_matrix_type> > (SingletonMatrix_);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! SingletonMatrix_.is_null () && singletonFilter.is_null (),
-       std::logic_error, "Ifpack2::AdditiveSchwarz::localApply: "
-       "SingletonFilter_ is nonnull but is not a SingletonFilter"
-       "<row_matrix_type>.  This should never happen.  Please report this bug "
-       "to the Ifpack2 developers.");
-    singletonFilter->SolveSingletons (OverlappingB, OverlappingY);
-    singletonFilter->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
-
-    // process reordering
-    if (! UseReordering_) {
-      Inverse_->solve (ReducedY, ReducedB);
-    }
-    else {
-      RCP<ReorderFilter<row_matrix_type> > rf =
-        rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
-         "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
-         "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
-         "never happen.  Please report this bug to the Ifpack2 developers.");
-      MV ReorderedB (ReducedB, Teuchos::Copy);
-      MV ReorderedY (ReducedY, Teuchos::Copy);
-      rf->permuteOriginalToReordered (ReducedB, ReorderedB);
-      Inverse_->solve (ReorderedY, ReorderedB);
-      rf->permuteReorderedToOriginal (ReorderedY, ReducedY);
-    }
-
-    // finish up with singletons
-    singletonFilter->UpdateLHS (ReducedY, OverlappingY);
+  auto additiveSchwarzFilter = rcp_dynamic_cast<Details::AdditiveSchwarzFilter<MatrixType>>(innerMatrix_);
+  if(additiveSchwarzFilter)
+  {
+    //Create the reduced system innerMatrix_ * ReducedY = ReducedB.
+    //This effectively fuses 3 tasks:
+    //  -SingletonFilter::SolveSingletons (solve entries of OverlappingY corresponding to singletons)
+    //  -SingletonFilter::CreateReducedRHS (fill ReducedReorderedB from OverlappingB, with entries in singleton columns eliminated)
+    //  -ReorderFilter::permuteOriginalToReordered (apply permutation to ReducedReorderedB)
+    MV ReducedReorderedB (additiveSchwarzFilter->getRowMap(), numVectors);
+    MV ReducedReorderedY (additiveSchwarzFilter->getRowMap(), numVectors);
+    additiveSchwarzFilter->CreateReducedProblem(OverlappingB, OverlappingY, ReducedReorderedB);
+    //Apply inner solver
+    Inverse_->solve (ReducedReorderedY, ReducedReorderedB);
+    //Scatter ReducedY back to non-singleton rows of OverlappingY, according to the reordering.
+    additiveSchwarzFilter->UpdateLHS(ReducedReorderedY, OverlappingY);
   }
-  else {
-    // process reordering
-    if (! UseReordering_) {
-      Inverse_->solve (OverlappingY, OverlappingB);
+  else
+  {
+    if (FilterSingletons_) {
+      // process singleton filter
+      MV ReducedB (SingletonMatrix_->getRowMap (), numVectors);
+      MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
+
+      RCP<SingletonFilter<row_matrix_type> > singletonFilter =
+        rcp_dynamic_cast<SingletonFilter<row_matrix_type> > (SingletonMatrix_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! SingletonMatrix_.is_null () && singletonFilter.is_null (),
+         std::logic_error, "Ifpack2::AdditiveSchwarz::localApply: "
+         "SingletonFilter_ is nonnull but is not a SingletonFilter"
+         "<row_matrix_type>.  This should never happen.  Please report this bug "
+         "to the Ifpack2 developers.");
+      singletonFilter->SolveSingletons (OverlappingB, OverlappingY);
+      singletonFilter->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
+
+      // process reordering
+      if (! UseReordering_) {
+        Inverse_->solve (ReducedY, ReducedB);
+      }
+      else {
+        RCP<ReorderFilter<row_matrix_type> > rf =
+          rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
+           "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
+           "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
+           "never happen.  Please report this bug to the Ifpack2 developers.");
+        MV ReorderedB (ReducedB, Teuchos::Copy);
+        MV ReorderedY (ReducedY, Teuchos::Copy);
+        rf->permuteOriginalToReordered (ReducedB, ReorderedB);
+        Inverse_->solve (ReorderedY, ReorderedB);
+        rf->permuteReorderedToOriginal (ReorderedY, ReducedY);
+      }
+
+      // finish up with singletons
+      singletonFilter->UpdateLHS (ReducedY, OverlappingY);
     }
     else {
-      MV ReorderedB (OverlappingB, Teuchos::Copy);
-      MV ReorderedY (OverlappingY, Teuchos::Copy);
+      // process reordering
+      if (! UseReordering_) {
+        Inverse_->solve (OverlappingY, OverlappingB);
+      }
+      else {
+        MV ReorderedB (OverlappingB, Teuchos::Copy);
+        MV ReorderedY (OverlappingY, Teuchos::Copy);
 
-      RCP<ReorderFilter<row_matrix_type> > rf =
-        rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
-         "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
-         "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
-         "never happen.  Please report this bug to the Ifpack2 developers.");
-      rf->permuteOriginalToReordered (OverlappingB, ReorderedB);
-      Inverse_->solve (ReorderedY, ReorderedB);
-      rf->permuteReorderedToOriginal (ReorderedY, OverlappingY);
+        RCP<ReorderFilter<row_matrix_type> > rf =
+          rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
+           "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
+           "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
+           "never happen.  Please report this bug to the Ifpack2 developers.");
+        rf->permuteOriginalToReordered (OverlappingB, ReorderedB);
+        Inverse_->solve (ReorderedY, ReorderedB);
+        rf->permuteReorderedToOriginal (ReorderedY, OverlappingY);
+      }
     }
   }
 }
@@ -949,6 +959,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
+  std::cout << "Hello from AdditiveSchwarz::initialize (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
+
   const std::string timerName ("Ifpack2::AdditiveSchwarz::initialize");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
@@ -998,6 +1010,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     // compute the overlapping matrix if necessary
     if (IsOverlapping_) {
+      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("OverlappingRowMatrix construction"));
       OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
     }
 
@@ -1013,8 +1026,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   ++NumInitialize_;
 
   InitializeTime_ += (timer->wallTime() - startTime);
+  std::cout << "Done with AdditiveSchwarz::initialize (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 }
-
 
 template<class MatrixType,class LocalInverseType>
 bool AdditiveSchwarz<MatrixType,LocalInverseType>::isInitialized () const
@@ -1029,6 +1042,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   using Teuchos::RCP;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+
+  std::cout << "Hello from AdditiveSchwarz::compute (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 
   if (! IsInitialized_) {
     initialize ();
@@ -1056,6 +1071,25 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   }
   double startTime = timer->wallTime();
 
+  // compute () assumes that the values of Matrix_ (aka A) have changed.
+  // If this has overlap, do an import from the input matrix to the halo.
+  if (IsOverlapping_) {
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Ifpack2::AdditiveSchwarz::compute: Halo Import"));
+    OverlappingMatrix_->doExtImport();
+  }
+  // At this point, either Matrix_ or OverlappingMatrix_ (depending on whether this is overlapping)
+  // has new values and unchanged structure. If we are using AdditiveSchwarzFilter, update the local matrix.
+  //
+  if(auto asf = Teuchos::rcp_dynamic_cast<Details::AdditiveSchwarzFilter<MatrixType>>(innerMatrix_))
+  {
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Ifpack2::AdditiveSchwarz::compute: Fill Local Matrix"));
+    //NOTE: if this compute() call comes right after the initialize() with no intervening matrix changes, this call is redundant.
+    //initialize() already filled the local matrix. However, we have no way to tell if this is the case.
+    asf->updateMatrixValues();
+  }
+  //Now, whether the Inverse_'s matrix is the AdditiveSchwarzFilter's local matrix or simply Matrix_/OverlappingMatrix_,
+  //it will be able to see the new values and update itself accordingly.
+
   { // Start timing here.
     TimeMonitor timeMon (*timer);
 
@@ -1067,6 +1101,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   ++NumCompute_;
 
   ComputeTime_ += (timer->wallTime() - startTime);
+  std::cout << "Done with AdditiveSchwarz::compute (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 }
 
 //==============================================================================
@@ -1317,114 +1352,216 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     "initialize: The matrix to precondition is null.  You must either pass "
     "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
     "input, before you may call this method.");
+  
+  RCP<const row_matrix_type> innerPrecMatrix;
 
-  // Localized version of Matrix_ or OverlappingMatrix_.
-  RCP<row_matrix_type> LocalizedMatrix;
-
-  // The "most current local matrix."  At the end of this method, this
-  // will be handed off to the inner solver.
-  RCP<row_matrix_type> ActiveMatrix;
-
-  // Create localized matrix.
-  if (! OverlappingMatrix_.is_null ()) {
-    LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
-  }
-  else {
-    LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
-  }
-
-  // Sanity check; I don't trust the logic above to have created LocalizedMatrix.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    LocalizedMatrix.is_null (), std::logic_error,
-    "Ifpack2::AdditiveSchwarz::setup: LocalizedMatrix is null, after the code "
-    "that claimed to have created it.  This should never be the case.  Please "
-    "report this bug to the Ifpack2 developers.");
-
-  // Mark localized matrix as active
-  ActiveMatrix = LocalizedMatrix;
-
-  // Singleton Filtering
-  if (FilterSingletons_) {
-    SingletonMatrix_ = rcp (new SingletonFilter<row_matrix_type> (LocalizedMatrix));
-    ActiveMatrix = SingletonMatrix_;
-  }
-
-  // Do reordering
-  if (UseReordering_) {
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-    // Unlike Ifpack, Zoltan2 does all the dirty work here.
-    typedef ReorderFilter<row_matrix_type> reorder_filter_type;
-    Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
-    ReorderingAlgorithm_ = zlist.get<std::string> ("order_method", "rcm");
-
+  //If the matrix is a CrsMatrix or OverlappingRowMatrix, use the high-performance 
+  //AdditiveSchwarzFilter. Otherwise, use composition of Reordered/Singleton/LocalFilter.
+  auto matrixCrs = rcp_dynamic_cast<const crs_matrix_type>(Matrix_);
+  if(!OverlappingMatrix_.is_null() || !matrixCrs.is_null())
+  {
     ArrayRCP<local_ordinal_type> perm;
     ArrayRCP<local_ordinal_type> revperm;
+    if (UseReordering_) {
+      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Reordering"));
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+      // Unlike Ifpack, Zoltan2 does all the dirty work here.
+      Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
+      ReorderingAlgorithm_ = zlist.get<std::string> ("order_method", "rcm");
 
-    if(ReorderingAlgorithm_ == "user") {
-      // User-provided reordering
-      perm    = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user ordering");
-      revperm = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user reverse ordering");
+      if(ReorderingAlgorithm_ == "user") {
+        // User-provided reordering
+        perm    = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user ordering");
+        revperm = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user reverse ordering");
+      }
+      else {
+        // Zoltan2 reordering
+        typedef Tpetra::RowGraph
+          <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+        typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
+        auto constActiveGraph = Teuchos::rcp_const_cast<const row_graph_type>(
+            IsOverlapping_ ? OverlappingMatrix_->getGraph() : Matrix_->getGraph());
+        z2_adapter_type Zoltan2Graph (constActiveGraph);
+
+        typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
+#ifdef HAVE_MPI
+        // Grab the MPI Communicator and build the ordering problem with that
+        MPI_Comm myRawComm;
+
+        RCP<const MpiComm<int> > mpicomm =
+          rcp_dynamic_cast<const MpiComm<int> > (Matrix_->getComm ());
+        if (mpicomm == Teuchos::null) {
+          myRawComm = MPI_COMM_SELF;
+        } else {
+          myRawComm = * (mpicomm->getRawMpiComm ());
+        }
+        ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
+#else
+        ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
+#endif
+        MyOrderingProblem.solve ();
+
+        {
+          typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
+            ordering_solution_type;
+
+          ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
+
+          // perm[i] gives the where OLD index i shows up in the NEW
+          // ordering.  revperm[i] gives the where NEW index i shows
+          // up in the OLD ordering.  Note that perm is actually the
+          // "inverse permutation," in Zoltan2 terms.
+          perm = sol.getPermutationRCPConst (true);
+          revperm = sol.getPermutationRCPConst ();
+        }
+      }
+#else
+      // This is a logic_error, not a runtime_error, because
+      // setParameters() should have excluded this case already.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Ifpack2::AdditiveSchwarz::setup: "
+        "The Zoltan2 and Xpetra packages must be enabled in order "
+        "to support reordering.");
+#endif
+    }
+    else
+    {
+      local_ordinal_type numLocalRows = OverlappingMatrix_.is_null() ? matrixCrs->getLocalNumRows() : OverlappingMatrix_->getLocalNumRows();
+      //Use an identity ordering.
+      //TODO: create a non-permuted code path in AdditiveSchwarzFilter, in the case that neither
+      //reordering nor singleton filtering are enabled. In this situation it's like LocalFilter.
+      perm = ArrayRCP<local_ordinal_type>(numLocalRows);
+      revperm = ArrayRCP<local_ordinal_type>(numLocalRows);
+      for(local_ordinal_type i = 0; i < numLocalRows; i++)
+      {
+        perm[i] = i;
+        revperm[i] = i;
+      }
+    }
+    //Now, construct the filter
+    {
+      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Filter construction"));
+      RCP<Details::AdditiveSchwarzFilter<MatrixType>> asf;
+      if(OverlappingMatrix_.is_null())
+        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(matrixCrs, perm, revperm, FilterSingletons_));
+      else
+        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(OverlappingMatrix_, perm, revperm, FilterSingletons_));
+      innerMatrix_ = asf;
+      //The matrix for the inner preconditioner is a CrsMatrix
+      innerPrecMatrix = asf->getFilteredMatrix();
+    }
+  }
+  else
+  {
+    // Localized version of Matrix_ or OverlappingMatrix_.
+    RCP<row_matrix_type> LocalizedMatrix;
+
+    // The "most current local matrix."  At the end of this method, this
+    // will be handed off to the inner solver.
+    RCP<row_matrix_type> ActiveMatrix;
+
+    // Create localized matrix.
+    if (! OverlappingMatrix_.is_null ()) {
+      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
     }
     else {
-      // Zoltan2 reordering
-      typedef Tpetra::RowGraph
-        <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
-      typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
-      RCP<const row_graph_type> constActiveGraph =
-        Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
-      z2_adapter_type Zoltan2Graph (constActiveGraph);
-
-      typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
-#ifdef HAVE_MPI
-      // Grab the MPI Communicator and build the ordering problem with that
-      MPI_Comm myRawComm;
-
-      RCP<const MpiComm<int> > mpicomm =
-        rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
-      if (mpicomm == Teuchos::null) {
-        myRawComm = MPI_COMM_SELF;
-      } else {
-        myRawComm = * (mpicomm->getRawMpiComm ());
-      }
-      ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
-#else
-      ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
-#endif
-      MyOrderingProblem.solve ();
-
-      {
-        typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
-          ordering_solution_type;
-
-        ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
-
-        // perm[i] gives the where OLD index i shows up in the NEW
-        // ordering.  revperm[i] gives the where NEW index i shows
-        // up in the OLD ordering.  Note that perm is actually the
-        // "inverse permutation," in Zoltan2 terms.
-        perm = sol.getPermutationRCPConst (true);
-        revperm = sol.getPermutationRCPConst ();
-      }
+      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
     }
-    // All reorderings here...
-    ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
 
-
-    ActiveMatrix = ReorderedLocalizedMatrix_;
-#else
-    // This is a logic_error, not a runtime_error, because
-    // setParameters() should have excluded this case already.
+    // Sanity check; I don't trust the logic above to have created LocalizedMatrix.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Ifpack2::AdditiveSchwarz::setup: "
-      "The Zoltan2 and Xpetra packages must be enabled in order "
-      "to support reordering.");
+      LocalizedMatrix.is_null (), std::logic_error,
+      "Ifpack2::AdditiveSchwarz::setup: LocalizedMatrix is null, after the code "
+      "that claimed to have created it.  This should never be the case.  Please "
+      "report this bug to the Ifpack2 developers.");
+
+    // Mark localized matrix as active
+    ActiveMatrix = LocalizedMatrix;
+
+    // Singleton Filtering
+    if (FilterSingletons_) {
+      SingletonMatrix_ = rcp (new SingletonFilter<row_matrix_type> (LocalizedMatrix));
+      ActiveMatrix = SingletonMatrix_;
+    }
+
+    // Do reordering
+    if (UseReordering_) {
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+      // Unlike Ifpack, Zoltan2 does all the dirty work here.
+      typedef ReorderFilter<row_matrix_type> reorder_filter_type;
+      Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
+      ReorderingAlgorithm_ = zlist.get<std::string> ("order_method", "rcm");
+
+      ArrayRCP<local_ordinal_type> perm;
+      ArrayRCP<local_ordinal_type> revperm;
+
+      if(ReorderingAlgorithm_ == "user") {
+        // User-provided reordering
+        perm    = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user ordering");
+        revperm = zlist.get<Teuchos::ArrayRCP<local_ordinal_type> >("user reverse ordering");
+      }
+      else {
+        // Zoltan2 reordering
+        typedef Tpetra::RowGraph
+          <local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+        typedef Zoltan2::TpetraRowGraphAdapter<row_graph_type> z2_adapter_type;
+        RCP<const row_graph_type> constActiveGraph =
+          Teuchos::rcp_const_cast<const row_graph_type>(ActiveMatrix->getGraph());
+        z2_adapter_type Zoltan2Graph (constActiveGraph);
+
+        typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
+#ifdef HAVE_MPI
+        // Grab the MPI Communicator and build the ordering problem with that
+        MPI_Comm myRawComm;
+
+        RCP<const MpiComm<int> > mpicomm =
+          rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+        if (mpicomm == Teuchos::null) {
+          myRawComm = MPI_COMM_SELF;
+        } else {
+          myRawComm = * (mpicomm->getRawMpiComm ());
+        }
+        ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist, myRawComm);
+#else
+        ordering_problem_type MyOrderingProblem (&Zoltan2Graph, &zlist);
 #endif
+        MyOrderingProblem.solve ();
+
+        {
+          typedef Zoltan2::LocalOrderingSolution<local_ordinal_type>
+            ordering_solution_type;
+
+          ordering_solution_type sol (*MyOrderingProblem.getLocalOrderingSolution());
+
+          // perm[i] gives the where OLD index i shows up in the NEW
+          // ordering.  revperm[i] gives the where NEW index i shows
+          // up in the OLD ordering.  Note that perm is actually the
+          // "inverse permutation," in Zoltan2 terms.
+          perm = sol.getPermutationRCPConst (true);
+          revperm = sol.getPermutationRCPConst ();
+        }
+      }
+      // All reorderings here...
+      ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
+
+
+      ActiveMatrix = ReorderedLocalizedMatrix_;
+#else
+      // This is a logic_error, not a runtime_error, because
+      // setParameters() should have excluded this case already.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Ifpack2::AdditiveSchwarz::setup: "
+        "The Zoltan2 and Xpetra packages must be enabled in order "
+        "to support reordering.");
+#endif
+    }
+    innerMatrix_ = ActiveMatrix;
+    //The matrix for the inner preconditioner is just the reordered/localized matrix using filters
+    innerPrecMatrix = innerMatrix_;
   }
 
-  innerMatrix_ = ActiveMatrix;
-
   TEUCHOS_TEST_FOR_EXCEPTION(
-    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    innerMatrix_.is_null () || innerPrecMatrix.is_null(), std::logic_error, "Ifpack2::AdditiveSchwarz::"
     "setup: Inner matrix is null right before constructing inner solver.  "
     "Please report this bug to the Ifpack2 developers.");
 
@@ -1460,7 +1597,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       innerPrec.is_null (), std::logic_error,
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
       "with name \"" << innerName << "\".");
-    innerPrec->setMatrix (innerMatrix_);
+    innerPrec->setMatrix (innerPrecMatrix);
 
     // Extract and apply the sublist of parameters to give to the
     // inner solver, if there is such a sublist of parameters.
@@ -1476,7 +1613,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     // The new inner matrix is different from the inner
     // preconditioner's current matrix, so give the inner
     // preconditioner the new inner matrix.
-    Inverse_->setMatrix (innerMatrix_);
+    Inverse_->setMatrix (innerPrecMatrix);
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
     Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
@@ -1523,7 +1660,10 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     // calling initialize().
 
     // Give the local matrix to the new inner solver.
-    innerSolver->setMatrix (innerMatrix_);
+    if(auto asf = Teuchos::rcp_dynamic_cast<Details::AdditiveSchwarzFilter<MatrixType>>(innerMatrix_))
+      innerSolver->setMatrix (asf->getFilteredMatrix());
+    else
+      innerSolver->setMatrix (innerMatrix_);
 
     // If the user previously specified a parameter for the inner
     // preconditioner's type, then clear out that parameter and its
