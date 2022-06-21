@@ -22,11 +22,11 @@ function tril_genconfig_clone_or_update_repo() {
   echo
 
   if [[ -d ${sub_dir} ]] ; then
-    echo "${sub_dir}: Fetching remote repo"
+    echo "STATUS: ${sub_dir}: Fetching remote repo"
     cd ${sub_dir}
     git fetch
   else
-    echo "${sub_dir}: Cloning from '${git_url}'"
+    echo "STATUS: ${sub_dir}: Cloning from '${git_url}'"
     git clone ${git_url} ${sub_dir}
     cd ${sub_dir}
   fi
@@ -34,13 +34,13 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ ! -z ${head_sha} ]]; then
     git checkout -f ${head_sha}
   else
-    echo "${sub_dir}: Merging tip of remote tracking branch"
+    echo "STATUS: ${sub_dir}: Merging tip of remote tracking branch"
     git merge @{u}
   fi
 
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
     echo
-    echo "${sub_dir}: Update submodules"
+    echo "STATUS: ${sub_dir}: Update submodules"
     git submodule update --force --init --recursive
     cd - > /dev/null
   elif [[ "${has_submodules}" != "" ]] ; then
@@ -74,15 +74,15 @@ fi
 echo
 cd ${script_dir}/GenConfig/deps/LoadEnv/ini_files
 if [[ -d ${script_dir}/srn-ini-files ]] && [[ "$ini_file_option" == "--srn" ]]; then
-    echo "Link files from srn-ini-files"
+    echo "STATUS: Link files from srn-ini-files"
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
 elif [[ -d ${script_dir}/son-ini-files ]] && [[ "$ini_file_option" == "--son" ]]; then
-    echo "Link files from son-ini-files"
+    echo "STATUS: Link files from son-ini-files"
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
 else
-    echo "Link files from ini-files"
+    echo "STATUS: Link files from ini-files"
     [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
     [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
 fi
@@ -96,15 +96,15 @@ ln -sf ${script_dir}/ini-files/supported-config-flags.ini
 # Print summary of ini file settings
 cd ${script_dir}
 echo
-echo "You selected the following LoadEnv ini files:"
+echo "INFO: You selected the following LoadEnv ini files:"
 echo
 find GenConfig/deps/LoadEnv/ini_files -type l -exec ls -lta {} \;
 echo
-echo "You selected the following GenConfig ini files:"
+echo "INFO: You selected the following GenConfig ini files:"
 echo
 find  GenConfig/ini_files -type l -exec ls -lta {} \;
 echo
-echo "If these symlinks do not point to the desired ini files, please re-run:"
+echo "INFO: If these symlinks do not point to the desired ini files, please re-run:"
 echo
 echo "    $0 [--son|--srn]"
 popd > /dev/null
