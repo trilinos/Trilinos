@@ -18,7 +18,8 @@ set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default f
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
 
-set(Tpetra_INST_SERIAL ON CACHE BOOL "Set by default for PR testing")
+#set(Tpetra_INST_SERIAL ON CACHE BOOL "Set by default for PR testing")
+set (Kokkos_ENABLE_SERIAL OFF CACHE BOOL "Set Kokkos Serial to OFF for PR test")
 # note: mortar uses serial mode no matter what so we need to instantiate this to get it's examples to work
 
 set (Trilinos_ENABLE_COMPLEX_DOUBLE ON CACHE BOOL "Set by default for PR testing to exercise complex doubles case")
