@@ -267,7 +267,10 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
       LO LRID = blockRows_[blockOffsets_[i]];
       getMatDiag();
       auto diagView = Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
-      ISC d = W(LRID,0)*dampingFactor / diagView(LRID, 0);
+      ISC recip  = one / diagView(LRID, 0);
+      ISC wval   = W(LRID,0);
+      ISC combo  = wval*recip;
+      ISC d = combo*dampingFactor;
       for(size_t nv = 0; nv < numVecs; nv++)
       {
         ISC x = X(LRID, nv);
