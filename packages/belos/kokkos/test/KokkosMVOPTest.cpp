@@ -48,6 +48,7 @@
 #include "BelosKokkosMVOPTester.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosKokkosAdapter.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #ifdef HAVE_MPI
