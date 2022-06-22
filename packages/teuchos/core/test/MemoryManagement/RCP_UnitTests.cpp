@@ -333,6 +333,26 @@ TEUCHOS_UNIT_TEST( RCP, rcpFromUndefRef )
   TEST_ASSERT(nonnull(a_rcp));
 }
 
+/**
+ * @test Test @ref Teuchos::make_rcp without constructor argument.
+ */
+TEUCHOS_UNIT_TEST( RCP, make_rcp_no_constructor_arg )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>();
+  TEST_ASSERT(Teuchos::nonnull(a_rcp));
+}
+
+/**
+ * @test Test @ref Teuchos::make_rcp with constructor arguments.
+ */
+TEUCHOS_UNIT_TEST( RCP, make_rcp )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>(1,2);
+  TEST_ASSERT(Teuchos::nonnull(a_rcp));
+  TEST_EQUALITY(a_rcp->A_g(),1);
+  TEST_EQUALITY(a_rcp->A_f(),2);
+}
+
 
 //
 // Test rcpCloneNode(...)
