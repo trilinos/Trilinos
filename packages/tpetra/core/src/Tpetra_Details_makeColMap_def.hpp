@@ -629,13 +629,17 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //Pull down the sizes
   GO numLocalColGIDs = 0;
   GO numRemoteColGIDs = 0;
-  Kokkos::deep_copy(numLocalColGIDs, numLocals);
-  Kokkos::deep_copy(numRemoteColGIDs, numRemotes);
+  // DEEP_COPY REVIEW - DEVICE-TO-VALUE
+  Kokkos::deep_copy(exec_space(), numLocalColGIDs, numLocals);
+  // DEEP_COPY REVIEW - DEVICE-TO-numLocalColGIDs
+  Kokkos::deep_copy(exec_space(), numRemoteColGIDs, numRemotes);
   //Pull down the remote lists
   auto localsHost = Kokkos::create_mirror_view(localGIDView);
   auto remotesHost = Kokkos::create_mirror_view(remoteGIDView);
-  Kokkos::deep_copy(localsHost, localGIDView);
-  Kokkos::deep_copy(remotesHost, remoteGIDView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy(exec_space(), localsHost, localGIDView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy(exec_space(), remotesHost, remoteGIDView);
   //Finally, populate the STL structures which hold the index lists
   std::set<GO> RemoteGIDSet;
   std::vector<GO> RemoteGIDUnorderedVector;

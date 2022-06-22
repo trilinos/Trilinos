@@ -47,30 +47,30 @@ namespace testUtils
 inline
 int get_other_proc(int myproc)
 {
-    int otherproc = 1;
-    if (myproc == 1)
-        otherproc = 0;
-    return otherproc;
+  int otherproc = 1;
+  if (myproc == 1)
+    otherproc = 0;
+  return otherproc;
 }
 
 inline
 void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField, double prescribedTemperatureValue, const std::set<stk::mesh::EntityId> &boundaryNodeIds)
 {
-    stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-    for(size_t i=0; i<nodes.size(); ++i)
+  stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+  for(size_t i=0; i<nodes.size(); ++i)
+  {
+    double *temperature = stk::mesh::field_data(temperatureField, nodes[i]);
+    if(boundaryNodeIds.find(stkMeshBulkData.identifier(nodes[i])) != boundaryNodeIds.end())
     {
-        double *temperature = stk::mesh::field_data(temperatureField, nodes[i]);
-        if(boundaryNodeIds.find(stkMeshBulkData.identifier(nodes[i])) != boundaryNodeIds.end())
-        {
-            EXPECT_EQ(prescribedTemperatureValue, *temperature);
-        }
-        else
-        {
-            EXPECT_EQ(0.0, *temperature);
-        }
+      EXPECT_EQ(prescribedTemperatureValue, *temperature);
     }
+    else
+    {
+      EXPECT_EQ(0.0, *temperature);
+    }
+  }
 }
 }
 

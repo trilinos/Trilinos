@@ -288,7 +288,7 @@ namespace panzer {
     int num_orientations_cells_;
 
     // Orientations object
-    Teuchos::RCP<const OrientationsInterface>   orientations_;
+    std::vector<Intrepid2::Orientation>   orientations_;
 
     /// Used to check if arrays have been cached
     mutable bool basis_ref_scalar_evaluated_;
@@ -358,7 +358,7 @@ namespace panzer {
 
     /// Set the orientations object for applying orientations using the lazy evaluation path - required for certain bases
     void
-    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+    setOrientations(const std::vector<Intrepid2::Orientation> & orientations,
                     const int num_orientations_cells = -1);
 
     /// Set the cubature weights (weighted measure) for the basis values object - required to get weighted basis objects

@@ -340,6 +340,8 @@ namespace MueLu {
       if (printList.isParameter("pcoarsen: element to node map"))
         this->elementToNodeMapsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "pcoarsen: element to node map");
     }
+    if(paramList.isParameter("save data"))
+      this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
 
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
@@ -409,7 +411,11 @@ namespace MueLu {
     }
 
     if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable",      bool,        true)) {
-      if (!paramList.isSublist("repartition: params")) {
+      // We don't need coordinates if we're doing the in-place restriction
+      if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: use subcommunicators",      bool,        true) &&
+         MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: use subcommunicators in place",      bool,        true)) {
+        // do nothing --- these don't need coordinates
+      } else if (!paramList.isSublist("repartition: params")) {
         useCoordinates_ = true;
       } else {
         const ParameterList& repParams = paramList.sublist("repartition: params");
@@ -1004,8 +1010,13 @@ namespace MueLu {
    UpdateFactoryManager_Reitzinger(ParameterList& paramList, const ParameterList& defaultList,
                                                FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
    {
-     RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+     ParameterList rParams;
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
+     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
 
+     RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+     rFactory->SetParameterList(rParams);
+     
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
      rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
@@ -1017,6 +1028,7 @@ namespace MueLu {
 
      manager.SetFactory("Ptent", rFactory);
      manager.SetFactory("D0", rFactory);
+     manager.SetFactory("InPlaceMap", rFactory);
 
    }
 
@@ -1157,6 +1169,10 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z Dirichlet", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
+      // Unlike other factories, BrickAggregationFactory makes the Graph/DofsPerNode itself
+      manager.SetFactory("Graph",     aggFactory);
+      manager.SetFactory("DofsPerNode",     aggFactory);
+      manager.SetFactory("Filtering",     aggFactory);
       if (levelID > 1) {
         // We check for levelID > 0, as in the interpreter aggFactory for
         // levelID really corresponds to level 0. Managers are clunky, as they
@@ -1567,7 +1583,7 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, enableInPlace);
     if (enableRepart) {
 #ifdef HAVE_MPI
       // Short summary of the issue: RebalanceTransferFactory shares ownership
@@ -1706,66 +1722,82 @@ namespace MueLu {
       if (reuseType != "none" && reuseType != "S" && levelID)
         keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
 
-      // Rebalanced A
-      auto newA = rcp(new RebalanceAcFactory());
-      ParameterList rebAcParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
-      newA->SetParameterList(rebAcParams);
-      newA->SetFactory("A",         manager.GetFactory("A"));
-      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
-      manager.SetFactory("A", newA);
 
-      // Rebalanced P
-      auto newP = rcp(new RebalanceTransferFactory());
-      ParameterList newPparams;
-      newPparams.set("type", "Interpolation");
-      if (changedPRrebalance_)
-        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
-      newP->  SetParameterList(newPparams);
-      newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newP->  SetFactory("P",           manager.GetFactory("P"));
-      if (!paramList.isParameter("semicoarsen: number of levels"))
-        newP->SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      else
-        newP->SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
-      if (useCoordinates_)
-        newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("P",           newP);
-      if (useCoordinates_)
-        manager.SetFactory("Coordinates", newP);
-      if (useBlockNumber_ && (levelID > 0)) {
-        newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
-        manager.SetFactory("BlockNumber", newP);
+      if(enableInPlace) {
+        // Rebalanced A (in place)
+        // NOTE: This is for when we want to constrain repartitioning to match some other idea of what's going on.
+        // The major application is the (1,1) hierarchy in the Maxwell1 preconditioner.
+        auto newA = rcp(new RebalanceAcFactory());
+        ParameterList rebAcParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, rebAcParams);
+        newA->SetParameterList(rebAcParams);
+        newA->SetFactory("A",          manager.GetFactory("A"));
+        newA->SetFactory("InPlaceMap", manager.GetFactory("InPlaceMap"));
+        manager.SetFactory("A",newA);
       }
+      else {
+        // Rebalanced A
+        auto newA = rcp(new RebalanceAcFactory());
+        ParameterList rebAcParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
+        newA->SetParameterList(rebAcParams);
+        newA->SetFactory("A",         manager.GetFactory("A"));
+        newA->SetFactory("Importer",  manager.GetFactory("Importer"));
+        manager.SetFactory("A", newA);
+        
+        // Rebalanced P
+        auto newP = rcp(new RebalanceTransferFactory());
+        ParameterList newPparams;
+        newPparams.set("type", "Interpolation");
+        if (changedPRrebalance_)
+          newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
+        newP->  SetParameterList(newPparams);
+        newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
+        newP->  SetFactory("P",           manager.GetFactory("P"));
+        if (!paramList.isParameter("semicoarsen: number of levels"))
+          newP->SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+        else
+          newP->SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
+        if (useCoordinates_)
+          newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+        manager.SetFactory("P",           newP);
+        if (useCoordinates_)
+          manager.SetFactory("Coordinates", newP);
+        if (useBlockNumber_ && (levelID > 0)) {
+          newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+          manager.SetFactory("BlockNumber", newP);
+        }
+        
+        // Rebalanced R
+        auto newR = rcp(new RebalanceTransferFactory());
+        ParameterList newRparams;
+        newRparams.set("type", "Restriction");
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
+        if (changedPRrebalance_)
+          newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+        if (changedImplicitTranspose_)
+          newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+        newR->  SetParameterList(newRparams);
+        newR->  SetFactory("Importer", manager.GetFactory("Importer"));
+        if (!this->implicitTranspose_) {
+          newR->SetFactory("R",        manager.GetFactory("R"));
+          manager.SetFactory("R",      newR);
+        }
 
-      // Rebalanced R
-      auto newR = rcp(new RebalanceTransferFactory());
-      ParameterList newRparams;
-      newRparams.set("type", "Restriction");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
-      if (changedPRrebalance_)
-        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      if (changedImplicitTranspose_)
-        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
-      newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer", manager.GetFactory("Importer"));
-      if (!this->implicitTranspose_) {
-        newR->SetFactory("R",        manager.GetFactory("R"));
-        manager.SetFactory("R",      newR);
+        // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
+        // level if a user does not do that. For all other levels it simply passes
+        // nullspace from a real factory to whoever needs it. If we don't use
+        // repartitioning, that factory is "TentativePFactory"; if we do, it is
+        // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
+        // the "Nullspace" of the manager
+        // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
+        ParameterList newNullparams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "nullspace: calculate rotations", bool, newNullparams);
+        nullSpaceFactory->SetFactory("Nullspace", newP);
+        nullSpaceFactory->SetParameterList(newNullparams);
       }
-
-      // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
-      // level if a user does not do that. For all other levels it simply passes
-      // nullspace from a real factory to whoever needs it. If we don't use
-      // repartitioning, that factory is "TentativePFactory"; if we do, it is
-      // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
-      // the "Nullspace" of the manager
-      // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
-      ParameterList newNullparams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "nullspace: calculate rotations", bool, newNullparams);
-      nullSpaceFactory->SetFactory("Nullspace", newP);
-      nullSpaceFactory->SetParameterList(newNullparams);
 #else
       paramList.set("repartition: enable",false);
       this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";

@@ -43,54 +43,56 @@
 */
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
+
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
+#include <level_zero/zes_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
 
 #ifndef _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 #define _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 
+namespace KokkosKernels {
 
-namespace KokkosKernels{
-
-namespace Impl{
+namespace Impl {
 
 enum ExecSpaceType {
   Exec_SERIAL,
   Exec_OMP,
-  Exec_PTHREADS,
-  Exec_QTHREADS,
+  Exec_THREADS,
   Exec_CUDA,
   Exec_HIP,
   Exec_SYCL
 };
 template <typename ExecutionSpace>
-KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
+KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
   ExecSpaceType exec_space = Exec_SERIAL;
-#if defined( KOKKOS_ENABLE_SERIAL )
-  if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
+#if defined(KOKKOS_ENABLE_SERIAL)
+  if (std::is_same<Kokkos::Serial, ExecutionSpace>::value) {
     exec_space = Exec_SERIAL;
   }
 #endif
 
-#if defined( KOKKOS_ENABLE_THREADS )
-  if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-    exec_space =  Exec_PTHREADS;
+#if defined(KOKKOS_ENABLE_THREADS)
+  if (std::is_same<Kokkos::Threads, ExecutionSpace>::value) {
+    exec_space = Exec_THREADS;
   }
 #endif
 
-#if defined( KOKKOS_ENABLE_OPENMP )
-  if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+#if defined(KOKKOS_ENABLE_OPENMP)
+  if (std::is_same<Kokkos::OpenMP, ExecutionSpace>::value) {
     exec_space = Exec_OMP;
   }
 #endif
 
-#if defined( KOKKOS_ENABLE_CUDA )
-  if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+#if defined(KOKKOS_ENABLE_CUDA)
+  if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
     exec_space = Exec_CUDA;
   }
 #endif
 
-#if defined( KOKKOS_ENABLE_HIP )
-  if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace >::value){
+#if defined(KOKKOS_ENABLE_HIP)
+  if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
     exec_space = Exec_HIP;
   }
 #endif
@@ -101,11 +103,6 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
   }
 #endif
 
-#if defined(KOKKOS_ENABLE_QTHREAD)
-  if (std::is_same<Kokkos::Qthread, ExecutionSpace>::value) {
-    exec_space = Exec_QTHREADS;
-  }
-#endif
   return exec_space;
 }
 
@@ -178,8 +175,8 @@ kk_is_a64fx_mem_space<Kokkos::HostSpace>() {
 // Host function to determine free and total device memory.
 // Will throw if execution space doesn't support this.
 template <typename MemorySpace>
-inline void kk_get_free_total_memory(
-    size_t& /* free_mem */, size_t & /* total_mem */) {
+inline void kk_get_free_total_memory(size_t& /* free_mem */,
+                                     size_t& /* total_mem */) {
   std::ostringstream oss;
   oss << "Error: memory space " << MemorySpace::name()
       << " does not support querying free/total memory.";
@@ -188,81 +185,146 @@ inline void kk_get_free_total_memory(
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
-inline void kk_get_free_total_memory<Kokkos::CudaSpace>(size_t& free_mem, size_t& total_mem)
-{
+inline void kk_get_free_total_memory<Kokkos::CudaSpace>(size_t& free_mem,
+                                                        size_t& total_mem) {
   cudaMemGetInfo(&free_mem, &total_mem);
 }
 template <>
-inline void kk_get_free_total_memory<Kokkos::CudaUVMSpace>(size_t& free_mem, size_t& total_mem)
-{
+inline void kk_get_free_total_memory<Kokkos::CudaUVMSpace>(size_t& free_mem,
+                                                           size_t& total_mem) {
   cudaMemGetInfo(&free_mem, &total_mem);
 }
 template <>
-inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(size_t& free_mem, size_t& total_mem)
-{
+inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
+    size_t& free_mem, size_t& total_mem) {
   cudaMemGetInfo(&free_mem, &total_mem);
 }
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(size_t& free_mem, size_t& total_mem)
-{
+inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
+    size_t& free_mem, size_t& total_mem) {
   hipMemGetInfo(&free_mem, &total_mem);
 }
 #endif
 
-inline int kk_get_suggested_vector_size(
-    const size_t nr, const  size_t nnz, const ExecSpaceType exec_space){
-  int suggested_vector_size_ = 1;
-  switch (exec_space){
-  default:
-    break;
-  case Exec_SERIAL:
-  case Exec_OMP:
-  case Exec_PTHREADS:
-  case Exec_QTHREADS:
-    break;
-  case Exec_CUDA:
-  case Exec_HIP:
-    if (nr > 0)
-      suggested_vector_size_ = nnz / double (nr) + 0.5;
-    if (suggested_vector_size_ < 3){
-      suggested_vector_size_ = 2;
-    }
-    else if (suggested_vector_size_ <= 6){
-      suggested_vector_size_ = 4;
-    }
-    else if (suggested_vector_size_ <= 12){
-      suggested_vector_size_ = 8;
-    }
-    else if (suggested_vector_size_ <= 24){
-      suggested_vector_size_ = 16;
-    }
-    else {
-      if(exec_space == Exec_CUDA || suggested_vector_size_ <= 48) {
-        //use full CUDA warp, or half a HIP wavefront
-        suggested_vector_size_ = 32;
-      }
-      else {
-        //use full HIP wavefront
-        suggested_vector_size_ = 64;
-      }
-    }
-    break;
-  }
-  return suggested_vector_size_;
+// FIXME_SYCL Use compiler extension instead of low level interface when
+// available. Also, we assume to query memory associated with the default queue.
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  sycl::queue queue;
+  sycl::device device = queue.get_device();
+  auto level_zero_handle =
+      sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
 
+  uint32_t n_memory_modules = 0;
+  zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules, nullptr);
+
+  if (n_memory_modules != 1) {
+    std::ostringstream oss;
+    oss << "Error: number of memory modules for the SYCL backend: "
+        << n_memory_modules
+        << ". We only support querying free/total memory if exactly one memory "
+           "module was found. Make sure that ZES_ENABLE_SYSMAN=1 is set at run "
+           "time if no memeory modules were found!";
+    throw std::runtime_error(oss.str());
+  }
+
+  zes_mem_handle_t memory_module_handle;
+  zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules,
+                             &memory_module_handle);
+  zes_mem_state_t memory_properties{
+      ZES_STRUCTURE_TYPE_MEM_PROPERTIES,
+  };
+  zesMemoryGetState(memory_module_handle, &memory_properties);
+  total_mem = memory_properties.size;
+  free_mem  = memory_properties.free;
 }
 
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
+                                                                     total_mem);
+}
 
-inline int kk_get_suggested_team_size(const int vector_size, const ExecSpaceType exec_space){
-  if (exec_space == Exec_CUDA || exec_space == Exec_HIP) {
-    //TODO: where this is used, tune the target value for
-    //threads per block (but 256 is probably OK for CUDA and HIP)
-    return 256 / vector_size;
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
+                                                                     total_mem);
+}
+#endif
+
+template <typename ExecSpace>
+inline int kk_get_max_vector_size() {
+  return Kokkos::TeamPolicy<ExecSpace>::vector_length_max();
+}
+
+#ifdef KOKKOS_ENABLE_SYCL
+template <>
+inline int kk_get_max_vector_size<Kokkos::Experimental::SYCL>() {
+  // FIXME SYCL: hardcoding to 8 is a workaround that seems to work for all
+  // kernels. Wait for max subgroup size query to be fixed in SYCL and/or
+  // Kokkos. Then TeamPolicy::vector_length_max() can be used for all
+  // backends.
+  return 8;
+}
+#endif
+
+inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
+                                        const ExecSpaceType exec_space) {
+  int suggested_vector_size_ = 1;
+  int max_vector_size        = 1;
+  switch (exec_space) {
+    case Exec_CUDA: max_vector_size = 32; break;
+    case Exec_HIP: max_vector_size = 64; break;
+    case Exec_SYCL:
+      // FIXME SYCL: same as above - 8 is a workaround
+      max_vector_size = 8;
+      break;
+    default:;
   }
-  else {
+  switch (exec_space) {
+    default: break;
+    case Exec_SERIAL:
+    case Exec_OMP:
+    case Exec_THREADS: break;
+    case Exec_CUDA:
+    case Exec_HIP:
+    case Exec_SYCL:
+      if (nr > 0) suggested_vector_size_ = nnz / double(nr) + 0.5;
+      if (suggested_vector_size_ < 3) {
+        suggested_vector_size_ = 2;
+      } else if (suggested_vector_size_ <= 6) {
+        suggested_vector_size_ = 4;
+      } else if (suggested_vector_size_ <= 12) {
+        suggested_vector_size_ = 8;
+      } else if (suggested_vector_size_ <= 24) {
+        suggested_vector_size_ = 16;
+      } else if (suggested_vector_size_ <= 48) {
+        suggested_vector_size_ = 32;
+      } else {
+        suggested_vector_size_ = 64;
+      }
+      if (suggested_vector_size_ > max_vector_size)
+        suggested_vector_size_ = max_vector_size;
+      break;
+  }
+  return suggested_vector_size_;
+}
+
+inline int kk_get_suggested_team_size(const int vector_size,
+                                      const ExecSpaceType exec_space) {
+  if (exec_space == Exec_CUDA || exec_space == Exec_HIP ||
+      exec_space == Exec_SYCL) {
+    // TODO: where this is used, tune the target value for
+    // threads per block (but 256 is probably OK for CUDA and HIP)
+    return 256 / vector_size;
+  } else {
     return 1;
   }
 }
@@ -314,15 +376,15 @@ struct SpaceInstance<Kokkos::Experimental::HIP> {
     hipStreamDestroy(stream);
   }
   static bool overlap() {
-    //TODO: does HIP have an equivalent for CUDA_LAUNCH_BLOCKING?
+    // TODO: does HIP have an equivalent for CUDA_LAUNCH_BLOCKING?
     return true;
   }
 };
 #endif
 
-}
+}  // namespace Experimental
 
-}
-}
+}  // namespace Impl
+}  // namespace KokkosKernels
 
 #endif

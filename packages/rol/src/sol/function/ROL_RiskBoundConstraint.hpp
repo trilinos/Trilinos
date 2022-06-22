@@ -68,7 +68,7 @@ private:
   std::vector<bool> activatedCon_;
   std::vector<int> nStatCon_;
 
-  mutable bool isLOinitialized_, isHIinitialized_; 
+  mutable bool isLOinitialized_, isHIinitialized_;
   mutable Ptr<RiskVector<Real>> lo_, hi_;
 
   void setBoundInfo(ParameterList &parlist,
@@ -341,7 +341,7 @@ public:
       bc_->pruneUpperActive(*vv,*gv,*xv,xeps,geps);
     }
   }
- 
+
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
@@ -389,7 +389,7 @@ public:
       Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
       bc_->pruneLowerActive(*vv,*gv,*xv,xeps,geps);
     }
-  } 
+  }
 
   const Ptr<const Vector<Real>> getLowerBound(void) const {
     if (!isLOinitialized_) {
@@ -423,7 +423,7 @@ public:
     return hi_;
   }
 
-  bool isFeasible( const Vector<Real> &v ) { 
+  bool isFeasible( const Vector<Real> &v ) {
     bool flagstat = true, flagcon = true, flagvec = true;
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
@@ -443,6 +443,64 @@ public:
       flagvec = bc_->isFeasible(*vv);
     }
     return (flagstat && flagcon && flagvec);
+  }
+
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+    if ( augmentedObj_ && activatedObj_ ) {
+      Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);
+      Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
+      statObj_bc_->applyInverseScalingFunction(*dvs,*vs,*xs,*gs);
+    }
+    if (augmentedCon_) {
+      int size = statCon_bc_.size();
+      for (int i = 0; i < size; ++i) {
+        if (activatedCon_[i]) {
+          Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
+          statCon_bc_[i]->applyInverseScalingFunction(*dvs,*vs,*xs,*gs);
+        }
+      }
+    }
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getVector();
+      Ptr<const Vector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+      Ptr<const Vector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getVector();
+      bc_->applyInverseScalingFunction(*dvs,*vs,*xs,*gs);
+    }
+  }
+
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+    if ( augmentedObj_ && activatedObj_ ) {
+      Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);
+      Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
+      statObj_bc_->applyScalingFunctionJacobian(*dvs,*vs,*xs,*gs);
+    }
+    if (augmentedCon_) {
+      int size = statCon_bc_.size();
+      for (int i = 0; i < size; ++i) {
+        if (activatedCon_[i]) {
+          Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
+          statCon_bc_[i]->applyScalingFunctionJacobian(*dvs,*vs,*xs,*gs);
+        }
+      }
+    }
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getVector();
+      Ptr<const Vector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+      Ptr<const Vector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getVector();
+      bc_->applyScalingFunctionJacobian(*dvs,*vs,*xs,*gs);
+    }
   }
 
 }; // class RiskBoundConstraint

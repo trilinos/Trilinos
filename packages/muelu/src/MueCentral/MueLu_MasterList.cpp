@@ -151,6 +151,7 @@ namespace MueLu {
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -272,6 +273,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
+  "<Parameter name=\"keep data\" type=\"string\" value=\"{}\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
@@ -330,6 +332,7 @@ namespace MueLu {
   "<ParameterList name=\"repartition: params\"/>"
   "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"repartition: use map\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: node id\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
@@ -757,6 +760,8 @@ namespace MueLu {
       
          ("export data","export data")
       
+         ("keep data","keep data")
+      
          ("ML print initial list","print initial parameters")
       
          ("print unused","print unused parameters")
@@ -872,6 +877,8 @@ namespace MueLu {
          ("repartition: start level","repartition: start level")
       
          ("repartition: use map","repartition: use map")
+      
+         ("repartition: use subcommunicators in place","repartition: use subcommunicators in place")
       
          ("repartition: node repartition level","repartition: node repartition level")
       

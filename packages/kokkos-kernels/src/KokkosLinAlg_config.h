@@ -46,4 +46,4 @@
 
 #include <KokkosKernels_config.h>
 
-#endif // KOKKOSLINALG_CONFIG_H
+#endif  // KOKKOSLINALG_CONFIG_H

@@ -53,10 +53,71 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "UnitTestReadWriteUtils.hpp"
 
-class StkFaceIoTest : public stk::unit_test_util::MeshFixture
+#ifndef STK_USE_SIMPLE_FIELDS
+
+class StkFaceIoTest_legacy : public stk::unit_test_util::MeshFixture
 {
 public:
-  StkFaceIoTest() : stk::unit_test_util::MeshFixture(), stkIoInput(), stkIoOutput()
+  StkFaceIoTest_legacy()
+    : stk::unit_test_util::MeshFixture(),
+      stkIoInput(),
+      stkIoOutput()
+  {
+  }
+
+  void setup_face_mesh(unsigned numBlocks);
+
+  void setup_mesh_with_faces(unsigned numBlocks);
+
+  void setup_mesh_with_edges_and_faces(unsigned numBlocks);
+
+  void test_connectivity_to_element(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank);
+
+  void test_entity_count(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank,
+                         unsigned expectedNumLocalEntities, unsigned expectedNumEntities);
+
+  void test_edges(const stk::mesh::BulkData& bulk);
+
+  void test_faces(const stk::mesh::BulkData& bulk);
+
+  virtual void output_mesh();
+
+  void test_output_mesh();
+
+  void test_output_mesh(stk::mesh::BulkData& bulk);
+
+  virtual void load_output_mesh(stk::mesh::BulkData& bulk);
+
+  void set_expected_values(io_test_utils::ExpectedValues& expectedValues_);
+
+  virtual ~StkFaceIoTest_legacy()
+  {
+    //unlink(fileName.c_str());
+  }
+
+  void set_file_name(const std::string& newName)
+  { fileName = newName; }
+
+protected:
+  std::string fileName = "output.exo";
+  std::string edgePartName = "edgeBlock";
+  std::string facePartName = "faceBlock";
+  io_test_utils::ExpectedValues expectedValues;
+  stk::io::StkMeshIoBroker stkIoInput;
+  stk::io::StkMeshIoBroker stkIoOutput;
+};
+
+#endif // STK_USE_SIMPLE_FIELDS
+
+namespace simple_fields {
+
+class StkFaceIoTest : public stk::unit_test_util::simple_fields::MeshFixture
+{
+public:
+  StkFaceIoTest()
+    : stk::unit_test_util::simple_fields::MeshFixture(),
+      stkIoInput(),
+      stkIoOutput()
   {
   }
 
@@ -101,5 +162,7 @@ protected:
   stk::io::StkMeshIoBroker stkIoInput;
   stk::io::StkMeshIoBroker stkIoOutput;
 };
+
+} // namespace simple_fields
 
 #endif

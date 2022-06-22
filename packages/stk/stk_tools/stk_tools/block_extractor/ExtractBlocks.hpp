@@ -19,17 +19,17 @@
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
 //
- // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef PACKAGES_STK_STK_TOOLS_STK_TOOLS_BLOCK_EXTRACTOR_EXTRACT_BLOCKS_HPP_
 #define PACKAGES_STK_STK_TOOLS_STK_TOOLS_BLOCK_EXTRACTOR_EXTRACT_BLOCKS_HPP_
@@ -46,10 +46,10 @@ namespace stk {
 namespace tools {
 
 void extract_blocks_and_ns_from_file(const std::string &inFile,
-                              const std::string &outFile,
-                              const std::vector<int> &blockIDs,
-                                                          const std::vector<int> &nodesetIDs,
-                              MPI_Comm comm);
+                                     const std::string &outFile,
+                                     const std::vector<int> &blockIDs,
+                                     const std::vector<int> &nodesetIDs,
+                                     MPI_Comm comm);
 
 void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, const std::vector<std::string> &blockNames);
 
@@ -60,12 +60,12 @@ std::vector<std::string> GetBlockNamesFromIDs(const stk::mesh::BulkData & meshBu
 std::vector<std::string> find_nodeset_names_from_id(const stk::mesh::BulkData & meshBulk, const std::vector<int> & nodeset_ids);
 
 void GetPartsByName(std::vector<stk::mesh::Part*> & parts,
-                           const stk::mesh::BulkData& inBulk,
-                           std::vector < std::string > names);
+                    const stk::mesh::BulkData& inBulk,
+                    std::vector < std::string > names);
 
 stk::mesh::Selector GetBlockAndNodesetSelector(const stk::mesh::BulkData & inBulk,
-                                            const std::vector<std::string>& nodesetNames,
-                                            const std::vector<std::string>& blockNames);
+                                               const std::vector<std::string>& nodesetNames,
+                                               const std::vector<std::string>& blockNames);
 
 }
 }

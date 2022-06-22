@@ -71,6 +71,7 @@ makeDualViewFromOwningHostView
   (Kokkos::DualView<ElementType*, DeviceType>& dv,
    const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
 {
+  using execution_space = typename DeviceType::execution_space;
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
 
   if (dv.extent (0) == hostView.extent (0)) {
@@ -82,7 +83,8 @@ makeDualViewFromOwningHostView
   }
   else {
     auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
-    Kokkos::deep_copy (devView, hostView);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), devView, hostView);
     dv = dual_view_type (devView, hostView);
   }
 }
@@ -93,6 +95,7 @@ makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
                            const Teuchos::ArrayView<const ElementType>& av,
                            const std::string& label)
 {
+  using execution_space = typename DeviceType::execution_space;
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
   using host_view_type = typename dual_view_type::t_host;
   using const_host_view_type = typename host_view_type::const_type;
@@ -101,7 +104,8 @@ makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
   const ElementType* ptr = (size == 0) ? nullptr : av.getRawPtr ();
   const_host_view_type inView (ptr, size);
   host_view_type hostView (view_alloc_no_init (label), size);
-  Kokkos::deep_copy (hostView, inView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy (execution_space(), hostView, inView);
 
   makeDualViewFromOwningHostView (dv, hostView);
 }
@@ -113,6 +117,7 @@ makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
                         const std::string& label)
 {
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
+  using execution_space = typename DeviceType::execution_space;
   using host_view_type = typename dual_view_type::t_host;
   using const_host_view_type = typename host_view_type::const_type;
 
@@ -120,7 +125,8 @@ makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
   const ElementType* ptr = (size == 0) ? nullptr : vec.data ();
   const_host_view_type inView (ptr, size);
   host_view_type hostView (view_alloc_no_init (label), size);
-  Kokkos::deep_copy (hostView, inView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy (execution_space(), hostView, inView);
 
   makeDualViewFromOwningHostView (dv, hostView);
 }

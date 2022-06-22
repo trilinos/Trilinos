@@ -46,6 +46,7 @@
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/BuildMesh.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -56,6 +57,7 @@ using stk::mesh::Field;
 using stk::mesh::BulkData;
 using stk::mesh::EntityId;
 using stk::mesh::MetaData;
+using stk::unit_test_util::build_mesh;
 
 namespace {
 
@@ -70,10 +72,12 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
   const unsigned num_states = 1;
-  Field<double>& dfield = meta_data.declare_field<Field<double> >(stk::topology::NODE_RANK, "double_scalar", num_states);
+  Field<double>& dfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_scalar", num_states);
 
   const double initial_value = 99.9;
 
@@ -81,7 +85,6 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -112,57 +115,58 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(pm);
   if (numProcs == 1) {
-      // Set up meta and bulk data
-      const unsigned spatial_dim = 2;
-      MetaData meta_data(spatial_dim);
-    
-      stk::mesh::Part& newPart = meta_data.declare_part("new part");
-    
-      const unsigned num_states = 1;
-      Field<double>& dfield = meta_data.declare_field<Field<double> >(stk::topology::NODE_RANK, "double_scalar", num_states);
-    
-      const double initial_value = 99.9;
-    
-      stk::mesh::put_field_on_mesh(dfield, newPart, &initial_value);
-    
-      meta_data.commit();
-    
-      BulkData mesh(meta_data, pm);
-      unsigned p_rank = mesh.parallel_rank();
-    
-      // Begin modification cycle so we can create stuff
-      mesh.modification_begin();
-    
-      //declare a node that is not in newPart:
-      EntityId node_id = p_rank+1;
-      Entity node = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&meta_data.universal_part()});
+    // Set up meta and bulk data
+    const unsigned spatial_dim = 2;
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+    stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& mesh = *bulkPtr;
 
-      //declare two nodes that *are* in newPart:
-      node_id = p_rank+2;
-      Entity node_tmp = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
-      node_id = p_rank+3;
-      Entity node_tmp2 = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
-    
-      mesh.modification_end();
-    
-      //zero the field-data for the nodes that have dfield:
-      double* data_ptr = stk::mesh::field_data( dfield, node_tmp);
-      ASSERT_TRUE( nullptr != data_ptr);
-      *data_ptr = 0.0;
-      data_ptr = stk::mesh::field_data( dfield, node_tmp2);
-      ASSERT_TRUE( nullptr != data_ptr);
-      *data_ptr = 0.0;
+    stk::mesh::Part& newPart = meta_data.declare_part("new part");
 
-      mesh.modification_begin();
-      //delete one of the nodes in newPart, add the node that wasn't previously in newPart:
-      mesh.destroy_entity(node_tmp);
-      mesh.change_entity_parts(node, stk::mesh::ConstPartVector{&newPart});
-      mesh.modification_end();
-    
-      //now expect that data for dfield on node matches initial value
-      data_ptr = stk::mesh::field_data( dfield, node);
-    
-      ASSERT_EQ( initial_value, *data_ptr);
+    const unsigned num_states = 1;
+    Field<double>& dfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_scalar", num_states);
+
+    const double initial_value = 99.9;
+
+    stk::mesh::put_field_on_mesh(dfield, newPart, &initial_value);
+
+    meta_data.commit();
+
+    unsigned p_rank = mesh.parallel_rank();
+
+    // Begin modification cycle so we can create stuff
+    mesh.modification_begin();
+
+    //declare a node that is not in newPart:
+    EntityId node_id = p_rank+1;
+    Entity node = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&meta_data.universal_part()});
+
+    //declare two nodes that *are* in newPart:
+    node_id = p_rank+2;
+    Entity node_tmp = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
+    node_id = p_rank+3;
+    Entity node_tmp2 = mesh.declare_node(node_id, stk::mesh::ConstPartVector{&newPart});
+
+    mesh.modification_end();
+
+    //zero the field-data for the nodes that have dfield:
+    double* data_ptr = stk::mesh::field_data( dfield, node_tmp);
+    ASSERT_TRUE( nullptr != data_ptr);
+    *data_ptr = 0.0;
+    data_ptr = stk::mesh::field_data( dfield, node_tmp2);
+    ASSERT_TRUE( nullptr != data_ptr);
+    *data_ptr = 0.0;
+
+    mesh.modification_begin();
+    //delete one of the nodes in newPart, add the node that wasn't previously in newPart:
+    mesh.destroy_entity(node_tmp);
+    mesh.change_entity_parts(node, stk::mesh::ConstPartVector{&newPart});
+    mesh.modification_end();
+
+    //now expect that data for dfield on node matches initial value
+    data_ptr = stk::mesh::field_data( dfield, node);
+
+    ASSERT_EQ( initial_value, *data_ptr);
   }
 }
 
@@ -172,16 +176,18 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   // present the first time field-data is referenced for that field.
   //
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
+  typedef stk::mesh::Field<double> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
@@ -189,7 +195,6 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -220,17 +225,19 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   // the field to a new bucket that does have the field.
   //
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
+  typedef stk::mesh::Field<double> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
@@ -240,7 +247,6 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -283,17 +289,19 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   // present the first time field-data is referenced for that field.
   //
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
+  typedef stk::mesh::Field<double> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
   const unsigned num_states = 2;
-  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<double>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
@@ -301,7 +309,6 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff

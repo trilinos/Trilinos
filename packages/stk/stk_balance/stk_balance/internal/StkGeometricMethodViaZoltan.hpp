@@ -30,6 +30,7 @@
  // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STK_GEOMETRIC_METHOD_VIA_ZOLTAN_HPP
 #define STK_GEOMETRIC_METHOD_VIA_ZOLTAN_HPP
 
@@ -44,7 +45,8 @@ namespace balance {
 
 class BalanceSettings;
 
-std::vector<unsigned> get_decomposition(const stk::balance::internal::GeometricVertices& vertexInfo, const BalanceSettings& balanceSettings, int numParts, MPI_Comm comm);
+std::vector<unsigned> get_decomposition(const stk::balance::internal::GeometricVertices& vertexInfo,
+                                        const BalanceSettings& balanceSettings, int numParts, MPI_Comm comm);
 
 }
 }

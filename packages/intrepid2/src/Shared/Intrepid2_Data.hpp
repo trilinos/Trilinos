@@ -928,7 +928,7 @@ public:
         // extract the type of the first argument; use that for the arrays below
         using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
         
-        const Kokkos::Array<int_type, numArgs> args {intArgs...};
+        const Kokkos::Array<int_type, numArgs+1> args {intArgs...,0}; // we pad with one extra entry (0) to avoid gcc compiler warnings about references beyond the bounds of the array (the [d+1]'s below)
         Kokkos::Array<int_type, 7> refEntry;
         for (int d=0; d<numArgs; d++)
         {
@@ -1734,7 +1734,7 @@ public:
     //! returns the true extent of the data corresponding to the logical dimension provided; if the data does not vary in that dimension, returns 1
     KOKKOS_INLINE_FUNCTION int getDataExtent(const ordinal_type &d) const
     {
-      for (unsigned i=0; i<numActiveDims_; i++)
+      for (int i=0; i<numActiveDims_; i++)
       {
         if (activeDims_[i] == d)
         {

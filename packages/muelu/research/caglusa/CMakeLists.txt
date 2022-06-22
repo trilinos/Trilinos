@@ -9,21 +9,23 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
     COMM mpi
     )
 
-  TRIBITS_ADD_TEST(
-    HierarchicalDriver
-    NAME "HierarchicalDriver-fractionalLaplacian1D"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
+  file(GLOB FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 1d-*/*)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(caglusa_cp
     SOURCE_FILES
-    hierarchical.xml muelu.xml aux.xml
-    rowmap.mtx coeffmap.mtx ghosted_coeffmap.mtx
-    Anear.mtx basismatrix.mtx kernelApproximations.mtx
-    transfer0.mtx transfer1.mtx transfer2.mtx transfer3.mtx transfer4.mtx
-    X_ex.mtx RHS.mtx
-    aux.mtx coords.mtx
+    muelu.xml aux.xml ${FILES}
+    )
+
+  TRIBITS_ADD_TEST(
+    HierarchicalDriver
+    NAME "HierarchicalDriver-fractionalLaplacian1D"
+    ARGS
+    "--xml=1d-mm-global/hierarchical.xml"
+    "--xml=1d-mm-local/hierarchical.xml"
+    "--xml=1d-binary-global/hierarchical.xml"
+    "--xml=1d-binary-local/hierarchical.xml"
+    COMM mpi
+    NUM_MPI_PROCS 4
     )
 
 ENDIF()

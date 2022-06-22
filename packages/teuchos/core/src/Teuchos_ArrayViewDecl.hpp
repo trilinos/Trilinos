@@ -84,7 +84,7 @@ template<class T> class ArrayRCP;
  * attempt to replace memory debugging tools such as the Memcheck tool
  * in <a href="http://en.wikipedia.org/wiki/Valgrind">Valgrind</a>.
  *
- * \section Teuchos_ArrayRCP_Req Requirements on the type T
+ * \section Teuchos_ArrayView_Req Requirements on the type T
  *
  * ArrayView imposes the following requirements on the type T of
  * elements in the array:

@@ -44,7 +44,11 @@
 #define   __Panzer_WriteVector_GlobalEvaluationData_hpp__
 
 // Panzer
+#include "PanzerDiscFE_config.hpp"
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_KokkosUtils_VectorToView.hpp"
+#endif
+
 #include "Panzer_GlobalEvaluationData.hpp"
 
 // Teuchos
@@ -98,6 +102,7 @@ public:
   //! Get the ghosted vector
   virtual Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const = 0;
 
+#ifdef PANZER_HAVE_EPETRA
   /**
    *  \brief Element access.
    *
@@ -125,16 +130,17 @@ protected:
   /**
    *  \brief The `PHX::View` of the owned vector.
    */
-  typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::
-  View ownedView_;
+  typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::View
+  ownedView_;
 
   /**
    *  \brief The `PHX::View` of the ghosted vector.
    */
   typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::View
   ghostedView_;
+#endif // PANZER_HAVE_EPETRA
 
-private: 
+private:
 
   CombineMode combineMode_;
 }; // end of class WriteVector_GlobalEvaluationData

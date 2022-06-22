@@ -740,15 +740,22 @@ public:
   static void checkLocalRowMapMatchesColMap(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A) {
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
-    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
-    LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getLocalNumElements());
     bool fail = false;
-    for (LO rowLID = 0; rowLID < numRows; rowLID++) {
-      GO rowGID = rowMap->getGlobalElement(rowLID);
-      LO colLID = colMap->getLocalElement(rowGID);
-      if (rowLID != colLID) {
-        fail = true;
-        std::cerr << "On rank " << comm->getRank() << ", GID " << rowGID << " is LID " << rowLID << "in the rowmap, but LID " << colLID << " in the column map.\n";
+    if (rowMap->lib() == Xpetra::UseTpetra) {
+      auto tpRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(rowMap, true)->getTpetra_Map();
+      auto tpColMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(colMap, true)->getTpetra_Map();
+      fail = ! tpColMap->isLocallyFitted(*tpRowMap);
+    } else {
+      RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+      LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getLocalNumElements());
+
+      for (LO rowLID = 0; rowLID < numRows; rowLID++) {
+        GO rowGID = rowMap->getGlobalElement(rowLID);
+        LO colGID = colMap->getGlobalElement(rowLID);
+        if (rowGID != colGID) {
+          fail = true;
+          std::cerr << "On rank " << comm->getRank() << ", LID " << rowLID << " is GID " << rowGID << " in the rowmap, but GID " << colGID << " in the column map.\n";
+        }
       }
     }
     TEUCHOS_TEST_FOR_EXCEPTION(fail, Exceptions::RuntimeError,

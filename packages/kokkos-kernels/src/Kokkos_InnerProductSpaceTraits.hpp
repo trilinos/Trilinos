@@ -46,7 +46,8 @@
 #define KOKKOS_INNERPRODUCTSPACETRAITS_HPP
 
 /// \file Kokkos_InnerProductSpaceTraits.hpp
-/// \brief Declaration and definition of Kokkos::Details::InnerProductSpaceTraits
+/// \brief Declaration and definition of
+/// Kokkos::Details::InnerProductSpaceTraits
 
 #include "Kokkos_ArithTraits.hpp"
 
@@ -139,9 +140,9 @@ namespace Details {
 /// macro.)  If CUDA <i>does</i> support using T in device functions,
 /// you <i>must</i> mark norm() and dot() as device functions in order
 /// to use them in device functions.
-template<class T>
+template <class T>
 class InnerProductSpaceTraits {
-public:
+ public:
   //! The type T itself.
   typedef T val_type;
 
@@ -152,8 +153,8 @@ public:
   typedef val_type dot_type;
 
   //! The "norm" (absolute value or magnitude) of a value x of type val_type.
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
   /// \brief The "dot product" of two values x and y of type val_type.
   ///
@@ -161,8 +162,8 @@ public:
   /// complex.  In that case, see the partial specialization for
   /// Kokkos::complex below to see our convention for which input gets
   /// conjugated.
-  static KOKKOS_FORCEINLINE_FUNCTION
-  dot_type dot (const val_type& x, const val_type& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type dot(const val_type& x,
+                                                  const val_type& y) {
     return x * y;
   }
 };
@@ -170,38 +171,32 @@ public:
 /// \brief Partial specialization for long double.
 ///
 /// \warning CUDA does not support long double in device functions.
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-template<>
-struct InnerProductSpaceTraits<long double>
-{
+template <>
+struct InnerProductSpaceTraits<long double> {
   typedef long double val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static dot_type dot (const val_type& x, const val_type& y) {
-    return x * y;
-  }
+  static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
-#endif
 
 //! Partial specialization for Kokkos::complex<T>.
-template<class T>
-class InnerProductSpaceTraits<Kokkos::complex<T> > {
-public:
+template <class T>
+class InnerProductSpaceTraits<Kokkos::complex<T>> {
+ public:
   typedef Kokkos::complex<T> val_type;
   typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static KOKKOS_FORCEINLINE_FUNCTION
-  mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static KOKKOS_FORCEINLINE_FUNCTION
-  dot_type dot (const val_type& x, const val_type& y) {
-    return Kokkos::conj (x) * y;
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type dot(const val_type& x,
+                                                  const val_type& y) {
+    return Kokkos::conj(x) * y;
   }
 };
 
@@ -209,18 +204,17 @@ public:
 ///
 /// \warning CUDA does not support std::complex<T> in device
 ///   functions.
-template<class T>
-struct InnerProductSpaceTraits<std::complex<T> >
-{
+template <class T>
+struct InnerProductSpaceTraits<std::complex<T>> {
   typedef std::complex<T> val_type;
   typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static dot_type dot (const val_type& x, const val_type& y) {
-    return std::conj (x) * y;
+  static dot_type dot(const val_type& x, const val_type& y) {
+    return std::conj(x) * y;
   }
 };
 
@@ -231,22 +225,19 @@ struct InnerProductSpaceTraits<std::complex<T> >
 /// CUDA does not support __float128 in device functions, so none of
 /// the class methods in this specialization are marked as device
 /// functions.
-template<>
-struct InnerProductSpaceTraits<__float128>
-{
+template <>
+struct InnerProductSpaceTraits<__float128> {
   typedef __float128 val_type;
   typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static dot_type dot (const val_type& x, const val_type& y) {
-    return x * y;
-  }
+  static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 
-#endif // HAVE_KOKKOSKERNELS_QUADMATH
+#endif  // HAVE_KOKKOSKERNELS_QUADMATH
 
 // dd_real and qd_real are floating-point types provided by the QD
 // library of David Bailey (LBNL):
@@ -263,64 +254,53 @@ struct InnerProductSpaceTraits<__float128>
 // Hence, the class methods of the ArithTraits specializations for
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
-template<>
-struct InnerProductSpaceTraits<dd_real>
-{
+template <>
+struct InnerProductSpaceTraits<dd_real> {
   typedef dd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static dot_type dot (const val_type& x, const val_type& y) {
-    return x * y;
-  }
+  static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 
-template<>
-struct InnerProductSpaceTraits<qd_real>
-{
+template <>
+struct InnerProductSpaceTraits<qd_real> {
   typedef qd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+  static mag_type norm(const val_type& x) {
+    return ArithTraits<val_type>::abs(x);
   }
-  static dot_type dot (const val_type& x, const val_type& y) {
-    return x * y;
-  }
+  static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
-#endif // HAVE_KOKKOS_QD
+#endif  // HAVE_KOKKOS_QD
 
-template<class ResultType, class InputType1, class InputType2>
-KOKKOS_INLINE_FUNCTION void
-updateDot(ResultType& sum, const InputType1& x, const InputType2& y)
-{
+template <class ResultType, class InputType1, class InputType2>
+KOKKOS_INLINE_FUNCTION void updateDot(ResultType& sum, const InputType1& x,
+                                      const InputType2& y) {
   // FIXME (mfh 22 Jan 2020) We should actually pick the type with the
   // greater precision.
   sum += InnerProductSpaceTraits<InputType1>::dot(x, y);
 }
 
-KOKKOS_INLINE_FUNCTION void
-updateDot(double& sum, const double x, const double y)
-{
+KOKKOS_INLINE_FUNCTION void updateDot(double& sum, const double x,
+                                      const double y) {
   sum += x * y;
 }
 
-KOKKOS_INLINE_FUNCTION void
-updateDot(double& sum, const float x, const float y)
-{
+KOKKOS_INLINE_FUNCTION void updateDot(double& sum, const float x,
+                                      const float y) {
   sum += x * y;
 }
 
 // This exists because complex<float> += complex<double> is not defined.
-KOKKOS_INLINE_FUNCTION void
-updateDot(Kokkos::complex<double>& sum,
-          const Kokkos::complex<float> x,
-          const Kokkos::complex<float> y)
-{
+KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<double>& sum,
+                                      const Kokkos::complex<float> x,
+                                      const Kokkos::complex<float> y) {
   const auto tmp = Kokkos::conj(x) * y;
   sum += Kokkos::complex<double>(tmp.real(), tmp.imag());
 }
@@ -328,33 +308,27 @@ updateDot(Kokkos::complex<double>& sum,
 // This exists in case people call the overload of KokkosBlas::dot
 // that takes an output View, and the output View has element type
 // Kokkos::complex<float>.
-KOKKOS_INLINE_FUNCTION void
-updateDot(Kokkos::complex<float>& sum,
-          const Kokkos::complex<float> x,
-          const Kokkos::complex<float> y)
-{
+KOKKOS_INLINE_FUNCTION void updateDot(Kokkos::complex<float>& sum,
+                                      const Kokkos::complex<float> x,
+                                      const Kokkos::complex<float> y) {
   sum += Kokkos::conj(x) * y;
 }
 
 // This exists because Kokkos::complex<double> =
 // Kokkos::complex<float> is not defined.
-template<class Out, class In>
+template <class Out, class In>
 struct CastPossiblyComplex {
-  static Out cast(const In& x) {
-    return x;
-  }
+  static Out cast(const In& x) { return x; }
 };
 
-template<class OutReal, class InReal>
-struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>>
-{
-  static Kokkos::complex<OutReal>
-  cast (const Kokkos::complex<InReal>& x) {
+template <class OutReal, class InReal>
+struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>> {
+  static Kokkos::complex<OutReal> cast(const Kokkos::complex<InReal>& x) {
     return {static_cast<OutReal>(x.real()), static_cast<OutReal>(x.imag())};
   }
 };
 
-} // namespace Details
-} // namespace Kokkos
+}  // namespace Details
+}  // namespace Kokkos
 
-#endif // KOKKOS_INNERPRODUCTSPACETRAITS_HPP
+#endif  // KOKKOS_INNERPRODUCTSPACETRAITS_HPP

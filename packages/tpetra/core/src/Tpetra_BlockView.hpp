@@ -197,7 +197,9 @@ struct SCAL<ViewType, CoefficientType, IndexType, false, 1> {
     const IndexType numRows = static_cast<IndexType> (x.extent (0));
 
     /// general case
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
     for (IndexType i = 0; i < numRows; ++i) 
       x(i) = alpha * x(i);
   }
@@ -232,7 +234,9 @@ struct SCAL<ViewType, CoefficientType, IndexType, true, rank> {
     using x_value_type = typename std::decay<decltype (*x.data()) >::type;
     const IndexType span = static_cast<IndexType> (x.span());
     x_value_type *__restrict__ x_ptr(x.data()); 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
     for (IndexType i = 0; i < span; ++i) 
       x_ptr[i] = alpha * x_ptr[i];
   }
@@ -292,7 +296,9 @@ struct FILL<ViewType, InputType, IndexType, true, rank> {
   {
     const IndexType span = static_cast<IndexType> (x.span());
     auto x_ptr = x.data();
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
     for (IndexType i = 0; i < span; ++i) 
       x_ptr[i] = val;
   }
@@ -391,7 +397,9 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, true, rank> {
       const IndexType span = static_cast<IndexType> (y.span());
       const x_value_type *__restrict__ x_ptr(x.data()); 
       y_value_type *__restrict__ y_ptr(y.data()); 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
       for (IndexType i = 0; i < span; ++i) 
         y_ptr[i] += alpha * x_ptr[i];
     }
@@ -463,7 +471,9 @@ struct COPY<ViewType1, ViewType2, IndexType, true, rank> {
     const x_value_type *__restrict__  x_ptr(x.data()); 
     y_value_type *__restrict__        y_ptr(y.data()); 
 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
       for (IndexType i = 0; i < span; ++i) 
         y_ptr[i] = x_ptr[i];
   }
@@ -524,11 +534,15 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutLef
     const x_value_type *__restrict__ x_ptr(x.data()); 
     y_value_type *__restrict__ y_ptr(y.data()); 
 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
     for (IndexType j=0;j<numCols;++j) {
       const x_value_type x_at_j = alpha*x_ptr[j];
       const A_value_type *__restrict__ A_at_j = A_ptr + j*as1;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
       for (IndexType i=0;i<numRows;++i) 
         y_ptr[i] += A_at_j[i] * x_at_j;
     }
@@ -562,11 +576,15 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutRig
     const x_value_type *__restrict__ x_ptr(x.data()); 
     y_value_type *__restrict__ y_ptr(y.data()); 
     
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
     for (IndexType i=0;i<numRows;++i) {
       y_value_type y_at_i(0);
       const auto A_at_i = A_ptr + i*as0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
+#endif
       for (IndexType j=0;j<numCols;++j) 
         y_at_i += A_at_i[j] * x_ptr[j];
       y_ptr[i] += alpha*y_at_i;

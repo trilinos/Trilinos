@@ -52,6 +52,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
 // #include <stk_rebalance/Rebalance.hpp>
@@ -423,7 +424,8 @@ void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
 
-   bulkData_ = rcp(new stk::mesh::BulkData(*metaData_, *mpiComm_->getRawMpiComm()));
+   std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(*mpiComm_->getRawMpiComm()).create(Teuchos::get_shared_ptr(metaData_));
+   bulkData_ = rcp(bulkUPtr.release());
 }
 
 void STK_Interface::beginModification()
@@ -690,7 +692,7 @@ setupExodusFile(const std::string& filename,
 
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
-  meshData_->set_bulk_data(bulkData_);
+  meshData_->set_bulk_data(Teuchos::get_shared_ptr(bulkData_));
   Ioss::PropertyManager props;
   props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
   if (append) {

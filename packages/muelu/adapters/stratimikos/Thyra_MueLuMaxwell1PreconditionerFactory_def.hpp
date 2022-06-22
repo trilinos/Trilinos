@@ -163,7 +163,7 @@ namespace Thyra {
       // Convert to Xpetra
       std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0"};
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
-        replaceWithXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList,*it);
+        Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
       paramList.set<bool>("Maxwell1: use as preconditioner", true);
       if (useHalfPrecision) {

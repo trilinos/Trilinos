@@ -70,8 +70,8 @@ void addDiscreteCurlToRequestHandler(
   RCP<const epetraBlockedLinObjFactory > eblof  = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
   if (tblof != Teuchos::null) {
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> matrix;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> map;
 
     RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
 
@@ -180,7 +180,7 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(curlAtDofCoordsNonOriented, curlAtDofCoordsNonOriented_d);
 
     // create the global curl matrix
-    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,basisCoeffsLI.extent(1)));
+    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,hcurlCardinality));
 
     // get IDs for edges and faces
     auto fLIDs_k = face_ugi->getLIDs();

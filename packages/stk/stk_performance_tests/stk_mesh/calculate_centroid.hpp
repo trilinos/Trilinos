@@ -181,7 +181,7 @@ inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData
 }
 
 inline
-std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
+std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, stk::mesh::Field<double> &centroid, const stk::mesh::Selector& selector)
 {
   std::vector<double> average = {0, 0, 0};
   size_t numElems = 0;
@@ -207,7 +207,7 @@ std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, st
 }
 
 inline
-std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
+std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double> &centroid, const stk::mesh::Selector& selector)
 {
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(centroid);
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);

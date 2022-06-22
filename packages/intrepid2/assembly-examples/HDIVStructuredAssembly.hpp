@@ -10,6 +10,10 @@
 
 #include "JacobianFlopEstimate.hpp"
 
+/** \file   HDIVStructuredAssembly.hpp
+    \brief  Locally assembles a matrix with the H(div) natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j) + (div e_i, div e_j), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
+ */
+
 //! Version that takes advantage of new structured integration support, including sum factorization.  Computes H(div) norm: (div, div) + (value,value).
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHDIV(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,

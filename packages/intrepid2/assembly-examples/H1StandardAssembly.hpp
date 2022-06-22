@@ -10,7 +10,11 @@
 
 #include "JacobianFlopEstimate.hpp"
 
-//! version that uses the classic, generic Intrepid2 paths;
+/** \file   H1StandardAssembly.hpp
+    \brief  Locally assembles a matrix with the H^1 natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j) + (grad e_i, grad e_j), using standard Intrepid2 methods; these do not algorithmically exploit geometric structure.
+ */
+
+//! Version that uses the classic, generic Intrepid2 paths.
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureH1(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry,
                                                                      const int &polyOrder, int worksetSize,

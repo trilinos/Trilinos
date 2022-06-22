@@ -10,6 +10,10 @@
 
 #include "JacobianFlopEstimate.hpp"
 
+/** \file   H1StructuredAssembly.hpp
+    \brief  Locally assembles a matrix with the H^1 natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j) + (grad e_i, grad e_j), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
+ */
+
 //! Version that takes advantage of new structured integration support, including sum factorization.
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureH1(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,

@@ -10,7 +10,6 @@
 
 #include <Akri_CDFEM_Parent_Edge.hpp>
 #include <Akri_LevelSet.hpp>
-#include <Akri_Phase_Support.hpp>
 #include <Akri_LowerEnvelope.hpp>
 
 #include <limits>
@@ -50,7 +49,7 @@ CDFEM_Parent_Edge::debug_print_crossings() const
 }
 
 void
-CDFEM_Parent_Edge::find_crossings(const std::vector<std::vector<double> > & nodes_isovar)
+CDFEM_Parent_Edge::find_crossings(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar)
 {
   my_crossings.clear();
   my_crossing_signs.clear();
@@ -58,10 +57,10 @@ CDFEM_Parent_Edge::find_crossings(const std::vector<std::vector<double> > & node
   const int num_nodes = get_num_nodes();
   ThrowAssert(static_cast<int>(nodes_isovar.size()) == num_nodes);
   const int num_ls = nodes_isovar[0].size();
-  if (num_ls > 1 && Phase_Support::has_one_levelset_per_phase())
+  if (num_ls > 1 && oneLSPerPhase)
   {
     find_crossings_multiple_levelset(nodes_isovar);
-    find_crossings_including_fake_ones(nodes_isovar);
+    find_crossings_including_fake_ones(oneLSPerPhase, nodes_isovar);
     return;
   }
 
@@ -423,11 +422,11 @@ bool determine_real_crossings_from_locations(CrossingMap & realCrossings, Crossi
   return true;
 }
 
-void CDFEM_Parent_Edge::adjust_crossing_locations_based_on_node_captured_domains(const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains)
+void CDFEM_Parent_Edge::adjust_crossing_locations_based_on_node_captured_domains(const bool oneLSPerPhase, const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains)
 {
   if (sortedParentNode0Domains.empty() && sortedParentNode1Domains.empty())
     return;
-  if (Phase_Support::has_one_levelset_per_phase())
+  if (oneLSPerPhase)
   {
     if (my_crossings_including_fake.empty())
       return;
@@ -487,9 +486,9 @@ CDFEM_Parent_Edge::have_any_crossings() const
 }
 
 std::tuple<double, int, bool>
-CDFEM_Parent_Edge::get_crossing_position_and_sign(const InterfaceID key) const
+CDFEM_Parent_Edge::get_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key) const
 {
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  ThrowRequire(oneLSPerPhase);
 
   if(have_crossing(key))
   {
@@ -586,12 +585,12 @@ void CDFEM_Parent_Edge::fixup_fake_crossing_locations_for_consistency()
 }
 
 void
-CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vector<double> > & nodes_isovar)
+CDFEM_Parent_Edge::find_crossings_including_fake_ones(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar)
 {
   my_crossings_including_fake.clear();
   my_crossing_signs_including_fake.clear();
 
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  ThrowRequire(oneLSPerPhase);
   const int numLS = nodes_isovar[0].size();
   std::vector<double> lsMins(numLS,std::numeric_limits<double>::max());
   std::vector<double> lsMaxs(numLS,std::numeric_limits<double>::lowest());
@@ -613,7 +612,7 @@ CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vec
         InterfaceID iface(ls1, ls2);
         const std::pair<double, int> result = have_crossing(iface) ?
             std::make_pair(get_crossing_position(iface), get_crossing_sign(iface)) :
-            find_crossing_position_and_sign(iface, nodes_isovar);
+            find_crossing_position_and_sign(oneLSPerPhase, iface, nodes_isovar);
         if (result.first >= 0.)
         {
           my_crossings_including_fake[iface] = result.first;
@@ -627,9 +626,9 @@ CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vec
 }
 
 std::pair<double, int>
-CDFEM_Parent_Edge::find_crossing_position_and_sign(const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const
+CDFEM_Parent_Edge::find_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const
 {
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  ThrowRequire(oneLSPerPhase);
   return krino::find_crossing_position_and_sign(key, my_edge_node_positions, nodes_isovar);
 }
 

@@ -4,4 +4,4 @@
 #include "Test_HIP.hpp"
 #include "Test_Blas.hpp"
 
-#endif // TEST_HIP_BLAS_CPP
+#endif  // TEST_HIP_BLAS_CPP

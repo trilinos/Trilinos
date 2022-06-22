@@ -151,7 +151,7 @@ template<typename ValueType, typename DeviceSpaceType>
 int feProjection(int argc, char *argv[]) {
 
   typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space HostSpaceType ;
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
   typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 
@@ -639,7 +639,7 @@ int feProjection(int argc, char *argv[]) {
             auto it = mapL2Proj.find(gid);
             if (it==mapL2Proj.end())
               mapL2Proj.insert(std::make_pair(gid,basisCoeffsL2ProjHost(elemId, nodeId)));
-            else if(abs(it->second-basisCoeffsL2ProjHost(elemId, nodeId))>1e-10) {
+            else if(std::abs(it->second-basisCoeffsL2ProjHost(elemId, nodeId))>1e-10) {
               std::cout << "ERROR: DoFs shared by cells are not consistent \n"
                   "basisL2Proj(" << gid << "):" << it->second << " " << basisCoeffsL2ProjHost(elemId, nodeId) <<std::endl;
               errorFlag++;

@@ -22,7 +22,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <Akri_LevelSet.hpp>
-#include <Akri_LevelSetInterfaceGeometry.hpp>
+#include <Akri_CreateInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ResultsOutputOptions.hpp>
@@ -34,6 +34,9 @@
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <Akri_BoundingSurface.hpp>
+#include <Akri_CDMesh_Refinement.hpp>
+#include <Akri_Surface_Manager.hpp>
 
 namespace krino{
 
@@ -124,8 +127,8 @@ void Region::commit()
   if (krino::CDFEM_Support::is_active(meta))
   {
     cdfem_support.add_interpolation_field(cdfem_support.get_coords_field());
-    const LevelSetManager & region_ls = LevelSetManager::get(meta);
-    for(auto&& ls : region_ls)
+    const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+    for(auto&& ls : surfaceManager.get_levelsets())
     {
       cdfem_support.add_interpolation_field(ls->get_distance_field());
     }
@@ -147,14 +150,15 @@ void Region::commit()
     set_generated_mesh_domain();
     my_generated_mesh->populate_mesh(stk::EnvData::parallel_comm(), auto_aura_option);
     my_bulk = &my_generated_mesh->bulk_data();
-    stk_IO().set_bulk_data( Teuchos::rcpFromRef( *my_bulk ) );
+    stk_IO().set_bulk_data( *my_bulk );
     if (my_generated_mesh->has_flat_boundaries())
       my_generated_mesh->create_domain_sides();
   }
   else
   {
-    my_bulk = new stk::mesh::BulkData(meta,stk::EnvData::parallel_comm(),auto_aura_option);
-    stk_IO().set_bulk_data( Teuchos::rcp( my_bulk ) );
+    auto shared_bulk = std::make_shared<stk::mesh::BulkData>(meta,stk::EnvData::parallel_comm(),auto_aura_option);
+    my_bulk = shared_bulk.get();
+    stk_IO().set_bulk_data( shared_bulk );
     stk_IO().populate_bulk_data();
   }
 
@@ -183,7 +187,7 @@ void Region::commit()
 
 namespace {
 
-void zero_error_indicator(const LevelSetManager & region_ls, stk::mesh::BulkData & mesh)
+void zero_error_indicator(stk::mesh::BulkData & mesh)
 {
   auto & meta = mesh.mesh_meta_data();
   const auto & cdfem_support = CDFEM_Support::get(meta);
@@ -212,49 +216,104 @@ void mark_selected_elements(const std::string & marker_field_name, const int cur
   }
 }
 
-void do_adaptive_refinement(const krino::CDFEM_Support & cdfemSupport, const LevelSetManager & region_ls, stk::mesh::BulkData & mesh)
+static void refine_elements_near_interface(const std::function<void(const std::string &, int)> & hAdapt,
+    const krino::CDFEM_Support & cdfemSupport,
+    stk::mesh::BulkData & mesh,
+    const std::string & markerName,
+    const int numRefinementSteps)
 {
-  const auto target_count = cdfemSupport.get_nonconformal_adapt_target_count();
-  if(target_count > 0) zero_error_indicator(region_ls, mesh);
-  {
-    stk::diag::TimeBlock adapt_timer__(cdfemSupport.get_timer_adapt());
+  std::function<void(const std::string &, int)> mark_elements_near_interface =
+      [&mesh, &cdfemSupport, numRefinementSteps]
+       (const std::string & marker_field_name, int num_refinements)
+      {
+        LevelSet::initialize(mesh.mesh_meta_data());
+        if (num_refinements < numRefinementSteps)
+        {
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          const auto & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+          krino::mark_possible_cut_elements_for_adaptivity(mesh, *interfaceGeometry, auxMeta, cdfemSupport, marker_field_name, num_refinements);
+        }
+      };
 
-    const std::string & marker_name = "refine_field"; //cdfemSupport.get_nonconformal_adapt_marker_name();
-    auto & h_adapt = cdfemSupport.get_nonconformal_hadapt();
+  perform_multilevel_adaptivity(mesh, markerName, mark_elements_near_interface, hAdapt, cdfem_do_not_refine_or_unrefine_selector(cdfemSupport));
+}
 
-    const int num_refinement_levels = cdfemSupport.get_interface_maximum_refinement_level();
-    const int num_refinement_steps = (target_count > 0) ? num_refinement_levels : 2*num_refinement_levels;
+static void refine_interface_elements(const std::function<void(const std::string &, int)> & hAdapt,
+    const krino::CDFEM_Support & cdfemSupport,
+    stk::mesh::BulkData & mesh,
+    const std::string & markerName,
+    const int numRefinementSteps)
+{
+  std::function<void(const std::string &, int)> marker_function =
+      [&mesh, numRefinementSteps]
+       (const std::string & marker_field_name, int num_refinements)
+      {
+        LevelSet::initialize(mesh.mesh_meta_data());
+        if(num_refinements < numRefinementSteps)
+        {
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          CDMesh::mark_interface_elements_for_adaptivity(mesh, *interfaceGeometry, marker_field_name, num_refinements);
+        }
+      };
 
-    const auto & indicator_field_name = cdfemSupport.get_nonconformal_adapt_indicator_name();
+  perform_multilevel_adaptivity(mesh, markerName, marker_function, hAdapt, cdfem_do_not_refine_or_unrefine_selector(cdfemSupport));
+}
 
-    const bool do_post_adapt_refinement = cdfemSupport.get_post_adapt_refinement_levels() > 0;
-    std::function<void(const std::string &, int)> marker_function =
-        [&mesh, &region_ls, num_refinement_steps, do_post_adapt_refinement, target_count, indicator_field_name]
+static void refine_based_on_indicator_field(const std::function<void(const std::string &, int)> & hAdapt,
+    const krino::CDFEM_Support & cdfemSupport,
+    stk::mesh::BulkData & mesh,
+    const std::string & markerName,
+    const int targetCount,
+    const int numRefinementSteps)
+{
+  zero_error_indicator(mesh);
+  const auto & indicatorFieldName = cdfemSupport.get_nonconformal_adapt_indicator_name();
+
+  std::function<void(const std::string &, int)> marker_function =
+        [&mesh, numRefinementSteps, targetCount, indicatorFieldName]
          (const std::string & marker_field_name, int num_refinements)
         {
-          const bool do_adapt = num_refinements < num_refinement_steps;
-          const bool more_to_do = do_adapt || do_post_adapt_refinement;
-          if(target_count > 0) zero_error_indicator(region_ls, mesh);
-          LevelSet::initialize(mesh.mesh_meta_data(), more_to_do);
-          if(!do_adapt) return;
-
-          if(target_count == 0)
-          {
-            const LevelSetInterfaceGeometry interfaceGeometry(mesh.mesh_meta_data());
-            CDMesh::mark_interface_elements_for_adaptivity(mesh, interfaceGeometry, marker_field_name, num_refinements);
-          }
-          else
+          zero_error_indicator(mesh);
+          LevelSet::initialize(mesh.mesh_meta_data());
+          if(num_refinements < numRefinementSteps)
           {
             HAdapt::mark_based_on_indicator_field(mesh,
                 marker_field_name,
-                indicator_field_name,
-                num_refinement_steps,
+                indicatorFieldName,
+                numRefinementSteps,
                 num_refinements,
-                target_count);
+                targetCount);
           }
         };
 
-    perform_multilevel_adaptivity(mesh, marker_name, marker_function, h_adapt, cdfem_do_not_refine_or_unrefine_selector(cdfemSupport));
+  perform_multilevel_adaptivity(mesh, markerName, marker_function, hAdapt, cdfem_do_not_refine_or_unrefine_selector(cdfemSupport));
+}
+
+void do_adaptive_refinement(const krino::CDFEM_Support & cdfemSupport, stk::mesh::BulkData & mesh)
+{
+  stk::diag::TimeBlock adapt_timer__(cdfemSupport.get_timer_adapt());
+
+  const auto targetCount = cdfemSupport.get_nonconformal_adapt_target_count();
+
+  const std::string & markerName = "refine_field"; //cdfemSupport.get_nonconformal_adapt_marker_name();
+  auto & hAdapt = cdfemSupport.get_nonconformal_hadapt();
+
+  const int numRefinementLevels = cdfemSupport.get_interface_maximum_refinement_level();
+
+  if (targetCount > 0)
+  {
+    refine_based_on_indicator_field(hAdapt, cdfemSupport, mesh, markerName, targetCount, numRefinementLevels);
+  }
+  else
+  {
+    const bool doNearbyRefinementBeforeInterfaceRefinement = cdfemSupport.do_nearby_refinement_before_interface_refinement();
+    if (doNearbyRefinementBeforeInterfaceRefinement)
+    {
+      const int numNearbyRefinementSteps = numRefinementLevels;
+      refine_elements_near_interface(hAdapt, cdfemSupport, mesh, markerName, numNearbyRefinementSteps);
+    }
+    const int numInterfaceRefinementSteps = doNearbyRefinementBeforeInterfaceRefinement ? numRefinementLevels : (2*numRefinementLevels); // Make sure refinement completes so that interfacial elements are fully refined
+    refine_interface_elements(hAdapt, cdfemSupport, mesh, markerName, numInterfaceRefinementSteps);
   }
 }
 
@@ -281,9 +340,8 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const krino
           [&mesh, marker_field, num_levels]
            (const std::string & marker_field_name, int num_refinements)
           {
-            const bool do_adapt = num_refinements < num_levels;
-            LevelSet::initialize(mesh.mesh_meta_data(), do_adapt);
-            if (do_adapt)
+            LevelSet::initialize(mesh.mesh_meta_data());
+            if (num_refinements < num_levels)
             {
               stk::mesh::field_fill(1, marker_field);
             }
@@ -337,7 +395,7 @@ void Region::initialize()
   const bool adapt_is_active = cdfem_support.get_interface_maximum_refinement_level() > 0 ||
       cdfem_support.get_post_cdfem_refinement_levels() > 0;
 
-  const LevelSetManager & region_ls = LevelSetManager::get(get_stk_mesh_meta_data());
+  const Surface_Manager & surfaceManager = Surface_Manager::get(get_stk_mesh_meta_data());
 
   if (my_initial_refinement_levels > 0)
   {
@@ -350,13 +408,15 @@ void Region::initialize()
     auto & bulk = get_stk_mesh_bulk_data();
     if(adapt_is_active)
     {
-      do_adaptive_refinement(cdfem_support, region_ls, bulk);
+      do_adaptive_refinement(cdfem_support, bulk);
 
       const auto & auxMeta = AuxMetaData::get(get_stk_mesh_meta_data());
       do_post_adapt_uniform_refinement(my_simulation, cdfem_support, auxMeta, bulk);
 
-      const LevelSetInterfaceGeometry interfaceGeometry(get_stk_mesh_meta_data());
-      krino::CDMesh::decompose_mesh(bulk, interfaceGeometry, my_simulation.get_time_step_count(), {});
+      LevelSet::clear_initialization_data(get_stk_mesh_meta_data()); // reclaim memory, harmless to call multiple times after we are done initializing
+
+      const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(get_stk_mesh_meta_data());
+      krino::CDMesh::decompose_mesh(bulk, *interfaceGeometry, my_simulation.get_time_step_count(), {});
 
       do_post_cdfem_uniform_refinement(my_simulation, cdfem_support, auxMeta, bulk);
     }
@@ -370,10 +430,9 @@ void Region::initialize()
       const int num_init_decomp_cycles = cdfem_support.get_num_initial_decomposition_cycles();
       for (int icycle=0; icycle<num_init_decomp_cycles; ++icycle )
       {
-        const bool not_last_init = (icycle < (num_init_decomp_cycles-1));
-        LevelSet::initialize(get_stk_mesh_meta_data(), not_last_init);
-        const LevelSetInterfaceGeometry interfaceGeometry(get_stk_mesh_meta_data());
-        krino::CDMesh::decompose_mesh(bulk, interfaceGeometry, my_simulation.get_time_step_count(), {});
+        LevelSet::initialize(get_stk_mesh_meta_data());
+        const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(get_stk_mesh_meta_data());
+        krino::CDMesh::decompose_mesh(bulk, *interfaceGeometry, my_simulation.get_time_step_count(), {});
       }
     }
 
@@ -384,7 +443,7 @@ void Region::initialize()
   }
   else
   {
-    for(auto&& ls : region_ls)
+    for(auto&& ls : surfaceManager.get_levelsets())
     {
       ls->initialize(0.);
 
@@ -402,18 +461,19 @@ void Region::initialize()
     }
   }
 
+  LevelSet::clear_initialization_data(get_stk_mesh_meta_data()); // reclaim memory, harmless to call multiple times after we are done initializing
+
   // Skip output of empty parts
   for (auto && part : get_stk_mesh_meta_data().get_parts())
   {
     if (stk::io::is_part_io_part(*part))
     {
-      uint64_t local_num_entities = stk::mesh::count_selected_entities(
-          *part, get_stk_mesh_bulk_data().buckets(part->primary_entity_rank()));
-      uint64_t global_num_entities = 0;
-      stk::all_reduce_sum(
-          get_stk_mesh_bulk_data().parallel(), &local_num_entities, &global_num_entities, 1);
-      if(global_num_entities == 0)
+      uint64_t numEntities = stk::mesh::count_selected_entities(*part, get_stk_mesh_bulk_data().buckets(part->primary_entity_rank()));
+      const uint64_t localNumEntities = numEntities;
+      stk::all_reduce_sum(get_stk_mesh_bulk_data().parallel(), &localNumEntities, &numEntities, 1);
+      if(numEntities == 0)
       {
+        krinolog << "Skipping output of empty part " << part->name() << stk::diag::dendl;
         stk::io::remove_io_part_attribute(*part);
       }
     }
@@ -433,8 +493,8 @@ void Region::execute()
 
   double deltaTime = time_step();
 
-  const LevelSetManager & region_ls = LevelSetManager::get(get_stk_mesh_meta_data());
-  for(auto&& ls : region_ls)
+  const Surface_Manager & surfaceManager = Surface_Manager::get(get_stk_mesh_meta_data());
+  for(auto&& ls : surfaceManager.get_levelsets())
   {
     ls->advance_semilagrangian(deltaTime);
   }
@@ -591,9 +651,11 @@ Region::associate_input_mesh(const std::string & model_name, bool assert_32bit_i
     stk_io.create_input_mesh();
     my_meta = &stk_io.meta_data();
     AuxMetaData::create(*my_meta);
-    auto & active_part = AuxMetaData::get(*my_meta).active_part();
-    stk::mesh::Selector activeSelector = active_part;
-    stk_io.set_active_selector(activeSelector);
+  }
+
+  {
+    stk::mesh::Selector activeSelector = AuxMetaData::get(*my_meta).active_part();
+    stk_IO().set_active_selector(activeSelector);
   }
 
   if (assert_32bit_ids)
@@ -638,14 +700,19 @@ Region::set_generated_mesh_domain()
   else
   {
     typename BoundingBoxMesh::BoundingBoxType domain_bbox;
-    const LevelSetManager & region_ls = LevelSetManager::get(get_stk_mesh_meta_data());
-    for(auto&& ls : region_ls)
+    const Surface_Manager & surfaceManager = Surface_Manager::get(get_stk_mesh_meta_data());
+    for(auto&& ls : surfaceManager.get_levelsets())
     {
       if (ls->has_IC_surfaces())
       {
-        BoundingBox ls_IC_surf_bbox = ls->get_IC_surface_bounding_box();
+        const BoundingBox ls_IC_surf_bbox = ls->get_IC_surface_bounding_box();
         domain_bbox.accommodate(ls_IC_surf_bbox);
       }
+    }
+    for(auto&& boundingSurface : surfaceManager.get_bounding_surfaces())
+    {
+      const BoundingBox surfaceBBox = boundingSurface->surface().get_bounding_box();
+      domain_bbox.accommodate(surfaceBBox);
     }
 
     if (db_options->get_generated_mesh_spatial_dimension() == 2)

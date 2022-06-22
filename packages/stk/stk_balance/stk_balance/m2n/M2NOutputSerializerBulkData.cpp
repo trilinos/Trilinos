@@ -39,9 +39,17 @@ namespace stk {
 namespace balance {
 namespace m2n {
 
-OutputSerializerBulkData::OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel)
-  : BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
-{}
+OutputSerializerBulkData::OutputSerializerBulkData(ParallelMachine parallel)
+  : BulkData(std::make_shared<stk::mesh::MetaData>(), parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+{
+  mesh_meta_data().use_simple_fields();
+}
+
+OutputSerializerBulkData::OutputSerializerBulkData(unsigned spatialDim, ParallelMachine parallel)
+  : BulkData(std::make_shared<stk::mesh::MetaData>(spatialDim), parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+{
+  mesh_meta_data().use_simple_fields();
+}
 
 void
 OutputSerializerBulkData::switch_to_serial_mesh() {

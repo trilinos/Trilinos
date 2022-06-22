@@ -54,34 +54,35 @@ namespace KokkosBlas {
 namespace Experimental {
 namespace Impl {
 
-
-template<class RV, class XV>
+template <class RV, class XV>
 struct team_abs_tpl_spec_avail {
   constexpr static bool value = false;
 };
 
 // Unification and Specialization layer
-template<class TeamType, class RV, class XV, bool tpl_spec_avail = team_abs_tpl_spec_avail<RV,XV>::value>
+template <class TeamType, class RV, class XV,
+          bool tpl_spec_avail = team_abs_tpl_spec_avail<RV, XV>::value>
 struct TeamAbs {
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
 
-  static KOKKOS_INLINE_FUNCTION void team_abs (const TeamType& team, const RV& R, const XV& X);
+  static KOKKOS_INLINE_FUNCTION void team_abs(const TeamType& team, const RV& R,
+                                              const XV& X);
 };
 
-template<class TeamType, class RV, class XV>
+template <class TeamType, class RV, class XV>
 struct TeamAbs<TeamType, RV, XV, false> {
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
 
-  static KOKKOS_INLINE_FUNCTION void team_abs (const TeamType& team, const RV& R, const XV& X) {
+  static KOKKOS_INLINE_FUNCTION void team_abs(const TeamType& team, const RV& R,
+                                              const XV& X) {
     int N = X.extent(0);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& i) {
-      R(i) =  ATS::abs(X(i));
-    });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                         [&](const int& i) { R(i) = ATS::abs(X(i)); });
   }
 };
 
-}
-}
-}
+}  // namespace Impl
+}  // namespace Experimental
+}  // namespace KokkosBlas
 
 #endif

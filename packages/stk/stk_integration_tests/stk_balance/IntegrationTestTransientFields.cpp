@@ -40,6 +40,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include "stk_unit_test_utils/GenerateALefRAMesh.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
 #include "stk_io/FillMesh.hpp"
 #include "stk_io/WriteMesh.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -51,6 +52,8 @@
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <iostream>
 #include <limits>
+
+using stk::unit_test_util::build_mesh;
 
 class TransientWriter
 {
@@ -79,22 +82,22 @@ public:
 
   void write_static_mesh(const std::string& meshDesc) const
   {
-    stk::unit_test_util::generated_mesh_to_file_in_serial(meshDesc, m_fileBaseName);
+    stk::unit_test_util::simple_fields::generated_mesh_to_file_in_serial(meshDesc, m_fileBaseName);
   }
 
   void write_transient_mesh(const std::string& meshDesc) const
   {
-    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(
+    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(
           meshDesc, m_fileBaseName, m_fieldName, m_varName, m_timeSteps, m_fieldSetter);
   }
 
   void write_two_element_mesh_with_sideset(stk::unit_test_util::ElementOrdering elemOrdering) const
   {
     if (stk::parallel_machine_rank(m_comm) == 0) {
-      stk::mesh::MetaData meta(3);
-      stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+      std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF);
+      stk::mesh::BulkData& bulk = *bulkPtr;
 
-      stk::unit_test_util::create_AB_mesh_with_sideset_and_field(
+      stk::unit_test_util::simple_fields::create_AB_mesh_with_sideset_and_field(
             bulk, stk::unit_test_util::LEFT, elemOrdering, "dummyField");
       stk::io::write_mesh_with_fields(m_fileBaseName, bulk, 1, 1.0);
     }
@@ -109,7 +112,7 @@ private:
   stk::unit_test_util::IdAndTimeFieldValueSetter m_fieldSetter;
 };
 
-class TransientFieldBalance : public stk::unit_test_util::MeshFixture
+class TransientFieldBalance : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   TransientFieldBalance()
@@ -126,13 +129,13 @@ public:
     balanceRunner.set_decomp_method("rcb");
   }
 
-  stk::unit_test_util::MeshFromFile& get_initial_mesh()
+  stk::unit_test_util::simple_fields::MeshFromFile& get_initial_mesh()
   {
     if (m_initialMesh.is_empty()) read_initial_mesh();
     return m_initialMesh;
   }
 
-  stk::unit_test_util::MeshFromFile& get_balanced_mesh()
+  stk::unit_test_util::simple_fields::MeshFromFile& get_balanced_mesh()
   {
     if (m_balancedMesh.is_empty()) read_balanced_mesh();
     return m_balancedMesh;
@@ -170,11 +173,11 @@ protected:
   const std::string fileBaseName;
   stk::integration_test_utils::StkBalanceRunner balanceRunner;
   TransientWriter writer;
-  const stk::unit_test_util::TransientVerifier verifier;
+  const stk::unit_test_util::simple_fields::TransientVerifier verifier;
 
 private:
-  stk::unit_test_util::MeshFromFile m_initialMesh;
-  stk::unit_test_util::MeshFromFile m_balancedMesh;
+  stk::unit_test_util::simple_fields::MeshFromFile m_initialMesh;
+  stk::unit_test_util::simple_fields::MeshFromFile m_balancedMesh;
 };
 
 TEST_F(TransientFieldBalance, verifyStaticDataTransfer)
@@ -186,13 +189,13 @@ TEST_F(TransientFieldBalance, verifyStaticDataTransfer)
 
     writer.write_static_mesh("1x4x4");
 
-    stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+    stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
     verifier.verify_time_steps(initialMesh, {});
     verifier.verify_num_transient_fields(initialMesh, 0u);
 
     balanceRunner.run_end_to_end();
 
-    stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+    stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
     verifier.verify_time_steps(balancedMesh, {});
     verifier.verify_num_transient_fields(balancedMesh, 0u);
 
@@ -209,13 +212,13 @@ TEST_F(TransientFieldBalance, verifyNumberOfSteps)
   writer.set_time_steps(timeSteps);
   writer.write_transient_mesh("1x1x20");
 
-  stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
   verifier.verify_time_steps(initialMesh, timeSteps);
   verifier.verify_num_transient_fields(initialMesh, 2u);
 
   balanceRunner.run_end_to_end();
 
-  stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
   verifier.verify_time_steps(balancedMesh, timeSteps);
 
   cleanup_files();
@@ -232,13 +235,13 @@ TEST_F(TransientFieldBalance, verifyGlobalVariable)
   writer.set_global_variable_name(globalVariableName);
   writer.write_transient_mesh("1x1x20");
 
-  stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
   verifier.verify_time_steps(initialMesh, timeSteps);
   verifier.verify_num_transient_fields(initialMesh, 2u);
 
   balanceRunner.run_end_to_end();
 
-  stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
   verifier.verify_global_variables_at_each_time_step(balancedMesh, globalVariableName, timeSteps);
 
   cleanup_files();
@@ -255,14 +258,14 @@ TEST_F(TransientFieldBalance, verifyTransientDataTransferOnFourProcessors)
   writer.set_field_name(fieldName);
   writer.write_transient_mesh("1x4x4");
 
-  stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
   verifier.verify_time_steps(initialMesh, timeSteps);
   verifier.verify_num_transient_fields(initialMesh, 2u);
   verifier.verify_transient_field_names(initialMesh, fieldName);
 
   balanceRunner.run_end_to_end();
 
-  stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
   verifier.verify_time_steps(balancedMesh, timeSteps);
   verifier.verify_num_transient_fields(balancedMesh, 2u);
   verifier.verify_transient_field_names(balancedMesh, fieldName);
@@ -289,14 +292,14 @@ TEST_F(TransientFieldBalance, verifyTransientDataTransferWithSidesets)
 
   writer.write_two_element_mesh_with_sideset(stk::unit_test_util::INCREASING);
 
-  stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
   verifier.verify_sideset_orientation(initialMesh, initialSidesetProc, expectedId, expectedOrdinal);
   verifier.verify_decomp(initialMesh, expectedInitialDecomp);
 
   balanceRunner.set_decomp_method("rib");
   balanceRunner.run_end_to_end();
 
-  stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
   verifier.verify_sideset_orientation(balancedMesh, balancedSidesetProc, expectedId, expectedOrdinal);
   verifier.verify_decomp(balancedMesh, expectedBalancedDecomp);
 
@@ -318,13 +321,13 @@ TEST_F(TransientFieldBalance, verifyTransientDataTransferWithSidesetsOnMovedElem
 
   writer.write_two_element_mesh_with_sideset(stk::unit_test_util::DECREASING);
 
-  stk::unit_test_util::MeshFromFile& initialMesh = get_initial_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& initialMesh = get_initial_mesh();
   verifier.verify_sideset_orientation(initialMesh, initialSidesetProc, expectedId, expectedOrdinal);
   verifier.verify_decomp(initialMesh, expectedInitialDecomp);
 
   balanceRunner.run_end_to_end();
 
-  stk::unit_test_util::MeshFromFile& balancedMesh = get_balanced_mesh();
+  stk::unit_test_util::simple_fields::MeshFromFile& balancedMesh = get_balanced_mesh();
   verifier.verify_sideset_orientation(balancedMesh, balancedSidesetProc, expectedId, expectedOrdinal);
   verifier.verify_decomp(balancedMesh, expectedBalancedDecomp);
 

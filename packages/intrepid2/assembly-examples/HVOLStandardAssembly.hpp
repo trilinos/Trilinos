@@ -10,7 +10,11 @@
 
 #include "JacobianFlopEstimate.hpp"
 
-//! version that uses the classic, generic Intrepid2 paths.
+/** \file   HVOLStandardAssembly.hpp
+    \brief  Locally assembles a matrix with the H(vol) natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j), using standard Intrepid2 methods; these do not algorithmically exploit geometric structure.
+ */
+
+//! Version that uses the classic, generic Intrepid2 paths.
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHVOL(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry,
                                                                        const int &polyOrder, int worksetSize,
@@ -58,7 +62,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHVOL(Intrepid2
   
   const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
   const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
-  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
   
   // Allocate some intermediate containers
   ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );

@@ -77,6 +77,7 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
+#include "MueLu_InverseApproximationFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
@@ -139,6 +140,7 @@ namespace MueLu {
     } else {
       // No factory was created for this name, but we may know which one to create
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+      if (varName == "Ainv")                            return SetAndReturnDefaultFactory(varName, rcp(new InverseApproximationFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
       if (varName == "AP Pattern")                      return GetFactory("A");
       if (varName == "Ptent")                           return MUELU_KOKKOS_FACTORY(varName, TentativePFactory, TentativePFactory_kokkos);

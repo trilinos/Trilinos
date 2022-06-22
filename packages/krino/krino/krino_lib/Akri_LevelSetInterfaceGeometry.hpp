@@ -12,7 +12,8 @@
 #include <Akri_Element_Cutter.hpp>
 #include <Akri_ParentsToChildMapper.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
+#include <Akri_InterfaceGeometry.hpp>
+#include <Akri_Phase_Support.hpp>
 
 namespace krino {
 
@@ -53,7 +54,7 @@ public:
   virtual int get_starting_phase_for_cutting_surfaces() const override
     { return myElementInterfaceCutter->get_starting_phase_for_cutting_surfaces(); }
 
-  PhaseTag get_starting_phase(const CDFEM_Support & cdfemSupport, const Phase_Support & phaseSupport) const;
+  PhaseTag get_starting_phase(const Phase_Support & phaseSupport, const std::vector<LS_Field> & LSFields) const;
   void update_edge_crossings(const unsigned iEdge, const std::vector<std::vector<double>> & nodesIsovar);
   void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
@@ -69,13 +70,19 @@ private:
 class LevelSetInterfaceGeometry : public InterfaceGeometry {
 
 public:
-  LevelSetInterfaceGeometry(const stk::mesh::MetaData & meta);
+
   LevelSetInterfaceGeometry(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
 : myActivePart(activePart),
   myCdfemSupport(cdfemSupport),
   myPhaseSupport(phaseSupport) {}
+
+  LevelSetInterfaceGeometry(const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport,
+    const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & LSFields);
+
   virtual ~LevelSetInterfaceGeometry() {}
 
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
@@ -84,6 +91,9 @@ public:
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
 
+  virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
+
+  virtual bool snapped_elements_may_have_new_intersections() const override;
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
   virtual void append_element_intersection_points(const stk::mesh::BulkData & mesh,
@@ -91,6 +101,8 @@ public:
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const override;
+
+  virtual void set_ls_fields(const std::vector<LS_Field> & lsFields) { myLSFields = lsFields; }
 
   // FIXME: Temporary methods
   virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & mesh) const override;
@@ -107,10 +119,15 @@ public:
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const override;
 
+  const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
+
 private:
+  bool have_enough_levelsets_to_have_interior_intersections_or_multiple_crossings() const;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;
+  std::vector<LS_Field> myLSFields;
+  std::vector<Surface_Identifier> mySurfaceIdentifiers;
   mutable ParentEdgeMap myParentEdges;
   mutable ParentsToChildMapper myParentsToChildMapper;
   mutable ElementToDomainMap myUncutElementPhases;

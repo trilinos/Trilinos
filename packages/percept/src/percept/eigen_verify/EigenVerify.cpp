@@ -73,22 +73,20 @@ void EigenVerify::create_fields(const int num_time_steps)
     // allocate data for the eigenvectors (sending)
     fieldAll[m] = & (mesh_data[m]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, field_name_all));
 
-    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
     stk::mesh::put_field_on_mesh( *fieldAll[m],
 			  mesh_data[m]->meta_data().universal_part(),
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
-			  init_np);
+        nullptr);
 
     // allocate data for the eigenvectors (receiving)
     xferFieldAll[m] = & (mesh_data[m]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, xfer_field_name_all));
 
-    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np2 = nullptr; // gcc 4.8 hack
     stk::mesh::put_field_on_mesh( *xferFieldAll[m],
 			  mesh_data[m]->meta_data().universal_part(),
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
-			  init_np2);
+        nullptr);
 
     // get eigenvector field
     inputField[m] = mesh_data[m]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, field_name);
@@ -103,8 +101,7 @@ void EigenVerify::create_fields(const int num_time_steps)
   // create fields to store nodal errors
   std::string error_field_name = "error." + field_name;
   errorField = & ( mesh_data[1]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, error_field_name) );
-  stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-  stk::mesh::put_field_on_mesh( *errorField, mesh_data[1]->meta_data().universal_part() , init_np);
+  stk::mesh::put_field_on_mesh( *errorField, mesh_data[1]->meta_data().universal_part() , nullptr);
 }
 
 void EigenVerify::load_field_data(const int m)

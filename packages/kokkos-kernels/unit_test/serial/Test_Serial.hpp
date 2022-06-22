@@ -10,17 +10,13 @@
 #endif
 
 class serial : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory serial
 #define TestExecSpace Kokkos::Serial
 
-#endif // TEST_SERIAL_HPP
+#endif  // TEST_SERIAL_HPP

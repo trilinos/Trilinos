@@ -137,11 +137,14 @@ namespace
   public:
     static const FormulationChoice formulation = L2;
   };
-  class StandardAlgorithm
-  {
-  public:
-    static const AlgorithmChoice algorithm = Standard;
-  };
+// StandardAlgorithm is not actually used in our test templates: Standard is the baseline we compare against.
+// We therefore comment it out here; the unused static member "algorithm" below generates compilation errors on
+// some platforms (with warnings as errors turned on).
+//  class StandardAlgorithm
+//  {
+//  public:
+//    static const AlgorithmChoice algorithm = Standard;
+//  };
   class AffineNonTensorAlgorithm
   {
   public:
@@ -162,11 +165,16 @@ namespace
   public:
     static const AlgorithmChoice algorithm = Uniform;
   };
-  class DiagonalJacobianAlgorithm // note that DiagonalJacobian is not yet supported by getMesh()
-  {
-  public:
-    static const AlgorithmChoice algorithm = DiagonalJacobian;
-  };
+// DiagonalJacobianAlgorithm is not yet used in our test templates: getMesh() does not support DiagonalJacobian yet.
+// (We hope soon to add support for orthogonal extrusions in CellGeometry, which would give us those
+//  diagonal Jacobians in a natural way.)
+// We therefore comment out the class out here; the unused static member "algorithm" below generates compilation errors on
+// some platforms (with warnings as errors turned on).
+//  class DiagonalJacobianAlgorithm // note that DiagonalJacobian is not yet supported by getMesh()
+//  {
+//  public:
+//    static const AlgorithmChoice algorithm = DiagonalJacobian;
+//  };
   class D1
   {
   public:

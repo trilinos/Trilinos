@@ -1,0 +1,15 @@
+#include "Kokkos_Core.hpp"
+
+#if @ETI_WITH_TASK@
+#define TACHO_ENABLE_KOKKOS_TASK
+#endif
+
+#include "Tacho.hpp"
+#include "Tacho_Driver.hpp"
+#include "Tacho_Driver_Impl.hpp"
+
+namespace Tacho {
+  using eti_value_type = @ETI_VALUE_TYPE@;
+  using eti_device_type = @ETI_DEVICE_TYPE@;
+  template struct Driver<eti_value_type,eti_device_type>;
+}

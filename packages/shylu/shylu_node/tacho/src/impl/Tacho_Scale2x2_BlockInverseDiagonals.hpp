@@ -9,13 +9,12 @@
 
 namespace Tacho {
 
-  ///
-  /// Scale2x2_BlockInverseDiagonals
-  ///
+///
+/// Scale2x2_BlockInverseDiagonals
+///
 
-  /// various implementation for different uplo and algo parameters
-  template<typename ArgSide, typename ArgAlgo>
-  struct Scale2x2_BlockInverseDiagonals;
-}
+/// various implementation for different uplo and algo parameters
+template <typename ArgSide, typename ArgAlgo> struct Scale2x2_BlockInverseDiagonals;
+} // namespace Tacho
 
 #endif

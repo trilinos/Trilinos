@@ -10,6 +10,10 @@
 
 #include "JacobianFlopEstimate.hpp"
 
+/** \file   HCURLStructuredAssembly.hpp
+    \brief  Locally assembles a matrix with the H(curl) natural norm -- an array of shape (C,F,F), with formulation (e_i, e_j) + (curl e_i, curl e_j), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
+ */
+
 //! Version that takes advantage of new structured integration support, including sum factorization.  Computes H(curl) norm: (curl, curl) + (value,value).
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHCURL(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
