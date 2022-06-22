@@ -85,7 +85,7 @@ void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col
 #endif
 }
 
-#ifdef NEW_IMPL
+#ifndef NEW_IMPL
 
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
@@ -391,7 +391,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 }
 
-#else//OLD_IMPL
+#else//NEW_IMPL
 
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
@@ -543,6 +543,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
         //auto ptr2_view = subview(Z, end_row-1, Kokkos::ALL());
 
         root = row_owner(global_col);
+        fprintf(stderr,"me %d, global_col %d, end_row %d, root %d", me, global_col, end_row, root);
 
         if (me == root) {
 #ifdef GET_TIMING
@@ -697,7 +698,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 }
 
-#endif//OLD_IMPL
+#endif//NEW_IMPL
 
 }//namespace Adelus
 
