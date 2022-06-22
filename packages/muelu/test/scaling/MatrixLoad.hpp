@@ -335,7 +335,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
                                     // enough. Later, we check to see if things are not large enough and re-allocate space
                                     // in this case. 
 
-            Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > blockLists(nOwned,Teuchos::null);
+            Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > blockLists(nOwned,Teuchos::null);
 
             Teuchos::Array<int> buffer(maxDofsInAnyBlock,0);
 
