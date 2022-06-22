@@ -2,6 +2,7 @@
 #include "stk_util/parallel/CouplingVersions_impl.hpp"
 
 #include "stk_util/stk_config.h"
+#include <array>
 #include <stdexcept>
 #include <map>
 #include <string>
