@@ -263,6 +263,7 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
     }
     else    // singleton, can't access Containers_[i] as it was never filled and may be null.
     {
+      const ISC one = STS::one();
       size_t numVecs = X.extent(1);
       LO LRID = blockRows_[blockOffsets_[i]];
       getMatDiag();
