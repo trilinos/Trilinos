@@ -226,7 +226,7 @@ namespace Intrepid2
             
             const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
             
-            Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_, PointScalar(s1), PointScalar(s0+s1));
+            Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
             for (int i=0; i<num1DEdgeFunctions; i++)
             {
               output_(i+fieldOrdinalOffset,pointOrdinal) = (i+2) * P_i(i) * grad_s0_cross_grad_s1;
@@ -277,7 +277,13 @@ namespace Intrepid2
             
             const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
             
-            Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_, PointScalar(s1), PointScalar(s0+s1));
+            Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
+            // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+            // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+//                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
+            const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
+            const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
+            OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
             
             const int max_ij_sum = polyOrder_ - 1;
             for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
@@ -289,19 +295,10 @@ namespace Intrepid2
               
                 const double alpha = i*2.0 + 1;
                 
-                // shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
                 Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
-                
                 Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
-                Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
               
-                // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-                // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-//                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
-                const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
-                const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
                 const PointScalar & edgeValue = P_i(i);
-                OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
                 output_(fieldOrdinal,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
                 
                 fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
