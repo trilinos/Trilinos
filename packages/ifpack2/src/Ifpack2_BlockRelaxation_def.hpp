@@ -145,7 +145,8 @@ getValidParameters () const
   validParams->set("partitioner: combine mode", "ZERO"); // use string mode for this
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   validParams->set("partitioner: parts", tmp0);
-  validParams->set("partitioner: global ID parts", tmp0);
+  Teuchos::Array<Teuchos::ArrayRCP<typename MatrixType::global_ordinal_type> > tmp1;
+  validParams->set("partitioner: global ID parts", tmp1);
   validParams->set("partitioner: nonsymmetric overlap combine", false);
   validParams->set("partitioner: maintain sparsity", false);
   validParams->set("fact: ilut level-of-fill", 1.0);

@@ -89,7 +89,7 @@ public:
   ///     <li> "partitioner: parts" (Teuchos::Array<Teuchos::ArrayRCP<local ordinal>>)
   /// The i'th entry in the Array is an ArrayRCP that contains all the
   /// rows (local IDs) in part (block) i. In this case, you are specifying OverlappingPartitioner::Parts_.
-  ///     <li> "partitioner: global ID parts" (Teuchos::Array<Teuchos::ArrayRCP<local ordinal>>)
+  ///     <li> "partitioner: global ID parts" (Teuchos::Array<Teuchos::ArrayRCP<global ordinal>>)
   /// The i'th entry in the Array is an ArrayRCP that contains all the
   /// rows (global IDs) in part (block) i. In this case, you are specifying a translated version of 
   //  OverlappingPartitioner::Parts_.
