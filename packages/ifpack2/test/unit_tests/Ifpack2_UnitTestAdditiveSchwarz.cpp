@@ -167,7 +167,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   MV x (rowmap, 2), y (rowmap, 2), z (rowmap, 2);
   x.putScalar (one);
 
-  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  out << "Calling AdditiveSchwarz's apply()" << endl;
   prec.apply(x, y);
 
   // The solution should now be full of 1/2s
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LO, GO)
 
   // Don't run in serial.
   if(rowmap->getComm()->getSize()==1) {
-    out << "It only makes sense to run this test with 1 MPI process." << endl;
+    out << "It only makes sense to run this test with more than 1 MPI process." << endl;
     return;
   }
 
@@ -239,8 +239,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LO, GO)
   prec.initialize();
 
   prec.compute();
-
-  //prec.describe (* Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)), Teuchos::VERB_EXTREME);
 
   Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,1), y(rowmap,1), z(rowmap,1);
   x.putScalar(1);
