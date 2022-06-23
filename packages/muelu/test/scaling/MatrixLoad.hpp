@@ -371,7 +371,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
               else { fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
             }
             fclose(fp);
-            mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").set< Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > >("partitioner: global ID parts", blockLists);
+            mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").set< Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > >("partitioner: global ID parts", blockLists);
           }
         }
       }
