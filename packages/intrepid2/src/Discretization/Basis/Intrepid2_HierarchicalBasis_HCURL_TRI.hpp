@@ -568,8 +568,8 @@ namespace Intrepid2
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
-                    (this->basisDegree_));
+            IntegratedLegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>
+                    (this->basisDegree_-1));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
