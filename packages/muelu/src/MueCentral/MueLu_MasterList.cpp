@@ -207,6 +207,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
+  "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
@@ -627,6 +628,8 @@ namespace MueLu {
          ("aggregation: mode","aggregation: mode")
       
          ("aggregation: ordering","aggregation: ordering")
+      
+         ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
       
