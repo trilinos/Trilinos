@@ -116,9 +116,6 @@
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
 
-/* Define when enabling Tpetra for refactoring to new KokkosCore interface */
-#cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
-
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

@@ -51,19 +51,9 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   if (sendType == DISTRIBUTOR_ISEND) {
     return "Isend";
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  else if (sendType == DISTRIBUTOR_RSEND) {
-    return "Rsend";
-  }
-#endif
   else if (sendType == DISTRIBUTOR_SEND) {
     return "Send";
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  else if (sendType == DISTRIBUTOR_SSEND) {
-    return "Ssend";
-  }
-#endif
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
       "EDistributorSendType enum value " << sendType << ".");
@@ -96,9 +86,6 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
     sendType_(DISTRIBUTOR_SEND),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_(barrierBetween_default),
-#endif
     useDistinctTags_(useDistinctTags_default),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
@@ -112,9 +99,6 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
     reversePlan_(otherPlan.reversePlan_),
     sendType_(otherPlan.sendType_),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
-#endif
     useDistinctTags_(otherPlan.useDistinctTags_),
     sendMessageToSelf_(otherPlan.sendMessageToSelf_),
     numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
@@ -602,9 +586,6 @@ void DistributorPlan::createReversePlan() const
   reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
   reversePlan_->sendType_ = sendType_;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  reversePlan_->barrierBetweenRecvSend_ = barrierBetweenRecvSend_;
-#endif
 
   // The total length of all the sends of this DistributorPlan.  We
   // calculate it because it's the total length of all the receives
@@ -884,55 +865,11 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     RCP<const ParameterList> validParams = getValidParameters ();
     plist->validateParametersAndSetDefaults (*validParams);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    const bool barrierBetween =
-      plist->get<bool> ("Barrier between receives and sends");
-#endif
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    {
-      // mfh 03 May 2016: We keep this option only for backwards
-      // compatibility, but it must always be true.  See discussion of
-      // Github Issue #227.
-      const bool enable_cuda_rdma =
-        plist->get<bool> ("Enable MPI CUDA RDMA support");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
-         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
-         "support\" = false.  This is no longer valid.  You don't need to "
-         "specify this option any more; Tpetra assumes it is always true.  "
-         "This is a very light assumption on the MPI implementation, and in "
-         "fact does not actually involve hardware or system RDMA support.  "
-         "Tpetra just assumes that the MPI implementation can tell whether a "
-         "pointer points to host memory or CUDA device memory.");
-    }
-#endif
 
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (sendType_ == Details::DISTRIBUTOR_RSEND ||
-        sendType_ == Details::DISTRIBUTOR_SSEND) {
-      // User requested a deprecated send type; change it back to default
-#ifdef HAVE_TPETRA_DEBUG
-      if (comm_->getRank() == 0)
-        std::cout << "Tpetra send type " 
-                  << DistributorSendTypeEnumToString(sendType_)
-                  << " is deprecated; send type = Send will be used."
-                  << std::endl;
-#endif
-      sendType_ = Details::DISTRIBUTOR_SEND;
-    }
-#endif
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_ = barrierBetween;
-    useDistinctTags_ = useDistinctTags;
-#endif
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -944,13 +881,7 @@ Teuchos::Array<std::string> distributorSendTypes()
 {
   Teuchos::Array<std::string> sendTypes;
   sendTypes.push_back ("Isend");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypes.push_back ("Rsend");
-#endif
   sendTypes.push_back ("Send");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypes.push_back ("Ssend");
-#endif
   return sendTypes;
 }
 
@@ -963,52 +894,18 @@ DistributorPlan::getValidParameters() const
   using Teuchos::RCP;
   using Teuchos::setStringToIntegralParameter;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  const bool barrierBetween = Details::barrierBetween_default;
-  const bool useDistinctTags = Details::useDistinctTags_default;
-#endif
-
   Array<std::string> sendTypes = distributorSendTypes ();
   const std::string defaultSendType ("Send");
   Array<Details::EDistributorSendType> sendTypeEnums;
   sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
-#endif
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
-#endif
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  plist->set ("Barrier between receives and sends", barrierBetween,
-      "(DEPRECATED) Whether to execute a barrier between receives and sends in do"
-      "[Reverse]Posts().  "
-      "Required for correctness when \"Send type\""
-      "=\"Rsend\", otherwise "
-      "Correct but not recommended.");
-#endif
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-      "MPI message tags for different code paths.  Highly recommended"
-      " to avoid message collisions.");
-#endif
   plist->set ("Timer Label","","Label for Time Monitor output");
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  plist->set ("Enable MPI CUDA RDMA support", true, 
-      "(DEPRECATED) Assume that MPI can "
-      "tell whether a pointer points to host memory or CUDA device "
-      "memory.  You don't need to specify this option any more; "
-      "Tpetra assumes it is always true.  This is a very light "
-      "assumption on the MPI implementation, and in fact does not "
-      "actually involve hardware or system RDMA support.");
-#endif
 
   return Teuchos::rcp_const_cast<const ParameterList> (plist);
 }

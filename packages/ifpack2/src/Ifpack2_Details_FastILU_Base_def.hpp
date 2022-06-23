@@ -160,6 +160,7 @@ initialize()
   if (timer.is_null ()) {
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
+  Teuchos::TimeMonitor timeMon (*timer);
   
   if(mat_.is_null())
   {
@@ -194,7 +195,7 @@ compute()
   if (timer.is_null ()) {
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
-
+  Teuchos::TimeMonitor timeMon (*timer);
 
   //get copy of values array from matrix
   Kokkos::Timer copyTimer;
@@ -334,10 +335,10 @@ Params::getDefaults()
 {
   Params p;
   p.sptrsv_algo = FastILU::SpTRSV::Fast;
-  p.nFact = 5;
-  p.nTrisol = 1;
-  p.level = 0;
-  p.omega = 0.5;
+  p.nFact = 5;          // # of sweeps for computing fastILU
+  p.nTrisol = 5;        // # of sweeps for applying fastSpTRSV
+  p.level = 0;          // level of ILU
+  p.omega = 1.0;        // damping factor for fastILU
   p.shift = 0;
   p.guessFlag = true;
   p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU

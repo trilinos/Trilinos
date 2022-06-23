@@ -49,7 +49,6 @@
 
 namespace Amesos2 {
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   template <class S, class LO, class GO, class D>
   typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
@@ -551,7 +550,6 @@ namespace Amesos2 {
                                                   BaseScalar> >::type::value;
   };
 
-#endif
 
 } // namespace Amesos2
 
