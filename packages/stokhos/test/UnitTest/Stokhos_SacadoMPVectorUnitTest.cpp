@@ -591,15 +591,3 @@ namespace StaticFixedVecTest
   // Always test for Kokkos::complex because it is always shipped as part of Kokkos, whatever the space.
   namespace Complex_Kokkos{TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector, ::Kokkos::complex<double>, kokkos_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
 }
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Kokkos::initialize(argc,argv);
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-
-  return res;
-}

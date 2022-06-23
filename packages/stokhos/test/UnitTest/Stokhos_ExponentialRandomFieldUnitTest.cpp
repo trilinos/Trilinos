@@ -341,11 +341,3 @@ namespace ExponentialRandomFieldUnitTest {
   }
 
 }
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize();
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-  Kokkos::finalize();
-  return ret;
-}
