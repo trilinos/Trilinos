@@ -78,9 +78,18 @@ public:
 
   FaceToElement(panzer::ConnManager & conn);
 
-  /** Build the mapping from a mesh topology.
+  FaceToElement(panzer::ConnManager & conn,
+                const Teuchos::RCP<const Teuchos::Comm<int>> comm);
+
+  /** Build the mapping from a mesh topology using MPI_COMM_WORLD.
     */
   void initialize(panzer::ConnManager & conn);
+
+  /** Build the mapping from a mesh topology using the provided communicator.
+    */
+  void initialize(panzer::ConnManager & conn,
+                  const Teuchos::RCP<const Teuchos::Comm<int>> comm);
+
 
   GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,0);}
