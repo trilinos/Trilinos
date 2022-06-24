@@ -387,7 +387,7 @@ namespace Amesos2 {
 			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
 			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
-      SLUD::D::ddistribute(options, fact, n, A, glu_freeable, lu, grid);
+      SLUD::D::ddistribute(options, n, A, glu_freeable, lu, grid);
     }
 #else
     static void distribute(SLUD::fact_t fact, SLUD::int_t n,
@@ -407,7 +407,7 @@ namespace Amesos2 {
      */
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void pdistribute(SLUD::amesos2_superlu_dist_options_t* options,
-                            SLUD::fact_t fact, SLUD::int_t n, 
+                            SLUD::int_t n, 
 			    SLUD::SuperMatrix* A, SLUD::D::dScalePermstruct_t* scale_perm, 
 			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
 			    SLUD::gridinfo_t* grid)
@@ -424,7 +424,7 @@ namespace Amesos2 {
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-      SLUD::D::pddistribute(options, fact, n, A, scale_perm, glu_freeable, lu, grid);
+      SLUD::D::pddistribute(options, n, A, scale_perm, glu_freeable, lu, grid);
 #else
       SLUD::D::pddistribute(fact, n, A, scale_perm, glu_freeable, lu, grid);
 #endif
@@ -440,7 +440,7 @@ namespace Amesos2 {
      */
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void dist_psymbtonum(SLUD::amesos2_superlu_dist_options_t* options,
-                                SLUD::fact_t fact, SLUD::int_t n, SLUD::SuperMatrix* A,
+                                SLUD::int_t n, SLUD::SuperMatrix* A,
 				SLUD::D::dScalePermstruct_t* scale_perm,
 				SLUD::Pslu_freeable_t* pslu_freeable,
 				type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
@@ -457,7 +457,7 @@ namespace Amesos2 {
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-      SLUD::D::ddist_psymbtonum(options, fact, n, A, scale_perm, pslu_freeable, lu, grid);
+      SLUD::D::ddist_psymbtonum(options, n, A, scale_perm, pslu_freeable, lu, grid);
 #else
       SLUD::D::ddist_psymbtonum(fact, n, A, scale_perm, pslu_freeable, lu, grid);
 #endif
@@ -668,11 +668,11 @@ namespace Amesos2 {
 
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void distribute(SLUD::amesos2_superlu_dist_options_t* options,
-                           SLUD::fact_t fact, SLUD::int_t n,
+                           SLUD::int_t n,
 			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
 			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
-      SLUD::Z::zdistribute(options, fact, n, A, glu_freeable, lu, grid);
+      SLUD::Z::zdistribute(options, n, A, glu_freeable, lu, grid);
     }
 #else
     static void distribute(SLUD::fact_t fact, SLUD::int_t n,
@@ -685,7 +685,7 @@ namespace Amesos2 {
 
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void pdistribute(SLUD::amesos2_superlu_dist_options_t* options,
-                            SLUD::fact_t fact, SLUD::int_t n, 
+                            SLUD::int_t n, 
 			    SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
 			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
 			    SLUD::gridinfo_t* grid)
@@ -702,7 +702,7 @@ namespace Amesos2 {
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-      SLUD::Z::pzdistribute(options, fact, n, A, scale_perm, glu_freeable, lu, grid);
+      SLUD::Z::pzdistribute(options, n, A, scale_perm, glu_freeable, lu, grid);
 #else
       SLUD::Z::pzdistribute(fact, n, A, scale_perm, glu_freeable, lu, grid);
 #endif
@@ -710,7 +710,7 @@ namespace Amesos2 {
 
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void dist_psymbtonum(SLUD::amesos2_superlu_dist_options_t* options,
-                                SLUD::fact_t fact, SLUD::int_t n,
+                                SLUD::int_t n,
 				SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
 				SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
 				SLUD::gridinfo_t* grid)
@@ -727,7 +727,7 @@ namespace Amesos2 {
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-      SLUD::Z::zdist_psymbtonum(options, fact, n, A, scale_perm, pslu_freeable, lu, grid);
+      SLUD::Z::zdist_psymbtonum(options, n, A, scale_perm, pslu_freeable, lu, grid);
 #else
       SLUD::Z::zdist_psymbtonum(fact, n, A, scale_perm, pslu_freeable, lu, grid);
 #endif
