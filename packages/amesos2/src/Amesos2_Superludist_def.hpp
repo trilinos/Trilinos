@@ -398,6 +398,7 @@ namespace Amesos2 {
                                    data_.perm_r.getRawPtr(), data_.sizes,
                                    data_.fstVtxSep, &(data_.pslu_freeable),
                                    &(data_.grid.comm), &(data_.symb_comm),
+                                   &(data_.mem_usage));
 
 #else
         info = SLUD::symbfact_dist((data_.grid.nprow) * (data_.grid.npcol),
