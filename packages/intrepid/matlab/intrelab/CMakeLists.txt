@@ -42,12 +42,6 @@ endif()
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
-if (APPLE)
-  # Trilinos doesn't propagate its sysroot
-  message(STATUS "CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
-  set(CMAKE_CXX_FLAGS "--sysroot=${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
-endif(APPLE)
-
 set(MOBJS "intrepid_setJacobian;intrepid_setJacobianInv;intrepid_setJacobianDet;intrepid_getNumCubaturePoints;intrepid_getCubature;intrepid_getBasisValues;intrepid_computeCellMeasure;intrepid_HGRADtransformGRAD;intrepid_HGRADtransformVALUE;intrepid_multiplyMeasure;intrepid_integrate;intrepid_mapToPhysicalFrame;intrepid_mapToReferenceFrame;intrepid_scalarMultiplyDataField;intrepid_scalarMultiplyDataData;intrepid_dataIntegral;intrepid_evaluate;intrepid_multiplyVectorDataField;intrepid_dotMultiplyDataField;intrepid_vectorMultiplyDataField;intrepid_dotMultiplyDataData;intrepid_computeEdgeMeasure;intrepid_computeFaceMeasure;intrepid_getCellDeviatoricMat;intrepid_getCellVolumetricMat;intrepid_getPhysicalSideNormals;intrepid_mapToReferenceSubcell;intrepid_tensorMultiplyDataData;intrepid_tensorMultiplyDataField;defGrad;evaluateVectorField;evaluateVectorGradField;externalForceElastostaticsTL;geometricBmat;intrepid_det;intrepid_inverse;intrepid_transpose;materialBmat;strainEulerianLagrangian;stress;tangentStiffnessElastostaticsTL;tensorMultiplyDataField;myMatVecProductDataField;myMatVecProductDataData")
 
 if (NOT APPLE)
@@ -81,8 +75,3 @@ endforeach()
 install(TARGETS ${MOBJS}
   DESTINATION ${CMAKE_INSTALL_PREFIX} 
 )
-
-if(APPLE)
-  message("\"*.dylib was built for newer macOS version (*.*) than being linked (10.9)\" type warnings can be safely ignored. MEX compiler specifies a -mmacosx-min-version=10.9, which can not be overridden.")
-endif(APPLE)
-
