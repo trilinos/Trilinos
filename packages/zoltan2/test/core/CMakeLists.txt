@@ -4,6 +4,7 @@ partition
 order
 TpetraCrsColorer
 color
+connectivity
 scaling
 correctness
 temp
