@@ -458,7 +458,7 @@ namespace Amesos2 {
         // initialized, because it is never accessed.  It is a
         // placeholder arg.  The real work is done in data_.lu
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-        data.options.fact_t = SLUD::SamePattern_SameRowPerm;
+        data_.options.Fact = SLUD::SamePattern_SameRowPerm;
         function_map::pdistribute(&(data_.options),
                                   as<SLUD::int_t>(this->globalNumRows_), // aka "n"
                                   &(data_.A), &(data_.scale_perm),
@@ -473,7 +473,7 @@ namespace Amesos2 {
 #endif
       } else {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
-        data_.options.fact_t = SLUD::DOFACT;
+        data_.options.Fact = SLUD::DOFACT;
         function_map::dist_psymbtonum(&(data_.options),
                                       as<SLUD::int_t>(this->globalNumRows_), // aka "n"
                                       &(data_.A), &(data_.scale_perm),
