@@ -253,10 +253,9 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
         HostView tempo("", X.extent(0), X.extent(1));
         size_t numVecs = X.extent(1);
         LO  bOffset = blockOffsets_[i];
-        LO LRID = blockRows_[bOffset++];
         for (LO ii = 0; ii < blockSizes_[i]; ii++) {
+          LO LRID = blockRows_[bOffset++];
           for (size_t jj = 0; jj < numVecs; jj++) tempo(LRID,jj)=X(LRID,jj)/ W(LRID,0);
-          LRID = blockRows_[bOffset++];
         }
         weightedApply(tempo, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
       }
