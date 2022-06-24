@@ -53,9 +53,10 @@ class DataExchangeUnknownPatternBlocking
 
     template <typename T>
     void execute(std::vector< std::vector<T> > &sendLists,
-                 std::vector< std::vector<T> > &recvLists)
+                 std::vector< std::vector<T> > &recvLists,
+                 int numRecvsExpected=DataExchangeUnknownPatternNonBlocking::Unknown)
     {
-      m_exchanger.start_nonblocking(sendLists, recvLists);
+      m_exchanger.start_nonblocking(sendLists, recvLists, numRecvsExpected);
       m_exchanger.post_nonblocking_receives(recvLists);
 
       auto f = [](int rank, const std::vector<T>& recvBuf) {};

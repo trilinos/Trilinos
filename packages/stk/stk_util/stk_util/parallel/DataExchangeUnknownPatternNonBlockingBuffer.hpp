@@ -56,9 +56,9 @@ class DataExchangeUnknownPatternNonBlockingBuffer : public ManagedBufferBase<T>
       m_exchanger(comm, tag_hint)
     {}
 
-    void start_nonblocking()
+    void start_nonblocking(int numRecvsExpected=DataExchangeUnknownPatternNonBlocking::Unknown)
     {
-      m_exchanger.start_nonblocking(m_sendBufs, m_recvBufs);
+      m_exchanger.start_nonblocking(m_sendBufs, m_recvBufs, numRecvsExpected);
       update_buffer_flags();
     }
 
@@ -104,12 +104,12 @@ class DataExchangeUnknownPatternNonBlockingCommBuffer : public ManagedCommBuffer
       m_exchanger(comm, tag_hint)
     {}
 
-    void start_nonblocking()
+    void start_nonblocking(int numRecvsExpected=DataExchangeUnknownPatternNonBlocking::Unknown)
     {
       if (!get_send_buffers_allocated())
         throw std::runtime_error("Cannot start sends before allocating buffers (CommBuffer requires 2 pass approach to size and then populate buffer");
 
-      m_exchanger.start_nonblocking(m_sendBufStorage, m_recvBufStorage);
+      m_exchanger.start_nonblocking(m_sendBufStorage, m_recvBufStorage, numRecvsExpected);
       update_buffer_flags();
     }
 
