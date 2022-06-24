@@ -14,16 +14,16 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #set(MATLAB_FIND_DEBUG TRUE)
 
 # --> ACTION: define Trilinos install directory
-set(TRILINOS_INSTALL_DIR "/Users/pakuber/Compadre/Trilinos-intrelab/pthread/install_release")
-#set(TRILINOS_INSTALL_DIR "/ascldap/users/pakuber/Compadre/Trilinos-intrelab/build/install")
+#set(TRILINOS_INSTALL_DIR "/Users/pakuber/Compadre/Trilinos-intrelab/pthread/install_release")
+set(TRILINOS_INSTALL_DIR "/ascldap/users/pakuber/Compadre/Trilinos-intrelab/build/install")
 if(DEFINED ENV{TRILINOS_INSTALL_DIR})
   set(TRILINOS_INSTALL_DIR $ENV{TRILINOS_INSTALL_DIR})
 endif()
 
 
 # --> ACTION: define Matlab root directory
-set(Matlab_ROOT_DIR "/Applications/MATLAB_R2020a.app/")
-#set(Matlab_ROOT_DIR "/usr/local/matlab/R2021b/")
+#set(Matlab_ROOT_DIR "/Applications/MATLAB_R2020a.app/")
+set(Matlab_ROOT_DIR "/usr/local/matlab/R2021b/")
 if(DEFINED ENV{Matlab_ROOT_DIR})
   set(Matlab_ROOT_DIR $ENV{Matlab_ROOT_DIR})
 endif()
@@ -42,15 +42,6 @@ endif()
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
-# set compilers to Trilinos compilers
-set(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER})
-set(CMAKE_C_COMPILER ${Trilinos_C_COMPILER})
-
-# set flags to Trilinos flags
-set(CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
-
-# Trilinos doesn't propagate its C++ standard
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC")
 if (APPLE)
   # Trilinos doesn't propagate its sysroot
   message(STATUS "CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
@@ -59,12 +50,7 @@ endif(APPLE)
 
 set(MOBJS "intrepid_setJacobian;intrepid_setJacobianInv;intrepid_setJacobianDet;intrepid_getNumCubaturePoints;intrepid_getCubature;intrepid_getBasisValues;intrepid_computeCellMeasure;intrepid_HGRADtransformGRAD;intrepid_HGRADtransformVALUE;intrepid_multiplyMeasure;intrepid_integrate;intrepid_mapToPhysicalFrame;intrepid_mapToReferenceFrame;intrepid_scalarMultiplyDataField;intrepid_scalarMultiplyDataData;intrepid_dataIntegral;intrepid_evaluate;intrepid_multiplyVectorDataField;intrepid_dotMultiplyDataField;intrepid_vectorMultiplyDataField;intrepid_dotMultiplyDataData;intrepid_computeEdgeMeasure;intrepid_computeFaceMeasure;intrepid_getCellDeviatoricMat;intrepid_getCellVolumetricMat;intrepid_getPhysicalSideNormals;intrepid_mapToReferenceSubcell;intrepid_tensorMultiplyDataData;intrepid_tensorMultiplyDataField;defGrad;evaluateVectorField;evaluateVectorGradField;externalForceElastostaticsTL;geometricBmat;intrepid_det;intrepid_inverse;intrepid_transpose;materialBmat;strainEulerianLagrangian;stress;tangentStiffnessElastostaticsTL;tensorMultiplyDataField;myMatVecProductDataField;myMatVecProductDataData")
 
-if (APPLE)
-  #matlab_add_mex(NAME m2i_helpers
-  #    SHARED
-  #    SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp
-  #)
-else()
+if (NOT APPLE)
   matlab_add_mex(NAME m2i_helpers
       SHARED
       SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp
