@@ -82,8 +82,6 @@
 #include "HYPRE_parcsr_ls.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
-#else
-#error "Hypre not found"
 #endif
 
 // =========================================================================
