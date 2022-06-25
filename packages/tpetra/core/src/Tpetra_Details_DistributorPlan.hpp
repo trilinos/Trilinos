@@ -49,10 +49,6 @@
 namespace Tpetra {
 namespace Details {
 
-namespace {
-  const bool useDistinctTags_default = true;
-}
-
 /// \brief The type of MPI send that Distributor should use.
 ///
 /// This is an implementation detail of Distributor.  Please do
@@ -115,7 +111,6 @@ public:
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
   EDistributorSendType getSendType() const { return sendType_; }
-  bool useDistinctTags() const { return useDistinctTags_; }
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
   bool hasSelfMessage() const { return sendMessageToSelf_; }
@@ -153,19 +148,6 @@ private:
   //! @name Parameters read in from the Teuchos::ParameterList
   //@{
   EDistributorSendType sendType_;
-
-  /// \brief Whether to use different tags for different code paths.
-  ///
-  /// There are currently three code paths in Distributor that post
-  /// receives and sends:
-  ///
-  /// 1. Three-argument variant of doPosts()
-  /// 2. Four-argument variant of doPosts()
-  /// 3. computeReceives()
-  ///
-  /// If this option is true, Distributor will use a distinct
-  /// message tag for each of these paths.
-  bool useDistinctTags_;
   //@}
 
   bool sendMessageToSelf_;
