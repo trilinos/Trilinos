@@ -93,10 +93,6 @@ public:
   bool isReady() const;
 
 private:
-  int getNewMpiTag() {
-    return 1;
-  }
-
   int mpiTag_;
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
