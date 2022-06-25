@@ -283,8 +283,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   Teuchos::CommandLineProcessor clp;
   Xpetra::Parameters xpetraParameters (clp);
   Teuchos::ParameterList GaleriList;
-  int nx = 100;
-  //    int nx = 6;
+  int nx = 447;  // ~200K unknowns per MPI rank
   size_t numElementsPerProc = nx*nx;
   GaleriList.set("nx", static_cast<GO> (nx));
   GaleriList.set("ny", static_cast<GO> (nx * numProcs));
@@ -322,7 +321,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   VectorType X (A->getRowMap ());
   VectorType Y (A->getRowMap ());
   VectorType Z (A->getRowMap ());
-  ArrayRCP<ArrayRCP<Scalar> > x_ptr = X.get2dViewNonConst ();
 
   const int OverlapLevel = 5;
 
@@ -352,8 +350,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();
 
+  {
+  ArrayRCP<ArrayRCP<Scalar> > x_ptr = X.get2dViewNonConst ();
   for (LO i = 0 ; i < static_cast<LO> (A->getLocalNumRows ()); ++i) {
     x_ptr[0][i] = 1.0 * A->getRowMap ()->getGlobalElement (i);
+  }
   }
   Y.putScalar (0.0);
 
