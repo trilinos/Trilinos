@@ -407,6 +407,17 @@ namespace Intrepid2 {
             const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
             const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs );
     
+    /** \brief Computes the matrix-matrix product \f$A^T A\f$, for an input rectangular matrix \f$A\f$.
+        
+        \param matVec  [out]  - matrix-matrix product \f$A^T A\f$ indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+        \param inMat    [in]  - the matrix argument \f$A\f$ indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+    */
+    template<typename outMatValueType, class ...outMatProperties,
+             typename inMatValueType,  class ...inMatProperties>
+    static void
+    AtA(       Kokkos::DynRankView<outMatValueType,outMatProperties...> outMats,
+         const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats);
+
     /** \brief Vector product using multidimensional arrays:\n
         <b><var>vecProd</var></b> = <b><var>inVecLeft</var></b> x <b><var>inVecRight</var></b>
       

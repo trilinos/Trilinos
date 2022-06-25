@@ -50,7 +50,6 @@ TEST( Util, tag ) {
 }
 
 
-/// TODO:: add task scheduler instanciation test
 int main (int argc, char *argv[]) {
 
   int r_val(0);

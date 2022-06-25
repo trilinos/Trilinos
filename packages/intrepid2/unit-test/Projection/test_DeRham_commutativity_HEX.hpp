@@ -109,8 +109,13 @@ namespace Test {
 template<typename ValueType, typename DeviceType>
 int DeRhamCommutativityHex(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
+  using ExecSpaceType = typename DeviceType::execution_space;
+  using MemSpaceType = typename DeviceType::memory_space;
+
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+  using DynRankViewIntHost = Kokkos::DynRankView<ordinal_type,HostSpaceType>;
+  
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -123,6 +128,10 @@ int DeRhamCommutativityHex(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
+
+  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "\n";
 
   int errorFlag = 0;
   const ValueType tol = tolerence();
@@ -344,12 +353,16 @@ int DeRhamCommutativityHex(const bool verbose) {
         shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
         shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
+        const ordinal_type numNodesPerElem = hexa.getNodeCount();
+
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
+              hPhysVertexes(i,j,k) = vertices[hexas[i][j]][k];
+        Kokkos::deep_copy(physVertexes,hPhysVertexes);
 
         //compute reference points
         Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
@@ -358,7 +371,8 @@ int DeRhamCommutativityHex(const bool verbose) {
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
+        DynRankViewIntHost elemNodesHost(&hexas[0][0], 2, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
         Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, hexa);
 
@@ -366,7 +380,6 @@ int DeRhamCommutativityHex(const bool verbose) {
         Basis_HCURL_HEX_In_FEM<DeviceType,ValueType,ValueType> basisHCurl(order);
         ordinal_type basisCardinality = basis.getCardinality();
         ordinal_type basisHCurlCardinality = basisHCurl.getCardinality();
-
 
         // compute projection-based interpolation of fun into HGRAD
         DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
@@ -390,48 +403,50 @@ int DeRhamCommutativityHex(const bool verbose) {
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalGradPoints, numCells, numGradPoints, dim);
           {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalGradPoints, hexa.getNodeCount(), numGradPoints);
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              if(numGradPoints>0)
-                hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numGradPoints; ++j)
-                    physEvalGradPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalGradPoints(k,j);
-                }
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalGradPoints, numCells, numNodesPerElem);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+            KOKKOS_LAMBDA (const int &i) {
+              Fun fun;
+              auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j) {
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+                for(ordinal_type d=0; d<dim; ++d)
+                  for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                    physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+                targetAtEvalPoints(i,j) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2));
               }
-            }
+
+              GradFun gradFun;
+              auto basisValuesAtEvalCurlPoints = Kokkos::subview(linearBasisValuesAtEvalGradPoints,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numGradPoints; ++j) {
+                auto evalCurlPoint = Kokkos::subview(evaluationGradPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoints, evalCurlPoint);
+                for(ordinal_type d=0; d<dim; ++d)
+                  for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                    physEvalGradPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalCurlPoints(k);
+                for(int d=0;d<dim;d++)
+                  targetGradAtEvalPoints(i,j,d) = gradFun(physEvalGradPoints(i,j,0), physEvalGradPoints(i,j,1), physEvalGradPoints(i,j,2), d);
+
+              }
+            });
           }
 
           //transform the target function and its derivative to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numGradPoints, dim, dim);
-          if(numGradPoints>0)
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints);
+          fst::mapHGradDataFromPhysToRef(refTargetAtEvalPoints,targetAtEvalPoints);
+
+          DynRankView ConstructWithLabel(refTargetGradAtEvalPoints, numCells, numGradPoints, dim);
+          if(numGradPoints>0) {
+            DynRankView ConstructWithLabel(jacobian, numCells, numGradPoints, dim, dim);
             ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, hexa);
-
-          Fun fun;
-          GradFun gradFun;
-          Kokkos::deep_copy(targetGradAtEvalPoints,0.);
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++) {
-              targetAtEvalPoints(ic,i) = fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
-            }
-            for(int i=0;i<numGradPoints;i++) {
-              for(int d=0;d<dim;d++)
-                for(int j=0;j<dim;j++)
-                  targetGradAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*gradFun(physEvalGradPoints(ic,i,0), physEvalGradPoints(ic,i,1), physEvalGradPoints(ic,i,2), d);//funHGradCoeffs(k)
-            }
-
+            fst::mapHCurlDataFromPhysToRef(refTargetGradAtEvalPoints,jacobian,targetGradAtEvalPoints);
           }
 
           pts::getHGradBasisCoeffs(basisCoeffsHGrad,
-              targetAtEvalPoints,
-              targetGradAtEvalPoints,
+              refTargetAtEvalPoints,
+              refTargetGradAtEvalPoints,
               evaluationPoints,
               evaluationGradPoints,
               elemOrts,
@@ -457,41 +472,36 @@ int DeRhamCommutativityHex(const bool verbose) {
               &basisHCurl,
               &projStruct);
 
-
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints, dim);
-
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
-          {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                }
-              }
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            GradFun fun;
+            auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numPoints; ++j) {
+              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+              for(ordinal_type d=0; d<dim; ++d)
+                targetAtEvalPoints(i,j,d) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2),d);
             }
-          }
+          });
 
           //transform the target function to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-
-          GradFun fun;
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++)
-              for(int j=0;j<dim;j++)
-                for(int d=0;d<dim;d++)
-                  targetAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints, dim);
+          {
+            DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
+            ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+            fst::mapHCurlDataFromPhysToRef(refTargetAtEvalPoints,jacobian,targetAtEvalPoints);
           }
 
+          DynRankView ConstructWithLabel(refTargetCurlAtEvalPoints, numCells, numDivPoints, dim); //zero, curl of grad
           pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
-              targetAtEvalPoints,
-              targetDivAtEvalPoints,
+              refTargetAtEvalPoints,
+              refTargetCurlAtEvalPoints,
               evaluationPoints,
               evaluationDivPoints,
               elemOrts,
@@ -527,13 +537,14 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian_inv,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisCardinality; ++k)
                 for(ordinal_type d=0; d<dim; ++d)
                   gradProjFunAtRefCoordsOriented(i,j,d) += basisCoeffsHGrad(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
             }
-          }
+          });
         }
 
         // compute HCURL projection of fun gradient at reference points
@@ -563,21 +574,25 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian_inv,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisHCurlCardinality; ++k)
                 for(ordinal_type d=0; d<dim; ++d)
                   projGradFunAtRefCoordsOriented(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
             }
-          }
+          });
         }
 
+
         // compare the gradient of the target HGRAD projection and the HCURL projection of the gradient of the target at reference points
+        auto hostGradProjFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), gradProjFunAtRefCoordsOriented);
+        auto hostProjGradFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), projGradFunAtRefCoordsOriented);
         for(ordinal_type i=0; i<numCells; ++i) {
           ValueType error=0;
           for(ordinal_type j=0; j<numRefCoords; ++j)
             for(ordinal_type d=0; d<dim; ++d) {
-              error = std::max(std::abs( gradProjFunAtRefCoordsOriented(i,j,d) - projGradFunAtRefCoordsOriented(i,j,d)), error);
+              error = std::max(std::abs( hostGradProjFun(i,j,d) - hostProjGradFun(i,j,d)), error);
             }
           if(error>10000*tol) {
             errorFlag++;
@@ -585,10 +600,10 @@ int DeRhamCommutativityHex(const bool verbose) {
             *outStream << "Gradient of projection is different than projection of gradient at reference points " << i << "\n";
             *outStream << "Gradient of projection at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << gradProjFunAtRefCoordsOriented(i,j,0) << "," << gradProjFunAtRefCoordsOriented(i,j,1) << "," << gradProjFunAtRefCoordsOriented(i,j,2)   << ")";
+              *outStream << " (" << hostGradProjFun(i,j,0) << "," << hostGradProjFun(i,j,1) << "," << hostGradProjFun(i,j,2)   << ")";
             *outStream << "\nProjection of gradient at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << projGradFunAtRefCoordsOriented(i,j,0) << "," << projGradFunAtRefCoordsOriented(i,j,1) << "," << projGradFunAtRefCoordsOriented(i,j,2)  << ")";
+              *outStream << " (" << hostProjGradFun(i,j,0) << "," << hostProjGradFun(i,j,1) << "," << hostProjGradFun(i,j,2)  << ")";
             *outStream << std::endl;
           }
         }
@@ -666,12 +681,17 @@ int DeRhamCommutativityHex(const bool verbose) {
         shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
         shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
+        const ordinal_type numNodesPerElem = hexa.getNodeCount();
+
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
+              hostPhysVertexes(i,j,k) = vertices[hexas[i][j]][k];
+        deep_copy(physVertexes, hostPhysVertexes);
+
 
         //compute reference points
         Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
@@ -680,7 +700,8 @@ int DeRhamCommutativityHex(const bool verbose) {
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
+        DynRankViewIntHost elemNodesHost(&hexas[0][0], 2, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
         Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, hexa);
 
@@ -690,7 +711,7 @@ int DeRhamCommutativityHex(const bool verbose) {
         ordinal_type basisCardinality = basis.getCardinality();
         ordinal_type basisHDivCardinality = basisHDiv.getCardinality();
 
-        // compute projection-based interpolation of fun into HCURL
+        // compute projection-based interpolation of fun into HDIV
         DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
         {
           ordinal_type targetCubDegree(FunCurl::degree()),targetDerivCubDegree(CurlFunCurl::degree());
@@ -715,60 +736,63 @@ int DeRhamCommutativityHex(const bool verbose) {
 
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalCurlPoints, numCells, numCurlPoints, dim);
-          {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalCurlPoints, hexa.getNodeCount(), numCurlPoints);
 
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              if(numCurlPoints>0)
-                hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numCurlPoints; ++j)
-                    physEvalCurlPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalCurlPoints(k,j);
-                }
-              }
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalCurlPoints, numCells, numNodesPerElem);
+
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            FunCurl fun;
+            auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numPoints; ++j) {
+              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+              for(ordinal_type d=0; d<dim; ++d)
+                targetAtEvalPoints(i,j,d) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2),d);
             }
-          }
+
+            CurlFunCurl curlFun;
+            auto basisValuesAtEvalCurlPoints = Kokkos::subview(linearBasisValuesAtEvalCurlPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numCurlPoints; ++j) {
+              auto evalCurlPoint = Kokkos::subview(evaluationCurlPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoints, evalCurlPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalCurlPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalCurlPoints(k);
+              for(ordinal_type d=0; d<dim; ++d)
+                targetCurlAtEvalPoints(i,j,d) = curlFun(physEvalCurlPoints(i,j,0), physEvalCurlPoints(i,j,1), physEvalCurlPoints(i,j,2), d);
+            }
+          });
+
+
 
           //transform the function and its derivative to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints, dim);
+          {
+            DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
+            ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+            fst::mapHCurlDataFromPhysToRef(refTargetAtEvalPoints,jacobian,targetAtEvalPoints);
+          }
 
-          DynRankView ConstructWithLabel(jacobianCurl, numCells, numCurlPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobianCurl_inv, numCells, numCurlPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobianCurl_det, numCells, numCurlPoints);
+          DynRankView ConstructWithLabel(refTargetCurlAtEvalPoints, numCells, numCurlPoints, dim);
           if(numCurlPoints>0) {
+
+            DynRankView ConstructWithLabel(jacobianCurl, numCells, numCurlPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobianCurl_inv, numCells, numCurlPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobianCurl_det, numCells, numCurlPoints);
             ct::setJacobian(jacobianCurl, evaluationCurlPoints, physVertexes, hexa);
             ct::setJacobianInv (jacobianCurl_inv, jacobianCurl);
             ct::setJacobianDet (jacobianCurl_det, jacobianCurl);
-          }
 
-          FunCurl fun;
-          CurlFunCurl curlFun;
-          Kokkos::deep_copy(targetCurlAtEvalPoints,0.);
-          Kokkos::deep_copy(targetAtEvalPoints,0.);
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++) {
-              for(int j=0;j<dim;j++)
-                for(int d=0;d<dim;d++)
-                  targetAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
-            }
-            for(int i=0;i<numCurlPoints;i++) {
-              for(int d=0;d<dim;d++)
-                for(int j=0;j<dim;j++)
-                  targetCurlAtEvalPoints(ic,i,j) += jacobianCurl_det(ic,i)*jacobianCurl_inv(ic,i,j,d)*curlFun(physEvalCurlPoints(ic,i,0), physEvalCurlPoints(ic,i,1), physEvalCurlPoints(ic,i,2), d);//funHGradCoeffs(k)
-            }
-
+            fst::mapHDivDataFromPhysToRef(refTargetCurlAtEvalPoints,jacobianCurl_inv,jacobianCurl_det,targetCurlAtEvalPoints);
           }
 
           pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
-              targetAtEvalPoints,
-              targetCurlAtEvalPoints,
+              refTargetAtEvalPoints,
+              refTargetCurlAtEvalPoints,
               evaluationPoints,
               evaluationCurlPoints,
               elemOrts,
@@ -796,43 +820,39 @@ int DeRhamCommutativityHex(const bool verbose) {
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
-
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
-          {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                }
-              }
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            CurlFunCurl fun;
+            auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numPoints; ++j) {
+              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+              for(ordinal_type d=0; d<dim; ++d)
+                targetAtEvalPoints(i,j,d) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2),d);
             }
-          }
+          });
 
           //transform the function to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-          ct::setJacobianInv(jacobian_inv,jacobian);
-          ct::setJacobianDet (jacobian_det, jacobian);
-
-          CurlFunCurl fun;
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++)
-              for(int j=0;j<dim;j++)
-                for(int d=0;d<dim;d++)
-                  targetAtEvalPoints(ic,i,j) += jacobian_det(ic,i)*jacobian_inv(ic,i,j,d)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints, dim);
+          {
+            DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
+            ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+            ct::setJacobianInv(jacobian_inv,jacobian);
+            ct::setJacobianDet (jacobian_det, jacobian);
+            fst::mapHDivDataFromPhysToRef(refTargetAtEvalPoints,jacobian_inv,jacobian_det,targetAtEvalPoints);
           }
 
+          DynRankView ConstructWithLabel(refTargetDivAtEvalPoints, numCells, numDivPoints); //zero, div of curl
           pts::getHDivBasisCoeffs(basisCoeffsHDiv,
-              targetAtEvalPoints,
-              targetDivAtEvalPoints,
+              refTargetAtEvalPoints,
+              refTargetDivAtEvalPoints,
               evaluationPoints,
               evaluationDivPoints,
               elemOrts,
@@ -867,13 +887,14 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian, jacobian_det,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisCardinality; ++k)
                 for(ordinal_type d=0; d<dim; ++d)
                   curlProjFunAtRefCoordsOriented(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
             }
-          }
+          });
         }
 
         // compute HDIV projection of fun curl at reference points
@@ -903,20 +924,24 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian, jacobian_det,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisHDivCardinality; ++k)
                 for(ordinal_type d=0; d<dim; ++d)
                   projCurlFunAtRefCoordsOriented(i,j,d) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
             }
-          }
+          });
         }
 
+        // compare the curl of the target HCURL projection and the HDIV projection of the curl of the target at reference points
+        auto hostCurlProjFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), curlProjFunAtRefCoordsOriented);
+        auto hostProjCurlFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), projCurlFunAtRefCoordsOriented);
         for(ordinal_type i=0; i<numCells; ++i) {
           ValueType error=0;
           for(ordinal_type j=0; j<numRefCoords; ++j)
             for(ordinal_type d=0; d<dim; ++d) {
-              error = std::max(std::abs( curlProjFunAtRefCoordsOriented(i,j,d) - projCurlFunAtRefCoordsOriented(i,j,d)), error);
+              error = std::max(std::abs( hostCurlProjFun(i,j,d) - hostProjCurlFun(i,j,d)), error);
             }
           if(error>10000*tol) {
             errorFlag++;
@@ -924,10 +949,10 @@ int DeRhamCommutativityHex(const bool verbose) {
             *outStream << "Curl of projection is different than projection of curl at reference points " << i << "\n";
             *outStream << "Curl of rojection at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << curlProjFunAtRefCoordsOriented(i,j,0) << "," << curlProjFunAtRefCoordsOriented(i,j,1) << "," << curlProjFunAtRefCoordsOriented(i,j,2)   << ")";
+              *outStream << " (" << hostCurlProjFun(i,j,0) << "," << hostCurlProjFun(i,j,1) << "," << hostCurlProjFun(i,j,2)   << ")";
             *outStream << "\nProjection of curl at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << projCurlFunAtRefCoordsOriented(i,j,0) << "," << projCurlFunAtRefCoordsOriented(i,j,1) << "," << projCurlFunAtRefCoordsOriented(i,j,2)  << ")";
+              *outStream << " (" << hostProjCurlFun(i,j,0) << "," << hostProjCurlFun(i,j,1) << "," << hostProjCurlFun(i,j,2)  << ")";
             *outStream << std::endl;
           }
         }
@@ -1000,15 +1025,20 @@ int DeRhamCommutativityHex(const bool verbose) {
         shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
         shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
+        const ordinal_type numNodesPerElem = hexa.getNodeCount();
+
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
+              hostPhysVertexes(i,j,k) = vertices[hexas[i][j]][k];
+        deep_copy(physVertexes, hostPhysVertexes);
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&hexas[0][0], numCells, numElemVertexes);
+        DynRankViewIntHost elemNodesHost(&hexas[0][0], numCells, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
         Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, hexa);
 
@@ -1048,58 +1078,58 @@ int DeRhamCommutativityHex(const bool verbose) {
           DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalDivPoints, numCells, numDivPoints, dim);
-          {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalDivPoints, hexa.getNodeCount(), numDivPoints);
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              if(numDivPoints)
-                hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numDivPoints; ++j)
-                    physEvalDivPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalDivPoints(k,j);
-                }
-              }
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalDivPoints, numCells, numNodesPerElem);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            FunDiv fun;
+            auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numPoints; ++j) {
+              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+              for(ordinal_type d=0; d<dim; ++d)
+                targetAtEvalPoints(i,j,d) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2),d);
             }
-          }
+
+            DivFunDiv divFun;
+            auto basisValuesAtEvalDivPoints = Kokkos::subview(linearBasisValuesAtEvalDivPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numDivPoints; ++j) {
+              auto evalDivPoint = Kokkos::subview(evaluationDivPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoints, evalDivPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalDivPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDivPoints(k);
+              targetDivAtEvalPoints(i,j) = divFun(physEvalDivPoints(i,j,0), physEvalDivPoints(i,j,1), physEvalDivPoints(i,j,2));
+            }
+          });
 
           //transform the function to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
-          DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-          ct::setJacobianDet (jacobian_det, jacobian);
-          ct::setJacobianInv (jacobian_inv, jacobian);
-
-          DynRankView ConstructWithLabel(jacobianDiv, numCells, numDivPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobianDiv_det, numCells, numDivPoints);
-          if(numDivPoints) {
-            ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, hexa);
-            ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints, dim);
+          {
+            DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
+            DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
+            ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+            ct::setJacobianDet (jacobian_det, jacobian);
+            ct::setJacobianInv (jacobian_inv, jacobian);
+            fst::mapHDivDataFromPhysToRef(refTargetAtEvalPoints,jacobian_inv,jacobian_det,targetAtEvalPoints);
           }
 
-          FunDiv fun;
-          DivFunDiv divFun;
-          Kokkos::deep_copy(targetDivAtEvalPoints,0.);
-          Kokkos::deep_copy(targetAtEvalPoints,0.);
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++) {
-              for(int j=0;j<dim;j++)
-                for(int d=0;d<dim;d++)
-                  targetAtEvalPoints(ic,i,j) += jacobian_det(ic,i)*jacobian_inv(ic,i,j,d)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2),d);
-            }
-            for(int i=0;i<numDivPoints;i++)
-              targetDivAtEvalPoints(ic,i) += jacobianDiv_det(ic,i)*divFun(physEvalDivPoints(ic,i,0), physEvalDivPoints(ic,i,1), physEvalDivPoints(ic,i,2));//funHGradCoeffs(k)
+          DynRankView ConstructWithLabel(refTargetDivAtEvalPoints, numCells, numDivPoints);
+          if(numDivPoints) {
+            DynRankView ConstructWithLabel(jacobianDiv, numCells, numDivPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobianDiv_det, numCells, numDivPoints);
+            ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, hexa);
+            ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+            fst::mapHVolDataFromPhysToRef(refTargetDivAtEvalPoints,jacobianDiv_det,targetDivAtEvalPoints);
           }
 
           pts::getHDivBasisCoeffs(basisCoeffsHDiv,
-              targetAtEvalPoints,
-              targetDivAtEvalPoints,
+              refTargetAtEvalPoints,
+              refTargetDivAtEvalPoints,
               evaluationPoints,
               evaluationDivPoints,
               elemOrts,
@@ -1126,38 +1156,35 @@ int DeRhamCommutativityHex(const bool verbose) {
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
-
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
-          {
-            Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, hexa.getNodeCount(), numPoints);
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtEvalPoints(k,j);
-                }
-              }
+          DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoints, numCells, numNodesPerElem);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            DivFunDiv fun;
+            auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<numPoints; ++j) {
+              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
+              for(ordinal_type d=0; d<dim; ++d)
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoints(k);
+              targetAtEvalPoints(i,j) = fun(physEvalPoints(i,j,0), physEvalPoints(i,j,1), physEvalPoints(i,j,2));
             }
-          }
+          });
 
           //transform the function to the reference element (inverse of pullback operator)
-          DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
-          DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
-          ct::setJacobianDet (jacobian_det, jacobian);
-
-          DivFunDiv fun;
-          for(int ic=0; ic<numCells; ic++) {
-            for(int i=0;i<numPoints;i++)
-              targetAtEvalPoints(ic,i) += jacobian_det(ic,i)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
+          DynRankView ConstructWithLabel(refTargetAtEvalPoints, numCells, numPoints);
+          {
+            DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
+            DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
+            ct::setJacobian(jacobian, evaluationPoints, physVertexes, hexa);
+            ct::setJacobianDet (jacobian_det, jacobian);
+            fst::mapHVolDataFromPhysToRef(refTargetAtEvalPoints,jacobian_det,targetAtEvalPoints);
           }
 
           pts::getHVolBasisCoeffs(basisCoeffsHVol,
-              targetAtEvalPoints,
+              refTargetAtEvalPoints,
               evaluationPoints,
               elemOrts,
               &basisHVol,
@@ -1191,12 +1218,13 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian_det,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisCardinality; ++k)
                 divProjFunAtRefCoordsOriented(i,j) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
             }
-          }
+          });
         }
 
         // compute HVOL projection of fun divergence at reference points
@@ -1226,18 +1254,22 @@ int DeRhamCommutativityHex(const bool verbose) {
               jacobian_det,
               basisValuesAtRefCoordsOriented);
 
-          for(ordinal_type i=0; i<numCells; ++i) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type j=0; j<numRefCoords; ++j) {
               for(ordinal_type k=0; k<basisHVolCardinality; ++k)
                 projDivFunAtRefCoordsOriented(i,j) += basisCoeffsHVol(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
             }
-          }
+          });
         }
 
+        // compare the divergence of the target HDIV projection and the HVOL projection of the divergence of the target at reference points
+        auto hostDivProjFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), divProjFunAtRefCoordsOriented);
+        auto hostProjDivFun = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), projDivFunAtRefCoordsOriented);
         for(ordinal_type i=0; i<numCells; ++i) {
           ValueType error=0;
           for(ordinal_type j=0; j<numRefCoords; ++j)
-            error = std::max(std::abs( divProjFunAtRefCoordsOriented(i,j) - projDivFunAtRefCoordsOriented(i,j)), error);
+            error = std::max(std::abs( hostDivProjFun(i,j) - hostProjDivFun(i,j)), error);
 
           if(error>10000*tol) {
             errorFlag++;
@@ -1245,10 +1277,10 @@ int DeRhamCommutativityHex(const bool verbose) {
             *outStream << "Divergence of projection is different than projection of divergence at reference points " << i << "\n";
             *outStream << "Divergence of projection at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << divProjFunAtRefCoordsOriented(i,j)    << ")";
+              *outStream << " (" << hostDivProjFun(i,j)    << ")";
             *outStream << "\nProjection of divergence at reference points are:\n";
             for(ordinal_type j=0; j<numRefCoords; ++j)
-              *outStream << " (" << projDivFunAtRefCoordsOriented(i,j)   << ")";
+              *outStream << " (" << hostProjDivFun(i,j)   << ")";
             *outStream << std::endl;
           }
         }

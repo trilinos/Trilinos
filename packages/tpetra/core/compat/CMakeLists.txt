@@ -1,75 +1,41 @@
 
+#
+# A) Package-specific configuration options
+#
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
 #
 
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.h)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-#
-# Core Files
-#
+# Must glob the binary dir last to get all of the auto-generated headers
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# general headers, sources
-APPEND_SET(HEADERS
-    Kokkos_BufferMacros.hpp
-    Kokkos_DefaultNode.hpp
-    Kokkos_NodeAPIConfigDefs.hpp
-    KokkosCompat_ClassicNodeAPI_Wrapper.hpp
-  )
-APPEND_SET(SOURCES
-    Kokkos_DefaultNode.cpp
-    KokkosCompat_ClassicNodeAPI_Wrapper.cpp
-  )
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SerialNode)
-IF (${PACKAGE_NAME}_ENABLE_SerialNode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::SerialNode class was deprecated long ago and is no longer supported.")
-ENDIF()
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OpenMPNode)
-IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
-ENDIF()
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBBNode)
-IF (${PACKAGE_NAME}_ENABLE_TBBNode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::TBBNode class was deprecated long ago and has since been removed.")
-ENDIF()
-
+# Sanity Checking of Macros
 ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
 ASSERT_DEFINED(Kokkos_ENABLE_THREADS)
 ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
 ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
 
-# mfh 04 Oct 2015: Deprecate KokkosClassic_DefaultNode in favor of
-# Tpetra_DefaultNode (or better yet, Tpetra_DefaultExecutionSpace).
+
+
+# Default Node Processing
 IF(DEFINED Tpetra_DefaultNode)
   MESSAGE(STATUS "User-set default Node: ${Tpetra_DefaultNode}")
 ELSE()
-  IF(DEFINED KokkosClassic_DefaultNode AND NOT DEFINED Tpetra_DefaultNode)
-    MESSAGE(WARNING "You set Tpetra's default Node type to ${KokkosClassic_DefaultNode}, but you used KokkosClassic_DefaultNode, which has been deprecated.  Please use Tpetra_DefaultNode instead.")
-    SET(Tpetra_DefaultNode ${KokkosClassic_DefaultNode})
-  ELSE()
-    SET(Tpetra_DefaultNode "")
-  ENDIF()
+  SET(Tpetra_DefaultNode "")
 ENDIF()
-
-# If the user set a default Node type, Tpetra_DefaultNode will 
-# be a nonempty string.  In that case, check that the requested
-# default Node type is actually enabled before using it.  If the
-# user did not set a default Node type, set one ourselves.  Note
-# precedence rule: First Cuda, then OpenMP, then Serial, then 
-# Threads (least preferred because it will likely interfere with
-# performance of users' own threads -- OpenMP doesn't have
-# that problem).
 
 IF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosSYCLWrapperNode")
   IF (NOT Kokkos_ENABLE_SYCL)
@@ -120,6 +86,7 @@ ELSEIF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosSerialWrapperNode")
   ENDIF ()
   SET (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE ON CACHE BOOL "")
 ELSEIF (Tpetra_DefaultNode STREQUAL "")
+
   #
   # The user didn't set Tpetra_DefaultNode, so we need to pick it.
   #
@@ -184,12 +151,16 @@ CONFIGURE_FILE(cmake/KokkosClassic_DefaultNode_config.h.in  KokkosClassic_Defaul
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 APPEND_SET(HEADERS  ${CMAKE_CURRENT_BINARY_DIR}/KokkosClassic_DefaultNode_config.h)
 
-#
-# C) Define the targets for package's library(s)
-#
 
 TRIBITS_ADD_LIBRARY(
-  tpetraclassicnodeapi
+  tpetraclassic
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  ADDED_LIB_TARGET_NAME_OUT TPETRA_LIBNAME
+  )
+
+# We need to set the linker language explicitly here for CUDA builds.
+SET_PROPERTY(
+  TARGET ${TPETRA_LIBNAME}
+  APPEND PROPERTY LINKER_LANGUAGE CXX
   )

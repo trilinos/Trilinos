@@ -30,7 +30,8 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::External> {
 #endif
   }
 
-  template <typename MemberType, typename ViewTypeA> inline static int invoke(MemberType &member, const ViewTypeA &A) {
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     // Kokkos::single(Kokkos::PerTeam(member), [&]() {

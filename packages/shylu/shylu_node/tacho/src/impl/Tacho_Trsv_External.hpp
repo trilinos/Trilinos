@@ -39,7 +39,8 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
   }
 
   template <typename MemberType, typename DiagType, typename ViewTypeA, typename ViewTypeB>
-  inline static int invoke(MemberType &member, const DiagType diagA, const ViewTypeA &A, const ViewTypeB &B) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const DiagType diagA, const ViewTypeA &A,
+                                           const ViewTypeB &B) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     // Kokkos::single(Kokkos::PerTeam(member), [&]() {
     invoke(diagA, A, B);

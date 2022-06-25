@@ -32,13 +32,14 @@ public:
   /// Constructor
   WrapperModelEvaluatorPairIMEX_StaggeredFSA(
     const Teuchos::RCP<const WrapperModelEvaluatorPairIMEX_Basic<Scalar> >& forwardModel,
+    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null)
   {
     forwardModel_ = forwardModel;
     appExplicitModel_ = forwardModel_->getExplicitModel();
     appImplicitModel_ = forwardModel_->getImplicitModel();
-    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, pList));
-    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, pList));
+    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_, appExplicitModel_, is_pseudotransient, pList));
+    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_, appImplicitModel_, is_pseudotransient, pList));
     Base::setup(fsaExplicitModel_, fsaImplicitModel_);
   }
 

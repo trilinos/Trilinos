@@ -9,6 +9,9 @@
 #ifndef Tempus_AdjointSensitivityModelEvaluator_impl_hpp
 #define Tempus_AdjointSensitivityModelEvaluator_impl_hpp
 
+#include "Teuchos_TimeMonitor.hpp"
+#include "Tempus_config.hpp"
+
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_MultiVectorLinearOp.hpp"
@@ -279,6 +282,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
+  TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel()", TEMPUS_EVAL);
+
   // Note:  adjoint models compute the transposed W (either explicitly or
   // implicitly.  Thus we need to always call their evalModel() functions
   // whenever computing the adjoint operators, and subsequent calls to apply()
@@ -341,10 +346,15 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (outArgs.supports(MEB::OUT_ARG_W_op))
     op = outArgs.get_W_op();
   if (op != Teuchos::null) {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::W", TEMPUS_EVAL_W);
     if (me_inArgs.supports(MEB::IN_ARG_alpha))
       me_inArgs.set_alpha(inArgs.get_alpha());
-    if (me_inArgs.supports(MEB::IN_ARG_beta))
-      me_inArgs.set_beta(inArgs.get_beta());
+    if (me_inArgs.supports(MEB::IN_ARG_beta)) {
+      if (me_inArgs.supports(MEB::IN_ARG_x_dot))
+        me_inArgs.set_beta(inArgs.get_beta()); // Implicit form (see below)
+      else
+        me_inArgs.set_beta(-inArgs.get_beta()); // Explicit form (see below)
+    }
 
     RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_adjoint_op =
       rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op,true);
@@ -359,8 +369,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   RCP<Thyra::VectorBase<Scalar> > adjoint_g = outArgs.get_g(0);
   RCP<Thyra::VectorBase<Scalar> > g = outArgs.get_g(1);
   RCP<const Thyra::MultiVectorBase<Scalar> > adjoint_x_mv;
+  RCP<const Thyra::VectorBase<Scalar> > adjoint_x;
   if (adjoint_f != Teuchos::null || adjoint_g != Teuchos::null) {
-    RCP<const Thyra::VectorBase<Scalar> > adjoint_x =
+    adjoint_x =
       inArgs.get_x().assert_not_null();
     adjoint_x_mv =
       rcp_dynamic_cast<const DMVPV>(adjoint_x,true)->getMultiVector();
@@ -372,6 +383,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // For implicit form, we assume df/dx_dot is constant w.r.t. x, x_dot, and t,
   // so the residual becomes F(y) = df/dx_dot^T*y_dot + df/dx^T*y - dg/dx^T
   if (adjoint_f != Teuchos::null) {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::f", TEMPUS_EVAL_F);
+
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_f_mv =
       rcp_dynamic_cast<DMVPV>(adjoint_f,true)->getNonconstMultiVector();
 
@@ -380,43 +393,50 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // dg/dx^T
     // Don't re-evaluate dg/dx for pseudotransient
-    if (my_dgdx_mv_ == Teuchos::null)
-      my_dgdx_mv_ =
-        Thyra::createMembers(model_->get_x_space(),
-                             model_->get_g_space(g_index_)->dim());
-    if (!response_gradient_is_computed_) {
-      me_outArgs.set_DgDx(g_index_,
-                          MEB::Derivative<Scalar>(my_dgdx_mv_,
-                                                  MEB::DERIV_MV_GRADIENT_FORM));
-      model_->evalModel(me_inArgs, me_outArgs);
-      me_outArgs.set_DgDx(g_index_, MEB::Derivative<Scalar>());
-      if (is_pseudotransient_)
-        response_gradient_is_computed_ = true;
+    {
+      TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::dg/dx", TEMPUS_EVAL_DGDX);
+      if (my_dgdx_mv_ == Teuchos::null)
+        my_dgdx_mv_ =
+          Thyra::createMembers(model_->get_x_space(),
+                               model_->get_g_space(g_index_)->dim());
+      if (!response_gradient_is_computed_) {
+        me_outArgs.set_DgDx(g_index_,
+                            MEB::Derivative<Scalar>(my_dgdx_mv_,
+                                                    MEB::DERIV_MV_GRADIENT_FORM));
+        model_->evalModel(me_inArgs, me_outArgs);
+        me_outArgs.set_DgDx(g_index_, MEB::Derivative<Scalar>());
+        if (is_pseudotransient_)
+          response_gradient_is_computed_ = true;
+      }
+      Thyra::assign(adjoint_f_mv.ptr(), *my_dgdx_mv_);
     }
-    Thyra::assign(adjoint_f_mv.ptr(), *my_dgdx_mv_);
 
     // Explicit form of the residual F(y) = -df/dx^T*y + dg/dx^T
     // Don't re-evaluate df/dx for pseudotransient
-    if (my_dfdx_ == Teuchos::null)
-      my_dfdx_ = adjoint_residual_model_->create_W_op();
-    if (!jacobian_matrix_is_computed_) {
-      adj_me_outArgs.set_W_op(my_dfdx_);
-      if (me_inArgs.supports(MEB::IN_ARG_alpha))
-        me_inArgs.set_alpha(0.0);
-      if (me_inArgs.supports(MEB::IN_ARG_beta))
-        me_inArgs.set_beta(1.0);
-      adjoint_residual_model_->evalModel(me_inArgs, adj_me_outArgs);
-      if (is_pseudotransient_)
-        jacobian_matrix_is_computed_ = true;
+    {
+      TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::df/dx", TEMPUS_EVAL_DFDX);
+      if (my_dfdx_ == Teuchos::null)
+        my_dfdx_ = adjoint_residual_model_->create_W_op();
+      if (!jacobian_matrix_is_computed_) {
+        adj_me_outArgs.set_W_op(my_dfdx_);
+        if (me_inArgs.supports(MEB::IN_ARG_alpha))
+          me_inArgs.set_alpha(0.0);
+        if (me_inArgs.supports(MEB::IN_ARG_beta))
+          me_inArgs.set_beta(1.0);
+        adjoint_residual_model_->evalModel(me_inArgs, adj_me_outArgs);
+        if (is_pseudotransient_)
+          jacobian_matrix_is_computed_ = true;
+      }
+      my_dfdx_->apply(Thyra::NOTRANS, *adjoint_x_mv, adjoint_f_mv.ptr(),
+                      Scalar(-1.0), Scalar(1.0));
     }
-    my_dfdx_->apply(Thyra::NOTRANS, *adjoint_x_mv, adjoint_f_mv.ptr(),
-                    Scalar(-1.0), Scalar(1.0));
 
     // Implicit form residual F(y) df/dx_dot^T*y_dot + df/dx^T*y - dg/dx^T
     // using the second scalar argument to apply() to change the explicit term
     // above.
     // Don't re-evaluate df/dx_dot for pseudotransient
     if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
+      TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::df/dx_dot", TEMPUS_EVAL_DFDXDOT);
       RCP<const Thyra::VectorBase<Scalar> > adjoint_x_dot = inArgs.get_x_dot();
       if (adjoint_x_dot != Teuchos::null) {
         RCP<const Thyra::MultiVectorBase<Scalar> > adjoint_x_dot_mv =
@@ -449,6 +469,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // We don't add pseudotransient logic here because this part is only
   // evaluated once in that case anyway.
   if (adjoint_g != Teuchos::null) {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::AdjointSensitivityModelEvaluator::evalModel::g", TEMPUS_EVAL_G);
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_g_mv =
       rcp_dynamic_cast<DMVPV>(adjoint_g,true)->getNonconstMultiVector();
 

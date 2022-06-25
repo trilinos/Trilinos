@@ -51,7 +51,6 @@
 
 namespace Stokhos {
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   // Build a CRS graph from a sparse Cijk tensor
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
@@ -547,7 +546,6 @@ namespace Stokhos {
     return flat_mat;
   }
 
-#endif
 
 } // namespace Stokhos
 

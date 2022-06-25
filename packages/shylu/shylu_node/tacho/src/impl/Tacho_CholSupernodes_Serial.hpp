@@ -134,7 +134,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
           const value_type *__restrict__ ss = src + j * srcsize;
           /* */ value_type *__restrict__ tt = tgt + j * srcsize;
-          const ordinal_Type iend = update_lower ? srcsize : j + 1;
+          const ordinal_type iend = update_lower ? srcsize : j + 1;
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
                                [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
         });
