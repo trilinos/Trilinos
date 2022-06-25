@@ -1284,10 +1284,7 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isinf;
-#endif
-    return isinf(real(x)) || isinf(imag(x));
+    return Kokkos::Experimental::isinf(real(x)) || Kokkos::Experimental::isinf(imag(x));
   }
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
@@ -1307,10 +1304,7 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isnan;
-#endif
-    return isnan(real(x)) || isnan(imag(x));
+    return Kokkos::Experimental::isnan(real(x)) || Kokkos::Experimental::isnan(imag(x));
   }
 #endif
   static mag_type abs(const std::complex<RealFloatType>& x) {

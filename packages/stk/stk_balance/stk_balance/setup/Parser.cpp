@@ -121,6 +121,9 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
   set_vertex_weight_method(settings);
+  set_contact_search_edge_weight(settings);
+  set_contact_search_vertex_weight_multiplier(settings);
+  set_edge_weight_multiplier(settings);
   set_use_nested_decomp(settings);
   set_print_diagnostics(settings);
   set_logfile(settings);
@@ -199,8 +202,17 @@ void Parser::add_options_to_parser()
                            "of processors must be an integer multiple of the input processors."};
 
   stk::CommandLineOption vertexWeightMethod{m_optionNames.vertexWeightMethod, "",
-                           "Method used to calculate vertex weights given to the partitioner. "
+                           "(Experimental) Method used to calculate vertex weights given to the partitioner. "
                            "[constant|topology|connectivity]"};
+  stk::CommandLineOption contactSearchEdgeWeight{m_optionNames.contactSearchEdgeWeight, "",
+                           "(Experimental) Graph edge weight to use between elements that are determined to be "
+                           "in contact."};
+  stk::CommandLineOption contactSearchVertexWeightMultiplier{m_optionNames.contactSearchVertexWeightMultiplier, "",
+                           "(Experimental) Scale factor to be applied to graph vertex weights for elements that "
+                           "are determined to be in contact."};
+  stk::CommandLineOption edgeWeightMultiplier{m_optionNames.edgeWeightMultiplier, "",
+                           "(Experimental) Scale factor to be applied to all graph edge weights."};
+
 
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_optional_positional<std::string>(outputDirectory, DefaultSettings::outputDirectory);
@@ -219,6 +231,9 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_flag(useNested);
 
   m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
+  m_commandLineParser.add_optional<double>(contactSearchEdgeWeight);
+  m_commandLineParser.add_optional<double>(contactSearchVertexWeightMultiplier);
+  m_commandLineParser.add_optional<double>(edgeWeightMultiplier);
 
   m_commandLineParser.disallow_unrecognized();
 }
@@ -422,5 +437,29 @@ void Parser::set_vertex_weight_method(BalanceSettings &settings) const
   }
 }
 
+void Parser::set_contact_search_edge_weight(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.contactSearchEdgeWeight)) {
+    const double edgeWeight = m_commandLineParser.get_option_value<double>(m_optionNames.contactSearchEdgeWeight);
+    settings.setEdgeWeightForSearch(edgeWeight);
+  }
 }
+
+void Parser::set_contact_search_vertex_weight_multiplier(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.contactSearchVertexWeightMultiplier)) {
+    const double multiplier = m_commandLineParser.get_option_value<double>(m_optionNames.contactSearchVertexWeightMultiplier);
+    settings.setVertexWeightMultiplierForVertexInSearch(multiplier);
+  }
 }
+
+void Parser::set_edge_weight_multiplier(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.edgeWeightMultiplier)) {
+    const double edgeWeightMultiplier = m_commandLineParser.get_option_value<double>(m_optionNames.edgeWeightMultiplier);
+    settings.setGraphEdgeWeightMultiplier(edgeWeightMultiplier);
+  }
+}
+
+}  // namespace balance
+}  // namespace stk
