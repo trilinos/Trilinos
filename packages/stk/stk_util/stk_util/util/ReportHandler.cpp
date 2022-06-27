@@ -55,13 +55,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wattributes"
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
 #include "boost/stacktrace.hpp"
-#undef _GNU_SOURCE
-#else
-#include "boost/stacktrace.hpp"
-#endif
 #pragma GCC diagnostic pop
 #endif
 #endif
