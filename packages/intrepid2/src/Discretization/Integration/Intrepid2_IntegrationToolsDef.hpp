@@ -1795,6 +1795,12 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
 {
   // allocates a (C,F,F) container for storing integral data
   
+  // ordinal filter is used for Serendipity basis; we don't yet support Serendipity for sum factorization.
+  // (when we do, the strategy will likely be to do sum factorized assembly and then filter the result).
+  const bool  leftHasOrdinalFilter =  vectorDataLeft.basisValues().ordinalFilter().extent_int(0) > 0;
+  const bool rightHasOrdinalFilter = vectorDataRight.basisValues().ordinalFilter().extent_int(0) > 0;
+  TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
+  
   // determine cellDataExtent and variation type.  We currently support CONSTANT, MODULAR, and GENERAL as possible output variation types, depending on the inputs.
   // If cellMeasures has non-trivial tensor structure, the rank-1 cell Data object is the first component.
   // If cellMeasures has trivial tensor structure, then the first and only component has the cell index in its first dimension.
@@ -1841,6 +1847,12 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
 {
   using ExecutionSpace = typename DeviceType::execution_space;
 
+  // ordinal filter is used for Serendipity basis; we don't yet support Serendipity for sum factorization.
+  // (when we do, the strategy will likely be to do sum factorized assembly and then filter the result).
+  const bool  leftHasOrdinalFilter =  basisValuesLeft.basisValues().ordinalFilter().extent_int(0) > 0;
+  const bool rightHasOrdinalFilter = basisValuesRight.basisValues().ordinalFilter().extent_int(0) > 0;
+  TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
+  
   if (approximateFlops != NULL)
   {
     *approximateFlops = 0;
