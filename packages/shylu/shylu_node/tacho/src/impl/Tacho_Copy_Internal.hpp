@@ -22,14 +22,14 @@ template <> struct Copy<Algo::Internal> {
         /// contiguous array
         value_type *ptrA(A.data());
         const value_type *ptrB(B.data());
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, sA),
                              [ptrA, ptrB](const ordinal_type &ij) { ptrA[ij] = ptrB[ij]; });
 #else
         memcpy((void *)ptrA, (const void *)ptrB, sA * sizeof(value_type));
 #endif
       } else {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, mA * nA), [A, B, mA](const ordinal_type &ij) {
           const ordinal_type i = ij % mA, j = ij / mA;
           A(i, j) = B(i, j);
@@ -57,7 +57,7 @@ template <> struct Copy<Algo::Internal> {
     // const ordinal_type sA = A.span(), sB = B.span();
     if (A.extent(0) == B.extent(0) && A.extent(0) == B.extent(0) && A.span() > 0) {
       if (uploB.param == 'U') {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, A.extent(1)), [&](const ordinal_type &j) {
           const ordinal_type tmp = diagB.param == 'U' ? j : j + 1;
           const ordinal_type iend = tmp < A.extent(0) ? tmp : A.extent(0);
@@ -73,7 +73,7 @@ template <> struct Copy<Algo::Internal> {
         }
 #endif
       } else if (uploB.param == 'L') {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, A.extent(1)), [&](const ordinal_type &j) {
           const ordinal_type ibeg = diagB.param == 'U' ? j + 1 : j;
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, ibeg, A.extent(0)),

@@ -1,5 +1,6 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlocking.hpp"
 #include <thread>
+#include "stk_util/parallel/MPITagManager.hpp"
 
 namespace stk {
 
@@ -17,8 +18,7 @@ void DataExchangeUnknownPatternNonBlocking::reset()
     m_recvReqs.resize(0);
     m_recvcount = 0;
 
-    MPI_Comm_rank(m_comm, &m_myrank);
-    m_tag = m_tag == m_tag1 ? m_tag2 : m_tag1;
+    m_tag = get_mpi_tag_manager().get_tag(m_comm, m_tagHint);
 }
 
 void DataExchangeUnknownPatternNonBlocking::yield()

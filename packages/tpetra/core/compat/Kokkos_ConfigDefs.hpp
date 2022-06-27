@@ -1,8 +1,8 @@
-// @HEADER
-// ***********************************************************************
+//@HEADER
+// ************************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -37,26 +37,12 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
-// @HEADER
+//@HEADER
 
-#ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
-#define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
+#ifndef KOKKOS_CONFIGDEFS_HPP
+#define KOKKOS_CONFIGDEFS_HPP
 
-#if !defined(TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS)
-#if defined(__GNU__)
-#warning "Tpetra_Experimental_BlockVector is deprecated in June 2019; it will be removed sometime later"
-#endif
-#endif
+#include "TpetraCore_config.h"
 
-#include "Tpetra_BlockVector.hpp"
-#include "Tpetra_BlockMultiVector.hpp"
 
-namespace Tpetra {
-  namespace Experimental {
-    using Tpetra::BlockVector;
-  }
-}
-
-#endif
-
-  
+#endif /* KOKKOS_CONFIGDEFS_HPP */

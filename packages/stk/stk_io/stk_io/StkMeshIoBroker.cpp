@@ -240,18 +240,6 @@ void StkMeshIoBroker::create_sideset_observer()
     }
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2022
-STK_DEPRECATED void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
-{
-  set_bulk_data(Teuchos::get_shared_ptr(arg_bulk_data));
-}
-
-STK_DEPRECATED void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
-{
-  replace_bulk_data(Teuchos::get_shared_ptr(arg_bulk_data));
-}
-#endif
-
 void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
     ThrowErrorMsgIf( m_bulkData != nullptr,

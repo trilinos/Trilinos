@@ -84,6 +84,8 @@ bool
 IntegratorAdjointSensitivity<Scalar>::
 advanceTime(const Scalar timeFinal)
 {
+  TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorAdjointSensitivity::advanceTime()", TEMPUS_AS_AT);
+
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Thyra::VectorBase;
@@ -108,8 +110,12 @@ advanceTime(const Scalar timeFinal)
     (*state_solution_history)[0];
 
   // Run state integrator and get solution
-  stepMode_ = SensitivityStepMode::Forward;
-  bool state_status = state_integrator_->advanceTime(timeFinal);
+  bool state_status = true;
+  {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorAdjointSensitivity::advanceTime::state", TEMPUS_AS_AT_FWD);
+    stepMode_ = SensitivityStepMode::Forward;
+    state_status = state_integrator_->advanceTime(timeFinal);
+  }
 
   // For at least some time-stepping methods, the time of the last time step
   // may not be timeFinal (e.g., it may be greater by at most delta_t).
@@ -208,10 +214,14 @@ advanceTime(const Scalar timeFinal)
   }
 
   // Run sensitivity integrator and get solution
-  stepMode_ = SensitivityStepMode::Adjoint;
-  const Scalar tinit = adjoint_integrator_->getTimeStepControl()->getInitTime();
-  adjoint_integrator_->initializeSolutionHistory(tinit, adjoint_init);
-  bool sens_status = adjoint_integrator_->advanceTime(timeFinal);
+  bool sens_status = true;
+  {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorAdjointSensitivity::advanceTime::adjoint", TEMPUS_AS_AT_ADJ);
+    stepMode_ = SensitivityStepMode::Adjoint;
+    const Scalar tinit = adjoint_integrator_->getTimeStepControl()->getInitTime();
+    adjoint_integrator_->initializeSolutionHistory(tinit, adjoint_init);
+    sens_status = adjoint_integrator_->advanceTime(timeFinal);
+  }
   RCP<const SolutionHistory<Scalar> > adjoint_solution_history =
     adjoint_integrator_->getSolutionHistory();
 

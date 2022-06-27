@@ -51,6 +51,7 @@
 
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -267,7 +268,7 @@ namespace Intrepid2 {
 
       if(subCellDim == 2) {
         return Teuchos::rcp(new
-            Basis_HGRAD_QUAD_Cn_FEM<DeviceType,outputValueType,pointValueType>
+            Basis_HVOL_QUAD_Cn_FEM<DeviceType,outputValueType,pointValueType>
             (this->basisDegree_-1,POINTTYPE_GAUSS));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");

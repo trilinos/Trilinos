@@ -438,11 +438,29 @@ FieldBase::sync_to_host() const
   }
 }
 
+void FieldBase::sync_to_host(const stk::ngp::ExecSpace& exec_space) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->sync_to_host(exec_space);
+  } else {
+    clear_device_sync_state();
+  }
+}
+
 void
 FieldBase::sync_to_device() const
 {
   if (m_ngpField != nullptr) {
     m_ngpField->sync_to_device();
+  } else {
+    clear_host_sync_state();
+  }
+}
+
+void FieldBase::sync_to_device(const stk::ngp::ExecSpace& exec_space) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->sync_to_device(exec_space);
   } else {
     clear_host_sync_state();
   }

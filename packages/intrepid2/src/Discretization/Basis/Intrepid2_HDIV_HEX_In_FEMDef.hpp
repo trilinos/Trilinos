@@ -324,16 +324,13 @@ namespace Intrepid2 {
   Basis_HDIV_HEX_In_FEM( const ordinal_type order,
                          const EPointType   pointType ) {
 
-    //Default is equispaced
-    auto pointT = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
-    
-    INTREPID2_TEST_FOR_EXCEPTION( !(pointT == POINTTYPE_EQUISPACED ||
-                                    pointT == POINTTYPE_WARPBLEND), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+                                    pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
                                   ">>> ERROR (Basis_HDIV_HEX_In_FEM): pointType must be either equispaced or warpblend.");
 
     // this should be created in host and vinv should be deep copied into device space
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointT );
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
+    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
+    Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
 
     const ordinal_type
       cardLine = lineBasis.getCardinality(),
@@ -351,7 +348,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_LAGRANGIAN;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HDIV;
-    pointType_ = pointT;
+    pointType_ = pointType;
 
     // initialize tags
     {
@@ -361,10 +358,6 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-      // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
-      // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
-      INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
-      
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration
       constexpr ordinal_type maxCardLine = Parameters::MaxOrder + 1;
       ordinal_type tags[3*maxCardLine*maxCardLine*maxCardLine][4];

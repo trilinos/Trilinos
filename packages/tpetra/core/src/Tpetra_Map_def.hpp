@@ -1730,16 +1730,6 @@ namespace Tpetra {
     return lgMapHost_;
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Teuchos::ArrayView<const GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
-  {
-    return this->getLocalElementList();
-  }
-#endif
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElementList () const
