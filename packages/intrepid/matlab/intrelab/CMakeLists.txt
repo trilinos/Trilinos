@@ -22,8 +22,21 @@ endif()
 
 
 # --> ACTION: define Matlab root directory
+
 #set(Matlab_ROOT_DIR "/Applications/MATLAB_R2020a.app/")
 set(Matlab_ROOT_DIR "/usr/local/matlab/R2021b/")
+
+# allow for all caps version of variable
+if (MATLAB_ROOT_DIR)
+  if (NOT Matlab_ROOT_DIR)
+    set(Matlab_ROOT_DIR ${MATLAB_ROOT_DIR})
+  endif()
+endif()
+
+# look for environment variable and give it precedence
+if(DEFINED ENV{MATLAB_ROOT_DIR})
+  set(Matlab_ROOT_DIR $ENV{MATLAB_ROOT_DIR})
+endif()
 if(DEFINED ENV{Matlab_ROOT_DIR})
   set(Matlab_ROOT_DIR $ENV{Matlab_ROOT_DIR})
 endif()
