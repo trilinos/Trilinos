@@ -712,7 +712,11 @@ namespace
     const double relTol=1e-11;
     const double absTol=1e-11;
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     for (int polyOrder=1; polyOrder<3; polyOrder++)
     {
       CGBasis cgBasis(polyOrder);
@@ -838,38 +842,6 @@ namespace
       {
         out << "** spaceDim " << spaceDim << " **\n";
         auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
-        auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
-        
-        testBasisEquivalence<DefaultTestDeviceType>(*hierarchicalBasis, *serendipityBasis, opsToTest, relTol, absTol, out, success);
-      }
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeLowestOrderVersusSerendipity_HVOL )
-  {
-    const int maxSpaceDim = 7; // lowest-order hypercube basis should be identitical to its serendipity basis
-    const int minDegree = 1;
-    const int maxDegree = 1;
-    
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
-    
-    // these tolerances are selected such that we have a little leeway for architectural differences
-    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
-    const double relTol=1e-14;
-    const double absTol=1e-14;
-    
-    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HVOL;
-    
-    using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
-    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
-    
-    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
-    {
-      out << "** polyDegree " << polyDegree << " **\n";
-      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
-      {
-        out << "** spaceDim " << spaceDim << " **\n";
-        auto hierarchicalBasis = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
         auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
         
         testBasisEquivalence<DefaultTestDeviceType>(*hierarchicalBasis, *serendipityBasis, opsToTest, relTol, absTol, out, success);

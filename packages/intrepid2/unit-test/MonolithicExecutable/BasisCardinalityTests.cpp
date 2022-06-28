@@ -644,9 +644,9 @@ namespace
     }
   }
 
-  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_Hypercube )
+  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_Hypercube_HGRAD )
   {
-    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HVOL};
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD};
 
     const int maxSpaceDim = 7;
     const int maxDegreeForCardinalityTests = 7;
@@ -657,15 +657,6 @@ namespace
     
     for (auto fs : functionSpaces)
     {
-      if (fs == FUNCTION_SPACE_HGRAD)
-      {
-        out << "Testing HGRAD.\n";
-      }
-      else if (fs == FUNCTION_SPACE_HVOL)
-      {
-        out << "Testing HVOL.\n";
-      }
-      
       const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
       for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
       {
@@ -682,6 +673,7 @@ namespace
           }
           else
           {
+            // closed form for H^1 -- see Juno et al. doi:10.1016/j.jcp.2017.10.009, Eqn. (83).
             for (int i = 0; i <= i_max; i++)
             {
               int d_choose_i = choose(spaceDim, i);
@@ -690,21 +682,10 @@ namespace
               expectedCardinality += two_to_the_d_minus_i * d_choose_i * p_minus_i_choose_i;
             }
           }
-          int expectedExtrusionCount = spaceDim - 1;
-          if (fs == FUNCTION_SPACE_HGRAD)
-          {
-            auto fullBasis        = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
-            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
-            
-            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
-          }
-          else if (fs == FUNCTION_SPACE_HVOL)
-          {
-            auto fullBasis        = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
-            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
-            
-            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
-          }
+          auto fullBasis        = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
+          auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
+          
+          TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
         }
       }
     }
