@@ -240,7 +240,11 @@ int main (int argc, char* argv[])
     {
       stackedTimer->stopBaseTimer();
       StackedTimer::OutputOptions options;
+      options.num_histogram=3;
       options.print_warnings = false;
+      options.output_histogram = true;
+      options.output_fraction=true;
+      options.output_minmax = true;
       stackedTimer->report(std::cout, comm, options);
       auto xmlOut = stackedTimer->reportWatchrXML(problem_name, comm);
       if(comm->getRank() == 0)
