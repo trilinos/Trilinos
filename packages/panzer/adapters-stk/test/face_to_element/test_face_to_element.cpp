@@ -83,6 +83,7 @@ namespace core_tests {
     }
   }
 
+#ifndef PANZER_HIDE_DEPRECATED_CODE
   TEUCHOS_UNIT_TEST(FaceToElement, test_default_communicator)
   {
     Teuchos::RCP<const Teuchos::MpiComm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD));
@@ -103,6 +104,7 @@ namespace core_tests {
 
     MPI_Barrier(MPI_COMM_WORLD);
   }
+#endif
 
   TEUCHOS_UNIT_TEST(FaceToElement, test_comm_world)
   {
