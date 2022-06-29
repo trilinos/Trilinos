@@ -169,7 +169,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Galeri_ENABLE_Xpetra)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
     SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml

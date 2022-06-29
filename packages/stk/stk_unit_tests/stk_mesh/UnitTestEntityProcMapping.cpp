@@ -127,3 +127,29 @@ TEST(EntityProcMapping, basic)
   EXPECT_EQ(3u, entityProcVec.size());
 }
 
+TEST(EntityProcMapping, add_two_remove_one_then_other_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity, 0);
+  mapping.addEntityProc(entity, 2);
+  EXPECT_TRUE(mapping.find(entity,0));
+  EXPECT_TRUE(mapping.find(entity,2));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
+}
+
+TEST(EntityProcMapping, erase_nonexisting_then_previous_proc_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity, 0);
+  EXPECT_TRUE(mapping.find(entity,0));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
+}
+

@@ -25,7 +25,8 @@ BalanceSettings::BalanceSettings()
     m_shouldPrintDiagnostics(false),
     m_diagnosticElementWeightsField(nullptr),
     m_vertexConnectivityWeightField(nullptr),
-    m_vertexWeightMethod(DefaultSettings::vertexWeightMethod)
+    m_vertexWeightMethod(DefaultSettings::vertexWeightMethod),
+    m_graphEdgeWeightMultiplier(DefaultSettings::graphEdgeWeightMultiplier)
 {}
 
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
@@ -53,6 +54,15 @@ BalanceSettings::GraphOption BalanceSettings::getGraphOption() const
   return BalanceSettings::LOAD_BALANCE;
 }
 
+double BalanceSettings::getGraphEdgeWeightMultiplier() const
+{
+  return m_graphEdgeWeightMultiplier;
+}
+
+void BalanceSettings::setGraphEdgeWeightMultiplier(double multiplier)
+{
+  m_graphEdgeWeightMultiplier = multiplier;
+}
 
 void BalanceSettings::setVertexWeightMethod(VertexWeightMethod method)
 {

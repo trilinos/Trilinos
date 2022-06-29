@@ -235,7 +235,9 @@ public:
   bool need_sync_to_host() const;
   bool need_sync_to_device() const;
   void sync_to_host() const;
+  void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) const;
   void sync_to_device() const;
+  void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) const;
   void clear_sync_state() const;
   void clear_host_sync_state() const;
   void clear_device_sync_state() const;
