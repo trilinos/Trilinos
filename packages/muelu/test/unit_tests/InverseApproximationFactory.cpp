@@ -250,7 +250,7 @@ namespace MueLuTests {
 
       RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
       invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("spai")));
+      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
       // request InverseApproximation operator
       level.Request("Ainv", invapproxFact.get());
@@ -277,7 +277,7 @@ namespace MueLuTests {
 
       RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
       invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("spai")));
+      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
       // request InverseApproximation operator
       level.Request("Ainv", invapproxFact.get());
@@ -308,7 +308,7 @@ namespace MueLuTests {
 
       RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
       invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("spai")));
+      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
       // request InverseApproximation operator
       level.Request("Ainv", invapproxFact.get());

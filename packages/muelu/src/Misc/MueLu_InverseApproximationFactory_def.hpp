@@ -97,8 +97,9 @@ namespace MueLu {
 
     // check which approximation type to use
     const std::string method = pL.get<std::string>("inverse: approximation type");
-    TEUCHOS_TEST_FOR_EXCEPTION(method != "diagonal" && method != "lumping" && method != "spai", Exceptions::RuntimeError,
-                               "MueLu::InverseApproximationFactory::Build: Approximation type can be 'diagonal' or 'lumping'.");
+    TEUCHOS_TEST_FOR_EXCEPTION(method != "diagonal" && method != "lumping" && method != "sparseapproxinverse", Exceptions::RuntimeError,
+                               "MueLu::InverseApproximationFactory::Build: Approximation type can be 'diagonal' or 'lumping' or "
+                               "'sparseapproxinverse'.");
 
     RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
@@ -119,7 +120,7 @@ namespace MueLu {
       const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
       Ainv = MatrixFactory::Build(D);
     }
-    else if(method=="spai") {
+    else if(method=="sparseapproxinverse") {
       Ainv = GetSparseInverse(A, A->getCrsGraph());
     }
 
@@ -175,14 +176,16 @@ namespace MueLu {
       // 4. get direction-vector
       // diagonal needs an entry!
       Teuchos::SerialDenseVector<LO, SC> ek(Jk.size(), true);
-      ek[std::find(Jk.begin(), Jk.end(), k) - Jk.begin()] = 1.0;
+      ek[std::find(Jk.begin(), Jk.end(), k) - Jk.begin()] = Teuchos::ScalarTraits<Scalar>::one();;
 
       // 5. solve linear system for x
       Teuchos::SerialDenseVector<LO, SC> localX(Ik.size());
       Teuchos::SerialQRDenseSolver<LO, SC> qrSolver;
       qrSolver.setMatrix(Teuchos::rcp(&localA, false));
       qrSolver.setVectors(Teuchos::rcp(&localX, false), Teuchos::rcp(&ek, false));
-      qrSolver.solve();
+      const int err = qrSolver.solve();
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, Exceptions::RuntimeError,
+                                 "MueLu::InverseApproximationFactory::GetSparseInverse: Error in serial QR solve.");
 
       // 6. set calculated row into Ainv
       ArrayView<const SC> Mk(localX.values(), localX.length());
