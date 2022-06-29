@@ -57,27 +57,11 @@ FIND_PACKAGE(Trilinos REQUIRED)
 
 set(MOBJS "intrepid_setJacobian;intrepid_setJacobianInv;intrepid_setJacobianDet;intrepid_getNumCubaturePoints;intrepid_getCubature;intrepid_getBasisValues;intrepid_computeCellMeasure;intrepid_HGRADtransformGRAD;intrepid_HGRADtransformVALUE;intrepid_multiplyMeasure;intrepid_integrate;intrepid_mapToPhysicalFrame;intrepid_mapToReferenceFrame;intrepid_scalarMultiplyDataField;intrepid_scalarMultiplyDataData;intrepid_dataIntegral;intrepid_evaluate;intrepid_multiplyVectorDataField;intrepid_dotMultiplyDataField;intrepid_vectorMultiplyDataField;intrepid_dotMultiplyDataData;intrepid_computeEdgeMeasure;intrepid_computeFaceMeasure;intrepid_getCellDeviatoricMat;intrepid_getCellVolumetricMat;intrepid_getPhysicalSideNormals;intrepid_mapToReferenceSubcell;intrepid_tensorMultiplyDataData;intrepid_tensorMultiplyDataField;defGrad;evaluateVectorField;evaluateVectorGradField;externalForceElastostaticsTL;geometricBmat;intrepid_det;intrepid_inverse;intrepid_transpose;materialBmat;strainEulerianLagrangian;stress;tangentStiffnessElastostaticsTL;tensorMultiplyDataField;myMatVecProductDataField;myMatVecProductDataData")
 
-if (NOT APPLE)
-  matlab_add_mex(NAME m2i_helpers
-      SHARED
-      SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp
-  )
-  target_link_libraries(m2i_helpers Trilinos::all_libs)
-endif()
-
 function(make_mex fname)
-  if (APPLE)
-    matlab_add_mex(NAME ${fname}
-        SHARED
-        SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
-    )
-  else()
-    matlab_add_mex(NAME ${fname}
-        SHARED
-        SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
-    )
-    target_link_libraries(${fname} m2i_helpers)
-  endif()
+  matlab_add_mex(NAME ${fname}
+      SHARED
+      SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
+  )
   target_link_libraries(${fname} Trilinos::all_libs)
 endfunction(make_mex)
 
