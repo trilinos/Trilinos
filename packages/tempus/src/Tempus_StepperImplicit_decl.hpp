@@ -78,7 +78,6 @@ class ImplicitODEParameters
  *  with multiple variables, we can write
  *  \f[
  *    \left[
- *
  *    \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
  *    \frac{\partial}{\partial \dot{x}_n}
  *    \left(
@@ -90,7 +89,6 @@ class ImplicitODEParameters
  *    \left(
  *      \mathcal{F}(\dot{x}_n,x_n,t_n)
  *    \right)
- *
  *    \right] \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
  *  \f]
  *  Defining the iteration matrix, \f$W\f$, we have
