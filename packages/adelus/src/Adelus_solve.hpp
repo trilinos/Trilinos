@@ -58,7 +58,6 @@
 #include "KokkosBlas3_gemm.hpp"
 
 #define IBM_MPI_WRKAROUND2
-#define NEW_IMPL 
 
 #define SOSTATUSINT 32768
 
@@ -85,7 +84,7 @@ void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col
 #endif
 }
 
-#ifndef NEW_IMPL
+#if 0
 
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
@@ -397,7 +396,6 @@ template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
-  //TODO: add host pinned mem support
   using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
   using execution_space = typename ZViewType::device_type::execution_space;
@@ -405,7 +403,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   using memory_space    = typename ZViewType::device_type::memory_space;
   using View2DType      = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI)
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
@@ -429,7 +427,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 
 #ifdef GET_TIMING
   double t1,t2;
-  double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,xchgrhstime;
+  double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,bcastcoltime,copycoltime;
   double totalsolvetime;
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   double copyhostpinnedtime;
@@ -441,7 +439,7 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 
 #ifdef GET_TIMING
-  allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=xchgrhstime=0.0;
+  allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=bcastcoltime=copycoltime=0.0;
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   copyhostpinnedtime=0.0;
 #endif
@@ -451,11 +449,12 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 
   View2DType curr_col( "curr_col", my_rows, 1 ); //current column
   View2DType rhs_row ( "rhs_row", 1, my_rhs );   //current row of RHS to hold the elimination results (i.e row of solution)
-#if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+  View2DHostPinnType h_curr_col( "h_curr_col", my_rows, 1 );
   View2DHostPinnType h_rhs_row( "h_rhs_row", 1, my_rhs );
 #endif
 
-  Kokkos::fence();
+  //Kokkos::fence();//NOTE: Should we need this?
 
 #ifdef GET_TIMING
   allocviewtime += (MPI_Wtime()-t1);
@@ -471,19 +470,47 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
     int end_row = k/nprocs_col;
     if (myrow <= k_row) end_row++;
 
-    //fprintf(stderr,"MYTEST me %d, k %d, procid (row) holding k %d, procid (col) holding k %d, end_row %d, kdivnprocs_row %d\n", me, k, k_row, k_col, end_row, k/nprocs_row);
-
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
 #endif
     //Step 1: copy the current column of Z to a temporary view
     Kokkos::deep_copy( Kokkos::subview(curr_col, Kokkos::make_pair(0, end_row), 0), 
                        Kokkos::subview(Z, Kokkos::make_pair(0, end_row), k/nprocs_row) );
-
-    //Step 2: broadcast the current column to all ranks in the row_comm
-    MPI_Bcast(reinterpret_cast<char *>(curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
 #ifdef GET_TIMING
-    xchgrhstime += (MPI_Wtime()-t1);//will change this time var name later
+    copycoltime += (MPI_Wtime()-t1);
+#endif
+
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+#ifdef GET_TIMING
+    t1 = MPI_Wtime();
+#endif
+    Kokkos::deep_copy(h_curr_col,curr_col);
+#ifdef GET_TIMING
+    copyhostpinnedtime += (MPI_Wtime()-t1);
+#endif
+#endif
+
+#ifdef GET_TIMING
+    t1 = MPI_Wtime();
+#endif
+    //Step 2: broadcast the current column to all ranks in the row_comm
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    MPI_Bcast(reinterpret_cast<char *>(h_curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+#else //GPU-aware MPI
+    MPI_Bcast(reinterpret_cast<char *>(curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+#endif
+#ifdef GET_TIMING
+    bcastcoltime += (MPI_Wtime()-t1);
+#endif
+
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+#ifdef GET_TIMING
+    t1 = MPI_Wtime();
+#endif
+    Kokkos::deep_copy(curr_col,h_curr_col);
+#ifdef GET_TIMING
+    copyhostpinnedtime += (MPI_Wtime()-t1);
+#endif
 #endif
 
 #ifdef GET_TIMING
@@ -503,9 +530,9 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
     eliminaterhstime += (MPI_Wtime()-t1);
 #endif
 
-    MPI_Barrier(comm);
+    //MPI_Barrier(comm);//NOTE: Should we need this?
 
-    if (my_rhs > 0) { //only on ranks having some rhs
+    if (my_rhs > 0) { //only on ranks having rhs
       if (k >= 1) {//still have row(s) to do rhs updates with elimination results
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
@@ -549,15 +576,14 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
         auto B_view = Kokkos::subview(rhs_row,  Kokkos::ALL(), Kokkos::make_pair(0, my_rhs));
         auto C_view = Kokkos::subview(RHS,      Kokkos::make_pair(0, end_row), Kokkos::make_pair(0, my_rhs));
 
-        KokkosBlas::gemm("N","N",d_min_one, A_view, B_view, d_one, C_view);
-        Kokkos::fence();
+        KokkosBlas::gemm("N","N",d_min_one, A_view, B_view, d_one, C_view); Kokkos::fence();
 #ifdef GET_TIMING
         updrhstime += (MPI_Wtime()-t1);
 #endif
       }//end of (k >= 1)
     }//end of (my_rhs > 0)
 
-    MPI_Barrier(comm);
+    //MPI_Barrier(comm);//NOTE: Should we need this?
 
   }//end of for (int k = ncols_matrix-1; k >= 0; k--)
 
@@ -566,13 +592,14 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 #ifdef GET_TIMING
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to alloc view", &allocviewtime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy matrix column",&copycoltime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast matrix column",&bcastcoltime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to eliminate rhs",&eliminaterhstime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
-#endif
-  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to xchg rhs",&xchgrhstime);
+#endif 
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
