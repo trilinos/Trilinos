@@ -24,14 +24,14 @@ First of all, we have to define a communicator object.
   :start-after: CommunicatorObject begin
   :end-before: CommunicatorObject end 
 
-For the multigrid method we need a linear operator :math:`A`. For demonstration purposes, here we hust generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`). In this example we use Epetra for the underlying linear algebra framework, but it shall be mentioned that it works for Tpetra in a similar way (refer to the code examples in the MueLu examples folder).
+For the multigrid method we need a linear operator :math:`A`. For demonstration purposes, here we just generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`). In this example we use Epetra for the underlying linear algebra framework, but it shall be mentioned that it works for Tpetra in a similar way (refer to the code examples in the MueLu examples folder).
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
   :start-after: 2DLaplacianOperator begin
   :end-before: 2DLaplacianOperator end 
 	
-Muelu is based on Xpetra which provides a common interface both for Epetra and Tpetra. Therefore we have to enxapsulate our Epetra objects into Xpetra wrapper objects. This is done using the following code.
+Muelu is based on Xpetra which provides a common interface both for Epetra and Tpetra. Therefore we have to encapsulate our Epetra objects into Xpetra wrapper objects. This is done using the following code.
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp

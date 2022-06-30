@@ -2,12 +2,12 @@
 MueLu factories for transfer operators
 ======================================
 
-For this example we reuse the **Recirc2D** example as introduced in :ref:`multigrid_for_non_symmetrix_problems/test_example`. The resulting linear systems are (slightly) non-symmetrix and classical smoothed aggregation methods may be able to solve the problem but are not optimal in sense of convergence.
+For this example we reuse the **Recirc2D** example as introduced in :ref:`multigrid_for_non_symmetric_problems/test_example`. The resulting linear systems are (slightly) non-symmetric and classical smoothed aggregation methods may be able to solve the problem but are not optimal in sense of convergence.
 
 Multigrid setup phase - algorithmic design
 ==========================================
 
-Smoothed aggregation based algebraix multigrid methods originally have not been designed for non-symmetric linear systems. Inappropriately smoothed transfer operators may signigicantly deteriorate the convergence rate or even break convergence completely. 
+Smoothed aggregation based algebraic multigrid methods originally have not been designed for non-symmetric linear systems. Inappropriately smoothed transfer operators may significantly deteriorate the convergence rate or even break convergence completely. 
 
 Unsmoothed transfer operators
 -----------------------------
@@ -61,7 +61,7 @@ To construct a multigrid hierarchy with unsmoothed transfer operators one can us
 .. literalinclude:: ../../../test/tutorial/s3a.xml
   :language: xml
   
-Beside the **TentiativePFactory** which is responsible to generate the unsmoothed transfer operators we also introduce the **UncoupledAggregationFactory` with this example. In the **Factories** section of the XML file you find both an entry for the aggregation factory and the prolongation operator factory with its parameters. In the **Hierarchy** section the defined factories are just put in into the multigrid setup algorithm. That is, the factory with the name **UncoupledAggregationFact** is used to generate the **Aggregates** and the **myTentativePFact** is responsible for generating borh the (unsmoothed) prolongation operator P and the (coarse) near null space vectors **Nullspace**.
+Beside the **TentiativePFactory** which is responsible to generate the unsmoothed transfer operators we also introduce the **UncoupledAggregationFactory` with this example. In the **Factories** section of the XML file you find both an entry for the aggregation factory and the prolongation operator factory with its parameters. In the **Hierarchy** section the defined factories are just put in into the multigrid setup algorithm. That is, the factory with the name **UncoupledAggregationFact** is used to generate the **Aggregates** and the **myTentativePFact** is responsible for generating both the (unsmoothed) prolongation operator P and the (coarse) near null space vectors **Nullspace**.
 
 .. note::
 

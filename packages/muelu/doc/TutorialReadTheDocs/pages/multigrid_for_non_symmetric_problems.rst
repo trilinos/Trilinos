@@ -2,7 +2,7 @@
 Multigrid for non-symmetric problems
 ====================================
 
-.. _multigrid_for_non_symmetrix_problems/test_example:
+.. _multigrid_for_non_symmetric_problems/test_example:
 
 Test example
 ============
@@ -29,7 +29,7 @@ The convergence of the used unsmoothed transfer operators (**multigrid algorithm
 
 In MueLu one can choose a Petrov-Galerkin approach for the transfer operators by setting **multigrid algorithm = pg**. Furthermore, one has to state that the system is non-symmetric by setting **problem: symmetric = false**. In addition you have to set **transpose: use implicit = false** to make sure that the prolongation and restriction are built separately. This is highly important for non-symmetric problems since :math:`R=P^T` is not a good choice for non-symmetric problems (see, e.g., [1]_ [2]_).
 
-The role of the **transpose: use implicit** and the **problem: symmetric** paramters are the following:
+The role of the **transpose: use implicit** and the **problem: symmetric** parameters are the following:
 
 .. admonition:: Description
 
@@ -53,5 +53,5 @@ The role of the **transpose: use implicit** and the **problem: symmetric** param
 
 Footnotes
 =========
-.. [1] Sala, M. and Tuminaro, R. S., A new Petrov-Galerkin Smoothed Aggregation Preconditionerfor nonsymmetric Linear Systems, SIAM J. Sci. Comput., 2008, 31, p. 143–166
+.. [1] Sala, M. and Tuminaro, R. S., A new Petrov-Galerkin Smoothed Aggregation Preconditioner for nonsymmetric Linear Systems, SIAM J. Sci. Comput., 2008, 31, p. 143–166
 .. [2] Wiesner, T. A., Tuminaro, R. S., Wall, W. A. and Gee, M. W., Multigrid transfers fornonsymmetric systems based on Schur complements and Galerkin projections., Numer.Linear Algebra Appl., 2013, doi: 10.1002/nla.1889

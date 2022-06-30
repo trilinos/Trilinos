@@ -31,7 +31,7 @@ Content
 The tutorial is split into three parts.
 The first part contains four tutorials for beginners who are interested in using multigrid methods.
 No knowledge about ``C++`` is required if the programs are used that come with the tutorial (in the Trilinos repository).
-If one uses the virtual box image one can even avoid the Trrilinos compilation process.
+If one uses the virtual box image one can even avoid the Trilinos compilation process.
 So, the tutorials in the first part can also be used for teaching purposes.
 One can easily study the smoothing effect of multigrid smoothers and perform some very basic experiments,
 which helps to gain a better understanding of multigrid methods.

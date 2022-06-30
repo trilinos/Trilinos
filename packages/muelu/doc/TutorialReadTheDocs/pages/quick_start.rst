@@ -24,8 +24,8 @@ The problem domain is the unit square with a Cartesian (uniform) mesh.
 User interface
 ====================
 
-For this tutorial there is an easy-to-use user interfaxe to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run **./hands-on.py** in a terminal in the **../../../test/tutorial** folder.
-First one has to coose a problem. For this tutorial the right choice is the option 0 for the Laplaxe 2D problem on a :math:`50 \times 50` mesh.
+For this tutorial there is an easy-to-use user interface to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run **./hands-on.py** in a terminal in the **../../../test/tutorial** folder.
+First one has to choose a problem. For this tutorial the right choice is the option 0 for the Laplace 2D problem on a :math:`50 \times 50` mesh.
 
 .. image:: pics/tut1_1.png
   :width: 10cm
@@ -76,7 +76,7 @@ These lines give you some information about the setup process with some details 
 
   Insert screen output
 
-One can see that a three level multigrid method is used with a direct solver on the xoarsest level and Jacobi level smoothers on the fine and inter-medium level. Furthermore some basic information is printed such as the operator complexity.
+One can see that a three level multigrid method is used with a direct solver on the coarsest level and Jacobi level smoothers on the fine and inter-medium level. Furthermore some basic information is printed such as the operator complexity.
 
 In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver from the AztecOO package in Trilinos. The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
 
@@ -100,7 +100,7 @@ As a first experiment we change the number of multigrid sweeps for the stand alo
 .. image:: pics/tut1_7.png
   :width: 10cm
 
-Then, do not forget to rerun the examples to update the results. That is, coose option 0 and wait for the simulation to finsh. Then plot again the results using menu option 6 and you should obtain 
+Then, do not forget to rerun the examples to update the results. That is, choose option 0 and wait for the simulation to finish. Then plot again the results using menu option 6 and you should obtain 
 
 .. image:: pics/tut1_8.png
   :width: 10cm
@@ -109,7 +109,7 @@ As one can see is the multigrid solution rather close to the exact solution. In 
 
 .. admonition: Exercise 1
 
-  Change the number of processors. Use option 4 and selevt for example 4 processors (instead of 2). Rerun the example and plot the results.
+  Change the number of processors. Use option 4 and select for example 4 processors (instead of 2). Rerun the example and plot the results.
 
   .. image:: pics/tut1_9.png
     :width: 10cm
@@ -138,7 +138,7 @@ Once that is done it is time for some first experiments. Open your **mysolver.xm
 .. image:: pics/tut1_10.png
   :width: 10cm
 
-Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml file, that is, change the calue of the parameter **max levels** from 3 to 10. Do not forget to save the file and rerun the example by choosing option 0 in the driver program. The screen output should be the following
+Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml file, that is, change the value of the parameter **max levels** from 3 to 10. Do not forget to save the file and rerun the example by choosing option 0 in the driver program. The screen output should be the following
 
 .. warning:
 
@@ -154,7 +154,7 @@ Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml
 
 .. admonition: Exercise 5
 
-  What happens if you allow only for a 1 level method (i.e., no multigrid)? How does this affext the preconditioned CG method?
+  What happens if you allow only for a 1 level method (i.e., no multigrid)? How does this affect the preconditioned CG method?
 
 The option sa for **smoothed aggregation** in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
 

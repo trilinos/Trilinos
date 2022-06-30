@@ -141,7 +141,7 @@ The meaning of the factories is the following:
 - **NullspaceFactory**:
   For defining multigrid methods for multiphysics problems, the **NullspaceFactory** is very important.
   In general, the **TentativePFactory** uses the provided fine level near null space vectors
-  to generate the tentative prolongation operator :math:`P_i` together with a coarse represenation of the near null space vectors.
+  to generate the tentative prolongation operator :math:`P_i` together with a coarse representation of the near null space vectors.
   That is, the **TentativePFactory** produces the **Nullspace** information that it needs itself on the next coarser level.
   That is a hidden dependency which usually automatically works without any changes necessary by the user.
   The user is only responsible to provide proper fine level near null space vectors as **Nullspace** variable on the finest level.

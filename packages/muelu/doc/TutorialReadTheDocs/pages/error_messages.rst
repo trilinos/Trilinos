@@ -88,7 +88,7 @@ There is a typo in your parameter list. Locate the parameter and fix it (using t
 
     Throw test that evaluated to true: maxNodesPerAggregate < minNodesPerAggregate
 
-Choose the **aggregation: min agg size** parameter to be smallter than the **aggregation: max agg size** parameter for the aggregation routine.
+Choose the **aggregation: min agg size** parameter to be smaller than the **aggregation: max agg size** parameter for the aggregation routine.
 
 Advanced XML file format
 ------------------------

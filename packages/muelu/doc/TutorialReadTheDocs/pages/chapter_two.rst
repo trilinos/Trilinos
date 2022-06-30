@@ -30,7 +30,7 @@ There are also other directives to put text into boxes.
 .. deprecated:: 1.2
    Naturally, sometimes stuff gets deprecated.
 
-Refernces to other parts of the documenation are possible as well.
+References to other parts of the documentation are possible as well.
 
 .. seealso:: Related information is also important.
 
