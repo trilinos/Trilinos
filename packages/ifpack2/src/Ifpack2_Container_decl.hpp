@@ -206,7 +206,7 @@ public:
   virtual void compute () = 0;
 
   void DoJacobi(ConstHostView X, HostView Y, SC dampingFactor) const;
-  void DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor) const;
+  void DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor, bool nonsymScaling) const;
   void DoGaussSeidel(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const;
   void DoSGS(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const;
 

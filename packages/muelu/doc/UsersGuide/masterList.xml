@@ -401,6 +401,14 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: phase 1 algorithm</name>
+      <type>string</type>
+      <default>"Distance2"</default>
+      <description>Look at distance2 hops when aggregating.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
     <!--
     <parameter>
       <name>aggregation: symmetrize</name>
