@@ -51,7 +51,7 @@ instead of
 * <Parameter name="smoother: type" type="int" value="RELAXATION"/>
 
 
-Muelu errors
+MueLu errors
 ============
 
 General errors
@@ -141,7 +141,7 @@ For example, above error is caused by the following XML file
 
 Looking at the error output it seems to be a problem with aggregates. However, in the XML file no special aggregation factory has been declared. The only factory which has been introduced was a tentative prolongation factory for generating unsmoothed transfer operators. Therefore, one should start digging into the details of the **TentativePFactory** to find out that the unsmoothed transfer operator factory is responsible both for creating the unsmoothed prolongator and the coarse level null space information. When looking at the screen output one should find that the last called/generated factory is a **NullspaceFactory** which can also be a hint that the problem is the null space.
 
-When looking at the XML file one can see that the **myTentativePFact** factory has been registered to be responsible for generating  the prolongator :math:`P`, but the generating factory for the variable **Nullspace** is not declared. Muelu tries to generate the default null space, but since it does not know about **myTentativePFact** to be a **TentativePFactory** which would already produce the needed information the calling ordering of the dependent factories (e.g., aggregation) gets mixed up.
+When looking at the XML file one can see that the **myTentativePFact** factory has been registered to be responsible for generating  the prolongator :math:`P`, but the generating factory for the variable **Nullspace** is not declared. MueLu tries to generate the default null space, but since it does not know about **myTentativePFact** to be a **TentativePFactory** which would already produce the needed information the calling ordering of the dependent factories (e.g., aggregation) gets mixed up.
 
 Note that the **TentativePFactory** is special. If you declare an explicit instance of the **TentativePFactory** you always have to register it for generating the **Nullspace** variable, too. Only in very special cases this would not be necessary.
 
@@ -152,4 +152,4 @@ Note that the **TentativePFactory** is special. If you declare an explicit insta
 To solve above problem there are two possibilities:
 
 * Following above comment, just register **myTentativePFact** for generating **Nullspace**. That is, just comment in the corresponding line in above xml file.
-* Alternatively you can register **myTentativePFact** for generating **Ptent** (and **P**). This way you mark the **myTentativePFact** object to be used for generating the unsmoothed transfer operators (and state that they shall be used for the final prolongation operators). Muelu is smart enough to understand that the factory responsible for generating **Ptent** is also supposed to generate the null space vectors.
+* Alternatively you can register **myTentativePFact** for generating **Ptent** (and **P**). This way you mark the **myTentativePFact** object to be used for generating the unsmoothed transfer operators (and state that they shall be used for the final prolongation operators). MueLu is smart enough to understand that the factory responsible for generating **Ptent** is also supposed to generate the null space vectors.

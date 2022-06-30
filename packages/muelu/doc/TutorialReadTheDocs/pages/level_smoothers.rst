@@ -42,7 +42,7 @@ This produces the following multigrid hierarchy
 
 
 Of course, there exist other smoother methods such as polynomial smoothers (Chebyshev) and ILU based methods.
-A detailed overview of the different available smoothers can be found in the Muelu users guide ([1]_).
+A detailed overview of the different available smoothers can be found in the MueLu users guide ([1]_).
 
 .. _level_smoothers/figure_1vcycles:
 
@@ -127,7 +127,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
 .. admonition:: Exercise 1
 
-    Play around with the smoother parameters and study their effect on the error plot and the convergence of the preconditioned cg method. For all available smoothing options and parameters refer to the Muelu user guide ([1]_). Hint: use **unsmoothed** transfer operator basis functions (i.e., **multigrid algorithm = unsmoothed**) to highlight the effect of the level smoothers.
+    Play around with the smoother parameters and study their effect on the error plot and the convergence of the preconditioned cg method. For all available smoothing options and parameters refer to the MueLu user guide ([1]_). Hint: use **unsmoothed** transfer operator basis functions (i.e., **multigrid algorithm = unsmoothed**) to highlight the effect of the level smoothers.
 
 .. admonition:: Exercise 2
 

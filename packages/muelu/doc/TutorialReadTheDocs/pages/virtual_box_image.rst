@@ -2,7 +2,7 @@
 A. Virtual box image
 ====================
 
-This chapter discusses the basics of the virtual box image that comes with this tutorial to allow the user to follow above explanations and do its own experiments with Muelu and Trilinos. A virtual machine has the advantage that it is rather easy to set up for a user. Even though compiling and installing got easier the last years by using a cmake based build system it is still a nightmare for not so experienced users. The virtual machine runs both on Linux and Windows as host and brings all the necessary tools for a quick start to Muelu.
+This chapter discusses the basics of the virtual box image that comes with this tutorial to allow the user to follow above explanations and do its own experiments with MueLu and Trilinos. A virtual machine has the advantage that it is rather easy to set up for a user. Even though compiling and installing got easier the last years by using a cmake based build system it is still a nightmare for not so experienced users. The virtual machine runs both on Linux and Windows as host and brings all the necessary tools for a quick start to MueLu.
 
 Preparations
 ============
@@ -59,12 +59,12 @@ First, you should adapt the language settings and the keyboard layout. You can s
 
 Then you are ready to go with the tutorial.
 
-Muelu tutorial
+MueLu tutorial
 --------------
 
 Open the tutorial with **evince** as pdf viewer. To open **evince** you can either use the shortcut in the lower left corner of your desktop or press :kbd:`Alt` + :kbd:`F2` to open the **Run** dialog and enter **evince**. Load the **muelu_tutorial.pdf** file in the **tutorial** folder of your home directory.
 
-To open a terminal you have several option. Either use the shortcut button in the lower left corner. Alternatively you can open the **Run** dialog (:kbd:`Alt` + :kbd:`F2`) and enter **lxterminal**. As a third alternative you can just press :kbd:`Ctrl`+ :kbd:`Alt` + :kbd:`T`. In the terminal, change to the **tutorial** folder by entering **cd tutorial**. Therein you can find the **hands-on.py** script which is used throughout the whole Muelu tutorial.
+To open a terminal you have several option. Either use the shortcut button in the lower left corner. Alternatively you can open the **Run** dialog (:kbd:`Alt` + :kbd:`F2`) and enter **lxterminal**. As a third alternative you can just press :kbd:`Ctrl`+ :kbd:`Alt` + :kbd:`T`. In the terminal, change to the **tutorial** folder by entering **cd tutorial**. Therein you can find the **hands-on.py** script which is used throughout the whole MueLu tutorial.
 
 .. image:: pics/lubuntu_4.png
 

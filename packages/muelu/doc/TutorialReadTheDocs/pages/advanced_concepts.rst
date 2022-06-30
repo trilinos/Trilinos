@@ -2,7 +2,7 @@
 Advanced concepts
 =================
 
-As already mentioned in the beginning, Muelu is designed as a multigrid framework, and, even though initiated as an aggregation-based algebraic multigrid method, it can also be used for other kinds of coarsening methods. In this chapter we demonstrate the combination of a semi-coarsening method with an aggregation-based coarsening on the coarser levels. Semi-coarsening is combined with a line-smoothing method which then changes to a point-relaxation smoothing once no further semi-coarsening is possible. In both cases, the semi-coarsening and the line-smoothing, the key element here is the dynamic switch from one to the another coarsening or smoothing strategy during runtime.
+As already mentioned in the beginning, MueLu is designed as a multigrid framework, and, even though initiated as an aggregation-based algebraic multigrid method, it can also be used for other kinds of coarsening methods. In this chapter we demonstrate the combination of a semi-coarsening method with an aggregation-based coarsening on the coarser levels. Semi-coarsening is combined with a line-smoothing method which then changes to a point-relaxation smoothing once no further semi-coarsening is possible. In both cases, the semi-coarsening and the line-smoothing, the key element here is the dynamic switch from one to the another coarsening or smoothing strategy during runtime.
 
 Semi-coarsening
 ===============
@@ -244,7 +244,7 @@ The parameters are standard except of **type**. The standard choice would be **R
    * [LINESMOOTHING\BLOCKEDRELAXATION] Use a dense matrix container to store the local block associated with one vertical line. This is the safe fallback variant. Use the **LINESMOOTHING\_BANDEDRELAXATION** variant instead.
 
 
-All the other parameters in the parameter sublist correspond to the usual parameters for relaxation based smoothers such as Jacobi, Gauss-Seidel or Symmetric Gauss-Seidel methods. Refer to Section :ref:`level_smoothers` or the Muelu user guide [1]_ for an overview of all available parameters.
+All the other parameters in the parameter sublist correspond to the usual parameters for relaxation based smoothers such as Jacobi, Gauss-Seidel or Symmetric Gauss-Seidel methods. Refer to Section :ref:`level_smoothers` or the MueLu user guide [1]_ for an overview of all available parameters.
 
 Footnotes
 =========

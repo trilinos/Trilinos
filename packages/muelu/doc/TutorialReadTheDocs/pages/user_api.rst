@@ -31,7 +31,7 @@ For the multigrid method we need a linear operator :math:`A`. For demonstration 
   :start-after: 2DLaplacianOperator begin
   :end-before: 2DLaplacianOperator end 
 	
-Muelu is based on Xpetra which provides a common interface both for Epetra and Tpetra. Therefore we have to encapsulate our Epetra objects into Xpetra wrapper objects. This is done using the following code.
+MueLu is based on Xpetra which provides a common interface both for Epetra and Tpetra. Therefore we have to encapsulate our Epetra objects into Xpetra wrapper objects. This is done using the following code.
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
@@ -108,7 +108,7 @@ There are some member functions which can be used to describe the basic multigri
   :start-after: InstantiateNewHierarchyObject begin
   :end-before: InstantiateNewHierarchyObject end 
 
-Next, one defines an empty **MueLu::Level** object for the finest level. The **MueLu::Level** objects represent a data container storing the internal variables on each multigrid level. The user has to provide and fill the level container for the finest level only. The **MueLu::Hierarchy** object then automatically generates the coarse levels using the multigrid parameters. The absolute minimum requirements for the finest level that the user has to provide is the fine level operator :math:`A` which represents the fine level matrix. Muelu is based on Xpetra. So, the matrix :math:`A` has to be of type **Xpetra::Matrix**. In addition, the user should also provide a valid set of near null space vectors. For a Laplace problem we can just use the constant **nullspace** vector that has previously been defined. Some routines need additional information. For example, the user has to provide the node coordinates for repartitioning. 
+Next, one defines an empty **MueLu::Level** object for the finest level. The **MueLu::Level** objects represent a data container storing the internal variables on each multigrid level. The user has to provide and fill the level container for the finest level only. The **MueLu::Hierarchy** object then automatically generates the coarse levels using the multigrid parameters. The absolute minimum requirements for the finest level that the user has to provide is the fine level operator :math:`A` which represents the fine level matrix. MueLu is based on Xpetra. So, the matrix :math:`A` has to be of type **Xpetra::Matrix**. In addition, the user should also provide a valid set of near null space vectors. For a Laplace problem we can just use the constant **nullspace** vector that has previously been defined. Some routines need additional information. For example, the user has to provide the node coordinates for repartitioning. 
 
 .. literalinclude:: ../../../test/tutorial/ScalingTest.cpp
   :language: cpp

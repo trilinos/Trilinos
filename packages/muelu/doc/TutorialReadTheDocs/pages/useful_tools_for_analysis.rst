@@ -8,13 +8,13 @@ Visualization of aggregates
 Technical prerequisites
 -----------------------
 
-Muelu allows to export plain aggregation information in simple text files that have to be interpreted by some post-processing scripts to generate pictures from the raw data. The post-processing script provided with the Muelu tutorial is written in python and produces VTK output. Please make sure that you have all necessary python packages installed on your machine (including **python-vtk**).
+MueLu allows to export plain aggregation information in simple text files that have to be interpreted by some post-processing scripts to generate pictures from the raw data. The post-processing script provided with the MueLu tutorial is written in python and produces VTK output. Please make sure that you have all necessary python packages installed on your machine (including **python-vtk**).
 
 .. note::
 
     The visualization script has successfully been tested with VTK 5.x. Note that it is not compatible to VTK 6.x.
 
-Visualization of aggregates with Muelu using VTK
+Visualization of aggregates with MueLu using VTK
 ------------------------------------------------
 
 We can visualize the aggregates using the vtk file format and paraview. First add the parameter **aggregation: export visualization data = true** to the list of aggregation parameters. Use, e.g., the following xml file **../../../test/tutorial/n2_easy_agg.xml**.
@@ -100,7 +100,7 @@ Comparing Figures :ref:`useful_tools_for_analysis/figure_aggsSymm` and :ref:`use
 Export data
 ===========
 
-For debugging purposes it can be very helpful to have a look at the coarse level matrices as well as the transfer operators. Muelu allows to export the corresponding operators to the matrix market format such that the files can be imported, e.g., into MATLAB (or `FreeMat <http://freemat.sourceforge.net/>`_) for some in-depth analysis.
+For debugging purposes it can be very helpful to have a look at the coarse level matrices as well as the transfer operators. MueLu allows to export the corresponding operators to the matrix market format such that the files can be imported, e.g., into MATLAB (or `FreeMat <http://freemat.sourceforge.net/>`_) for some in-depth analysis.
 
 Using the following xml file writes the fine level operator and the coarse level operator as well as the prolongation and restriction operator to the hard disk using the filenames **A_0.m**, **A_1.m** as well as **P_1.m** and **R_1.m**
 

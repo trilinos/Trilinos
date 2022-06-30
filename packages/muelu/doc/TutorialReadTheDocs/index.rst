@@ -21,7 +21,7 @@ The MueLu tutorial is written as a hands-on tutorial for MueLu,
 the next generation multigrid framework in Trilinos.
 It covers the whole spectrum from absolute beginners' topics to expert level.
 Since the focus of this tutorial is on practical and technical aspects
-of multigrid methods in general and Muelu in particular,
+of multigrid methods in general and MueLu in particular,
 the reader should already have a basic understanding of multigrid methods and their general underlying concepts.
 Please refer to multigrid textbooks for the theoretical background.
 
