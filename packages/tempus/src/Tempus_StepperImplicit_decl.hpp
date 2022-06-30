@@ -264,13 +264,6 @@ public:
     /// Return beta  = d(x)/dx.
     virtual Scalar getBeta (const Scalar dt) const = 0;
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    /// Solve problem using x in-place.  (Needs to be deprecated!)
-    TEMPUS_DEPRECATED
-    const Thyra::SolveStatus<Scalar> solveImplicitODE(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
-
-#endif
     /// Solve implicit ODE, f(x, xDot, t, p) = 0.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,

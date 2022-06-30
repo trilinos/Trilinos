@@ -8,11 +8,8 @@ append_glob(SOURCES ${DIR}/*.cpp)
 if (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/deprecated)
   append_set(HEADERS
-    Tempus_IntegratorBasicOld_decl.hpp
-    Tempus_IntegratorBasicOld_impl.hpp
     )
   append_set(SOURCES
-    Tempus_IntegratorBasicOld.cpp
     )
 endif()
 
