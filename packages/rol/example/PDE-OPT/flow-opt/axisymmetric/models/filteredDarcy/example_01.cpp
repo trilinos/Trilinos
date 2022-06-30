@@ -194,8 +194,8 @@ int main(int argc, char *argv[]) {
       h0p = ROL::makePtr<ROL::StdVector<RealT>>(dim,ROL::ROL_INF<RealT>());
       l1_ptr = fobj->getAssembler()->createControlVector();
       h1_ptr = fobj->getAssembler()->createControlVector();
-      l1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(l1_ptr,pde,assembler,*parlist);
-      h1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(h1_ptr,pde,assembler,*parlist);
+      l1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(l1_ptr,pdeFilter,fobj->getAssembler(),*parlist);
+      h1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(h1_ptr,pdeFilter,fobj->getAssembler(),*parlist);
       l1p->setScalar(0.0);
       h1p->setScalar(1.0);
       lp = ROL::makePtr<PDE_OptVector<RealT>>(l1p,l0p,myRank);
