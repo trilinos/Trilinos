@@ -205,7 +205,7 @@ namespace Intrepid2
               using Kokkos::subview;
               using Kokkos::ALL;
               auto jacobi_alpha = subview(jacobi_values1_at_point, alphaOrdinal, ALL);
-              Polynomials::integratedJacobiValues(jacobi_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
             }
             
             const int edgeOrdinal = face_ordinal_of_first_edge[faceOrdinal];
@@ -238,7 +238,7 @@ namespace Intrepid2
             using Kokkos::subview;
             using Kokkos::ALL;
             auto jacobi_alpha = subview(jacobi_values1_at_point, alphaOrdinal, ALL);
-            Polynomials::integratedJacobiValues(jacobi_alpha, alpha, polyOrder_-3, lambda[3], jacobiScaling);
+            Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_alpha, alpha, polyOrder_-3, lambda[3], jacobiScaling);
           }
           const int min_i  = 2;
           const int min_j  = 1;
@@ -358,7 +358,7 @@ namespace Intrepid2
            and
              [R^{2i}_{j-1}(s0,s1)] = d/dt L^{2i}_j(s1,s0+s1)
            We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
-           and d/dt L^{alpha}_{j} as integratedJacobiValues_dt.
+           and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
            */
           // rename the scratch memory to match our usage here:
           auto & L_i            = legendre_values2_at_point;
@@ -385,8 +385,8 @@ namespace Intrepid2
               auto L_2i_j_dt_alpha      = subview(L_2i_j_dt,      alphaOrdinal, ALL);
               auto L_2i_j_alpha         = subview(L_2i_j,         alphaOrdinal, ALL);
               auto P_2i_j_minus_1_alpha = subview(P_2i_j_minus_1, alphaOrdinal, ALL);
-              Polynomials::integratedJacobiValues_dt(L_2i_j_dt_alpha,      alpha, polyOrder_-2, s2, jacobiScaling);
-              Polynomials::integratedJacobiValues   (L_2i_j_alpha,         alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt_alpha,      alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues   (L_2i_j_alpha,         alpha, polyOrder_-2, s2, jacobiScaling);
               Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1_alpha, alpha, polyOrder_-1, s2, jacobiScaling);
             }
             
@@ -473,7 +473,7 @@ namespace Intrepid2
               using Kokkos::subview;
               using Kokkos::ALL;
               auto jacobi_alpha = subview(jacobi_values3_at_point, alphaOrdinal, ALL);
-              Polynomials::integratedJacobiValues(jacobi_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
             }
           }
           
@@ -489,8 +489,8 @@ namespace Intrepid2
             // values for interior functions:
             auto L = subview(L_alpha, alphaOrdinal, ALL);
             auto P = subview(P_alpha, alphaOrdinal, ALL);
-            Polynomials::integratedJacobiValues   (L, alpha, polyOrder_-3, lambda[3], jacobiScaling);
-            Polynomials::shiftedScaledJacobiValues(P, alpha, polyOrder_-3, lambda[3], jacobiScaling);
+            Polynomials::shiftedScaledIntegratedJacobiValues(L, alpha, polyOrder_-3, lambda[3], jacobiScaling);
+            Polynomials::shiftedScaledJacobiValues          (P, alpha, polyOrder_-3, lambda[3], jacobiScaling);
           }
           
           const int min_i  = 2;

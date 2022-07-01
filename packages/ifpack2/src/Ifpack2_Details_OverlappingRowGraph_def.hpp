@@ -126,7 +126,7 @@ template<class GraphType>
 Teuchos::RCP<const Tpetra::Import<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> >
 OverlappingRowGraph<GraphType>::getImporter () const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+  return nonoverlappingImporter_;
 }
 
 

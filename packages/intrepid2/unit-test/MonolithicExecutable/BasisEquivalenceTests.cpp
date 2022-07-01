@@ -181,14 +181,6 @@ namespace
     TEUCHOS_TEST_FOR_EXCEPTION(N2 != C.extent_int(1), std::invalid_argument, "C column count should match B column count");
     
     TEUCHOS_TEST_FOR_EXCEPTION(B.rank() != C.rank(), std::invalid_argument, "B's rank must match C's rank");
-//    for (unsigned dim=0; dim<B.rank(); dim++)
-//    {
-//      {//DEBUGGING
-//        std::cout << "B.extent_int(" << dim << ") = " << B.extent_int(dim) << std::endl;
-//        std::cout << "C.extent_int(" << dim << ") = " << C.extent_int(dim) << std::endl;
-//      }
-//    }
-    
     for (unsigned dim=2; dim<B.rank(); dim++)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
@@ -310,11 +302,17 @@ namespace
     }
     
     ordinal_type numRefPoints = quadrature->getNumPoints();
+<<<<<<< HEAD
     const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
     
     auto points  = quadrature->allocateCubaturePoints();
     auto weights = quadrature->allocateCubatureWeights();
     
+=======
+    const int spaceDim = basis1.getBaseCellTopology().getDimension();
+    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
+>>>>>>> develop
     quadrature->getCubature(points, weights);
     
     using HostExecSpace = Kokkos::HostSpace::execution_space;
@@ -349,22 +347,51 @@ namespace
     // integrate basis1 against basis2 to compute the RHS b for the basis conversion system
     ViewType<Scalar,DeviceType> basis1_vs_basis2 = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
     
-    Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
+    // HDIV and HCURL under OPERATOR_VALUE are vector-valued; "scalarValued" tests for this case.
+    const bool scalarValued = (functionSpace == FUNCTION_SPACE_HGRAD) || (functionSpace == FUNCTION_SPACE_HVOL);
+    
+    if (scalarValued)
     {
-      // we could use hierarchical parallelism to speed this up
-      for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
+      Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
       {
-        Scalar integral1v1 = 0.0, integral1v2 = 0.0;
-        for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+        // we could use hierarchical parallelism to speed this up
+        for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
         {
-          const auto quadratureWeight = weights(pointOrdinal);
-          integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis1Values(basisOrdinal2,pointOrdinal);
-          integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis2Values(basisOrdinal2,pointOrdinal);
+          Scalar integral1v1 = 0.0, integral1v2 = 0.0;
+          for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+          {
+            const auto quadratureWeight = weights(pointOrdinal);
+            integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis1Values(basisOrdinal2,pointOrdinal);
+            integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis2Values(basisOrdinal2,pointOrdinal);
+          }
+          basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
+          basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
         }
-        basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
-        basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
-      }
-    });
+      });
+    }
+    else
+    {
+      int spaceDim = basis1Values.extent_int(2);
+      Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
+      {
+        // we could use hierarchical parallelism to speed this up
+        for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
+        {
+          Scalar integral1v1 = 0.0, integral1v2 = 0.0;
+          for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+          {
+            const auto quadratureWeight = weights(pointOrdinal);
+            for (int d=0; d<spaceDim; d++)
+            {
+              integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal,d) * basis1Values(basisOrdinal2,pointOrdinal,d);
+              integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal,d) * basis2Values(basisOrdinal2,pointOrdinal,d);
+            }
+          }
+          basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
+          basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
+        }
+      });
+    }
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
     ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 coefficients", basisCardinality, basisCardinality);
@@ -1016,7 +1043,7 @@ namespace
     using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -1037,7 +1064,7 @@ namespace
     using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -1049,6 +1076,66 @@ namespace
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
       testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HCURL_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-10;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(hierarchicalBasis, nodalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HDIV_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-10;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(hierarchicalBasis, nodalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HVOL_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11;
+    const double absTol=1e-12;
+    
+    for (int polyOrder=0; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   

@@ -82,8 +82,10 @@
 #include "HYPRE_parcsr_ls.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
-#else
-#error "Hypre not found"
+#endif
+
+#if defined (HAVE_MUELU_PETSC)
+#include "petscksp.h"
 #endif
 
 // =========================================================================
@@ -114,6 +116,100 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
   printf("\n");
 }
 
+// =========================================================================
+// PETSC Testing
+// =========================================================================
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+
+/*#define PETSC_CHK_ERR(x)  {                   \
+  PetscCall(x); \
+  }*/
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class Petsc_SpmV_Pack {
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+
+public:
+  Petsc_SpmV_Pack (const crs_matrix_type& A,
+                   const vector_type& X,
+                   vector_type& Y) {
+    using LO = LocalOrdinal;
+    const MPI_Comm & comm = *Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A.getRowMap()->getComm())->getRawMpiComm();
+    LO Nx = (LO) X.getMap()->getLocalNumElements();
+    LO Ny = (LO) Y.getMap()->getLocalNumElements();
+
+    // NOTE:  Petsc requires contiguous GIDs for the row map
+    if(!A.getRowMap()->isContiguous())
+      throw std::runtime_error("ERROR: Petsc requires contiguous GIDs for row maps");
+  
+
+    // Note: PETSC appears to favor local indices for vector insertion
+    std::vector<PetscInt> l_indices(std::max(Nx,Ny));
+    for(int i=0; i<std::max(Nx,Ny); i++) 
+      l_indices[i] = i;
+
+    // x vector
+    VecCreate(comm,&x_p);
+    VecSetType(x_p,VECMPI);
+    VecSetSizes(x_p,Nx, X.getMap()->getGlobalNumElements());
+    VecSetValues(x_p,Nx,l_indices.data(),X.getData(0).getRawPtr(),INSERT_VALUES);
+    VecAssemblyBegin(x_p);
+    VecAssemblyEnd(x_p);
+
+    // y vector
+    VecCreate(comm,&y_p);
+    VecSetType(y_p,VECMPI);
+    VecSetSizes(y_p,Ny, Y.getMap()->getGlobalNumElements());
+    VecSetValues(y_p,Ny,l_indices.data(),Y.getData(0).getRawPtr(),INSERT_VALUES);
+    VecAssemblyBegin(y_p);
+    VecAssemblyEnd(y_p);
+
+    // A matrix
+    // NOTE: This is an overallocation, but that's OK
+    PetscInt max_nnz = A.getLocalMaxNumRowEntries();
+    MatCreateAIJ(comm,A.getRowMap()->getLocalNumElements(),A.getDomainMap()->getLocalNumElements(),PETSC_DECIDE,PETSC_DECIDE,
+                 max_nnz, NULL, max_nnz,NULL, &A_p);
+
+
+    std::vector<PetscInt> new_indices(max_nnz);
+    for(LO i = 0; i < (LO)A.getLocalNumRows(); i++){
+      typename crs_matrix_type::values_host_view_type     values;
+      typename crs_matrix_type::local_inds_host_view_type indices;
+      A.getLocalRowView(i, indices, values);
+      for(LO j = 0; j < (LO) indices.extent(0); j++){
+        new_indices[j] = A.getColMap()->getGlobalElement(indices(j));
+      }
+      PetscInt GlobalRow[1];
+      PetscInt numEntries = (PetscInt) indices.extent(0);
+      GlobalRow[0] = A.getRowMap()->getGlobalElement(i);
+      
+      MatSetValues(A_p,1,GlobalRow, numEntries, new_indices.data(), values.data(),INSERT_VALUES);
+    }                   
+    MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);
+
+  }
+
+  ~Petsc_SpmV_Pack() { 
+    VecDestroy(&x_p);
+    VecDestroy(&y_p);
+    MatDestroy(&A_p);
+  }
+
+  bool spmv(const Scalar alpha, const Scalar beta) { 
+    int rv = MatMult(A_p,x_p,y_p);
+    return (rv != 0);
+  }  
+
+private:
+  Mat A_p;
+  Vec x_p, y_p;
+  
+};
+
+
+#endif
 
 // =========================================================================
 // HYPRE Testing
@@ -591,6 +687,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+  PetscInitialize(0,NULL,NULL,NULL);
+#endif
+
 
   bool success = false;
   bool verbose = true;
@@ -633,6 +733,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     bool do_cusparse = true;
     bool do_magmasparse = true;
     bool do_hypre    = true;
+    bool do_petsc    = true;
 
     bool report_error_norms = false;
     // handle the TPLs
@@ -648,6 +749,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     #if ! defined(HAVE_MUELU_HYPRE) || !defined(HAVE_MPI)
       do_hypre = false;
     #endif
+    #if ! defined(HAVE_MUELU_PETSC) || !defined(HAVE_MPI)
+      do_petsc = false;
+    #endif
 
 
     clp.setOption("mkl",      "nomkl",      &do_mkl,        "Evaluate MKL");
@@ -656,6 +760,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("cusparse", "nocusparse", &do_cusparse,   "Evaluate CuSparse");
     clp.setOption("magamasparse", "nomagmasparse", &do_magmasparse,   "Evaluate MagmaSparse");
     clp.setOption("hypre", "nohypre", &do_hypre,   "Evaluate Hypre");
+    clp.setOption("petsc", "nopetsc", &do_petsc,   "Evaluate Petsc");
 
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms,   "Report L2 norms for the solution");
 
@@ -707,15 +812,30 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
     #endif
 
+    #if ! defined(HAVE_MUELU_HYPRE)
+    if (do_hypre) {
+      out << "Hypre was requested, but this kernel is not available. Disabling..." << endl;
+      do_hypre = false;
+    }
+    #endif
+
+    #if ! defined(HAVE_MUELU_PETSC)
+    if (do_hypre) {
+      out << "Petsc was requested, but this kernel is not available. Disabling..." << endl;
+      do_petsc = false;
+    }
+    #endif
+
     // simple hack to randomize order of experiments
-    enum class Experiments { MKL=0, TPETRA, KK, CUSPARSE, MAGMASPARSE, HYPRE };
+    enum class Experiments { MKL=0, TPETRA, KK, CUSPARSE, MAGMASPARSE, HYPRE, PETSC };
     const char * const experiment_id_to_string[] = {
         "MKL        ",
         "Tpetra     ",
         "KK         ",
         "CuSparse   ",
         "MagmaSparse",
-        "HYPRE"};
+        "HYPRE",
+        "PETSC"};
       
     std::vector<Experiments> my_experiments;
     // add the experiments we will run
@@ -734,6 +854,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     #if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
     if (do_hypre) my_experiments.push_back(Experiments::HYPRE);   // HYPRE
+    #endif
+
+    #if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
+    if (do_petsc) my_experiments.push_back(Experiments::PETSC);   // PETSc
     #endif
 
     // assume these are available
@@ -802,7 +926,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       l_permutes = At->getGraph()->getImporter()->getNumPermuteIDs();
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,1,&l_permutes,&g_permutes);
     }
-    if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);
 
   #if defined(HAVE_MUELU_CUSPARSE)
     typedef CuSparse_SpmV_Pack<SC,LO,GO,Node> CuSparse_thing_t;
@@ -816,6 +939,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   #if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
     typedef HYPRE_SpmV_Pack<SC,LO,GO,Node> HYPRE_thing_t;
     HYPRE_thing_t hypre_spmv(*At, xt, yt);
+  #endif
+  #if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
+    typedef Petsc_SpmV_Pack<SC,LO,GO,Node> Petsc_thing_t;
+    Petsc_thing_t petsc_spmv(*At, xt, yt);
   #endif
 
 
@@ -980,6 +1107,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
           break;
         #endif
+
+        #ifdef HAVE_MUELU_PETSC
+        // PETSc
+        case Experiments::PETSC:
+        {
+           const Scalar alpha = 1.0;
+           const Scalar beta = 0.0;
+           TimeMonitor t(*TimeMonitor::getNewTimer("MV Petsc: Total"));
+           petsc_spmv.spmv(alpha,beta);
+        }
+          break;
+        #endif
+
         default:
           std::cerr << "Unknown experiment ID encountered: " << (int) experiment_id << std::endl;
         }
@@ -1043,6 +1183,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+  PetscFinalize();
+#endif
+
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main
