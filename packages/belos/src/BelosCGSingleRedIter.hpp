@@ -502,7 +502,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     alpha = rHz_ / delta;
 
     // Check that alpha is a positive number!
-    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGPositiveDefiniteFailure,
       "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
  
     ////////////////////////////////////////////////////////////////
@@ -563,7 +563,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));
         //
         // Check that alpha is a positive number!
-        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGPositiveDefiniteFailure,
                                     "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
         //
@@ -628,7 +628,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));
         //
         // Check that alpha is a positive number!
-        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGPositiveDefiniteFailure,
                                     "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
         //
