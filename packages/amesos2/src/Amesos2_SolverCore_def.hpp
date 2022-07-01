@@ -283,9 +283,18 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   // get local matriix
   host_crsmat_t crsmat;
   host_graph_t static_graph;
-  host_row_map_t rowmap_view("rowptr", 1+nrows);
-  host_colinds_t colind_view("colind", nnz);
-  host_values_t  values_view("nzvals", nnz);
+  host_row_map_t rowmap_view;
+  host_colinds_t colind_view;
+  host_values_t  values_view;
+  if (this->root_) {
+    Kokkos::resize(rowmap_view, 1+nrows);
+    Kokkos::resize(colind_view, nnz);
+    Kokkos::resize(values_view, nnz);
+  } else {
+    Kokkos::resize(rowmap_view, 1);
+    Kokkos::resize(colind_view, 0);
+    Kokkos::resize(values_view, 0);
+  }
 
   int nnz_ret = 0;
   Util::get_crs_helper_kokkos_view<
