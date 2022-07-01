@@ -95,7 +95,8 @@ public:
     ordinalMap_ = OrdinalTypeArray1D("serendipity ordinal map",fullBasisOrdinals.size());
     
     auto ordinalMapHost = Kokkos::create_mirror_view(ordinalMap_);
-    for (int i=0; i<fullBasisOrdinals.size(); i++)
+    const ordinal_type fullBasisCardinality = fullBasisOrdinals.size();
+    for (ordinal_type i=0; i<fullBasisCardinality; i++)
     {
       ordinalMapHost(i) = fullBasisOrdinals[i];
     }
@@ -144,14 +145,14 @@ public:
       subcellDofCount[d]   = vector<ordinal_type>(numSubcells,0);
       subcellDofOrdinal[d] = vector<ordinal_type>(numSubcells,0);
     }
-    for (ordinal_type fieldOrdinal=0; fieldOrdinal<fullBasisOrdinals.size(); fieldOrdinal++)
+    for (ordinal_type fieldOrdinal=0; fieldOrdinal<fullBasisCardinality; fieldOrdinal++)
     {
       const ordinal_type fullFieldOrdinal = fullBasisOrdinals[fieldOrdinal];
       const ordinal_type subcellDim   = fullBasisOrdinalToTag(fullFieldOrdinal,posScDim);
       const ordinal_type subcellOrd   = fullBasisOrdinalToTag(fullFieldOrdinal,posScOrd);
       subcellDofCount[subcellDim][subcellOrd]++;
     }
-    for (int fieldOrdinal=0; fieldOrdinal<fullBasisOrdinals.size(); fieldOrdinal++)
+    for (ordinal_type fieldOrdinal=0; fieldOrdinal<fullBasisCardinality; fieldOrdinal++)
     {
       const ordinal_type fullFieldOrdinal = fullBasisOrdinals[fieldOrdinal];
       const ordinal_type subcellDim   = fullBasisOrdinalToTag(fullFieldOrdinal,posScDim);
