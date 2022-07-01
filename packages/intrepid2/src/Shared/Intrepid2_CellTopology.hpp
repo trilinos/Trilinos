@@ -123,7 +123,8 @@ namespace Intrepid2
       for (int d=0; d<baseDim+tensorialDegree_; d++)
       {
         subcells_[d] = vector< CellTopoPtr >(subcellCounts[d]);
-        for (int scord=0; scord<subcells_[d].size(); scord++)
+        int subcellCount = subcells_[d].size();
+        for (int scord=0; scord<subcellCount; scord++)
         {
           subcells_[d][scord] = getSubcell(d, scord);
         }
@@ -280,7 +281,7 @@ namespace Intrepid2
      */
     ordinal_type getSubcellCount( const ordinal_type subcell_dim ) const
     {
-      if (subcell_dim >= subcells_.size()) return 0;
+      if (subcell_dim >= ordinal_type(subcells_.size())) return 0;
       else return subcells_[subcell_dim].size();
     }
 
@@ -290,7 +291,7 @@ namespace Intrepid2
      */
     ordinal_type getNodeFromTensorialComponentNodes(const std::vector<ordinal_type> &tensorComponentNodes) const
     {
-      if (tensorComponentNodes.size() != tensorialDegree_ + 1)
+      if (ordinal_type(tensorComponentNodes.size()) != tensorialDegree_ + 1)
       {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "tensorComponentNodes.size() != _tensorialDegree + 1");
       }
