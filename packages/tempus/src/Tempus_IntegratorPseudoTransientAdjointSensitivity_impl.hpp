@@ -244,25 +244,6 @@ getSensStepper() const
   return sens_integrator_->getStepper();
 }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-getTempusParameterList()
-{
-  return state_integrator_->getTempusParameterList();
-}
-
-template<class Scalar>
-void
-IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  state_integrator_->setTempusParameterList(pl);
-  sens_integrator_->setTempusParameterList(pl);
-}
-
-#endif
 template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::

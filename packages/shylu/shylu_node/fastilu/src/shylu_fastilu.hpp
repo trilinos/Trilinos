@@ -60,6 +60,7 @@
 #include <Kokkos_Timer.hpp>
 #include <KokkosKernels_Sorting.hpp>
 #include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_sptrsv.hpp>
 #include <KokkosSparse_trsv.hpp>
 #include <shylu_fastutil.hpp>
@@ -119,7 +120,7 @@ class FastILUPrec
                              Kokkos::Serial, Kokkos::MemoryUnmanaged> UMScalarArray;
         typedef FastILUPrec<Ordinal, Scalar, ExecSpace> FastPrec;
 
-        using HostSpace = typename Kokkos::HostSpace;
+        using HostSpace = Kokkos::HostSpace;
         using MirrorSpace = typename OrdinalArray::host_mirror_space;
 
         typedef Kokkos::View<Ordinal *, HostSpace> OrdinalArrayHost;
@@ -146,6 +147,7 @@ class FastILUPrec
         Scalar shift; //Manteuffel Shift
 
         //Lower triangular factor (CSR)
+        bool sptrsv_KKSpMV; // use Kokkos-Kernels SpMV for Fast SpTRSV
         ScalarArray lVal;
         OrdinalArray lColIdx;
         OrdinalArray lRowMap;
@@ -180,7 +182,7 @@ class FastILUPrec
 
         //Upper triangular factor (CSR), with diagonal extracted out
         // for TRSV (not SpTRSV)
-        bool doUnitDiag_TRSV;
+        bool doUnitDiag_TRSV; // perform TRSV with unit diagonals
         ScalarArrayHost   dVal_trsv_;
         ScalarArrayHost  utVal_trsv_;
         OrdinalArrayHost utColIdx_trsv_;
@@ -1066,6 +1068,7 @@ class FastILUPrec
             blkSzILU = blkSzILU_;
             blkSz = blkSz_;
             doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
+            sptrsv_KKSpMV = true;   // use Kokkos-Kernels SpMV for Fast SpTRSV
 
             const Scalar one = STS::one();
             onesVector = ScalarArray("onesVector", nRow_);
@@ -1088,6 +1091,7 @@ class FastILUPrec
         struct CopyValsTag {};
         struct GetDiagsTag {};
         struct DiagScalTag {};
+        struct SwapDiagTag {};
 
         struct GetLowerTag{};
         struct GetUpperTag{};
@@ -1129,6 +1133,20 @@ class FastILUPrec
             lColIdx (lColIdx_)
             {}
 
+
+            // just calling SwapDiagTag
+            FastILUPrec_Functor(ScalarArray  lVal_, OrdinalArray  lRowMap_,
+                                ScalarArray utVal_, OrdinalArray utRowMap_,
+                                ScalarArray diagElems_) :
+            diagElems (diagElems_),
+            lVal (lVal_),
+            lRowMap (lRowMap_),
+            utVal (utVal_),
+            utRowMap (utRowMap_)
+            {}
+
+
+            // ------------------------------------------------
             // functor to load values
             // both matrices are sorted and, "a" (with fills) contains "aIn" (original)
             KOKKOS_INLINE_FUNCTION
@@ -1175,6 +1193,19 @@ class FastILUPrec
                         diagFact[i] = one/(RTS::sqrt(STS::abs(aVal[k])));
                     }
                 }
+            }
+
+            // functor to swap diagonals
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const SwapDiagTag &, const int i) const {
+                const Scalar one  = STS::one();
+                const Scalar zero = STS::zero();
+                // diagonal of L (stored as last entry in the row)
+                lVal[lRowMap[i+1]-1] = zero; // -one;
+                // diagonal of U (stored as first entry in the row)
+                utVal[utRowMap[i]] = zero; // -one
+                // invert D
+                diagElems[i] = one / diagElems[i];
             }
 
             // functor to apply diagonal scaling
@@ -1247,6 +1278,9 @@ class FastILUPrec
             ScalarArray    lVal;
             OrdinalArray   lRowMap;
             OrdinalArray   lColIdx;
+            // + output U matrix
+            ScalarArray    utVal;
+            OrdinalArray   utRowMap;
         };
 
         //Symbolic Factorization Phase
@@ -1536,6 +1570,12 @@ class FastILUPrec
                     }
                     dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
                 }
+            } else if (sptrsv_KKSpMV) {
+                FastILUPrec_Functor functor(lVal, lRowMap, utVal, utRowMap, diagElems);
+                Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, nRows);
+                Kokkos::parallel_for(
+                  "numericILU::swapDiag", swap_policy, functor);
+                ExecSpace().fence();
             }
             #ifdef FASTILU_TIMER
             std::cout << "  >> compute done " << Timer2.seconds() << " <<" << std::endl << std::endl;
@@ -1548,6 +1588,8 @@ class FastILUPrec
         void apply(ScalarArray &x, ScalarArray &y)
         {
             Kokkos::Timer timer;
+            const Scalar one  = STS::one();
+            const Scalar zero = STS::zero();
 
             //required to prevent contamination of the input.
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
@@ -1556,67 +1598,127 @@ class FastILUPrec
             ExecSpace().fence();
             //apply D
             applyD(x, xTemp);
-            if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
-
-                // wrap x and y into 2D views
-                typedef Kokkos::View<Scalar **, ExecSpace> Scalar2dArray;
-                Scalar2dArray x2d (const_cast<Scalar*>(xTemp.data()), nRows, 1);
-                Scalar2dArray y2d (const_cast<Scalar*>(y.data()), nRows, 1);
-                auto x_ = Kokkos::create_mirror(x2d);
-                auto y_ = Kokkos::create_mirror(y2d);
-
-                // copy x to host
-                Kokkos::deep_copy(x_, x2d);
-
-                if (doUnitDiag_TRSV) {
-                    using crsmat_host_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, HostSpace, void, Ordinal>;
-                    using graph_host_t  = typename crsmat_host_t::StaticCrsGraphType;
-
-                    // wrap L into crsmat on host
-                    graph_host_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
-                    crsmat_host_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
-
-                    // wrap U into crsmat on host
-                    graph_host_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
-                    crsmat_host_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
-
-                    // solve with L, unit-diag
-                    KokkosSparse::trsv ("L", "N", "U", crsmatL, x_, y_);
-                    // solve with D
-                    for (Ordinal i = 0; i < nRows; i++) {
-                        y_(i, 0) = dVal_trsv_(i) * y_(i, 0);
-                    }
-                    // solve with U, unit-diag
-                    KokkosSparse::trsv ("U", "N", "U", crsmatU, y_, x_);
-                } else {
-                    using crsmat_mirror_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, MirrorSpace, void, Ordinal>;
-                    using graph_mirror_t  = typename crsmat_mirror_t::StaticCrsGraphType;
-
-                    // wrap L into crsmat on host
-                    graph_mirror_t static_graphL(lColIdx_, lRowMap_);
-                    crsmat_mirror_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
-
-                    // wrap U into crsmat on host
-                    graph_mirror_t static_graphU(utColIdx_, utRowMap_);
-                    crsmat_mirror_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
-
-                    // solve with L
-                    KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
-                    // solve with U
-                    KokkosSparse::trsv ("U", "N", "N", crsmatU, y_, x_);
-                }
-                // copy x to device
-                Kokkos::deep_copy(x2d, x_);
-            } else if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+            if (sptrsv_algo == FastILU::SpTRSV::Standard) {
                 // solve with L
                 KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
                 // solve with U
                 KokkosSparse::Experimental::sptrsv_solve(&khU, utRowMap, utColIdx, utVal, y, xTemp);
             } else {
-                //apply L
-                applyL(xTemp, y);
-                //apply U or Lt depending on icFlag
-                applyU(y, xTemp);
+
+                // wrap x and y into 2D views
+                typedef Kokkos::View<Scalar **, ExecSpace> Scalar2dArray;
+                Scalar2dArray x2d (const_cast<Scalar*>(xTemp.data()), nRows, 1);
+                Scalar2dArray y2d (const_cast<Scalar*>(y.data()), nRows, 1);
+
+                if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+
+                    // copy x to host
+                    auto x_ = Kokkos::create_mirror(x2d);
+                    auto y_ = Kokkos::create_mirror(y2d);
+                    Kokkos::deep_copy(x_, x2d);
+
+                    if (doUnitDiag_TRSV) {
+                        using crsmat_host_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, HostSpace, void, Ordinal>;
+                        using graph_host_t  = typename crsmat_host_t::StaticCrsGraphType;
+
+                        // wrap L into crsmat on host
+                        graph_host_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
+                        crsmat_host_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
+
+                        // wrap U into crsmat on host
+                        graph_host_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
+                        crsmat_host_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
+
+                        // solve with L, unit-diag
+                        KokkosSparse::trsv ("L", "N", "U", crsmatL, x_, y_);
+                        // solve with D
+                        for (Ordinal i = 0; i < nRows; i++) {
+                            y_(i, 0) = dVal_trsv_(i) * y_(i, 0);
+                        }
+                        // solve with U, unit-diag
+                        KokkosSparse::trsv ("U", "N", "U", crsmatU, y_, x_);
+                    } else {
+                        using crsmat_mirror_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, MirrorSpace, void, Ordinal>;
+                        using graph_mirror_t  = typename crsmat_mirror_t::StaticCrsGraphType;
+
+                        // wrap L into crsmat on host
+                        graph_mirror_t static_graphL(lColIdx_, lRowMap_);
+                        crsmat_mirror_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
+
+                        // wrap U into crsmat on host
+                        graph_mirror_t static_graphU(utColIdx_, utRowMap_);
+                        crsmat_mirror_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
+
+                        // solve with L
+                        KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
+                        // solve with U
+                        KokkosSparse::trsv ("U", "N", "N", crsmatU, y_, x_);
+                    }
+                    // copy x to device
+                    Kokkos::deep_copy(x2d, x_);
+                } else {
+                    if (sptrsv_KKSpMV) {
+                        using crsmat_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecSpace, void, Ordinal>;
+                        using graph_t  = typename crsmat_t::StaticCrsGraphType;
+
+                        graph_t static_graphL(lColIdx, lRowMap);
+                        crsmat_t crsmatL("CrsMatrix", nRows, lVal, static_graphL);
+
+                        graph_t static_graphU(utColIdx, utRowMap);
+                        crsmat_t crsmatU("CrsMatrix", nRows, utVal, static_graphU);
+
+                        Scalar2dArray x2d_old (const_cast<Scalar*>(xOld.data()), nRows, 1);
+
+                        // 1) approximately solve, y = L^{-1}*x
+                        // y = zeros
+                        ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, y);
+                        //Kokkos::parallel_for(nRows, parInitZero);
+                        //ExecSpace().fence();
+                        Kokkos::deep_copy(y2d, zero);
+                        // to copy RHS x into y
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_newX(nRows, y, xTemp);
+                        // to save old y
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_oldX(nRows, xOld, y);
+                        for (Ordinal i = 0; i < nTrisol; i++) 
+                        {
+                            // x = y - Lx (diag(L) is zero)
+                            Kokkos::parallel_for(nRows, copy_oldX); // x_old = y
+                            Kokkos::parallel_for(nRows, copy_newX); // y = x
+                            ExecSpace().fence();
+
+                            KokkosSparse::spmv("N", -one, crsmatL, x2d_old, one, y2d);
+                        }
+                        // 2) approximately solve, x = U^{-1}*y
+                        // to copy y into x
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_newY(nRows, xTemp, y);
+                        // to save old x
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_oldY(nRows, xOld, xTemp);
+                        // to scale x
+                        ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(nRows, xTemp, xTemp, diagElems);
+                        // x = zeros
+                        ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroY(nRows, xTemp);
+                        //Kokkos::parallel_for(nRows, initZeroY);
+                        //ExecSpace().fence();
+                        Kokkos::deep_copy(x2d, zero);
+                        for (Ordinal i = 0; i < nTrisol; i++) 
+                        {
+                            // y = x - Uy (diag(U) is zero)
+                            Kokkos::parallel_for(nRows, copy_oldY); // x_old = x
+                            Kokkos::parallel_for(nRows, copy_newY); // x = y
+                            ExecSpace().fence();
+                            //Kokkos::deep_copy(x2d_old, x2d);
+                            //Kokkos::deep_copy(x2d, y2d);
+                            KokkosSparse::spmv("N", -one, crsmatU, x2d_old, one, x2d);
+                            // scale y = inv(diag(U))*y
+                            Kokkos::parallel_for(nRows, parScal);
+                        }
+                    } else {
+                        //apply L^{-1} to xTemp
+                        applyL(xTemp, y);
+                        //apply U^{-1} to y
+                        applyU(y, xTemp);
+                    }
+                }
             }
             //apply D again (we assume that the scaling is 
             //symmetric for now).
@@ -2204,6 +2306,7 @@ class ParCopyFunctor
 
         scalar_array_type xDestination_, xSource_;
 };
+
 
 template<class Ordinal, class Scalar, class ExecSpace>
 class JacobiIterFunctorT

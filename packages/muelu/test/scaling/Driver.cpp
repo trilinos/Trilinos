@@ -258,6 +258,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MPI
   int provideNodeComm = 0;                            clp.setOption("nodecomm",          &provideNodeComm,  "make the nodal communicator available w/ reduction factor X");
 #endif
+  std::string userBlkFileName = "";                   clp.setOption("userBlks",              &userBlkFileName,   "read user smoother blocks from MatrixMarket matrix file. nnz (i,j) ==> jth dof in ith block");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -423,6 +424,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
       }
     }
 
+    // If doing user based block smoothing, read block information from file.
+    // Must do this for both smoothers and coarse solvers
+
+    readUserBlks<SC,LO,GO,NO> ( userBlkFileName, "coarse", mueluList, A);
+    readUserBlks<SC,LO,GO,NO> ( userBlkFileName, "smoother", mueluList, A);
 
     int runCount = 1;
     int   savedOut  = -1;
@@ -472,45 +478,31 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
-      bool preconditionerOK = true;
-      try {
-        comm->barrier();
-        // Build the preconditioner numRebuilds+1 times
-        MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,setNullSpace,numRebuilds,H,Prec);
+      // Build the preconditioner numRebuilds+1 times
+      MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+      PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,setNullSpace,numRebuilds,H,Prec);
 
-        comm->barrier();
-        tm = Teuchos::null;
-      }
-      catch(const std::exception& e) {
-        out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
-        H=Teuchos::null; Prec=Teuchos::null;
-        preconditionerOK = false;
-      }
+      comm->barrier();
+      tm = Teuchos::null;
 
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
-      if(preconditionerOK) {
-        try {
-          comm->barrier();
-          if (writeMatricesOPT > -2) {
-            tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-            H->Write(writeMatricesOPT, writeMatricesOPT);
-            tm = Teuchos::null;
-          }
-
-          // Solve the system numResolves+1 times
-          SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
-
-          comm->barrier();
+      try {
+        comm->barrier();
+        if (writeMatricesOPT > -2) {
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+          H->Write(writeMatricesOPT, writeMatricesOPT);
+          tm = Teuchos::null;
         }
-        catch(const std::exception& e) {
-          out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
-        }
+
+        // Solve the system numResolves+1 times
+        SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
+
+        comm->barrier();
       }
-      else {
-        out2<<"MueLu_Driver: Not solving system due to crash in preconditioner setup"<<std::endl;
+      catch(const std::exception& e) {
+        out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
       }
 
 
