@@ -8,8 +8,7 @@
 
 namespace Tacho {
 
-    template<typename ArgWorkflowAlgo>
-    struct CholSupernodes;
+template <typename ArgWorkflowAlgo> struct CholSupernodes;
 
 }
 

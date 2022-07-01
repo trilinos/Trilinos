@@ -124,14 +124,6 @@ namespace Tpetra {
     IDNotPresent   /*!< At least one of the specified indices was not present in the Map */
   };
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /*! Allocation profile for matrix/graph entries */
-  enum ProfileType {
-    StaticProfile
-  };
-
-#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
-#endif
 
 /*! Optimize storage option */
   enum OptimizeOption {
@@ -249,11 +241,6 @@ namespace KokkosClassic {
   using ::Tpetra::ESweepDirection;
 }
 
-#if defined(HAVE_TPETRACORE_KOKKOSCORE) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)
-#define TPETRA_USE_KOKKOS_DISTOBJECT 1
-#else
-#define TPETRA_USE_KOKKOS_DISTOBJECT 0
-#endif
 
 #include <Kokkos_Complex.hpp>
 

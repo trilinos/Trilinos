@@ -1059,14 +1059,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Access the local KokkosSparse::StaticCrsGraph data
-    typename local_graph_type::HostMirror getLocalGraph () const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-                                 "Epetra does not support Kokkos::StaticCrsGraph!");
-      TEUCHOS_UNREACHABLE_RETURN((local_graph_type::HostMirror()));
-    }
-#endif
     local_graph_type getLocalGraphDevice () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");

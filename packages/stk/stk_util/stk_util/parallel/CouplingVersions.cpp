@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <cassert>
+#include <array>
 
 namespace stk {
 namespace util {
@@ -200,7 +201,8 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(1, "7/6/2022"),
                                                       std::make_pair(2, "7/26/2022"),
                                                       std::make_pair(3, "7/26/2022"),
-                                                      std::make_pair(4, "")
+                                                      std::make_pair(4, "7/27/2022"),
+                                                      std::make_pair(5, "")
                                                     };
 
   return deprecationDates.at(version);

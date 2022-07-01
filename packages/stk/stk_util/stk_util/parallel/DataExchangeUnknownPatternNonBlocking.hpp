@@ -56,13 +56,15 @@ namespace stk {
 class DataExchangeUnknownPatternNonBlocking
 {
   public:
+    static constexpr int Unknown = -1;
+
     DataExchangeUnknownPatternNonBlocking(MPI_Comm comm, int tag_hint=11173) :
       m_comm(comm),
-      m_tag1(stk::get_mpi_tag_manager().get_tag(comm, tag_hint)),
-      m_tag2(stk::get_mpi_tag_manager().get_tag(comm, tag_hint)),
-      m_tag(m_tag2),
+      m_tagHint(tag_hint),
+      m_tag(stk::get_mpi_tag_manager().get_tag(comm, tag_hint)),
       m_recvCounter(comm),
-      m_recvcount(0)
+      m_recvcount(0),
+      m_numRecvsExpected(Unknown)
     {
       // the MPI standard is a little fuzzy on whether MPI_Requests need
       // to have stable memory addresses.  Reserve enough space to make
@@ -75,14 +77,18 @@ class DataExchangeUnknownPatternNonBlocking
 
     ~DataExchangeUnknownPatternNonBlocking()
     {
-      MPI_Waitall(m_sendReqs.size(), m_sendReqs.data(), MPI_STATUSES_IGNORE);
+      if (m_areSendsInProgress) {
+        MPI_Waitall(m_sendReqs.size(), m_sendReqs.data(), MPI_STATUSES_IGNORE);
+      }
     }
 
     MPI_Comm get_comm() const { return m_comm; }
 
+
     template <typename T>
     void start_nonblocking(std::vector< std::vector<T> > &sendLists,
-                           std::vector< std::vector<T> > &recvLists);
+                           std::vector< std::vector<T> > &recvLists,
+                           int numRecvsExpected=Unknown);
 
     // this function guarantees that all the receives have been posted
     // It does *not* guarantee the receives have been waited on (ie. that
@@ -140,8 +146,7 @@ class DataExchangeUnknownPatternNonBlocking
 
     MPI_Comm m_comm;
     int m_myrank = -1;
-    const MPITag m_tag1;
-    const MPITag m_tag2;
+    int m_tagHint;
     MPITag m_tag;
 
     ReceiveCounter m_recvCounter;
@@ -152,6 +157,7 @@ class DataExchangeUnknownPatternNonBlocking
     bool m_areSendsInProgress = false;
     bool m_areRecvsInProgress = false;
     int m_recvcount;
+    int m_numRecvsExpected;
 };
 
 
@@ -176,12 +182,17 @@ void DataExchangeUnknownPatternNonBlocking::start_sends(std::vector< std::vector
 
 template <typename T>
 void DataExchangeUnknownPatternNonBlocking::start_nonblocking(std::vector< std::vector<T> > &sendLists,
-                                             std::vector< std::vector<T> > &recvLists)
+                                                              std::vector< std::vector<T> > &recvLists,
+                                                              int numRecvsExpected)
 {
   ThrowRequireMsg(sendLists.size() == recvLists.size(), "send and receive lists must be same size");
+  ThrowRequireMsg(numRecvsExpected >= -1, "num_recvs_expected must be a positive value or -1");
   reset();
 
-  m_recvCounter.start_receive_count(get_send_counts(sendLists));
+  m_numRecvsExpected = numRecvsExpected;
+  if (m_numRecvsExpected == Unknown) {
+    m_recvCounter.start_receive_count(get_send_counts(sendLists));
+  }
   start_sends(sendLists);
 
   post_nonblocking_receives_impl(recvLists, 100);
@@ -192,7 +203,6 @@ void DataExchangeUnknownPatternNonBlocking::start_nonblocking(std::vector< std::
 template <typename T>
 void DataExchangeUnknownPatternNonBlocking::post_nonblocking_receives_impl(std::vector< std::vector<T> > &recvLists, int nmisses)
 {
-  int nRecvExpected = -1;
   int nItersSinceReceive = 0;
 
   while (true)
@@ -225,12 +235,12 @@ void DataExchangeUnknownPatternNonBlocking::post_nonblocking_receives_impl(std::
       nItersSinceReceive = 0;
     }
 
-    if (m_recvCounter.is_complete()) {
-      nRecvExpected = m_recvCounter.get_receive_count();
-      assert(m_recvReqs.size() <= static_cast<size_t>(nRecvExpected));
+    if (m_numRecvsExpected == Unknown && m_recvCounter.is_complete()) {
+      m_numRecvsExpected = m_recvCounter.get_receive_count();
+      assert(m_recvReqs.size() <= static_cast<size_t>(m_numRecvsExpected));
     }
 
-    if (m_recvcount == nRecvExpected) {
+    if (m_recvcount == m_numRecvsExpected) {
       break;
     }
 

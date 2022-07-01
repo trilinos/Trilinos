@@ -225,28 +225,6 @@ namespace Intrepid2 {
                                 pointT );
         
       }
-      // topological order
-      // { 
-      //   // two vertices
-      //   dofCoords(0,0) = -1.0;
-      //   dofCoords(1,0) =  1.0;
-        
-      //   // internal points
-      //   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      //   auto pts = Kokkos::subview(dofCoords, range_type(2, card), Kokkos::ALL());
-        
-      //   const auto offset = 1;
-      //   PointTools::getLattice( pts,
-      //                           this->basisCellTopology_, 
-      //                           order, offset, 
-      //                           pointType );
-      // }
-      break;
-    }
-    case POINTTYPE_GAUSS: {
-      // internal points only
-      PointTools::getGaussPoints( dofCoords, 
-                                  order );
       break;
     }
     default: {
@@ -307,8 +285,6 @@ namespace Intrepid2 {
 
     // initialize tags
     {
-      const bool is_vertex_included = (pointType != POINTTYPE_GAUSS);
-
       // Basis-dependent initializations
       const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
       const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
@@ -318,61 +294,52 @@ namespace Intrepid2 {
 
       ordinal_type tags[Parameters::MaxOrder+1][4];
 
-      // now we check the points for association 
-      if (is_vertex_included) {
-        // lattice order
-        {
-          const auto v0 = 0;
-          tags[v0][0] = 0; // vertex dof
-          tags[v0][1] = 0; // vertex id
-          tags[v0][2] = 0; // local dof id
-          tags[v0][3] = 1; // total number of dofs in this vertex
-          
-          const ordinal_type iend = card - 2;
-          for (ordinal_type i=0;i<iend;++i) {
-            const auto e = i + 1;
-            tags[e][0] = 1;    // edge dof
-            tags[e][1] = 0;    // edge id
-            tags[e][2] = i;    // local dof id
-            tags[e][3] = iend; // total number of dofs in this edge
-          }
+      // lattice order
+      {
+        const auto v0 = 0;
+        tags[v0][0] = 0; // vertex dof
+        tags[v0][1] = 0; // vertex id
+        tags[v0][2] = 0; // local dof id
+        tags[v0][3] = 1; // total number of dofs in this vertex
 
-          const auto v1 = card -1;
-          tags[v1][0] = 0; // vertex dof
-          tags[v1][1] = 1; // vertex id
-          tags[v1][2] = 0; // local dof id
-          tags[v1][3] = 1; // total number of dofs in this vertex
+        const ordinal_type iend = card - 2;
+        for (ordinal_type i=0;i<iend;++i) {
+          const auto e = i + 1;
+          tags[e][0] = 1;    // edge dof
+          tags[e][1] = 0;    // edge id
+          tags[e][2] = i;    // local dof id
+          tags[e][3] = iend; // total number of dofs in this edge
         }
 
-        // topological order
-        // {
-        //   tags[0][0] = 0; // vertex dof
-        //   tags[0][1] = 0; // vertex id
-        //   tags[0][2] = 0; // local dof id
-        //   tags[0][3] = 1; // total number of dofs in this vertex
-          
-        //   tags[1][0] = 0; // vertex dof
-        //   tags[1][1] = 1; // vertex id
-        //   tags[1][2] = 0; // local dof id
-        //   tags[1][3] = 1; // total number of dofs in this vertex
-          
-        //   const ordinal_type iend = card - 2;
-        //   for (ordinal_type i=0;i<iend;++i) {
-        //     const auto ii = i + 2;
-        //     tags[ii][0] = 1;    // edge dof
-        //     tags[ii][1] = 0;    // edge id
-        //     tags[ii][2] = i;    // local dof id
-        //     tags[ii][3] = iend; // total number of dofs in this edge
-        //   }
-        // }
-      } else {
-        for (ordinal_type i=0;i<card;++i) {
-          tags[i][0] = 1;    // edge dof
-          tags[i][1] = 0;    // edge id
-          tags[i][2] = i;    // local dof id
-          tags[i][3] = card; // total number of dofs in this edge
-        }
+        const auto v1 = card -1;
+        tags[v1][0] = 0; // vertex dof
+        tags[v1][1] = 1; // vertex id
+        tags[v1][2] = 0; // local dof id
+        tags[v1][3] = 1; // total number of dofs in this vertex
       }
+
+      // topological order
+      // {
+      //   tags[0][0] = 0; // vertex dof
+      //   tags[0][1] = 0; // vertex id
+      //   tags[0][2] = 0; // local dof id
+      //   tags[0][3] = 1; // total number of dofs in this vertex
+
+      //   tags[1][0] = 0; // vertex dof
+      //   tags[1][1] = 1; // vertex id
+      //   tags[1][2] = 0; // local dof id
+      //   tags[1][3] = 1; // total number of dofs in this vertex
+
+      //   const ordinal_type iend = card - 2;
+      //   for (ordinal_type i=0;i<iend;++i) {
+      //     const auto ii = i + 2;
+      //     tags[ii][0] = 1;    // edge dof
+      //     tags[ii][1] = 0;    // edge id
+      //     tags[ii][2] = i;    // local dof id
+      //     tags[ii][3] = iend; // total number of dofs in this edge
+      //   }
+      // }
+
 
       OrdinalTypeArray1DHost tagView(&tags[0][0], card*4);
 

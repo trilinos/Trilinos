@@ -113,9 +113,6 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   std::string distributorSendType ("Send");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  bool barrierBetween = true;
-#endif
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
@@ -136,11 +133,6 @@ namespace {
                    "In MPI tests, the type of send operation that the Tpetra::"
                    "Distributor will use.  Valid values include \"Isend\", "
                    "and \"Send\".");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
-                   "In MPI tests, whether Tpetra::Distributor will execute a "
-                   "barrier between posting receives and posting sends.");
-#endif
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
                    "output.");
   }
@@ -163,9 +155,6 @@ namespace {
     if (plist.is_null ()) {
       plist = parameterList ("Tpetra::Distributor");
       plist->set ("Send type", distributorSendType);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      plist->set ("Barrier between receives and sends", barrierBetween);
-#endif
 
       if (verbose && getDefaultComm()->getRank() == 0) {
         cout << "ParameterList for Distributor: " << *plist << endl;

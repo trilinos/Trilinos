@@ -119,12 +119,6 @@ public:
     //! The part of the sparse matrix's graph on each MPI process.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type local_graph_device_type;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief The specialization of Kokkos::CrsMatrix that represents
-    ///        the part of the sparse matrix on each MPI process.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
-#endif
-
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///        the part of the sparse matrix for each MPI process on device.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type local_matrix_device_type;
