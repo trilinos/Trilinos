@@ -302,17 +302,11 @@ namespace
     }
     
     ordinal_type numRefPoints = quadrature->getNumPoints();
-<<<<<<< HEAD
     const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
     
     auto points  = quadrature->allocateCubaturePoints();
     auto weights = quadrature->allocateCubatureWeights();
     
-=======
-    const int spaceDim = basis1.getBaseCellTopology().getDimension();
-    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
-    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
->>>>>>> develop
     quadrature->getCubature(points, weights);
     
     using HostExecSpace = Kokkos::HostSpace::execution_space;
