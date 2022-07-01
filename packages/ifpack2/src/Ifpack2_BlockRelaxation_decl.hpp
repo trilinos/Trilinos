@@ -425,6 +425,13 @@ private:
   //! Number of rows of overlap between adjacent blocks.
   int OverlapLevel_;
 
+  //! Combine overlapping soltuions in nonsymmetric way
+  //only valid with block Jacobi relaxation and overlapping blocks (e.g., defined by "partitioner: type" "user" and "parts: " or "global ID parts:"). Average solutions in overlapped regions (i.e., after summing different solutions divide by number of blocks contain this dof). When false (the default) symmetric averaging performed (i.e., average residuals and solutions).
+  bool nonsymCombine_;
+
+  //! Corresponds to "schwarz: combine mode" to distinguish between RAS and ADD when computing weights
+  std::string schwarzCombineMode_;
+
   //! Damping factor.
   scalar_type DampingFactor_;
 

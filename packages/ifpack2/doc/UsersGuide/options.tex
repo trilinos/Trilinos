@@ -168,12 +168,37 @@ There are several ways the blocks are constructed:
 
     The unknowns are grouped according to a user provided partition. A user
     may provide a non-overlapping partition {\tt "partitioner: map"} or an
-    overlapping one {\tt "partitioner: parts"}.
+    overlapping one via either {\tt "partitioner: parts"} or {\tt "partitioner: global ID parts"}.
 
-    A particular example of a smoother using this approach is a Vanka
+    A particular example of a smoother using  this type of approach might be a Vanka
     smoother~\cite{Vanka1986}, where a user may in {\tt "partition: parts"} pressure
     degrees of freedom, and request a overlap of one thus constructing Vanka
     blocks.
+
+    When blocks overlap, multiple solutions at each dof are combined for all blocks
+    that contain this dof. When overlapping blocks reside on 
+    different MPI ranks,  use block relaxation with 
+    Schwarz  by setting {\tt "subdomain solver name"} to {\tt "BLOCK\_RELAXATION"} (see \ref{s:schwarz}).
+    {\tt "schwarz: overlap level"} must be sufficient so that each block is
+    fully contained within a subdomain. {\tt "schwarz: combine mode"}
+    determines how overlapped values across MPI ranks are combined. If 
+    {\tt "Jacobi"} is used for {\tt "relaxation: type"} when either 
+    {\tt "schwarz: overlap level"} is not zero or when using
+    {\tt "partitioner: parts"} or {\tt "partitioner: global ID parts"}, the main overlap combinations are
+\begin{itemize}
+        \item average solutions at each dof from all block solves containing the dof even when blocks
+           reside on different MPI ranks. Set {\tt "schwarz: combine mode"} to {\tt "ADD"},
+           and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "true"} to do this.
+        \item average solutions from all block solves containing the dof residing on MPI rank owning the dof within non-overlapped
+           version of sub-domain (RAS or Restrictive Additive Schwarz). Set {\tt "schwarz: combine mode"} to {\tt "ZERO"}
+           and {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "true"} for this.
+        \item symmetric version of first option when employing CG Krylov solver (i.e., first average block residuals and then average block solutions). 
+           Set {\tt "schwarz: combine mode"} to {\tt "ADD"} and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "false"}.
+        \item symmetric version of second option when employing CG Krylov solver (i.e., average block residuals and block solutions
+           for blocks on owning MPI rank). 
+           Set {\tt "schwarz: combine mode"} to {\tt "ZERO"} and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "false"}.
+\end{itemize}
+
 \end{itemize}
 The original partitioning may be further modified with {\tt "partitioner: overlap"}
 parameter which will use the local matrix graph to construct overlapping
@@ -246,14 +271,26 @@ The following parameters are used in the block relaxation methods:
     {empty}
     {An array containing the partition number for each element.
      The $i$th entry in the \texttt{ArrayRCP} is the part (block) number that
-     row $i$ belongs to. Use this option if the parts (blocks) do not
+     row $i$ belongs to. Use this option if parts (blocks) do not
      overlap. Only valid for ``user'' partitioner type.}
 \ccc{partitioner: parts}
     {Teuchos::Array<Teuchos::ArrayRCP\\<local\_ordinal>>}
     {empty}
-    {Use this option if the parts (blocks) overlap. The $i$th entry in the
-     \texttt{Array} is an \texttt{ArrayRCP} that contains all the rows in part
+    {Use this option if parts (blocks) overlap. The $i$th entry in the
+     \texttt{Array} is an \texttt{ArrayRCP} containing all rows (local IDs) in part
      (block) $i$. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: global ID parts}
+    {Teuchos::Array<Teuchos::ArrayRCP\\<global\_ordinal>>}
+    {empty}
+    {Use this option if parts (blocks) overlap. The $i$th entry in the
+     \texttt{Array} is an \texttt{ArrayRCP} containing all rows (global IDs) in part
+     (block) $i$. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: nonsymmetric overlap combine"}
+    {bool}
+    {\false}
+    {Valid when using Jacobi relaxation with overlapping blocks.
+     Corresponds to averaging only overlapping solutions as opposed
+     to symmetric averaging which also averages residuals before performing block solves.}
 \ccc{partitioner: line detection threshold}
     {magnitude}
     {0.0}
@@ -556,7 +593,7 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {bool}
     {true}
     {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
-\ccc{block size for ILU}
+ \ccc{block size for ILU}
     {int}
     {1}
     {Block size for the iterative factorization algorithm.}
