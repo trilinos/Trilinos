@@ -550,7 +550,18 @@ namespace
     
     // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
     auto basis2ValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
-    deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); // true: transpose
+    {
+      const int rankB = basis1Values.rank();
+      using ViewType = decltype(basis1Coefficients);
+      using BType    = decltype(basis1Values);
+      switch(rankB)
+      {
+        case 2: deviceGeneralizedMatrixMultiply<ViewType,BType,2>(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); break;
+        case 3: deviceGeneralizedMatrixMultiply<ViewType,BType,3>(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION((rankB < 2) || (rankB > 3), std::invalid_argument, "Unhandled rank for basis1Values");
+      }
+    }
     
     testViewFloatingEquality(basis2ValuesFromBasis1, basis2Values, relTol, absTol, out, success, "actual", "expected");
     
