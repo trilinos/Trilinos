@@ -862,8 +862,6 @@ namespace
     const double relTol=1e-14;
     const double absTol=1e-14;
     
-    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
-    
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
@@ -892,8 +890,6 @@ namespace
     const double relTol=1e-13;
     const double absTol=1e-13;
     
-    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
-    
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
@@ -921,8 +917,6 @@ namespace
     
     const double relTol=1e-13;
     const double absTol=1e-13;
-    
-    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HVOL;
     
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;

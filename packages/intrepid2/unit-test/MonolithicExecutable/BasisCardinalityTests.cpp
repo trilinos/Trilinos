@@ -94,7 +94,6 @@ namespace
   {
     using BasisFamily = SerendipityBasisFamily<DefaultTestDeviceType>;
     
-    const bool defineVertexFunctions = true;
     int expectedCardinality = 0;
     int maxDegree = std::max(polyOrder_x,polyOrder_y);
     int maxH1Degree = (fs == FUNCTION_SPACE_HVOL) ? maxDegree + 1 : maxDegree;
@@ -624,7 +623,6 @@ namespace
               expectedCardinality += two_to_the_d_minus_i * d_choose_i * p_minus_i_choose_i;
             }
           }
-          int expectedExtrusionCount = spaceDim - 1;
           if (fs == FUNCTION_SPACE_HGRAD)
           {
             auto fullBasis        = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
