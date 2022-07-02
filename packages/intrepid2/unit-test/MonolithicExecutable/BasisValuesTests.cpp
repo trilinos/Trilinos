@@ -140,8 +140,9 @@ namespace
     });
     Kokkos::fence();
     
-    auto hostPoints  = getHostCopy(points);
-    auto hostWeights = getHostCopy(weights);
+    using HostDeviceType = Kokkos::HostSpace::device_type;
+    auto hostPoints  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), points);
+    auto hostWeights = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), weights);
 
     printFunctor2(points, out, "points being tested");
     printFunctor2(tensorPoints, out, "tensorPoints");
