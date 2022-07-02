@@ -703,7 +703,6 @@ struct OperatorTensorDecomposition
       // set cell topology
       this->basisCellTopology_ = tensorComponents_[0]->getBaseCellTopology();
       this->numTensorialExtrusions_ = tensorComponents_.size() - 1;
-      const ordinal_type spaceDim = this->basisCellTopology_.getDimension() + numTensorialExtrusions_;
       
       this->basisType_         = basis1_->getBasisType();
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
@@ -1033,8 +1032,6 @@ struct OperatorTensorDecomposition
     virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
     {
       const int spaceDim  = this->getDomainDimension();
-      const int spaceDim1 = basis1_->getDomainDimension();
-      const int spaceDim2 = basis2_->getDomainDimension();
       
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       
@@ -1500,7 +1497,6 @@ struct OperatorTensorDecomposition
               {
                 INTREPID2_TEST_FOR_EXCEPTION(pointComponentOrdinal >= inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
                 const auto & pointComponent = inputPoints.getTensorComponent(pointComponentOrdinal);
-                const ordinal_type numComponentPoints = pointComponent.extent_int(0);
                 const ordinal_type numComponentDims   = pointComponent.extent_int(1);
                 dimsSoFar += numComponentDims;
                 INTREPID2_TEST_FOR_EXCEPTION(dimsSoFar > inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
