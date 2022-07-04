@@ -163,7 +163,7 @@ namespace MueLu {
       Jk.erase(std::unique(Jk.begin(), Jk.end()), Jk.end());
       // create map
       std::map<LO, LO> G;
-      for (LO i = 0; i < Jk.size(); i++) G.insert(std::pair<GO, GO>(Jk[i], i));
+      for (LO i = 0; i < Jk.size(); i++) G.insert(std::pair<LO, LO>(Jk[i], i));
 
       // 3. merge rows together
       Teuchos::SerialDenseMatrix<LO, SC> localA(Jk.size(), Ik.size(), true);
