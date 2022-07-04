@@ -470,7 +470,7 @@ namespace Belos {
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
       typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
-        typename flat_view_type::const_type flat_B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      typename flat_view_type::const_type flat_B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
       // Create a view for C on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;
