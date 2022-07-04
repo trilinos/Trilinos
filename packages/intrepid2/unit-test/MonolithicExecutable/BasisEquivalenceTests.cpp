@@ -791,7 +791,11 @@ namespace
     const double relTol=1e-13; // ____ is sharp on development setup for polyOrder=1; relaxing for potential architectural differences
     const double absTol=1e-13; // ____ is sharp on development setup for polyOrder=1; relaxing for potential architectural differences
 
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 on Hexahedron not supported by BasisValues.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     const int polyOrder = 1;
     CnBasis cnBasis(polyOrder);
     C1Basis c1Basis;
@@ -810,7 +814,11 @@ namespace
 
     // C2 throws an exception for OPERATOR_D5 and OPERATOR_D6, with a message that these are unsupported.
     // I'm not sure why that is, but for that reason we don't test with OPERATOR_D5 here, as we do in other tests
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 on Hexahedron not supported by BasisValues.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4};
     const int polyOrder = 2;
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
