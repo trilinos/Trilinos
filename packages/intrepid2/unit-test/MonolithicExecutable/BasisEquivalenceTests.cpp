@@ -245,12 +245,14 @@ namespace
     const int basisCardinality  = basis1.getCardinality();
     const int basisCardinality2 = basis2.getCardinality();
     
-    typename Basis1::OrdinalTypeArray1DHost reverseOrdinalMapHost;
+    typename Basis1::OrdinalTypeArray1D reverseOrdinalMap;
+    reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap", basisCardinality2);
+    auto reverseOrdinalMapHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), reverseOrdinalMap);
+    
     if (ordinalMap.size() > 0)
     {
       // then set up reverse ordinal map
       auto ordinalMapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ordinalMap);
-      reverseOrdinalMapHost = typename Basis1::OrdinalTypeArray1DHost("",basisCardinality2);
       
       // initialize with -1; these are ordinals for members in basis2 that are not included in basis1
       Kokkos::deep_copy(reverseOrdinalMapHost, -1);
@@ -260,8 +262,9 @@ namespace
         int i_mapped = ordinalMapHost(i);
         reverseOrdinalMapHost(i_mapped) = i;
       }
-      printFunctor1(ordinalMapHost,        out, "ordinalMapHost");
-      printFunctor1(reverseOrdinalMapHost, out, "reverseOrdinalMapHost");
+      Kokkos::deep_copy(reverseOrdinalMap, reverseOrdinalMapHost);
+      printFunctor1(ordinalMap,        out, "ordinalMap");
+      printFunctor1(reverseOrdinalMap, out, "reverseOrdinalMap");
     }
     
     // get quadrature points for integrating up to 2*polyOrder
