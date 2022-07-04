@@ -94,7 +94,7 @@ namespace
           // proceed to next entry
           // find the first dimension we should decrement.
           int dimToDecrement = spaceDim - 2;
-          int totalOrder;
+          int totalOrder = 0;
           for (; dimToDecrement >= 0; dimToDecrement--)
           {
             if (entries[dimToDecrement] == 0) continue; // can't decrement from 0!
