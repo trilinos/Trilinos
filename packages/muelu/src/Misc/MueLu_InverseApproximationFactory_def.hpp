@@ -153,9 +153,9 @@ namespace MueLu {
       Array<ArrayView<const LO>> J(Ik.size());
       Array<ArrayView<const SC>> Ak(Ik.size());
       Array<LO> Jk;
-      for (size_t i = 0; i < Ik.size(); i++) {
+      for (LO i = 0; i < Ik.size(); i++) {
         A->getLocalRowView(Ik[i], J[i], Ak[i]);
-        for (size_t j = 0; j < J[i].size(); j++)
+        for (LO j = 0; j < J[i].size(); j++)
           Jk.append(J[i][j]);
       }
       // set of unique column indices Jk
@@ -163,12 +163,12 @@ namespace MueLu {
       Jk.erase(std::unique(Jk.begin(), Jk.end()), Jk.end());
       // create map
       std::map<LO, LO> G;
-      for (size_t i = 0; i < Jk.size(); i++) G.insert(std::pair<GO, GO>(Jk[i], i));
+      for (LO i = 0; i < Jk.size(); i++) G.insert(std::pair<GO, GO>(Jk[i], i));
 
       // 3. merge rows together
       Teuchos::SerialDenseMatrix<LO, SC> localA(Jk.size(), Ik.size(), true);
-      for (size_t i = 0; i < Ik.size(); i++) {
-        for (size_t j = 0; j < J[i].size(); j++) {
+      for (LO i = 0; i < Ik.size(); i++) {
+        for (LO j = 0; j < J[i].size(); j++) {
           localA(G.at(J[i][j]), i) = Ak[i][j];
         }
       }
