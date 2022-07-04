@@ -72,7 +72,7 @@ namespace
     // for all alpha, t, integrated jacobi should evaluate to 0 at 0.
     Kokkos::View<double*,DeviceType> integratedJacobiView("integrated jacobi values",polyOrder+1);
     
-    using Intrepid2::Polynomials::integratedJacobiValues;
+    using Intrepid2::Polynomials::shiftedScaledIntegratedJacobiValues;
     using Intrepid2::Polynomials::shiftedScaledJacobiValues;
 
     const double x = 0.0;
@@ -85,7 +85,7 @@ namespace
         auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
         Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
-          integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
+          shiftedScaledIntegratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
         });
         
         Kokkos::fence();
@@ -110,7 +110,7 @@ namespace
     const int polyOrder = 2;
     Kokkos::View<double*,DeviceType> integratedJacobiView("integrated jacobi values",polyOrder+1);
     
-    using Intrepid2::Polynomials::integratedJacobiValues;
+    using Intrepid2::Polynomials::shiftedScaledIntegratedJacobiValues;
     
     const double alpha = 0.0;
     
@@ -123,7 +123,7 @@ namespace
         auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
         Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
-          integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
+          shiftedScaledIntegratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
         });
         
         Kokkos::fence();
@@ -154,7 +154,7 @@ namespace
       {
         for (auto t : t_values)
         {
-          using Intrepid2::Polynomials::integratedJacobiValues;
+          using Intrepid2::Polynomials::shiftedScaledIntegratedJacobiValues;
           using Intrepid2::Polynomials::shiftedScaledJacobiValues;
           
           // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
@@ -162,8 +162,8 @@ namespace
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
           {
             shiftedScaledJacobiValues(jacobiView, alpha, polyOrder, x, t);
-            integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
-            integratedJacobiValues(integratedJacobiViewSecondPath, jacobiView, alpha, polyOrder, x, t);
+            shiftedScaledIntegratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
+            shiftedScaledIntegratedJacobiValues(integratedJacobiViewSecondPath, jacobiView, alpha, polyOrder, x, t);
           });
           
           auto integratedJacobiViewSecondPathHost = getHostCopy(integratedJacobiViewSecondPath);
@@ -201,7 +201,7 @@ namespace
       {
         for (auto t : t_values)
         {
-          using Intrepid2::Polynomials::integratedJacobiValues_dt;
+          using Intrepid2::Polynomials::shiftedScaledIntegratedJacobiValues_dt;
           using Intrepid2::Polynomials::shiftedScaledJacobiValues;
           
           // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
@@ -209,8 +209,8 @@ namespace
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
           {
             shiftedScaledJacobiValues(jacobiView, alpha, polyOrder, x, t);
-            integratedJacobiValues_dt(integratedJacobiView_dt, alpha, polyOrder, x, t);
-            integratedJacobiValues_dt(secondPathIntegratedJacobiView_dt, jacobiView, alpha, polyOrder, x, t);
+            shiftedScaledIntegratedJacobiValues_dt(integratedJacobiView_dt, alpha, polyOrder, x, t);
+            shiftedScaledIntegratedJacobiValues_dt(secondPathIntegratedJacobiView_dt, jacobiView, alpha, polyOrder, x, t);
           });
           
           auto secondPathIntegratedJacobiView_dt_host = getHostCopy(secondPathIntegratedJacobiView_dt);

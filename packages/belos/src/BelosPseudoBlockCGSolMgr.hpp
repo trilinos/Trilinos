@@ -239,6 +239,7 @@ namespace Belos {
       \note Only works if "Estimate Condition Number" is set on parameterlist
     */
     ScalarType getConditionEstimate() const {return condEstimate_;}
+    Teuchos::ArrayRCP<MagnitudeType> getEigenEstimates() const {return eigenEstimates_;}
 
     //! Return the residual status test
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
@@ -301,6 +302,7 @@ namespace Belos {
     // Compute the condition number estimate
     void compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
                                      Teuchos::ArrayView<MagnitudeType> offdiag,
+                                     Teuchos::ArrayRCP<MagnitudeType>& lambdas,
                                      ScalarType & lambda_min,
                                      ScalarType & lambda_max,
                                      ScalarType & ConditionNumber );
@@ -350,6 +352,7 @@ namespace Belos {
     std::string resScale_;
     bool genCondEst_;
     ScalarType condEstimate_;
+    Teuchos::ArrayRCP<MagnitudeType> eigenEstimates_;
 
     // Timers.
     std::string label_;
@@ -883,7 +886,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
               ScalarType l_min, l_max;
               Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
               Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
-              compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+              compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
 
               // Make sure not to do more condition estimate computations for this solve.
               block_cg_iter->setDoCondEst(false); 
@@ -988,7 +991,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
     ScalarType l_min, l_max;
     Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
     Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
-    compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+    compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
     condEstPerf = true;
   }
 
@@ -1015,6 +1018,7 @@ void
 PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
                              Teuchos::ArrayView<MagnitudeType> offdiag,
+                             Teuchos::ArrayRCP<MagnitudeType>& lambdas,
                              ScalarType & lambda_min,
                              ScalarType & lambda_max,
                              ScalarType & ConditionNumber )
@@ -1034,6 +1038,7 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
   char char_N = 'N';
   Teuchos::LAPACK<int,ScalarType> lapack;
 
+  lambdas.resize(N, 0.0);
   lambda_min = STS::one ();
   lambda_max = STS::one ();
   if( N > 2 ) {
@@ -1044,6 +1049,9 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
        "compute_condnum_tridiag_sym: LAPACK's _PTEQR failed with info = "
        << info << " < 0.  This suggests there might be a bug in the way Belos "
        "is calling LAPACK.  Please report this to the Belos developers.");
+    for (int k = 0; k < N; k++) {
+      lambdas[k] = diag[N - 1 - k];
+    }
     lambda_min = Teuchos::as<ScalarType> (diag[N-1]);
     lambda_max = Teuchos::as<ScalarType> (diag[0]);
   }

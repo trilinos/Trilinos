@@ -448,7 +448,7 @@ namespace Belos {
     if ( assertPositiveDefiniteness_ )
         for (i=0; i<numRHS_; ++i)
             TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
-                                CGIterateFailure,
+                                CGPositiveDefiniteFailure,
                                 "Belos::PseudoBlockStochasticCGIter::iterate(): negative value for r^H*M*r encountered!" );
 
     ////////////////////////////////////////////////////////////////
@@ -471,7 +471,7 @@ namespace Belos {
         if ( assertPositiveDefiniteness_ )
             // Check that pAp[i] is a positive number!
             TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp[i]) <= zero,
-                                CGIterateFailure,
+                                CGPositiveDefiniteFailure,
                                 "Belos::PseudoBlockStochasticCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
         alpha(i,i) = rHz[i] / pAp[i];
@@ -522,7 +522,7 @@ namespace Belos {
       if ( assertPositiveDefiniteness_ )
           for (i=0; i<numRHS_; ++i)
               TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
-                                  CGIterateFailure,
+                                  CGPositiveDefiniteFailure,
                                   "Belos::PseudoBlockStochasticCGIter::iterate(): negative value for r^H*M*r encountered!" );
       //
       // Update the search directions.

@@ -426,11 +426,11 @@ namespace Intrepid2
      
      When alpha = 0, Jacobi coincides with Legendre.
      
-     Compared with the integratedJacobiValues() below, this version uses more memory, but may require fewer floating point computations by reusing the values in jacobiValues.
+     Compared with the shiftedScaledIntegratedJacobiValues() below, this version uses more memory, but may require fewer floating point computations by reusing the values in jacobiValues.
      */
     template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
-    KOKKOS_INLINE_FUNCTION void integratedJacobiValues(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
-                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedJacobiValues(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
+                                                                    double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 1.0;
@@ -466,11 +466,11 @@ namespace Intrepid2
      
      When alpha = 0, Jacobi coincides with Legendre.
      
-     Compared with the integratedJacobiValues() above, this version uses less memory, but may require more floating point computations.
+     Compared with the shiftedScaledIntegratedJacobiValues() above, this version uses less memory, but may require more floating point computations.
      */
     template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
-    KOKKOS_INLINE_FUNCTION void integratedJacobiValues(OutputValueViewType outputValues,
-                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedJacobiValues(OutputValueViewType outputValues,
+                                                                    double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // memory-conserving version -- place the Jacobi values in the final output container
       shiftedScaledJacobiValues(outputValues, alpha, n, x, t);
@@ -509,8 +509,8 @@ namespace Intrepid2
      These are defined for x in [0,1].  The x derivative of integrated Jacobi is just Jacobi; the only distinction is in the index -- outputValues indices are shifted by 1 relative to shiftedScaledJacobiValues, above.
      */
     template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
-    KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dx(OutputValueViewType outputValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedJacobiValues_dx(OutputValueViewType outputValues,
+                                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // rather than repeating the somewhat involved implementation of jacobiValues here,
       // call with (n-1), and then move values accordingly
@@ -539,8 +539,8 @@ namespace Intrepid2
      This implementation uses more memory than the one above, but depending on the application may save some computation, in that it can reuse previously computed jacobiValues.
      */
     template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
-    KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dt(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedJacobiValues_dt(OutputValueViewType outputValues, const OutputValueViewType jacobiValues,
+                                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // reduced flops version: rely on previously computed P_i
       if (n >= 0) outputValues(0) = 0.0;
@@ -564,8 +564,8 @@ namespace Intrepid2
      This implementation requires less memory than the one above, but depending on the application may require some extra computation.
      */
     template<typename OutputValueViewType, typename ScalarType, typename ScalarTypeForScaling>
-    KOKKOS_INLINE_FUNCTION void integratedJacobiValues_dt(OutputValueViewType outputValues,
-                                                          double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+    KOKKOS_INLINE_FUNCTION void shiftedScaledIntegratedJacobiValues_dt(OutputValueViewType outputValues,
+                                                                       double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
     {
       // memory-conserving version -- place the Jacobi values in the final output container
       shiftedScaledJacobiValues(outputValues, alpha, n, x, t);

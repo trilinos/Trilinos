@@ -123,15 +123,6 @@ public:
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Return a copy of the Tempus ParameterList
-  TEMPUS_DEPRECATED
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
-    { return integrator_->getTempusParameterList(); }
-  TEMPUS_DEPRECATED
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
-    { integrator_->setTempusParameterList(pl); }
-#endif
   //@}
 
   /// \name Accessor methods

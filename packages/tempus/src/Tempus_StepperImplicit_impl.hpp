@@ -237,22 +237,6 @@ void StepperImplicit<Scalar>::setSolver(
 }
 
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-const Thyra::SolveStatus<Scalar>
-StepperImplicit<Scalar>::solveImplicitODE(
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
-{
-  if (getZeroInitialGuess())
-    Thyra::assign(x.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-
-  const Thyra::SolveStatus<Scalar> sStatus = (*solver_).solve(&*x);
-
-  return sStatus;
-}
-
-
-#endif
 template<class Scalar>
 const Thyra::SolveStatus<Scalar>
 StepperImplicit<Scalar>::solveImplicitODE(
