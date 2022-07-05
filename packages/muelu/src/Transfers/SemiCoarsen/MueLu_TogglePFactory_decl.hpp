@@ -147,6 +147,7 @@ template <class Scalar = DefaultScalar,
     //! Returns number of coarse null space factories.
     size_t NumCoarseNullspaceFactories() const { return prolongatorFacts_.size(); }
 
+    RCP<const FactoryBase>  getProlongatorFactory(size_t t) const {return prolongatorFacts_[t]; }
     //@}
   private:
     //! list of user-defined prolongation operator factories
