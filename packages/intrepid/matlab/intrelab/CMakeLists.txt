@@ -9,31 +9,25 @@
 #
 
 PROJECT(Intrelab)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(MATLAB_FIND_DEBUG TRUE)
 
 # --> ACTIONS:
-# 1.) Specify Trilinos install directory with -DTrilinos_ROOT=     (case-sensitive)
-# 2.) Specify Matlab install directory with   -DMatlab_ROOT_DIR=   (case-sensitive and note extra _DIR)
-# 3.) Specify directory to install intrelab   -DINST_DIR=          (case-sensitive)
+# 1.) Specify Trilinos install directory with -DTrilinos_ROOT     =    (case-sensitive)
+# 2.) Specify Matlab install directory with   -DMatlab_ROOT_DIR   =    (case-sensitive and note extra _DIR)
+# 3.) Specify directory to install intrelab   -DINST_DIR          =    (case-sensitive)
 
 # handle Matlab_ROOT_DIR and all variants 
 # allow for {Matlab_ROOT_DIR, MATLAB_ROOT_DIR, Matlab_ROOT, MATLAB_ROOT}
 if (MATLAB_ROOT_DIR)
-  if (NOT Matlab_ROOT_DIR)
-    set(Matlab_ROOT_DIR ${MATLAB_ROOT_DIR})
-  endif()
+  set(Matlab_ROOT_DIR ${MATLAB_ROOT_DIR})
 endif()
 if (Matlab_ROOT)
-  if (NOT Matlab_ROOT_DIR)
-    set(Matlab_ROOT_DIR ${Matlab_ROOT})
-  endif()
+  set(Matlab_ROOT_DIR ${Matlab_ROOT})
 endif()
 if (MATLAB_ROOT)
-  if (NOT Matlab_ROOT_DIR)
-    set(Matlab_ROOT_DIR ${MATLAB_ROOT})
-  endif()
+  set(Matlab_ROOT_DIR ${MATLAB_ROOT})
 endif()
 # look for environment variable and give it precedence
 # allow for {MATLAB_ROOT, Matlab_ROOT, MATLAB_ROOT_DIR, Matlab_ROOT_DIR}
@@ -52,29 +46,42 @@ endif()
 if (NOT Matlab_ROOT_DIR)
   message(WARNING "Matlab_ROOT_DIR has NOT been specified.")    
 endif()
+set(Matlab_ROOT_DIR "${Matlab_ROOT_DIR}" CACHE STRING "Matlab installation directory")
 
 find_package(Matlab REQUIRED)
 
 # handle Trilinos_ROOT and all variants 
-# allow for {Trilinos_ROOT, TRILINOS_ROOT}
+# allow for {Trilinos_DIR, TRILINOS_DIR, Trilinos_ROOT, TRILINOS_ROOT}
+if (TRILINOS_DIR)
+  set(Trilinos_ROOT ${TRILINOS_DIR})
+endif()
+if (Trilinos_DIR)
+  set(Trilinos_ROOT ${Trilinos_DIR})
+endif()
 if (TRILINOS_ROOT)
-  if (NOT Trilinos_ROOT)
-    set(Trilinos_ROOT ${TRILINOS_ROOT})
-  endif()
+  set(Trilinos_ROOT ${TRILINOS_ROOT})
 endif()
 # look for environment variable and give it precedence
-# allow for {Trilinos_ROOT, TRILINOS_ROOT}
 if(DEFINED ENV{TRILINOS_ROOT})
   set(Trilinos_ROOT $ENV{TRILINOS_ROOT})
 endif()
 if(DEFINED ENV{Trilinos_ROOT})
   set(Trilinos_ROOT $ENV{Trilinos_ROOT})
 endif()
-if (NOT Trilinos_ROOT)
+if(DEFINED ENV{TRILINOS_DIR})
+  set(Trilinos_ROOT $ENV{TRILINOS_DIR})
+endif()
+if(DEFINED ENV{Trilinos_DIR})
+  set(Trilinos_ROOT $ENV{Trilinos_DIR})
+endif()
+message(WARNING "Trilinos_ROOT: ${Trilinos_ROOT}")    
+if ("${Trilinos_ROOT}" STREQUAL "")
   message(WARNING "Trilinos_ROOT has NOT been specified.")    
 endif()
+set(Trilinos_ROOT "${Trilinos_ROOT}" CACHE STRING "Trilinos installation directory")
 
 FIND_PACKAGE(Trilinos COMPONENTS Intrepid REQUIRED)
+
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
 set(INST_DIR "install")
@@ -104,12 +111,16 @@ set(MOBJS intrepid_setJacobian intrepid_setJacobianInv intrepid_setJacobianDet
     strainEulerianLagrangian stress tangentStiffnessElastostaticsTL
     tensorMultiplyDataField myMatVecProductDataField myMatVecProductDataData)
 
+string(TOLOWER "${Trilinos_CMAKE_BUILD_TYPE}" Trilinos_CMAKE_BUILD_TYPE_lower)
 function(make_mex fname)
   matlab_add_mex(NAME ${fname}
       SHARED
       SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
   )
   target_link_libraries(${fname} Trilinos::all_selected_libs)
+  if(Trilinos_CMAKE_BUILD_TYPE_lower STREQUAL "release")
+    target_compile_options(${fname} PRIVATE "-O3;-march=native;-mtune=native")
+  endif()
 endfunction()
 
 foreach(fname ${MOBJS})
