@@ -52,12 +52,15 @@
 #include "Intrepid2_DerivedBasisFamily.hpp"
 
 #include "Intrepid2_HierarchicalBasis_HCURL_TRI.hpp"
+#include "Intrepid2_HierarchicalBasis_HCURL_TET.hpp"
 #include "Intrepid2_HierarchicalBasis_HDIV_TRI.hpp"
+#include "Intrepid2_HierarchicalBasis_HDIV_TET.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TET.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_TET.hpp"
 
 namespace Intrepid2 {
   
@@ -95,9 +98,9 @@ namespace Intrepid2 {
   public:
     // we will fill these in as we implement them
     using HGRAD = IntegratedLegendreBasis_HGRAD_TET<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
-    using HCURL = dummyBasis<DeviceType,OutputScalar,PointScalar>;
-    using HDIV  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
-    using HVOL  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HCURL = HierarchicalBasis_HCURL_TET<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = HierarchicalBasis_HDIV_TET<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = LegendreBasis_HVOL_TET<DeviceType,OutputScalar,PointScalar>;
   };
   
   /** \class Intrepid2::HierarchicalBasisFamily
