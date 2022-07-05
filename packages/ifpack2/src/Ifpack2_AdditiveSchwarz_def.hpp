@@ -1064,6 +1064,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
   }
+  TimeMonitor timeMon (*timer);
   double startTime = timer->wallTime();
 
   // compute () assumes that the values of Matrix_ (aka A) have changed.
@@ -1086,7 +1087,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   //it will be able to see the new values and update itself accordingly.
 
   { // Start timing here.
-    TimeMonitor timeMon (*timer);
 
     IsComputed_ = false;
     Inverse_->numeric ();
