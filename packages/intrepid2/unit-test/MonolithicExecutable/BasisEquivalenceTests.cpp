@@ -246,12 +246,15 @@ namespace
     const int basisCardinality2 = basis2.getCardinality();
     
     typename Basis1::OrdinalTypeArray1D reverseOrdinalMap;
-    reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap", basisCardinality2);
+    reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap - empty", 0);
     auto reverseOrdinalMapHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), reverseOrdinalMap);
     
     if (ordinalMap.size() > 0)
     {
       // then set up reverse ordinal map
+      reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap", basisCardinality2);
+      reverseOrdinalMapHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), reverseOrdinalMap);
+      
       auto ordinalMapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ordinalMap);
       
       // initialize with -1; these are ordinals for members in basis2 that are not included in basis1
