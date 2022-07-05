@@ -829,6 +829,9 @@ OverlappingRowMatrix<MatrixType>::getExtHaloStartsHost() const
 template<class MatrixType>
 void OverlappingRowMatrix<MatrixType>::doExtImport()
 {
+  //TODO: CrsMatrix can't doImport after resumeFill (see #9720). Ideally, this import could
+  //happen using combine mode REPLACE without reconstructing the matrix.
+  //Maybe even without another fillComplete since this doesn't change structure - see #9655.
   ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
   ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
   ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
