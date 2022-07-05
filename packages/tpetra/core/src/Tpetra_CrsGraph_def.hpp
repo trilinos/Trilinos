@@ -2720,16 +2720,6 @@ namespace Tpetra {
       }
     }
 
-    /*
-    // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
-    // since the future model will be allocation at construction, not
-    // lazy allocation on first insert.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      ((this->lclIndsUnpacked_wdv.extent (0) != 0 || this->gblInds_wdv.extent (0) != 0),
-       std::runtime_error, "You may not call this method if 1-D data "
-       "structures are already allocated.");
-     */
-
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;
     indicesAreSorted_    = true;

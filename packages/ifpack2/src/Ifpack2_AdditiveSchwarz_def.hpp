@@ -959,8 +959,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
-  std::cout << "Hello from AdditiveSchwarz::initialize (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
-
   const std::string timerName ("Ifpack2::AdditiveSchwarz::initialize");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
@@ -1026,7 +1024,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   ++NumInitialize_;
 
   InitializeTime_ += (timer->wallTime() - startTime);
-  std::cout << "Done with AdditiveSchwarz::initialize (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 }
 
 template<class MatrixType,class LocalInverseType>
@@ -1042,8 +1039,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   using Teuchos::RCP;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
-
-  std::cout << "Hello from AdditiveSchwarz::compute (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 
   if (! IsInitialized_) {
     initialize ();
@@ -1074,7 +1069,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   // compute () assumes that the values of Matrix_ (aka A) have changed.
   // If this has overlap, do an import from the input matrix to the halo.
   if (IsOverlapping_) {
-    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Ifpack2::AdditiveSchwarz::compute: Halo Import"));
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Halo Import"));
     OverlappingMatrix_->doExtImport();
   }
   // At this point, either Matrix_ or OverlappingMatrix_ (depending on whether this is overlapping)
@@ -1082,7 +1077,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   //
   if(auto asf = Teuchos::rcp_dynamic_cast<Details::AdditiveSchwarzFilter<MatrixType>>(innerMatrix_))
   {
-    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Ifpack2::AdditiveSchwarz::compute: Fill Local Matrix"));
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Fill Local Matrix"));
     //NOTE: if this compute() call comes right after the initialize() with no intervening matrix changes, this call is redundant.
     //initialize() already filled the local matrix. However, we have no way to tell if this is the case.
     asf->updateMatrixValues();
@@ -1101,7 +1096,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   ++NumCompute_;
 
   ComputeTime_ += (timer->wallTime() - startTime);
-  std::cout << "Done with AdditiveSchwarz::compute (rank " << Matrix_->getComm()->getRank() << ")." << std::endl;
 }
 
 //==============================================================================

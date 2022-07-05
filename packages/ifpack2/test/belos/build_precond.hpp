@@ -95,20 +95,16 @@ build_precond (Teuchos::ParameterList& test_params,
     OSTab tab (*out);
     prec->setParameters (tif_params);
     {
-      std::cout << "Driver: starting precond init (rank " << myRank << ")" << std::endl;
       Teuchos::TimeMonitor timeMon (timer_init);
       prec->initialize ();
-      std::cout << "Driver: done with precond init (rank " << myRank << ")" << std::endl;
       comm->barrier();
     }
      if (myRank == 0) {
       *out << "Time Init: " << timer_init.totalElapsedTime() << endl;
      }
     {
-      std::cout << "Driver: starting precond compute (rank " << myRank << ")" << std::endl;
       Teuchos::TimeMonitor timeMon (timer);
       prec->compute ();
-      std::cout << "Driver: done with precond compute (rank " << myRank << ")" << std::endl;
       comm->barrier();
     }
     if (myRank == 0) {

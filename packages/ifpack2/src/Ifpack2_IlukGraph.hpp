@@ -281,7 +281,6 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
 
   // Get Maximum Row length
   const int MaxNumIndices = OverlapGraph_->getLocalMaxNumRowEntries ();
-  std::cout << "IlukGraph: OverlapGraph says max num row entries is " << MaxNumIndices << '\n';
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
   // getLocalNumElements() returns, instead of ptrdiff_t.

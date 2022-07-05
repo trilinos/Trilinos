@@ -115,10 +115,6 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     Array<global_ordinal_type> mylist (size);
     size_t count = 0;
 
-    {
-
-      Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("OverlappingRowMatrix n^2 loop??"));
-
     // define the set of rows that are in ColMap but not in RowMap
     for (local_ordinal_type i = 0 ; (size_t) i < ColMap->getLocalNumElements() ; ++i) {
       const global_ordinal_type GID = ColMap->getGlobalElement (i);
@@ -132,7 +128,6 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
           ++count;
         }
       }
-    }
     }
 
     // On last import round, TmpMap, TmpGraph, and TmpImporter are unneeded,
