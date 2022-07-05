@@ -1987,10 +1987,6 @@ ApplyInverseMTGS_CrsMatrix(
       "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
       "B be in the range Map of the matrix.");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! D.getMap ()->isSameAs (*rowMap), std::runtime_error,
-      "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
-      "D be in the row Map of the matrix.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
       ! rowMap->isSameAs (*rangeMap), std::runtime_error,
       "Ifpack2::Relaxation::MTGaussSeidel requires that the row Map and the "
       "range Map be the same (in the sense of Tpetra::Map::isSameAs).");

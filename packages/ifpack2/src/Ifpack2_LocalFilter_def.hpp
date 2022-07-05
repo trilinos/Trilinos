@@ -64,11 +64,11 @@ mapPairsAreFitted (const row_matrix_type& A)
 {
   const map_type& rangeMap = * (A.getRangeMap ());
   const map_type& rowMap = * (A.getRowMap ());
-  const bool rangeAndRowFitted = mapPairIsFitted (rangeMap, rowMap);
+  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
 
   const map_type& domainMap = * (A.getDomainMap ());
   const map_type& columnMap = * (A.getColMap ());
-  const bool domainAndColumnFitted = mapPairIsFitted (domainMap, columnMap);
+  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
 
   return rangeAndRowFitted && domainAndColumnFitted;
 }
