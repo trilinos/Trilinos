@@ -70,6 +70,13 @@ TRIBITS_ADD_ETI_SUPPORT()
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 
+#Adding a define for TPL METIS
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_METIS
+  HAVE_IFPACK2_METIS
+  "Enable METIS for Ifpack2."
+  ${TPL_ENABLE_METIS} )
+
 #Adding an option and define when MPI is enabled.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_MPI

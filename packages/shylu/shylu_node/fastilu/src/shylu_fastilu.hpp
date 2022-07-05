@@ -94,6 +94,11 @@ class ParCopyFunctor;
 template<class Ordinal, class Scalar, class Real, class ExecSpace>
 class ParScalFunctor;
 
+struct NonTranPermScalTag {};
+struct    TranPermScalTag {};
+template<class Ordinal, class Scalar, class Real, class ExecSpace>
+class PermScalFunctor;
+
 template<class Ordinal, class Scalar, class ExecSpace>
 class ParInitZeroFunctor;
 
@@ -145,6 +150,13 @@ class FastILUPrec
         Ordinal blkSz;
         Scalar omega; //Underrelaxation parameter
         Scalar shift; //Manteuffel Shift
+
+        // Metis
+        bool useMetis;
+        OrdinalArray  permMetis;
+        OrdinalArray ipermMetis;
+        OrdinalArrayMirror  permMetisHost;
+        OrdinalArrayMirror ipermMetisHost;
 
         //Lower triangular factor (CSR)
         bool sptrsv_KKSpMV; // use Kokkos-Kernels SpMV for Fast SpTRSV
@@ -294,7 +306,7 @@ class FastILUPrec
 
             Ordinal n = nRows;
 
-            Ordinal i;
+            Ordinal row = 0, i = 0;
             vector<int> lnklst(n);
             vector<int> curlev(n);
             vector<int> iwork(n);
@@ -308,12 +320,14 @@ class FastILUPrec
             for (i=0; i<n; i++)
             {
                 int first, next, j;
+                row = (useMetis ? permMetisHost(i) : i);
 
                 /* copy column indices of row into workspace and sort them */
-                int len = aRowMap[i+1] - aRowMap[i];
+                int len = aRowMap[row+1] - aRowMap[row];
                 next = 0;
-                for (j=aRowMap[i]; j<aRowMap[i+1]; j++)
-                    iwork[next++] = aColIdx[j];
+                for (j=aRowMap[row]; j<aRowMap[row+1]; j++) {
+                    iwork[next++] = (useMetis ? ipermMetisHost(aColIdx[j]) : aColIdx[j]);
+                }
                 // sort column indices in non-descending (ascending) order
                 sort(iwork.begin(), iwork.begin() + len);
 
@@ -655,7 +669,7 @@ class FastILUPrec
 
             lVal_    = Kokkos::create_mirror(lVal);
             uVal_    = Kokkos::create_mirror(uVal);
-            utVal_    = Kokkos::create_mirror(utVal);
+            utVal_   = Kokkos::create_mirror(utVal);
         }
 
         void numericILU()
@@ -664,6 +678,14 @@ class FastILUPrec
             #ifdef FASTILU_TIMER
             Kokkos::Timer Timer;
             #endif
+            if (useMetis && level == 0) { // applied only at the first call (level 0)
+              // apply column permutation before sorting it
+              FastILUPrec_Functor perm_functor(aColIdxIn, ipermMetis);
+              Kokkos::RangePolicy<ColPermTag, ExecSpace> perm_policy (0, aColIdxIn.size());
+              Kokkos::parallel_for(
+                "numericILU::colPerm", perm_policy, perm_functor);
+              ExecSpace().fence();
+            }
             //Sort each row of A by ColIdx
             KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
             ExecSpace().fence();
@@ -671,21 +693,28 @@ class FastILUPrec
             //Copy the host matrix into the initialized a;
             //a contains the structure of ILU(k), values of original Ain is copied at level-0
             FastILUPrec_Functor functor(aValIn, aRowMapIn, aColIdxIn, aVal, diagFact, aRowMap, aColIdx, aRowIdx);
-            Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
-            Kokkos::parallel_for(
-              "numericILU::copyVals", copy_policy, functor);
+            if (useMetis) {
+              FastILUPrec_Functor functor_perm(aValIn, aRowMapIn, aColIdxIn, permMetis, aVal, diagFact, aRowMap, aColIdx, aRowIdx);
+              Kokkos::RangePolicy<CopySortedValsPermTag, ExecSpace> copy_perm_policy (0, nRows);
+              Kokkos::parallel_for(
+                "numericILU::copyVals", copy_perm_policy, functor_perm);
+            } else {
+              Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
+              Kokkos::parallel_for(
+                "numericILU::copyVals", copy_policy, functor);
+            }
             ExecSpace().fence();
             #ifdef FASTILU_TIMER
             std::cout << "   + copy values  " << Timer.seconds() << std::endl;
             Timer.reset();
             #endif
 
-            // applyDiagonalScaling
+            // obtain diagonal scaling factor
             Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
             Kokkos::parallel_for(
               "numericILU::getDiags", get_policy, functor);
             ExecSpace().fence();
-
+            // apply diagonal scaling
             Kokkos::RangePolicy<DiagScalTag, ExecSpace> scale_policy (0, nRows);
             Kokkos::parallel_for(
               "numericILU::diagScal", scale_policy, functor);
@@ -970,25 +999,44 @@ class FastILUPrec
             }
         }
 
+        void applyD_Perm(ScalarArray &x, ScalarArray &y)
+        {
+            Kokkos::RangePolicy<NonTranPermScalTag, ExecSpace> scale_policy (0, nRows);
+            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, diagFact, permMetis);
+            ExecSpace().fence();
+            Kokkos::parallel_for(
+              "numericILU::applyD_iPerm", scale_policy, functor);
+            ExecSpace().fence();
+        }
+
+        void applyD_iPerm(ScalarArray &x, ScalarArray &y)
+        {
+            Kokkos::RangePolicy<TranPermScalTag, ExecSpace> scale_policy (0, nRows);
+            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, diagFact, ipermMetis);
+            ExecSpace().fence();
+            Kokkos::parallel_for(
+              "numericILU::applyD_iPerm", scale_policy, functor);
+            ExecSpace().fence();
+        }
+
         void applyD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(nRows, x, y, diagFact);
+            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(x, y, diagFact);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
-
         }
 
         void applyL(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(nRows, parInitZero);
             ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector); 
 #endif 
             BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(nRows, xOld, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
             if (nRows%blkSz != 0)
             {
@@ -1008,14 +1056,14 @@ class FastILUPrec
 
         void applyU(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(nRows, parInitZero);
             ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, utRowMap, utColIdx, utVal, x, y, xOld, diagElems); 
 #endif
             BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(nRows, xOld, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz; 
             if (nRows%blkSz != 0)
             {
@@ -1045,6 +1093,9 @@ class FastILUPrec
             sptrsv_algo = sptrsv_algo_;
             nFact = nFact_;
             nTrisol = nTrisol_;
+
+            useMetis = false;
+
             computeTime = 0.0;
             applyTime = 0.0;
             initTime = 0.0;
@@ -1079,7 +1130,7 @@ class FastILUPrec
             xOld = ScalarArray("xOld", nRow_);
             xTemp = ScalarArray("xTemp", nRow_);
 
-            if (level > 0)
+            if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_, 3, 5,
                                                           level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_));
@@ -1087,7 +1138,9 @@ class FastILUPrec
         }
 
         // internal functors
+        struct ColPermTag {};
         struct CopySortedValsTag {};
+        struct CopySortedValsPermTag {};
         struct CopyValsTag {};
         struct GetDiagsTag {};
         struct DiagScalTag {};
@@ -1107,6 +1160,20 @@ class FastILUPrec
             aRowMap (aRowMap_),
             aColIdx (aColIdx_),
             aRowIdx (aRowIdx_)
+            {}
+
+            // just calling CopySortedValsPermTag
+            FastILUPrec_Functor(ScalarArray aValIn_, OrdinalArray aRowMapIn_, OrdinalArray aColIdxIn_, OrdinalArray perm_,
+                                ScalarArray aVal_, RealArray diagFact_, OrdinalArray aRowMap_, OrdinalArray aColIdx_, OrdinalArray aRowIdx_) :
+            aValIn (aValIn_),
+            aRowMapIn (aRowMapIn_),
+            aColIdxIn (aColIdxIn_),
+            aVal (aVal_),
+            diagFact (diagFact_),
+            aRowMap (aRowMap_),
+            aColIdx (aColIdx_),
+            aRowIdx (aRowIdx_),
+            iperm (perm_)
             {}
 
             // just calling CopySortedValsTag, or GetUpperTag
@@ -1133,7 +1200,6 @@ class FastILUPrec
             lColIdx (lColIdx_)
             {}
 
-
             // just calling SwapDiagTag
             FastILUPrec_Functor(ScalarArray  lVal_, OrdinalArray  lRowMap_,
                                 ScalarArray utVal_, OrdinalArray utRowMap_,
@@ -1145,6 +1211,12 @@ class FastILUPrec
             utRowMap (utRowMap_)
             {}
 
+            // just calling ColPerm
+            FastILUPrec_Functor(OrdinalArray aColIdx_, OrdinalArray iperm_) :
+            aColIdx (aColIdx_),
+            iperm (iperm_)
+            {}
+            
 
             // ------------------------------------------------
             // functor to load values
@@ -1159,6 +1231,29 @@ class FastILUPrec
                     {
                         aVal[k] = aValIn[aPtr];
                         aPtr++;
+                    } else
+                    {
+                        aVal[k] = STS::zero();
+                    }
+                }
+            }
+
+            // ------------------------------------------------
+            // functor to load values with perm
+            // both matrices are sorted and, "a" (with fills) contains "aIn" (original)
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const CopySortedValsPermTag &, const int i) const {
+                Ordinal aPtr = aRowMapIn[iperm[i]];
+                for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
+                {
+                    Ordinal col = aColIdx[k];
+                    if (col == aColIdxIn[aPtr])
+                    {
+                        aVal[k] = aValIn[aPtr];
+                        aPtr++;
+                    } else
+                    {
+                        aVal[k] = STS::zero();
                     }
                 }
             }
@@ -1236,8 +1331,10 @@ class FastILUPrec
                         if (row == col)
                         {
                             diagElems[row] = aVal[k];
+                            lVal[lPtr] = STS::one();
+                        } else {
+                            lVal[lPtr] = aVal[k];
                         }
-                        lVal[lPtr] = aVal[k];
                         lColIdx[lPtr] = col;
                         lPtr++;
                     }
@@ -1261,6 +1358,12 @@ class FastILUPrec
                 }
             }
 
+            // ----------------------------------------------------------
+            // functor to apply column permutation
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const ColPermTag &, const int i) const {
+              aColIdx(i) = iperm(aColIdx(i));
+            }
 
             // member variables
             // + input matrix
@@ -1281,7 +1384,33 @@ class FastILUPrec
             // + output U matrix
             ScalarArray    utVal;
             OrdinalArray   utRowMap;
+            // permutation
+            OrdinalArray   iperm;
         };
+
+        // set Metis pre-ordering
+        template<class MetisArrayHost>
+        void setMetisPerm(MetisArrayHost permMetis_, MetisArrayHost ipermMetis_)
+        {
+          Ordinal nRows_ = permMetis_.size();
+          permMetis = OrdinalArray("permMetis", nRows_);
+          ipermMetis = OrdinalArray("ipermMetis", nRows_);
+
+          permMetisHost = Kokkos::create_mirror(permMetis);
+          ipermMetisHost = Kokkos::create_mirror(ipermMetis);
+          for (Ordinal i = 0; i < nRows_; i++) {
+            permMetisHost(i) = permMetis_(i);
+            ipermMetisHost(i) = ipermMetis_(i);
+          }
+          Kokkos::deep_copy(permMetis, permMetisHost);
+          Kokkos::deep_copy(ipermMetis, ipermMetisHost);
+          if ((level > 0) && (guessFlag != 0))
+          {
+            initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
+          }
+
+          useMetis = true;
+        }
 
         //Symbolic Factorization Phase
         void initialize()
@@ -1589,22 +1718,24 @@ class FastILUPrec
         {
             Kokkos::Timer timer;
             const Scalar one  = STS::one();
-            const Scalar zero = STS::zero();
 
             //required to prevent contamination of the input.
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(xTemp, x);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor);
             ExecSpace().fence();
             //apply D
-            applyD(x, xTemp);
+            if (useMetis) {
+                applyD_Perm(x, xTemp);
+            } else {
+                applyD(x, xTemp);
+            }
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
                 // solve with L
                 KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
                 // solve with U
                 KokkosSparse::Experimental::sptrsv_solve(&khU, utRowMap, utColIdx, utVal, y, xTemp);
             } else {
-
                 // wrap x and y into 2D views
                 typedef Kokkos::View<Scalar **, ExecSpace> Scalar2dArray;
                 Scalar2dArray x2d (const_cast<Scalar*>(xTemp.data()), nRows, 1);
@@ -1670,47 +1801,86 @@ class FastILUPrec
                         Scalar2dArray x2d_old (const_cast<Scalar*>(xOld.data()), nRows, 1);
 
                         // 1) approximately solve, y = L^{-1}*x
-                        // y = zeros
-                        ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, y);
-                        //Kokkos::parallel_for(nRows, parInitZero);
-                        //ExecSpace().fence();
-                        Kokkos::deep_copy(y2d, zero);
-                        // to copy RHS x into y
-                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_newX(nRows, y, xTemp);
-                        // to save old y
-                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_oldX(nRows, xOld, y);
-                        for (Ordinal i = 0; i < nTrisol; i++) 
-                        {
-                            // x = y - Lx (diag(L) is zero)
-                            Kokkos::parallel_for(nRows, copy_oldX); // x_old = y
-                            Kokkos::parallel_for(nRows, copy_newX); // y = x
-                            ExecSpace().fence();
+                        // functor to copy RHS x into y (for even iteration)
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2y(y, xTemp);
+                        // functor to copy RHS x into xold (for odd iteration)
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2xold(xOld, xTemp);
 
-                            KokkosSparse::spmv("N", -one, crsmatL, x2d_old, one, y2d);
-                        }
-                        // 2) approximately solve, x = U^{-1}*y
-                        // to copy y into x
-                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_newY(nRows, xTemp, y);
-                        // to save old x
-                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_oldY(nRows, xOld, xTemp);
-                        // to scale x
-                        ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(nRows, xTemp, xTemp, diagElems);
-                        // x = zeros
-                        ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroY(nRows, xTemp);
-                        //Kokkos::parallel_for(nRows, initZeroY);
-                        //ExecSpace().fence();
-                        Kokkos::deep_copy(x2d, zero);
+                        // functor to copy x_old to y (final iteration)
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2y(y, xOld);
+
+                        // xold = zeros
+                        ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroX(xOld);
+                        Kokkos::parallel_for(nRows, initZeroX);
+                        //Kokkos::deep_copy(x2d_old, zero);
                         for (Ordinal i = 0; i < nTrisol; i++) 
                         {
-                            // y = x - Uy (diag(U) is zero)
-                            Kokkos::parallel_for(nRows, copy_oldY); // x_old = x
-                            Kokkos::parallel_for(nRows, copy_newY); // x = y
-                            ExecSpace().fence();
-                            //Kokkos::deep_copy(x2d_old, x2d);
-                            //Kokkos::deep_copy(x2d, y2d);
-                            KokkosSparse::spmv("N", -one, crsmatU, x2d_old, one, x2d);
-                            // scale y = inv(diag(U))*y
-                            Kokkos::parallel_for(nRows, parScal);
+                            if (i%2 == 0) {
+                                // y = y - L*x_old
+                                // > y = x
+                                Kokkos::parallel_for(nRows, copy_x2y);
+                                ExecSpace().fence();
+                                // > y = y - L*x_old
+                                KokkosSparse::spmv("N", -one, crsmatL, x2d_old, one, y2d);
+                            } else {
+                                // x_old = x_old - L*y
+                                // > x_old = x
+                                Kokkos::parallel_for(nRows, copy_x2xold);
+                                ExecSpace().fence();
+                                // > x_old = x_old - L*y
+                                KokkosSparse::spmv("N", -one, crsmatL, y2d, one, x2d_old);
+
+                                if (i == nTrisol-1) {
+                                    // y = x_old
+                                    Kokkos::parallel_for(nRows, copy_xold2y);
+                                    ExecSpace().fence();
+                                }
+                            }
+                        }
+
+                        // 2) approximately solve, x = U^{-1}*y
+                        // functor to copy y into x
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2x(xTemp, y);
+                        // functor to copy y into xold
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2xold(xOld, y);
+
+                        // functor to scale x
+                        ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_x(xTemp, xTemp, diagElems);
+                        ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_xold(xOld, xOld, diagElems);
+
+                        // functor to copy x_old to x (final iteration)
+                        ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2x(xTemp, xOld);
+
+                        // xold = zeros
+                        Kokkos::parallel_for(nRows, initZeroX);
+                        //Kokkos::deep_copy(x2d_old, zero);
+                        for (Ordinal i = 0; i < nTrisol; i++) 
+                        {
+                            if (i%2 == 0) {
+                                // x = y - U*x_old
+                                // > x = y
+                                Kokkos::parallel_for(nRows, copy_y2x);
+                                ExecSpace().fence();
+                                // > x = x - U*x_old
+                                KokkosSparse::spmv("N", -one, crsmatU, x2d_old, one, x2d);
+                                // > scale x = inv(diag(U))*x
+                                Kokkos::parallel_for(nRows, scal_x);
+                            } else {
+                                // xold = y - U*x
+                                // > xold = y
+                                Kokkos::parallel_for(nRows, copy_y2xold);
+                                ExecSpace().fence();
+                                // > x = x - U*x_old
+                                KokkosSparse::spmv("N", -one, crsmatU, x2d, one, x2d_old);
+                                // > scale x = inv(diag(U))*x
+                                Kokkos::parallel_for(nRows, scal_xold);
+
+                                if (i == nTrisol-1) {
+                                    // x = x_old
+                                    Kokkos::parallel_for(nRows, copy_xold2x);
+                                    ExecSpace().fence();
+                                }
+                            }
                         }
                     } else {
                         //apply L^{-1} to xTemp
@@ -1722,7 +1892,11 @@ class FastILUPrec
             }
             //apply D again (we assume that the scaling is 
             //symmetric for now).
-            applyD(xTemp, y);
+            if (useMetis) {
+                applyD_iPerm(xTemp, y);
+            } else {
+                applyD(xTemp, y);
+            }
             double t = timer.seconds();
             applyTime = t;
             return;
@@ -1855,6 +2029,7 @@ class FastILUPrec
         friend class ParCopyFunctor<Ordinal, Scalar, ExecSpace>;
         friend class JacobiIterFunctorT<Ordinal, Scalar, ExecSpace>;
         friend class ParScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
+        friend class PermScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace>;
@@ -2293,7 +2468,7 @@ class ParCopyFunctor
         typedef ExecSpace execution_space;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-        ParCopyFunctor (Ordinal n, scalar_array_type xDestination, scalar_array_type xSource)
+        ParCopyFunctor (scalar_array_type xDestination, scalar_array_type xSource)
             :
                 xDestination_(xDestination), xSource_(xSource)
         {}
@@ -2352,11 +2527,10 @@ class ParScalFunctor
 {
     public:
         typedef ExecSpace execution_space;
-        typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
         typedef Kokkos::View<Real *, ExecSpace> real_array_type;
 
-        ParScalFunctor (Ordinal n, scalar_array_type x, scalar_array_type y, real_array_type scaleFactors)
+        ParScalFunctor (scalar_array_type x, scalar_array_type y, real_array_type scaleFactors)
             :
                 x_(x), y_(y), scaleFactors_(scaleFactors)
         {
@@ -2366,7 +2540,6 @@ class ParScalFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal xId) const
             {
-               // x_[xId] *= scaleFactors_[xId];
                y_[xId] = x_[xId]*scaleFactors_[xId];
             }
 
@@ -2375,15 +2548,51 @@ class ParScalFunctor
 };
 
 
-template<class Ordinal, class Scalar, class ExecSpace>
-class ParInitZeroFunctor
+template<class Ordinal, class Scalar, class Real, class ExecSpace>
+class PermScalFunctor
 {
     public:
         typedef ExecSpace execution_space;
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+        typedef Kokkos::View<Real *, ExecSpace> real_array_type;
 
-        ParInitZeroFunctor(Ordinal n, scalar_array_type x)
+        PermScalFunctor (scalar_array_type x, scalar_array_type y, real_array_type scaleFactors, ordinal_array_type perm)
+            :
+                x_(x), y_(y), scaleFactors_(scaleFactors), perm_(perm)
+        {
+        }
+
+        KOKKOS_INLINE_FUNCTION
+            void operator()(const NonTranPermScalTag &, const Ordinal xId) const
+            {
+               // y = D*P*x 
+               Ordinal row = perm_(xId);
+               y_[xId] = scaleFactors_[xId]*x_[row];
+            }
+
+        KOKKOS_INLINE_FUNCTION
+            void operator()(const TranPermScalTag &, const Ordinal xId) const
+            {
+               // y = P'*D*x 
+               Ordinal row = perm_(xId);
+               y_[xId] = x_[row]*scaleFactors_[row];
+            }
+
+        scalar_array_type x_, y_;
+        real_array_type scaleFactors_;
+        ordinal_array_type perm_;
+};
+
+
+template<class Ordinal, class Scalar, class ExecSpace>
+class ParInitZeroFunctor
+{
+    public:
+        typedef ExecSpace execution_space;
+        typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+
+        ParInitZeroFunctor(scalar_array_type x)
             :
                 x_(x) 
     {
