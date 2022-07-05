@@ -74,7 +74,7 @@ if (NOT Trilinos_ROOT)
   message(WARNING "Trilinos_ROOT has NOT been specified.")    
 endif()
 
-FIND_PACKAGE(Trilinos REQUIRED)
+FIND_PACKAGE(Trilinos COMPONENTS Intrepid REQUIRED)
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
 set(INST_DIR "install")
@@ -109,7 +109,7 @@ function(make_mex fname)
       SHARED
       SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
   )
-  target_link_libraries(${fname} Trilinos::all_libs)
+  target_link_libraries(${fname} Trilinos::all_selected_libs)
 endfunction()
 
 foreach(fname ${MOBJS})
