@@ -96,16 +96,6 @@ namespace Belos {
     PseudoBlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief PseudoBlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockCGSolMgr::solve() method.
-   *
-   */
-  class PseudoBlockCGSolMgrOrthoFailure : public BelosError {public:
-    PseudoBlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
 
   // Partial specialization for unsupported ScalarType types.
   // This contains a stub implementation.
