@@ -1226,9 +1226,9 @@ void Relaxation<MatrixType>::compute ()
       // optionally applies the L1 method and replacement of small
       // entries, and then inverts.
       if (invDiagKernel_.is_null())
-        invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(A_));
+        invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(crsMat));
       else
-        invDiagKernel_->setMatrix(A_);
+        invDiagKernel_->setMatrix(crsMat);
       invDiagKernel_->compute(*Diagonal_,
                               DoL1Method_ && IsParallel_, L1Eta_,
                               fixTinyDiagEntries_, minDiagValMag);

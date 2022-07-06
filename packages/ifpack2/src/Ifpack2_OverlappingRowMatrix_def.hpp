@@ -367,7 +367,7 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 template<class MatrixType>
 size_t OverlappingRowMatrix<MatrixType>::getGlobalMaxNumRowEntries() const
 {
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalMaxNumRowEntries() not supported.");
+  return std::max<size_t>(A_->getGlobalMaxNumRowEntries(), ExtMatrix_->getGlobalMaxNumRowEntries());
 }
 
 
@@ -425,7 +425,14 @@ OverlappingRowMatrix<MatrixType>::
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const
 {
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getLocalRowCopy() not supported.");
+  using Teuchos::as;
+  const size_t numMyRowsA = A_->getLocalNumRows ();
+  if (as<size_t> (LocalRow) < numMyRowsA) {
+    A_->getLocalRowCopy (LocalRow, Indices, Values, NumEntries);
+  } else {
+    ExtMatrix_->getLocalRowCopy (LocalRow - as<local_ordinal_type> (numMyRowsA),
+                                 Indices, Values, NumEntries);
+  }
 }
 
 template<class MatrixType>
