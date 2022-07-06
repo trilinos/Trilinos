@@ -1347,8 +1347,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
     "input, before you may call this method.");
   
-  RCP<const row_matrix_type> innerPrecMatrix;
-
   //If the matrix is a CrsMatrix or OverlappingRowMatrix, use the high-performance 
   //AdditiveSchwarzFilter. Otherwise, use composition of Reordered/Singleton/LocalFilter.
   auto matrixCrs = rcp_dynamic_cast<const crs_matrix_type>(Matrix_);
@@ -1441,8 +1439,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       else
         asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(OverlappingMatrix_, perm, revperm, FilterSingletons_));
       innerMatrix_ = asf;
-      //The matrix for the inner preconditioner is a CrsMatrix
-      innerPrecMatrix = asf->getFilteredMatrix();
     }
   }
   else
@@ -1550,12 +1546,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #endif
     }
     innerMatrix_ = ActiveMatrix;
-    //The matrix for the inner preconditioner is just the reordered/localized matrix using filters
-    innerPrecMatrix = innerMatrix_;
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    innerMatrix_.is_null () || innerPrecMatrix.is_null(), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
     "setup: Inner matrix is null right before constructing inner solver.  "
     "Please report this bug to the Ifpack2 developers.");
 
@@ -1591,7 +1585,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       innerPrec.is_null (), std::logic_error,
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
       "with name \"" << innerName << "\".");
-    innerPrec->setMatrix (innerPrecMatrix);
+    innerPrec->setMatrix (innerMatrix_);
 
     // Extract and apply the sublist of parameters to give to the
     // inner solver, if there is such a sublist of parameters.
@@ -1607,7 +1601,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     // The new inner matrix is different from the inner
     // preconditioner's current matrix, so give the inner
     // preconditioner the new inner matrix.
-    Inverse_->setMatrix (innerPrecMatrix);
+    Inverse_->setMatrix (innerMatrix_);
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
     Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"

@@ -459,7 +459,11 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                     typename MatrixType::node_type> >
 AdditiveSchwarzFilter<MatrixType>::getGraph() const
 {
-  throw std::runtime_error("Ifpack2::AdditiveSchwarzFilter: does not support getGraph.");
+  //NOTE BMK 6-22: this is to maintain compatibilty with LocalFilter.
+  //Situations like overlapping AdditiveSchwarz + BlockRelaxation
+  //require the importer of the original distributed graph, even though the
+  //BlockRelaxation is preconditioning a local matrix (A_).
+  return A_unfiltered_->getGraph();
 }
 
 template<class MatrixType>
