@@ -46,6 +46,20 @@ SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalInd
 IF(PANZER_HAVE_EPETRA)
   APPEND_SET(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
              tEpetra_GlbEvalData.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tCloneLOF_Epetra
+    SOURCES tEpetra_tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+    COMM mpi
+    NUM_MPI_PROCS 2
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    LOF_FilteredGlobalIndexer_Epetra
+    SOURCES tEpetra_LOF_FilteredGlobalIndexer.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+    COMM mpi
+    NUM_MPI_PROCS 2
+  )
 ENDIF(PANZER_HAVE_EPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -57,18 +71,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-IF(PANZER_HAVE_EPETRA)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    tCloneLOF
-    SOURCES tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
-    COMM mpi
-    NUM_MPI_PROCS 2
-  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tCloneLOF_Tpetra
+  SOURCES tTpetra_tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    tEpetra_LOF_FilteredGlobalIndexer
-    SOURCES tEpetra_LOF_FilteredGlobalIndexer.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
-    COMM mpi
-    NUM_MPI_PROCS 2
-  )
-ENDIF(PANZER_HAVE_EPETRA)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LOF_FilteredGlobalIndexer_Tpetra
+  SOURCES tTpetra_LOF_FilteredGlobalIndexer.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+)
