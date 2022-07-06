@@ -76,15 +76,15 @@ const char *Version();
 #if defined(KOKKOS_ENABLE_ASM)
 #if defined(__amd64) || defined(__amd64__) || defined(__x86_64) || defined(__x86_64__)
 #if !defined(_WIN32) /* IS NOT Microsoft Windows */
-#define KOKKOS_IMPL_PAUSE asm volatile("pause\n" ::: "memory");
+#define TACHO_IMPL_PAUSE asm volatile("pause\n" ::: "memory");
 #else
-#define KOKKOS_IMPL_PAUSE __asm__ __volatile__("pause\n" ::: "memory");
+#define TACHO_IMPL_PAUSE __asm__ __volatile__("pause\n" ::: "memory");
 #endif
 #elif defined(__PPC64__)
-#define KOKKOS_IMPL_PAUSE asm volatile("or 27, 27, 27" ::: "memory");
+#define TACHO_IMPL_PAUSE asm volatile("or 27, 27, 27" ::: "memory");
 #endif
 #else
-#define KOKKOS_IMPL_PAUSE
+#define TACHO_IMPL_PAUSE
 #endif
 
 ///
