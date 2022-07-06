@@ -84,11 +84,9 @@ void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col
 #endif
 }
 
-#if 0
-
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
-void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
+void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
   using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
@@ -390,11 +388,9 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 }
 
-#else//NEW_IMPL
-
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
-void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
+void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
   using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
@@ -604,7 +600,21 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 #endif
 }
 
-#endif//NEW_IMPL
+template<class HandleType, class ZViewType, class RHSViewType>
+inline
+void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
+{
+#if 0
+  back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
+#else
+  if (ahandle.get_nrhs() <= ahandle.get_nprocs_row()) {
+    back_solve_rhs_pipelined_comm(ahandle, Z, RHS);
+  }
+  else {
+    back_solve_currcol_bcast(ahandle, Z, RHS);
+  }
+#endif
+}
 
 }//namespace Adelus
 
