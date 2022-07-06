@@ -11,7 +11,7 @@
 PROJECT(Intrelab)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(MATLAB_FIND_DEBUG TRUE)
+#set(MATLAB_FIND_DEBUG TRUE)
 
 # --> ACTIONS:
 # 1.) Specify Trilinos install directory with -DTrilinos_ROOT     =    (case-sensitive)
@@ -74,13 +74,13 @@ endif()
 if(DEFINED ENV{Trilinos_DIR})
   set(Trilinos_ROOT $ENV{Trilinos_DIR})
 endif()
-message(WARNING "Trilinos_ROOT: ${Trilinos_ROOT}")    
 if ("${Trilinos_ROOT}" STREQUAL "")
   message(WARNING "Trilinos_ROOT has NOT been specified.")    
 endif()
 set(Trilinos_ROOT "${Trilinos_ROOT}" CACHE STRING "Trilinos installation directory")
 
 FIND_PACKAGE(Trilinos COMPONENTS Intrepid REQUIRED)
+message(STATUS "Found Trilinos: ${Trilinos_INSTALL_DIR}")
 
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
