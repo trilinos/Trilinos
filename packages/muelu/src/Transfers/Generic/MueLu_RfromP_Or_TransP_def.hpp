@@ -81,7 +81,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RfromP_Or_TransP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& /* fineLevel */, Level& coarseLevel) const {
-    Input(coarseLevel, "P");
     Input(coarseLevel, "RfromPfactory");
 
     // Using a PgPFactory in conjunction with a TogglePFactory is a bit problematic. Normally, PgPFactory is supposed to be
@@ -98,8 +97,9 @@ namespace MueLu {
     // "RfromPFactory" is used to get the pre-computed restriction matrix. If "RfromPFactory" is not present, then RfromP_Or_TransP
     // just transposes P to get R.
 
-    RCP<const FactoryBase> PFact = GetFactory("P");
-    if (PFact == Teuchos::null) { PFact = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<const FactoryBase> PFact = coarseLevel.GetFactoryManager()->GetFactory("P");
+    if (PFact == Teuchos::null) { PFact = GetFactory("P"); }
+    coarseLevel.DeclareInput("P", PFact.get(), this);
     RCP<const MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myToggleFact = Teuchos::rcp_const_cast<const MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcp_dynamic_cast<const MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(PFact));
     if (myToggleFact != Teuchos::null) {
       for (size_t ii = 0; ii < myToggleFact->NumProlongatorFactories();  ii++) {
@@ -122,7 +122,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
     std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
-    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
     const Teuchos::ParameterList& pL = GetParameterList();
 
     // Reuse pattern if available (multiple solve)
@@ -137,9 +136,10 @@ namespace MueLu {
     Tparams->set("compute global constants",Tparams->get("compute global constants",false));
 
     RCP<Matrix> R;
-    RCP<const FactoryBase> PFact = GetFactory("P");
-    if (PFact == Teuchos::null) { PFact = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<const FactoryBase> PFact = coarseLevel.GetFactoryManager()->GetFactory("P");
+    if (PFact == Teuchos::null) { PFact = GetFactory("P"); }
 
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P",             PFact.get());
 
     if (coarseLevel.IsAvailable("RfromPfactory", PFact.get()))
     {
@@ -155,6 +155,7 @@ namespace MueLu {
           MueLu::DisableMultipleCallCheck check(myToggleFact);
           RCP<PFactory> actualPFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(myToggleFact->getProlongatorFactory((size_t) coarseLevel.Get<int>("RfromPfactory",  PFact.get()))));
 	                                                                                    // toggle factory sets RfromPfactory to correct index into prolongatorFactory array
+          MueLu::DisableMultipleCallCheck check2(actualPFact);
           bool rmode = actualPFact->isRestrictionModeSet();
           actualPFact->setRestrictionMode(true);
           R = coarseLevel.Get<RCP<Matrix> >("R",actualPFact.get());
