@@ -14,14 +14,17 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #set(MATLAB_FIND_DEBUG TRUE)
 
 # --> ACTIONS:
-# 1.) Specify Trilinos install directory with -DTrilinos_ROOT     =    (case-sensitive)
+# 1.) Specify Trilinos install directory with -DTrilinos_ROOT        =    (case-sensitive)
 #     Also accepts: TRILINOS_ROOT, Trilinos_DIR, TRILINOS_DIR }
-# 2.) Specify Matlab install directory with   -DMatlab_ROOT_DIR   =    (case-sensitive and note extra _DIR)
+# 2.) Specify Matlab install directory with   -DMatlab_ROOT_DIR      =    (case-sensitive and note extra _DIR)
 #     Also accepts: MATLAB_ROOT, Matlab_ROOT, MATLAB_ROOT_DIR
-# 3.) Specify directory to install intrelab   -DINST_DIR          =    (case-sensitive)
+# 3.) Specify directory to install intrelab   -DCMAKE_INSTALL_PREFIX =    (case-sensitive)
 
 # define install directory (full path or relative to the intrelab directory)
-set(INST_DIR "install" CACHE STRING "Intrelab installation directory (absolute or relative to Intrelab source directory)")
+# per https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT.html
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "..." FORCE)
+endif()
 
 # handle Matlab_ROOT_DIR and all variants 
 # allow for {Matlab_ROOT_DIR, MATLAB_ROOT_DIR, Matlab_ROOT, MATLAB_ROOT}
@@ -86,13 +89,6 @@ set(Trilinos_ROOT "${Trilinos_ROOT}" CACHE STRING "Trilinos installation directo
 
 FIND_PACKAGE(Trilinos COMPONENTS Intrepid REQUIRED)
 message(STATUS "Found Trilinos: ${Trilinos_INSTALL_DIR}")
-
-set(CMAKE_PREFIX_PATH ${TRILINOS_INSTALL_DIR} ${CMAKE_PREFIX_PATH})
-if(IS_ABSOLUTE ${INST_DIR})
-  set(CMAKE_INSTALL_PREFIX ${INST_DIR}) 
-else()
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/${INST_DIR}") 
-endif()
 
 set(MOBJS intrepid_setJacobian intrepid_setJacobianInv intrepid_setJacobianDet
     intrepid_getNumCubaturePoints intrepid_getCubature intrepid_getBasisValues
