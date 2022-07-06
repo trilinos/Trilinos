@@ -70,7 +70,6 @@ namespace Intrepid2
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HVOL_TET_Functor
   {
-    // TODO: revise this for 3D -- what's here is the 2D (tri) implementation
     using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
