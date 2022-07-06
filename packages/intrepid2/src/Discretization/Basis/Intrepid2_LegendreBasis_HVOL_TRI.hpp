@@ -88,11 +88,6 @@ namespace Intrepid2
     
     size_t fad_size_output_;
     
-    static const int numVertices = 3;
-    static const int numEdges    = 3;
-    const int edge_start_[numEdges] = {0,1,0}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2}; // edge i is from edge_start_[i] to edge_end_[i]
-    
     Hierarchical_HVOL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
       polyOrder_(polyOrder),
