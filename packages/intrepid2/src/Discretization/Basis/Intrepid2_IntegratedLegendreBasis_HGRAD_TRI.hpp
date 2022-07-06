@@ -418,6 +418,7 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
@@ -428,11 +429,13 @@ namespace Intrepid2
       {
         // for H(grad) on triangle, if defineVertexFunctions is false, first three basis members are linear
         // if not, then the only difference is that the first member is constant
-        this->fieldOrdinalPolynomialDegree_(i,0) = 1;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = 1;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = 1;
       }
       if (!defineVertexFunctions)
       {
-        this->fieldOrdinalPolynomialDegree_(0,0) = 0;
+        this->fieldOrdinalPolynomialDegree_  (0,0) = 0;
+        this->fieldOrdinalH1PolynomialDegree_(0,0) = 0;
       }
       fieldOrdinalOffset += numVertexFunctions;
       
@@ -443,7 +446,8 @@ namespace Intrepid2
       {
         for (int i=0; i<numFunctionsPerEdge; i++)
         {
-          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0)   = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalH1PolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
         }
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
@@ -458,7 +462,8 @@ namespace Intrepid2
         for (int i=min_i; i<=ij_sum-min_j; i++)
         {
           const int j = ij_sum - i;
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
+          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0)   = i+j;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = i+j;
           fieldOrdinalOffset++;
         }
       }

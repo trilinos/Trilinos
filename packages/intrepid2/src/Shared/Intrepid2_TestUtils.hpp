@@ -350,7 +350,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   // ! This returns a vector whose entries are vector<int>s containing 1-3 polynomial orders from 1 up to and including those specified
   // ! Intended for testing bases that support anisotropic polynomial degree, such as the hierarchical bases
-  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z=-1)
   {
     std::vector<int> degrees(spaceDim);
     degrees[0] = polyOrder_x;
@@ -360,6 +360,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     int numCases = degrees[0];
     for (unsigned d=1; d<degrees.size(); d++)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(degrees[d] < minDegree, std::invalid_argument, "Unsupported degree/minDegree combination");
       numCases = numCases * (degrees[d] + 1 - minDegree);
     }
     std::vector< std::vector<int> > subBasisDegreeTestCases(numCases);

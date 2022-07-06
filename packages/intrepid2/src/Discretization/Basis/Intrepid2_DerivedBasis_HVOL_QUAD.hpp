@@ -102,6 +102,8 @@ namespace Intrepid2
       std::ostringstream basisName;
       basisName << "HVOL_QUAD (" << this->TensorBasis::getName() << ")";
       name_ = basisName.str();
+      
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief  Constructor.
@@ -141,33 +143,6 @@ namespace Intrepid2
     }
     
     using TensorBasis::getValues;
-    
-    /** \brief  multi-component getValues() method (required/called by TensorBasis)
-        \param [out] outputValues - the view into which to place the output values
-        \param [in] operatorType - the operator on the basis
-        \param [in] inputPoints1 - input points in the x dimension
-        \param [in] inputPoints2 - input points in the y dimension
-        \param [in] tensorPoints - if true, inputPoints1 and inputPoints2 should be understood as tensorial components of the points in outputValues (i.e., the evaluation points are the tensor product of inputPoints1 and inputPoints2).  If false, inputPoints1 and inputPoints2 should correspond elementwise to the evaluation points.
-     */
-    virtual void getValues(OutputViewType outputValues, const EOperator operatorType,
-                           const PointViewType inputPoints1, const PointViewType inputPoints2,
-                           bool tensorPoints) const override
-    {
-      Intrepid2::EOperator op1, op2;
-      if (operatorType == Intrepid2::OPERATOR_VALUE)
-      {
-        op1 = Intrepid2::OPERATOR_VALUE;
-        op2 = Intrepid2::OPERATOR_VALUE;
-        
-        this->TensorBasis::getValues(outputValues,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-      }
-    }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
      

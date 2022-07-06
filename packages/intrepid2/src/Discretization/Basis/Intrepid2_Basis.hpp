@@ -200,7 +200,10 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
     /** \brief  Base topology of the cells for which the basis is defined. See
          the <a href="https://trilinos.org/packages/shards/">Shards</a> package
-         for definition of base cell topology.
+         for definition of base cell topology.  For TensorBasis subclasses, by default this the cell topology that is extruded (i.e., it is a lower-dimensional CellTopology than
+         the space on which the tensor basis is defined).  This allows tensor bases to be defined in higher dimensions than shards::CellTopology supports.  TensorBasis subclasses can
+         opt to use an equivalent shards CellTopology for basisCellTopology_, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
+         TensorBasis::setShardsTopologyAndTags().
     */
     shards::CellTopology basisCellTopology_;
 
@@ -332,6 +335,19 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      Rank-2 array with dimensions (cardinality, cell dimension)
      */
     OrdinalTypeArray2DHost fieldOrdinalPolynomialDegree_;
+    
+    /** \brief H^1 polynomial degree for each degree of freedom.  Only defined for hierarchical bases right now.
+     The number of entries per degree of freedom in this table depends on the basis type.  For hypercubes,
+     this will be the spatial dimension.  We have not yet determined what this will be for simplices beyond 1D;
+     there are not yet hierarchical simplicial bases beyond 1D in Intrepid2.
+     
+     The H^1 polynomial degree is identical to the polynomial degree for H(grad) bases.  For H(vol) bases, it is one
+     higher than the polynomial degree.  Since H(div) and H(curl) bases are constructed as products of H(vol) and H(grad)
+     bases, the H^1 degree in a given dimension is the H^1 degree for the multiplicand in that dimension.
+     
+     Rank-2 array with dimensions (cardinality, cell dimension)
+     */
+    OrdinalTypeArray2DHost fieldOrdinalH1PolynomialDegree_;
   public:
 
     Basis() = default;
@@ -366,17 +382,14 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     
     /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
      
-        The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
-        should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
+        The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have non-trivial tensor-product structure
+        should override.  The basic exact-sequence operators are supported (VALUE, GRAD, DIV, CURL), as are the Dn operators (OPERATOR_D1 through OPERATOR_D10).
      */
     virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const
     {
       const bool operatorIsDk = (operatorType >= OPERATOR_D1) && (operatorType <= OPERATOR_D10);
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || operatorIsDk;
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
-      
-//      // this default implementation employs a trivial tensor-product structure; make sure that points also have a trivial tensor product structure:
-//      INTREPID2_TEST_FOR_EXCEPTION(points.numTensorComponents() != 1, std::invalid_argument, "default implementation of allocateBasisValues() only supports a trivial tensor product structure (one tensor component)");
       
       const int numPoints = points.extent_int(0);
       
@@ -549,6 +562,38 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       return fieldOrdinals;
     }
     
+    /** \brief For hierarchical bases, returns the field ordinals that have at most the specified H^1 degree in each dimension.
+     Assuming that these are less than or equal to the polynomial orders provided at Basis construction, the corresponding polynomials will form a superset of the Basis of the same type constructed with polynomial orders corresponding to the specified degrees.
+     
+     \param  degrees      [in] - 1D host ordinal array of length specified by getPolynomialDegreeLength(), indicating what the maximum degree in each dimension should be
+     
+     \return a 1D host ordinal array containing the ordinals of matching basis functions
+     */
+    OrdinalTypeArray1DHost getFieldOrdinalsForH1Degree(OrdinalTypeArray1DHost &degrees) const
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getFieldOrdinalsForDegree): this method is not supported for non-hierarchical bases.");
+      int degreeEntryLength     = fieldOrdinalH1PolynomialDegree_.extent_int(1);
+      int requestedDegreeLength = degrees.extent_int(0);
+      INTREPID2_TEST_FOR_EXCEPTION(degreeEntryLength != requestedDegreeLength, std::invalid_argument, "length of degrees does not match the entries in fieldOrdinalPolynomialDegree_");
+      std::vector<int> fieldOrdinalsVector;
+      for (int basisOrdinal=0; basisOrdinal<fieldOrdinalH1PolynomialDegree_.extent_int(0); basisOrdinal++)
+      {
+        bool matches = true;
+        for (int d=0; d<degreeEntryLength; d++)
+        {
+          if (fieldOrdinalH1PolynomialDegree_(basisOrdinal,d) > degrees(d)) matches = false;
+        }
+        if (matches) fieldOrdinalsVector.push_back(basisOrdinal);
+      }
+      OrdinalTypeArray1DHost fieldOrdinals("fieldOrdinalsForH1Degree",fieldOrdinalsVector.size());
+      for (unsigned i=0; i<fieldOrdinalsVector.size(); i++)
+      {
+        fieldOrdinals(i) = fieldOrdinalsVector[i];
+      }
+      return fieldOrdinals;
+    }
+    
     /** \brief For hierarchical bases, returns the field ordinals that have at most the specified degree in each dimension.
      Assuming that these are less than or equal to the polynomial orders provided at Basis construction, the corresponding polynomials will form a superset of the Basis of the same type constructed with polynomial orders corresponding to the specified degrees.
      
@@ -570,6 +615,34 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         degreesView(d) = degrees[d];
       }
       auto fieldOrdinalsView = getFieldOrdinalsForDegree(degreesView);
+      std::vector<int> fieldOrdinalsVector(fieldOrdinalsView.extent_int(0));
+      for (int i=0; i<fieldOrdinalsView.extent_int(0); i++)
+      {
+        fieldOrdinalsVector[i] = fieldOrdinalsView(i);
+      }
+      return fieldOrdinalsVector;
+    }
+    
+    /** \brief For hierarchical bases, returns the field ordinals that have at most the specified H^1 degree in each dimension.
+     Assuming that these are less than or equal to the polynomial orders provided at Basis construction, the corresponding polynomials will form a superset of the Basis of the same type constructed with polynomial orders corresponding to the specified degrees.
+
+     This variant takes a std::vector of polynomial degrees and returns a std::vector of field ordinals.  It calls the other variant, which uses Kokkos Views on the host.
+     
+     \param  degrees      [in] - std::vector<int> of length specified by getPolynomialDegreeLength(), indicating what the maximum degree in each dimension should be
+     
+     \return a std::vector<int> containing the ordinals of matching basis functions
+     
+     */
+    std::vector<int> getFieldOrdinalsForH1Degree(std::vector<int> &degrees) const
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getFieldOrdinalsForDegree): this method is not supported for non-hierarchical bases.");
+      OrdinalTypeArray1DHost degreesView("degrees",degrees.size());
+      for (unsigned d=0; d<degrees.size(); d++)
+      {
+        degreesView(d) = degrees[d];
+      }
+      auto fieldOrdinalsView = getFieldOrdinalsForH1Degree(degreesView);
       std::vector<int> fieldOrdinalsVector(fieldOrdinalsView.extent_int(0));
       for (int i=0; i<fieldOrdinalsView.extent_int(0); i++)
       {
@@ -600,6 +673,28 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       return polyDegree;
     }
     
+    /** \brief For hierarchical bases, returns the polynomial degree (which may have multiple values in higher spatial dimensions) for the specified basis ordinal as a host array.
+     
+        \param fieldOrdinal     [in] - ordinal of the basis function whose polynomial degree is requested.
+     
+        \return a 1D host array of length matching getPolynomialDegreeLength(), with the H^1 polynomial degree of the basis function in each dimension.
+     */
+    OrdinalTypeArray1DHost getH1PolynomialDegreeOfField(int fieldOrdinal) const
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getPolynomialDegreeOfField): this method is not supported for non-hierarchical bases.");
+      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal < 0, std::invalid_argument, "field ordinal must be non-negative");
+      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal >= fieldOrdinalH1PolynomialDegree_.extent_int(0), std::invalid_argument, "field ordinal out of bounds");
+      
+      int polyDegreeLength = getPolynomialDegreeLength();
+      OrdinalTypeArray1DHost polyDegree("polynomial degree", polyDegreeLength);
+      for (int d=0; d<polyDegreeLength; d++)
+      {
+        polyDegree(d) = fieldOrdinalH1PolynomialDegree_(fieldOrdinal,d);
+      }
+      return polyDegree;
+    }
+    
     /**
      \brief For hierarchical bases, returns the polynomial degree (which may have multiple values in higher spatial dimensions) for the specified basis ordinal as a host array.
      
@@ -612,6 +707,27 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
                                    ">>> ERROR (Basis::getPolynomialDegreeOfFieldAsVector): this method is not supported for non-hierarchical bases.");
       auto polynomialDegreeView = getPolynomialDegreeOfField(fieldOrdinal);
+      std::vector<int> polynomialDegree(polynomialDegreeView.extent_int(0));
+      
+      for (unsigned d=0; d<polynomialDegree.size(); d++)
+      {
+        polynomialDegree[d] = polynomialDegreeView(d);
+      }
+      return polynomialDegree;
+    }
+    
+    /**
+     \brief For hierarchical bases, returns the polynomial degree (which may have multiple values in higher spatial dimensions) for the specified basis ordinal as a host array.
+     
+     \param fieldOrdinal     [in] - ordinal of the basis function whose polynomial degree is requested.
+     
+     \return a std::vector<int> of length matching getPolynomialDegreeLength(), with the polynomial degree of the basis function in each dimension.
+     */
+    std::vector<int> getH1PolynomialDegreeOfFieldAsVector(int fieldOrdinal) const
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( basisType_ != BASIS_FEM_HIERARCHICAL, std::logic_error,
+                                   ">>> ERROR (Basis::getPolynomialDegreeOfFieldAsVector): this method is not supported for non-hierarchical bases.");
+      auto polynomialDegreeView = getH1PolynomialDegreeOfField(fieldOrdinal);
       std::vector<int> polynomialDegree(polynomialDegreeView.extent_int(0));
       
       for (unsigned d=0; d<polynomialDegree.size(); d++)
@@ -763,6 +879,13 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 #endif
       return r_val;
     }
+    
+    /** \brief returns the number of tensorial extrusions relative to the cell topology returned by getBaseCellTopology().  Base class returns 0; overridden by TensorBasis.
+     */
+    virtual int getNumTensorialExtrusions() const
+    {
+      return 0;
+    }
 
     /** \brief DoF tag to ordinal data structure */
     const OrdinalTypeArray3DHost
@@ -824,6 +947,15 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                                     ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
+    /** \brief Returns the spatial dimension of the domain of the basis; this is equal to getBaseCellTopology().getDimension() + getNumTensorialExtrusions().
+    
+       \return The spatial dimension of the domain.
+    */
+    ordinal_type getDomainDimension() const
+    {
+      return this->getBaseCellTopology().getDimension() + this->getNumTensorialExtrusions();
+    }
+    
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
     
        \return Pointer to the new Basis object.
