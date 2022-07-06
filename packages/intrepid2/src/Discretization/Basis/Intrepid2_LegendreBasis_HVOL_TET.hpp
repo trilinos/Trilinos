@@ -89,11 +89,6 @@ namespace Intrepid2
     
     size_t fad_size_output_;
     
-    static const int numVertices = 3;
-    static const int numEdges    = 3;
-    const int edge_start_[numEdges] = {0,1,0}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2}; // edge i is from edge_start_[i] to edge_end_[i]
-    
     Hierarchical_HVOL_TET_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
       polyOrder_(polyOrder),
@@ -108,22 +103,35 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
+      // values are product of [P_i](lambda_0,lambda_1), [P^{2i+1}_j](lambda_0 + lambda_1, lambda_2), and [P^{2*(i+j+1)}_k](1-lambda_3,lambda_3),
+      // times ((grad lambda_1) x (grad lambda_2)) \cdot (grad lambda_3).
+      // For the canonical orientation (all we support), the last term evaluates to 1, and
+      // lambda_0 = 1 - x - y - z
+      // lambda_1 = x
+      // lambda_2 = y
+      // lambda_3 = z
+      // [P_i](lambda_0, lambda_1) = P_i(lambda_1; lambda_0 + lambda_1) = P_i(x; 1 - y - z) -- a shifted, scaled Legendre function
+      // [P^{2i+1}_j](lambda_0 + lambda_1, lambda_2) = P^{2i+1}_j(lambda_2; lambda_0 + lambda_1 + lambda_2) = P^{2i+1}_j(y; 1 - z) -- a shifted, scaled Jacobi function
+      // [P^{2*(i+j+1)}_k](1-lambda_3,lambda_3) = P^{2*(i+j+1)}_k(lambda_3; 1) = P^{2*(i+j+1)}_k(z; 1) -- another shifted, scaled Jacobi function
       auto pointOrdinal = teamMember.league_rank();
-      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point;
+      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point_1, jacobi_values_at_point_2;
       if (fad_size_output_ > 0) {
         legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        jacobi_values_at_point_1       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        jacobi_values_at_point_2       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
       }
       else {
         legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        jacobi_values_at_point_1       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        jacobi_values_at_point_2       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
       }
       
       const auto & x = inputPoints_(pointOrdinal,0);
       const auto & y = inputPoints_(pointOrdinal,1);
+      const auto & z = inputPoints_(pointOrdinal,2);
       
       // write as barycentric coordinates:
-      const PointScalar lambda[3]    = {1. - x - y, x, y};
+      const PointScalar lambda[4] = {1. - x - y - z, x, y, z};
       
       switch (opType_)
       {
@@ -135,21 +143,40 @@ namespace Intrepid2
             Polynomials::shiftedScaledLegendreValues(legendre_field_values_at_point, polyOrder_, lambda[1], tLegendre);
 
             int fieldOrdinalOffset = 0;
-            const int max_ij_sum = polyOrder_;
-            for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
+            
+            const int min_i  = 0;
+            const int min_j  = 0;
+            const int min_k  = 0;
+            const int min_ij = min_i + min_j;
+            const int min_ijk = min_ij + min_k;
+            int localInteriorBasisOrdinal = 0;
+            for (int totalPolyOrder_ijk=min_ijk; totalPolyOrder_ijk <= polyOrder_; totalPolyOrder_ijk++)
             {
-              for (int i=0; i<=ij_sum; i++)
+              int localFaceBasisOrdinal = 0;
+              for (int totalPolyOrder_ij=min_ij; totalPolyOrder_ij <= totalPolyOrder_ijk-min_j; totalPolyOrder_ij++)
               {
-                const int j = ij_sum - i;
-                const auto & legendreValue = legendre_field_values_at_point(i);
-                const double alpha = i*2.0+1;
-                
-                const PointScalar tJacobi = 1.0;// lambda[0] + lambda[1] + lambda[2];
-                Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point, alpha, polyOrder_, lambda[2], tJacobi);
-                
-                const auto & jacobiValue = jacobi_values_at_point(j);
-                output_(fieldOrdinalOffset,pointOrdinal) = legendreValue * jacobiValue;
-                fieldOrdinalOffset++;
+                for (int i=min_i; i <= totalPolyOrder_ij-min_j; i++)
+                {
+                  const int j = totalPolyOrder_ij - i;
+                  const int k = totalPolyOrder_ijk - totalPolyOrder_ij;
+                  
+                  const double alpha1          = i * 2.0 + 1.;
+                  const PointScalar tJacobi1   = lambda[0] + lambda[1] + lambda[2];
+                  const PointScalar & xJacobi1 = lambda[2];
+                  Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point_1, alpha1, polyOrder_, xJacobi1, tJacobi1);
+                  
+                  const double alpha2          = 2. * (i + j + 1.);
+                  const PointScalar tJacobi2   = 1.0; // 1 - lambda[3] + lambda[3]
+                  const PointScalar & xJacobi2 = lambda[3];
+                  Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point_2, alpha2, polyOrder_, xJacobi2, tJacobi2);
+                  
+                  const auto & legendreValue = legendre_field_values_at_point(i);
+                  const auto & jacobiValue1  = jacobi_values_at_point_1(j);
+                  const auto & jacobiValue2  = jacobi_values_at_point_2(k);
+                  
+                  output_(fieldOrdinalOffset,pointOrdinal) = legendreValue * jacobiValue1 * jacobiValue2;
+                  fieldOrdinalOffset++;
+                }
               }
             }
           }
@@ -166,20 +193,19 @@ namespace Intrepid2
     // which allows team_size-dependent allocations.
     size_t team_shmem_size (int team_size) const
     {
-      // TODO: edit this to match scratch that we actually need.  (What's here is copied from H^1 basis on triangles…)
       // we will use shared memory to create a fast buffer for basis computations
       size_t shmem_size = 0;
       if (fad_size_output_ > 0)
-        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
+        shmem_size += 3 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
       else
-        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1);
+        shmem_size += 3 * OutputScratchView::shmem_size(polyOrder_ + 1);
       
       return shmem_size;
     }
   };
   
   /** \class  Intrepid2::LegendreBasis_HVOL_TET
-      \brief  Basis defining Legendre basis on the line, a polynomial subspace of H(vol) on the line: extension to triangle using Jacobi blending function.
+      \brief  Basis defining Legendre basis on the line, a polynomial subspace of H(vol) on the line: extension to tetrahedron using Jacobi blending functions.
 
               For mathematical details of the construction, see:
    
