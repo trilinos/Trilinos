@@ -257,14 +257,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !run_scalar_product_tests<float>(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
-#endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
+#endif
     if( !run_scalar_product_tests<double>(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_THYRA_COMPLEX)
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !run_scalar_product_tests<std::complex<float> >(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
-#endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
+#endif
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_DOUBLE)
     if( !run_scalar_product_tests<std::complex<double> >(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
