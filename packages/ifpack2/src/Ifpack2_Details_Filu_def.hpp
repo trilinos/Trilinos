@@ -103,6 +103,11 @@ initLocalPrec()
   auto& p = this->params_;
   localPrec_ = Teuchos::rcp(new LocalFILU(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
+  #ifdef HAVE_IFPACK2_METIS
+  if (p.use_metis) {
+    localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
+  }
+  #endif
   localPrec_->initialize();
   this->initTime_ = localPrec_->getInitializeTime();
 }

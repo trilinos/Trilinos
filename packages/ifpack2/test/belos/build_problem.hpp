@@ -176,13 +176,16 @@ build_problem (Teuchos::ParameterList& test_params,
 
   if (b == Teuchos::null) {
     bool rhs_unit = false;
-    int rhs_option = 1;
+    int rhs_option = 2;
     b = Teuchos::rcp (new TMV (rowmap, 1));
     if (rhs_option == 0) {
       // random B
       b->randomize ();
+    } else if (rhs_option == 1) {
+      // b = ones
+      b->putScalar (STS::one ());
     } else {
-      if (rhs_option == 1) {
+      if (rhs_option == 2) {
         // b = A * random
         x->randomize ();
       } else {
