@@ -350,7 +350,11 @@ namespace PHX {
     }
 
     // Returns true if the outer view has been initialized.
-    bool isInitialized() {return is_initialized_;}
+    bool isInitialized() const {return is_initialized_;}
+
+    bool deviceViewIsSynced() const {return device_view_is_synced_;}
+
+    bool safetyCheck() const {return check_use_count_;}
 
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
@@ -380,8 +384,23 @@ namespace PHX {
       return view_host_;
     }
 
+    /// Returns a host mirror view for the outer view, where the inner
+    /// views are still on device.
+    auto getViewHost() const
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      return view_host_;
+    }
+
     /// Returns device view of views
     auto getViewDevice()
+    {
+      KOKKOS_ASSERT(device_view_is_synced_);
+      return view_device_;
+    }
+
+    /// Returns device view of views
+    auto getViewDevice() const
     {
       KOKKOS_ASSERT(device_view_is_synced_);
       return view_device_;
