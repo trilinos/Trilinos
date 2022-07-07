@@ -1234,7 +1234,6 @@ void Relaxation<MatrixType>::compute ()
         invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(A_));
       else
         invDiagKernel_->setMatrix(A_);
-      std::cout << "Comptuing inv diag. L1 method? " << DoL1Method_ << ", L1Eta = " << L1Eta_ << ", fixTinyDiags? " << fixTinyDiagEntries_ << ", min diag clamp = " << minDiagValMag << '\n';
       invDiagKernel_->compute(*Diagonal_,
                               DoL1Method_ && IsParallel_, L1Eta_,
                               fixTinyDiagEntries_, minDiagValMag);
