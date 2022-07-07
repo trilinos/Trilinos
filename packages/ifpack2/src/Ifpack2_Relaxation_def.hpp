@@ -1234,6 +1234,7 @@ void Relaxation<MatrixType>::compute ()
         invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(A_));
       else
         invDiagKernel_->setMatrix(A_);
+      std::cout << "Comptuing inv diag. L1 method? " << DoL1Method_ << ", L1Eta = " << L1Eta_ << ", fixTinyDiags? " << fixTinyDiagEntries_ << ", min diag clamp = " << minDiagValMag << '\n';
       invDiagKernel_->compute(*Diagonal_,
                               DoL1Method_ && IsParallel_, L1Eta_,
                               fixTinyDiagEntries_, minDiagValMag);
@@ -1301,17 +1302,19 @@ void Relaxation<MatrixType>::compute ()
         // small in magnitude, replace them with oneOverMinDiagVal.
         auto localDiag = Diagonal->getLocalViewDevice(Tpetra::Access::ReadWrite);
         Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace>(0, localDiag.extent(0)),
-                             KOKKOS_LAMBDA (const IST& d_i) {
+                             KOKKOS_LAMBDA (local_ordinal_type i) {
+                               auto d_i = localDiag(i, 0);
                                const magnitude_type d_i_mag = KAT::magnitude (d_i);
                                // <= not <, in case minDiagValMag is zero.
                                if (d_i_mag <= minDiagValMag) {
-                                 return oneOverMinDiagVal;
+                                 d_i = oneOverMinDiagVal;
                                }
                                else {
                                  // For Stokhos types, operator/ returns an expression
                                  // type.  Explicitly convert to IST before returning.
-                                 return IST (KAT::one () / d_i);
+                                 d_i = IST (KAT::one () / d_i);
                                }
+                               localDiag(i, 0) = d_i;
                              });
       }
       else { // don't fix tiny or zero diagonal entries
