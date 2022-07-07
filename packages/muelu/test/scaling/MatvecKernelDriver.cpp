@@ -71,6 +71,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
 #endif
+#include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
 #include "cublas_v2.h"
@@ -675,6 +676,7 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
 }
 #endif
 
+
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -1160,6 +1162,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                     << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
                     << "\n";
         }
+        
+        // We need to both fence and barrier to make sure the kernels do not overlap
+        Kokkos::fence();
         comm->barrier();
       }// end random exp loop
     } // end repeat
