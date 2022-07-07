@@ -347,7 +347,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     constexpr bool matrix_has_sorted_rows = true; // see #6282
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-      KOKKOS_LAMBDA(const LO& j)
+      [&](const LO& j)
       {
         size_t distance = 0;
 

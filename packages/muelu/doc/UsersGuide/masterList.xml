@@ -1175,6 +1175,15 @@
     </parameter>
 
     <parameter>
+      <name>semicoarsen: piecewise linear</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>whether or not to use piecewise linear interpolation when semicoarsening.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>true</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: calculate nonsym restriction</name>
       <type>bool</type>
       <default>false</default>

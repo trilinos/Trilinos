@@ -113,7 +113,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
         // lock
         while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          KOKKOS_IMPL_PAUSE;
+          TACHO_IMPL_PAUSE;
         Kokkos::store_fence();
 
         for (ordinal_type j = 0; j < srcsize; ++j) {
@@ -181,7 +181,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 
         // lock
         while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          KOKKOS_IMPL_PAUSE;
+          TACHO_IMPL_PAUSE;
         Kokkos::store_fence();
 
         for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
@@ -390,7 +390,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
       // lock
       const auto &s = info.supernodes(info.sid_block_colidx(i).first);
       while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-        KOKKOS_IMPL_PAUSE;
+        TACHO_IMPL_PAUSE;
       Kokkos::store_fence();
 
       // both src and tgt increase index

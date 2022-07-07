@@ -95,6 +95,8 @@ namespace Intrepid2
       order_x_= polyOrder_x;
       order_y_ = polyOrder_x;
       pointType_ = pointType;
+      
+      this->setShardsTopologyAndTags();
     }
 
     /** \brief  Constructor.
@@ -110,93 +112,7 @@ namespace Intrepid2
       return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
-    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
-    */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
-    {
-      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
-      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
-      
-      if (operatorType == VALUE)
-      {
-        return OperatorTensorDecomposition(Intrepid2::OPERATOR_VALUE,Intrepid2::OPERATOR_VALUE);
-      }
-      else if (operatorType == GRAD)
-      {
-        // to evaluate gradient, we need both OP_VALUE and OP_GRAD (thanks to product rule)
-        // for 1D line x line, we will put derivative * value in first component, and value * derivative in second
-        
-        std::vector< std::vector<EOperator> > ops;
-        ops.push_back(std::vector<EOperator>{GRAD,  VALUE});
-        ops.push_back(std::vector<EOperator>{VALUE, GRAD});
-        
-        std::vector<double> weights(ops.size(), 1.0);
-        
-        return OperatorTensorDecomposition(ops, weights);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-      }
-    }
-    
     using BasisBase::getValues;
-
-    /** \brief  multi-component getValues() method (required/called by TensorBasis)
-        \param [out] outputValues - the view into which to place the output values
-        \param [in] operatorType - the operator on the basis
-        \param [in] inputPoints1 - input points in the x dimension
-        \param [in] inputPoints2 - input points in the y dimension
-        \param [in] tensorPoints - if true, inputPoints1 and inputPoints2 should be understood as tensorial components of the points in outputValues (i.e., the evaluation points are the tensor product of inputPoints1 and inputPoints2).  If false, inputPoints1 and inputPoints2 should correspond elementwise to the evaluation points.
-     */
-    virtual void getValues(OutputViewType outputValues, const EOperator operatorType,
-                           const PointViewType  inputPoints1, const PointViewType  inputPoints2,
-                           bool tensorPoints) const override
-    {
-      Intrepid2::EOperator op1, op2;
-      if (operatorType == Intrepid2::OPERATOR_VALUE)
-      {
-        op1 = Intrepid2::OPERATOR_VALUE;
-        op2 = Intrepid2::OPERATOR_VALUE;
-        
-        this->TensorBasis::getValues(outputValues,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-      }
-      else if (operatorType == Intrepid2::OPERATOR_GRAD)
-      {
-        // to evaluate gradient, we actually need both OP_VALUE and OP_GRAD (thanks to product rule)
-        // for 1D line x line, we will put derivative * value in first component, and value * derivative in second
-        
-        // outputValues1 and outputValues2 are computed by basis1 and basis2 -- these are tensorial components
-        // outputValuesComponent1 is a slice of the final output container (similarly, outputValuesComponent2)
-        // when the component basis is 1D, it expects not to have a "dimension" component in the output container
-        // the int argument in the dimension component creates a subview that skips the dimension component; the std::pair argument retains it
-        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
-        auto outputValuesComponent2 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),1);
-        
-        // compute first component -- derivative happens in x, and value taken in y
-        op1 = Intrepid2::OPERATOR_GRAD;
-        op2 = Intrepid2::OPERATOR_VALUE;
-        
-        this->TensorBasis::getValues(outputValuesComponent1,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-        
-        // second component -- value in x, derivative in y
-        op1 = Intrepid2::OPERATOR_VALUE;
-        op2 = Intrepid2::OPERATOR_GRAD;
-        
-        this->TensorBasis::getValues(outputValuesComponent2,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-      }
-    }
-                             
 
     /** \brief  Returns basis name
 
