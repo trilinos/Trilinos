@@ -55,7 +55,8 @@
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -96,7 +97,7 @@ namespace Intrepid2
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
-      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != (polyOrder_+1)*(polyOrder_+2)/2, std::invalid_argument, "output field size does not match basis cardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != (polyOrder_+1)*(polyOrder_+2)*(polyOrder_+3)/6, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -148,10 +149,8 @@ namespace Intrepid2
             const int min_k  = 0;
             const int min_ij = min_i + min_j;
             const int min_ijk = min_ij + min_k;
-            int localInteriorBasisOrdinal = 0;
             for (int totalPolyOrder_ijk=min_ijk; totalPolyOrder_ijk <= polyOrder_; totalPolyOrder_ijk++)
             {
-              int localFaceBasisOrdinal = 0;
               for (int totalPolyOrder_ij=min_ij; totalPolyOrder_ij <= totalPolyOrder_ijk-min_j; totalPolyOrder_ij++)
               {
                 for (int i=min_i; i <= totalPolyOrder_ij-min_j; i++)
@@ -246,10 +245,9 @@ namespace Intrepid2
     polyOrder_(polyOrder),
     pointType_(pointType)
     {
-      // TODO: revise this for 3D -- what's here is the 2D (tri) implementation
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
 
-      this->basisCardinality_  = ((polyOrder+2) * (polyOrder+1)) / 2;
+      this->basisCardinality_  = ((polyOrder+3) * (polyOrder+2) * (polyOrder+1)) / 6;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -260,15 +258,24 @@ namespace Intrepid2
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
-      // **** face functions **** //
-      const int max_ij_sum = polyOrder;
-      for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
+      // **** volume/interior functions **** //
+      const int min_i  = 0;
+      const int min_j  = 0;
+      const int min_k  = 0;
+      const int min_ij = min_i + min_j;
+      const int min_ijk = min_ij + min_k;
+      for (int totalPolyOrder_ijk=min_ijk; totalPolyOrder_ijk <= polyOrder_; totalPolyOrder_ijk++)
       {
-        for (int i=0; i<=ij_sum; i++)
+        for (int totalPolyOrder_ij=min_ij; totalPolyOrder_ij <= totalPolyOrder_ijk-min_j; totalPolyOrder_ij++)
         {
-          const int j = ij_sum - i;
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
-          fieldOrdinalOffset++;
+          for (int i=min_i; i <= totalPolyOrder_ij-min_j; i++)
+          {
+            const int j = totalPolyOrder_ij - i;
+            const int k = totalPolyOrder_ijk - totalPolyOrder_ij;
+            
+            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j+k;
+            fieldOrdinalOffset++;
+          }
         }
       }
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
@@ -284,11 +291,11 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const int faceDim = 2;
+        const int volumeDim = 3;
 
         for (ordinal_type i=0;i<cardinality;++i) {
-          tagView(i*tagSize+0) = faceDim;     // face dimension
-          tagView(i*tagSize+1) = 0;           // face id
+          tagView(i*tagSize+0) = volumeDim;   // volume dimension
+          tagView(i*tagSize+1) = 0;           // volume id
           tagView(i*tagSize+2) = i;           // local dof id
           tagView(i*tagSize+3) = cardinality; // total number of dofs on this face
         }
@@ -359,24 +366,6 @@ namespace Intrepid2
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
       Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_TET_Functor");
-    }
-
-    /** \brief returns the basis associated to a subCell.
-
-        The bases of the subCell are the restriction to the subCell
-        of the bases of the parent cell.
-        \param [in] subCellDim - dimension of subCell
-        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
-        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
-     */
-    BasisPtr<DeviceType,OutputScalar,PointScalar>
-      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
-                    (this->basisDegree_));
-      }
-      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
