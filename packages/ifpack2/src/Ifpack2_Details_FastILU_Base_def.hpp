@@ -179,64 +179,65 @@ initialize()
     }
     Teuchos::TimeMonitor timeMonMetis (*timerMetis);
     #ifdef HAVE_IFPACK2_METIS
-    // reorder will convert both graph and perm/iperm to the internal METIS integer type
     idx_t nrows = localRowPtrsHost_.size() - 1;
-    metis_perm_  = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_perm"),  nrows);
-    metis_iperm_ = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_iperm"), nrows);
+    if (nrows > 0) {
+      // reorder will convert both graph and perm/iperm to the internal METIS integer type
+      metis_perm_  = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_perm"),  nrows);
+      metis_iperm_ = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_iperm"), nrows);
 
-    // copy ColInds to host
-    auto localColIndsHost_ = Kokkos::create_mirror(localColInds_);
-    Kokkos::deep_copy(localColIndsHost_, localColInds_);
+      // copy ColInds to host
+      auto localColIndsHost_ = Kokkos::create_mirror(localColInds_);
+      Kokkos::deep_copy(localColIndsHost_, localColInds_);
 
-    // prepare for calling metis
-    idx_t nnz = localColIndsHost_.size();
-    MetisArrayHost metis_rowptr;
-    MetisArrayHost metis_colidx;
+      // prepare for calling metis
+      idx_t nnz = localColIndsHost_.size();
+      MetisArrayHost metis_rowptr;
+      MetisArrayHost metis_colidx;
 
-    bool metis_symmetrize = true;
-    if (metis_symmetrize) {
-      // symmetrize
-      using OrdinalArrayMirror = typename OrdinalArray::host_mirror_type;
-      KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
-        OrdinalArrayHost, OrdinalArrayMirror, MetisArrayHost, MetisArrayHost, Kokkos::HostSpace::execution_space>
-        (nrows, localRowPtrsHost_, localColIndsHost_, metis_rowptr, metis_colidx);
+      bool metis_symmetrize = true;
+      if (metis_symmetrize) {
+        // symmetrize
+        using OrdinalArrayMirror = typename OrdinalArray::host_mirror_type;
+        KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
+          OrdinalArrayHost, OrdinalArrayMirror, MetisArrayHost, MetisArrayHost, Kokkos::HostSpace::execution_space>
+          (nrows, localRowPtrsHost_, localColIndsHost_, metis_rowptr, metis_colidx);
 
-      // remove diagonals
-      idx_t old_nnz = nnz = 0;
-      for (idx_t i = 0; i < nrows; i++) {
-        for (LocalOrdinal k = old_nnz; k < metis_rowptr(i+1); k++) {
-          if (metis_colidx(k) != i) {
-            metis_colidx(nnz) = metis_colidx(k);
-            nnz++;
+        // remove diagonals
+        idx_t old_nnz = nnz = 0;
+        for (idx_t i = 0; i < nrows; i++) {
+          for (LocalOrdinal k = old_nnz; k < metis_rowptr(i+1); k++) {
+            if (metis_colidx(k) != i) {
+              metis_colidx(nnz) = metis_colidx(k);
+              nnz++;
+            }
           }
+          old_nnz = metis_rowptr(i+1);
+          metis_rowptr(i+1) = nnz;
         }
-        old_nnz = metis_rowptr(i+1);
-        metis_rowptr(i+1) = nnz;
+      } else {
+        // copy and remove diagonals
+        metis_rowptr = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_rowptr"), nrows+1);
+        metis_colidx = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_colidx"), nnz);
+        nnz = 0;
+        metis_rowptr(0) = 0;
+        for (idx_t i = 0; i < nrows; i++) {
+          for (LocalOrdinal k = localRowPtrsHost_(i); k < localRowPtrsHost_(i+1); k++) {
+            if (localColIndsHost_(k) != i) {
+              metis_colidx(nnz) = localColIndsHost_(k);
+              nnz++;
+            }
+          }
+          metis_rowptr(i+1) = nnz;
+        }
       }
-    } else {
-      // copy and remove diagonals
-      metis_rowptr = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_rowptr"), nrows+1);
-      metis_colidx = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_colidx"), nnz);
-      nnz = 0;
-      metis_rowptr(0) = 0;
-      for (idx_t i = 0; i < nrows; i++) {
-        for (LocalOrdinal k = localRowPtrsHost_(i); k < localRowPtrsHost_(i+1); k++) {
-          if (localColIndsHost_(k) != i) {
-            metis_colidx(nnz) = localColIndsHost_(k);
-            nnz++;
-          }
-        }
-        metis_rowptr(i+1) = nnz;
+
+      // call metis
+      int info = METIS_NodeND(&nrows, metis_rowptr.data(), metis_colidx.data(),
+                              NULL, NULL, metis_perm_.data(), metis_iperm_.data());
+      if (METIS_OK != info) {
+        throw std::runtime_error(std::string("METIS_NodeND returned info = " + info));
       }
     }
-
-    // call metis
-    int info = METIS_NodeND(&nrows, metis_rowptr.data(), metis_colidx.data(),
-                            NULL, NULL, metis_perm_.data(), metis_iperm_.data());
-    if (METIS_OK != info) {
-      throw std::runtime_error(std::string("METIS_NodeND returned info = " + info));
-    }
-    //for (idx_t i = 0; i < nrows; i++) printf("%d %d\n",metis_perm_(i),metis_iperm_(i));
     #else
     throw std::runtime_error(std::string("TPL METIS is not enabled"));
     #endif

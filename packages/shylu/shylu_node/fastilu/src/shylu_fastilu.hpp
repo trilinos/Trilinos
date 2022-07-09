@@ -1393,22 +1393,23 @@ class FastILUPrec
         void setMetisPerm(MetisArrayHost permMetis_, MetisArrayHost ipermMetis_)
         {
           Ordinal nRows_ = permMetis_.size();
-          permMetis = OrdinalArray("permMetis", nRows_);
-          ipermMetis = OrdinalArray("ipermMetis", nRows_);
+          if (nRows > 0) {
+            permMetis = OrdinalArray("permMetis", nRows_);
+            ipermMetis = OrdinalArray("ipermMetis", nRows_);
 
-          permMetisHost = Kokkos::create_mirror(permMetis);
-          ipermMetisHost = Kokkos::create_mirror(ipermMetis);
-          for (Ordinal i = 0; i < nRows_; i++) {
-            permMetisHost(i) = permMetis_(i);
-            ipermMetisHost(i) = ipermMetis_(i);
+            permMetisHost = Kokkos::create_mirror(permMetis);
+            ipermMetisHost = Kokkos::create_mirror(ipermMetis);
+            for (Ordinal i = 0; i < nRows_; i++) {
+              permMetisHost(i) = permMetis_(i);
+              ipermMetisHost(i) = ipermMetis_(i);
+            }
+            Kokkos::deep_copy(permMetis, permMetisHost);
+            Kokkos::deep_copy(ipermMetis, ipermMetisHost);
+            if ((level > 0) && (guessFlag != 0))
+            {
+              initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
+            }
           }
-          Kokkos::deep_copy(permMetis, permMetisHost);
-          Kokkos::deep_copy(ipermMetis, ipermMetisHost);
-          if ((level > 0) && (guessFlag != 0))
-          {
-            initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
-          }
-
           useMetis = true;
         }
 
