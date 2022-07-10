@@ -201,6 +201,7 @@ class FastILUPrec
         OrdinalArrayHost utRowMap_trsv_;
 
         //Pointer to the copy of input A.
+        bool skipSortMatrix;
         // device
         ScalarArray        aValIn;
         OrdinalArray       aRowMapIn;
@@ -687,8 +688,10 @@ class FastILUPrec
               ExecSpace().fence();
             }
             //Sort each row of A by ColIdx
-            KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
-            ExecSpace().fence();
+            if (!skipSortMatrix) {
+              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
+              ExecSpace().fence();
+            }
 
             //Copy the host matrix into the initialized a;
             //a contains the structure of ILU(k), values of original Ain is copied at level-0
@@ -1085,9 +1088,9 @@ class FastILUPrec
     public:
         //Constructor
         //TODO: Use a Teuchos::ParameterList object
-        FastILUPrec(OrdinalArray &aRowMapIn_, OrdinalArray &aColIdxIn_, ScalarArray &aValIn_, Ordinal nRow_, FastILU::SpTRSV sptrsv_algo_,
-                    Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_,
-                    Ordinal blkSzILU_, Ordinal blkSz_)
+        FastILUPrec(bool skipSortMatrix_, OrdinalArray &aRowMapIn_, OrdinalArray &aColIdxIn_, ScalarArray &aValIn_, Ordinal nRow_,
+                    FastILU::SpTRSV sptrsv_algo_, Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_,
+                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_)
         {
             nRows = nRow_;
             sptrsv_algo = sptrsv_algo_;
@@ -1103,6 +1106,7 @@ class FastILUPrec
             level = level_;
 
             // mirror & deep-copy the input matrix
+            skipSortMatrix = false;
             aRowMapIn = aRowMapIn_;
             aColIdxIn = aColIdxIn_;
             aValIn    = aValIn_;
@@ -1132,8 +1136,8 @@ class FastILUPrec
 
             if ((level > 0) && (guessFlag != 0))
             {
-                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_, 3, 5,
-                                                          level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_));
+                initGuessPrec = Teuchos::rcp(new FastPrec(skipSortMatrix_, aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_,
+                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_));
             }
         }
 
