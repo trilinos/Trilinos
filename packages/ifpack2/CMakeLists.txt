@@ -56,7 +56,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEBUG
-  HAVE_${PACKAGE_NAME}_DEBUG
+  HAVE_${PACKAGE_NAME_UC}_DEBUG
   "Enable runtime debug checking."
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
@@ -68,7 +68,7 @@ TRIBITS_ADD_ETI_SUPPORT()
 
 #Adding a define for when the TPL QD is enabled.
 #This replaces an option that was reusing an existing name.
-SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
+SET(HAVE_${PACKAGE_NAME_UC}_QD "${PACKAGE_NAME}_ENABLE_QD")
 
 #Adding a define for TPL METIS
 IF (TPL_ENABLE_METIS)

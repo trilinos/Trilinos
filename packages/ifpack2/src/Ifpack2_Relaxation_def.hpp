@@ -1301,17 +1301,19 @@ void Relaxation<MatrixType>::compute ()
         // small in magnitude, replace them with oneOverMinDiagVal.
         auto localDiag = Diagonal->getLocalViewDevice(Tpetra::Access::ReadWrite);
         Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace>(0, localDiag.extent(0)),
-                             KOKKOS_LAMBDA (const IST& d_i) {
+                             KOKKOS_LAMBDA (local_ordinal_type i) {
+                               auto d_i = localDiag(i, 0);
                                const magnitude_type d_i_mag = KAT::magnitude (d_i);
                                // <= not <, in case minDiagValMag is zero.
                                if (d_i_mag <= minDiagValMag) {
-                                 return oneOverMinDiagVal;
+                                 d_i = oneOverMinDiagVal;
                                }
                                else {
                                  // For Stokhos types, operator/ returns an expression
                                  // type.  Explicitly convert to IST before returning.
-                                 return IST (KAT::one () / d_i);
+                                 d_i = IST (KAT::one () / d_i);
                                }
+                               localDiag(i, 0) = d_i;
                              });
       }
       else { // don't fix tiny or zero diagonal entries
@@ -1986,10 +1988,6 @@ ApplyInverseMTGS_CrsMatrix(
       ! B.getMap ()->isSameAs (*rangeMap), std::runtime_error,
       "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
       "B be in the range Map of the matrix.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! D.getMap ()->isSameAs (*rowMap), std::runtime_error,
-      "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
-      "D be in the row Map of the matrix.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! rowMap->isSameAs (*rangeMap), std::runtime_error,
       "Ifpack2::Relaxation::MTGaussSeidel requires that the row Map and the "
