@@ -116,13 +116,15 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   }
   //zero out applyTime_ now, because the calls to applyLocalPrec() will add to it
   applyTime_ = 0;
-  int nvecs = X.getNumVectors();
+  int  nvecs = X.getNumVectors();
+  auto nrowsX = X.getLocalLength();
+  auto nrowsY = Y.getLocalLength();
   if(nvecs == 1)
   {
     auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
-    ImplScalarArray x1d (const_cast<ImplScalar*>(x2d.data()), x1d.extent(0));
-    ImplScalarArray y1d (const_cast<ImplScalar*>(y2d.data()), y1d.extent(0));
+    ImplScalarArray x1d (const_cast<ImplScalar*>(x2d.data()), nrowsX);
+    ImplScalarArray y1d (const_cast<ImplScalar*>(y2d.data()), nrowsY);
 
     applyLocalPrec(x1d, y1d);
   }
@@ -135,8 +137,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
     {
       auto xColView1d = Kokkos::subview(x2d, Kokkos::ALL(), i);
       auto yColView1d = Kokkos::subview(y2d, Kokkos::ALL(), i);
-      ImplScalarArray x1d (const_cast<ImplScalar*>(xColView1d.data()), xColView1d.extent(0));
-      ImplScalarArray y1d (const_cast<ImplScalar*>(yColView1d.data()), yColView1d.extent(0));
+      ImplScalarArray x1d (const_cast<ImplScalar*>(xColView1d.data()), nrowsX);
+      ImplScalarArray y1d (const_cast<ImplScalar*>(yColView1d.data()), nrowsY);
 
       applyLocalPrec(x1d, y1d);
     }
