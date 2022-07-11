@@ -1106,7 +1106,7 @@ class FastILUPrec
             level = level_;
 
             // mirror & deep-copy the input matrix
-            skipSortMatrix = false;
+            skipSortMatrix = skipSortMatrix_;
             aRowMapIn = aRowMapIn_;
             aColIdxIn = aColIdxIn_;
             aValIn    = aValIn_;
@@ -1409,10 +1409,10 @@ class FastILUPrec
             }
             Kokkos::deep_copy(permMetis, permMetisHost);
             Kokkos::deep_copy(ipermMetis, ipermMetisHost);
-            if ((level > 0) && (guessFlag != 0))
-            {
-              initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
-            }
+          }
+          if ((level > 0) && (guessFlag != 0))
+          {
+            initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
           }
           useMetis = true;
         }
