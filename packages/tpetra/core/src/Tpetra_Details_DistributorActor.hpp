@@ -57,6 +57,7 @@ template <class View1, class View2>
 constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
 
 class DistributorActor {
+  static constexpr int DEFAULT_MPI_TAG = 1;
 
 public:
   DistributorActor();

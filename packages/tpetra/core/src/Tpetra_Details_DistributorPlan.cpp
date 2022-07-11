@@ -636,7 +636,7 @@ void DistributorPlan::computeReceives()
   const int myRank = comm_->getRank();
   const int numProcs = comm_->getSize();
 
-  const int mpiTag = 0;
+  const int mpiTag = DEFAULT_MPI_TAG;
 
   // toProcsFromMe[i] == the number of messages sent by this process
   // to process i.  The data in numSendsToOtherProcs_, procIdsToSendTo_, and lengthsTo_

@@ -96,6 +96,8 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 ///   sends, this prevents deadlock, even if MPI_Send blocks and
 ///   does not buffer.)
 class DistributorPlan : public Teuchos::ParameterListAcceptorDefaultBase {
+  static constexpr int DEFAULT_MPI_TAG = 0;
+
 public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);

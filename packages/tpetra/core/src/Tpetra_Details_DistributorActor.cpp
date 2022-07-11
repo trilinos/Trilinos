@@ -43,7 +43,7 @@ namespace Tpetra {
 namespace Details {
 
   DistributorActor::DistributorActor()
-    : mpiTag_(1)
+    : mpiTag_(DEFAULT_MPI_TAG)
   {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers();
