@@ -7,7 +7,6 @@ namespace Tpetra {
     template <typename Space>
     Space &get_space(int i);
 
-    // Kokkos::DefaultExecutionSpace &get_exec_space(int i);
     void drop_exec_spaces();
 
 
@@ -19,5 +18,8 @@ namespace Tpetra {
 
     template<>
     Kokkos::Cuda &get_space(int i);
+
+    template<>
+    Kokkos::OpenMP &get_space(int i);
 
 }

@@ -8,11 +8,12 @@ namespace Tpetra {
 /// Tpetra's internal spaces
 std::vector<Kokkos::Cuda> cudaSpaces;
 std::vector<Kokkos::Serial> serialSpaces;
+std::vector<Kokkos::OpenMP> openMPSpaces;
 
 template<>
 Kokkos::Serial &get_space(int i) {
     if (i < 0) {
-        throw std::runtime_error("requested exec space < 0 from get_exec_space");
+        throw std::runtime_error("requested exec space < 0 from get_space");
     }
 
     while (serialSpaces.size() <= size_t(i)) {
@@ -24,7 +25,7 @@ Kokkos::Serial &get_space(int i) {
 template<>
 Kokkos::Cuda &get_space(int i) {
     if (i < 0) {
-        throw std::runtime_error("requested exec space < 0 from get_exec_space");
+        throw std::runtime_error("requested exec space < 0 from get_space");
     }
 
     while (cudaSpaces.size() <= size_t(i)) {
@@ -39,6 +40,19 @@ Kokkos::Cuda &get_space(int i) {
     }
     return cudaSpaces[i];
 }
+
+template<>
+Kokkos::OpenMP &get_space(int i) {
+    if (i < 0) {
+        throw std::runtime_error("requested exec space < 0 from get_space");
+    }
+
+    while (openMPSpaces.size() <= size_t(i)) {
+        openMPSpaces.push_back(Kokkos::OpenMP());
+    }
+    return openMPSpaces[i];
+}
+
 
 void drop_exec_spaces() {
     cudaSpaces.clear();
