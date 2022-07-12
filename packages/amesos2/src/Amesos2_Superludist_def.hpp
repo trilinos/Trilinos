@@ -391,12 +391,23 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
 #endif
+
+#if (SUPERLU_DIST_MAJOR_VERSION > 7)
+        info = SLUD::symbfact_dist(&(data_.options), (data_.grid.nprow) * (data_.grid.npcol),
+                                   data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
+                                   data_.perm_r.getRawPtr(), data_.sizes,
+                                   data_.fstVtxSep, &(data_.pslu_freeable),
+                                   &(data_.grid.comm), &(data_.symb_comm),
+                                   &(data_.mem_usage));
+
+#else
         info = SLUD::symbfact_dist((data_.grid.nprow) * (data_.grid.npcol),
                                    data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
                                    data_.perm_r.getRawPtr(), data_.sizes,
                                    data_.fstVtxSep, &(data_.pslu_freeable),
                                    &(data_.grid.comm), &(data_.symb_comm),
                                    &(data_.mem_usage));
+#endif
       }
       TEUCHOS_TEST_FOR_EXCEPTION( info > 0.0,
                           std::runtime_error,
@@ -446,17 +457,35 @@ namespace Amesos2 {
         // matter that the glu_freeable member has never been
         // initialized, because it is never accessed.  It is a
         // placeholder arg.  The real work is done in data_.lu
+#if (SUPERLU_DIST_MAJOR_VERSION > 7)
+        data_.options.Fact = SLUD::SamePattern_SameRowPerm;
+        function_map::pdistribute(&(data_.options),
+                                  as<SLUD::int_t>(this->globalNumRows_), // aka "n"
+                                  &(data_.A), &(data_.scale_perm),
+                                  &(data_.glu_freeable), &(data_.lu),
+                                  &(data_.grid));
+#else
         function_map::pdistribute(SLUD::SamePattern_SameRowPerm,
                                   as<SLUD::int_t>(this->globalNumRows_), // aka "n"
                                   &(data_.A), &(data_.scale_perm),
                                   &(data_.glu_freeable), &(data_.lu),
                                   &(data_.grid));
+#endif
       } else {
+#if (SUPERLU_DIST_MAJOR_VERSION > 7)
+        data_.options.Fact = SLUD::DOFACT;
+        function_map::dist_psymbtonum(&(data_.options),
+                                      as<SLUD::int_t>(this->globalNumRows_), // aka "n"
+                                      &(data_.A), &(data_.scale_perm),
+                                      &(data_.pslu_freeable), &(data_.lu),
+                                      &(data_.grid));
+#else
         function_map::dist_psymbtonum(SLUD::DOFACT,
                                       as<SLUD::int_t>(this->globalNumRows_), // aka "n"
                                       &(data_.A), &(data_.scale_perm),
                                       &(data_.pslu_freeable), &(data_.lu),
                                       &(data_.grid));
+#endif
       }
 
       // Retrieve the normI of A (required by gstrf).
@@ -582,11 +611,20 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
+
+#if (SUPERLU_DIST_MAJOR_VERSION > 7)
+        function_map::gstrs(&(data_.options), as<SLUD::int_t>(this->globalNumRows_), &(data_.lu),
+                            &(data_.scale_perm), &(data_.grid), bvals_.getRawPtr(),
+                            as<SLUD::int_t>(local_len_rhs), as<SLUD::int_t>(first_global_row_b),
+                            as<SLUD::int_t>(local_len_rhs), as<int>(nrhs),
+                            &(data_.solve_struct), &(data_.stat), &ierr);
+#else
         function_map::gstrs(as<SLUD::int_t>(this->globalNumRows_), &(data_.lu),
                             &(data_.scale_perm), &(data_.grid), bvals_.getRawPtr(),
                             as<SLUD::int_t>(local_len_rhs), as<SLUD::int_t>(first_global_row_b),
                             as<SLUD::int_t>(local_len_rhs), as<int>(nrhs),
                             &(data_.solve_struct), &(data_.stat), &ierr);
+#endif
       } // end block for solve time
 
       TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
