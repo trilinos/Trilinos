@@ -91,6 +91,9 @@ class BlockJacobiIterFunctorL;
 template<class Ordinal, class Scalar, class ExecSpace>
 class ParCopyFunctor;
 
+template<class Ordinal, class Scalar, class ExecSpace>
+class ParPermCopyFunctor;
+
 template<class Ordinal, class Scalar, class Real, class ExecSpace>
 class ParScalFunctor;
 
@@ -178,6 +181,7 @@ class FastILUPrec
         ScalarArray uVal;
         OrdinalArray uColIdx;
         OrdinalArray uRowMap;
+        OrdinalArray a2uMap;
         // mirrors
         ScalarArrayMirror uVal_;
         OrdinalArrayMirror uColIdx_;
@@ -679,7 +683,7 @@ class FastILUPrec
             #ifdef FASTILU_TIMER
             Kokkos::Timer Timer;
             #endif
-            if (useMetis && level == 0) { // applied only at the first call (level 0)
+            if (useMetis && (guessFlag == 0 || level == 0)) { // applied only at the first call (level 0)
               // apply column permutation before sorting it
               FastILUPrec_Functor perm_functor(aColIdxIn, ipermMetis);
               Kokkos::RangePolicy<ColPermTag, ExecSpace> perm_policy (0, aColIdxIn.size());
@@ -721,20 +725,15 @@ class FastILUPrec
             Kokkos::RangePolicy<DiagScalTag, ExecSpace> scale_policy (0, nRows);
             Kokkos::parallel_for(
               "numericILU::diagScal", scale_policy, functor);
-            Kokkos::deep_copy(aVal_, aVal);
 
             // applyShift
             if (shift != zero) {
+                Kokkos::deep_copy(aVal_, aVal);
                 applyManteuffelShift();
+                Kokkos::deep_copy(aVal, aVal_);
             }
             #ifdef FASTILU_TIMER
             std::cout << "   + apply shift/scale  " << Timer.seconds() << std::endl;
-            Timer.reset();
-            #endif
-
-            Kokkos::deep_copy(aVal, aVal_);
-            #ifdef FASTILU_TIMER
-            std::cout << "   + deep copy  " << Timer.seconds() << std::endl;
             Timer.reset();
             #endif
 
@@ -839,16 +838,63 @@ class FastILUPrec
                 uRowMap_[i+1] += uRowMap_[i];
             }
             Kokkos::deep_copy(uRowMap, uRowMap_);
-            return uRowMap_[nRows];
+
+            // create a map from A to U (sorted)
+            auto nnzU = uRowMap_[nRows];
+#if 1
+            a2uMap = OrdinalArray("a2uMap", nnzU);
+            auto a2uMap_ = Kokkos::create_mirror(a2uMap);
+            for (Ordinal i = 0; i < nRows; i++) 
+            {
+                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
+                {
+                    Ordinal row = aRowIdx_[k];
+                    Ordinal col = aColIdx_[k];
+                    if (row <= col)
+                    {
+                        Ordinal pos = uRowMap_[col];
+                        a2uMap_(pos) = k;
+                        uRowMap_[col]++;
+                    }
+                }
+            }
+            Kokkos::deep_copy(a2uMap, a2uMap_);
+            // shift back pointer
+            for (Ordinal i = nRows; i > 0; i--) 
+            {
+                uRowMap_[i] = uRowMap_[i-1];
+            }
+            uRowMap_[0] = 0;
+#endif
+
+            return nnzU;
         }
 
         //Put initial guess into U
         void fillU()
         {
-#if 1
             #ifdef FASTILU_TIMER
             Kokkos::Timer Timer;
             #endif
+#if 1
+            int nnzU = a2uMap.extent(0);
+            #if 1
+            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx);
+            Kokkos::parallel_for(nnzU, permCopy);
+            ExecSpace().fence();
+            #else
+            Kokkos::deep_copy(aVal_, aVal);
+            auto a2uMap_ = Kokkos::create_mirror(a2uMap);
+            Kokkos::deep_copy(a2uMap_, a2uMap);
+            for (int k=0; k<nnzU; k++) {
+                auto pos = a2uMap_(k);
+                uVal_(k) = aVal_[pos];
+                uColIdx_(k) = aRowIdx_[pos];
+            }
+            Kokkos::deep_copy(uVal, uVal_);
+            Kokkos::deep_copy(uColIdx, uColIdx_);
+            #endif
+#else
             // extract U
             Kokkos::deep_copy(utRowMap, uRowMap); // using utRowMap (will get incremented)
             FastILUPrec_Functor functor(aVal, aRowMap, aColIdx, uVal, utRowMap, uColIdx);
@@ -868,30 +914,6 @@ class FastILUPrec
             std::cout << "   + sort_matrix  " << Timer.seconds() << std::endl;
             Timer.reset();
             #endif
-#else
-            using std::vector;
-            vector<Ordinal> colPtrs(nRows, 0);
-            for(Ordinal i = 0; i < nRows; i++) 
-            {
-                colPtrs[i] = uRowMap_[i];
-            }
-            for(Ordinal i = 0; i < nRows; i++)
-            {
-                for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
-                {
-                    Ordinal row = i;
-                    Ordinal col = aColIdx_[k];
-                    if (row <= col)
-                    {
-                        uVal_[colPtrs[col]] = aVal_[k];
-                        uColIdx_[colPtrs[col]] = row;
-                        colPtrs[col]++;
-                        assert(colPtrs[col] <= uRowMap_[col+1]);
-                    }
-                }
-            }
-            Kokkos::deep_copy(uColIdx, uColIdx_);
-            Kokkos::deep_copy(uVal, uVal_);
 #endif
 
             if ((level > 0) && (guessFlag !=0))
@@ -2485,6 +2507,36 @@ class ParCopyFunctor
             }
 
         scalar_array_type xDestination_, xSource_;
+};
+
+//Parallel copy operation with permutation
+template<class Ordinal, class Scalar, class ExecSpace>
+class ParPermCopyFunctor
+{
+    public:
+        typedef ExecSpace execution_space;
+        typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
+        typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+
+        ParPermCopyFunctor (ordinal_array_type a2uMap, scalar_array_type aVal, ordinal_array_type aRowIdx,
+                            scalar_array_type uVal, ordinal_array_type uColIdx)
+            :
+                a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), uVal_(uVal), uColIdx_(uColIdx)
+        {}
+
+        KOKKOS_INLINE_FUNCTION
+            void operator()(const Ordinal k) const
+            {
+                auto pos = a2uMap_(k);
+                uVal_(k) = aVal_[pos];
+                uColIdx_(k) = aRowIdx_[pos];
+            }
+
+        ordinal_array_type a2uMap_;
+        scalar_array_type  aVal_;
+        ordinal_array_type aRowIdx_;
+        scalar_array_type  uVal_;
+        ordinal_array_type uColIdx_;
 };
 
 
