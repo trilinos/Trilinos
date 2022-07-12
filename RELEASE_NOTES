@@ -6,9 +6,10 @@
 
 CMake
 
-  - Switch to modern CMake targets in IMPORTED library targets in installed
-    `<Package>Config.cmake` files which **breaks backward compatibility** for
-    some downstream CMake projects:
+  - A switch to modern CMake targets in IMPORTED library targets in installed
+    `<Package>Config.cmake` files has been made that **breaks backward
+    compatibility** for some downstream CMake projects by changing how include
+    directories are handled:
 
     With the switch to modern CMake IMPORTED targets, now include directories
     (along with critical compiler options and other modern CMake usage
@@ -23,14 +24,14 @@ CMake
     `Trilinos::all_selected_libs` or by linking against the individual package
     targets `<packageName>::all_libs` and/or the TPL targets
     `<tplName>::all_libs`.  To upgrade downstream CMake projects that are
-    showing missing include directories (i.e. header files can't be found)
-    just add `target_link_libraries()` calls with the appropriate
-    `<prefix>::all_libs` targets for the desired package and/or TPL.  (See the
-    section "Using the installed software in downstream CMake projects" in the
-    updated build reference guide.)  However, backward compatibility is
-    maintained for most customers which are linking all of their libraries
-    against `${Trilinos_LIBRARIES}`.  For these projects, no changes will need
-    to be made.
+    showing missing include directories (i.e. header files can't be found on
+    the compile liens) just add `target_link_libraries()` calls with the
+    appropriate `<prefix>::all_libs` targets for the desired package and/or
+    TPL.  (See the section "Using the installed software in downstream CMake
+    projects" in the updated build reference guide.)  However, backward
+    compatibility is maintained for most customers which are linking all of
+    their libraries against `${Trilinos_LIBRARIES}`.  For these projects, no
+    changes will need to be made.
 
     However, this change to modern CMake targets will also cause downstream
     CMake projects to pull in include directories as `SYSTEM` includes
@@ -89,6 +90,28 @@ CMake
     For more details on this change in the handling of include directories
     with the switch to modern CMake, see
     https://github.com/TriBITSPub/TriBITS/issues/443.
+
+  - TPL dependencies for selected TPLs are now set by default by setting
+    `<tplName>_LIB_ENABLED_DEPENDENCIES` in `Trilinos/TPLsList.cmake` but may
+    need to be adjusted in some existing configure scripts:
+
+    With the new TriBITS implementation to use modern CMake targets and
+    dependencies between these targets, the variable
+    `<tplName>_LIB_ENABLED_DEPENDENCIES` had to be set for several Trilinos
+    TPLs to ensure the correct order of libraries on the link line.  For
+    example, `LAPACK_LIB_ENABLED_DEPENDENCIES` is set by default to `BLAS` and
+    `ParMETIS_LIB_ENABLED_DEPENDENCIES` is set by default to `METIS` to inform
+    TriBITS to set up the correct IMPORTED library dependencies for these.
+    But there are cases with existing Trilinos configure scripts where only
+    the downstream TPL are enabled and `TPL_<tplName>_LIBRARIES` and
+    `TPL_<tplName>_INCLUDE_DIRS` is set up to contain all of the necessary
+    libraries and include dirs.  For example, there are some Trilinos
+    configure scripts that only enable `ParMETIS` and not `METIS` and
+    `TPL_ParMETIS_LIBRARIES` and `TPL_ParMETIS_INCLUDE_DIRS` are set to
+    contain the libraries and include directories for METIS as well.  To avoid
+    a configure error in this case, these unusual configure scripts will need
+    to modified to set `ParMETIS_LIB_ENABLED_DEPENDENCIES=OFF` to avoid
+    configure errors.
 
 
 ###############################################################################
