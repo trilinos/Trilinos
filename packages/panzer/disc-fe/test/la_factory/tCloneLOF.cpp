@@ -121,14 +121,14 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
    control_indexer->addField("Z",patternC1);
    control_indexer->buildGlobalUnknowns();
- 
+
    // setup factory
    RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
          = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm.getConst(),indexer));
-   
+
    // this is the member we are testing!
    RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
-   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
    std::vector<panzer::GlobalOrdinal> control_owned;
@@ -198,18 +198,18 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    // setup factory
    RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
          = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm,indexer));
-   
+
    // this is the member we are testing!
    RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
-   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
-   RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getThyraMatrix()); 
-   RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getGhostedThyraMatrix()); 
-   RCP<PVector>   x   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraDomainVector()); 
-   RCP<PVector>   gx   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraDomainVector()); 
-   RCP<PVector>   f   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraRangeVector()); 
-   RCP<PVector>   gf   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraRangeVector()); 
+   RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getThyraMatrix());
+   RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getGhostedThyraMatrix());
+   RCP<PVector>   x   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraDomainVector());
+   RCP<PVector>   gx   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraDomainVector());
+   RCP<PVector>   f   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraRangeVector());
+   RCP<PVector>   gf   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraRangeVector());
 
    TEST_EQUALITY(x->productSpace()->numBlocks(),1);
    TEST_EQUALITY(x->productSpace()->dim(),18);
@@ -286,22 +286,22 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    out << "build lof" << std::endl;
    RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
          = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm,indexer));
-   
+
    // this is the member we are testing!
    out << "cloning lof" << std::endl;
    RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
 
    out << "casting lof" << std::endl;
-   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof,true);
 
    out << "using casted lof" << std::endl;
-   RCP<BLinearOp> mat  = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getThyraMatrix(),true); 
-   RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getGhostedThyraMatrix(),true); 
+   RCP<BLinearOp> mat  = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getThyraMatrix(),true);
+   RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getGhostedThyraMatrix(),true);
    RCP<Vector>    x    = ep_control_lof->getThyraDomainVector();
    RCP<Vector>    gx   = ep_control_lof->getGhostedThyraDomainVector();
-   RCP<PVector>   f    = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraRangeVector(),true); 
-   RCP<PVector>   gf   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraRangeVector(),true); 
+   RCP<PVector>   f    = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraRangeVector(),true);
+   RCP<PVector>   gf   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraRangeVector(),true);
 
    TEST_EQUALITY(x->space()->dim(),18);
    TEST_EQUALITY(gx->space()->dim(),10+15);

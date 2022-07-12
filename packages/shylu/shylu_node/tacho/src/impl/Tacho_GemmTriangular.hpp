@@ -9,14 +9,13 @@
 
 namespace Tacho {
 
-  ///
-  /// GemmTriangular:
-  ///
-  
-  /// various implementation for different uplo and algo parameters
-  template<typename ArgTransA, typename ArgTransB, typename ArgUploC, typename ArgAlgo>
-  struct GemmTriangular;
+///
+/// GemmTriangular:
+///
 
-}
+/// various implementation for different uplo and algo parameters
+template <typename ArgTransA, typename ArgTransB, typename ArgUploC, typename ArgAlgo> struct GemmTriangular;
+
+} // namespace Tacho
 
 #endif

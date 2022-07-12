@@ -115,6 +115,7 @@ IGNORE_PREFIX          =
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
+HTML_TIMESTAMP         = YES
 #HTML_HEADER            = ../../common/header.html
 #HTML_FOOTER            = ../../common/footer.html
 #HTML_STYLESHEET        = ../../common/styles.css
