@@ -692,7 +692,7 @@ class FastILUPrec
               ExecSpace().fence();
             }
             //Sort each row of A by ColIdx
-            if (!skipSortMatrix) {
+            if (!skipSortMatrix || useMetis) {
               KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
               ExecSpace().fence();
             }
