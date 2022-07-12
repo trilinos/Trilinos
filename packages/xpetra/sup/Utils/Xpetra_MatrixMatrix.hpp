@@ -212,13 +212,27 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       }
     }
 
-    static const bool isTpetraCrs(RCP<Matrix>  Op) {
+    static bool isTpetraCrs(RCP<Matrix> Op) {
       RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if(crsOp == Teuchos::null) return false;
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
       const RCP<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(tmp_CrsMtx);
       if(tmp_ECrsMtx == Teuchos::null) return false;
       else return true;
+    }
+
+
+    static bool isTpetraCrs(const Matrix& Op) {
+      try{
+        const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap& >(Op);
+        if(crsOp == Teuchos::null) return false;
+        RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+        const RCP<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(tmp_CrsMtx);
+        if(tmp_ECrsMtx == Teuchos::null) return false;
+        else return true;
+      } catch(...) {
+        return false;
+      }
     }
     
     static RCP<const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Op2TpetraBlockCrs(RCP<Matrix> Op) {
@@ -265,7 +279,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       }
     }
 
-   static const bool isTpetraBlockCrs(RCP<Matrix>  Op) {
+   static bool isTpetraBlockCrs(RCP<Matrix>  Op) {
       RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if(crsOp == Teuchos::null) return false;
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
@@ -273,6 +287,20 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       if(tmp_BlockCrs == Teuchos::null) return false;
       else return true;
     }
+
+   static bool isTpetraBlockCrs(const Matrix&  Op) {
+     try {
+       const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
+       if(crsOp == Teuchos::null) return false;
+       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+       RCP<const TpetraBlockCrsMatrix> tmp_BlockCrs= Teuchos::rcp_dynamic_cast<const TpetraBlockCrsMatrix>(tmp_CrsMtx);
+       if(tmp_BlockCrs == Teuchos::null) return false;
+       else return true;
+     } catch(...) {
+       return false;
+     }
+    }
+
 
 #endif // HAVE_XPETRA_TPETRA
 
