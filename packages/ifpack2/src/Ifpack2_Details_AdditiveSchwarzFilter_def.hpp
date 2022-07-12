@@ -292,7 +292,7 @@ setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
   //Create a serial comm and the map for the final filtered CrsMatrix (each process uses its own local map)
 #ifdef HAVE_IFPACK2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! mapPairsAreFitted (A_unfiltered_), std::invalid_argument, "Ifpack2::LocalFilter: "
+    ! mapPairsAreFitted (*A_unfiltered_), std::invalid_argument, "Ifpack2::LocalFilter: "
     "A's Map pairs are not fitted to each other on Process "
     << A_->getRowMap ()->getComm ()->getRank () << " of the input matrix's "
     "communicator.  "
@@ -723,6 +723,42 @@ typename AdditiveSchwarzFilter<MatrixType>::mag_type AdditiveSchwarzFilter<Matri
   // Reordering doesn't change the Frobenius norm.
   return A_->getFrobeniusNorm ();
 }
+
+template<class MatrixType>
+bool
+AdditiveSchwarzFilter<MatrixType>::
+mapPairsAreFitted (const row_matrix_type& A)
+{
+  const map_type& rangeMap = * (A.getRangeMap ());
+  const map_type& rowMap = * (A.getRowMap ());
+  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
+
+  const map_type& domainMap = * (A.getDomainMap ());
+  const map_type& columnMap = * (A.getColMap ());
+  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
+
+  //Note BMK 6-22: Map::isLocallyFitted is a local-only operation, not a collective.
+  //This means that it can return different values on different ranks. This can cause MPI to hang,
+  //even though it's supposed to terminate globally when any single rank does.
+  //
+  //This function doesn't need to be fast since it's debug-only code.
+  int localSuccess = rangeAndRowFitted && domainAndColumnFitted;
+  int globalSuccess;
+
+  Teuchos::reduceAll<int, int> (*(A.getComm()), Teuchos::REDUCE_MIN, localSuccess, Teuchos::outArg (globalSuccess));
+
+  return globalSuccess == 1;
+}
+
+
+template<class MatrixType>
+bool
+AdditiveSchwarzFilter<MatrixType>::
+mapPairIsFitted (const map_type& map1, const map_type& map2)
+{
+  return map1.isLocallyFitted (map2);
+}
+
 
 }} // namespace Ifpack2::Details
 

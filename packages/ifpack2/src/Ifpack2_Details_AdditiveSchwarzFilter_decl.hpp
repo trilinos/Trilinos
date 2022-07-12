@@ -384,6 +384,30 @@ public:
   //@}
 
 private:
+
+  /// \brief Whether map1 is fitted to map2.
+  ///
+  /// \param map1 [in] The first map.
+  /// \param map2 [in] The second map.
+  ///
+  /// For Tpetra::Map instances map1 and map2, we say that map1 is
+  /// <i>fitted</i> to map2 (on the calling process), when the initial
+  /// indices of map1 (on the calling process) are the same and in the
+  /// same order as those of map2.  "Fittedness" is entirely a local
+  /// (per MPI process) property.  The predicate "map1 is fitted to
+  /// map2?" is <i>not</i> symmetric.  For example, map2 may have more
+  /// entries than map1.
+  static bool
+  mapPairIsFitted (const map_type& map1, const map_type& map2);
+
+  /// \brief Whether the domain Map of A is fitted to its column Map,
+  ///   and the range Map of A is fitted to its row Map.
+  ///
+  // If both pairs of Maps of the original matrix A are fitted on this
+  // process, then this process can use a fast "view" implementation.
+  static bool
+  mapPairsAreFitted (const row_matrix_type& A);
+
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_unfiltered_;
   //! Filtered and reordered matrix.
