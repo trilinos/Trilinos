@@ -100,6 +100,8 @@ namespace panzer
   {
     using Teuchos::RCP;
 
+    bool ENABLE_DEBUG_OUTPUT = false;
+
 #ifdef HAVE_MPI
     Teuchos::RCP<const Teuchos::MpiComm<int>> tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
 #else
@@ -254,7 +256,7 @@ namespace panzer
     ;
 
     // Debugging
-    if (true)
+    if (ENABLE_DEBUG_OUTPUT)
     {
       Teuchos::RCP<Teuchos::FancyOStream> out2 = Teuchos::getFancyOStream(Teuchos::rcp(&out, false));
       out2->setOutputToRootOnly(-1);
