@@ -188,7 +188,7 @@ initialize()
       metis_iperm_ = MetisArrayHost(Kokkos::ViewAllocateWithoutInitializing("metis_iperm"), nrows);
 
       // copy ColInds to host
-      auto localColIndsHost_ = Kokkos::create_mirror(localColInds_);
+      auto localColIndsHost_ = Kokkos::create_mirror_view(localColInds_);
       Kokkos::deep_copy(localColIndsHost_, localColInds_);
 
       // prepare for calling metis

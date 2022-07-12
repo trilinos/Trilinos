@@ -171,9 +171,9 @@ class FastICPrec
             level = level_;
 
             // mirror & deep-copy the input matrix
-            aRowMapHost = Kokkos::create_mirror(aRowMapIn);
-            aColIdxHost = Kokkos::create_mirror(aColIdxIn);
-            aValHost    = Kokkos::create_mirror(aValIn);
+            aRowMapHost = Kokkos::create_mirror_view(aRowMapIn);
+            aColIdxHost = Kokkos::create_mirror_view(aColIdxIn);
+            aValHost    = Kokkos::create_mirror_view(aValIn);
             Kokkos::deep_copy(aRowMapHost, aRowMapIn);
             Kokkos::deep_copy(aColIdxHost, aColIdxIn);
             Kokkos::deep_copy(aValHost,    aValIn);
@@ -256,9 +256,9 @@ class FastICPrec
 
         void transposeL()
         {
-            auto ltRowMap_ = Kokkos::create_mirror(ltRowMap);
-            auto ltColIdx_ = Kokkos::create_mirror(ltColIdx);
-            auto ltVal_ = Kokkos::create_mirror(ltVal);
+            auto ltRowMap_ = Kokkos::create_mirror_view(ltRowMap);
+            auto ltColIdx_ = Kokkos::create_mirror_view(ltColIdx);
+            auto ltVal_ = Kokkos::create_mirror_view(ltVal);
 
             //Count the elements in each row of Lt
             auto temp = OrdinalArrayHost("temp", nRows + 1);
@@ -482,9 +482,9 @@ class FastICPrec
             aRowMap = OrdinalArray("aRowMap", nRows + 1);
             aColIdx = OrdinalArray("aColIdx", knzl + knzu);
             aRowIdx = OrdinalArray("aRowIds", knzl + knzu);
-            aRowMap_ = Kokkos::create_mirror(aRowMap);
-            aColIdx_ = Kokkos::create_mirror(aColIdx);
-            aRowIdx_ = Kokkos::create_mirror(aRowIdx);
+            aRowMap_ = Kokkos::create_mirror_view(aRowMap);
+            aColIdx_ = Kokkos::create_mirror_view(aColIdx);
+            aRowIdx_ = Kokkos::create_mirror_view(aRowIdx);
 
             Ordinal aRowPtr = 0;
             aRowMap_[0] = 0;
@@ -530,7 +530,7 @@ class FastICPrec
         void numericILU()
         {
             aVal = ScalarArray("aVal", aColIdx.extent(0));
-            aVal_ = Kokkos::create_mirror(aVal);
+            aVal_ = Kokkos::create_mirror_view(aVal);
 
             //Copy the host matrix into the initialized a;
             for (Ordinal i = 0; i < nRows; i++)
@@ -562,7 +562,7 @@ class FastICPrec
 
         void countL()
         {
-            lRowMap_ = Kokkos::create_mirror(lRowMap);
+            lRowMap_ = Kokkos::create_mirror_view(lRowMap);
 
             lRowMap_[0] = 0;
             for (Ordinal i = 0; i < nRows; i++) 
@@ -585,9 +585,9 @@ class FastICPrec
 
         void fillL()
         {
-            lVal_    = Kokkos::create_mirror(lVal);
-            lColIdx_ = Kokkos::create_mirror(lColIdx);
-            diagElems_ = Kokkos::create_mirror(diagElems);
+            lVal_    = Kokkos::create_mirror_view(lVal);
+            lColIdx_ = Kokkos::create_mirror_view(lColIdx);
+            diagElems_ = Kokkos::create_mirror_view(diagElems);
 
             Ordinal lPtr = 0; 
             for (Ordinal i = 0; i < nRows; i++) 
@@ -625,8 +625,8 @@ class FastICPrec
 
                 Kokkos::deep_copy(diagElems, gD);
 
-                auto lGColIdx_ = Kokkos::create_mirror(lGColIdx);
-                auto lGVal_ = Kokkos::create_mirror(lGVal);
+                auto lGColIdx_ = Kokkos::create_mirror_view(lGColIdx);
+                auto lGVal_ = Kokkos::create_mirror_view(lGVal);
                 Kokkos::deep_copy(lGColIdx_, lGColIdx);
                 Kokkos::deep_copy(lGVal_, lGVal);
                 for (Ordinal i = 0; i < nRows; i++) 
@@ -662,7 +662,7 @@ class FastICPrec
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
-            auto diagFact_ = Kokkos::create_mirror(diagFact);
+            auto diagFact_ = Kokkos::create_mirror_view(diagFact);
             for (int i = 0; i < nRows; i++) 
             {
                 for(int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
@@ -818,7 +818,7 @@ class FastICPrec
 
         void setValues(ScalarArray& aValsIn)
         {
-          this->aValHost = Kokkos::create_mirror(aValsIn);
+          this->aValHost = Kokkos::create_mirror_view(aValsIn);
           Kokkos::deep_copy(this->aValHost, aValsIn);
           if(!initGuessPrec.is_null())
           {
@@ -854,7 +854,7 @@ class FastICPrec
             computeTime = t;
 
             Kokkos::deep_copy(diagElems_, diagElems);
-            diagElemsInv_ = Kokkos::create_mirror(diagElemsInv);
+            diagElemsInv_ = Kokkos::create_mirror_view(diagElemsInv);
             for (int i = 0; i < nRows; i++) 
             {
                 diagElemsInv_[i] = one/diagElems_[i];

@@ -493,14 +493,14 @@ class FastILUPrec
             aRowMap = OrdinalArray("aRowMap", nRows + 1);
             aColIdx = OrdinalArray("aColIdx", knzl + knzu);
             aRowIdx = OrdinalArray("aRowIds", knzl + knzu);
-            aRowMap_ = Kokkos::create_mirror(aRowMap);
-            aColIdx_ = Kokkos::create_mirror(aColIdx);
-            aRowIdx_ = Kokkos::create_mirror(aRowIdx);
+            aRowMap_ = Kokkos::create_mirror_view(aRowMap);
+            aColIdx_ = Kokkos::create_mirror_view(aColIdx);
+            aRowIdx_ = Kokkos::create_mirror_view(aRowIdx);
 
             aLvlIdx_ = OrdinalArrayHost("aLvlIdx", knzl + knzu);
 
             aVal = ScalarArray("aVal", aColIdx.extent(0));
-            aVal_ = Kokkos::create_mirror(aVal);
+            aVal_ = Kokkos::create_mirror_view(aVal);
 
             Ordinal aRowPtr = 0;
             aRowMap_[0] = aRowPtr;
@@ -552,7 +552,7 @@ class FastILUPrec
             //Compute RowMap for L and U. 
             // > form RowMap for L
             lRowMap = OrdinalArray("lRowMap", nRows + 1);
-            lRowMap_ = Kokkos::create_mirror(lRowMap);
+            lRowMap_ = Kokkos::create_mirror_view(lRowMap);
             Ordinal nnzL = countL();
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished counting L" << std::endl;
@@ -561,8 +561,8 @@ class FastILUPrec
             // > form RowMap for U and Ut
             uRowMap  = OrdinalArray("uRowMap", nRows + 1);
             utRowMap = OrdinalArray("utRowMap", nRows + 1);
-            utRowMap_ = Kokkos::create_mirror(utRowMap);
-            uRowMap_  = Kokkos::create_mirror(uRowMap);
+            utRowMap_ = Kokkos::create_mirror_view(utRowMap);
+            uRowMap_  = Kokkos::create_mirror_view(uRowMap);
             Ordinal nnzU = countU();
 
             // > form RowMap for Ut
@@ -580,13 +580,13 @@ class FastILUPrec
             utVal = ScalarArray("utVal", nnzU);
 
             //Create mirror
-            lColIdx_ = Kokkos::create_mirror(lColIdx);
-            uColIdx_ = Kokkos::create_mirror(uColIdx);
-            utColIdx_ = Kokkos::create_mirror(utColIdx);
+            lColIdx_  = Kokkos::create_mirror_view(lColIdx);
+            uColIdx_  = Kokkos::create_mirror_view(uColIdx);
+            utColIdx_ = Kokkos::create_mirror_view(utColIdx);
 
-            lVal_    = Kokkos::create_mirror(lVal);
-            uVal_    = Kokkos::create_mirror(uVal);
-            utVal_    = Kokkos::create_mirror(utVal);
+            lVal_    = Kokkos::create_mirror_view(lVal);
+            uVal_    = Kokkos::create_mirror_view(uVal);
+            utVal_   = Kokkos::create_mirror_view(utVal);
             #ifdef FASTILU_INIT_TIMER
             std::cout << " Mirror : " << timer.seconds() << std::endl;
             timer.reset();
@@ -605,12 +605,12 @@ class FastILUPrec
             aRowMap = OrdinalArray("aRowMap", nRows + 1);
             aColIdx = OrdinalArray("aColIdx", nnzA);
             aRowIdx = OrdinalArray("aRowIds", nnzA);
-            aRowMap_ = Kokkos::create_mirror(aRowMap);
-            aColIdx_ = Kokkos::create_mirror(aColIdx);
-            aRowIdx_ = Kokkos::create_mirror(aRowIdx);
+            aRowMap_ = Kokkos::create_mirror_view(aRowMap);
+            aColIdx_ = Kokkos::create_mirror_view(aColIdx);
+            aRowIdx_ = Kokkos::create_mirror_view(aRowIdx);
 
             aVal = ScalarArray("aVal", nnzA);
-            aVal_ = Kokkos::create_mirror(aVal);
+            aVal_ = Kokkos::create_mirror_view(aVal);
 
             Ordinal aRowPtr = 0;
             aRowMap_[0] = aRowPtr;
@@ -643,7 +643,7 @@ class FastILUPrec
             //Now allocate memory for L and U. 
             //
             lRowMap = OrdinalArray("lRowMap", nRows + 1);
-            lRowMap_ = Kokkos::create_mirror(lRowMap);
+            lRowMap_ = Kokkos::create_mirror_view(lRowMap);
             countL();
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished counting L" << std::endl;
@@ -651,8 +651,8 @@ class FastILUPrec
             
             uRowMap = OrdinalArray("uRowMap", nRows + 1);
             utRowMap = OrdinalArray("utRowMap", nRows + 1);
-            utRowMap_ = Kokkos::create_mirror(utRowMap);
-            uRowMap_  = Kokkos::create_mirror(uRowMap);
+            utRowMap_ = Kokkos::create_mirror_view(utRowMap);
+            uRowMap_  = Kokkos::create_mirror_view(uRowMap);
             countU();
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "**Finished counting U" << std::endl;
@@ -668,13 +668,13 @@ class FastILUPrec
             utVal = ScalarArray("utVal", uRowMap_[nRows]);
 
             //Create mirror
-            lColIdx_ = Kokkos::create_mirror(lColIdx);
-            uColIdx_ = Kokkos::create_mirror(uColIdx);
-            utColIdx_ = Kokkos::create_mirror(utColIdx);
+            lColIdx_  = Kokkos::create_mirror_view(lColIdx);
+            uColIdx_  = Kokkos::create_mirror_view(uColIdx);
+            utColIdx_ = Kokkos::create_mirror_view(utColIdx);
 
-            lVal_    = Kokkos::create_mirror(lVal);
-            uVal_    = Kokkos::create_mirror(uVal);
-            utVal_   = Kokkos::create_mirror(utVal);
+            lVal_    = Kokkos::create_mirror_view(lVal);
+            uVal_    = Kokkos::create_mirror_view(uVal);
+            utVal_   = Kokkos::create_mirror_view(utVal);
         }
 
         void numericILU()
@@ -843,7 +843,7 @@ class FastILUPrec
             auto nnzU = uRowMap_[nRows];
 #if 1
             a2uMap = OrdinalArray("a2uMap", nnzU);
-            auto a2uMap_ = Kokkos::create_mirror(a2uMap);
+            auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
             for (Ordinal i = 0; i < nRows; i++) 
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
@@ -884,7 +884,7 @@ class FastILUPrec
             ExecSpace().fence();
             #else
             Kokkos::deep_copy(aVal_, aVal);
-            auto a2uMap_ = Kokkos::create_mirror(a2uMap);
+            auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
             Kokkos::deep_copy(a2uMap_, a2uMap);
             for (int k=0; k<nnzU; k++) {
                 auto pos = a2uMap_(k);
@@ -974,7 +974,7 @@ class FastILUPrec
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
-            auto diagFact_ = Kokkos::create_mirror(diagFact);
+            auto diagFact_ = Kokkos::create_mirror_view(diagFact);
             for (int i = 0; i < nRows; i++)
             {
                 for(int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
@@ -1132,9 +1132,9 @@ class FastILUPrec
             aRowMapIn = aRowMapIn_;
             aColIdxIn = aColIdxIn_;
             aValIn    = aValIn_;
-            aRowMapHost = Kokkos::create_mirror(aRowMapIn_);
-            aColIdxHost = Kokkos::create_mirror(aColIdxIn_);
-            aValHost = Kokkos::create_mirror(aValIn_);
+            aRowMapHost = Kokkos::create_mirror_view(aRowMapIn_);
+            aColIdxHost = Kokkos::create_mirror_view(aColIdxIn_);
+            aValHost = Kokkos::create_mirror_view(aValIn_);
             Kokkos::deep_copy(aRowMapHost, aRowMapIn_);
             Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
             Kokkos::deep_copy(aValHost,    aValIn_);
@@ -1423,8 +1423,8 @@ class FastILUPrec
             permMetis = OrdinalArray("permMetis", nRows_);
             ipermMetis = OrdinalArray("ipermMetis", nRows_);
 
-            permMetisHost = Kokkos::create_mirror(permMetis);
-            ipermMetisHost = Kokkos::create_mirror(ipermMetis);
+            permMetisHost = Kokkos::create_mirror_view(permMetis);
+            ipermMetisHost = Kokkos::create_mirror_view(ipermMetis);
             for (Ordinal i = 0; i < nRows_; i++) {
               permMetisHost(i) = permMetis_(i);
               ipermMetisHost(i) = ipermMetis_(i);
@@ -1574,7 +1574,7 @@ class FastILUPrec
         void setValues(ScalarArray& aValIn_)
         {
           this->aValIn = aValIn_;
-          this->aValHost = Kokkos::create_mirror(aValIn_);
+          this->aValHost = Kokkos::create_mirror_view(aValIn_);
           Kokkos::deep_copy(this->aValHost, aValIn_);
           if(!initGuessPrec.is_null())
           {
@@ -1771,8 +1771,8 @@ class FastILUPrec
                 if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
 
                     // copy x to host
-                    auto x_ = Kokkos::create_mirror(x2d);
-                    auto y_ = Kokkos::create_mirror(y2d);
+                    auto x_ = Kokkos::create_mirror_view(x2d);
+                    auto y_ = Kokkos::create_mirror_view(y2d);
                     Kokkos::deep_copy(x_, x2d);
 
                     if (doUnitDiag_TRSV) {
