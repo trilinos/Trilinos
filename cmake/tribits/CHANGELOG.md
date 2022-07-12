@@ -2,7 +2,19 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
-## 2022-05-16:
+## 2022-05-25:
+
+* **Changed:** Dependencies between external packages (TPLs) must
+  now be specified in order for correct linkage.  No longer will listing
+  the external packages (TPLs) in the correct order in the
+  `<repoDir>/TPLsList.cmake` file and listing all upstream external packages (TPLs) in
+  `<packageDir>/cmake/Dependencies.cmake` be sufficient.  For now, dependencies
+  between external packages (TPLs) can be set in the `<packageDir>/TPLsList.cmake`
+  file by setting the cache var `<tplName>_LIB_ENABLED_DEPENDENCIES` for each downstream
+  external package (TPL).  (See [`TribitsExampleProject2/TPLsList.cmake`](https://github.com/TriBITSPub/TriBITS/blob/master/tribits/examples/TribitsExampleProject2/TPLsList.cmake)
+  for an example.)  Later, a more scalable approach for setting these vars will
+  be devised.  However, this means it is no longer necessary for a package
+  to list all of its upstream external packages/TPLs, only its direct dependencies.
 
 * **Changed:** All compliant external packages (TPLs) must now set the
   imported target `<tplName>::all_libs` in their `FindTPL<tplName>.cmake`

@@ -42,7 +42,7 @@ include_guard()
 include(CMakeBuildTypesList)
 
 
-# Return the value of the target proeprty IMPORTED_LOCATION_<CONFIG> for every
+# Return the value of the target property IMPORTED_LOCATION_<CONFIG> for every
 # known <CONFIG> and returns the fist non-null value.  Otherwise, returns
 # empty.
 #

@@ -357,7 +357,7 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
     clp.add_argument(
       "--no-op", dest="noOp", action="store_true",
       default=False,
-      help="Don't actaully run any commands that would change the state other"
+      help="Don't actually run any commands that would change the state other"
       +" (other than the natural side-effects of running git query commands)" )
 
     options = clp.parse_args(cmndLineArgs)
