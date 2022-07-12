@@ -1262,7 +1262,7 @@ endmacro()
 # ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON but the target
 # <thePackage>_libs is attempted to be built anyway and we expect it to build
 # nothing and result in no error.  (The outer ctest -S driver is not smart
-# enough to know all the lgoic for if a package will actaully be enabled or
+# enough to know all the lgoic for if a package will actually be enabled or
 # not.  That is the job of the inner TriBITS dependency logic and
 # ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.) Otherwise, with
 # CMake 3.19+, cmake_build() catches errors in undefined global build targets

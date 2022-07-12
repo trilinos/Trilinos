@@ -61,9 +61,9 @@ cmake_policy(SET CMP0057 NEW) # Support if ( ... IN_LIST ... )
 #   ``<tplConfigFile>``: Full file path for the ``<tplName>Config.cmake``
 #   file that will be written out.
 #
-# This function just calls
-# ``tribits_external_package_write_config_file_str()`` and writes that text to
-# the file ``<tplConfigFile>`` so see that function for more details.
+# This function just calls `tribits_external_package_write_config_file_str()`_
+# and writes that text to the file ``<tplConfigFile>`` so see that function
+# for more details.
 #
 function(tribits_external_package_write_config_file  tplName  tplConfigFile)
   tribits_external_package_write_config_file_str(${tplName} tplConfigFileStr)
@@ -172,30 +172,81 @@ endfunction()
 #   tribits_external_package_write_config_file_str(
 #     <tplName> <tplConfigFileStrOut> )
 #
-# The arguments are:
+# The function arguments are:
 #
 #   ``<tplName>``: Name of the external package/TPL
 #
 #   ``<tplConfigFileStrOut>``: Name of variable that will contain the string
 #   for the config file on output.
 #
-# This function reads from the variables ``TPL_<tplName>_INCLUDE_DIRS``
-# ``TPL_<tplName>_LIBRARIES``, and ``<tplName>_LIB_ENABLED_DEPENDENCIES``
+# This function reads from the (cache) variables
+#
+#   * ``TPL_<tplName>_INCLUDE_DIRS``
+#   * ``TPL_<tplName>_LIBRARIES``
+#   * ``<tplName>_LIB_ENABLED_DEPENDENCIES``
+#
 # (which must already be set) and uses that information to produce the
 # contents of the ``<tplName>Config.cmake`` which is returned as a string
 # variable that contains IMPORTED targets to represent these libraries and
 # include directories as well as ``find_dependency()`` calls for upstream
-# packages listed in ``<tplName>_LIB_ENABLED_DEPENDENCIES``
+# packages listed in ``<tplName>_LIB_ENABLED_DEPENDENCIES``.
 #
-# ToDo: Flesh out more documentation for behavior as more features are added
-# for handling:
+# The arguments in ``TPL_<tplName>_LIBRARIES`` are handled in special ways in
+# order to create the namespaced IMPORTED targets ``<tplName>::<libname>`` and
+# the ``<tplName>::all_libs`` target that depends on these.  The types of
+# arguments that are handled and how the are interpreted:
 #
-# * ``TPL_<tplName>_LIBRARIES`` containing ``-l`` and ``-L`` arguments ...
+#   ``<abs-base-path>/[lib]<libname>.<longest-ext>``
 #
-# * ``TPL_<tplName>_LIBRARIES`` containing arguments other than library files
-# * or ``-l`` and ``-L`` arguments and files.
+#     Arguments that are absolute file paths are treated as libraries and an
+#     imported target name ``<libname>`` is derived from the file name (of the
+#     form ``lib<libname>.<longest-ext>`` removing beginning ``lib`` and file
+#     extension ``.<longest-ext>``).  The IMPORTED target
+#     ``<tplName>::<libname>`` is created and the file path is set using the
+#     ``IMPORTED_LOCATION`` target property.
 #
-function(tribits_external_package_write_config_file_str tplName tplConfigFileStrOut)
+#   ``-l<libname>``
+#
+#     Arguments of the form ``-l<libname>`` are used to create IMPORTED
+#     targets with the name ``<tplName>::<libname>`` using the
+#     ``IMPORTED_LIBNAME`` target property.
+#
+#   ``<libname>``
+#
+#     Arguments that are a raw name that matches the regex
+#     ``^[a-zA-Z_][a-zA-Z0-9_-]*$`` are interpreted to be a library name
+#     ``<libname>`` and is used to create an IMPORTED targets
+#     ``<tplName>::<libname>`` using the ``IMPORTED_LIBNAME`` target property.
+#
+#   ``-L<dir>``
+#
+#     Link directories.  These are pulled off and added to the
+#     ``<tplName>::all_libs`` using ``target_link_options()``.  (The order of
+#     these options is maintained.)
+#
+#   ``-<any-option>``
+#
+#     Any other option that starts with ``-`` is assumed to
+#     be a link argument where the order does not matter in relation to the
+#     libraries (but the order of these extra options are maintained w.r.t. each
+#     other).
+#
+#   ``<unrecognized>``
+#
+#     Any other argument that does not match one of the above patterns is
+#     regarded as an error.
+#
+# For more details on the handling of individual ``TPL_<tplName>_LIBRARIES``
+# arguments, see `tribits_tpl_libraries_entry_type()`_.
+#
+# The list of directories given in ``TPL_<tplName>_INCLUDE_DIRS`` is added to
+# the ``<tplName>::all_libs`` target using ``target_include_directories()``.
+#
+# Finally, for every ``<upstreamTplName>`` listed in
+# ``<tplName>_LIB_ENABLED_DEPENDENCIES``, a link dependency is created using
+# ``target_link_library(<tplName>::all_libs INTERFACE <upstreamTplName>)``.
+#
+function(tribits_external_package_write_config_file_str  tplName  tplConfigFileStrOut)
 
   # A) Set up beginning of config file text
   set(configFileStr "")
@@ -402,30 +453,36 @@ function(tribits_external_package_process_libraries_list  tplName)
 endfunction()
 
 
+# @FUNCTION: tribits_tpl_libraries_entry_type()
+#
 # Returns the type of the library entry in the list TPL_<tplName>_LIBRARIES
+#
+# Usage::
+#
+#   tribits_tpl_libraries_entry_type(<libentry>  <libEntryTypeOut>)
 #
 # Arguments:
 #
-#   ``libentry`` [in]: Element of ``TPL_<tplName>_LIBRARIES``
+#   ``<libentry>`` [in]: Element of ``TPL_<tplName>_LIBRARIES``
 #
-#   ``libEntryTypeOut`` [out]: Variable set on output to the type of entry.
+#   ``<libEntryTypeOut>`` [out]: Variable set on output to the type of entry.
 #
 # The types of entries set on ``libEntryTypeOut`` include:
 #
-#   ``FULL_LIB_PATH``: A full library path
+#   * ``FULL_LIB_PATH``: A full library path
 #
-#   ``LIB_NAME_LINK_OPTION``: A library name link option of the form
-#   ``-l<libname>``
+#   * ``LIB_NAME_LINK_OPTION``: A library name link option of the form
+#     ``-l<libname>``
 #
-#   ``LIB_NAME``: A library name of the form ``<libname>``
+#   * ``LIB_NAME``: A library name of the form ``<libname>``
 #
-#   ``LIB_DIR_LINK_OPTION``: A library directory search option of the form
-#   ``-L<dir>``
+#   * ``LIB_DIR_LINK_OPTION``: A library directory search option of the form
+#     ``-L<dir>``
 #
-#   ``GENERAL_LINK_OPTION``: Some other general link option that starts with
-#   ``-`` but is not ``-l`` or ``-L``.
+#   * ``GENERAL_LINK_OPTION``: Some other general link option that starts with
+#     ``-`` but is not ``-l`` or ``-L``.
 #
-#   ``UNSUPPORTED_LIB_ENTRY``: An unsupported lib option
+#   * ``UNSUPPORTED_LIB_ENTRY``: An unsupported lib option
 #
 function(tribits_tpl_libraries_entry_type  libentry  libEntryTypeOut)
   string(SUBSTRING "${libentry}" 0 1 firstCharLibEntry)
@@ -497,6 +554,7 @@ endfunction()
 # imported targets <tplName>::<libnamei> for this TPL are linked to this first
 # <tplName>::<libname0> which has the needed dependencies.
 
+
 function(tribits_external_package_get_libname_and_path_from_libentry
     libentry  libEntryType  libnameOut  libpathOut
   )
@@ -548,24 +606,56 @@ function(tribits_external_package_get_libname_from_full_lib_path  full_lib_path
     libnameOut
   )
   # Should be an absolute library path
-  get_filename_component(full_libname "${full_lib_path}" NAME_WLE)
+  get_filename_component(full_libname "${full_lib_path}" NAME_WE)
+  # Begins with 'lib'?
+  tribits_external_package_libname_begins_with_lib("${full_libname}" beginsWithLib)
   # Assert is a valid lib name and get lib name
+  set(libname "")
   string(LENGTH "${full_libname}" full_libname_len)
   if (full_libname_len LESS 0)
-    tribits_print_invalid_lib_name(${tplName} "${full_libname}")
+    tribits_print_invalid_lib_name(${tplName} "${full_lib_path}")
   endif()
   if (WIN32)
     # Native windows compilers does not prepend library names with 'lib'
     set(libname "${full_libname}")
-  else()
-    # Every other system prepends the library name with 'lib'
-    string(SUBSTRING "${full_libname}" 0 3 libPart)
-    if (NOT libPart STREQUAL "lib")
-      tribits_print_invalid_lib_name(${tplName} "${full_libname}")
+  elseif (APPLE)
+    # On MacOSX, CMake allows using frameworks that *don't* begin with 'lib'
+    # so we have to allow for that
+    if (beginsWithLib)
+      string(SUBSTRING "${full_libname}" 3 -1 libname)
+    else()
+      # Must be a framework dir with extension .framework
+      get_filename_component(last_ext "${full_lib_path}" LAST_EXT)
+      if (last_ext  STREQUAL ".framework")
+        set(libname "${full_libname}")
+      else()
+        tribits_print_invalid_lib_name(${tplName} "${full_lib_path}")
+      endif()
     endif()
-    string(SUBSTRING "${full_libname}" 3 -1 libname)
+  else() # I.e. Linux
+    # Every other system (i.e. Linux) prepends the library name with 'lib' so
+    # assert for that
+    if (NOT beginsWithLib)
+      tribits_print_invalid_lib_name(${tplName} "${full_lib_path}")
+    else()
+      string(SUBSTRING "${full_libname}" 3 -1 libname)
+    endif()
   endif()
+  # Set output
   set(${libnameOut} ${libname} PARENT_SCOPE)
+endfunction()
+
+
+function(tribits_external_package_libname_begins_with_lib  full_libname
+    libnameBeginsWithLibOut
+  )
+  string(SUBSTRING "${full_libname}" 0 3 libPart)
+  if (libPart STREQUAL "lib")
+    set(libnameBeginsWithLib TRUE)
+  else()
+    set(libnameBeginsWithLib FALSE)
+  endif()
+  set(${libnameBeginsWithLibOut} ${libnameBeginsWithLib} PARENT_SCOPE)
 endfunction()
 
 
@@ -585,8 +675,8 @@ endfunction()
 
 
 function(tribits_print_invalid_lib_name  tplName  full_libname)
-  message(SEND_ERROR
-    "ERROR: TPL_${tplName}_LIBRARIES entry '${full_libname}' not a valid lib name!")
+  message_wrapper(SEND_ERROR
+    "ERROR: TPL_${tplName}_LIBRARIES entry '${full_libname}' not a valid lib file name!")
 endfunction()
 
 

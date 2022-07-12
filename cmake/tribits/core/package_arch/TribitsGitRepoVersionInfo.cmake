@@ -153,7 +153,7 @@ function(tribits_generate_single_repo_version_string  gitRepoDir
 
 endfunction()
 # NOTE: Above, it is fine if ${maxSummaryLen} > len(${gitCmndOutput}) as
-# string(SUBSTRING ...) will just shorten this to the lenght of the string.
+# string(SUBSTRING ...) will just shorten this to the length of the string.
 
 
 function(tribits_assert_git_executable)

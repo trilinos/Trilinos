@@ -39,6 +39,7 @@
 
 
 # Standard TriBITS Includes
+include(TribitsExternalPackageFindTplHelpers)
 include(TribitsExternalPackageWriteConfigFile)
 include(TribitsTplFindIncludeDirsAndLibraries)
 include(TribitsGeneralMacros)
@@ -147,9 +148,6 @@ function(tribits_process_enabled_tpl  TPL_NAME)
       message(FATAL_ERROR
         "ERROR: TPL_${TPL_NAME}_NOT_FOUND=${TPL_${TPL_NAME}_NOT_FOUND}, aborting!")
     endif()
-
-    # Assert that the TPL correctly defined all of these variables
-    assert_defined(TPL_${TPL_NAME}_LIBRARIES)
 
     # Generate the <tplName>ConfigVersion.cmake file if it has not been
     # created yet and add install targets for <tplName>Config[Version].cmake
