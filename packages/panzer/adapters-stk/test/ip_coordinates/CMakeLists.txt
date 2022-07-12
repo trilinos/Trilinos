@@ -10,14 +10,17 @@ SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
 IF(PANZER_HAVE_EPETRA)
-  SET(SOURCES epetra_ip_coordinates.cpp)
-ELSE(PANZER_HAVE_EPETRA)
-  SET(SOURCES tpetra_ip_coordinates.cpp)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    epetra_ip_coordinates
+    SOURCES epetra_ip_coordinates.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 ENDIF(PANZER_HAVE_EPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ip_coordinates
-  SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
+  tpetra_ip_coordinates
+  SOURCES tpetra_ip_coordinates.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
