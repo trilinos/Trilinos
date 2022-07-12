@@ -101,7 +101,7 @@ initLocalPrec()
 {
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  bool skipSortMatrix = false;
+  bool skipSortMatrix = !p.use_metis;
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   #ifdef HAVE_IFPACK2_METIS
