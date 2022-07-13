@@ -542,12 +542,10 @@ namespace panzer {
     auto weighted_curl_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_curl_basis_scalar.get_view());
     for(int cell=0;cell<num_cells;cell++) {
         for(unsigned int i=0;i<num_qp;i++) {
-           double x = ref_ip_coordinates_host(cell,i,0);
-           double y = ref_ip_coordinates_host(cell,i,1);
            double weight = cub_weights_host(i);
 
            // check values
-           TEST_EQUALITY(curl_basis_scalar_host(cell,0,i), 8); // CAN 8 can be
+           TEST_EQUALITY(curl_basis_scalar_host(cell,0,i), 8);
            TEST_EQUALITY(curl_basis_scalar_host(cell,1,i), 8);
            TEST_EQUALITY(curl_basis_scalar_host(cell,2,i), 8);
            TEST_EQUALITY(curl_basis_scalar_host(cell,3,i), 8);
@@ -908,8 +906,10 @@ namespace panzer {
 
     Kokkos::View<double****, Kokkos::LayoutLeft> basis_view("A", 4, 4, 11, 3);
     Kokkos::deep_copy(basis_view, basis_values.basis_vector.get_view());
+    auto basis_view_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_view);
     Kokkos::View<double***, Kokkos::LayoutLeft> div_basis_view("B", 4, 4, 11);
     Kokkos::deep_copy(div_basis_view, basis_values.div_basis.get_view());
+    auto div_basis_view_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),div_basis_view);
     basis_values.applyOrientations(orientations);
 
     Kokkos::deep_copy(div_basis_host,basis_values.div_basis.get_view());
@@ -927,12 +927,13 @@ namespace panzer {
          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
          for(int b=0;b<4;b++) {
-           // check out basis on transformed elemented
-           TEST_EQUALITY( basis_vector_host(cell, b,i,0),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,0));
-           TEST_EQUALITY( basis_vector_host(cell, b,i,1),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,1));
-           TEST_EQUALITY( basis_vector_host(cell, b,i,2),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,2));
+//           // check out basis on transformed elemented
+//           std::cout <<  "compare: "<< basis_vector_host(cell, b,i,0) << " == "<< ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,0) <<std::endl;
+           TEST_EQUALITY( basis_vector_host(cell, b,i,0),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,0));
+           TEST_EQUALITY( basis_vector_host(cell, b,i,1),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,1));
+           TEST_EQUALITY( basis_vector_host(cell, b,i,2),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,2));
 
-           TEST_EQUALITY(div_basis_host(cell, b,i), ortVal[faceOrts[cell][b]] * div_basis_view(cell, b,i));
+           TEST_EQUALITY(div_basis_host(cell, b,i), ortVal[faceOrts[cell][b]] * div_basis_view_mirror(cell, b,i));
 
            TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,0),relCellVol*weight*basis_vector_host(cell,b,i,0));
            TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,1),relCellVol*weight*basis_vector_host(cell,b,i,1));
