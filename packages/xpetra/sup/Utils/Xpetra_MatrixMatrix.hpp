@@ -225,7 +225,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
     static bool isTpetraCrs(const Matrix& Op) {
       try{
         const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap& >(Op);
-        RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+        RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
         const RCP<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(tmp_CrsMtx);
         if(tmp_ECrsMtx == Teuchos::null) return false;
         else return true;
@@ -290,7 +290,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
    static bool isTpetraBlockCrs(const Matrix&  Op) {
      try {
        const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
-       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+       RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
        RCP<const TpetraBlockCrsMatrix> tmp_BlockCrs= Teuchos::rcp_dynamic_cast<const TpetraBlockCrsMatrix>(tmp_CrsMtx);
        if(tmp_BlockCrs == Teuchos::null) return false;
        else return true;
