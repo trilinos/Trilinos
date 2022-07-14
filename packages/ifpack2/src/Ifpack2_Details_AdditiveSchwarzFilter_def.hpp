@@ -311,7 +311,7 @@ setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
   localMap_ = rcp (new map_type (numLocalRows, 0, localComm, Tpetra::GloballyDistributed));
   //Create the inner filtered matrix.
   auto crsParams = rcp(new Teuchos::ParameterList);
-  crsParams->set<bool>("sorted", true);
+  crsParams->template set<bool>("sorted", true);
   //NOTE: this is the fastest way to construct A_ - it's created as fillComplete,
   //and no communication needs to be done since localMap_ uses a local comm.
   //It does need to copy the whole local matrix to host when DualViews are constructed
