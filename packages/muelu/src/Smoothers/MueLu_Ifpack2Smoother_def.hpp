@@ -227,7 +227,6 @@ namespace MueLu {
       if (blocksize) {
         // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
 
-        using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
         RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
         if(AcrsWrap.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot convert matrix A to CrsMatrixWrap object.");
