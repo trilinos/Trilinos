@@ -1627,8 +1627,7 @@ class FastILUPrec
             KokkosKernels::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
               (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
             // sort, if the triangular solve algorithm requires a sorted matrix.
-            // Currently, only Fast does not require this.
-            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast;
+            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if(sortRequired) {
               KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
                 (utRowMap, utColIdx, utVal);
