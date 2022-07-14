@@ -1201,14 +1201,16 @@ class FastILUPrec
             {}
 
             // just calling SwapDiagTag
-            FastILUPrec_Functor(ScalarArray  lVal_, OrdinalArray  lRowMap_,
-                                ScalarArray utVal_, OrdinalArray utRowMap_,
+            FastILUPrec_Functor(const SwapDiagTag&, ScalarArray  lVal_, OrdinalArray  lRowMap_, OrdinalArray lColIdx_,
+                                ScalarArray utVal_, OrdinalArray utRowMap_, OrdinalArray utColIdx_,
                                 ScalarArray diagElems_) :
             diagElems (diagElems_),
             lVal (lVal_),
             lRowMap (lRowMap_),
+            lColIdx (lColIdx_),
             utVal (utVal_),
-            utRowMap (utRowMap_)
+            utRowMap (utRowMap_),
+            utColIdx (utColIdx_)
             {}
 
             // just calling ColPerm
@@ -1295,10 +1297,25 @@ class FastILUPrec
             void operator()(const SwapDiagTag &, const int i) const {
                 const Scalar one  = STS::one();
                 const Scalar zero = STS::zero();
-                // diagonal of L (stored as last entry in the row)
-                lVal[lRowMap[i+1]-1] = zero; // -one;
-                // diagonal of U (stored as first entry in the row)
-                utVal[utRowMap[i]] = zero; // -one
+                // zero the diagonal of L. If sorted, this finds it on first iter.
+                Ordinal lRowBegin = lRowMap(i);
+                Ordinal lRowEnd = lRowMap(i + 1);
+                for(Ordinal j = 0; j < lRowEnd - lRowBegin; j++) {
+                  Ordinal reversed = lRowEnd - j - 1;
+                  if(lColIdx(reversed) == i) {
+                    lVal(reversed) = zero;
+                    break;
+                  }
+                }
+                // zero the diagonal of Ut. If sorted, this finds it on first iter.
+                Ordinal utRowBegin = utRowMap(i);
+                Ordinal utRowEnd = utRowMap(i + 1);
+                for(Ordinal j = utRowBegin; j < utRowEnd; j++) {
+                  if(utColIdx(j) == i) {
+                    utVal(j) = zero;
+                    break;
+                  }
+                }
                 // invert D
                 diagElems[i] = one / diagElems[i];
             }
@@ -1384,6 +1401,7 @@ class FastILUPrec
             // + output U matrix
             ScalarArray    utVal;
             OrdinalArray   utRowMap;
+            OrdinalArray   utColIdx;
             // permutation
             OrdinalArray   iperm;
         };
@@ -1608,9 +1626,13 @@ class FastILUPrec
             Kokkos::deep_copy(utRowMap, 0);
             KokkosKernels::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
               (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
-            // sort
-            KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
-              (utRowMap, utColIdx, utVal);
+            // sort, if the triangular solve algorithm requires a sorted matrix.
+            // Currently, only Fast does not require this.
+            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast;
+            if(sortRequired) {
+              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+                (utRowMap, utColIdx, utVal);
+            }
             if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
                 // deep-copy to host
                 Kokkos::deep_copy(lColIdx_, lColIdx);
@@ -1700,7 +1722,7 @@ class FastILUPrec
                     dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
                 }
             } else if (sptrsv_KKSpMV) {
-                FastILUPrec_Functor functor(lVal, lRowMap, utVal, utRowMap, diagElems);
+                FastILUPrec_Functor functor(SwapDiagTag(), lVal, lRowMap, lColIdx, utVal, utRowMap, utColIdx, diagElems);
                 Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, nRows);
                 Kokkos::parallel_for(
                   "numericILU::swapDiag", swap_policy, functor);
