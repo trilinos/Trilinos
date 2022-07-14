@@ -99,9 +99,13 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initLocalPrec()
 {
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  bool skipSortMatrix = !p.use_metis;
+  auto matCrs = Teuchos::rcp_dynamic_cast<const TCrsMatrix>(this->mat_);
+
+  bool skipSortMatrix = matCrs && matCrs->getCrsGraph()->isSorted() &&
+                       !p.use_metis;
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   #ifdef HAVE_IFPACK2_METIS
