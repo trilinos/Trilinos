@@ -91,28 +91,6 @@ CMake
     with the switch to modern CMake, see
     https://github.com/TriBITSPub/TriBITS/issues/443.
 
-  - TPL dependencies for selected TPLs are now set by default by setting
-    `<tplName>_LIB_ENABLED_DEPENDENCIES` in `Trilinos/TPLsList.cmake` but may
-    need to be adjusted in some existing configure scripts:
-
-    With the new TriBITS implementation to use modern CMake targets and
-    dependencies between these targets, the variable
-    `<tplName>_LIB_ENABLED_DEPENDENCIES` had to be set for several Trilinos
-    TPLs to ensure the correct order of libraries on the link line.  For
-    example, `LAPACK_LIB_ENABLED_DEPENDENCIES` is set by default to `BLAS` and
-    `ParMETIS_LIB_ENABLED_DEPENDENCIES` is set by default to `METIS` to inform
-    TriBITS to set up the correct IMPORTED library dependencies for these.
-    But there are cases with existing Trilinos configure scripts where only
-    the downstream TPL are enabled and `TPL_<tplName>_LIBRARIES` and
-    `TPL_<tplName>_INCLUDE_DIRS` is set up to contain all of the necessary
-    libraries and include dirs.  For example, there are some Trilinos
-    configure scripts that only enable `ParMETIS` and not `METIS` and
-    `TPL_ParMETIS_LIBRARIES` and `TPL_ParMETIS_INCLUDE_DIRS` are set to
-    contain the libraries and include directories for METIS as well.  To avoid
-    a configure error in this case, these unusual configure scripts will need
-    to modified to set `ParMETIS_LIB_ENABLED_DEPENDENCIES=OFF` to avoid
-    configure errors.
-
 
 ###############################################################################
 #                                                                             #
