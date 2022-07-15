@@ -466,7 +466,7 @@ namespace Tpetra {
     rowmap_t lclGraphT_rowmap("Transpose rowmap", numCols + 1);
     entries_t lclGraphT_entries(
                                 Kokkos::ViewAllocateWithoutInitializing("Transpose entries"), lclGraph.entries.extent(0));
-    KokkosKernels::Impl::transpose_graph<
+    KokkosSparse::Impl::transpose_graph<
       c_rowmap_t, c_entries_t,
       rowmap_t, entries_t,
       rowmap_t, typename local_graph_device_type::execution_space>(
