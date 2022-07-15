@@ -9,7 +9,7 @@ if (Tpl4_ALLOW_PREFIND)
   if (Tpl4_FOUND)
     message("-- Found Tpl4_DIR='${Tpl4_DIR}'")
     message("-- Generating Tpl4::all_libs and Tpl4Config.cmake")
-    tribits_external_package_create_imported_all_libs_target_and_config_file(Tpl4
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(Tpl4
       INNER_FIND_PACKAGE_NAME  Tpl4
       IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
   endif()

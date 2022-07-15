@@ -42,6 +42,7 @@ include(TribitsProcessPackagesAndDirsLists)
 include(TribitsAddOptionAndDefine)
 include(TribitsGeneralMacros)
 include(TribitsPrintEnabledPackagesLists)
+include(TribitsPackageDependencies)
 
 include(AdvancedOption)
 include(AdvancedSet)
@@ -588,7 +589,9 @@ endmacro()
 #    packages where only the shell of the parent package is enabled and not
 #    all of its required subpackages are enabled.
 #
-macro(tribits_setup_direct_package_dependencies_lists_and_lib_required_enable_vars packageName)
+macro(tribits_setup_direct_package_dependencies_lists_and_lib_required_enable_vars
+    packageName
+  )
 
   # LIB dependencies
 
@@ -679,7 +682,7 @@ endmacro()
 
 # Function to print the direct package dependency lists
 #
-function(tribits_print_direct_package_dependencies_lists packageName)
+function(tribits_print_direct_package_dependencies_lists  packageName)
   set(PRINTED_VAR "")
   message("")
   print_nonempty_var_with_spaces(${packageName}_LIB_ENABLED_DEPENDENCIES PRINTED_VAR)
@@ -1470,9 +1473,17 @@ macro(tribits_adjust_package_enables)
   tribits_set_up_enabled_lists_and_se_pkg_idx()
 
   #
-  # H) Set up flat list of direct package dependencies (even for non-enabled
-  # packages) and enabled package dependencies for enabled packages
+  # H) Set up flat list of direct external and inner package dependencies (even
+  # for non-enabled packages) and enabled package dependencies for enabled
+  # packages
   #
+
+  foreach(externalPkgName ${${PROJECT_NAME}_TPLS})
+    tribits_extpkg_setup_enabled_dependencies(${externalPkgName})
+    # ToDo: Assert that all of the listed dependencies in
+    # ${externalPkgName}_LIB_ENABLED_DEPENDENCIES exist and are upstream from
+    # ${externalPkgName}
+  endforeach()
 
   foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
     tribits_setup_direct_package_dependencies_lists_and_lib_required_enable_vars(
@@ -1480,9 +1491,9 @@ macro(tribits_adjust_package_enables)
   endforeach()
 
   if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
-    message("\nDumping direct dependencies for each SE package ...")
-    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      tribits_print_direct_package_dependencies_lists(${TRIBITS_PACKAGE})
+    message("\nDumping direct dependencies for each package ...")
+    foreach(tribitsPkg  IN  LISTS  ${PROJECT_NAME}_DEFINED_TPLS  ${PROJECT_NAME}_SE_PACKAGES)
+      tribits_print_direct_package_dependencies_lists(${tribitsPkg})
     endforeach()
   endif()
 

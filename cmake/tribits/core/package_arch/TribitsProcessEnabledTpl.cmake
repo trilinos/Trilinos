@@ -157,10 +157,10 @@ function(tribits_process_enabled_tpl  TPL_NAME)
       "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
     set(tplConfigVersionFile
       "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}ConfigVersion.cmake")
-    tribits_external_package_write_config_version_file(${TPL_NAME}
+    tribits_extpkg_write_config_version_file(${TPL_NAME}
       "${tplConfigVersionFile}")
-    tribits_external_package_install_config_file(${TPL_NAME} "${tplConfigFile}")
-    tribits_external_package_install_config_version_file(${TPL_NAME}
+    tribits_extpkg_install_config_file(${TPL_NAME} "${tplConfigFile}")
+    tribits_extpkg_install_config_version_file(${TPL_NAME}
       "${tplConfigVersionFile}")
 
   endif()

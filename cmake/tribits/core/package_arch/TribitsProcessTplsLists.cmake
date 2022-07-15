@@ -74,13 +74,13 @@ include(Split)
 #    ``SOMETPL``).
 #
 # 1. **FINDMOD** (``<tpli_findmod>``): The relative path for the find module,
-#    usually with the name ``FindTPL<tplName>.cmake``.  This path is relative
-#    to the repository base directory.  If just the base path for the find
-#    module is given, ending with ``"/"`` (e.g. ``"cmake/tpls/"``), then the
-#    find module will be assumed to be under that this directory with the
-#    standard name (e.g. ``cmake/tpls/FindTPL<tplName>.cmake``).  A standard
-#    way to write a ``FindTPL<tplName>.cmake`` module is to use the function
-#    `tribits_tpl_find_include_dirs_and_libraries()`_.
+#    usually with the name `FindTPL<tplName>.cmake`_.  This path is relative
+#    to the repository base directory ``<repoDir>``.  If just the base path
+#    for the find module is given, ending with ``"/"``
+#    (e.g. ``"cmake/tpls/"``), then the find module will be assumed to be
+#    under that this directory with the standard name
+#    ``FindTPL<tplName>.cmake``.  (See `Creating the FindTPL<tplName>.cmake
+#    file`_.)
 #
 # 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
 #    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
@@ -130,13 +130,15 @@ endmacro()
 # and updates the project-level variables::
 #
 #   ${PROJECT_NAME}_TPLS
-#   ${PROJECT_NAME}_NUM_TPLS,
+#   ${PROJECT_NAME}_NUM_TPLS
 #   ${PROJECT_NAME}_REVERSE_TPLS
 #
 # For each TPL, it also sets the variables::
 #
 #   ${TPL_NAME}_FINDMOD
 #   ${TPL_NAME}_TESTGROUP
+#   ${TPL_NAME}_DEPENDENCIES_FILE
+#   ${TPL_NAME}_TPLS_LIST_FILE
 #
 # See `Function call tree for constructing package dependency graph`_
 #
@@ -258,16 +260,31 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         set(${TPL_NAME}_FINDMOD ${TPL_FINDMOD_STD_NAME})
       endif()
 
+      # Set ${TPL_NAME}_DEPENDENCIES_FILE
+
+      # Breakdown ${${TPL_NAME}_FINDMOD} into parts <dir>/<base>.<ext>
+      get_filename_component(tpl_findmod_dir ${${TPL_NAME}_FINDMOD} DIRECTORY)
+      get_filename_component(tpl_findmod_base ${${TPL_NAME}_FINDMOD} NAME_WLE)
+      get_filename_component(tpl_findmod_ext ${${TPL_NAME}_FINDMOD} LAST_EXT)
+
+      set(${TPL_NAME}_DEPENDENCIES_FILE
+        "${tpl_findmod_dir}/${tpl_findmod_base}Dependencies${tpl_findmod_ext}")
+
+      # Set ${TPL_NAME}_TPLS_LIST_FILE
+
       assert_defined(${REPOSITORY_NAME}_TPLS_FILE)
       set(${TPL_NAME}_TPLS_LIST_FILE ${${REPOSITORY_NAME}_TPLS_FILE})
 
-      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        print_var(${TPL_NAME}_FINDMOD)
+      # Print variables/properties for the TPL
+
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE  OR  TRIBITS_PROCESS_TPLS_LISTS_VERBOSE)
         print_var(${TPL_NAME}_TESTGROUP)
+        print_var(${TPL_NAME}_FINDMOD)
+        print_var(${TPL_NAME}_DEPENDENCIES_FILE)
         print_var(${TPL_NAME}_TPLS_LIST_FILE)
       endif()
 
-      # Set the enable cache variable for ${TPL_NAME}
+      # Set cache var TPL_ENABLE_${TPL_NAME} with default ""
 
       multiline_set(DOCSTR
         "Enable support for the TPL ${TPL_NAME} in all supported ${PROJECT_NAME} packages."
@@ -277,8 +294,9 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
 
       # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
       # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
-      # different from packages so users don't get confused and
-      # think that the project actually includes some TPL when it does not!
+      # different from packages so users don't get confused and think that the
+      # project actually includes the source code and internal build for some
+      # TPL when it does not!
 
     endforeach()
 

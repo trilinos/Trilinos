@@ -99,8 +99,8 @@ include(Split)
 # to disable the prefind call to ``find_package()`` even if it would be
 # allowed otherwise.
 #
-# See `Creating FindTPL*.cmake using find_package() without IMPORTED targets`_
-# for details in how to use this function to create a
+# See `Creating FindTPL<tplName>.cmake using find_package() without IMPORTED
+# targets`_ for details in how to use this function to create a
 # ``FindTPL<tplName>.cmake`` module file.
 #
 function(tribits_tpl_allow_pre_find_package  TPL_NAME  ALLOW_PACKAGE_PREFIND_OUT)
@@ -280,7 +280,7 @@ endfunction()
 #     This fill will also call ``find_dependency()`` to pull in
 #     ``<upstreamTplName>Config.cmake`` files for upstream TPLs that are
 #     listed in ``<tplName>_LIB_ENABLED_DEPENDENCIES``.  (For more
-#     information, see `tribits_external_package_write_config_file()`_.)
+#     information, see `tribits_extpkg_write_config_file()`_.)
 #
 # Note, if ``TPL_TENTATIVE_ENABLE_<tplName>=ON``, then if all of the parts of
 # the TPL can't be found, then ``TPL_ENABLE_<tplName>`` will be (forced) set
@@ -718,7 +718,7 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
     "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
   set(tplConfigFileBaseDir "${buildDirExternalPkgsDir}/${TPL_NAME}")
   set(tplConfigFile "${tplConfigFileBaseDir}/${TPL_NAME}Config.cmake")
-  tribits_external_package_write_config_file(${TPL_NAME} "${tplConfigFile}")
+  tribits_extpkg_write_config_file(${TPL_NAME} "${tplConfigFile}")
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     include("${tplConfigFile}")
     set(${TPL_NAME}_DIR "${tplConfigFileBaseDir}" CACHE INTERNAL

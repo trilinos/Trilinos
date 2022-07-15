@@ -495,7 +495,9 @@ lists and dependency data-structures described above.
 |     `tribits_process_project_dependency_setup_file()`_
 |       ``include(``  `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
 |     `tribits_read_all_package_deps_files_create_deps_graph()`_
-|       Foreach ``TOPLEVEL_PACKAGE``:
+|       Foreach  ``EXTERNAL_PACKAGE`` in ``${PROJECT_NAME}_DEFINED_TPLS``:
+|         `tribits_read_external_package_deps_files_add_to_graph()`_
+|       Foreach ``TOPLEVEL_PACKAGE`` in ``${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES``:
 |         `tribits_read_toplevel_package_deps_files_add_to_graph()`_
 |           `tribits_prep_to_read_dependencies()`_
 |           ``include(`` `<packageDir>/cmake/Dependencies.cmake`_ ``)``

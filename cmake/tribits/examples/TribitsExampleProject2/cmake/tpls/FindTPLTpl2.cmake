@@ -10,7 +10,7 @@ if (Tpl2_ALLOW_PREFIND)
   if (Tpl2_FOUND)
     message("-- Found Tpl2_DIR='${Tpl2_DIR}'")
     message("-- Generating Tpl2::all_libs and Tpl2Config.cmake")
-    tribits_external_package_create_imported_all_libs_target_and_config_file(Tpl2
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(Tpl2
       INNER_FIND_PACKAGE_NAME  Tpl2
       IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
   endif()
