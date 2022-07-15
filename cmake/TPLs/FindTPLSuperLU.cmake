@@ -89,7 +89,7 @@ int main()
 "
   )
 
-  SET(CMAKE_REQUIRED_LIBRARIES SuperLU::all_libs ParMETIS::all_libs BLAS::all_libs)
+  SET(CMAKE_REQUIRED_LIBRARIES SuperLU::all_libs)
   CHECK_C_SOURCE_COMPILES("${SOURCE}" ${VARNAME})
 ENDFUNCTION()
 
