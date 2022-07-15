@@ -373,7 +373,23 @@ function( tribits_gather_enabled_items  PACKAGE_NAME  LISTTYPE_PREFIX
 endfunction()
 
 
-# Print trace of file processing
+# @FUNCTION: tribits_trace_file_processing()
+#
+# Print trace of file processing when
+# ``${PROJECT_NAME}_TRACE_FILE_PROCESSING`` is ``TRUE``.
+#
+# Usage::
+#
+#   tribits_trace_file_processing( <type> <processingType> <filePath>)
+#
+# Arguments:
+#
+# * ``<type>``: Allowed values "PROJECT", "REPOSITORY", "PACKAGE", or "TPL"
+#
+# * ``<processingType>``: Allowed values "INCLUDE", "ADD_SUBDIR", "READ", or
+#   "CONFIGURE"
+#
+# * ``<filePath>``: Path of the file being processed
 #
 function(tribits_trace_file_processing  TYPE_IN  PROCESSING_TYPE_IN  FILE_PATH)
 
@@ -410,5 +426,3 @@ function(tribits_trace_file_processing  TYPE_IN  PROCESSING_TYPE_IN  FILE_PATH)
   endif()
 
 endfunction()
-
-

@@ -38,7 +38,7 @@
 # @HEADER
 
 
-# @FUNCTION: tribits_external_package_create_imported_all_libs_target_and_config_file()
+# @FUNCTION: tribits_extpkg_create_imported_all_libs_target_and_config_file()
 #
 # Call from a ``FindTPL<tplName>.cmake`` module that calls inner
 # ``find_package(<externalPkg>)`` for external package that uses modern CMake
@@ -46,7 +46,7 @@
 #
 # Usage::
 #
-#   tribits_external_package_create_imported_all_libs_target_and_config_file(
+#   tribits_extpkg_create_imported_all_libs_target_and_config_file(
 #     <tplName>
 #     INNER_FIND_PACKAGE_NAME <externalPkg>
 #     IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
@@ -64,10 +64,10 @@
 # ``find_dependency(<externalPkg>)`` (with no other argument) and then, again,
 # defines the correct imported library dependency.
 #
-# For more details, see `Creating FindTPL*.cmake using find_package() with
-# IMPORTED targets`_.
+# For more details, see `Creating FindTPL<tplName>.cmake using find_package()
+# with IMPORTED targets`_.
 #
-function(tribits_external_package_create_imported_all_libs_target_and_config_file
+function(tribits_extpkg_create_imported_all_libs_target_and_config_file
     tplName
   )
 
@@ -88,7 +88,7 @@ function(tribits_external_package_create_imported_all_libs_target_and_config_fil
   endforeach()
 
   # Create <tplName>Config.cmake file
-  tribits_external_package_create_package_config_file_with_imported_targets(
+  tribits_extpkg_create_package_config_file_with_imported_targets(
     ${tplName}
     INNER_FIND_PACKAGE_NAME ${PARSE_INNER_FIND_PACKAGE_NAME}
     IMPORTED_TARGETS_FOR_ALL_LIBS ${PARSE_IMPORTED_TARGETS_FOR_ALL_LIBS} )
@@ -96,7 +96,7 @@ function(tribits_external_package_create_imported_all_libs_target_and_config_fil
 endfunction()
 
 
-function(tribits_external_package_create_package_config_file_with_imported_targets
+function(tribits_extpkg_create_package_config_file_with_imported_targets
     tplName
   )
 

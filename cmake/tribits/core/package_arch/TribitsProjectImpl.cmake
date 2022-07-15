@@ -66,6 +66,7 @@ include(TribitsFindPythonInterp)
 include(TribitsGlobalMacros)
 include(TribitsConfigureCTestCustom)
 include(TribitsGenerateResourceSpecFile)
+include(TribitsPackageDependencies)
 include(TribitsPrintDependencyInfo)
 
 include(AdvancedSet)

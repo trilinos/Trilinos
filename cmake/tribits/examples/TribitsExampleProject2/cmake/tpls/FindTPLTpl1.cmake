@@ -19,7 +19,7 @@ if (Tpl1_ALLOW_PREFIND)
       set(TPL_Tpl1_LIBRARIES "${libfile}" CACHE PATH "Libraries for Tpl1")
     else()
       message("-- Generating Tpl1::all_libs and Tpl1Config.cmake")
-      tribits_external_package_create_imported_all_libs_target_and_config_file(Tpl1
+      tribits_extpkg_create_imported_all_libs_target_and_config_file(Tpl1
         INNER_FIND_PACKAGE_NAME  Tpl1
         IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
     endif()

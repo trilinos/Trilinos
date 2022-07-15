@@ -1571,6 +1571,7 @@ Other TriBITS macros/functions that can be called in this file include
 `tribits_tpl_tentatively_enable()`_ and
 `tribits_allow_missing_external_packages()`_.
 
+.. _<packageName>_config.h.in:
 .. _<packageDir>/cmake/<packageName>_config.h.in:
 
 **<packageDir>/cmake/<packageName>_config.h.in**: [Optional] The package's
@@ -2154,59 +2155,135 @@ subpackages that will be mentioned in other sections as well.
 TriBITS External Package/TPL
 ++++++++++++++++++++++++++++
 
-A *TriBITS TPL*:
+A *TriBITS External Package/TPL*:
 
-* Defines a set of pre-built libraries and/or header files and/or executables
-  and/or some other resources used by one or more TriBITS Packages for which
-  TriBITS publishes the list of include directories and/or libraries and/or
-  executables provided by the TPL to the TriBITS project.
-* Has a globally unique name (see `Globally unique TriBITS TPL names`_) that
-  is declared in a `<repoDir>/TPLsList.cmake`_ file.
+* Provides access to a set of pre-built/installed libraries and/or header
+  files and/or executables and/or some other resources through a standard
+  interface to one or more downstream TriBITS Packages.
+* Has a globally unique name ``<tplName>`` (see `Globally unique TriBITS TPL
+  names`_) that is declared in a `<repoDir>/TPLsList.cmake`_ file.
+* Has as `FindTPL<tplName>.cmake`_ module that finds the pieces of an external
+  package/TPL and provides them to downstream packages through a required
+  INTERFACE target ``<tplName>::all_libs`` (which gives the libraries, include
+  directories, and other usage requirements).
 * Is listed as an explicit optional or required dependency in one or more
-  TriBITS SE package's `<packageDir>/cmake/Dependencies.cmake`_ files.
+  downstream TriBITS packages' `<packageDir>/cmake/Dependencies.cmake`_ files.
+* Can be enabled automatically or can trigger the disable of dependent
+  downstream packages (see `TriBITS Dependency Handling Behaviors`_).
+
+The TriBITS external package/TPL mechanism provides a uniform way to find and
+provide access to any type of external resource no matter how it might be
+installed or ways to provide access to it.  Using a TriBITS TPL is to be
+preferred over using raw CMake ``find_package(<externalPkg>)`` call because
+the TriBITS system guarantees that only a single unique version of an external
+package/TPL of the same version will be used all of the downstream packages
+that uses it.  Also, by defining a TriBITS TPL, automatic enable/disable logic
+will be applied as described in `Package Dependencies and Enable/Disable
+Logic`_.  For example, if a TPL is explicitly disabled, all of the downstream
+packages that depend on that TPL will be automatically disabled as well (see
+`TPL disable triggers auto-disables of downstream dependencies`_).
 
 .. _Globally unique TriBITS TPL names:
 
-**WARNING:** One must be very careful to pick **Globally unique TriBITS TPL
-names** across all TPLs in all TriBITS repositories that ever might be cobbled
-together into a single TriBITS (meta) project!  However, choosing TPL names is
-usually much easier and less risky than choosing `Globally unique TriBITS
-package names`_ because the native TPLs themselves tend to be uniquely named.
-For example, the TPL names ``BLAS`` and ``LAPACK`` are well defined in the
-applied math and computational science community and are not likely to clash.
-
-Using a TriBITS TPL is to be preferred over using raw CMake
-``find_package(<someCMakePackage>)`` because the TriBITS system guarantees
-that only a single unique version of TPL of the same version will be used by
-multiple packages that uses the TPL.  Also, by defining a TriBITS TPL,
-automatic enable/disable logic will be applied as described in `Package
-Dependencies and Enable/Disable Logic`_.  For example, if a TPL is explicitly
-disabled, all of the downstream packages that depend on that TPL will be
-automatically disabled as well (see `TPL disable triggers auto-disables of
-downstream dependencies`_).
+**WARNING:** One must be very careful to pick **Globally unique TriBITS
+External Package/TPL names** ``<tplName>`` across all TPLs in all TriBITS
+repositories that ever might be cobbled together into a single TriBITS (meta)
+project!  However, choosing TPL names is usually much easier and less risky
+than choosing `Globally unique TriBITS package names`_ because the native TPLs
+themselves tend to be uniquely named.  For example, the TPL names ``BLAS`` and
+``LAPACK`` are well defined in the applied math and computational science
+community and are not likely to clash.
 
 
 TriBITS External Package/TPL Core Files
 .......................................
 
-For each external package/TPL referenced in a `<repoDir>/TPLsList.cmake`_ file
-using the macro `tribits_repository_define_tpls()`_, there must exist a file,
-typically called ``FindTPL<tplName>.cmake``, that once processed, produces the
-target ```<tplName>::all_libs`` and generates a wrapper package config file
-``<tplName>Config.cmake``. A simple example of such a file is the common
-TriBITS ``FindTPLPETSC.cmake`` module which is currently:
+The core files that define a *TriBITS External Package/TPL* are::
+
+  <tplDefsDir>/
+    FindTPL<tplName>.cmake   # The name is not fixed (see <tplName>_FINDMOD)
+    FindTPL<tplName>Dependencies.cmake   # [Optional], defines upstream dependencies 
+
+Above, ``<tplDefsDir>/`` can be a subdirectory under a TriBITS repository
+``<repoDir>/`` (e.g. ``<repoDir>/cmake/tpls/``) or can be under a TriBITS
+package directory ``<packageDir>/`` (e.g. ``<packageDir>/cmake/tpls/``).
+
+The following TriBITS External Package/TPL files are documented in more detail
+below:
+
+* `<tplDefsDir>/FindTPL<tplName>.cmake`_
+* `<tplDefsDir>/FindTPL<tplName>Dependencies.cmake`_
+
+
+.. _FindTPL<tplName>.cmake:
+.. _<tplDefsDir>/FindTPL<tplName>.cmake:
+
+**<tplDefsDir>/FindTPL<tplName>.cmake**: [Required] Defines how an external
+package/TPL is found and provided for usage by a downstream TriBITS package by
+providing the ``<tplName>::all_libs`` target and a package config file
+``<tplName>Config.cmake`` that also defines the target
+``<tplName>::all_libs``.  (The requirements for a ``FindTPL<tplName>.cmake``
+file are given in `Requirements for FindTPL<tplName>.cmake modules`_).
+
+The form of a simple ``FindTPL<tplName>.cmake`` file that uses an internal
+call to ``find_package(<externalPkg>)`` which provides modern IMPORTED CMake
+targets looks like::
+
+  find_package(<externalPkg> REQUIRED)
+  tribits_extpkg_create_imported_all_libs_target_and_config_file(
+    <tplName>
+    INNER_FIND_PACKAGE_NAME <externalPkg>
+    IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
+
+In this case, the purpose for the ``FindTPL<tplName>.cmake`` file (as apposed
+to a direct call to ``find_package(<externalPkg>)``) is to ensure the
+definition of the complete target ``<tplName>::all_libs`` which contains all
+usage requirements for the external package/TPL (i.e. all of the libraries,
+include directories, etc.).
+
+The form of a simple ``FindTPL<tplName>.cmake`` file that just provides a list
+of required header files and libraries that does **not** use an internal call
+to ``find_package()`` looks like::
+
+  tribits_tpl_find_include_dirs_and_libraries( <tplName>
+    REQUIRED_HEADERS <header0> <header1> ...
+    REQUIRED_LIBS_NAMES <libname0> <libname1> ...
+    MUST_FIND_ALL_LIBS
+    )
+
+An example concrete file is ``tribits/common_tpls/FindTPLPETSC.cmake``:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
 
-Many concrete ``FindTPL<tplName>.cmake`` files use ``find_package()``
-internally and a standard CMake package find module or an installed
-``<Package>Config.cmake`` file to fill in the guts of finding at TPL.  In this
-case, the purpose for the wrapping ``FindTPL<tplName>.cmake`` file is to
-ensure the definition of the complete target ``<tplName>::all_libs`` which
-contains all usage requirements for the external package/TPL (i.e. all of the
-libraries, include directories, etc.).  For more details creating or upgrading
-a ``FindTPL<tplName>.cmake`` file, see `How to add a new TriBITS TPL`_.
+For complete details, see `Creating the FindTPL<tplName>.cmake file`_.
+
+
+.. _FindTPL<tplName>Dependencies.cmake:
+.. _<tplDefsDir>/FindTPL<tplName>Dependencies.cmake:
+
+**<tplDefsDir>/FindTPL<tplName>Dependencies.cmake**: [Optional]
+Declares dependencies on upstream external packages/TPLs for the external
+package/TPL ``<tplName>``.  Many external packages/TPLs defined with a
+`FindTPL<tplName>.cmake`_ file do not have any upstream dependencies or have
+internal mechanisms to get those (such as when using
+``find_package(<externalPkg>)`` where the ``<externalPkg>Config.cmake`` file
+which recursively uses ``find_dependency()`` to get its upstream
+dependencies).  But for ``FindTPL<tplName>.cmake`` files that just use
+`tribits_tpl_find_include_dirs_and_libraries()`_ (see `Creating a
+FindTPL<tplName>.cmake module without find_package()`_), TriBITS needs to be told
+about any upstream external packages/TPLs that it may depend on so it can add
+the dependencies between the created IMPORTED target libraries.
+
+The file ``FindTPL<tplName>Dependencies.cmake`` is typically just a single
+call to `tribits_extpkg_define_dependencies()`_ and takes the form::
+
+  tribits_extpkg_define_dependencies( <tplName>
+    DEPENDENCIES <upstreamTpl_0> <upstreamTpl_1> ... )
+
+This defines all of the TPLs that ``<tplName>`` could directly depends on but
+only dependencies for enabled upstream TPLs will be added to the IMPORTED
+targets.
 
 
 TriBITS External Package/TPL Core Variables
@@ -2216,53 +2293,65 @@ Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
   .. _${PACKAGE_NAME}_FINDMOD:
-
+  .. _<tplName>_FINDMOD:
   .. _${TPL_NAME}_FINDMOD:
 
   ``${TPL_NAME}_FINDMOD``
 
-    Gives the location for the TPL's find module (typically called
-    ``FindTPL<tplName>.cmake``, see `How to add a new TriBITS TPL`_).  This is
-    set using the ``FINDMOD`` field in the call to
-    `tribits_repository_define_tpls()`_.  The final value of the variable is
-    defined by the *last* `<repoDir>/TPLsList.cmake`_ file that is processed
-    that declares the TPL ``TPL_NAME``.  For example, if
-    ``Repo1/TPLsList.cmake`` and ``Repo2/TPLsList.cmake`` both list the TPL
-    ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
-    ``SomeTpl_FINDMOD`` is determined by ``Repo2/TPLsList.cmake`` and the find
-    module listed in ``Repo1/TPLsList.cmake`` is ignored.
+    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's find
+    module (typically named `FindTPL<tplName>.cmake`_): This is set using the
+    ``FINDMOD`` field in the call to `tribits_repository_define_tpls()`_.  The
+    final value of the variable is defined by the *last*
+    `<repoDir>/TPLsList.cmake`_ file that is processed that declares the TPL
+    ``TPL_NAME``.  For example, if ``Repo1/TPLsList.cmake`` and
+    ``Repo2/TPLsList.cmake`` both list the TPL ``SomeTpl``, then if ``Repo2``
+    is processed after ``Repo1``, then ``SomeTpl_FINDMOD`` is determined by
+    ``Repo2/TPLsList.cmake`` and the find module listed in
+    ``Repo1/TPLsList.cmake`` is ignored.
+
+  .. _<tplName>_DEPENDENCIES_FILE:
+  .. _${TPL_NAME}_DEPENDENCIES_FILE:
+
+  ``${TPL_NAME}_DEPENDENCIES_FILE``
+
+    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's
+    dependencies file (typically named `FindTPL<tplName>Dependencies.cmake`_)
 
   .. _${TPL_NAME}_TESTGROUP:
 
   ``${TPL_NAME}_TESTGROUP``
 
-    Gives the TPL's `SE Package Test Group`_. This is set using the
-    ``CLASSIFICATION`` field in the call to
-    `tribits_repository_define_tpls()`_.  If multiple repos define a given
-    TPL, then the *first* `<repoDir>/TPLsList.cmake`_ file that is processed
-    that declares the TPL ``TPL_NAME`` specifies the test group.  For example,
-    if ``Repo1/TPLsList.cmake`` and ``Repo2/TPLsList.cmake`` both list the TPL
-    ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
-    ``SomeTpl_TESTGROUP`` is determined by ``Repo1/TPLsList.cmake`` and the
-    test group in ``Repo2/TPLsList.cmake`` is ignored.  However, if
-    ``${TPL_NAME}_TESTGROUP`` is already set before the
+    TPL's `SE Package Test Group`_: This is set using the ``CLASSIFICATION``
+    field in the call to `tribits_repository_define_tpls()`_.  If multiple
+    repos define a given TPL, then the *first* `<repoDir>/TPLsList.cmake`_
+    file that is processed that declares the TPL ``TPL_NAME`` specifies the
+    test group.  For example, if ``Repo1/TPLsList.cmake`` and
+    ``Repo2/TPLsList.cmake`` both list the TPL ``SomeTpl``, then if ``Repo2``
+    is processed after ``Repo1``, then ``SomeTpl_TESTGROUP`` is determined by
+    ``Repo1/TPLsList.cmake`` and the test group in ``Repo2/TPLsList.cmake`` is
+    ignored.  However, if ``${TPL_NAME}_TESTGROUP`` is already set before the
     `<repoDir>/TPLsList.cmake`_ files are processed, then that test group will
     be used.  Therefore, the project can override the test group for a given
-    TPL if desired.
+    TPL if desired by setting ``${TPL_NAME}_TESTGROUP`` before the first
+    `<repoDir>/TPLsList.cmake`_ file gets processed.
+
+  .. _+${TPL_NAME}_TPLS_LIST_FILE:
+
+  ``${TPL_NAME}_TPLS_LIST_FILE``
+
+    Absolute path of the (last) `<repoDir>/TPLsList.cmake`_ file that declared
+    this external package/TPL.
 
 As noted above, it is allowed for the same TPL to be listed in multiple
 `<repoDir>/TPLsList.cmake`_ files.  In this case, the rules for overrides of
-the find module and the test group as as described above.
+the find module and the test group as described above.
 
 The specification given in `Enabling support for an optional Third-Party
-Library (TPL)`_ and `How to add a new TriBITS TPL`_ describes to create a
-``FindTPL<tplName>.cmake`` module.  However, all that is required is that
-some CMake file fragment exist such that, once included, will define the
-target ``<tplName>::all_libs`` and create the ``<tplName>Config.cmake`` file
-in the correct location.
-
-
-
+Library (TPL)`_ and `Creating the FindTPL<tplName>.cmake file`_ describe how
+to create a ``FindTPL<tplName>.cmake`` module.  However, all that is required
+is that some CMake file fragment exist such that, once included, will define
+the target ``<tplName>::all_libs`` and create the ``<tplName>Config.cmake``
+file in the correct location (see `Requirements for FindTPL<tplName>.cmake modules`_).
 
 
 Processing of TriBITS Files: Ordering and Details
@@ -5459,60 +5548,64 @@ subpackages, do the following:
 How to add a new TriBITS external package/TPL
 ---------------------------------------------
 
-In order for a TriBITS package to define a dependency on a new external
-package/TPL (i.e. a TPL that has not already been declared in the current
-repo's or an upstream repo's `<repoDir>/TPLsList.cmake`_ file), one must add
-and modify a few repository-level files in addition to modifying files within
-the TriBITS packages that use the new external package/TPL.
+In order for a TriBITS package to define a dependency on a new `TriBITS
+External Package/TPL`_ (i.e. a TPL that has not already been declared in the
+current repo's or an upstream repo's `<repoDir>/TPLsList.cmake`_ file), one
+must add and modify a few repository-level files in addition to modifying
+files within the TriBITS packages that use the new external package/TPL.
 
 To add a new TriBITS TPL, do the following:
 
-1) Chose a name ``<tplName>`` for the new TPL (must be globally unique across
-   all TriBITS repos, see `Globally unique TriBITS TPL names`_) and which
-   TriBITS repository (``<repoDir>``) to define the new TPL inside of.  (The
-   right repo is usually the one where the package exists that needs the new
-   TPL dependency.)
+1) **Chose a name <tplName>** for the new TPL (must be globally unique across
+   all TriBITS repos.  (See `Globally unique TriBITS TPL names`_.)
 
-2) Create the TPL find module file ``FindTPL<tplName>.cmake`` (or some other
-   name, see `TriBITS TPL`_) under some location under ``<replDir>``
-   (e.g. ``<repoDir>/cmake/tpls/``) or under the package that uses it
-   (e.g. ``<packageDir>/cmake/tpls/``).  How this file is defined depends on
-   if it uses ``find_package(<externalPkg>)`` or not and if that
-   ``find_package(<externalPkg>)`` command creates modern CMake IMPORTED
-   targets or not (see `Creating FindTPL*.cmake using find_package() with
-   IMPORTED targets`_ and `Creating FindTPL*.cmake using find_package()
-   without IMPORTED targets`_).  If not using ``find_package(<externalPkg>)``,
-   follow the instructions in `Creating a FindTPL*.cmake module without
-   find_package()`_.
+2) **Choose the subdirectory <tplDefsDir> for the new TPL files**.  These
+   files are usually placed under the TriBITS repository directory
+   ``<repoDir>/`` (e.g. ``<repoDir>/cmake/tpls/``) where the first downstream
+   dependent package is defined or can be under a TriBITS package directory
+   ``<packageDir>/`` (e.g. ``<packageDir>/cmake/tpls/``) if only one package
+   is using that TPL.
 
-3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
-   TPLs that this new TPL may depend on.  (One must also set the cache
-   variable ``<tplName>_LIB_ENABLED_DEPENDENCIES`` to point the direct
-   dependencies of this new TPL.  See the example in
-   ``TribitsExampleProject2/TPLsList.cmake``.)
+3) **Create the FindTPL<tplName>.cmake file** (or some other name, see
+   `<tplName>_FINDMOD`_) under ``<tplDefsDir>/``.  (See `Creating the
+   FindTPL<tplName>.cmake file`_.)
 
-4) Configure the TriBITS project enabling the new TPL with
-   ``TPL_ENABLE_<tplName>=ON`` and see that the new find module finds the TPL
-   correctly at configure time.
+4) **[Optional] Create the FindTPL<tplName>Dependencies.cmake file** in the
+   same directory as the ``FindTPL<tplName>.cmake`` file, ``<tplDefsDir>/``.
+   (See `FindTPL<tplName>Dependencies.cmake`_.)
 
-5) List the new external packages/TPL in the package(s) that need this
-   dependency in the package's `<packageDir>/cmake/Dependencies.cmake`_ file
-   (or `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ for a subpackage).
+5) **Add a row to the <repoDir>/TPLsList.cmake file** for the new TPL after
+   any TPLs that this new TPL may depend on.  (See
+   `<repoDir>/TPLsList.cmake`_.)
 
-6) If the TPL is optional for the package, then::
+6) **Configure the TriBITS project enabling the new TPL with
+   TPL_ENABLE_<tplName>=ON** and see that the TPL is found correctly at
+   configure time.
+
+7) **Add <tplName> to the package Dependencies.cmake files** of downstream
+   dependent packages that will use this TPL (see
+   `<packageDir>/cmake/Dependencies.cmake`_ or
+   `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ for a subpackage).
+
+8) **[Optional] Add #cmakedefine for an optional package library TPL
+   dependency in the package's <packageName>_config.h.in file** using::
 
      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<TPL_NAME_UC>
 
-   should be added to the package's ``<packageName>_config.h.in`` file (see
-   `tribits_configure_file()`_) so that the code knows if the TPL is defined
-   or not.
+   so that the package's code build knows if the TPL is defined or not (see
+   `<packageName>_config.h.in`_ and `tribits_configure_file()`_).  (NOTE: Do
+   **not** add this for a optional test-only TPL dependency.  We don't want
+   all of the libraries in a package to have to be rebuild when we enable or
+   disable tests for the package.)
 
-7) Use the TPL in the packages that define the dependency on the new TPL,
-   configure, test, etc.
+9) **Use the TPL functionality in the packages** that define the dependency on
+   the new TPL, configure, test, etc.
 
-The following subsections describe the various use cases for creating (or
-upgrading) ``FindTPL*.cmake`` modules.  The main axes of variation for
-``FindTPL*.cmake`` modules are:
+.. _Creating the FindTPL<tplName>.cmake file:
+
+**Creating the FindTPL<tplName>.cmake file**
+
+The main axes of variation in defining ``FindTPL<tplName>.cmake`` modules are:
 
 a) Use an inner ``find_package(<externalPkg>)`` call or just use a simple list
    of header file names and library names?
@@ -5524,9 +5617,21 @@ c) Maintain backward compatibility with the legacy TriBITS TPL system that
    allows the user to set cache variables for the include directories and link
    libraries or force users to always call ``find_package(<externalPkg>)``?
 
+See the different variations in the below sections:
 
-Creating FindTPL*.cmake using find_package()
-++++++++++++++++++++++++++++++++++++++++++++
+* `Creating FindTPL<tplName>.cmake using find_package()`_
+
+  * `Creating FindTPL<tplName>.cmake using find_package() with IMPORTED targets`_
+
+  * `Creating FindTPL<tplName>.cmake using find_package() without IMPORTED targets`_
+
+* `Creating a FindTPL<tplName>.cmake module without find_package()`_
+
+* `Requirements for FindTPL<tplName>.cmake modules`_
+
+
+Creating FindTPL<tplName>.cmake using find_package()
+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When defining a ``FindTPL<tplName>.cmake`` file, it encouraged to utilize
 ``find_package(<externalPkg> ...)`` to provide the default find operation (and
@@ -5551,31 +5656,34 @@ to adapt the information and objects provided by the
 for consumption by downstream TriBITS-compatible packages.
 
 The following subsections will describe how to create these TriBITS-compatible
-``FindTPL<tplName>.cmake`` modules for all of the various cases using
-``find_package(<externalPkg> ...)``.
+``FindTPL<tplName>.cmake`` modules for all of the various cases using an
+internal call to ``find_package(<externalPkg> ...)``:
+
+* `Creating FindTPL<tplName>.cmake using find_package() with IMPORTED targets`_
+* `Creating FindTPL<tplName>.cmake using find_package() without IMPORTED targets`_
 
 
-Creating FindTPL*.cmake using find_package() with IMPORTED targets
-..................................................................
+Creating FindTPL<tplName>.cmake using find_package() with IMPORTED targets
+..........................................................................
 
 For cases where ``find_package(<externalPkg>)`` provides complete and proper
 modern (namespaced) IMPORTED targets (but is missing the
 ``<tplName>::all_libs`` target or the name ``<tplName>`` and ``<externalPkg>``
 name are different), these ``FindTPL<tplName>.cmake`` modules can call the
 function
-`tribits_external_package_create_imported_all_libs_target_and_config_file()`_
+`tribits_extpkg_create_imported_all_libs_target_and_config_file()`_
 after calling ``find_package(<externalPkg>)`` to create a very thin wrapper
 ``FindTPL<tplName>.cmake`` module.  In these cases, such a
 ``FindTPL<tplName>.cmake`` module file is nothing more than::
 
   find_package(<externalPkg> REQUIRED)
-  tribits_external_package_create_imported_all_libs_target_and_config_file(
+  tribits_extpkg_create_imported_all_libs_target_and_config_file(
     <tplName>
     INNER_FIND_PACKAGE_NAME <externalPkg>
     IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
 
 The function
-`tribits_external_package_create_imported_all_libs_target_and_config_file()`_
+`tribits_extpkg_create_imported_all_libs_target_and_config_file()`_
 creates the target ``<tplName>::all_libs`` and the wrapper file
 ``<tplName>Config.cmake`` which is installed by TriBITS.  The only unique
 information required to create this glue module is the name of the external
@@ -5609,7 +5717,7 @@ system (such as when upgrading a existing ``FindTPL<tplName>.cmake`` file), a
     if (<externalPkg>_FOUND)
       message("-- Found <externalPkg>_DIR='${<externalPkg>_DIR}'")
       message("-- Generating <tplName>::all_libs and <tplName>Config.cmake")
-      tribits_external_package_create_imported_all_libs_target_and_config_file(<tplName>
+      tribits_extpkg_create_imported_all_libs_target_and_config_file(<tplName>
         INNER_FIND_PACKAGE_NAME  <externalPkg>
         IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
     endif()
@@ -5634,7 +5742,7 @@ critical since ``find_package(<externalPkg>)`` defines IMPORTED targets that
 must be available each time configure is called.  Also, if
 ``find_package(<externalPkg>)`` is called and ``<externalPkg>_FOUND=TRUE``,
 then the function
-`tribits_external_package_create_imported_all_libs_target_and_config_file()`_
+`tribits_extpkg_create_imported_all_libs_target_and_config_file()`_
 is called which defines the targets ``<tplName>::all_libs`` which means that
 the function ``tribits_tpl_find_include_dirs_and_libraries()`` will **not** be
 called.
@@ -5646,8 +5754,8 @@ A concrete (and tested) example of the latter case can be found in the file
    :literal:
 
 
-Creating FindTPL*.cmake using find_package() without IMPORTED targets
-.....................................................................
+Creating FindTPL<tplName>.cmake using find_package() without IMPORTED targets
+.............................................................................
 
 There are cases where calling ``find_package(<externalPkg>)`` to find the
 parts of an external package does not create proper IMPORTED targets that can
@@ -5703,7 +5811,8 @@ using the ``FindTPL<tplName>.cmake`` module::
 
   tribits_tpl_find_include_dirs_and_libraries( <tplName>
     REQUIRED_HEADERS ${REQUIRED_HEADERS}
-    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
+    MUST_FIND_ALL_LIBS )
 
 Above, if ``find_package(<externalPkg>)`` can't find ``<externalPkg>``, then
 the function ``tribits_tpl_find_include_dirs_and_libraries()`` will try to
@@ -5742,7 +5851,8 @@ find must be used (to maintain backward compatibility).  This
 
   tribits_tpl_find_include_dirs_and_libraries( <tplName>
     REQUIRED_HEADERS ${REQUIRED_HEADERS}
-    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
+    MUST_FIND_ALL_LIBS )
 
 The above will result in skipping the call of ``find_package(<externalPkg>)``
 if any of the legacy TPL find variables are set.  But if the legacy TPL find
@@ -5790,8 +5900,8 @@ standard legacy TriBITS behavior described in `Enabling support for an
 optional Third-Party Library (TPL)`_.
 
 
-Creating a FindTPL*.cmake module without find_package()
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Creating a FindTPL<tplName>.cmake module without find_package()
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 For external packages that don't have a ``Find<externalPkg>.cmake`` module or
 ``<externalPkg>Config.cmake`` package config file, it may make sense to create
@@ -5803,11 +5913,12 @@ header files and libraries that must be found.  A simple
   tribits_tpl_find_include_dirs_and_libraries( <tplName>
     REQUIRED_HEADERS <header0> <header1> ...
     REQUIRED_LIBS_NAMES <libname0> <libname1> ...
+    MUST_FIND_ALL_LIBS
     )
 
 
-Requirements for FindTPL*.cmake modules
-+++++++++++++++++++++++++++++++++++++++
+Requirements for FindTPL<tplName>.cmake modules
++++++++++++++++++++++++++++++++++++++++++++++++
 
 It is possible to create a ``FindTPL<tplName>.cmake`` module without using any
 TriBITS functions.  The only firm requirements for a

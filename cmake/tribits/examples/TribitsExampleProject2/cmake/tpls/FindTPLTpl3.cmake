@@ -10,7 +10,7 @@ if (Tpl3_ALLOW_PREFIND)
   if (Tpl3_FOUND)
     message("-- Found Tpl3_DIR='${Tpl3_DIR}'")
     message("-- Generating Tpl3::all_libs and Tpl3Config.cmake")
-    tribits_external_package_create_imported_all_libs_target_and_config_file(Tpl3
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(Tpl3
       INNER_FIND_PACKAGE_NAME  Tpl3
       IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
   endif()

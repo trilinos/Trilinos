@@ -20,10 +20,11 @@
 @FUNCTION: tribits_determine_if_current_package_needs_rebuilt() +
 @MACRO:    tribits_disable_package_on_platforms() +
 @MACRO:    tribits_exclude_files() +
-@FUNCTION: tribits_external_package_append_upstream_target_link_libraries_get_name_and_vis() +
-@FUNCTION: tribits_external_package_create_imported_all_libs_target_and_config_file() +
-@FUNCTION: tribits_external_package_write_config_file() +
-@FUNCTION: tribits_external_package_write_config_file_str() +
+@MACRO:    tribits_extpkg_define_dependencies() +
+@FUNCTION: tribits_extpkg_get_dep_name_and_vis() +
+@FUNCTION: tribits_extpkg_create_imported_all_libs_target_and_config_file() +
+@FUNCTION: tribits_extpkg_write_config_file() +
+@FUNCTION: tribits_extpkg_write_config_file_str() +
 @FUNCTION: tribits_find_most_recent_binary_file_timestamp() +
 @FUNCTION: tribits_find_most_recent_file_timestamp() +
 @FUNCTION: tribits_find_most_recent_source_file_timestamp() +

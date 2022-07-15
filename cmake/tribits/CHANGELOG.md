@@ -2,19 +2,35 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2022-07-14:
+
+* **Added:** Added support for `FindTPL<tplName>Dependencies.cmake` with new
+  macro `tribits_extpkg_define_dependencies()` that sets
+  `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
+  is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
+  TPLs are actaully enabled.  This avoids the problem described below from
+  directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
+  what TPLs are actaully enabled.  This maintains backward compatibility for
+  existing configure scripts where an upstream TPL may not be enabled in some
+  strange configure scripts (see
+  [TriBITSPub/TriBITS#494](https://github.com/TriBITSPub/TriBITS/issues/494)).
+
 ## 2022-05-25:
 
-* **Changed:** Dependencies between external packages (TPLs) must
-  now be specified in order for correct linkage.  No longer will listing
-  the external packages (TPLs) in the correct order in the
-  `<repoDir>/TPLsList.cmake` file and listing all upstream external packages (TPLs) in
-  `<packageDir>/cmake/Dependencies.cmake` be sufficient.  For now, dependencies
-  between external packages (TPLs) can be set in the `<packageDir>/TPLsList.cmake`
-  file by setting the cache var `<tplName>_LIB_ENABLED_DEPENDENCIES` for each downstream
-  external package (TPL).  (See [`TribitsExampleProject2/TPLsList.cmake`](https://github.com/TriBITSPub/TriBITS/blob/master/tribits/examples/TribitsExampleProject2/TPLsList.cmake)
-  for an example.)  Later, a more scalable approach for setting these vars will
-  be devised.  However, this means it is no longer necessary for a package
-  to list all of its upstream external packages/TPLs, only its direct dependencies.
+* **Changed:** Dependencies between external packages (TPLs) must now be
+  specified in order for correct linkage.  No longer will listing the external
+  packages (TPLs) in the correct order in the `<repoDir>/TPLsList.cmake` file
+  and listing all upstream external packages (TPLs) in
+  `<packageDir>/cmake/Dependencies.cmake` be sufficient.  For now,
+  dependencies between external packages (TPLs) can be set in the
+  `<packageDir>/TPLsList.cmake` file by setting the cache var
+  `<tplName>_LIB_ENABLED_DEPENDENCIES` for each downstream external package
+  (TPL).  (See
+  [`TribitsExampleProject2/TPLsList.cmake`](https://github.com/TriBITSPub/TriBITS/blob/master/tribits/examples/TribitsExampleProject2/TPLsList.cmake)
+  for an example.)  Later, a more scalable approach for setting these vars
+  will be devised.  However, this means it is no longer necessary for a
+  package to list all of its upstream external packages/TPLs, only its direct
+  dependencies.
 
 * **Changed:** All compliant external packages (TPLs) must now set the
   imported target `<tplName>::all_libs` in their `FindTPL<tplName>.cmake`
