@@ -430,7 +430,7 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
-
+#define XPETRA_TPETRABLOCKCRSMATRIX_SHORT
 #endif // XPETRA_TPETRABLOCKCRSMATRIX_DECL_HPP
 
 

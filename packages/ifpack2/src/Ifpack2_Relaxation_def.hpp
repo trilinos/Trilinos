@@ -47,6 +47,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
@@ -749,10 +750,9 @@ void Relaxation<MatrixType>::initialize ()
 
     if (PrecType_ == Details::MTGS || PrecType_ == Details::MTSGS ||
         PrecType_ == Details::GS2  || PrecType_ == Details::SGS2) {
-      const crs_matrix_type* crsMat =
-        dynamic_cast<const crs_matrix_type*> (A_.get());
+      auto crsMat = Details::getCrsMatrix(A_);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (crsMat == nullptr, std::logic_error, methodName << ": "
+        (crsMat.is_null(), std::logic_error, methodName << ": "
          "Multithreaded Gauss-Seidel methods currently only work "
          "when the input matrix is a Tpetra::CrsMatrix.");
 
@@ -763,12 +763,8 @@ void Relaxation<MatrixType>::initialize ()
         static int sequence_number = 0;
         const std::string file_name = "Ifpack2_MT_GS_" +
           std::to_string (sequence_number++) + ".mtx";
-        Teuchos::RCP<const crs_matrix_type> rcp_crs_mat =
-          Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-        if (! rcp_crs_mat.is_null ()) {
-          using writer_type = Tpetra::MatrixMarket::Writer<crs_matrix_type>;
-          writer_type::writeSparseFile (file_name, rcp_crs_mat);
-        }
+        using writer_type = Tpetra::MatrixMarket::Writer<crs_matrix_type>;
+        writer_type::writeSparseFile (file_name, crsMat);
       }
 
       this->mtKernelHandle_ = Teuchos::rcp (new mt_kernel_handle_type ());
@@ -1025,7 +1021,6 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_MAX;
   using Teuchos::REDUCE_MIN;
   using Teuchos::REDUCE_SUM;
-  using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
   using LO = local_ordinal_type;
   using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type,
@@ -1223,7 +1218,7 @@ void Relaxation<MatrixType>::compute ()
 
     bool debugAgainstSlowPath = false;
 
-    auto crsMat = rcp_dynamic_cast<const crs_matrix_type> (A_);
+    auto crsMat = Details::getCrsMatrix(A_);
 
     if (crsMat.get() && crsMat->isFillComplete ()) {
       // The invDiagKernel object computes diagonal offsets if
@@ -1231,9 +1226,9 @@ void Relaxation<MatrixType>::compute ()
       // optionally applies the L1 method and replacement of small
       // entries, and then inverts.
       if (invDiagKernel_.is_null())
-        invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(A_));
+        invDiagKernel_ = rcp(new Ifpack2::Details::InverseDiagonalKernel<op_type>(crsMat));
       else
-        invDiagKernel_->setMatrix(A_);
+        invDiagKernel_->setMatrix(crsMat);
       invDiagKernel_->compute(*Diagonal_,
                               DoL1Method_ && IsParallel_, L1Eta_,
                               fixTinyDiagEntries_, minDiagValMag);
@@ -1601,7 +1596,7 @@ ApplyInverseSerialGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,g
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
   auto blockCrsMat = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
-  auto crsMat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+  auto crsMat = Details::getCrsMatrix(A_);
   if (blockCrsMat.get())  {
     const_cast<this_type&> (*this).ApplyInverseSerialGS_BlockCrsMatrix (*blockCrsMat, X, Y, direction);
   }
@@ -1924,9 +1919,9 @@ ApplyInverseMTGS_CrsMatrix(
   const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (A_.get());
+  auto crsMat = Details::getCrsMatrix(A_);
   TEUCHOS_TEST_FOR_EXCEPTION
-    (crsMat == nullptr, std::logic_error, "Ifpack2::Relaxation::apply: "
+    (crsMat.is_null(), std::logic_error, "Ifpack2::Relaxation::apply: "
      "Multithreaded Gauss-Seidel methods currently only work when the "
      "input matrix is a Tpetra::CrsMatrix.");
 
@@ -1941,10 +1936,6 @@ ApplyInverseMTGS_CrsMatrix(
      "GaussSeidel\" [sic].  "
      "You'll have to ask the person who did.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (crsMat == nullptr, std::logic_error, prefix << "The matrix is null."
-     "  This should never happen.  Please report this bug to the Ifpack2 "
-     "developers.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (! crsMat->isFillComplete (), std::runtime_error, prefix << "The "
      "input CrsMatrix is not fill complete.  Please call fillComplete "

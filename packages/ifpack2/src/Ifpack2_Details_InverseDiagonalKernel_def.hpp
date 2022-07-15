@@ -170,6 +170,10 @@ setMatrix (const Teuchos::RCP<const operator_type>& A)
     using Teuchos::rcp_dynamic_cast;
     A_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A);
 
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs_.is_null(), std::logic_error,
+       "Ifpack2::Details::InverseDiagonalKernel: operator A must be a Tpetra::CrsMatrix.");
+
     const size_t lclNumRows = A_crs_->getRowMap ()->getLocalNumElements ();
 
     if (offsets_.extent (0) < lclNumRows) {

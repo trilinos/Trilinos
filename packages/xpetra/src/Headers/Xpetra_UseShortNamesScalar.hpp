@@ -151,6 +151,10 @@ typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix
 typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
 
+#ifdef XPETRA_TPETRABLOCKCRSMATRIX_SHORT
+typedef Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraBlockCrsMatrix;
+#endif
+
 // TODO remove this
 #ifdef XPETRA_EPETRACRSMATRIX_SHORT
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
