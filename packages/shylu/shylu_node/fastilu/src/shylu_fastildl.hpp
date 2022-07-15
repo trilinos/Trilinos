@@ -726,7 +726,7 @@ class FastILDLPrec
 
         void applyDD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(nRows, x, y, diagElemsInv);
+            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(x, y, diagElemsInv);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
@@ -734,7 +734,7 @@ class FastILDLPrec
         }
         void applyD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(nRows, x, y, diagFact);
+            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(x, y, diagFact);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
@@ -742,7 +742,7 @@ class FastILDLPrec
         }
         void applyLIC(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(nRows, parInitZero);
             ExecSpace().fence();
 #if 0
@@ -750,7 +750,7 @@ class FastILDLPrec
 #endif 
             BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, lRowMap, lColIdx, lVal,
                                                                         x, y, xOld, onesVector);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(nRows, xOld, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
             if(nRows%blkSz != 0)
             {
@@ -769,7 +769,7 @@ class FastILDLPrec
 
         void applyLT(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
             Kokkos::parallel_for(nRows, parInitZero);
             ExecSpace().fence();
 #if 0
@@ -777,7 +777,7 @@ class FastILDLPrec
 #endif 
             BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, ltRowMap, ltColIdx, ltVal,
                                                                         x, y, xOld, onesVector);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(nRows, xOld, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
             Ordinal extent = nRows/blkSz;
             if (nRows%blkSz != 0)
             {
@@ -871,7 +871,7 @@ class FastILDLPrec
         {
 
             Kokkos::Timer timer;
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(xTemp, x);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor);
             ExecSpace().fence();
@@ -890,7 +890,7 @@ class FastILDLPrec
             }
             applyD(y, xTemp);
 
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor2(nRows, y, xTemp);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor2(y, xTemp);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor2);
             ExecSpace().fence();

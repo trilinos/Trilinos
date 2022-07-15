@@ -35,7 +35,7 @@ template <> struct LU<Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
-  inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = invoke(A, P);
@@ -53,8 +53,10 @@ template <> struct LU<Algo::External> {
     TACHO_TEST_FOR_EXCEPTION(int(P.extent(0)) < 4 * m, std::runtime_error, "P should be 4*m.");
 
     if (m > 0) {
-      ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                 *__restrict__ peri = perm + m;
+      ordinal_type *__restrict__ ipiv = P.data();
+      ordinal_type *__restrict__ fpiv = ipiv + m;
+      ordinal_type *__restrict__ perm = fpiv + m;
+      ordinal_type *__restrict__ peri = perm + m;
 
       for (ordinal_type i = 0; i < m; ++i)
         perm[i] = i;
@@ -78,7 +80,7 @@ template <> struct LU<Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeP>
-  inline static int modify(MemberType &member, ordinal_type m, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int modify(MemberType &member, ordinal_type m, const ViewTypeP &P) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = modify(m, P);

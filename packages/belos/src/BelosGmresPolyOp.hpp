@@ -865,8 +865,8 @@ namespace Belos {
       }
       
       //Value with largest product goes in the next slot:
-      MagnitudeType * maxPointer = std::max_element(prod.values(), (prod.values()+dimN));
-      int maxIndex = int (maxPointer- prod.values());
+      maxPointer = std::max_element(prod.values(), (prod.values()+dimN));
+      maxIndex = int (maxPointer- prod.values());
       sorted(j,0) = thetaN(maxIndex,0);
       sorted(j,1) = thetaN(maxIndex,1);
       newIndex[j] = index[maxIndex];

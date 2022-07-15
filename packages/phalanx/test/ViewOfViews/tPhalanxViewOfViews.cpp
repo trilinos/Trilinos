@@ -152,7 +152,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
     v_of_v.addView(c,1,0);
     v_of_v.addView(d,1,1);
 
+    TEST_ASSERT(!v_of_v.deviceViewIsSynced());
     v_of_v.syncHostToDevice();
+    TEST_ASSERT(v_of_v.deviceViewIsSynced());
 
     {
       auto v_dev = v_of_v.getViewDevice();
@@ -162,13 +164,25 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
       });
     }
 
+    // Test the query objectes used for VT serialization
+    TEST_ASSERT(v_of_v.safetyCheck());
     v_of_v.disableSafetyCheck();
+    TEST_ASSERT(!v_of_v.safetyCheck());
     v_of_v.enableSafetyCheck();
+    TEST_ASSERT(v_of_v.safetyCheck());
+
     // Uncomment the line below to prove the ViewOfViews prevents
     // device views from outliving host view. This line will cause a
     // Kokkos::abort() and error message since v_dev above is still in
     // scope when the ViewOfViews is destoryed.
     // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+
+    // Test the const versions of accessors
+    {
+      const PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
+      const_v_of_v.getViewHost();
+      const_v_of_v.getViewDevice();
+    }
   }
 
   auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);

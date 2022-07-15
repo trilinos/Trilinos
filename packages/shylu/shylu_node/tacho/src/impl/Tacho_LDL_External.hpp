@@ -37,7 +37,8 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeW>
-  inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeW &W) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
+                                           const ViewTypeW &W) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = invoke(A, P, W);
@@ -129,7 +130,8 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
-  inline static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeD &D) {
+  KOKKOS_INLINE_FUNCTION static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
+                                           const ViewTypeD &D) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = modify(A, P, D);

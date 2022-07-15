@@ -61,134 +61,145 @@ using namespace std;
  *  We will review this program's code structure, 00_Basic_Problem.cpp,
  *  and go over its basic details.
  *
- *  \subsection solutionIC Solution and Initial Conditions
+ *  <table>
+ *    <tr> <th> Comments <th> "Basic Problem" Code Snippet
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Solution Declaration.</b>  One of the first things an application
+ *      does is to define the solution.
+ *    <td>
+ *      @code
+ *        // Solution and its time-derivative.
+ *        double x_n[2];      // at time index n
+ *        double xDot_n[2];   // at time index n
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Initial Conditions.</b>  Here we are using an array of two doubles
+ *      for the solution and its time derivative, and set their initial
+ *      values (see \ref vanderpol).  Note that xDot_n is the time
+ *      derivative, \f$ \dot{x} \f$, but is also the right-hand side
+ *      evaluation, \f$ f(x,t) \f$.
+ *    <td>
+ *      @code
+ *        // Initial Conditions
+ *        double time = 0.0;
+ *        double epsilon = 1.0e-1;
+ *        x_n   [0] = 2.0;
+ *        x_n   [1] = 0.0;
+ *        xDot_n[0] = 0.0;
+ *        xDot_n[1] = -2.0/epsilon;
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Timestep Parameters.</b>  The next piece of code sets parameters
+ *      associated with time-integration, e.g., length of time integration,
+ *      number of timesteps and the timestep size.
+ *    <td>
+ *      @code
+ *        // Timestep size
+ *        double finalTime = 2.0;
+ *        int nTimeSteps = 2001;
+ *        const double constDT = finalTime/(nTimeSteps-1);
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Time-Integration Loop.</b>  The time-integration loop simply
+ *      advances the solution until the solution is not "passing", the
+ *      time has reached the final time, or the number timesteps is reached.
+ *    <td>
+ *      @code
+ *        // Advance the solution to the next timestep.
+ *        int n = 0;
+ *        bool passing = true;
+ *        cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
+ *        while (passing && time < finalTime && n < nTimeSteps) {
  *
- *  One of the first things an application does is to define the
- *  solution and set its initial values.
- *  @code
- *    // Solution and its time-derivative.
- *    double x_n[2];      // at time index n
- *    double xDot_n[2];   // at time index n
- *  @endcode
- *  Here we are using an array of two doubles for the solution and its
- *  time derivative, and set their initial values (see \ref vanderpol).
- *  @code
- *    // Initial Conditions
- *    double time = 0.0;
- *    double epsilon = 1.0e-1;
- *    x_n   [0] = 2.0;
- *    x_n   [1] = 0.0;
- *    xDot_n[0] = 0.0;
- *    xDot_n[1] = -2.0/epsilon;
- *  @endcode
- *  Note that xDot_n is the time derivative, \f$ \dot{x} \f$, but is also
- *  the right-hand side evaluation, \f$ f(x,t) \f$.
+ *          ...
  *
- *  \subsection timeStepParameters Timestep Parameters
+ *        }
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b> Initialize the Next Timestep.</b>  Within the time loop,
+ *      we initialize the next timestep, \f$ x^{n+1} \f$, to the
+ *      previous timestep, \f$ x^n \f$.  Although this is not needed
+ *      in this simple case, if one wants to recover from a failed
+ *      timestep, the previous timestep, \f$ x^n \f$, needs to be
+ *      perserved until the next timestep is accepted.
+ *    <td>
+ *      @code
+ *        // Initialize next time step
+ *        double x_np1[2];    // at time index n+1
+ *        x_np1[0] = x_n[0];
+ *        x_np1[1] = x_n[1];
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Set the Timestep and Time.</b>  Although this a constant
+ *      timestep example, for variable timestepping, the timestep size
+ *      needs to be determined and the related time for the next
+ *      timestep set.
+ *    <td>
+ *      @code
+ *        // Set the timestep and time.
+ *        double dt = constDT;
+ *        time = (n+1)*dt;
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Evaluate Righthand Side Function.</b>  This is a simple
+ *      evaluation of the van der Pol problem and setting it to
+ *      \f$ \dot{x} \f$.
+ *    <td>
+ *      @code
+ *        // Righthand side evaluation and time-derivative at n.
+ *        xDot_n[0] = x_n[1];
+ *        xDot_n[1] = ((1.0 - x_n[0]*x_n[0])*x_n[1] - x_n[0])/epsilon;
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Take the Timestep.</b>  For Forward Euler, the timestep
+ *      is a simple daxpy.
+ *    <td>
+ *      @code
+ *        // Take the timestep - Forward Euler
+ *        x_np1[0] = x_n[0] + dt*xDot_n[0];
+ *        x_np1[1] = x_n[1] + dt*xDot_n[1];
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Test If Solution is Passing.</b>  Here we have a simple
+ *      test if the solution is passing, i.e., the solution does not
+ *      have a NAN.  Otherwise "promote" the solution to the next
+ *      timestep and increment the timestep index.
+ *    <td>
+ *      @code
+ *        // Test if solution is passing.
+ *        if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
+ *          passing = false;
+ *        } else {
+ *          // Promote to next step (n -> n+1).
+ *          n++;
+ *          x_n[0] = x_np1[0];
+ *          x_n[1] = x_np1[1];
+ *        }
+ *      @endcode
+ *    <tr VALIGN=TOP>
+ *    <td>
+ *      <b>Output Solution.</b>  Of course, we would like to know
+ *      that progress of the solution during the simulation.
+ *    <td>
+ *    @code
+ *      // Output
+ *      if ( n%100 == 0 )
+ *        cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
+ *    @endcode
+ *  </table>
  *
- *  The next piece of code sets parameters associated with
- *  time-integration, e.g., length of time integration, number of timesteps
- *  and the timestep size.
- *  @code
- *    // Timestep size
- *    double finalTime = 2.0;
- *    int nTimeSteps = 2001;
- *    const double constDT = finalTime/(nTimeSteps-1);
- *  @endcode
- *
- *  \subsection timeLoop Time-Integration Loop
- *
- *  The time-integration loop simply advances the solution until the
- *  solution is not "passing", the time has reached the final time, or
- *  the number timesteps is reached.
- *  @code
- *    // Advance the solution to the next timestep.
- *    int n = 0;
- *    bool passing = true;
- *    cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
- *    while (passing && time < finalTime && n < nTimeSteps) {
- *
- *      ...
- *
- *    }
- *  @endcode
- *
- *  \subsubsection initNextTimeStep Initialize the Next Timestep
- *
- *  Within the time loop, we initialize the next timestep, \f$ x^{n+1} \f$,
- *  to the previous timestep, \f$ x^n \f$.  Although this is not needed
- *  in this simple case, if one wants to recover from a failed
- *  timestep, the previous timestep, \f$ x^n \f$, needs to be perserved
- *  until the next timestep is accepted.
- *  @code
- *    // Initialize next time step
- *    double x_np1[2];    // at time index n+1
- *    x_np1[0] = x_n[0];
- *    x_np1[1] = x_n[1];
- *  @endcode
- *
- *  \subsubsection setTimeStepTime Set the Timestep and Time
- *
- *  Although this a constant timestep example, for variable timestepping,
- *  the timestep size needs to be determined and the related time for the
- *  next timestep set.
- *  @code
- *    // Set the timestep and time.
- *    double dt = constDT;
- *    time = (n+1)*dt;
- *  @endcode
- *
- *  \subsubsection evalModel Evaluate Righthand Side Function
- *
- *  This is a simple evaluation of the van der Pol problem and
- *  setting it to \f$ \dot{x} \f$.
- *  @code
- *    // Righthand side evaluation and time-derivative at n.
- *    xDot_n[0] = x_n[1];
- *    xDot_n[1] = ((1.0 - x_n[0]*x_n[0])*x_n[1] - x_n[0])/epsilon;
- *  @endcode
- *
- *  \subsubsection takeStep Take the Timestep
- *
- *  For Forward Euler, the timestep is a simple daxpy.
- *  @code
- *    // Take the timestep - Forward Euler
- *    x_np1[0] = x_n[0] + dt*xDot_n[0];
- *    x_np1[1] = x_n[1] + dt*xDot_n[1];
- *  @endcode
- *
- *  \subsubsection acceptStep Test If Solution is Passing.
- *
- *  Here we have a simple test if the solution is passing, i.e.,
- *  the solution does not have a NAN.  Otherwise "promote" the solution
- *  to the next timestep and increment the timestep index.
- *  @code
- *    // Test if solution is passing.
- *    if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
- *      passing = false;
- *    } else {
- *      // Promote to next step (n -> n+1).
- *      n++;
- *      x_n[0] = x_np1[0];
- *      x_n[1] = x_np1[1];
- *    }
- *  @endcode
- *
- *  \subsubsection observe Output Solution
- *
- *  Of course, we would like to know that progress of the solution
- *  during the simulation.
- *  @code
- *    // Output
- *    if ( n%100 == 0 )
- *      cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
- *  @endcode
- *
- *  \subsection aftertimeLoop Following the Time-Integration Loop
- *
- *  Following the time loop is some basic regression testing, but
- *  serves to show tasks that one may want to complete after
- *  completion of time integration.
+ *  <b>Following the Time-Integration Loop.</b>  Following the time
+ *  loop is some basic regression testing, but serves to show tasks
+ *  that one may want to complete after completion of time integration.
  *
  *  \section example-00-summary Example 0: Basic Problem Summary
  *
@@ -196,6 +207,11 @@ using namespace std;
  *  problem with a few features.  We will use this example
  *  and introduce Tempus and Trilinos capabilities in the following
  *  examples.
+ *
+ *  \subsection example-01_Next Links
+ *
+ *  - Back to: \ref tutorials
+ *  - Next: \ref example-01
  */
 int main(int argc, char *argv[])
 {

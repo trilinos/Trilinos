@@ -256,7 +256,7 @@ int ConvergenceTet(const bool verbose) {
   ValueType hvol_errors[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
 
   ValueType hgrad_errors_L2[4] = {7.23725, 2.20317, 0.362514, 0.049889};
-  ValueType hcurl_errors_L2[4] = {6.32367, 2.04776, 0.428591, 0.090222};
+  ValueType hcurl_errors_L2[4] = {6.24416, 2.00036, 0.428591, 0.090222};
   ValueType hdiv_errors_L2[4] = {4.60503, 1.2758, 0.260201, 0.0561971};
   ValueType hvol_errors_L2[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
 

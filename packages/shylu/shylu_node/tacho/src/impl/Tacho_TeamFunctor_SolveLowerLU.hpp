@@ -145,7 +145,7 @@ public:
 
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        const auto perm = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + 2 * m, m);
+        const ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
 
         if (s.do_not_apply_pivots) {
           Copy<Algo::Internal>::invoke(member, bT, tT);
@@ -260,8 +260,7 @@ public:
 
             Kokkos::parallel_for(
                 Kokkos::TeamVectorRange(member, tcnt),
-                [&, ip, m, tbeg,
-                 tcnt](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
+                [&, ip, m, tbeg](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
                   const ordinal_type it = tbeg + ii;
                   const ordinal_type is = ip + ii;
                   // for (ordinal_type it=tbeg;it<tend;++it,++is) {

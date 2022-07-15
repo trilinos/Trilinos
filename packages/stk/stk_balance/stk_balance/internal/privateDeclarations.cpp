@@ -214,7 +214,7 @@ addSearchResultsToGraphEdges(stk::mesh::BulkData & bulk,
     stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEM_RANK, element1id);
     int owningProcElement2 = searchResult.second.proc();
 
-    double edge_weight = balanceSettings.getGraphEdgeWeightForSearch();
+    double edge_weight = balanceSettings.getGraphEdgeWeightForSearch() * balanceSettings.getGraphEdgeWeightMultiplier();
     graphEdges.push_back(GraphEdge(element1, element2id, owningProcElement2, edge_weight, true));
   }
 }

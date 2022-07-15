@@ -205,6 +205,26 @@ namespace Intrepid2
     rank_(0)
     {}
     
+    /**
+     \brief Constructor that takes a subset of the tensorial components of another TensorData container.
+     \param [in] otherTensorData - the original TensorData container
+     \param [in] whichComps - the tensorial component indices to take from the other container.
+     
+     \note this does not copy the data.
+    */
+    TensorData(TensorData otherTensorData, std::vector<int> whichComps)
+    :
+    numTensorComponents_(whichComps.size())
+    {
+      int r = 0;
+      for (const auto & componentOrdinal : whichComps)
+      {
+        tensorComponents_[r++] = otherTensorData.getTensorComponent(componentOrdinal);
+      }
+      
+      initialize();
+    }
+    
     //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
     template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
                                        class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>

@@ -54,7 +54,9 @@ cmake \
 -DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags}" \
 -DSTK_ENABLE_TESTS:BOOL=OFF \
 -DTrilinos_ENABLE_STK:BOOL=ON \
--DTrilinos_ENABLE_Gtest:BOOL=OFF \
+-DTrilinos_ENABLE_STKNGP_TEST:BOOL=ON \
+-DTrilinos_ENABLE_STKUnit_test_utils:BOOL=ON \
+-DTrilinos_ENABLE_Gtest:BOOL=ON \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
 -DTPL_ENABLE_Netcdf:BOOL=ON \

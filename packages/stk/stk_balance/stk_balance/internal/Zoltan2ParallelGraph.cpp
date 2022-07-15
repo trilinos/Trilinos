@@ -113,7 +113,8 @@ stk::balance::GraphEdge create_graph_edge(const stk::mesh::BulkData &bulk,
   const stk::topology element1Topology = bulk.bucket(element1).topology();
   const stk::topology element2Topology = bulk.bucket(element2).topology();
   const stk::mesh::EntityId element2Id = stk::balance::internal::get_local_id(localIds, element2);
-  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
+  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology) *
+                      balanceSettings.getGraphEdgeWeightMultiplier();
   int vertex2ParallelOwner = 0;
 
   return stk::balance::GraphEdge(element1, element2Id, vertex2ParallelOwner, edgeWeight);
@@ -127,7 +128,8 @@ stk::balance::GraphEdge create_graph_edge(const stk::mesh::BulkData &bulk,
   const stk::topology element1Topology = bulk.bucket(element1).topology();
   const stk::topology element2Topology = bulk.bucket(element2).topology();
   const stk::mesh::EntityId element2Id = bulk.identifier(element2);
-  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
+  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology) *
+                      balanceSettings.getGraphEdgeWeightMultiplier();
   int vertex2ParallelOwner = bulk.parallel_owner_rank(element2);
 
   return stk::balance::GraphEdge(element1, element2Id, vertex2ParallelOwner, edgeWeight);

@@ -244,8 +244,8 @@ namespace Test {
 
       // check Kronecker property for Lagrange polynomials.      
       try {
-        const EPointType pts[3] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND, POINTTYPE_GAUSS };
-        for (auto idx=0;idx<3;++idx) {
+        const EPointType pts[2] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND};
+        for (auto idx=0;idx<2;++idx) {
           *outStream << " -- Testing " << EPointTypeToString(pts[idx]) << " -- \n";
           for (auto ip=1;ip<maxOrder;++ip) {
 

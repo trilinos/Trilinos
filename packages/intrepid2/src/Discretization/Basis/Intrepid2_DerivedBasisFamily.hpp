@@ -61,6 +61,8 @@
 #include "Intrepid2_DerivedBasis_HDIV_HEX.hpp"
 #include "Intrepid2_DerivedBasis_HVOL_HEX.hpp"
 
+#include "Intrepid2_SerendipityBasis.hpp"
+
 namespace Intrepid2
 {
   //! \brief EmptyBasisFamily allows us to set a default void family for a given topology
@@ -197,6 +199,54 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
   }
+
+  /** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getHypercubeBasis_HGRAD(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    using BasisPtr = typename BasisFamily::BasisPtr;
+    
+    BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HGRAD, polyOrder);
+    BasisPtr tensorBasis = lineBasis;
+    
+    for (int d=1; d<spaceDim; d++)
+    {
+      tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HGRAD));
+    }
+    
+    return tensorBasis;
+  }
+
+  /** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getHypercubeBasis_HVOL(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    using BasisPtr = typename BasisFamily::BasisPtr;
+    
+    BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HVOL, polyOrder);
+    BasisPtr tensorBasis = lineBasis;
+    
+    for (int d=1; d<spaceDim; d++)
+    {
+      tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HVOL));
+    }
+    
+    return tensorBasis;
+  }
   
   /** \brief  Factory method for potentially anisotropic hexahedron bases in the given family.
       \param [in] fs          - the function space for the basis.
@@ -218,6 +268,36 @@ namespace Intrepid2
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
+  }
+
+  /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HGRAD(int polyOrder, int spaceDim)
+  {
+    auto fullBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyOrder, spaceDim);
+
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    auto serendipityBasis = Teuchos::rcp( new SerendipityBasis<BasisBase>(fullBasis) );
+    return serendipityBasis;
+  }
+
+  /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HVOL(int polyOrder, int spaceDim)
+  {
+    auto fullBasis = getHypercubeBasis_HVOL<BasisFamily>(polyOrder, spaceDim);
+
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    auto serendipityBasis = Teuchos::rcp( new SerendipityBasis<BasisBase>(fullBasis) );
+    return serendipityBasis;
   }
   
   /** \brief  Factory method for isotropic tetrahedron bases in the given family.

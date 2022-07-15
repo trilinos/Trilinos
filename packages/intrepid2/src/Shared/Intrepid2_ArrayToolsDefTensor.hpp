@@ -975,11 +975,11 @@ namespace Intrepid2 {
     {
       /*
        *   Check array rank and spatial dimension range (if applicable)
-       *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data
+       *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D1,D2); P=1 is admissible to allow multiply by const. left data
        *      (2) inputDataRight(C,P,D) or (P,D);
        *      (3) outputData(C,P,D)
        */
-      // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
+      // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D1,D2) and 1 <= D,D1,D2 <= 3 is required
       INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.rank() < 2 ||
                                 inputDataLeft.rank() > 4, std::invalid_argument,
                                 ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft must have rank 2,3 or 4" );
@@ -1036,9 +1036,10 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
       }
-      if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-        const size_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
-        for (size_type i=0; i<3; ++i) {
+      if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D1,D2): check C and D
+        size_type f1[] = { 0, 2}, f2[] = { 0, 2};
+        if (transpose) f2[1] = 3;
+        for (size_type i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.extent(f1[i]) != inputDataLeft.extent(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
@@ -1065,15 +1066,16 @@ namespace Intrepid2 {
           }
         }
         if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-          const size_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
-          for (size_type i=0; i<3; ++i) {
+          size_type f1[] = { 0, 3}, f2[] = { 0, 2};
+          if (transpose) f1[1] = 2;
+          for (size_type i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(f1[i]) != inputDataRight.extent(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
           }
         }
 
-        // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-        for (size_type i=0; i<outputData.rank(); ++i) {
+        // Cross-check (3): outputData(C,P) vs. inputDataRight(C,P): all dimensions C, P must match
+        for (size_type i=0; i<outputData.rank()-1; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.extent(i) != inputDataRight.extent(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
         }

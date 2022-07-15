@@ -75,6 +75,8 @@ namespace Intrepid2
     VectorDataType vectorData_;
     
     int numTensorDataFamilies_ = -1;
+    
+    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter_;
   public:
     //! Constructor for scalar-valued BasisValues with a single family of values.
     BasisValues(TensorDataType tensorData)
@@ -119,6 +121,10 @@ namespace Intrepid2
       {
         tensorDataFamilies_[family] = TensorData<Scalar,ExecSpaceType>(otherFamilies[family]);
       }
+      auto otherOrdinalFilter = basisValues.ordinalFilter();
+      ordinalFilter_ = Kokkos::View<ordinal_type*,ExecSpaceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
+      
+      Kokkos::deep_copy(ordinalFilter_, otherOrdinalFilter);
     }
     
     //! field start and length must align with families in vectorData_ or tensorDataFamilies_ (whichever is valid).
@@ -246,12 +252,13 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     Scalar operator()(const int &fieldOrdinal, const int &pointOrdinal) const
     {
+      const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
       if (numTensorDataFamilies_ == 1)
       {
 #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! tensorDataFamilies_[0].isValid(), std::invalid_argument, "TensorData object not initialized!");
 #endif
-        return tensorDataFamilies_[0](fieldOrdinal, pointOrdinal);
+        return tensorDataFamilies_[0](tensorFieldOrdinal, pointOrdinal);
       }
       else
       {
@@ -262,7 +269,7 @@ namespace Intrepid2
         for (int family=0; family<numTensorDataFamilies_; family++)
         {
           const int familyFieldCount = tensorDataFamilies_[family].extent_int(0);
-          const bool fieldInRange    = (fieldOrdinal > previousFamilyEnd) && (fieldOrdinal <= previousFamilyEnd + familyFieldCount);
+          const bool fieldInRange    = (tensorFieldOrdinal > previousFamilyEnd) && (tensorFieldOrdinal <= previousFamilyEnd + familyFieldCount);
           familyForField = fieldInRange ? family : familyForField;
           fieldAdjustment = fieldInRange ? previousFamilyEnd + 1 : fieldAdjustment;
           previousFamilyEnd += familyFieldCount;
@@ -270,7 +277,7 @@ namespace Intrepid2
 #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( familyForField == -1, std::invalid_argument, "fieldOrdinal appears to be out of range");
 #endif
-        return tensorDataFamilies_[familyForField](fieldOrdinal-fieldAdjustment,pointOrdinal);
+        return tensorDataFamilies_[familyForField](tensorFieldOrdinal-fieldAdjustment,pointOrdinal);
       }
     }
     
@@ -281,7 +288,8 @@ namespace Intrepid2
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! vectorData_.isValid(), std::invalid_argument, "VectorData object not initialized!");
 #endif
-      return vectorData_(fieldOrdinal, pointOrdinal, dim);
+      const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+      return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
     }
     
     //! operator() for (C,F,P,D) data, which arises in CVFEM; at present unimplemented, and only declared here to allow a generic setJacobian() method in CellTools to compile.
@@ -298,12 +306,19 @@ namespace Intrepid2
       // shape is (F,P) or (F,P,D)
       if (i == 0) // field dimension
       {
-        int numFields = 0;
-        for (int familyOrdinal=0; familyOrdinal<numFamilies(); familyOrdinal++)
+        if (ordinalFilter_.extent_int(0) == 0)
         {
-          numFields += numFieldsInFamily(familyOrdinal);
+          int numFields = 0;
+          for (int familyOrdinal=0; familyOrdinal<numFamilies(); familyOrdinal++)
+          {
+            numFields += numFieldsInFamily(familyOrdinal);
+          }
+          return numFields;
         }
-        return numFields;
+        else
+        {
+          return ordinalFilter_.extent_int(0);
+        }
       }
       else
       {
@@ -344,6 +359,16 @@ namespace Intrepid2
       {
         return 0;
       }
+    }
+    
+    void setOrdinalFilter(Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter)
+    {
+      ordinalFilter_ = ordinalFilter;
+    }
+    
+    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter() const
+    {
+      return ordinalFilter_;
     }
   };
 }

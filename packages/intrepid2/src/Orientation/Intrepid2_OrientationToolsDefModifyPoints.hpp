@@ -369,6 +369,7 @@ namespace Intrepid2 {
       }
     }
 
+
     template<typename TanViewType, typename ParamViewType>
     KOKKOS_INLINE_FUNCTION
     void

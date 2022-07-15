@@ -75,6 +75,15 @@ public:
 
   using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type,
 					    global_ordinal_type, node_type>;
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+					    global_ordinal_type, node_type>;
+
+  // device typedefs
+  typedef typename MatrixType::node_type::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename MatrixType::local_inds_device_view_type local_inds_device_view_type;
+  typedef typename MatrixType::global_inds_device_view_type global_inds_device_view_type;
+  typedef typename MatrixType::values_device_view_type values_device_view_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::OverlappingRowMatrix: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
@@ -220,13 +229,7 @@ public:
                     nonconst_global_inds_host_view_type &Indices,
                     nonconst_values_host_view_type &Values,
                     size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowCopy (global_ordinal_type GlobalRow,
-                    const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                    const Teuchos::ArrayView<scalar_type> &Values,
-                    size_t &NumEntries) const;
-#endif
+
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -243,13 +246,6 @@ public:
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowCopy (local_ordinal_type LocalRow,
-                   const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                   const Teuchos::ArrayView<scalar_type> &Values,
-                   size_t &NumEntries) const;
-#endif
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -265,12 +261,7 @@ public:
   getGlobalRowView (global_ordinal_type GlobalRow,
                     global_inds_host_view_type &indices,
                     values_host_view_type &values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowView (global_ordinal_type GlobalRow,
-                    Teuchos::ArrayView<const global_ordinal_type> &indices,
-                    Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
+
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -285,12 +276,6 @@ public:
   getLocalRowView (local_ordinal_type LocalRow,
                    local_inds_host_view_type & indices,
                    values_host_view_type & values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowView (local_ordinal_type LocalRow,
-                   Teuchos::ArrayView<const local_ordinal_type> &indices,
-                   Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
@@ -365,18 +350,20 @@ public:
 
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
 
-  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+  Teuchos::RCP<const crs_matrix_type> getUnderlyingMatrix() const;
 
-  Teuchos::RCP<const row_matrix_type> getExtMatrix() const;
+  Teuchos::RCP<const crs_matrix_type> getExtMatrix() const;
 
-  Teuchos::ArrayView<const size_t> getExtHaloStarts() const;
+  Kokkos::View<size_t*, typename OverlappingRowMatrix<MatrixType>::device_type> getExtHaloStarts() const;
+  typename Kokkos::View<size_t*, typename OverlappingRowMatrix<MatrixType>::device_type>::HostMirror getExtHaloStartsHost() const;
+
+  void doExtImport();
 
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
   typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
 
   //! The input matrix to the constructor.
@@ -393,10 +380,11 @@ private:
   Teuchos::RCP<const import_type> Importer_;
 
   //! The matrix containing only the overlap rows.
-  Teuchos::RCP<const crs_matrix_type> ExtMatrix_;
+  Teuchos::RCP<crs_matrix_type> ExtMatrix_;
   Teuchos::RCP<const map_type>        ExtMap_;
   Teuchos::RCP<const import_type>     ExtImporter_;
-  Teuchos::Array<size_t>              ExtHaloStarts_;
+  Kokkos::View<size_t*, device_type>  ExtHaloStarts_;
+  typename Kokkos::View<size_t*, device_type>::HostMirror ExtHaloStarts_h;
 
   //! Graph of the matrix (as returned by getGraph()).
   Teuchos::RCP<const row_graph_type> graph_;

@@ -14,7 +14,7 @@ template <> struct Symmetrize<Uplo::Upper, Algo::Internal> {
 
     if (m == n) {
       if (A.span() > 0) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j), [&](const ordinal_type &i) { A(j, i) = A(i, j); });
         });
@@ -38,7 +38,7 @@ template <> struct Symmetrize<Uplo::Lower, Algo::Internal> {
 
     if (m == n) {
       if (A.span() > 0) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j), [&](const ordinal_type &i) { A(i, j) = A(j, i); });
         });

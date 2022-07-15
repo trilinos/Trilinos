@@ -12,15 +12,20 @@
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-// todo: enable hipblas interface after checking on AMD machine
-//#define TACHO_ENABLE_HIPSOLVER
+#define TACHO_ENABLE_ROCSOLVER
+/// TODO:: for testing, enable the following macro.
+///        once it is confirmed that the LDL solver function is avail then find this macro
+///        and enable the code and remove the macro stuffs
+//#define TACHO_ENABLE_ROCSOLVER_LATEST
 #endif
 
 #if defined(TACHO_ENABLE_CUSOLVER)
 #include "cusolverDn.h"
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
-#include "hipsolver.h"
+
+#if defined(TACHO_ENABLE_ROCSOLVER)
+#include "rocblas.h"
+#include "rocsolver.h"
 #endif
 
 namespace Tacho {
@@ -36,11 +41,8 @@ template <typename T> struct Lapack {
   static int potrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo, const int m, T *a, const int lda, T *W,
                    const int lwork, int *dev);
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
-  static int potrf_buffersize(hipsolverHandle_t handle, const hipblasFillMode_t uplo, const int m, T *a, const int lda,
-                              int *lwork);
-  static int potrf(hipsolverHandle_t handle, const hipblasFillMode_t uplo, const int m, T *a, const int lda, T *W,
-                   const int lwork, int *dev);
+#if defined(TACHO_ENABLE_ROCSOLVER)
+  static int potrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, int *dev);
 #endif
 
   ///
@@ -52,10 +54,9 @@ template <typename T> struct Lapack {
   static int sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo, const int m, T *a, const int lda, int *ipiv,
                    T *W, const int lwork, int *dev);
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
-  static int sytrf_buffersize(hipsolverHandle_t handle, const int m, T *a, const int lda, int *lwork);
-  static int sytrf(hipsolverHandle_t handle, const hipblasFillMode_t uplo, const int m, T *a, const int lda, int *ipiv,
-                   T *W, const int lwork, int *dev);
+#if defined(TACHO_ENABLE_ROCSOLVER)
+  static int sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, int *ipiv,
+                   int *dev);
 #endif
 
   ///
@@ -66,9 +67,8 @@ template <typename T> struct Lapack {
   static int getrf_buffersize(cusolverDnHandle_t handle, const int m, const int n, T *a, const int lda, int *lwork);
   static int getrf(cusolverDnHandle_t handle, const int m, const int n, T *a, const int lda, T *w, int *ipiv, int *dev);
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
-  static int getrf_buffersize(hipsolverHandle_t handle, const int m, const int n, T *a, const int lda, int *lwork);
-  static int getrf(hipsolverHandle_t handle, const int m, const int n, T *a, const int lda, T *w, int *ipiv, int *dev);
+#if defined(TACHO_ENABLE_ROCSOLVER)
+  static int getrf(rocblas_handle handle, const int m, const int n, T *a, const int lda, int *ipiv, int *dev);
 #endif
 };
 } // namespace Tacho

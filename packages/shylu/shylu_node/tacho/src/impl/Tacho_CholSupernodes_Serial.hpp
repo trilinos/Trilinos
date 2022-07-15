@@ -113,7 +113,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
         // lock
         while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          KOKKOS_IMPL_PAUSE;
+          TACHO_IMPL_PAUSE;
         Kokkos::store_fence();
 
         for (ordinal_type j = 0; j < srcsize; ++j) {
@@ -134,7 +134,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
           const value_type *__restrict__ ss = src + j * srcsize;
           /* */ value_type *__restrict__ tt = tgt + j * srcsize;
-          const ordinal_Type iend = update_lower ? srcsize : j + 1;
+          const ordinal_type iend = update_lower ? srcsize : j + 1;
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
                                [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
         });
@@ -181,7 +181,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 
         // lock
         while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          KOKKOS_IMPL_PAUSE;
+          TACHO_IMPL_PAUSE;
         Kokkos::store_fence();
 
         for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
@@ -390,7 +390,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
       // lock
       const auto &s = info.supernodes(info.sid_block_colidx(i).first);
       while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-        KOKKOS_IMPL_PAUSE;
+        TACHO_IMPL_PAUSE;
       Kokkos::store_fence();
 
       // both src and tgt increase index

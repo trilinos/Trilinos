@@ -77,7 +77,7 @@ template <typename T> struct UseThisFuture<T, Kokkos::Cuda> {
 };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-template <> struct UseThisDevice<Kokkos::HIP> {
+template <> struct UseThisDevice<Kokkos::Experimental::HIP> {
   using type = Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
   using device_type = type;
 };

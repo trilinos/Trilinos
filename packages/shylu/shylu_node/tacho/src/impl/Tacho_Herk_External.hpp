@@ -34,8 +34,8 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
   }
 
   template <typename MemberType, typename ScalarType, typename ViewTypeA, typename ViewTypeC>
-  inline static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A, const ScalarType beta,
-                           const ViewTypeC &C) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A,
+                                           const ScalarType beta, const ViewTypeC &C) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     // Kokkos::single(Kokkos::PerTeam(member), [&]() {
     invoke(alpha, A, beta, C);

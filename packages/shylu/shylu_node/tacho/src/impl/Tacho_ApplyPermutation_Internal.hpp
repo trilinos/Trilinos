@@ -37,7 +37,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeB>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
                                            const ViewTypeB &B) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     if (A.extent(0) == P.extent(0)) {
       if (A.span() > 0) {
         const ordinal_type m = A.extent(0), n = A.extent(1);

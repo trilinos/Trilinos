@@ -56,6 +56,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
+#include "Ifpack2_OverlappingRowMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -329,6 +330,12 @@ public:
   using row_matrix_type =
     Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                       global_ordinal_type, node_type>;
+
+  //! The Tpetra::CrsMatrix specialization that is a subclass of MatrixType.
+  using crs_matrix_type =
+    Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                      global_ordinal_type, node_type>;
+
   //@}
   // \name Constructors and destructor
   //@{
@@ -774,7 +781,7 @@ private:
   /// \brief The overlapping matrix.
   ///
   /// If nonnull, this is an instance of OverlappingRowMatrix<row_matrix_type>.
-  Teuchos::RCP<row_matrix_type> OverlappingMatrix_;
+  Teuchos::RCP<OverlappingRowMatrix<row_matrix_type>> OverlappingMatrix_;
 
   //! The reordered matrix.
   Teuchos::RCP<row_matrix_type> ReorderedLocalizedMatrix_;

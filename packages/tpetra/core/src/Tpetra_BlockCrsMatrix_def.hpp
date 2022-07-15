@@ -750,8 +750,6 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
-    using execution_space = typename Node::execution_space;
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
@@ -836,17 +834,6 @@ public:
     return graph_.getGlobalNumRows();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  TPETRA_DEPRECATED
-  size_t
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumRows() const
-  {
-    return graph_.getLocalNumRows();
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -854,17 +841,6 @@ public:
   {
     return graph_.getLocalNumRows();
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  TPETRA_DEPRECATED
-  size_t
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeMaxNumRowEntries() const
-  {
-    return graph_.getLocalMaxNumRowEntries();
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
@@ -1038,21 +1014,6 @@ public:
                                 graph_.getLocalGraphDevice ().row_map, blockSize_));
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
-                    Kokkos::MemoryUnmanaged>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const
-  {
-    auto offsets_view_host = Kokkos::View<size_t*,Kokkos::HostSpace>(const_cast<size_t*>(offsets.getRawPtr()), offsets.size());
-    auto offsets_view_device = Kokkos::create_mirror_view_and_copy(typename device_type::memory_space(), offsets_view_host);
-    getLocalDiagCopy(diag, offsets_view_device);
-    Kokkos::deep_copy(offsets_view_host, offsets_view_device);
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -1085,35 +1046,6 @@ public:
     const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
     return validCount;
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  LO
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (const LO localRowInd,
-                   const LO*& colInds,
-                   Scalar*& vals,
-                   LO& numInds) const
-  {
-    
-    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
-      colInds = NULL;
-      vals = NULL;
-      numInds = 0;
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-    else {
-      const size_t absBlockOffsetStart = ptrHost_[localRowInd];
-      colInds = indHost_.data () + absBlockOffsetStart;
-
-      auto vals_host_out = getValuesHost (localRowInd);
-      impl_scalar_type* vals_host_out_raw = const_cast<impl_scalar_type*>(vals_host_out.data ());
-      vals = reinterpret_cast<Scalar*> (vals_host_out_raw);
-      numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
-      return 0; // indicates no error
-    }
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -1138,33 +1070,6 @@ public:
     }
     NumEntries = numInds;
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowCopy (LO LocalRow,
-                   const Teuchos::ArrayView<LO>& Indices,
-                   const Teuchos::ArrayView<Scalar>& Values,
-                   size_t &NumEntries) const
-  {
-    auto vals = getValuesHost(LocalRow);
-    const LO numInds = ptrHost_(LocalRow+1) - ptrHost_(LocalRow);
-    if (numInds > (LO)Indices.size() || numInds*blockSize_*blockSize_ > (LO)Values.size()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                  "Tpetra::BlockCrsMatrix::getLocalRowCopy : Column and/or values array is not large enough to hold "
-                  << numInds << " row entries");
-    }
-    const LO * colInds = indHost_.data() + ptrHost_(LocalRow);
-    for (LO i=0; i<numInds; ++i) {
-      Indices[i] = colInds[i];
-    }
-    for (LO i=0; i<numInds*blockSize_*blockSize_; ++i) {
-      Values[i] = vals[i];
-    }
-    NumEntries = numInds;
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1653,28 +1558,6 @@ public:
     const size_t bs2 = blockSize_ * blockSize_;
     return little_block_host_type (val + bs2 * pointOffset, blockSize_, rowStride);
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowInd, const LO localColInd) const
-  {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-
-    const size_t absRowBlockOffset = ptrHost_[localRowInd];
-    const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
-
-    if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
-      const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
-      return getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
-    }
-    else {
-      return little_block_type ();
-    }
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
@@ -3276,17 +3159,6 @@ public:
   }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  TPETRA_DEPRECATED
-  size_t
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumCols() const
-  {
-    return graph_.getLocalNumCols();
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -3310,17 +3182,6 @@ public:
   {
     return graph_.getGlobalNumEntries();
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  TPETRA_DEPRECATED
-  size_t
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumEntries() const
-  {
-    return graph_.getLocalNumEntries();
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
@@ -3401,49 +3262,6 @@ public:
       "This class doesn't support global matrix indexing.");
 
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowCopy (GO /* GlobalRow */,
-                    const Teuchos::ArrayView<GO> &/* Indices */,
-                    const Teuchos::ArrayView<Scalar> &/* Values */,
-                    size_t &/* NumEntries */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowCopy: "
-      "This class doesn't support global matrix indexing.");
-
-  }
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowView (GO /* GlobalRow */,
-                    Teuchos::ArrayView<const GO> &/* indices */,
-                    Teuchos::ArrayView<const Scalar> &/* values */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowView: "
-      "This class doesn't support global matrix indexing.");
-
-  }
-
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO /* LocalRow */,
-                   Teuchos::ArrayView<const LO>& /* indices */,
-                   Teuchos::ArrayView<const Scalar>& /* values */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
-      "This class doesn't support local matrix indexing.");
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   void

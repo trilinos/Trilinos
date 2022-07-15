@@ -210,66 +210,42 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
                                                  T* sendData,
                                                  const int* recvOffsets,
                                                  T* recvData,
-                                                 MPI_Comm comm )
+                                                 MPI_Comm mpi_communicator )
 {
 #if defined( STK_HAS_MPI)
-  const auto msgTag = get_mpi_tag_manager().get_tag(comm, 10243); //arbitrary tag value, anything less than 32768 is legal
-  const int numProcs = stk::parallel_machine_size(comm);
+  const auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10243); //arbitrary tag value, anything less than 32768 is legal
+  const int num_procs = stk::parallel_machine_size(mpi_communicator);
   const int bytesPerScalar = sizeof(T);
 
-  stk::util::print_unsupported_version_warning(3, __LINE__, __FILE__);
-  if (stk::util::get_common_coupling_version() >= 4) {
-    std::vector<MPI_Request> requests(numProcs*2);
-    int numRequests = 0;
-    for(int proc = 0; proc < numProcs; ++proc) {
-      const int recvSize = recvOffsets[proc+1]-recvOffsets[proc];
-      if(recvSize > 0) {
-        char* recvBuffer = (char*)(&recvData[recvOffsets[proc]]);
-        const int recvSizeBytes = recvSize*bytesPerScalar;
-        MPI_Irecv(recvBuffer, recvSizeBytes, MPI_CHAR, proc, msgTag, comm, &requests[numRequests++]);
-      }
+  //
+  //  Send the actual messages as raw byte streams.
+  //
+  std::vector<MPI_Request> recv_handles(num_procs);
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
+    if(recvSize > 0) {
+      char* recvBuffer = (char*)(&recvData[recvOffsets[iproc]]);
+      const int recvSizeBytes = recvSize*bytesPerScalar;
+      MPI_Irecv(recvBuffer, recvSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
     }
-  
-    for(int proc = 0; proc < numProcs; ++proc) {
-      const int sendSize = sendOffsets[proc+1]-sendOffsets[proc];
-      if(sendSize > 0) {
-        char* sendBuffer = (char*)(&sendData[sendOffsets[proc]]);
-        const int sendSizeBytes = sendSize*bytesPerScalar;
-        MPI_Isend(sendBuffer, sendSizeBytes, MPI_CHAR, proc, msgTag, comm, &requests[numRequests++]);
-      }
-    }
-  
-    std::vector<MPI_Status> statuses(numRequests);
-    MPI_Waitall(numRequests, requests.data(), statuses.data());
   }
-  else {
-    std::vector<MPI_Request> recv_handles(numProcs);
-    for(int iproc = 0; iproc < numProcs; ++iproc) {
-      const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
-      if(recvSize > 0) {
-        char* recvBuffer = (char*)(&recvData[recvOffsets[iproc]]);
-        const int recvSizeBytes = recvSize*bytesPerScalar;
-        MPI_Irecv(recvBuffer, recvSizeBytes, MPI_CHAR, iproc, msgTag, comm, &recv_handles[iproc]);
-      }   
+
+  MPI_Barrier(mpi_communicator);
+
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    const int sendSize = sendOffsets[iproc+1]-sendOffsets[iproc];
+    if(sendSize > 0) {
+      char* sendBuffer = (char*)(&sendData[sendOffsets[iproc]]);
+      const int sendSizeBytes = sendSize*bytesPerScalar;
+      MPI_Send(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator);
     }
-  
-    MPI_Barrier(comm);
-  
-    for(int iproc = 0; iproc < numProcs; ++iproc) {
-      const int sendSize = sendOffsets[iproc+1]-sendOffsets[iproc];
-      if(sendSize > 0) {
-        char* sendBuffer = (char*)(&sendData[sendOffsets[iproc]]);
-        const int sendSizeBytes = sendSize*bytesPerScalar;
-        MPI_Send(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msgTag, comm);
-      }   
-    }
-  
-    for(int iproc = 0; iproc < numProcs; ++iproc) {
-      const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
-      if(recvSize > 0) {
-        MPI_Status status;
-        MPI_Wait( &recv_handles[iproc], &status );
-      }   
+  }
+
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
+    if(recvSize > 0) {
+      MPI_Status status;
+      MPI_Wait( &recv_handles[iproc], &status );
     }
   }
 #endif
