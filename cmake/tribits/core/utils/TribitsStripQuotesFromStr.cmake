@@ -1,4 +1,3 @@
-#
 # @FUNCTION: tribits_strip_quotes_from_str()
 #
 # Remove one set of quotes from the outside of a string if they exist.
