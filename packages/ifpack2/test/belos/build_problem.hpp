@@ -92,9 +92,11 @@ build_problem (Teuchos::ParameterList& test_params,
   RCP<TMV> nullVec = Teuchos::null;
 
   std::string mm_file("not specified");
+  std::string map_mm_file("not specified");
   std::string rhs_mm_file("not specified");
   std::string nullMvec_mm_file("not specified");
   Ifpack2::getParameter(test_params, "mm_file", mm_file);
+  Ifpack2::getParameter(test_params, "map_mm_file", map_mm_file);
   Ifpack2::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
   Ifpack2::getParameter(test_params, "hb_file", hb_file);
@@ -114,8 +116,19 @@ build_problem (Teuchos::ParameterList& test_params,
       // fillCompleteParams->set ("Optimize Storage", false);
       fillCompleteParams->set ("Preserve Local Graph", true);
     }
-    A = reader_type::readSparseFile (mm_file, comm, constructorParams,
+    RCP<const map_type> rowMap;
+    RCP<const map_type> colMap = Teuchos::null;
+    if (map_mm_file != "not specified") {
+      if (comm->getRank() == 0) {
+        std::cout << "Matrix Market file for row Map of the sparse matrix A: " << map_mm_file << std::endl;
+      }
+      rowMap = reader_type::readMapFile(map_mm_file, comm);
+      A = reader_type::readSparseFile (mm_file, rowMap, colMap, rowMap, rowMap);
+    }
+    else {
+      A = reader_type::readSparseFile (mm_file, comm, constructorParams,
                                      fillCompleteParams);
+    }
 
     RCP<const map_type> domainMap = A->getDomainMap ();
     RCP<const map_type> rangeMap = A->getRangeMap ();
