@@ -51,6 +51,8 @@ namespace panzer_stk {
 PeriodicBC_Parser::PeriodicBC_Parser()
    : countStr_("Count")
    , condPrefix_("Periodic Condition ")
+   , searchStr_("Use BBox Search")
+   , newSearch_(false) // TODO BWR swap this to change default search (see also STK_interface.hpp)
 {
 }
 
@@ -58,6 +60,11 @@ const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
 PeriodicBC_Parser::getMatchers() const
 {
    return matchers_;
+}
+
+const bool & PeriodicBC_Parser::getSearchFlag() const
+{
+   return newSearch_;
 }
 
 void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
@@ -76,6 +83,8 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
    }
 
    int numBCs = pl->get<int>(countStr_);
+   // TODO this assumes newSearch_ is instantiated in the constructor
+   newSearch_ = pl->get<bool>(searchStr_,newSearch_);
    pl->validateParameters(*getValidParameters(numBCs));
 
    // loop over boundary conditions
@@ -134,7 +143,8 @@ Teuchos::RCP<const Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters
       pl->set<int>(countStr_,1,
                    "Number of set periodic boundary conditions");
       pl->set<std::string>(ss.str(),"MatchCondition bndry1;bndry2",
-                   "Boundary condition fairs formatted: <MatchCondition> <bndry1>;<bndry2>");
+                   "Boundary condition pairs formatted: <MatchCondition> <bndry1>;<bndry2>");
+      pl->set<bool>(searchStr_,newSearch_,"Use bounding box search for GID match (requires STKSearch) or not");
    }
 
    return pl.getConst();
@@ -147,6 +157,7 @@ Teuchos::RCP<Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters(int c
 
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
    pl->set(countStr_,count);
+   pl->set<bool>(searchStr_,newSearch_,"Use bounding box search for GID match (requires STKSearch) or not");
 
    for(int k=1;k<=count;k++) {
       std::stringstream ss;

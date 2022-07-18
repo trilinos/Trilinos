@@ -84,7 +84,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
@@ -135,13 +135,15 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      std::vector<std::size_t>::iterator itr
         = std::find(locallyRequiredIds->begin(),locallyRequiredIds->end(),owned);
 
+     // if found, replace the local ID with the previously matched ID
+     // this means the locallyRequiredIds may now include IDs owned by a different processor
      if(itr!=locallyRequiredIds->end())
        *itr = mapped;
      else
        unusedOwnedToMapped.push_back(ownedToMapped[i]);
   }
 
-  // build  a unique vector of locally matched IDs
+  // build a unique vector of locally matched IDs
   std::vector<std::size_t> unique_locallyRequiredIds;
   {
      std::set<std::size_t> s;
@@ -223,7 +225,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
