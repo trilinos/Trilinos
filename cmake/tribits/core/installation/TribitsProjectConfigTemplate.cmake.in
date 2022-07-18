@@ -102,27 +102,28 @@ endif()
 # the required components wasn't found.
 set(${PROJECT_NAME}_FOUND TRUE)
 set(${PROJECT_NAME}_NOT_FOUND_MESSAGE "")
+set(selectedComponentsFound "")
 foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
-  set(
-    INCLUDE_FILE
+  set(compPkgConfigFile
     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
     )
- if (EXISTS ${PDOLLAR}{INCLUDE_FILE})
-   # Set ${PROJECT_NAME}_<component>_FOUND.
-   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
-   # Include the package file.
-   include(${PDOLLAR}{INCLUDE_FILE})
-   # Add variables to lists.
-   list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-   list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
- else()
-   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
-   if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-     string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
-       "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
-     set(${PROJECT_NAME}_FOUND FALSE)
-   endif()
- endif()
+  if (EXISTS ${PDOLLAR}{compPkgConfigFile})
+    # Set ${PROJECT_NAME}_<component>_FOUND.
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+    # Include the package file.
+    include(${PDOLLAR}{compPkgConfigFile})
+    # Add variables to lists.
+    list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+    list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
+    list(APPEND selectedComponentsFound ${PDOLLAR}{comp})
+  else()
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+    if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+      string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
+        "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
+      set(${PROJECT_NAME}_FOUND FALSE)
+    endif()
+  endif()
 endforeach()
 
 # Deprecated (see #299)!
@@ -174,7 +175,7 @@ set(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LI
 set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The selected packages for this project
-set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{COMPONENTS_LIST}")
+set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{selectedComponentsFound}")
 
 ## The TPLs enabled for this project
 set(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
@@ -197,7 +198,7 @@ endif()
 # ${PROJECT_NAME}::all_selected_libs  (Depend on COMPONENTS)
 if (NOT TARGET ${PROJECT_NAME}::all_selected_libs)
   set(${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS)
-  foreach (pkg IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
+  foreach (pkg IN ITEMS ${PDOLLAR}{selectedComponentsFound})
     list(APPEND ${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
   endforeach()
   add_library(${PROJECT_NAME}::all_selected_libs IMPORTED INTERFACE GLOBAL)
