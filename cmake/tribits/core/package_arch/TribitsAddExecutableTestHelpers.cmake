@@ -37,6 +37,8 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+
 include(AdvancedSet)
 include(MessageWrapper)
 

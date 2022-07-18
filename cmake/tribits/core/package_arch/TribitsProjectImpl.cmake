@@ -59,7 +59,7 @@ endif()
 
 include(TribitsConstants)
 tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(TribitsIncludeDirectories)
 include(TribitsFindPythonInterp)

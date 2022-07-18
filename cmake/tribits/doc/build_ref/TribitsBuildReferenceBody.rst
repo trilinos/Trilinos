@@ -1775,14 +1775,24 @@ must be specified correctly for the compile and links to work correctly.  The
 <Project> Project already defines these dependencies for the average situation
 for all of these TPLs.  However, there may be situations where the
 dependencies may need to be tweaked to match how these TPLs were actually
-installed on some systems.  The dependencies for a TPL can be overridded by
-setting::
+installed on some systems.  To redefine what dependencies a TPL can have (if
+the upstream TPLs are enabled), set::
 
-  -D <TPLNAME>_LIB_ENABLED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+  -D <TPLNAME>_LIB_ALL_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+
+A dependency on an upstream TPL ``<tpl_i>`` will be set if the an upstream TPL
+``<tpl_i>`` is actually enabled.
 
 If any of the specified TPLs are listed after ``<TPLNAME>`` in the
 ``TPLsList.cmake`` file or are not enabled, then a configure-time error will
 occur.
+
+To take complete control over what dependencies an TPL has, set::
+
+  -D <TPLNAME>_LIB_ENABLED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+
+If the upstream TPLs listed here are not defined upstream and enabled TPLs,
+then an error will occur.
 
 
 Disabling support for a Third-Party Library (TPL)

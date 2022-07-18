@@ -50,11 +50,10 @@
 
 include_guard()
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+
 include(TribitsParseArgumentsHelpers)
 include(MessageWrapper)
-
-cmake_policy(SET CMP0011 NEW) # include() does policy push and pop
-cmake_policy(SET CMP0057 NEW) # Support if ( ... IN_LIST ... )
 
 
 # @MACRO: tribits_extpkg_define_dependencies()
@@ -98,16 +97,19 @@ macro(tribits_extpkg_define_dependencies
   tribits_check_for_unparsed_arguments(PARSE)
   tribits_assert_parse_arg_one_or_more_values(PARSE  DEPENDENCIES)
 
-  set(libAllDependencies "")
-  foreach (upstreamTplDepEntry  IN  LISTS  PARSE_DEPENDENCIES)
-    list(APPEND libAllDependencies ${upstreamTplDepEntry})
-  endforeach()
-
-  set(${tplName}_LIB_ALL_DEPENDENCIES  ${libAllDependencies}  CACHE STRING
+  set(${tplName}_LIB_ALL_DEPENDENCIES  ${PARSE_DEPENDENCIES}  CACHE STRING
     "List of all potential dependencies for external package/TPL '${tplName}'")
   mark_as_advanced(${tplName}_LIB_ALL_DEPENDENCIES)
 
 endmacro()
+#
+# NOTE: Above, we use a cache var for ${tplName}_LIB_ALL_DEPENDENCIES to allow
+# the user to override what dependencies a TPL can depend on.  Since this does
+# not depend on what actual TPLs are enabled, it is okay to set this as a
+# cache var.  As with any genetic change to a CMakeLists.txt file, you always
+# need to blow a way the cache and configure from scratch to get a correct
+# configuration.  (Only some types of changes to CMakeLists.txt files allow
+# for correct reconfiguration.)
 
 
 # @MACRO: tribits_extpkg_setup_enabled_dependencies()
@@ -158,6 +160,12 @@ macro(tribits_extpkg_setup_enabled_dependencies  externalPkgName)
   endforeach()
 
 endmacro()
+#
+# NOTE: Above we set ${externalPkgName}_LIB_ENABLED_DEPENDENCIES as a regular
+# project-level variable, not as a cache var.  That is because we want it to
+# update when the set of enabled TPLs changes without having to reconfigure
+# from scratch.  However, we use the if statement to allow the user to
+# override the default logic on the dependencies for an enabled TPL.
 
 
 # @FUNCTION: tribits_extpkg_get_dep_name_and_vis()

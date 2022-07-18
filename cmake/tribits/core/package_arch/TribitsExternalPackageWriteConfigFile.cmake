@@ -45,8 +45,6 @@ include(TribitsPackageDependencies)
 
 include(MessageWrapper)
 
-cmake_policy(SET CMP0057 NEW) # Support if ( ... IN_LIST ... )
-
 
 # @FUNCTION: tribits_extpkg_write_config_file()
 #

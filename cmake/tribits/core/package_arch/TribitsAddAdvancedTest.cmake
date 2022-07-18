@@ -37,6 +37,7 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(TribitsAddAdvancedTestHelpers)
 include(TribitsConstants)
@@ -44,13 +45,6 @@ include(TribitsConstants)
 include(TribitsPrintList)
 include(AppendStringVar)
 include(PrintVar)
-
-
-# Avoid quoted strings lookup variables
-cmake_policy(SET CMP0054 NEW)
-# NOTE: For some reason, setting this policy at the top level with TriBITS
-# in TribitsCMakePolices.cmake does not affect this function.  Therefore, I
-# have to set it again here.
 
 
 # @FUNCTION: tribits_add_advanced_test()
@@ -527,8 +521,8 @@ cmake_policy(SET CMP0054 NEW)
 #     **any** of the given regular expressions.  This will be applied and take
 #     precedence over other above pass criteria.  For example, if even if
 #     ``PASS_REGULAR_EXPRESSION`` or ``PASS_REGULAR_EXPRESSION_ALL`` match,
-#     then the test will be marked as failed if this fail regex matches the
-#     output.
+#     then the test will be marked as failed if any of the fail regexes match
+#     the output.
 #
 #   ``ALWAYS_FAIL_ON_NONZERO_RETURN``
 #
@@ -611,7 +605,7 @@ cmake_policy(SET CMP0054 NEW)
 # The logic given below can be used to determine pass/fail criteria for a test
 # case both based on what is printed in the test output **and** the return
 # code for the test block command.  Raw CTest, as of version 3.23, does not
-# allow that.  With raw CTest, one can only set determine pass/fail based the
+# allow that.  With raw CTest, one can only set pass/fail criteria based the
 # test output **or** the return code, but not both.  This make
 # `tribits_add_advanced_test()`_ more attractive to use than
 # `tribits_add_test()`_ or raw ``add_test()`` in cases where it is important
@@ -688,9 +682,8 @@ cmake_policy(SET CMP0054 NEW)
 #   ``FINAL_PASS_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
 #     If specified, the test will be assumed to pass if the output matches
-#     **any** of the provided regular expressions ``<regexi>``.  Otherwise, it
-#     will be assumed to fail.  (Sets the CTest property
-#     ``PASS_REGULAR_EXPRESSION`` for the overall test.)
+#     **any** of the provided regular expressions ``<regexi>``.  (Sets the
+#     CTest property ``PASS_REGULAR_EXPRESSION`` for the overall test.)
 #
 #   ``FINAL_FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #

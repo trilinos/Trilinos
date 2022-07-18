@@ -40,7 +40,9 @@
 include(CMakeParseArguments)
 include(GlobalSet)
 
-cmake_policy(SET CMP0007 NEW)
+# Set policy here instead of including TribitCTestPolicis.cmake since we want
+# this to be a standalone module
+cmake_policy(SET CMP0007 NEW)  # Don't ignore empty list items
 
 
 # @MACRO: unittest_initialize_vars()

@@ -1,3 +1,5 @@
+# Set policy here instead of including TribitCTestPolicis.cmake since we want
+# this to be a standalone module
 cmake_policy(SET CMP0007 NEW)
 
 

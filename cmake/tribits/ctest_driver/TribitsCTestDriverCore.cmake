@@ -151,7 +151,7 @@ set( CMAKE_MODULE_PATH
 
 include(TribitsConstants)
 tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(Split)
 include(PrintVar)

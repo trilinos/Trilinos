@@ -37,9 +37,8 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 include(TribitsAddTestHelpers)
-
-cmake_policy(SET CMP0007 NEW) # Don't ignore empty list elements
 
 
 # @FUNCTION: tribits_add_test()
