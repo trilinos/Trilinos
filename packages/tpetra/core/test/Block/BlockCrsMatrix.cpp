@@ -1793,6 +1793,118 @@ namespace {
     const int numRanks = comm->getSize();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
+    //auto out_to_screen = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+
+    if (myRank==0) std::cout << "TEST LOWER DIAG" << std::endl;
+    out << "2nd test: Import a lower triangular BlockCrsMatrix from a source row Map "
+           "where even processors have 1 element and odd processors have 3 elements, "
+           "to a target row Map where each processor have 2 elements. Blocksize=3." << endl;
+    try {
+      Teuchos::OSTab tab1 (out);
+
+      // This test only makes sense for even number of ranks
+      if (numRanks % 2 != 0) {
+        return;
+      }
+
+      const GO indexBase = 0;
+      LO src_num_local_elements;
+      if (myRank % 2 == 0) src_num_local_elements = 1;
+      else                 src_num_local_elements = 3;
+      LO tgt_num_local_elements = 2;
+      const int blocksize = 3;
+
+      // Create row Maps for the source and target
+      RCP<const map_type> src_map =
+        rcp (new map_type (INVALID,
+                           src_num_local_elements,
+                           indexBase, comm));
+      RCP<const map_type> tgt_map =
+        rcp (new map_type (INVALID,
+                           tgt_num_local_elements,
+                           indexBase, comm));
+      //src_map->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+      //tgt_map->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+
+      // Build src graph. Allow for up to 2 off-diagonal entries.
+      Teuchos::RCP<crs_graph_type> src_graph =
+        Teuchos::rcp (new crs_graph_type (src_map, 3));
+      {
+        Array<GO> cols(3);
+        for (GO globalrow = src_map->getMinGlobalIndex ();
+             globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
+          if      (globalrow==0) cols.resize(1);
+          else if (globalrow==1) cols.resize(2);
+          else                   cols.resize(3);
+          for (GO col = 0; col < cols.size(); ++col) {
+            cols[col] = globalrow - col;
+          }
+          src_graph->insertGlobalIndices (globalrow, cols());
+        }
+        src_graph->fillComplete();
+        //src_graph->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+      }
+
+      // Build src matrix. Simple block lower-diagonal matrix with
+      // A(b1,b2) = [(b1)+10*(b2+1)].
+      RCP<block_crs_type> src_mat =
+        rcp (new block_crs_type (*src_graph, blocksize));
+      build_lower_diag_matrix<block_crs_type>(src_mat);
+      //src_mat->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+
+      // Create the importer
+      import_type importer (src_map, tgt_map);
+
+      // Call importAndFillComplete to get the tgt matrix
+      RCP<block_crs_type> tgt_mat =
+        Tpetra::importAndFillCompleteBlockCrsMatrix<block_crs_type> (src_mat, importer);
+      //tgt_mat->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+
+      // Manually build the tgt matrix and test that it matches the returned matrix
+
+      // Build tgt graph.
+      Teuchos::RCP<crs_graph_type> tgt_graph_for_testing =
+        Teuchos::rcp (new crs_graph_type (tgt_map, 3));
+      {
+        Array<GO> cols(3);
+        for (GO globalrow = tgt_map->getMinGlobalIndex ();
+             globalrow <= tgt_map->getMaxGlobalIndex (); ++globalrow) {
+          if      (globalrow==0) cols.resize(1);
+          else if (globalrow==1) cols.resize(2);
+          else                   cols.resize(3);
+          for (GO col = 0; col < cols.size(); ++col) {
+            cols[col] = globalrow - col;
+          }
+          tgt_graph_for_testing->insertGlobalIndices (globalrow, cols());
+        }
+        tgt_graph_for_testing->fillComplete();
+        //tgt_graph_for_testing->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+      }
+
+      // Build tgt matrix
+      RCP<block_crs_type> tgt_mat_for_testing =
+        rcp (new block_crs_type (*tgt_graph_for_testing, blocksize));
+      build_lower_diag_matrix<block_crs_type>(tgt_mat_for_testing);
+      //tgt_mat_for_testing->describe(*out_to_screen, Teuchos::VERB_EXTREME);
+
+      // Test that matrices are identical
+      bool matrices_match = matrices_are_same<block_crs_type>(tgt_mat, tgt_mat_for_testing);
+      TEST_ASSERT(matrices_match);
+     }
+     catch (std::exception& e) { // end of the first test
+       err << "Proc " << myRank << ": " << e.what () << endl;
+       lclErr = 1;
+     }
+
+     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+     TEST_EQUALITY_CONST( gblErr, 0 );
+     if (gblErr != 0) {
+       Tpetra::Details::gathervPrint (out, err.str (), *comm);
+       out << "Above test failed; aborting further tests" << endl;
+       return;
+     }
+
+    if (myRank==0) std::cout << "TEST DIAG" << std::endl;
     out << "1st test: Import a diagonal BlockCrsMatrix from a source row Map "
            "that has all indices on Process 0, to a target row Map that is "
            "uniformly distributed over processes. Blocksize=3." << endl;
@@ -1912,116 +2024,6 @@ namespace {
        out << "Above test failed; aborting further tests" << endl;
        return;
      }
-
-     //auto out_to_screen = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-
-     out << "2nd test: Import a lower triangular BlockCrsMatrix from a source row Map "
-            "where even processors have 1 element and odd processors have 3 elements, "
-            "to a target row Map where each processor have 2 elements. Blocksize=3." << endl;
-     try {
-       Teuchos::OSTab tab1 (out);
-
-       // This test only makes sense for even number of ranks
-       if (numRanks % 2 != 0) {
-         return;
-       }
-
-       const GO indexBase = 0;
-       LO src_num_local_elements;
-       if (myRank % 2 == 0) src_num_local_elements = 1;
-       else                 src_num_local_elements = 3;
-       LO tgt_num_local_elements = 2;
-       const int blocksize = 3;
-
-       // Create row Maps for the source and target
-       RCP<const map_type> src_map =
-         rcp (new map_type (INVALID,
-                            src_num_local_elements,
-                            indexBase, comm));
-       RCP<const map_type> tgt_map =
-         rcp (new map_type (INVALID,
-                            tgt_num_local_elements,
-                            indexBase, comm));
-       //src_map->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-       //tgt_map->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-
-       // Build src graph. Allow for up to 2 off-diagonal entries.
-       Teuchos::RCP<crs_graph_type> src_graph =
-         Teuchos::rcp (new crs_graph_type (src_map, 3));
-       {
-         Array<GO> cols(3);
-         for (GO globalrow = src_map->getMinGlobalIndex ();
-              globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
-           if      (globalrow==0) cols.resize(1);
-           else if (globalrow==1) cols.resize(2);
-           else                   cols.resize(3);
-           for (GO col = 0; col < cols.size(); ++col) {
-             cols[col] = globalrow - col;
-           }
-           src_graph->insertGlobalIndices (globalrow, cols());
-         }
-         src_graph->fillComplete();
-         //src_graph->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-       }
-
-       // Build src matrix. Simple block lower-diagonal matrix with
-       // A(b1,b2) = [(b1)+10*(b2+1)].
-       RCP<block_crs_type> src_mat =
-         rcp (new block_crs_type (*src_graph, blocksize));
-       build_lower_diag_matrix<block_crs_type>(src_mat);
-       //src_mat->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-
-       // Create the importer
-       import_type importer (src_map, tgt_map);
-
-       // Call importAndFillComplete to get the tgt matrix
-       RCP<block_crs_type> tgt_mat =
-         Tpetra::importAndFillCompleteBlockCrsMatrix<block_crs_type> (src_mat, importer);
-       //tgt_mat->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-
-       // Manually build the tgt matrix and test that it matches the returned matrix
-
-       // Build tgt graph.
-       Teuchos::RCP<crs_graph_type> tgt_graph_for_testing =
-         Teuchos::rcp (new crs_graph_type (tgt_map, 3));
-       {
-         Array<GO> cols(3);
-         for (GO globalrow = tgt_map->getMinGlobalIndex ();
-              globalrow <= tgt_map->getMaxGlobalIndex (); ++globalrow) {
-           if      (globalrow==0) cols.resize(1);
-           else if (globalrow==1) cols.resize(2);
-           else                   cols.resize(3);
-           for (GO col = 0; col < cols.size(); ++col) {
-             cols[col] = globalrow - col;
-           }
-           tgt_graph_for_testing->insertGlobalIndices (globalrow, cols());
-         }
-         tgt_graph_for_testing->fillComplete();
-         //tgt_graph_for_testing->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-       }
-
-       // Build tgt matrix
-       RCP<block_crs_type> tgt_mat_for_testing =
-         rcp (new block_crs_type (*tgt_graph_for_testing, blocksize));
-       build_lower_diag_matrix<block_crs_type>(tgt_mat_for_testing);
-       //tgt_mat_for_testing->describe(*out_to_screen, Teuchos::VERB_EXTREME);
-
-       // Test that matrices are identical
-       bool matrices_match = matrices_are_same<block_crs_type>(tgt_mat, tgt_mat_for_testing);
-       TEST_ASSERT(matrices_match);
-      }
-      catch (std::exception& e) { // end of the first test
-        err << "Proc " << myRank << ": " << e.what () << endl;
-        lclErr = 1;
-      }
-
-      reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
-      TEST_EQUALITY_CONST( gblErr, 0 );
-      if (gblErr != 0) {
-        Tpetra::Details::gathervPrint (out, err.str (), *comm);
-        out << "Above test failed; aborting further tests" << endl;
-        return;
-      }
    }
 
   // Test BlockCrsMatrix Export for different graphs with different

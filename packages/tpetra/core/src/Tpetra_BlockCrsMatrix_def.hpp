@@ -2512,15 +2512,6 @@ public:
         const auto policy =
           policy_type(numExportLIDs, 1, 1)
           .set_scratch_size(0, Kokkos::PerTeam(sizeof(GO)*maxRowLength));
-
-        const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-        std::cout << std::endl << std::endl
-                  << "proc" << myRank
-                  << " packAndPrepare"
-                  << " - scratchsize " << sizeof(GO)*maxRowLength
-                  << std::endl << std::endl;
-
-
         Kokkos::parallel_for
           (policy,
            [=](const typename policy_type::member_type &member) {
@@ -2696,7 +2687,6 @@ public:
         PackTraits<impl_scalar_type>::packValueCount
         (val_host.extent (0) ? val_host(0) : impl_scalar_type ());
     }
-
     const size_t maxRowNumEnt = graph_.getLocalMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
@@ -2787,14 +2777,6 @@ public:
                                                sizeof (LO) * maxRowNumEnt +
                                                numBytesPerValue * maxRowNumScalarEnt));
 
-       const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-       std::cout << std::endl << std::endl
-                 << "proc" << myRank
-                 << " unpackAndCombine"
-                 << " - scratchsize " << sizeof (GO) * maxRowNumEnt +
-                                         sizeof (LO) * maxRowNumEnt +
-                                         numBytesPerValue * maxRowNumScalarEnt
-                 << std::endl << std::endl;
 
       using host_scratch_space = typename host_exec::scratch_memory_space;
       using pair_type = Kokkos::pair<size_t, size_t>;
