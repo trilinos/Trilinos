@@ -846,7 +846,6 @@ namespace panzer {
     auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_view());
     auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_view());
     auto basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_vector.get_view());
-    auto div_basis_ref_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.div_basis_ref.get_view());
     auto div_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.div_basis.get_view());
     auto weighted_basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_vector.get_view());
     auto weighted_div_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_div_basis.get_view());
@@ -902,19 +901,15 @@ namespace panzer {
     }
     out << std::endl;
 
-   PHX::MDField<double,Cell,BASIS,IP,Dim> basis_vector_host_ref;
+//   PHX::MDField<double,Cell,BASIS,IP,Dim> basis_vector_host_ref;
 
-    Kokkos::View<double****, Kokkos::LayoutLeft> basis_view("A", 4, 4, 11, 3);
+    Kokkos::View<double****, Kokkos::LayoutLeft, Kokkos::HostSpace> basis_view("A", 4, 4, 11, 3);
     Kokkos::deep_copy(basis_view, basis_values.basis_vector.get_view());
-    auto basis_view_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_view);
-    Kokkos::View<double***, Kokkos::LayoutLeft> div_basis_view("B", 4, 4, 11);
-    Kokkos::deep_copy(div_basis_view, basis_values.div_basis.get_view());
-    auto div_basis_view_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),div_basis_view);
-    basis_values.applyOrientations(orientations);
-
-    Kokkos::deep_copy(div_basis_host,basis_values.div_basis.get_view());
+    Kokkos::View<double***, Kokkos::LayoutLeft, Kokkos::HostSpace> div_basis_view("B", 4, 4, 11);
+    Kokkos::deep_copy(div_basis_view,basis_values.div_basis.get_view());
     Kokkos::deep_copy(weighted_basis_vector_host,basis_values.weighted_basis_vector.get_view());
     Kokkos::deep_copy(weighted_div_basis_host,basis_values.weighted_div_basis.get_view());
+    basis_values.applyOrientations(orientations);
 
     // check with orientations
     const double ortVal[6] = {  1.0,  1.0,  1.0,
@@ -927,13 +922,13 @@ namespace panzer {
          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
          for(int b=0;b<4;b++) {
-//           // check out basis on transformed elemented
-//           std::cout <<  "compare: "<< basis_vector_host(cell, b,i,0) << " == "<< ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,0) <<std::endl;
-           TEST_EQUALITY( basis_vector_host(cell, b,i,0),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,0));
-           TEST_EQUALITY( basis_vector_host(cell, b,i,1),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,1));
-           TEST_EQUALITY( basis_vector_host(cell, b,i,2),    ortVal[faceOrts[cell][b]] * basis_view_mirror(cell, b,i,2));
+           // check out basis on transformed elemented
+//             std::cout <<  "compare: "<< basis_vector_host(cell, b,i,0) << " == "<< ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,0) << " " << ortVal[faceOrts[cell][b]]<<std::endl;
+           TEST_EQUALITY( basis_vector_host(cell, b,i,0),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,0));
+           TEST_EQUALITY( basis_vector_host(cell, b,i,1),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,1));
+           TEST_EQUALITY( basis_vector_host(cell, b,i,2),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,2));
 
-           TEST_EQUALITY(div_basis_host(cell, b,i), ortVal[faceOrts[cell][b]] * div_basis_view_mirror(cell, b,i));
+           TEST_EQUALITY(div_basis_host(cell, b,i), ortVal[faceOrts[cell][b]] * div_basis_view(cell, b,i));
 
            TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,0),relCellVol*weight*basis_vector_host(cell,b,i,0));
            TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,1),relCellVol*weight*basis_vector_host(cell,b,i,1));
