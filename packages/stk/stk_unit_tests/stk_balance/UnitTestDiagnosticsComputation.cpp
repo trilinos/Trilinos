@@ -915,9 +915,9 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_HexMesh_GeometricP
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
   const double cornerNode = 8.0;
-  const double edgeNode = 12.0/2.0;
-  const double centerNode = 18.0/4.0;
-  const double elemWeight = 2*cornerNode + 4*edgeNode + 2*centerNode;
+  const double edgeNode = 12.0;
+  const double centerNode = 18.0;
+  const double elemWeight = (2*cornerNode + 4*edgeNode + 2*centerNode)/8;
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {4*elemWeight}; }
   else if (get_parallel_size() == 2) { expectedValues = {2*elemWeight, 2*elemWeight}; }
@@ -939,9 +939,9 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_HexMesh_GraphParti
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
   const double cornerNode = 8.0;
-  const double edgeNode = 12.0/2.0;
-  const double centerNode = 18.0/4.0;
-  const double elemWeight = 2*cornerNode + 4*edgeNode + 2*centerNode;
+  const double edgeNode = 12.0;
+  const double centerNode = 18.0;
+  const double elemWeight = (2*cornerNode + 4*edgeNode + 2*centerNode)/8;
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {4*elemWeight}; }
   else if (get_parallel_size() == 2) { expectedValues = {2*elemWeight, 2*elemWeight}; }
@@ -954,25 +954,28 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_HexMesh_GraphParti
 std::tuple<double, double, double, double, double, double>
 get_hex_pyramid_tet_element_connectivity_weights()
 {
-  const double node1Weight =  8.0/1.0;
-  const double node2Weight =  8.0/1.0;
-  const double node3Weight =  8.0/1.0;
-  const double node4Weight =  8.0/1.0;
-  const double node5Weight = 10.0/3.0;
-  const double node6Weight =  9.0/2.0;
-  const double node7Weight = 10.0/3.0;
-  const double node8Weight = 12.0/6.0;
-  const double node9Weight =  5.0/2.0;
-  const double node10Weight = 8.0/5.0;
-  const double node11Weight = 5.0/2.0;
-  const double node12Weight = 5.0/2.0;
-  const double elem1Weight = node1Weight + node2Weight + node3Weight + node4Weight +
-                             node5Weight + node6Weight + node7Weight + node8Weight;
-  const double elem2Weight = node5Weight + node6Weight + node7Weight + node8Weight + node10Weight;
-  const double elem3Weight = node5Weight + node9Weight + node8Weight + node10Weight;
-  const double elem4Weight = node8Weight + node9Weight + node12Weight + node10Weight;
-  const double elem5Weight = node8Weight + node12Weight + node10Weight + node11Weight;
-  const double elem6Weight = node7Weight + node8Weight + node10Weight + node11Weight;
+  const double node1Weight =  8.0;
+  const double node2Weight =  8.0;
+  const double node3Weight =  8.0;
+  const double node4Weight =  8.0;
+  const double node5Weight = 10.0;
+  const double node6Weight =  9.0;
+  const double node7Weight = 10.0;
+  const double node8Weight = 12.0;
+  const double node9Weight =  5.0;
+  const double node10Weight = 8.0;
+  const double node11Weight = 5.0;
+  const double node12Weight = 5.0;
+  const double hexElemsPerNode = 1;
+  const double pyrElemsPerNode = 6.0/2.0;
+  const double tetElemsPerNode = 6;
+  const double elem1Weight = (node1Weight + node2Weight + node3Weight + node4Weight +
+                              node5Weight + node6Weight + node7Weight + node8Weight)/8/hexElemsPerNode;
+  const double elem2Weight = (node5Weight + node6Weight + node7Weight + node8Weight + node10Weight)/5/pyrElemsPerNode;
+  const double elem3Weight = (node5Weight + node9Weight + node8Weight + node10Weight)/4/tetElemsPerNode;
+  const double elem4Weight = (node8Weight + node9Weight + node12Weight + node10Weight)/4/tetElemsPerNode;
+  const double elem5Weight = (node8Weight + node12Weight + node10Weight + node11Weight)/4/tetElemsPerNode;
+  const double elem6Weight = (node7Weight + node8Weight + node10Weight + node11Weight)/4/tetElemsPerNode;
 
   return std::make_tuple(elem1Weight, elem2Weight, elem3Weight, elem4Weight, elem5Weight, elem6Weight);
 }
@@ -1037,9 +1040,10 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_ShellMesh_Geometri
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
   const double cornerNode = 4.0;
-  const double edgeNode = 6.0/2.0;
-  const double centerNode = 9.0/4.0;
-  const double elemWeight = cornerNode + 2*edgeNode + centerNode;
+  const double edgeNode = 6.0;
+  const double centerNode = 9.0;
+  const double quadShellElemsPerNode = 1.0;
+  const double elemWeight = (cornerNode + 2*edgeNode + centerNode)/4/quadShellElemsPerNode;
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {4*elemWeight}; }
   else if (get_parallel_size() == 2) { expectedValues = {2*elemWeight, 2*elemWeight}; }
@@ -1061,9 +1065,10 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_ShellMesh_GraphPar
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
   const double cornerNode = 4.0;
-  const double edgeNode = 6.0/2.0;
-  const double centerNode = 9.0/4.0;
-  const double elemWeight = cornerNode + 2*edgeNode + centerNode;
+  const double edgeNode = 6.0;
+  const double centerNode = 9.0;
+  const double quadShellElemsPerNode = 1.0;
+  const double elemWeight = (cornerNode + 2*edgeNode + centerNode)/4/quadShellElemsPerNode;
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {4*elemWeight}; }
   else if (get_parallel_size() == 2) { expectedValues = {2*elemWeight, 2*elemWeight}; }
@@ -1076,15 +1081,16 @@ TEST_F(TestDiagnosticsComputation, ConnectivityWeight_Balance_ShellMesh_GraphPar
 std::tuple<double, double, double, double>
 get_beam_element_connectivity_weights()
 {
-  const double node1Weight = 2.0/1.0;
-  const double node2Weight = 3.0/2.0;
-  const double node3Weight = 4.0/3.0;
-  const double node4Weight = 2.0/1.0;
-  const double node5Weight = 2.0/1.0;
-  const double elem1Weight = node1Weight + node2Weight;
-  const double elem2Weight = node2Weight + node3Weight;
-  const double elem3Weight = node3Weight + node4Weight;
-  const double elem4Weight = node3Weight + node5Weight;
+  const double node1Weight = 2.0;
+  const double node2Weight = 3.0;
+  const double node3Weight = 4.0;
+  const double node4Weight = 2.0;
+  const double node5Weight = 2.0;
+  const double beamElemsPerNode = 1.0;
+  const double elem1Weight = (node1Weight + node2Weight)/2/beamElemsPerNode;
+  const double elem2Weight = (node2Weight + node3Weight)/2/beamElemsPerNode;
+  const double elem3Weight = (node3Weight + node4Weight)/2/beamElemsPerNode;
+  const double elem4Weight = (node3Weight + node5Weight)/2/beamElemsPerNode;
 
   return std::make_tuple(elem1Weight, elem2Weight, elem3Weight, elem4Weight);
 }

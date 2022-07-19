@@ -66,37 +66,25 @@ GraphEdgesForElement Graph::get_edges_for_element(impl::LocalId elem) const
     return GraphEdgesForElement(&m_graphEdges[begin], &m_graphEdges[end]);
 }
 
-void Graph::set_offsets()
+void Graph::set_offsets(impl::LocalId firstElem)
 {
-  const unsigned numOffsets = m_elemOffsets.size();
-  m_elemOffsets.assign(std::max(1u, numOffsets), 0);
+  static constexpr impl::LocalId zero = 0;
+  impl::LocalId prevElem = std::max(zero, static_cast<impl::LocalId>(firstElem-1));
+  unsigned edgeOffset = prevElem==0 ? 0 : m_elemOffsets[prevElem];
+  const unsigned edgesSize = m_graphEdges.size();
 
-  impl::LocalId prevElem = impl::INVALID_LOCAL_ID;
-  unsigned edgeCounter = 0;
-  for(const GraphEdge& edge : m_graphEdges) {
-    impl::LocalId elem1 = edge.elem1();
-    if (elem1 != prevElem) {
-      if (prevElem != impl::INVALID_LOCAL_ID) {
-        m_elemOffsets[prevElem] = edgeCounter;
-      }
-      edgeCounter = 0;
-      prevElem = elem1;
+  for( ; edgeOffset<edgesSize; ++edgeOffset) {
+    impl::LocalId elem1 = m_graphEdges[edgeOffset].elem1();
+    while (prevElem < elem1) {
+      m_elemOffsets[++prevElem] = edgeOffset;
     }
-    ++edgeCounter;
   }
 
-  if (prevElem != impl::INVALID_LOCAL_ID) {
-    m_elemOffsets[prevElem] = edgeCounter;
+  ++prevElem;
+  impl::LocalId end = m_elemOffsets.size();
+  while(prevElem < end) {
+    m_elemOffsets[prevElem++] = edgeOffset;
   }
-
-  unsigned edgeOffset = 0;
-  size_t numElems = m_elemOffsets.size()-1;
-  for(size_t i=0; i<numElems; ++i) {
-    unsigned count = m_elemOffsets[i];
-    m_elemOffsets[i] = edgeOffset;
-    edgeOffset += count;
-  }
-  m_elemOffsets.back() = edgeOffset;
 }
 
 using IterType = std::vector<GraphEdge>::iterator;
@@ -106,7 +94,7 @@ void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
   ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
   if (!graphEdges.empty()) {
     stk::util::insert_keep_sorted(graphEdges, m_graphEdges, GraphEdgeLessByElem1());
-    set_offsets();
+    set_offsets(graphEdges[0].elem1());
   }
 }
 
@@ -134,7 +122,7 @@ void Graph::delete_sorted_edges(const std::vector<GraphEdge>& edgesToDelete)
                                       [](const GraphEdge& edge)
                                       { return edge.vertex1 == impl::INVALID_LOCAL_ID; }),
                        m_graphEdges.end());
-    set_offsets();
+    set_offsets(edgesToDelete[0].elem1());
   }
 }
 

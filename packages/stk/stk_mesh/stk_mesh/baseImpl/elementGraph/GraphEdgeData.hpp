@@ -65,7 +65,7 @@ public:
     void clear();
 
 private:
-    void set_offsets();
+    void set_offsets(impl::LocalId firstElem = 0);
     std::vector<GraphEdge> m_graphEdges;
     std::vector<unsigned> m_elemOffsets;
 };

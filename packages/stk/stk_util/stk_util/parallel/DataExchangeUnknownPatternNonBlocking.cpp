@@ -25,7 +25,7 @@ void DataExchangeUnknownPatternNonBlocking::yield()
 {
   // Note: sleep_for would be better for this, but its minimum sleep time is
   // too long
-  std::this_thread::yield();
+  //std::this_thread::yield();
 }
 
 }  // namespace

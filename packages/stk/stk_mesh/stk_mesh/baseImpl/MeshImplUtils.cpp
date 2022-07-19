@@ -1264,38 +1264,6 @@ void comm_sync_aura_send_recv(
   }
 }
 
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int share_proc,
-                             std::vector<EntityProc>& send)
-{
-  EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
-  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
-
-  // If related entity is higher rank, I own it, and it is not
-  // already shared by proc, ghost it to the sharing processor.
-  if ( bulk_data.bucket(rel_entity).owned() && ! bulk_data.in_shared(rel_entity, share_proc) ) {
-
-    send.emplace_back(rel_entity,share_proc);
-
-    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
-    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
-    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
-    {
-      const int num_rels = bulk_data.num_connectivity(rel_entity, irank);
-      Entity const* rels     = bulk_data.begin(rel_entity, irank);
-
-      for (int r = 0; r < num_rels; ++r)
-      {
-        Entity const rel_of_rel_entity = rels[r];
-        if (bulk_data.is_valid(rel_of_rel_entity)) {
-          insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, share_proc, send);
-        }
-      }
-    }
-  }
-}
-
 EntityRank get_highest_upward_connected_rank(const BulkData& mesh, Entity entity)
 {
   const EntityRank entityRank = mesh.entity_rank(entity);

@@ -100,7 +100,9 @@ public:
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
       m_skinMeshSelector(nullptr),
-      m_multiStateSuffixes(nullptr)
+      m_multiStateSuffixes(nullptr),
+      m_filterEmptyEntityBlocks(false),
+      m_filterEmptyAssemblyEntityBlocks(false)
     {
         initialize_output_selectors();
         setup_output_file(filename, communicator, property_manager, type, openFileImmediately);
@@ -128,7 +130,9 @@ public:
       m_subsetSelector(nullptr),
       m_sharedSelector(nullptr),
       m_skinMeshSelector(nullptr),
-      m_multiStateSuffixes(nullptr)
+      m_multiStateSuffixes(nullptr),
+      m_filterEmptyEntityBlocks(false),
+      m_filterEmptyAssemblyEntityBlocks(false)
     {
         m_region = ioss_output_region;
         m_meshDefined = true;
@@ -216,6 +220,9 @@ public:
 
     void set_enable_edge_io(bool enableEdgeIO);
 
+    void set_filter_empty_entity_blocks(const bool filterEmptyEntityBlocks);
+    void set_filter_empty_assembly_entity_blocks(const bool filterEmptyAssemblyEntityBlocks);
+
     Ioss::DatabaseIO *get_output_database();
 
     std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
@@ -261,6 +268,9 @@ private:
     std::vector<GlobalAnyVariable> m_globalAnyFields;
 
     std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
+    bool m_filterEmptyEntityBlocks;
+    bool m_filterEmptyAssemblyEntityBlocks;
 
     OutputFile(const OutputFile &);
     const OutputFile & operator=(const OutputFile &);

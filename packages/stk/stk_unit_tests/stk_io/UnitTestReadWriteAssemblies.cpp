@@ -127,12 +127,12 @@ TEST_F(Assembly_legacy, readWriteAssembly_simple_emptyblock)
   const std::vector<std::string> partNames {"block_1", "block_2"};
 
   stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
-  stk::mesh::Part& block1Part = create_io_part(partNames[0]);
-  stk::mesh::Part& block2Part = create_io_part(partNames[1]);
+  stk::mesh::Part& block1Part = create_io_part(partNames[0], 1);
+  stk::mesh::Part& block2Part = create_io_part(partNames[1], 2);
   declare_subsets(assemblyPart, {&block1Part, &block2Part});
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
 
-  test_write_then_read_block_assemblies(1);
+  test_write_then_read_block_assemblies(1, stk::mesh::PartVector{&block2Part});
 }
 
 TEST_F(Assembly_legacy, readWriteAssembly_simple_emptysurface)
@@ -638,12 +638,12 @@ TEST_F(Assembly, readWriteAssembly_simple_emptyblock)
   const std::vector<std::string> partNames {"block_1", "block_2"};
 
   stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
-  stk::mesh::Part& block1Part = create_io_part(partNames[0]);
-  stk::mesh::Part& block2Part = create_io_part(partNames[1]);
+  stk::mesh::Part& block1Part = create_io_part(partNames[0], 1);
+  stk::mesh::Part& block2Part = create_io_part(partNames[1], 2);
   declare_subsets(assemblyPart, {&block1Part, &block2Part});
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
 
-  test_write_then_read_block_assemblies(1);
+  test_write_then_read_block_assemblies(1, stk::mesh::PartVector{&block2Part});
 }
 
 TEST_F(Assembly, readWriteAssembly_simple_emptysurface)

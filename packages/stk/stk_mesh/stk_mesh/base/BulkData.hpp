@@ -175,6 +175,7 @@ public:
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2022
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
    *          distribute bulk data over the given parallel machine.
@@ -182,7 +183,7 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-  BulkData(   MetaData & mesh_meta_data
+  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
             , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
 #ifdef SIERRA_MIGRATION
@@ -191,6 +192,7 @@ public:
             , FieldDataManager *field_dataManager = nullptr
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
+#endif
 
   virtual ~BulkData();
 

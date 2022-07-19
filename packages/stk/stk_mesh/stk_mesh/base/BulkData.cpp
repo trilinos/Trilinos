@@ -86,6 +86,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 #include <stk_mesh/baseImpl/elementGraph/SideSharingUsingGraph.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
@@ -325,6 +326,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
 }
 
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2022
 //----------------------------------------------------------------------
 BulkData::BulkData(MetaData & mesh_meta_data,
                    ParallelMachine parallel,
@@ -422,6 +424,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
 
   m_meshModification.set_sync_state_synchronized();
 }
+#endif
 
 //----------------------------------------------------------------------
 BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
@@ -3718,40 +3721,49 @@ void BulkData::communicate_entity_modification( const bool shared , std::vector<
   // Sizing send buffers:
   pack_entity_modification(shared , comm);
 
-  const bool needToSendOrRecv = comm.allocate_buffers();
-  if ( needToSendOrRecv )
+  comm.allocate_buffers();
+
+  bool needToSend = false;
+  for (int procNumber=0; procNumber < p_size; ++procNumber)
   {
+    if (comm.send_buffer(procNumber).capacity() > 0)
+    {
+      needToSend = true;
+      break;
+    }
+  }
 
-    // Packing send buffers:
+  // Packing send buffers:
+  if (needToSend) {
     pack_entity_modification(shared , comm);
+  }
 
-    comm.communicate();
+  comm.communicate();
 
-    const EntityCommListInfoVector & entityCommList = this->internal_comm_list();
-    for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
-      CommBuffer & buf = comm.recv_buffer( procNumber );
-      EntityKey key;
-      EntityState state;
-      int remote_owned_closure_int;
-      bool remote_owned_closure;
+  const EntityCommListInfoVector & entityCommList = this->internal_comm_list();
+  for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
+    CommBuffer & buf = comm.recv_buffer( procNumber );
+    EntityKey key;
+    EntityState state;
+    int remote_owned_closure_int;
+    bool remote_owned_closure;
 
-      while ( buf.remaining() ) {
+    while ( buf.remaining() ) {
 
-        buf.unpack<EntityKey>( key )
-           .unpack<EntityState>( state )
-           .unpack<int>( remote_owned_closure_int);
-        remote_owned_closure = ((remote_owned_closure_int==1)?true:false);
+      buf.unpack<EntityKey>( key )
+          .unpack<EntityState>( state )
+          .unpack<int>( remote_owned_closure_int);
+      remote_owned_closure = ((remote_owned_closure_int==1)?true:false);
 
-        // search through entity_comm, should only receive info on entities
-        // that are communicated.
-        EntityCommListInfo info = find_entity(*this, entityCommList, key);
-        int remoteProc = procNumber;
-        if (!shared && remoteProc == parallel_rank()) {
-          remoteProc = parallel_owner_rank(info.entity);
-        }
-        EntityParallelState parallel_state = {remoteProc, state, info, remote_owned_closure, this};
-        data.push_back( parallel_state );
+      // search through entity_comm, should only receive info on entities
+      // that are communicated.
+      EntityCommListInfo info = find_entity(*this, entityCommList, key);
+      int remoteProc = procNumber;
+      if (!shared && remoteProc == parallel_rank()) {
+        remoteProc = parallel_owner_rank(info.entity);
       }
+      EntityParallelState parallel_state = {remoteProc, state, info, remote_owned_closure, this};
+      data.push_back( parallel_state );
     }
   }
 

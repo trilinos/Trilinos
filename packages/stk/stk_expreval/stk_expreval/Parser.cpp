@@ -404,6 +404,21 @@ parseFactor(Eval & eval,
   return factor;
 }
 
+bool isRelation(Node* node)
+{
+  switch (node->m_opcode) {
+    case OPCODE_EQUAL:
+    case OPCODE_NOT_EQUAL:
+    case OPCODE_LESS:
+    case OPCODE_GREATER:
+    case OPCODE_LESS_EQUAL:
+    case OPCODE_GREATER_EQUAL:
+      return true;
+    default:
+      return false;
+  }
+}
+
 Node *
 parseRelation(Eval & eval,
               LexemVector::const_iterator from,
@@ -444,6 +459,10 @@ parseRelation(Eval & eval,
   Node *relation = eval.newNode(relation_opcode);
   relation->m_left = parseExpression(eval, from, relation_it);
   relation->m_right = parseExpression(eval, relation_it + 1, to);
+
+  if (isRelation(relation->m_left) || isRelation(relation->m_right)) {
+    throw std::runtime_error("stk::expreval::parseRelation: stk_expreval does not support chained comparisons");
+  }
 
   return relation;
 }

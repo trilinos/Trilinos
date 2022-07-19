@@ -244,11 +244,6 @@ void comm_sync_aura_send_recv(
   EntityProcMapping& entityProcMapping,
   std::vector<bool>& ghostStatus );
 
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int share_proc,
-                             std::vector<EntityProc>& send);
-
 void insert_upward_relations(const BulkData& bulk_data,
                              const EntityProcMapping& entitySharing,
                              Entity rel_entity,
