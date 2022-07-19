@@ -12,7 +12,7 @@ module load parmetis/4.0.3
 module load metis/5.1.0
 module load yaml-cpp/0.7.0
 module load zlib/1.2.11
-module load superlu/5.2.2
+module load superlu/5.3.0
 module load ninja
 
 export MPICH_GPU_SUPPORT_ENABLED=1
