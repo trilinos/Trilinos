@@ -67,6 +67,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 
@@ -234,16 +235,21 @@ namespace MueLu {
         if(Acrs.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix from matrix A.");
         RCP<TpetraCrsMatrix> At = rcp_dynamic_cast<TpetraCrsMatrix>(Acrs);
-        if(At.is_null())
-          throw std::runtime_error("Ifpack2Smoother: Cannot extract TpetraCrsMatrix from matrix A.");
-
-        RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
-        RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
-        RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
-        A_ = blockWrap;
-        this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
-
-        paramList.remove("smoother: use blockcrsmatrix storage");
+        if(At.is_null()) {
+          if(!Xpetra::Helpers<Scalar,LO,GO,Node>::isTpetraBlockCrs(matA))
+            throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix or BlockCrsMatrix from matrix A.");          
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using (native) BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
+        else {
+          RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
+          RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
+          RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
+          A_ = blockWrap;
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
       }
     }
 
