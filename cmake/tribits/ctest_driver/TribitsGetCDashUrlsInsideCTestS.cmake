@@ -428,7 +428,7 @@ function(tribits_get_cdash_index_php_from_drop_site_and_location)
     CTEST_DROP_SITE  ${PREFIX_CTEST_DROP_SITE}
     CTEST_DROP_LOCATION  ${PREFIX_CTEST_DROP_LOCATION}
     CDASH_SITE_URL_OUT  cdashSiteUrl )
-  SET(${PREFIX_INDEX_PHP_URL_OUT} "${cdashSiteUrl}/index.php" PARENT_SCOPE)
+  set(${PREFIX_INDEX_PHP_URL_OUT} "${cdashSiteUrl}/index.php" PARENT_SCOPE)
 endfunction()
 
 

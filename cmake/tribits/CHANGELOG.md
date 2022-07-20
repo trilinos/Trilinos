@@ -2,6 +2,14 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2022-07-20:
+
+* ** Changed:** Fixed TriBITS generated and installed `<tplName>Config.cmake`
+  files to not point into the build dir but instead point into relative dir
+  for upstream TPL's when calling find_dependency() (see
+  [TribitsPub/TriBITS#500](https://github.com/TriBITSPub/TriBITS/issues/500)).
+  This also makes these files relocatable.
+
 ## 2022-07-14:
 
 * **Added:** Added support for `FindTPL<tplName>Dependencies.cmake` with new
