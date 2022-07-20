@@ -901,15 +901,16 @@ namespace panzer {
     }
     out << std::endl;
 
-//   PHX::MDField<double,Cell,BASIS,IP,Dim> basis_vector_host_ref;
-
     Kokkos::View<double****, Kokkos::LayoutLeft, Kokkos::HostSpace> basis_view("A", 4, 4, 11, 3);
     Kokkos::deep_copy(basis_view, basis_values.basis_vector.get_view());
     Kokkos::View<double***, Kokkos::LayoutLeft, Kokkos::HostSpace> div_basis_view("B", 4, 4, 11);
     Kokkos::deep_copy(div_basis_view,basis_values.div_basis.get_view());
-    Kokkos::deep_copy(weighted_basis_vector_host,basis_values.weighted_basis_vector.get_view());
-    Kokkos::deep_copy(weighted_div_basis_host,basis_values.weighted_div_basis.get_view());
     basis_values.applyOrientations(orientations);
+    // TODO: MPL Verify the that:
+    Kokkos::deep_copy(basis_vector_host,basis_values.basis_vector.get_view());
+    Kokkos::deep_copy(div_basis_host,basis_values.div_basis.get_view());
+    Kokkos::deep_copy(weighted_basis_vector_host,basis_values.weighted_basis_vector.get_view());
+    Kokkos::deep_copy(weighted_div_basis_host, basis_values.weighted_div_basis.get_view());
 
     // check with orientations
     const double ortVal[6] = {  1.0,  1.0,  1.0,
@@ -923,7 +924,6 @@ namespace panzer {
 
          for(int b=0;b<4;b++) {
            // check out basis on transformed elemented
-//             std::cout <<  "compare: "<< basis_vector_host(cell, b,i,0) << " == "<< ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,0) << " " << ortVal[faceOrts[cell][b]]<<std::endl;
            TEST_EQUALITY( basis_vector_host(cell, b,i,0),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,0));
            TEST_EQUALITY( basis_vector_host(cell, b,i,1),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,1));
            TEST_EQUALITY( basis_vector_host(cell, b,i,2),    ortVal[faceOrts[cell][b]] * basis_view(cell, b,i,2));
