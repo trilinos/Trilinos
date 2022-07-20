@@ -9,6 +9,7 @@
 //#include "Tpetra_RowMatrixTransposer.hpp"
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 namespace Zoltan2
 {
@@ -70,7 +71,7 @@ compute_local_transpose_graph(
   const LocalCrsGraphType &local_graph, 
   const size_t num_cols)
 {
-  using KokkosKernels::Impl::transpose_graph;
+  using KokkosSparse::Impl::transpose_graph;
 
   typedef LocalCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
