@@ -105,7 +105,7 @@ initLocalPrec()
   auto& p = this->params_;
   auto matCrs = Ifpack2::Details::getCrsMatrix(this->mat_);
 
-  bool skipSortMatrix = matCrs && matCrs->getCrsGraph()->isSorted() &&
+  bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                        !p.use_metis;
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
