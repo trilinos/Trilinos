@@ -171,6 +171,7 @@
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#include "MueLu_RegionRFactory_kokkos.hpp"
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
@@ -288,6 +289,7 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory")              return Build2<RebalanceTransferFactory>              (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "RegionRFactory")                        return Build2<RegionRFactory>                        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RegionRFactory_kokkos")                 return Build2<RegionRFactory_kokkos>                 (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "ReorderBlockAFactory")                  return Build2<ReorderBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RepartitionInterface")                  return Build2<RepartitionInterface>                  (paramList, factoryMapIn, factoryManagersIn);
