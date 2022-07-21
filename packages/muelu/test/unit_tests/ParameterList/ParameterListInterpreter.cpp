@@ -43,14 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <MueLu_TestHelpers.hpp>
 
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Exceptions.hpp>
+
+#include <Xpetra_IO.hpp>
 
 namespace MueLuTests {
 
@@ -67,6 +69,10 @@ namespace MueLuTests {
     ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
 
     for(int i=0; i< fileList.size(); i++) {
+      // Ignore files with "BlockCrs" in their name
+      auto found = fileList[i].find("BlockCrs");
+      if(found != std::string::npos) continue;
+
       out << "Processing file: " << fileList[i] << std::endl;
       ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
 
@@ -83,8 +89,50 @@ namespace MueLuTests {
     out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2, Amesos, Amesos2)." << std::endl;
 #   endif
   }
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#if defined(HAVE_MUELU_TPETRA)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      Teuchos::ParameterList matrixParams;
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",(GlobalOrdinal)300);// needs to be even
+
+      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixParams,Xpetra::UseTpetra);  
+      out<<"Matrix Size = "<<A->getGlobalNumRows()<<std::endl;
+
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      
+      ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
+      
+      for(int i=0; i< fileList.size(); i++) {
+        // Only run files with "BlockCrs" in their name
+        auto found = fileList[i].find("BlockCrs");
+        if(found == std::string::npos) continue;
+
+        out << "Processing file: " << fileList[i] << std::endl;
+        ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
+        
+        RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+        H->GetLevel(0)->Set("A", A);
+        
+        mueluFactory.SetupHierarchy(*H);
+        
+        //TODO: check no unused parameters
+        //TODO: check results of Iterate()
+      }
+    }
+#   endif
+    TEST_EQUALITY(1,1);
+  }
+
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
