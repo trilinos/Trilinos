@@ -84,6 +84,7 @@ IF (ATDM_COMPLEX)
     Intrepid2
     STK
     Percept
+    Krino
     NOX
     Moertel
     MueLu
