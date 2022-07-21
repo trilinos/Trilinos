@@ -2298,24 +2298,28 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
   ``${TPL_NAME}_FINDMOD``
 
-    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's find
-    module (typically named `FindTPL<tplName>.cmake`_): This is set using the
-    ``FINDMOD`` field in the call to `tribits_repository_define_tpls()`_.  The
-    final value of the variable is defined by the *last*
-    `<repoDir>/TPLsList.cmake`_ file that is processed that declares the TPL
-    ``TPL_NAME``.  For example, if ``Repo1/TPLsList.cmake`` and
-    ``Repo2/TPLsList.cmake`` both list the TPL ``SomeTpl``, then if ``Repo2``
-    is processed after ``Repo1``, then ``SomeTpl_FINDMOD`` is determined by
-    ``Repo2/TPLsList.cmake`` and the find module listed in
-    ``Repo1/TPLsList.cmake`` is ignored.
+    Relative path (w.r.t. ``<projectDir>``) or absolute path for the external
+    package/TPL's find module (typically named `FindTPL<tplName>.cmake`_):
+    This is set using the ``FINDMOD`` field in the call to
+    `tribits_repository_define_tpls()`_.  The final value of the variable is
+    defined by the *last* `<repoDir>/TPLsList.cmake`_ file that is processed
+    that declares the TPL ``TPL_NAME``.  For example, if
+    ``Repo1/TPLsList.cmake`` and ``Repo2/TPLsList.cmake`` both list the TPL
+    ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
+    ``SomeTpl_FINDMOD`` is determined by ``Repo2/TPLsList.cmake`` and the find
+    module listed in ``Repo1/TPLsList.cmake`` is ignored.
 
   .. _<tplName>_DEPENDENCIES_FILE:
   .. _${TPL_NAME}_DEPENDENCIES_FILE:
 
   ``${TPL_NAME}_DEPENDENCIES_FILE``
 
-    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's
-    dependencies file (typically named `FindTPL<tplName>Dependencies.cmake`_)
+    Relative path (w.r.t. ``<projectDir>``) or absolute path for the external
+    package/TPL's dependencies file (typically named
+    `FindTPL<tplName>Dependencies.cmake`_).  This is always beside the find
+    module `${TPL_NAME}_FINDMOD`_ (and in fact
+    ``${TPL_NAME}_DEPENDENCIES_FILE`` is constructed from
+    ``${TPL_NAME}_FINDMOD``).
 
   .. _${TPL_NAME}_TESTGROUP:
 
@@ -2341,6 +2345,13 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
     Absolute path of the (last) `<repoDir>/TPLsList.cmake`_ file that declared
     this external package/TPL.
+
+Note, the ``<findmod>`` field path in the call to
+`tribits_repository_define_tpls()`_ is relative to the TriBITS repository dir
+``<repoDir>`` but a relative path in for the varaible `<tplName>_FINDMOD`_ is
+relative to the project dir ``<projectDir>``.  There is a translation of the
+``<findmod>`` field to the variable ``<tplName>_FINDMOD`` that takes place
+when the `<repoDir>/TPLsList.cmake`_ file is processed to make this so.
 
 As noted above, it is allowed for the same TPL to be listed in multiple
 `<repoDir>/TPLsList.cmake`_ files.  In this case, the rules for overrides of

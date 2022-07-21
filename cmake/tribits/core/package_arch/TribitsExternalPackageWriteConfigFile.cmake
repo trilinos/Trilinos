@@ -333,7 +333,7 @@ function(tribits_extpkg_add_find_upstream_dependencies_str
         message(FATAL_ERROR "ERROR: ${upstreamTplDepName}_DIR is empty!")
       endif()
       string(APPEND configFileFragStr
-        "set(${upstreamTplDepName}_DIR \"${${upstreamTplDepName}_DIR}\")\n"
+        "set(${upstreamTplDepName}_DIR \"\${CMAKE_CURRENT_LIST_DIR}/../${upstreamTplDepName}\")\n"
         "find_dependency(${upstreamTplDepName} REQUIRED CONFIG \${${tplName}_SearchNoOtherPathsArgs})\n"
 	"unset(${upstreamTplDepName}_DIR)\n"
 	"\n"
