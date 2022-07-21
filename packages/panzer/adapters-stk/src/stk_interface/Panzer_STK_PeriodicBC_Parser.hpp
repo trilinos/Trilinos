@@ -140,8 +140,8 @@ private:
 
    // stored string values
    const std::string countStr_;
-   const std::string searchStr_;
    const std::string condPrefix_;
+   const std::string searchStr_;
    
    // stored search flag
    bool newSearch_;
