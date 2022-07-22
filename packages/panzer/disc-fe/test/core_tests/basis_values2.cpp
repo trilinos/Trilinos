@@ -901,12 +901,11 @@ namespace panzer {
     }
     out << std::endl;
 
-    Kokkos::View<double****, Kokkos::LayoutLeft, Kokkos::HostSpace> basis_view("A", 4, 4, 11, 3);
+    auto basis_view = Kokkos::create_mirror(Kokkos::HostSpace(),basis_values.basis_vector.get_view());
     Kokkos::deep_copy(basis_view, basis_values.basis_vector.get_view());
-    Kokkos::View<double***, Kokkos::LayoutLeft, Kokkos::HostSpace> div_basis_view("B", 4, 4, 11);
+    auto div_basis_view = Kokkos::create_mirror(Kokkos::HostSpace(), basis_values.div_basis.get_view());
     Kokkos::deep_copy(div_basis_view,basis_values.div_basis.get_view());
     basis_values.applyOrientations(orientations);
-    // TODO: MPL Verify the that:
     Kokkos::deep_copy(basis_vector_host,basis_values.basis_vector.get_view());
     Kokkos::deep_copy(div_basis_host,basis_values.div_basis.get_view());
     Kokkos::deep_copy(weighted_basis_vector_host,basis_values.weighted_basis_vector.get_view());
