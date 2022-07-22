@@ -33,6 +33,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Pliris
   Komplex
   FEI
+  Krino
   TriKota
   Compadre
   STKClassic
@@ -84,7 +85,6 @@ IF (ATDM_COMPLEX)
     Intrepid2
     STK
     Percept
-    Krino
     NOX
     Moertel
     MueLu
