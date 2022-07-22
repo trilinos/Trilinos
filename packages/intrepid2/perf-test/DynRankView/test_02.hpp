@@ -147,8 +147,8 @@ namespace Intrepid2 {
 
       using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *verboseStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*verboseStream, false);
-      *verboseStream << "HostSpace::    ";   HostSpaceType::print_configuration(*verboseStream, false);
+      *verboseStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*verboseStream, false);
+      *verboseStream << "HostSpace::    ";   HostSpaceType().print_configuration(*verboseStream, false);
       *verboseStream << "\n";
 
       std::cout

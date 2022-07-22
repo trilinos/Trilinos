@@ -97,8 +97,8 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   typedef typename
       Kokkos::DefaultHostExecutionSpace HostSpaceType ;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
