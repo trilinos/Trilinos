@@ -14,6 +14,8 @@
 # then prints the directory <build>/Testing/<buildstarttime> to STDOUT.
 #
 
+cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+
 if ("${PROJECT_NAME}" STREQUAL "")
   message(FATAL_ERROR "Error, PROJECT_NAME must be set!")
 endif()

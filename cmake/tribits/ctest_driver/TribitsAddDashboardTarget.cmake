@@ -38,11 +38,14 @@
 # @HEADER
 
 
+################################################################################
 #
 # This file gets included in the main TriBITS framework.  It is put here to
 # reduce the size of the tribits/core/ directory.
 #
+################################################################################
 
+include(TribitsGitRepoVersionInfo)
 
 #
 # Macro that drives a experimental 'dashboard' target
@@ -94,6 +97,13 @@ macro(tribits_add_dashboard_target)
     append_set(EXPR_CMND_ARGS "${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}")
     append_set(EXPR_CMND_ARGS "${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS='${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}'")
     append_set(EXPR_CMND_ARGS "${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}")
+
+    # Determine if base repo is a git repo (by seeing if SHA1 can be extracted)
+    tribits_git_repo_sha1("${PROJECT_SOURCE_DIR}" projectGitRepoSha1
+      FAILURE_MESSAGE_OUT  projectGitRepoSha1FailureMsg)
+    if (projectGitRepoSha1 STREQUAL "")
+      append_set(EXPR_CMND_ARGS "CTEST_DO_UPDATES=OFF")
+    endif()
 
     # Conditionally override options used only for the 'dashboard' target.
     # These options have no use in a a basic build/test so we don't want to

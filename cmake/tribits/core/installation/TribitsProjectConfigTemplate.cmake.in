@@ -46,11 +46,6 @@
 #
 ##############################################################################
 
-#
-# Ensure CMAKE_CURRENT_LIST_DIR is usable.
-#
-${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
-
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
@@ -106,65 +101,46 @@ endif()
 # Initialize ${PROJECT_NAME}_FOUND with true, and set it to FALSE if any of
 # the required components wasn't found.
 set(${PROJECT_NAME}_FOUND TRUE)
-foreach(comp ${PDOLLAR}{COMPONENTS_LIST})
-  set(
-    INCLUDE_FILE
+set(${PROJECT_NAME}_NOT_FOUND_MESSAGE "")
+set(selectedComponentsFound "")
+foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
+  set(compPkgConfigFile
     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
     )
- if (EXISTS ${PDOLLAR}{INCLUDE_FILE})
-   # Set ${PROJECT_NAME}_<component>_FOUND.
-   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
-   # Include the package file.
-   include(${PDOLLAR}{INCLUDE_FILE})
-   # Add variables to lists.
-   list(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
-   list(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
-   list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-   list(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
-   list(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
-   list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
- else()
-   # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
-   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
-   # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
-   if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-     set(${PROJECT_NAME}_FOUND FALSE)
-   endif()
- endif()
+  if (EXISTS ${PDOLLAR}{compPkgConfigFile})
+    # Set ${PROJECT_NAME}_<component>_FOUND.
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+    # Include the package file.
+    include(${PDOLLAR}{compPkgConfigFile})
+    # Add variables to lists.
+    list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+    list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
+    list(APPEND selectedComponentsFound ${PDOLLAR}{comp})
+  else()
+    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+    if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+      string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
+        "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
+      set(${PROJECT_NAME}_FOUND FALSE)
+    endif()
+  endif()
 endforeach()
 
-# Resolve absolute paths and remove duplicate paths
-# for LIBRARY_DIRS and INCLUDE_DIRS
-# This reduces stress on regular expressions later
-set(short_dirs)
-foreach(dir ${PDOLLAR}{${PROJECT_NAME}_INCLUDE_DIRS})
-  get_filename_component(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
-  list(APPEND short_dirs ${PDOLLAR}{dir_abs})
-endforeach()
-list(REMOVE_DUPLICATES short_dirs)
-set(${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{short_dirs})
+# Deprecated (see #299)!
+set(${PROJECT_NAME}_INCLUDE_DIRS "${TRIBITS_PROJECT_INSTALL_INCLUDE_DIR}")
 
-set(short_dirs)
-foreach(dir ${PDOLLAR}{${PROJECT_NAME}_LIBRARY_DIRS})
-  get_filename_component(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
-  list(APPEND short_dirs ${PDOLLAR}{dir_abs})
-endforeach()
-list(REMOVE_DUPLICATES short_dirs)
-set(${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{short_dirs})
+# Deprecated (see #299)!
+set(${PROJECT_NAME}_LIBRARY_DIRS "")
 
 # Remove duplicates in ${PROJECT_NAME}_LIBRARIES
 list(REVERSE ${PROJECT_NAME}_LIBRARIES)
 list(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
 list(REVERSE ${PROJECT_NAME}_LIBRARIES)
 
-# Remove duplicates in ${PROJECT_NAME}_TPL_INCLUDE_DIRS
-if (${PROJECT_NAME}_TPL_INCLUDE_DIRS)
-  list(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_INCLUDE_DIRS)
-endif()
-
-# NOTE: It is *NOT* safe to try to remove duplicate in
-# ${PROJECT_NAME}_TPL_LIBRARIES because these can be specified as -L, -l, etc.
-# Actually, we should think about that.
+# Remove duplicates in ${PROJECT_NAME}_TPL_LIBRARIES
+list(REVERSE ${PROJECT_NAME}_TPL_LIBRARIES)
+list(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_LIBRARIES)
+list(REVERSE ${PROJECT_NAME}_TPL_LIBRARIES)
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -198,5 +174,34 @@ set(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LI
 ## The packages enabled for this project
 set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
+## The selected packages for this project
+set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{selectedComponentsFound}")
+
 ## The TPLs enabled for this project
 set(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
+
+## ---------------------------------------------------------------------------
+## Modern CMake (IMPORTED) targets
+## ---------------------------------------------------------------------------
+
+# ${PROJECT_NAME}::all_libs  (Does *not* depend on COMPONENTS)
+if (NOT TARGET ${PROJECT_NAME}::all_libs)
+  set(${PROJECT_NAME}_ALL_PACKAGES_TARGETS)
+  foreach (pkg IN ITEMS ${FULL_PACKAGE_SET})
+    list(APPEND ${PROJECT_NAME}_ALL_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
+  endforeach()
+  add_library(${PROJECT_NAME}::all_libs IMPORTED INTERFACE GLOBAL)
+  target_link_libraries(${PROJECT_NAME}::all_libs
+  INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_PACKAGES_TARGETS} )
+endif()
+
+# ${PROJECT_NAME}::all_selected_libs  (Depend on COMPONENTS)
+if (NOT TARGET ${PROJECT_NAME}::all_selected_libs)
+  set(${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS)
+  foreach (pkg IN ITEMS ${PDOLLAR}{selectedComponentsFound})
+    list(APPEND ${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
+  endforeach()
+  add_library(${PROJECT_NAME}::all_selected_libs IMPORTED INTERFACE GLOBAL)
+  target_link_libraries(${PROJECT_NAME}::all_selected_libs
+    INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS} )
+endif()

@@ -40,6 +40,7 @@
 include(TribitsPackageSetupCompilerFlags)
 include(TribitsWriteClientExportFiles)
 include(TribitsGeneralMacros)
+include(TribitsLibIsTestOnly)
 
 include(CMakeParseArguments)
 include(GlobalNullSet)
@@ -48,6 +49,7 @@ include(PrintVar)
 include(PrependSet)
 include(PrependGlobalSet)
 include(RemoveGlobalDuplicates)
+include(TribitsGatherBuildTargets)
 
 include(TribitsAddOptionAndDefine)
 include(TribitsLibraryMacros)
@@ -59,17 +61,11 @@ include(TribitsCopyFilesToBinaryDir)
 include(TribitsReportInvalidTribitsUsage)
 
 
-###
-### WARNING: See "NOTES TO DEVELOPERS" at the bottom of file!
-###
-
-
 #
 # Utility macros
 #
 
 
-#
 # Macro that defines the package architecture system variables used to link
 # different SE packages together
 #
@@ -77,14 +73,11 @@ include(TribitsReportInvalidTribitsUsage)
 # they are used.
 #
 macro(tribits_define_linkage_vars PACKAGE_NAME_IN)
-  global_null_set(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
-  global_null_set(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
-  global_null_set(${PACKAGE_NAME_IN}_LIBRARIES)
+  global_null_set(${PACKAGE_NAME_IN}_LIBRARIES "")
   global_set(${PACKAGE_NAME_IN}_HAS_NATIVE_LIBRARIES_TO_INSTALL FALSE)
 endmacro()
 
 
-#
 # Macro that defines variables that create global targets
 #
 macro(tribits_define_target_vars PARENT_PACKAGE_NAME_IN)
@@ -92,10 +85,9 @@ macro(tribits_define_target_vars PARENT_PACKAGE_NAME_IN)
   global_null_set(${PARENT_PACKAGE_NAME_IN}_ALL_TARGETS)
 endmacro()
 
-#
+
 # Set up some common variables used in the creation of an SE package
 #
-
 macro(tribits_set_common_vars PACKAGE_NAME_IN)
 
   string(TOUPPER ${PACKAGE_NAME_IN} PACKAGE_NAME_UC)
@@ -111,7 +103,6 @@ macro(tribits_set_common_vars PACKAGE_NAME_IN)
 endmacro()
 
 
-#
 # @MACRO: tribits_package_decl()
 #
 # Macro called at the very beginning of a package's top-level
@@ -277,7 +268,6 @@ macro(tribits_package_decl PACKAGE_NAME_IN)
 endmacro()
 
 
-#
 # @MACRO: tribits_package_def()
 #
 # Macro called in `<packageDir>/CMakeLists.txt`_ after subpackages are
@@ -343,7 +333,6 @@ macro(tribits_package_def)
 endmacro()
 
 
-#
 # @MACRO: tribits_package()
 #
 # Macro called at the very beginning of a package's top-level
@@ -397,7 +386,6 @@ macro(tribits_package PACKAGE_NAME_IN)
 endmacro()
 
 
-#
 # @MACRO: tribits_add_test_directories()
 #
 # Macro called to add a set of test directories for an SE package.
@@ -471,7 +459,6 @@ endmacro()
 #
 
 
-#
 # @MACRO: tribits_add_debug_option()
 #
 # Add the standard cache variable option ``${PACKAGE_NAME}_ENABLE_DEBUG`` for
@@ -481,10 +468,12 @@ endmacro()
 #
 #   tribits_add_debug_option()
 #
-# This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
-# true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
-# the package's configured header file).  This macro is typically called in
-# the package's `<packageDir>/CMakeLists.txt`_ file.
+# This option is given the default value ``${${PROJECT_NAME}_ENABLE_DEBUG}``,
+# and if true, this macro will set the variable
+# ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in the package's configured
+# header file `<packageDir>/cmake/<packageName>_config.h.in`_).  This macro is
+# typically called in the package's `<packageDir>/CMakeLists.txt`_ file (see
+# the example ``SimpleCxx/CMakeLists.txt``).
 #
 macro(tribits_add_debug_option)
   tribits_add_option_and_define(
@@ -505,7 +494,6 @@ macro(tribits_add_enable_teuchos_time_monitor_option)
 endmacro()
 
 
-#
 # @MACRO: tribits_add_show_deprecated_warnings_option()
 #
 # Add the standard option ``${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` for the
@@ -551,7 +539,6 @@ macro(tribits_add_eti_support)
 endmacro()
 
 
-#
 # @MACRO: tribits_add_example_directories()
 #
 # Macro called to conditionally add a set of example directories for an SE
@@ -619,11 +606,9 @@ macro(tribits_add_example_directories)
 endmacro()
 
 
-#
 # Utility function that sets up package linkage linkage variables in case the
 # package has no libraries.
 #
-
 function(tribits_package_finalize_dependency_vars)
 
   if(${PACKAGE_NAME}_SUBPACKAGES)
@@ -631,9 +616,7 @@ function(tribits_package_finalize_dependency_vars)
     # A package with subpackages should get all of its dependency vars from
     # its enabled subpackages.
 
-    set(PARENT_PACKAGE_INCLUDE_DIRS)
-    set(PARENT_PACKAGE_LIBRARY_DIRS)
-    set(PARENT_PACKAGE_LIBRARIES)
+    set(PARENT_PACKAGE_LIBRARIES "")
 
     set(SUBPACKAGE_IDX 0)
     foreach(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
@@ -642,10 +625,6 @@ function(tribits_package_finalize_dependency_vars)
       set(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
 
       if (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-        prepend_set(PARENT_PACKAGE_INCLUDE_DIRS
-          ${${SUBPACKAGE_FULLNAME}_INCLUDE_DIRS})
-        prepend_set(PARENT_PACKAGE_LIBRARY_DIRS
-          ${${SUBPACKAGE_FULLNAME}_LIBRARY_DIRS})
         prepend_set(PARENT_PACKAGE_LIBRARIES
           ${${SUBPACKAGE_FULLNAME}_LIBRARIES})
       endif()
@@ -654,64 +633,29 @@ function(tribits_package_finalize_dependency_vars)
 
     endforeach()
 
-    if (PARENT_PACKAGE_INCLUDE_DIRS)
-      list(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
-    endif()
-    if (PARENT_PACKAGE_LIBRARY_DIRS)
-      list(REMOVE_DUPLICATES PARENT_PACKAGE_LIBRARY_DIRS)
-    endif()
-    # NOTE: Above, in the rare case that none of the subpackages contain any
-    # libraries or any include directories, we need to not call
-    # list(REMOVE_DUPLICATES ...).
-
     # NOTE: There can't be any duplicate libraries in PARENT_PACKAGE_LIBRARIES
     # so no need to remove them.
-
-    global_set(${PACKAGE_NAME}_INCLUDE_DIRS "${PARENT_PACKAGE_INCLUDE_DIRS}")
-    global_set(${PACKAGE_NAME}_LIBRARY_DIRS "${PARENT_PACKAGE_LIBRARY_DIRS}")
     global_set(${PACKAGE_NAME}_LIBRARIES "${PARENT_PACKAGE_LIBRARIES}")
-
-  elseif(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
-
-    # No libraries have been defined for this package so we are going to set
-    # them based on this package's dependencies.
-
-    tribits_sort_and_append_package_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-
-    tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-
-    get_directory_property(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
-    get_directory_property(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
-
-    prepend_global_set(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
-    prepend_global_set(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-    prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${LINK_LIBS})
 
   endif()
 
 endfunction()
 
 
-#
 # Helper macro for [SUB]tribits_package_postprocess()
 #
 macro(tribits_package_postprocess_common)
 
   if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     message("\nTRIBITS_PACKAGE_POSTPROCESS_COMMON: ${PACKAGE_NAME}")
-    print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
-    print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
     print_var(${PACKAGE_NAME}_LIBRARIES)
   endif()
 
-  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OR
-    ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
-    )
+  tribits_package_create_all_libs_interface_library()
+
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
     # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>).  This also creates the
-    # Makefile.export.* files.
+    # call to find_package(<package_name>).
     tribits_write_package_client_export_files(${PACKAGE_NAME})
   endif()
 
@@ -721,7 +665,64 @@ macro(tribits_package_postprocess_common)
 endmacro()
 
 
+# Macro to create the ${PACKAGE_NAME}::all_libs INTERFACE target
 #
+macro(tribits_package_create_all_libs_interface_library)
+
+  if (NOT TARGET ${PACKAGE_NAME}_all_libs)
+
+    # Find all of the non-TESTONLY library targets
+    tribits_get_all_build_targets_including_in_subdirs("${CMAKE_CURRENT_SOURCE_DIR}"
+      "STATIC_LIBRARY;SHARED_LIBRARY"
+      allPackageBuildableLibTargetsList )
+    #print_var(allPackageBuildableLibTargetsList)
+    set(packageLibsInAllLibsList)
+    foreach (libTarget IN LISTS allPackageBuildableLibTargetsList)
+      tribits_lib_is_testonly(${libTarget} isTestOnlyLib)
+      #print_var(isTestOnlyLib)
+      if (NOT isTestOnlyLib)
+        list(APPEND packageLibsInAllLibsList ${libTarget})
+      endif()
+    endforeach()
+    global_set(${PACKAGE_NAME}_EXPORTED_PACKAGE_LIBS_NAMES
+      ${packageLibsInAllLibsList})
+
+    # Create the ${PACKAGE_NAME}_all_libs INTERFACE interface target
+    add_library(${PACKAGE_NAME}_all_libs INTERFACE)
+    target_link_libraries(${PACKAGE_NAME}_all_libs
+      INTERFACE ${packageLibsInAllLibsList} )
+    set_target_properties(${PACKAGE_NAME}_all_libs PROPERTIES
+      EXPORT_NAME all_libs)
+    if (${PROJECT_NAME}_IMPORTED_NO_SYSTEM)
+      set_target_properties(${PACKAGE_NAME}_all_libs PROPERTIES IMPORTED_NO_SYSTEM TRUE)
+    endif()
+
+    # Install the interface target (makes sure it gets put in
+    # <Package>Targets.cmake file)
+    install(
+      TARGETS ${PACKAGE_NAME}_all_libs
+      EXPORT ${PACKAGE_NAME}
+      INCLUDES DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+      RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
+      LIBRARY DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+      ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+      COMPONENT ${PACKAGE_NAME}
+      )
+
+    if (NOT TARGET ${PACKAGE_NAME}::all_libs)
+      # Create ALIAS ${PACKAGE_NAME}::all_libs target
+      add_library(${PACKAGE_NAME}::all_libs ALIAS ${PACKAGE_NAME}_all_libs)
+    endif()
+
+  endif()
+
+  #include(CMakePrintHelpers)
+  #cmake_print_properties(TARGETS ${PACKAGE_NAME}_all_libs ${PACKAGE_NAME}::all_libs
+  #  PROPERTIES TYPE ALIASED_TARGET INTERFACE_LINK_LIBRARIES)
+
+endmacro()
+
+
 # @MACRO: tribits_package_postprocess()
 #
 # Macro called at the very end of a package's top-level
@@ -732,7 +733,11 @@ endmacro()
 #
 #   tribits_package_postprocess()
 #
-# NOTE: It is unfortunate that this macro must be called in a packages's
+# NOTE: This creates the aliased target ``${PACKAGE_NAME}::all_libs`` for all
+# libraries in all subdirectories that don't have the TRIBITS_TESTONLY_LIB
+# target property set on them.
+#
+# NOTE: It is unfortunate that this macro must be called in a package's
 # top-level ``CMakeLists.txt`` file but limitations of the CMake language make
 # it necessary to do so.
 #
@@ -828,7 +833,6 @@ macro(tribits_package_postprocess)
 endmacro()
 
 
-#
 # @MACRO: tribits_process_subpackages()
 #
 # Macro that processes the `TriBITS Subpackages`_ for a parent `TriBITS
@@ -917,25 +921,3 @@ macro(tribits_process_subpackages)
   set(${PACKAGE_NAME}_TRIBITS_PROCESS_SUBPACKAGES_CALLED TRUE)
 
 endmacro()
-
-
-##################################################################
-#
-#                    NOTES TO DEVELOPERS
-#
-# Don't even attempt to touch the logic that goes into setting up and
-# modifying the variables:
-#
-#   ${PACKAGE_NAME}_INCLUDE_DIRS
-#   ${PACKAGE_NAME}_LIBRARY_DIRS
-#   ${PACKAGE_NAME}_LIBRARIES
-#   ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL
-#   ${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES
-#   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
-#   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
-#
-# without carefully studying the documentation in README.DEPENDENCIES and then
-# carefully studying all of the code and issues that modify these variables!
-#
-# ToDo: Write some good unit tests that pin down the behavior of all of this!
-#

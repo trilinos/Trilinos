@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     Kokkos::initialize(argc,argv);
-    PHX::exec_space::print_configuration(std::cout);
+    PHX::exec_space().print_configuration(std::cout);
     
     // *********************************************************
     // * Build the Finite Element data structures

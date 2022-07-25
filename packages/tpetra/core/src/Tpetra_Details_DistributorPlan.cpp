@@ -86,7 +86,6 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
     sendType_(DISTRIBUTOR_SEND),
-    useDistinctTags_(useDistinctTags_default),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -99,7 +98,6 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
     reversePlan_(otherPlan.reversePlan_),
     sendType_(otherPlan.sendType_),
-    useDistinctTags_(otherPlan.useDistinctTags_),
     sendMessageToSelf_(otherPlan.sendMessageToSelf_),
     numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
     procIdsToSendTo_(otherPlan.procIdsToSendTo_),
@@ -114,10 +112,6 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     startsFrom_(otherPlan.startsFrom_),
     indicesFrom_(otherPlan.indicesFrom_)
 { }
-
-int DistributorPlan::getTag(const int pathTag) const {
-  return useDistinctTags_ ? pathTag : comm_->getTag();
-}
 
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
   using Teuchos::outArg;
@@ -620,7 +614,6 @@ void DistributorPlan::createReversePlan() const
   reversePlan_->procsFrom_ = procIdsToSendTo_;
   reversePlan_->startsFrom_ = startsTo_;
   reversePlan_->indicesFrom_ = indicesTo_;
-  reversePlan_->useDistinctTags_ = useDistinctTags_;
 }
 
 void DistributorPlan::computeReceives()
@@ -643,9 +636,7 @@ void DistributorPlan::computeReceives()
   const int myRank = comm_->getRank();
   const int numProcs = comm_->getSize();
 
-  // MPI tag for nonblocking receives and blocking sends in this method.
-  const int pathTag = 2;
-  const int tag = getTag(pathTag);
+  const int mpiTag = DEFAULT_MPI_TAG;
 
   // toProcsFromMe[i] == the number of messages sent by this process
   // to process i.  The data in numSendsToOtherProcs_, procIdsToSendTo_, and lengthsTo_
@@ -787,7 +778,7 @@ void DistributorPlan::computeReceives()
     lengthsFromBuffers[i].resize (1);
     lengthsFromBuffers[i][0] = as<size_t> (0);
     requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
-        tag, *comm_);
+        mpiTag, *comm_);
   }
 
   // Post the sends: Tell each process to which we are sending how
@@ -804,7 +795,7 @@ void DistributorPlan::computeReceives()
       // this communication pattern will send that process
       // lengthsTo_[i] blocks of packets.
       const size_t* const lengthsTo_i = &lengthsTo_[i];
-      send<int, size_t> (lengthsTo_i, 1, as<int> (procIdsToSendTo_[i]), tag, *comm_);
+      send<int, size_t> (lengthsTo_i, 1, as<int> (procIdsToSendTo_[i]), mpiTag, *comm_);
     }
     else {
       // We don't need a send in the self-message case.  If this
