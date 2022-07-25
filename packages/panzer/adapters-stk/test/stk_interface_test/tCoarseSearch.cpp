@@ -105,8 +105,8 @@ TEUCHOS_UNIT_TEST(tCoarseSearch, basic)
   auto myrank = mesh->getBulkData()->parallel_rank();
 
   // this test is designed for 4 mpi processes
-  // each process will own a line of points
-  // process 0 and 3 will only have matches for 1/2 their points
+  // each process will own a line of points, side 1 (0 and 1) side 2 (2 and 3)
+  // process 0 and 3 will only have matches for 1/2 of their points
 
   size_t npts = 10;
   size_t start[4] = {0,npts,npts/2,npts/2+npts};
@@ -126,7 +126,11 @@ TEUCHOS_UNIT_TEST(tCoarseSearch, basic)
   unsigned int matches = 0;
 
   for ( auto & x : results ) {
-    if (x.first.proc()==myrank) ++matches;
+    if (myrank<2) {
+      if (x.first.proc()==myrank) ++matches;
+    } else {
+      if (x.second.proc()==myrank) ++matches;
+    }
   }
 
   if ( (myrank == 0) || (myrank == 3) ) {
