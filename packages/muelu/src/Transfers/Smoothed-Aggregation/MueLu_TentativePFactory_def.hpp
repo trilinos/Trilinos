@@ -50,6 +50,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -157,7 +158,16 @@ namespace MueLu {
       Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getLocalNumElements() != fineNullspace->getMap()->getLocalNumElements(),
+   if(A->IsView("stridedMaps")==true) 
+     printf("striedMaps = true\n");
+
+    size_t num_rows = A->getRowMap()->getLocalNumElements();
+#ifdef HAVE_XPETRA_TPETRA
+    if(Xpetra::Helpers<Scalar,LO,GO,NO>::isTpetraBlockCrs(A))
+      num_rows *= A->GetFixedBlockSize();
+#endif
+
+    TEUCHOS_TEST_FOR_EXCEPTION(num_rows != fineNullspace->getMap()->getLocalNumElements(),
 			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
 
     RCP<Matrix>                Ptentative;
