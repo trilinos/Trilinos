@@ -126,14 +126,26 @@ namespace Xpetra {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
-        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
-
-        // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
-        // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-        Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+        using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
+        if(helpers::isTpetraCrs(R) && helpers::isTpetraCrs(A) && helpers::isTpetraCrs(P)) {
+          // All matrices are Crs
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
+          Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+          
+          // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+          // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+          Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+        }
+        else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
+          // All matrices are BlockCrs
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "BlockCrs Multiply not currently supported");          
+        }
+        else {
+          // Mix and match
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      
+        }            
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -215,14 +227,26 @@ namespace Xpetra {
       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,int> ETI enabled."));
 # else
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
-        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
-
-        // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
-        // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-        Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+        using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
+        if(helpers::isTpetraCrs(R) && helpers::isTpetraCrs(A) && helpers::isTpetraCrs(P)) {
+          // All matrices are Crs
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
+          Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+          
+          // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+          // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+          Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+        }
+        else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
+          // All matrices are BlockCrs
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "BlockCrs Multiply not currently supported");          
+        }
+        else {
+          // Mix and match
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      
+        }              
 # endif
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
@@ -303,14 +327,27 @@ namespace Xpetra {
       (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,long long,EpetraNode> ETI enabled."));
 # else
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
-        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+        using helpers = Xpetra::Helpers<SC,LO,GO,NO>;
+        if(helpers::isTpetraCrs(R) && helpers::isTpetraCrs(A) && helpers::isTpetraCrs(P)) {
+          // All matrices are Crs
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+          const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
+          Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+          
+          // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+          // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+          Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+        }
+        else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
+          // All matrices are BlockCrs
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "BlockCrs Multiply not currently supported");          
+        }
+        else {
+          // Mix and match
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      
+        }    
 
-        // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
-        // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-        Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
