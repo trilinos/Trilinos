@@ -388,9 +388,11 @@ namespace Intrepid2
     :
     polyOrder_(polyOrder)
     {
-      const int numEdgeFunctions = polyOrder * 3;
-      const int numFaceFunctions = polyOrder * (polyOrder-1);  // two families, each with p*(p-1)/2 functions
-      this->basisCardinality_  = numEdgeFunctions + numFaceFunctions;
+      const int numEdgeFunctions     = polyOrder * 6; // 6 edges
+      const int numFaceFunctions     = polyOrder * (polyOrder-1) * 4;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
+      const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3
+      const int numInteriorFunctions = numInteriorFunctionsPerFamily * 3; // 3 families of interior functions
+      this->basisCardinality_  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
