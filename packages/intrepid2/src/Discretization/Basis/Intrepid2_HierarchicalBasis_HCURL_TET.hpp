@@ -106,7 +106,12 @@ namespace Intrepid2
     {
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
-      const int expectedCardinality = 3 * polyOrder_ + polyOrder_ * (polyOrder-1);
+      
+      const int numEdgeFunctions     = polyOrder * 6; // 6 edges
+      const int numFaceFunctions     = polyOrder * (polyOrder-1) * 4;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
+      const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
+      const int numInteriorFunctions = numInteriorFunctionsPerFamily * 3; // 3 families of interior functions
+      const int expectedCardinality  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
       
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
       INTREPID2_TEST_FOR_EXCEPTION(numFields_ != expectedCardinality, std::invalid_argument, "output field size does not match basis cardinality");
@@ -231,7 +236,8 @@ namespace Intrepid2
             Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
             for (int i=0; i<num1DEdgeFunctions; i++)
             {
-              output_(i+fieldOrdinalOffset,pointOrdinal) = (i+2) * P_i(i) * grad_s0_cross_grad_s1;
+              // commented out because in 3D the curl is a vector; we'll fix this when we modify this 2D implementation for 3D
+//              output_(i+fieldOrdinalOffset,pointOrdinal) = (i+2) * P_i(i) * grad_s0_cross_grad_s1;
             }
             fieldOrdinalOffset += num1DEdgeFunctions;
           }
@@ -388,13 +394,17 @@ namespace Intrepid2
     :
     polyOrder_(polyOrder)
     {
-      const int numEdgeFunctions     = polyOrder * 6; // 6 edges
-      const int numFaceFunctions     = polyOrder * (polyOrder-1) * 4;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
+      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
+      const int numEdges       = this->basisCellTopology_.getEdgeCount();
+      const int numFaces       = this->basisCellTopology_.getFaceCount();
+      
+      const int numEdgeFunctions     = polyOrder * numEdges;
+      const int numFaceFunctions     = polyOrder * (polyOrder-1) * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
       const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
       const int numInteriorFunctions = numInteriorFunctionsPerFamily * 3; // 3 families of interior functions
       this->basisCardinality_  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
       this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+      
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
       this->functionSpace_     = FUNCTION_SPACE_HCURL;
@@ -406,10 +416,8 @@ namespace Intrepid2
       // **** vertex functions **** //
       // no vertex functions in H(curl)
       
-      // TODO: revise this for 3D -- what's below is 2D (tri) implementation
       // **** edge functions **** //
       const int numFunctionsPerEdge = polyOrder; // p functions associated with each edge
-      const int numEdges            = this->basisCellTopology_.getEdgeCount();
       for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
       {
         for (int i=0; i<numFunctionsPerEdge; i++)
@@ -420,11 +428,11 @@ namespace Intrepid2
       }
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != numEdgeFunctions, std::invalid_argument, "Internal error: basis enumeration is incorrect");
       
-      // TODO: revise this for 3D -- what's below is 2D (tri) implementation
       // **** face functions **** //
       const int max_ij_sum = polyOrder-1;
       const int faceFieldOrdinalOffset = fieldOrdinalOffset;
-      for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=2; faceFamilyOrdinal++)
+      const int numFaceFamilies = 2;
+      for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=numFaceFamilies; faceFamilyOrdinal++)
       {
         // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
         int fieldOrdinal = faceFieldOrdinalOffset + faceFamilyOrdinal - 1;
@@ -433,10 +441,35 @@ namespace Intrepid2
           for (int i=0; i<ij_sum; i++)
           {
             this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
-            fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
+            fieldOrdinal += numFaceFamilies; // increment due to the interleaving.
           }
         }
-        fieldOrdinalOffset = fieldOrdinal - 1; // due to the interleaving increment, we've gone two past the last face ordinal.  Set offset to be one past.
+        fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != numEdgeFunctions + numFaceFunctions, std::invalid_argument, "Internal error: basis enumeration is incorrect");
+      
+      const int numInteriorFamilies = 3;
+      const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
+      const int min_ijk_sum = 2;
+      const int max_ijk_sum = polyOrder-1;
+      for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
+      {
+        // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
+        int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+        for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
+        {
+          for (int i=0; i<ijk_sum; i++)
+          {
+            for (int j=1; j<ijk_sum-i; j++)
+            {
+              const int k = ijk_sum - i - j;
+              this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ijk_sum+1;
+            }
+            
+            fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
+          }
+        }
+        fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
       }
 
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
@@ -452,7 +485,7 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const ordinal_type edgeDim = 1, faceDim = 2;
+        const ordinal_type edgeDim = 1, faceDim = 2, volumeDim = 3;
 
         // TODO: revise this for 3D -- what's below is 2D (tri) implementation
         if (useCGBasis) {
@@ -469,8 +502,7 @@ namespace Intrepid2
                 tagNumber++;
               }
             }
-            const int numFunctionsPerFace = numFaceFunctions; // just one face in the triangle
-            const int numFaces = 1;
+            const int numFunctionsPerFace = numFaceFunctions / numFaces;
             for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
             {
               for (int functionOrdinal=0; functionOrdinal<numFunctionsPerFace; functionOrdinal++)
@@ -488,8 +520,8 @@ namespace Intrepid2
         {
           // DG basis: all functions are associated with interior
           for (ordinal_type i=0;i<cardinality;++i) {
-            tagView(i*tagSize+0) = faceDim;     // face dimension
-            tagView(i*tagSize+1) = 0;           // face id
+            tagView(i*tagSize+0) = volumeDim;   // face dimension
+            tagView(i*tagSize+1) = 0;           // interior/volume id
             tagView(i*tagSize+2) = i;           // local dof id
             tagView(i*tagSize+3) = cardinality; // total number of dofs on this face
           }
