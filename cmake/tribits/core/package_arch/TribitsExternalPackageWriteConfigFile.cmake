@@ -583,8 +583,14 @@ function(tribits_extpkg_append_add_library_str
   )
   set(configFileStr "${${configFileStrInOut}}")
   if (libEntryType STREQUAL "FULL_LIB_PATH")
+    get_filename_component(libExt "${libpath}" LAST_EXT)
+    if (libExt  STREQUAL ".a")
+      set(libType  STATIC)
+    else()
+      set(libType  UNKNOWN)
+    endif()
     string(APPEND configFileStr
-      "add_library(${prefixed_libname} IMPORTED UNKNOWN GLOBAL)\n"
+      "add_library(${prefixed_libname} IMPORTED ${libType} GLOBAL)\n"
       "set_target_properties(${prefixed_libname} PROPERTIES\n"
       "  IMPORTED_LOCATION \"${libpath}\")\n"
       )
