@@ -40,7 +40,7 @@
 include(PrependCmndlineArgs)
 include(DualScopeSet)
 
-#
+
 # @MACRO: dual_scope_prepend_cmndline_args()
 #
 # Utility function that prepends command-line arguments to a variable of

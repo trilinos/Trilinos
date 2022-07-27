@@ -1,16 +1,16 @@
-if (TPL_ENABLE_CUDA AND NOT Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
-  if ("${${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho}" STREQUAL "")
-    message(
-      "-- " "NOTE: Setting ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=OFF by default since TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE='${Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE}'!\n"
-      "-- NOTE: To allow the enable of ShyLU_NodeTacho, please set Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
-    set(${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho OFF)
-    # NOTE: Above we set the non-cache var
-    # ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho so that each reconfigure will
-    # show this same note.
-  elseif (${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho)
-    message(FATAL_ERROR "ERROR: ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=ON but TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE='${Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE}' which is not allowed!")
-  endif()
-endif() 
+# if (TPL_ENABLE_CUDA AND NOT Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
+#   if ("${${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho}" STREQUAL "")
+#     message(
+#       "-- " "NOTE: Setting ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=OFF by default since TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE='${Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE}'!\n"
+#       "-- NOTE: To allow the enable of ShyLU_NodeTacho, please set Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
+#     set(${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho OFF)
+#     # NOTE: Above we set the non-cache var
+#     # ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho so that each reconfigure will
+#     # show this same note.
+#   elseif (${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho)
+#     message(FATAL_ERROR "ERROR: ${PROJECT_NAME}_ENABLE_ShyLU_NodeTacho=ON but TPL_ENABLE_CUDA='${TPL_ENABLE_CUDA}' AND Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE='${Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE}' which is not allowed!")
+#   endif()
+# endif() 
 
 #########################################################################
 # STKBalance does not work with GO=INT or GO=UNSIGNED

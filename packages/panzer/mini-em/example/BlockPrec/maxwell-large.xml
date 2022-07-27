@@ -61,7 +61,7 @@
     <!-- The 2x2 Maxwell system -->
     <!-- Gets epsilon, sigma and 1/mu from closure model 'electromagnetics' -->
     <ParameterList name="Maxwell Physics">
-      <ParameterList>
+      <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Maxwell"/>
         <Parameter name="Basis Order"          type="int"    value="1"/>
         <Parameter name="Integration Order"    type="int"    value="2"/>
@@ -164,6 +164,22 @@
         <Parameter name="mu" type="double" value="1.2566370614e-6"/>
         <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Operators">
+    <ParameterList name="Discrete Curl">
+      <Parameter name="Source" type="string" value="E_edge"/>
+      <Parameter name="Target" type="string" value="B_face"/>
+      <Parameter name="Op" type="string" value="curl"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Auxiliary Operators">
+    <ParameterList name="Discrete Gradient">
+      <Parameter name="Source" type="string" value="AUXILIARY_NODE"/>
+      <Parameter name="Target" type="string" value="AUXILIARY_EDGE"/>
+      <Parameter name="Op" type="string" value="grad"/>
     </ParameterList>
   </ParameterList>
 

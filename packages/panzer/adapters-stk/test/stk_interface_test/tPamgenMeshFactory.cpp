@@ -60,6 +60,7 @@
 
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/CreateAdjacentEntities.hpp"
 
 namespace panzer_stk {
@@ -89,7 +90,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
     broker->add_mesh_database("pamgen_test.gen", "pamgen", stk::io::READ_MESH);
     broker->create_input_mesh();
     metaData = Teuchos::rcp(broker->meta_data_ptr());
-    bulkData = Teuchos::rcp(new stk::mesh::BulkData(*metaData,MPI_COMM_WORLD));
+    std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create(Teuchos::get_shared_ptr(metaData));
+    bulkData = Teuchos::rcp(bulkUPtr.release());
     broker->set_bulk_data(Teuchos::get_shared_ptr(bulkData));
     broker->add_all_mesh_fields_as_input_fields();
     broker->populate_bulk_data();
@@ -171,7 +173,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
     broker->add_mesh_database(output_exodus_file_name, "exodus", stk::io::READ_MESH);
     broker->create_input_mesh();
     metaData = Teuchos::rcp(broker->meta_data_ptr());
-    bulkData = Teuchos::rcp(new stk::mesh::BulkData(*metaData,MPI_COMM_WORLD));
+    std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create(Teuchos::get_shared_ptr(metaData));
+    bulkData = Teuchos::rcp(bulkUPtr.release());
     broker->set_bulk_data(Teuchos::get_shared_ptr(bulkData));
     broker->add_all_mesh_fields_as_input_fields();
     broker->populate_bulk_data();

@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 
     TEUCHOS_TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
-#if defined(HAVE_THYRA_FLOAT)
+#ifdef HAVE_TEUCHOS_INST_FLOAT
     result = runCgSolveExample<float>(dim, diagScale, symOp, showAllTests,
       tolerance, maxNumIters);
     if(!result) success = false;
@@ -262,19 +262,17 @@ int main(int argc, char *argv[])
       tolerance, maxNumIters);
     if(!result) success = false;
 
-#ifdef HAVE_THYRA_COMPLEX
-
-#if defined(HAVE_THYRA_FLOAT)
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT)
     result = runCgSolveExample<std::complex<float> >(dim, diagScale, symOp, showAllTests,
       tolerance, maxNumIters);
     if(!result) success = false;
 #endif
 
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_DOUBLE)
     result = runCgSolveExample<std::complex<double> >(dim, diagScale, symOp, showAllTests,
       tolerance, maxNumIters);
     if(!result) success = false;
-
-#endif // HAVE_THYRA_COMPLEX
+#endif
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 
@@ -282,14 +280,10 @@ int main(int argc, char *argv[])
       tolerance, maxNumIters);
     if(!result) success = false;
 
-#ifdef HAVE_THYRA_COMPLEX
-
-    //result = runCgSolveExample<std::complex<mpf_class> >(dim, mpf_class(diagScale), symOp,
-    showAllTests, mpf_class(tolerance), maxNumIters);
+    //result = runCgSolveExample<std::complex<mpf_class> >(dim, mpf_class(diagScale),
+    //   symOp, showAllTests, mpf_class(tolerance), maxNumIters);
     //if(!result) success = false;
     //The above commented-out code throws a floating-point exception?
-
-#endif // HAVE_THYRA_COMPLEX
 
 #endif // HAVE_TEUCHOS_GNU_MP
 

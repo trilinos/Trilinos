@@ -39,8 +39,24 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
   }
   else {
     mVertexWeights.resize(entities.size(), 0.0);
-    for (size_t i = 0; i < entities.size(); ++i) {
-      mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
+    if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONSTANT) {
+      for (size_t i = 0; i < entities.size(); ++i) {
+        mVertexWeights[i] = 1;
+      }
+    }
+    else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::TOPOLOGY) {
+      for (size_t i = 0; i < entities.size(); ++i) {
+        mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
+      }
+    }
+    else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONNECTIVITY) {
+      const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(bulkData);
+      for (size_t i = 0; i < entities.size(); ++i) {
+        mVertexWeights[i] = *stk::mesh::field_data(connectivityWeights, entities[i]);
+      }
+    }
+    else {
+      ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
     }
   }
 

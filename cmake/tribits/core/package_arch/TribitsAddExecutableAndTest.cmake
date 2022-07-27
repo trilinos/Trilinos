@@ -78,7 +78,7 @@ macro(tribits_add_test_wrapper)
   endif()
 endmacro()
 
-#
+
 # @FUNCTION: tribits_add_executable_and_test()
 #
 # Add an executable and a test (or several tests) all in one shot (just calls
@@ -113,6 +113,7 @@ endmacro()
 #     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
 #     [INSTALLABLE]
 #     [TIMEOUT <maxSeconds>]
+#     [LIST_SEPARATOR <sep>]
 #     [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
 #     [ADDED_TESTS_NAMES_OUT <testsNames>]
 #     )
@@ -159,7 +160,7 @@ function(tribits_add_executable_and_test EXE_NAME)
      #one_value_keywords
      "DISABLED"
      #mulit_value_keywords
-     "SOURCES;DEPLIBS;TESTONLYLIBS;IMPORTEDLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;ENVIRONMENT;TIMEOUT;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;XHOSTTYPE_TEST;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT;ADDED_TESTS_NAMES_OUT"
+     "SOURCES;DEPLIBS;TESTONLYLIBS;IMPORTEDLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;ENVIRONMENT;TIMEOUT;LIST_SEPARATOR;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;XHOSTTYPE_TEST;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT;ADDED_TESTS_NAMES_OUT"
      ${ARGN}
      )
 
@@ -193,7 +194,7 @@ function(tribits_add_executable_and_test EXE_NAME)
   tribits_fwd_parse_opt(COMMON_CALL_ARGS NOEXESUFFIX)
 
   #
-  # C) tribitsaddexecutable(...)
+  # C) tribits_add_executable(...)
   #
 
   set(CALL_ARGS "")
@@ -219,7 +220,7 @@ function(tribits_add_executable_and_test EXE_NAME)
   endif()
 
   #
-  # D) tribitsaddtest(...)
+  # D) tribits_add_test(...)
   #
 
   set(CALL_ARGS "")
@@ -236,6 +237,7 @@ function(tribits_add_executable_and_test EXE_NAME)
   tribits_fwd_parse_opt(CALL_ARGS STANDARD_PASS_OUTPUT)
   tribits_fwd_parse_opt(CALL_ARGS WILL_FAIL)
   tribits_fwd_parse_arg(CALL_ARGS TIMEOUT)
+  tribits_fwd_parse_arg(CALL_ARGS LIST_SEPARATOR)
   tribits_fwd_parse_opt(CALL_ARGS ADD_DIR_TO_NAME)
   tribits_fwd_parse_opt(CALL_ARGS ADDED_TESTS_NAMES_OUT)
   if (PARSE_XHOST_TEST)

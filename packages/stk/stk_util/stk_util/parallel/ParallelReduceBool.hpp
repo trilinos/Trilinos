@@ -36,6 +36,7 @@
 #define stk_util_parallel_ParallelReduceBool_hpp
 
 #include "stk_util/parallel/ParallelReduce.hpp"  // for ParallelMachine, etc
+#include "stk_util/parallel/CouplingVersions.hpp"
 
 //------------------------------------------------------------------------
 
@@ -43,18 +44,44 @@ namespace stk {
 
 inline bool is_true_on_all_procs(ParallelMachine comm , const bool truthValue)
 {
+#ifdef STK_HAS_MPI
+    stk::util::print_unsupported_version_warning(2, __LINE__, __FILE__);
+
+  if (stk::util::get_common_coupling_version() >= 3) {
+    bool globalResult;
+    MPI_Allreduce(&truthValue, &globalResult, 1, MPI_CXX_BOOL, MPI_LAND, comm);
+    return globalResult;
+  } else
+  {
     unsigned localResult = truthValue;
     unsigned globalResult = 0;
     stk::all_reduce_min<unsigned>( comm, &localResult, &globalResult , 1 );
     return (0 != globalResult);
+  }
+#else
+  return truthValue;
+#endif
 }
 
 inline bool is_true_on_any_proc(ParallelMachine comm , const bool truthValue)
 {
+#ifdef STK_HAS_MPI
+  stk::util::print_unsupported_version_warning(2, __LINE__, __FILE__);
+
+  if (stk::util::get_common_coupling_version() >= 3) {
+    bool globalResult;
+    MPI_Allreduce(&truthValue, &globalResult, 1, MPI_CXX_BOOL, MPI_LOR, comm);
+    return globalResult;
+  } else
+  {
     unsigned localResult = truthValue;
     unsigned globalResult = 0;
     stk::all_reduce_max<unsigned>( comm, &localResult, &globalResult , 1 );
     return (0 != globalResult);
+  }
+#else
+  return truthValue;
+#endif
 }
 
 }

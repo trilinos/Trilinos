@@ -39,6 +39,15 @@
 namespace stk {
 namespace balance {
 
+enum class VertexWeightMethod
+{
+  CONSTANT = 0,
+  TOPOLOGY,
+  CONNECTIVITY
+};
+
+std::string vertex_weight_method_name(VertexWeightMethod method);
+
 struct DefaultSettings {
   static constexpr const char * logFile {"stk_balance.log"};
   static constexpr const char * outputDirectory {"."};
@@ -59,7 +68,11 @@ struct DefaultSettings {
   static constexpr double smFaceSearchVertexMultiplier {10.0};
   static constexpr double smFaceSearchEdgeWeight {3.0};
 
+  static constexpr double graphEdgeWeightMultiplier {1.0};
+
   static constexpr const char * vertexWeightBlockMultiplier {""};
+
+  static constexpr VertexWeightMethod vertexWeightMethod {VertexWeightMethod::TOPOLOGY};
 };
 
 } }

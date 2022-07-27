@@ -90,12 +90,16 @@ namespace MueLuTests {
       // generate Schur complement operator
       invapproxFact->Build(level);
 
-      RCP<Vector> Ainv = level.Get<RCP<Vector> >("Ainv", invapproxFact.get());
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
+      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+      Ainv->getLocalDiagCopy(*AinvDiagonal);
+      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
       bool bCheck = true;
       for(int i=0; i<int(n/comm->getSize()); i++) if(AinvData[i] != Teuchos::as<Scalar>(0.5)) bCheck = false;
       TEST_EQUALITY(bCheck, true);
@@ -119,12 +123,16 @@ namespace MueLuTests {
       // generate Schur complement operator
       invapproxFact->Build(level);
 
-      RCP<Vector> Ainv = level.Get<RCP<Vector> >("Ainv", invapproxFact.get());
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
+      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+      Ainv->getLocalDiagCopy(*AinvDiagonal);
+      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
       bool bCheck = true;
       for(int i=0; i<int(n*n/comm->getSize()); i++) if(AinvData[i] != Teuchos::as<Scalar>(0.25)) bCheck = false;
       TEST_EQUALITY(bCheck, true);
@@ -161,12 +169,16 @@ namespace MueLuTests {
       // generate Schur complement operator
       invapproxFact->Build(level);
 
-      RCP<Vector> Ainv = level.Get<RCP<Vector> >("Ainv", invapproxFact.get());
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
+      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+      Ainv->getLocalDiagCopy(*AinvDiagonal);
+      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
       bool bCheck = false;
       for(int i=0; i<int(n/comm->getSize()); i++)
         if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.66666666667)) < std::abs(Teuchos::as<Scalar>(1e-8)) ||
@@ -193,12 +205,16 @@ namespace MueLuTests {
       // generate Schur complement operator
       invapproxFact->Build(level);
 
-      RCP<Vector> Ainv = level.Get<RCP<Vector> >("Ainv", invapproxFact.get());
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
+      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
+      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+      Ainv->getLocalDiagCopy(*AinvDiagonal);
+      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
       bool bCheck = false;
       for(int i=0; i<int(n*n/comm->getSize()); i++)
         if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.166667)) < std::abs(Teuchos::as<Scalar>(1e-6)) ||

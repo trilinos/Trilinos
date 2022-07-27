@@ -59,7 +59,6 @@ namespace Amesos2 {
     return S::static_size;
   }
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   template <class S, class LO, class GO, class D>
   LO get_mp_vector_size(
     const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
@@ -77,7 +76,6 @@ namespace Amesos2 {
     }
     return 0;
   }
-#endif
 
   /// \brief Amesos2 solver adapter for MP::Vector scalar type
   ///

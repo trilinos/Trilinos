@@ -24,6 +24,6 @@ std::string WithSubpackages::depsB() {
 #ifdef HAVE_WITHSUBPACKAGESB_INSERTEDPKG
   B_deps += (std::string("InsertedPkg ") + InsertedPkg::deps() + std::string(" "));
 #endif
-  B_deps += SimpleCxx::deps();
+  B_deps += (std::string("SimpleCxx ") + SimpleCxx::deps());
   return B_deps;
 }

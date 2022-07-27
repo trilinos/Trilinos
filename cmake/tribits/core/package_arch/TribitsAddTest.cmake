@@ -37,10 +37,10 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 include(TribitsAddTestHelpers)
 
 
-#
 # @FUNCTION: tribits_add_test()
 #
 # Add a test or a set of tests for a single executable or command using CTest
@@ -68,11 +68,12 @@ include(TribitsAddTestHelpers)
 #     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [DISABLED <messageWhyDisabled>]
 #     [STANDARD_PASS_OUTPUT
-#       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
-#     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#       | PASS_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...]
+#     [FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...]
 #     [WILL_FAIL]
 #     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
 #     [TIMEOUT <maxSeconds>]
+#     [LIST_SEPARATOR <sep>]
 #     [ADDED_TESTS_NAMES_OUT <testsNames>]
 #     )
 #
@@ -189,9 +190,9 @@ include(TribitsAddTestHelpers)
 #     For example, a set of three different tests with argument lists can be
 #     specified as::
 #
-#       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
-#       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
-#       POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
+#       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2=dummy
+#       POSTIFX_AND_ARGS_1 postfix1  --arg2=fly
+#       POSTIFX_AND_ARGS_2 postfix2  --arg2=bags
 #
 #     This will create three different test cases with the postfix names
 #     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
@@ -201,6 +202,13 @@ include(TribitsAddTestHelpers)
 #     specify multiple arguments without having to quote them and one can
 #     allow long argument lists to span multiple lines.  See `Adding Multiple
 #     Tests (tribits_add_test())`_ for more details and examples.
+#
+#     Note that one of the `<postfix>` arguments can be empty, in which case
+#     the base test name is not appended so::
+#
+#       POSTIFX_AND_ARGS_0 "" --arg1 --arg2=dummy
+#
+#     would create one test without appending the test name.
 #
 #   ``COMM [serial] [mpi]``
 #
@@ -329,7 +337,7 @@ include(TribitsAddTestHelpers)
 #     MPI executables is unreliable.  This is set using the built-in CTest
 #     property ``PASS_REGULAR_EXPRESSION``.
 #
-#   ``PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
+#   ``PASS_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
 #     If specified, then the test will be assumed to pass only if one of the
 #     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output
@@ -339,7 +347,7 @@ include(TribitsAddTestHelpers)
 #     CMake will interpret this as an array element boundary.  To match '.',
 #     use '[.]'.
 #
-#   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
+#   ``FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
 #     If specified, then a test will be assumed to fail if one of the regular
 #     expressions ``<regex0>``, ``<regex1>`` etc. match the output send to
@@ -354,11 +362,18 @@ include(TribitsAddTestHelpers)
 #     using the built-in CTest property ``WILL_FAIL``.  Consult standard CMake
 #     documentation for full behavior.
 #
-#   ``ENVIRONMENT <var0>=<value0> <var1>=<value1> ...``
+#   ``ENVIRONMENT "<var1>=<value1>" "<var2>=<value2>" ...``.
 #
-#     If passed in, the listed environment variables will be set before
-#     calling the test.  This is set using the built-in CTest property
-#     ``ENVIRONMENT``.
+#     If passed in, the listed environment variables will be set by CTest
+#     before calling the test.  This is set using the built-in CTest test
+#     property ``ENVIRONMENT``.  Note, if the env var values contain
+#     semi-colons ``';'``, then replace the semi-colons ``';'`` with another
+#     separator ``'<sep>'`` and pass in ``LIST_SEPARATOR <sep>`` so ``<sep>``
+#     will be replaced with ``';'`` at point of usage.  If the env var values
+#     contain any spaces, also quote the entire variable/value pair as
+#     ``"<vari>=<valuei>"``.  For example, the env var and value
+#     ``my_env_var="arg1 b;arg2;I have spaces"`` would need to be passed as
+#     ``"my_env_var=arg1 b<sep>arg2<sep>I have spaces"``.
 #
 #   ``TIMEOUT <maxSeconds>``
 #
@@ -373,6 +388,18 @@ include(TribitsAddTestHelpers)
 #     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
 #     ``HEAVY`` for extremely expensive tests).  Expensive tests are one of
 #     the worse forms of technical debt that a project can have!
+#
+#   ``LIST_SEPARATOR <sep>``
+#
+#     String used as placeholder for the semi-colon char ``';'`` in order to
+#     allow pass-through.  For example, if arguments to the ``ARGS`` or
+#     ``ENVIRONMENT`` need to use semi-colons, then replace ``';'`` with
+#     ``'<semicolon>'`` (for example) such as with
+#     ``"somearg=arg1<semicolon>arg2"``, then at the point of usage,
+#     ``'<semicolon>'`` will be replaced with ``';'`` and it will be passed to
+#     the final command as ``"somearg=arg1;arg2"`` (with as many preceding
+#     escape backslashes ``'\'`` in front of ``';'`` as is needed for the
+#     given usage context).
 #
 #   ``ADDED_TESTS_NAMES_OUT <testsNames>``
 #
@@ -807,15 +834,15 @@ function(tribits_add_test EXE_NAME)
   #print_var(POSTFIX_AND_ARGS_LIST)
 
   cmake_parse_arguments(
+     PARSE_ARGV 1 # One named argument
      #prefix
      PARSE
      # options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      #one_value_keywords
-     "DISABLED"
+     "DISABLED;LIST_SEPARATOR"
      #multi_value_keywords
 "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
-     ${ARGN}
      )
 
   tribits_check_for_unparsed_arguments()
@@ -848,20 +875,20 @@ function(tribits_add_test EXE_NAME)
 
   # If requested create a modifier for the name that will be inserted between
   # the package name and the given name or exe_name for the test
-  set(DIRECTORY_NAME "")
-  if(PARSE_ADD_DIR_TO_NAME)
-    tribits_create_name_from_current_source_directory(DIRECTORY_NAME)
-    set(DIRECTORY_NAME "${DIRECTORY_NAME}_")
+  set(directoryName "")
+  if (PARSE_ADD_DIR_TO_NAME)
+    tribits_create_name_from_current_source_directory(directoryName)
+    set(directoryName "${directoryName}_")
   endif()
 
   #message("TRIBITS_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
 
   if (PARSE_NAME)
-    set(TEST_NAME "${DIRECTORY_NAME}${PARSE_NAME}")
+    set(TEST_NAME "${directoryName}${PARSE_NAME}")
   elseif (PARSE_NAME_POSTFIX)
-    set(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}_${PARSE_NAME_POSTFIX}")
+    set(TEST_NAME "${directoryName}${EXE_NAME}_${PARSE_NAME_POSTFIX}")
   else()
-    set(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}")
+    set(TEST_NAME "${directoryName}${EXE_NAME}")
   endif()
 
   set(TEST_NAME "${PACKAGE_NAME}_${TEST_NAME}")
@@ -1005,13 +1032,17 @@ function(tribits_add_test EXE_NAME)
         break()
       endif()
 
-      set( POSTFIX_AND_ARGS ${PARSE_POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX}} )
+      set( POSTFIX_AND_ARGS "${PARSE_POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX}}" )
 
       list( GET  POSTFIX_AND_ARGS  0  POSTFIX )
-      set( INARGS  ${POSTFIX_AND_ARGS} ) # Initially contains postfix as ele 0
+      set( INARGS  "${POSTFIX_AND_ARGS}" ) # Initially contains postfix as ele 0
       list( REMOVE_AT  INARGS  0 ) # Strip off the postfix name
 
-      set(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
+      if (NOT "${POSTFIX}" STREQUAL "")
+        set(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
+      else()
+        set(TEST_NAME_INSTANCE "${TEST_NAME}${MPI_NAME_POSTFIX}")
+      endif()
 
       tribits_set_run_serial(${TEST_NAME_INSTANCE} "${PARSE_RUN_SERIAL}"
         SET_RUN_SERIAL)
@@ -1022,7 +1053,6 @@ function(tribits_add_test EXE_NAME)
       tribits_add_test_add_test_all( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}" "${NUM_PROCS_USED}" 
         "${NUM_TOTAL_CORES_USED}"
-        ${PARSE_CREATE_WORKING_DIR}
         "${SET_RUN_SERIAL}" "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
 	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}"
         )

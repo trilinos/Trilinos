@@ -3,10 +3,6 @@
 
 namespace Tacho {
 
-  const char* Version() {
-    return "Tacho:: Trilinos Git";
-  }
+const char *Version() { return "Tacho:: Trilinos Git"; }
 
-}
-
-
+} // namespace Tacho

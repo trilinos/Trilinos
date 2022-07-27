@@ -82,7 +82,6 @@ private:
   std::map<stk::mesh::Entity, int> m_dataMap;
 };
 
-
 class BalanceSettings
 {
 public:
@@ -111,6 +110,10 @@ public:
   virtual int getGraphVertexWeight(stk::topology type) const;
   virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
   virtual GraphOption getGraphOption() const;
+  virtual double getGraphEdgeWeightMultiplier() const;
+
+  virtual void setVertexWeightMethod(VertexWeightMethod method);
+  virtual VertexWeightMethod getVertexWeightMethod() const;
 
   // Graph based options only
   virtual bool includeSearchResultsInGraph() const;
@@ -146,6 +149,9 @@ public:
 
   virtual std::string getCoordinateFieldName() const ;
 
+  virtual void setShouldPrintDiagnostics(bool shouldPrint);
+
+  virtual bool shouldPrintDiagnostics() const;
   virtual bool shouldPrintMetrics() const;
 
   virtual int getNumCriteria() const;
@@ -166,9 +172,13 @@ public:
   virtual std::string getSpiderBeamConnectivityCountFieldName() const;
   virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
   virtual std::string getOutputSubdomainFieldName() const;
+  virtual std::string getDiagnosticElementWeightFieldName() const;
+  virtual std::string getVertexConnectivityWeightFieldName() const;
   virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const;
+  virtual const stk::mesh::Field<double> * getDiagnosticElementWeightField(const stk::mesh::BulkData & stkMeshBulkData) const;
+  virtual const stk::mesh::Field<double> * getVertexConnectivityWeightField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual bool usingColoring() const;
 
   virtual bool useNodeBalancer() const;
@@ -189,6 +199,7 @@ public:
   virtual void setEdgeWeightForSearch(double w) { }
   virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
   virtual void setToleranceForFaceSearch(double tol) { }
+  virtual void setGraphEdgeWeightMultiplier(double multiplier);
 
   void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
   bool get_use_nested_decomp() const { return m_useNestedDecomp; }
@@ -203,6 +214,11 @@ private:
   std::string m_logFilename;
   BlockWeightMultipliers m_vertexWeightBlockMultipliers;
   bool m_useNestedDecomp;
+  bool m_shouldPrintDiagnostics;
+  mutable const stk::mesh::Field<double> * m_diagnosticElementWeightsField;
+  mutable const stk::mesh::Field<double> * m_vertexConnectivityWeightField;
+  VertexWeightMethod m_vertexWeightMethod;
+  double m_graphEdgeWeightMultiplier;
 };
 
 class BasicGeometricSettings : public BalanceSettings

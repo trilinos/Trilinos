@@ -59,6 +59,7 @@ public:
 private:
   void clone_input_mesh();
   void move_subdomain_to_owning_processor();
+  void compute_rebalance_diagnostics();
 
   const InputMesh& m_inputMesh;
   const std::vector<unsigned>& m_targetSubdomains;

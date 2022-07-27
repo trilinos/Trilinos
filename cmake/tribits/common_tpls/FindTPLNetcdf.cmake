@@ -66,7 +66,7 @@ if (Netcdf_ALLOW_PREFIND)
     "${CMAKE_CURRENT_LIST_DIR}/find_modules"
     "${CMAKE_CURRENT_LIST_DIR}/utils"
      )
-  
+
   find_package(NetCDF)
 
   if (NetCDF_FOUND)
@@ -80,7 +80,7 @@ if (Netcdf_ALLOW_PREFIND)
     set(TPL_Netcdf_LIBRARY_DIRS ${_hdf5_LIBRARY_SEARCH_DIRS} CACHE PATH
       "${DOCSTR} library files")
     set(TPL_Netcdf_LIBRARIES ${NetCDF_LIBRARIES} CACHE PATH
-      "List of semi-colon seprated library names (not 'lib' or extension).")
+      "List of semi-colon separated library names (not 'lib' or extension).")
     set(TPL_Netcdf_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS} CACHE PATH
       "${DOCSTR} header files.")
   endif()
@@ -116,7 +116,7 @@ tribits_tpl_find_include_dirs_and_libraries( Netcdf
 # If the `find_package(NetCDF)` is not run, then this may not be set
 # Need to determine how this is set in the library that is being used...
 
-if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")  
+if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")
    assert_defined(TPL_Netcdf_INCLUDE_DIRS)
    find_path(meta_path
       NAMES "netcdf_meta.h"
@@ -129,12 +129,12 @@ if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")
       file(STRINGS "${meta_path}/netcdf_meta.h" netcdf_par_string REGEX "NC_HAS_PARALLEL ")
       string(REGEX MATCH "[01]" netcdf_par_val "${netcdf_par_string}")
       if (netcdf_par_val EQUAL 1)
-         set(TPL_Netcdf_PARALLEL True CACHE INTERNAL 
+         set(TPL_Netcdf_PARALLEL True CACHE INTERNAL
 	     "True if netcdf compiled with parallel enabled")
       endif()
    endif()
-   if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")  
-      set(TPL_Netcdf_PARALLEL False CACHE INTERNAL 
+   if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")
+      set(TPL_Netcdf_PARALLEL False CACHE INTERNAL
           "True if netcdf compiled with parallel enabled")
    endif()
 endif()

@@ -91,7 +91,7 @@ public:
       T x, y, z;
    };
 
-   CartesianConnManager() {}
+   CartesianConnManager() {isInitialized = false, areBoundarySidesBuilt = false;}
 
    ~CartesianConnManager() {}
 
@@ -251,6 +251,17 @@ public:
    virtual bool hasAssociatedNeighbors() const
    { return false; }
 
+   /** For each of the 6 faces (4 edges in 2d) of the brick, builds a vector sides on that brick face (edge in 2d).
+       Each side is described with a pair of integers: the cell containing the side, and side ordinal to the cell
+   */
+   void buildLocalBoundarySides();
+
+   /** Returns the boundary sides associated to one of the 6 faces (4 edges in 2D) of the brick.
+       Each side is described with pair of integers, the cell containing the side, and side ordinal to the cell   
+       \param[in] brickSide, the face (or edge in 2D) of the brick, whose sides are returned
+   */
+   virtual const std::vector<std::pair<LocalOrdinal,int>> & getBoundarySides(int brickSide) const;
+
 private:
 
    // For each element block allocate owned local elements in that block
@@ -284,7 +295,7 @@ private:
    Triplet<GlobalOrdinal> myBrickElements_;
    Triplet<GlobalOrdinal> myBrickOffset_;
 
-   std::map<std::string,std::vector<int> > localElements_;
+   std::map<std::string,std::vector<LocalOrdinal> > localElements_;
 
    // element vector to connectivity
    std::vector<std::vector<GlobalOrdinal> > connectivity_;
@@ -294,6 +305,7 @@ private:
    GlobalOrdinal totalFaces_;
    GlobalOrdinal totalElements_;
    int numSubElemsPerBrickElement_;
+   std::vector<int> numSubSidesPerBrickSide_;
 
    // element to brick map
 
@@ -307,6 +319,12 @@ private:
    //note: the faces of a sub elements can include faces of the brick element,
    //      and in 3D, faces internal to the brick element
    std::vector<std::vector<int> > subElemToBrickElementFacesMap_;
+
+   //  subElemToBrickElementEdgesMap_ in 2D,  subElemToBrickElementFacesMap_ in 3D
+   std::vector<std::vector<int> > subElemToBrickElementSidesMap_;
+
+   std::vector<std::vector<std::pair<LocalOrdinal,int>>> boundarySides_;
+   bool isInitialized, areBoundarySidesBuilt;
 
    shards::CellTopology elemTopology_;
 

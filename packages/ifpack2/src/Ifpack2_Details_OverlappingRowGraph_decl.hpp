@@ -235,14 +235,6 @@ public:
                     nonconst_global_inds_host_view_type& gblColInds,
                     size_t& numIndices) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowCopy (global_ordinal_type globalRow,
-                    const Teuchos::ArrayView<global_ordinal_type>& indices,
-                    size_t& numIndices) const;
-#endif
-
-
   /// \brief Copy out a list of local column indices in the given
   ///   local row that are owned by the calling process.
   ///
@@ -264,12 +256,6 @@ public:
   getLocalRowCopy (local_ordinal_type localRow,
                    nonconst_local_inds_host_view_type& gblColInds,
                    size_t& numIndices) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowCopy (local_ordinal_type localRow,
-                   const Teuchos::ArrayView<local_ordinal_type>& indices,
-                   size_t& numIndices) const;
-#endif
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the graph.
@@ -301,11 +287,6 @@ public:
     virtual void
     getLocalRowView (const local_ordinal_type lclRow,
                      local_inds_host_view_type & lclColInds) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getLocalRowView (const local_ordinal_type lclRow,
-                     Teuchos::ArrayView<const local_ordinal_type>& lclColInds) const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
@@ -325,13 +306,6 @@ public:
     virtual void
     getGlobalRowView (const global_ordinal_type gblRow,
                       global_inds_host_view_type& gblColInds) const;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getGlobalRowView (const global_ordinal_type gblRow,
-                      Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const;
-#endif
-
 
   //@}
 private:

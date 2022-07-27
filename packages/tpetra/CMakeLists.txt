@@ -17,7 +17,7 @@ SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_DEPRECATED_CODE
   TPETRA_ENABLE_DEPRECATED_CODE
-  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled), but note that all existing deprecated code was purged in Dec. 2019."
+  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled)."
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
@@ -275,16 +275,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   TPETRA_ASSUME_CUDA_AWARE_MPI
   "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
   ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor
-  TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable the \"Kokkos refactor\" version of Tpetra.  DO NOT SET THIS EXPLICITLY!  It is ON by default and that is the only supported value."
-  ON
-  )
-IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "The 'classic' version of Tpetra has been deprecated for a long time, and is not longer available.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you should not set it explicitly.)")
-ENDIF ()
 
 ######################################################################
 # Explicit template instantiation (ETI) and test instantiation logic
@@ -1092,15 +1082,9 @@ ENDIF ()
 
 # Decide whether to instantiate / test Scalar = qd_real ("quad
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_QD_REAL option: whether to instantiate / test
 # Scalar = qd_real.
@@ -1113,20 +1097,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_QD_REAL)
 GLOBAL_SET (HAVE_TPETRA_QD_REAL ${Tpetra_INST_QD_REAL})
 
-IF (Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_QD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = dd_real ("double
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_DD_REAL option: whether to instantiate / test
 # Scalar = dd_real.
@@ -1139,8 +1118,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DD_REAL)
 GLOBAL_SET (HAVE_TPETRA_DD_REAL ${Tpetra_INST_DD_REAL})
 
-IF (Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_DD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 #

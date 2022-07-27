@@ -65,6 +65,7 @@ public:
   int get_global_num_elements() const { return m_globalNumElems; }
   stk::io::EntitySharingInfo get_node_sharing_info(unsigned mySubdomain,
                                                    const std::vector<unsigned>& subdomainsInBatch) const;
+  const BalanceSettings & get_balance_settings() const { return m_balanceSettings; }
 
 private:
   void initialize_mesh_counts();

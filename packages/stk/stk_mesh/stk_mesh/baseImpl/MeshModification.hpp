@@ -67,6 +67,7 @@ public:
 
     size_t synchronized_count() const { return m_sync_count ; }
     void increment_sync_count() { ++m_sync_count; }
+    void set_sync_count(size_t syncCount) { m_sync_count = syncCount; }
 
     bool modification_begin(const std::string description);
 

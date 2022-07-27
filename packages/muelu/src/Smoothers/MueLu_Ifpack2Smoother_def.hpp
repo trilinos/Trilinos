@@ -227,7 +227,6 @@ namespace MueLu {
       if (blocksize) {
         // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
 
-        using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
         RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
         if(AcrsWrap.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot convert matrix A to CrsMatrixWrap object.");
@@ -354,7 +353,12 @@ namespace MueLu {
         ParameterList& subList = paramList.sublist(sublistName);
 
         std::string partName = "partitioner: type";
-        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+        // Pretty sure no one has been using this. Unfortunately, old if
+        // statement (which checked for equality with "user") prevented
+        // anyone from employing other types of Ifpack2 user partition 
+        // options. Leaving this and switching if to "vanka user" just 
+        // in case some day someone might want to use this.
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "vanka user") {
           isBlockedMatrix = true;
 
           RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
@@ -391,6 +395,7 @@ namespace MueLu {
           if (haveBoundary)
             numBlocks++;
 
+          subList.set("partitioner: type","user");
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
 

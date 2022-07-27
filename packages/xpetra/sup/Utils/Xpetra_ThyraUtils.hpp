@@ -64,6 +64,7 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_BlockedMultiVector.hpp"
+#include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MapUtils.hpp"
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"

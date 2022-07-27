@@ -85,12 +85,6 @@ namespace Amesos2 {
     typedef Node node_t;
 
     typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    typedef typename matrix_type::local_matrix_type  local_matrix_t;
-    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
-    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
-    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
-    #endif
 
     typedef typename matrix_type::nonconst_global_inds_host_view_type global_host_idx_type;
     typedef typename matrix_type::nonconst_values_host_view_type      global_host_val_type;
@@ -113,12 +107,6 @@ namespace Amesos2 {
     typedef Node node_t;
 
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  matrix_type;
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    typedef typename matrix_type::local_matrix_type  local_matrix_t;
-    typedef typename matrix_type::local_matrix_type::row_map_type::pointer_type  sparse_ptr_type;
-    typedef typename matrix_type::local_matrix_type::index_type::pointer_type sparse_idx_type;
-    typedef typename matrix_type::local_matrix_type::values_type::pointer_type sparse_values_type;
-    #endif
 
     typedef typename matrix_type::nonconst_global_inds_host_view_type global_host_idx_type;
     typedef typename matrix_type::nonconst_values_host_view_type      global_host_val_type;
@@ -140,13 +128,6 @@ namespace Amesos2 {
 
     typedef KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, DeviceType>  matrix_type;
     typedef Tpetra::Map<>::node_type node_t;
-
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    typedef matrix_type  local_matrix_t; // is the same right now
-    typedef typename matrix_type::row_map_type::value_type * sparse_ptr_type;
-    typedef typename matrix_type::ordinal_type * sparse_idx_type;
-    typedef typename matrix_type::value_type * sparse_values_type;
-    #endif
 
     typedef typename matrix_type::HostMirror::index_type  global_host_idx_type;
     typedef typename matrix_type::HostMirror::values_type global_host_val_type;

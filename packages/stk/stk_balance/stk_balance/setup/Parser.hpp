@@ -52,6 +52,7 @@ struct OptionNames
   const std::string outputDirectory = "output-directory";
   const std::string rebalanceTo = "rebalance-to";
   const std::string logfile = "logfile";
+  const std::string printDiagnostics = "print-diagnostics";
   const std::string smDefaults = "sm";
   const std::string sdDefaults = "sd";
   const std::string faceSearchAbsTol = "face-search-abs-tol";
@@ -62,6 +63,11 @@ struct OptionNames
   const std::string decompMethod = "decomp-method";
   const std::string vertexWeightBlockMultiplier = "block-weights";
   const std::string useNestedDecomp = "use-nested-decomp";
+
+  const std::string vertexWeightMethod = "EXP-vertex-weight-method";
+  const std::string contactSearchEdgeWeight = "EXP-contact-search-edge-weight";
+  const std::string contactSearchVertexWeightMultiplier = "EXP-contact-search-vertex-weight-mult";
+  const std::string edgeWeightMultiplier = "EXP-edge-weight-mult";
 };
 
 class Examples
@@ -102,6 +108,12 @@ private:
   void set_contact_search_tolerance(BalanceSettings& settings) const;
   void set_decomp_method(BalanceSettings& settings) const;
   void set_vertex_weight_block_multiplier(BalanceSettings& settings) const;
+  void set_print_diagnostics(BalanceSettings& settings) const;
+
+  void set_vertex_weight_method(BalanceSettings& settings) const;
+  void set_contact_search_edge_weight(BalanceSettings& settings) const;
+  void set_contact_search_vertex_weight_multiplier(BalanceSettings& settings) const;
+  void set_edge_weight_multiplier(BalanceSettings& settings) const;
 
   const MPI_Comm m_comm;
   const OptionNames m_optionNames;

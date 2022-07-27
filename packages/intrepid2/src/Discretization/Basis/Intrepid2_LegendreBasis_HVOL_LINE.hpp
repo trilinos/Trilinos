@@ -225,11 +225,13 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       for (int i=0; i<this->basisCardinality_; i++)
       {
         // for H(vol) line, first basis member is constant, second is first-degree, etc.
-        this->fieldOrdinalPolynomialDegree_(i,0) = i;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = i;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = i+1; // H^1 degree is one greater
       }
       
       // initialize tags

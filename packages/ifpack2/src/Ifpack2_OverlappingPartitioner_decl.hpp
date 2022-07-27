@@ -177,9 +177,10 @@ protected:
   /// explicitly defined \c Parts_, then \c Partition_ is unused.
   Teuchos::Array<local_ordinal_type> Partition_;
 
-  /// \brief Mapping from partition to all local rows it contains.
+  /// \brief Mapping from partition to all rows it contains.
   ///
-  /// \c Parts_[i][j] is the local index of the j-th row contained in the
+  /// \c Used with 'partitioner: parts' (or 'partitioner: global ID parts')
+  /// \c Parts_[i][j] is the local (or global) index of the j-th row contained in the
   /// (overlapping) partition i.
   Teuchos::Array<Teuchos::ArrayRCP<local_ordinal_type> > Parts_;
 

@@ -59,7 +59,6 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -86,6 +85,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "AztecOO.h"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 
 #include "BelosPseudoBlockGmresSolMgr.hpp"
@@ -203,6 +203,12 @@ int main(int argc,char * argv[])
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+   if(!useTpetra){
+#ifndef PANZER_HAVE_EPETRA
+        throw std::runtime_error("Trying to run Panzer MixedPoisson Test with Epetra, but Epetra is disabled!");
+#endif
+   }
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -345,6 +351,7 @@ int main(int argc,char * argv[])
 
    // build the connection manager
    if(!useTpetra) {
+#ifdef PANZER_HAVE_EPETRA
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
      panzer::DOFManagerFactory globalIndexerFactory;
@@ -354,6 +361,7 @@ int main(int argc,char * argv[])
 
      // construct some linear algebra object, build object to pass to evaluators
      linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager_int));
+#endif
    }
    else {
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
@@ -694,7 +702,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 {
   {
     std::string b_basis_type = threeD ? "HDiv" : "HVol";
-    int b_basis_order = threeD ? basis_order : basis_order-1; 
+    int b_basis_order = threeD ? basis_order : basis_order-1;
 
     Teuchos::ParameterList& p = ipb->sublist("CurlLapacian Physics");
     p.set("Type","CurlLaplacian");

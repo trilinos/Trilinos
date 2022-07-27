@@ -76,11 +76,6 @@ namespace Tpetra {
   // We really need this forward declaration here for friend to work
   template<typename SC, typename LO, typename GO, typename NO>
   class MultiVector;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  // Need this friend only until deprecated code is removed
-  template<typename SC, typename LO, typename GO, typename NO>
-  class BlockMultiVector;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 /// \brief Namespace for Tpetra implementation details.
@@ -556,11 +551,6 @@ public:
   // but we'd very much prefer that users not.
   template<typename SC, typename LO, typename GO, typename NO>
   friend class ::Tpetra::MultiVector;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  // Need this friend only until deprecated code is removed
-  template<typename SC, typename LO, typename GO, typename NO>
-  friend class ::Tpetra::BlockMultiVector;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 private:
   // A Kokkos implementation of WrappedDualView will have to make these
