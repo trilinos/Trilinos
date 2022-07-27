@@ -352,6 +352,9 @@ namespace Xpetra {
     //! Does this have an underlying matrix
     virtual bool hasMatrix() const = 0;
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    virtual LocalOrdinal GetStorageBlockSize() const = 0;
+
     //! Compute a residual R = B - (*this) * X
     virtual void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                           const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,

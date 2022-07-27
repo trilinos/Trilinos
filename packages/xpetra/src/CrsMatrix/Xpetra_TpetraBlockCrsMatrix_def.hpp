@@ -47,6 +47,7 @@
 #define XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 
 #include "Xpetra_TpetraBlockCrsMatrix_decl.hpp"
+#include "Xpetra_TpetraCrsGraph.hpp"
 
 namespace Xpetra {
 
@@ -377,7 +378,12 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     getCrsGraph() const
     {
-      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      XPETRA_MONITOR("TpetraBlockCrsMatrix::getCrsGraph"); 
+      using G_t = Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+      using G_x = TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<G_t> t_graph = Teuchos::rcp_const_cast<G_t>(Teuchos::rcpFromRef(mtx_->getCrsGraph()));
+      RCP<const G_x> x_graph = rcp(new G_x(t_graph));
+      return x_graph;
     }
     
 

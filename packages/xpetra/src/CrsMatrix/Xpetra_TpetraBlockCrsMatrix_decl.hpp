@@ -410,6 +410,9 @@ namespace Xpetra {
 #endif  // HAVE_XPETRA_TPETRA
 #endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
+    //! Returns the block size of the storage mechanism
+    LocalOrdinal GetStorageBlockSize() const {return mtx_->getBlockSize();}
+
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                   const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,

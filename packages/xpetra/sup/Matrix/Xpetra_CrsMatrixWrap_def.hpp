@@ -498,6 +498,11 @@ namespace Xpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetStorageBlockSize() const {
+    return matrixData_->GetStorageBlockSize();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::residual(
             const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X, 
             const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,

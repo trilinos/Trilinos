@@ -480,6 +480,9 @@ public:
   RCP<CrsMatrix> getCrsMatrix() const;
 
 
+  //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+  LocalOrdinal GetStorageBlockSize() const;
+
   //! Compute a residual R = B - (*this) * X
   void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
