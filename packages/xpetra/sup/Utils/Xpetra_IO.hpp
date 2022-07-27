@@ -319,6 +319,7 @@ namespace Xpetra {
         std::ofstream outstream (fileName,std::ofstream::out);
         Teuchos::FancyOStream ofs(Teuchos::rcpFromRef(outstream));
         tmp_BlockCrs->getTpetra_BlockCrsMatrix()->describe(ofs,Teuchos::VERB_EXTREME);        
+        return;
       }
 
 #endif // HAVE_XPETRA_TPETRA
@@ -1051,6 +1052,7 @@ namespace Xpetra {
         std::ofstream outstream (fileName,std::ofstream::out);
         Teuchos::FancyOStream ofs(Teuchos::rcpFromRef(outstream));
         tmp_BlockCrs->getTpetra_BlockCrsMatrix()->describe(ofs,Teuchos::VERB_EXTREME);
+        return;
       }
 
 # endif

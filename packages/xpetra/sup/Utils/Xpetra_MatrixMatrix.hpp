@@ -298,7 +298,14 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
        return false;
      }
     }
+#else // HAVE_XPETRA_TPETRA
+    static bool isTpetraCrs(const Matrix& Op) {
+      return false;
+    }
 
+    static bool isTpetraBlockCrs(const Matrix&  Op) {
+      return false;
+    }
 
 #endif // HAVE_XPETRA_TPETRA
 
