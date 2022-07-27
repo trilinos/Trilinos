@@ -81,8 +81,8 @@ class AdelusHandle {
   int blksz;         // block size for matrix update (matrix-matrix multiply)
                      // (e.g. blksz = 128 for GPU, or blksz = 96 for CPU)
 
-  int myrow;         // process id in the row_comm 
-  int mycol;         // process id in the col_comm
+  int myrow;         // process id in the col_comm 
+  int mycol;         // process id in the row_comm
 
   MPI_Comm row_comm; // row sub-communicator that I belong to
   MPI_Comm col_comm; // column sub-communicator that I belong to
