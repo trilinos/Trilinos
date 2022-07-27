@@ -80,6 +80,7 @@ namespace MueLu {
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    LO storageblocksize = A->GetStorageBlockSize();
     // GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps (unused)
 
     // 1) check for blocking/striding information
@@ -101,12 +102,18 @@ namespace MueLu {
       } else {
         stridedblocksize = fullblocksize;
       }
+      // Correct for the storageblocksize
+      TEUCHOS_TEST_FOR_EXCEPTION(fullblocksize % storageblocksize != 0,Exceptions::RuntimeError,"AmalgamationFactory: fullblocksize needs to be a multiple of A->GetStorageBlockSize()");
+      fullblocksize /= storageblocksize;
+      stridedblocksize /= storageblocksize;
+
       oldView = A->SwitchToView(oldView);
-      GetOStream(Runtime1) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
+      GetOStream(Runtime1) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << ", stridedblocksize=" << stridedblocksize << " and storageblocksize="<<storageblocksize<<" from strided maps. offset=" << offset << std::endl;
 
     } else {
       GetOStream(Warnings0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
     }
+
 
     // build node row map (uniqueMap) and node column map (nonUniqueMap)
     // the arrays rowTranslation and colTranslation contain the local node id
@@ -166,7 +173,7 @@ namespace MueLu {
     container               filter;
 
     GO offset = 0;
-    LO blkSize = A.GetFixedBlockSize();
+    LO blkSize = A.GetFixedBlockSize() / A.GetStorageBlockSize();
     if (A.IsView("stridedMaps") == true) {
       Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
       Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);

@@ -132,7 +132,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
-                      Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap, bool stay_amalgamated) const {
+                      Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
     Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();
@@ -146,7 +146,7 @@ namespace MueLu {
     const LO size = procWinner.size();
 
     std::vector<LO> sizes(numAggregates);
-    if (stay_amalgamated || stridedblocksize_ == 1) {
+    if (stridedblocksize_ == 1) {
       for (LO lnode = 0; lnode < size; lnode++)
         if (procWinner[lnode] == myPid)
           sizes[vertex2AggId[lnode]]++;
@@ -172,7 +172,7 @@ namespace MueLu {
 
     // count, how many dofs have been recorded for each aggregate so far
     Array<LO> numDofs(numAggregates, 0); // empty array with number of DOFs for each aggregate
-    if (stay_amalgamated || stridedblocksize_ == 1) {
+    if (stridedblocksize_ == 1) {
       for (LO lnode = 0; lnode < size; ++lnode)
         if (procWinner[lnode] == myPid) {
           LO myAgg = vertex2AggId[lnode];

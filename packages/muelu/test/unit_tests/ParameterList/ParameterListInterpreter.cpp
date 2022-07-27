@@ -103,8 +103,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
       matrixParams.set("nx",(GlobalOrdinal)300);// needs to be even
 
       RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixParams,Xpetra::UseTpetra);  
-      out<<"Matrix Size = "<<A->getGlobalNumRows()<<std::endl;
-
+      out<<"Matrix Size (block) = "<<A->getGlobalNumRows()<<" (point) "<<A->getRangeMap()->getGlobalNumElements()<<std::endl;
+      Xpetra::IO<SC,LO,GO,NO>::Write("Ablock.dat",*A);
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       
       ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
