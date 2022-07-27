@@ -64,11 +64,8 @@ double get_seconds(double start)
 
 // Exchange and calculate max, min, and average timing information
 
-void showtime(const char *label, double *value)
+void showtime(int comm_id, MPI_Comm comm, int me, int nprocs_cube, const char *label, double *value)
 {
-  extern int me;		// current processor rank
-  extern int nprocs_cube;
-  
   double avgtime;
   
   struct {
@@ -77,18 +74,18 @@ void showtime(const char *label, double *value)
   } max_in, max_out, min_in, min_out;
   max_in.val = *value;
   max_in.proc = me;
-  MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
+  MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,comm);
   min_in.val = *value;
   min_in.proc = me;
-  MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,MPI_COMM_WORLD);
+  MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,comm);
   
-  MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,comm);
   
   avgtime /= nprocs_cube;
   
   if (me == 0) {
-    fprintf(stderr, "%s = %.4f (min, on proc %d), %.4f (avg), %.4f (max, on proc %d).\n",
-      label,min_out.val,min_out.proc,avgtime, max_out.val,max_out.proc);
+    fprintf(stderr, "Communicator %d -- %s = %.4f (min, on proc %d), %.4f (avg), %.4f (max, on proc %d).\n",
+      comm_id,label,min_out.val,min_out.proc,avgtime, max_out.val,max_out.proc);
   }
 }
 

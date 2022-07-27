@@ -54,6 +54,7 @@
 //jdkotul@sandia.gov
 
 //  Variables  INPUT
+//             comm    --- communicator that Adelus is running on
 //             nprocsr --- number of processors assigned to a row
 //             ncols   --- number of columns(=rows) for the matrix
 //             nrhs    --- number of right hand sides
@@ -74,16 +75,17 @@
 
 namespace Adelus {
 
-void distmat_( int *nprocsr,
-               int *ncols,
-               int *nrhs_,
-               int *my_rows_,
-               int *my_cols_,
-               int *my_first_row_,
-               int *my_first_col_,
-               int *my_rhs_,
-               int *my_row,
-               int *my_col );
+void distmat_( MPI_Comm comm,
+               const int nprocsr,
+               const int ncols,
+               const int nrhs,
+               int& my_rows,
+               int& my_cols,
+               int& my_first_row,
+               int& my_first_col,
+               int& my_rhs,
+               int& my_row,
+               int& my_col );
 
 }//namespace Adelus
 
