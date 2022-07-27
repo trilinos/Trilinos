@@ -338,8 +338,6 @@ namespace MueLu {
       amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
       GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
     } else {
-      //      GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
-      // << "using GO->LO conversion with performance penalty" << std::endl;
       throw std::runtime_error("TentativePFactory::PuncoupledBlockCrs: Inconsistent maps not currently supported");
     }
   
@@ -354,7 +352,6 @@ namespace MueLu {
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
     }
 
-
     // BlockCrs requires that we build the (block) graph first, so let's do that...
     // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one 
     // block non-zero per row in the matrix;
@@ -364,10 +361,6 @@ namespace MueLu {
     BlockGraph->allocateAllIndices(numFineBlockRows, iaPtent, jaPtent);
     ArrayView<size_t> ia  = iaPtent();
     ArrayView<LO>     ja  = jaPtent();
-
-
-    printf("ia.size() = %d ja.size =%d numAggs=%d\n",(int)ia.size(),(int)ja.size(),numAggs);
-    fflush(stdout);
 
     for (size_t i = 0; i < numFineBlockRows; i++) {
       ia[i] = i;
@@ -384,22 +377,11 @@ namespace MueLu {
         // FIXME: Allow for bad maps
         const LO localRow = aggToRowMapLO[aggStart[agg]+j];
         const size_t rowStart = ia[localRow];
-        printf("Writing (%d,%d) rowStart=%d\n",(int)localRow,(int)agg,(int)rowStart);fflush(stdout);
+        //printf("Writing (%d,%d) rowStart=%d\n",(int)localRow,(int)agg,(int)rowStart);fflush(stdout);
         ja[rowStart] = offset;
       }      
     }
 
-    /*
-    printf("Before compression: \nja:");
-    for(int i=0; i< (int)ja.size(); i++)
-      printf("%d ",(int)ja[i]);
-    printf("\n");
-    for (size_t i = 0; i < numFineBlockRows; i++) {
-      for (size_t j = ia[i]; j < ia[i+1]; j++) {
-        printf("%d %d\n",(int)i,(int)ja[j]);
-      }
-    }
-    */
     // Compress storage (remove all INVALID, which happen when we skip zeros)
     // We do that in-place
     size_t ia_tmp = 0, nnz = 0;
@@ -412,15 +394,6 @@ namespace MueLu {
       ia_tmp  = ia[i+1];
       ia[i+1] = nnz;
     }
-
-    /*
-    printf("After compression: \n");
-    for (size_t i = 0; i < numFineBlockRows; i++) {
-      for (size_t j = ia[i]; j < ia[i+1]; j++) {
-        printf("%d %d\n",(int)i,(int)ja[j]);
-      }
-    }
-    */
 
     if (rowMap->lib() == Xpetra::UseTpetra) {
       // - Cannot resize for Epetra, as it checks for same pointers
