@@ -163,12 +163,7 @@ namespace Xpetra {
           Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, do_fill_complete, label, params);
 
           // Temporary output matrix
-          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());
-          
-          printf("Ac_t r/r/s=%d/%d/%d\n",
-                 (int)Ac_t->getRangeMap()->getGlobalNumElements(),(int)Ac_t->getRowMap()->getGlobalNumElements(),
-                 (int)Ac_t->getGlobalNumRows());
-
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());          
           RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
