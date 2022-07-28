@@ -254,25 +254,25 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
     }
 
-    static RCP<const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Op2TpetraBlockCrs(const Matrix& Op) {
+    static const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Op2TpetraBlockCrs(const Matrix& Op) {
       try {
         const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
         RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
         RCP<const TpetraBlockCrsMatrix> tmp_BlockCrs= Teuchos::rcp_dynamic_cast<const TpetraBlockCrsMatrix>(tmp_CrsMtx);
         TEUCHOS_TEST_FOR_EXCEPTION(tmp_BlockCrs == Teuchos::null, Xpetra::Exceptions::BadCast, "Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
-        return tmp_BlockCrs->getTpetra_BlockCrsMatrix();
+        return *tmp_BlockCrs->getTpetra_BlockCrsMatrix();
       } catch(...) {
         throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
       }
     }
 
-    static RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Op2NonTpetraBlockCrs(const Matrix& Op) {
+    static Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Op2NonConstTpetraBlockCrs(const Matrix& Op) {
       try {
         const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
         RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
         RCP<const TpetraBlockCrsMatrix> tmp_BlockCrs= Teuchos::rcp_dynamic_cast<const TpetraBlockCrsMatrix>(tmp_CrsMtx);     
         TEUCHOS_TEST_FOR_EXCEPTION(tmp_BlockCrs == Teuchos::null, Xpetra::Exceptions::BadCast, "Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
-        return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+        return *tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
       } catch(...) {
         throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
       }
