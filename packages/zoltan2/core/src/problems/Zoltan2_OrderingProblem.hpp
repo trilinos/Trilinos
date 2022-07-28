@@ -145,7 +145,7 @@ public:
 
     RCP<Teuchos::StringValidator> order_method_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural",
+        Teuchos::tuple<std::string>( "rcm", "metis", "minimum_degree", "natural",
           "random", "sorted_degree", "scotch", "nd" )));
     pl.set("order_method", "rcm", "order algorithm",
       order_method_Validator);
@@ -298,6 +298,10 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
       this->comm_);
     ZOLTAN2_COMPUTE_ORDERING
   }
+  if (method.compare("metis") == 0) {
+    AlgMetis<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
+  }
   else if (method.compare("minimum_degree") == 0) {
     std::string pkg = this->params_->template get<std::string>(
       "order_package", "amd");
@@ -356,6 +360,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   if ((method == std::string("rcm")) || 
       (method == std::string("sorted_degree")) || 
+      (method == std::string("metis")) || 
       (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
