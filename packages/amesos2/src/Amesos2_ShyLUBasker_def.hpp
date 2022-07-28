@@ -83,7 +83,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
-  	"Kokkos node type not supported by experimental ShyLUBasker Amesos2");
+  "Kokkos node type not supported by experimental ShyLUBasker Amesos2");
   */
   typedef Kokkos::OpenMP Exe_Space;
 
@@ -96,6 +96,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.prune          = BASKER_TRUE;
   ShyLUbasker->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbasker->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbasker->Options.matrix_scaling = 0; // use matrix scaling on a big A block
   ShyLUbasker->Options.min_block_size = 0; // no merging small blocks
   ShyLUbasker->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
   ShyLUbasker->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
@@ -103,7 +104,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
-  ShyLUbasker->Options.replace_tiny_pivot = BASKER_TRUE;
+  ShyLUbasker->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
@@ -123,6 +124,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.prune          = BASKER_TRUE;
   ShyLUbaskerTr->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbaskerTr->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbaskerTr->Options.matrix_scaling = 0; // use matrix scaling on a big A block
   ShyLUbaskerTr->Options.min_block_size = 0; // no merging small blocks
   ShyLUbaskerTr->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
   ShyLUbaskerTr->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
@@ -130,15 +132,15 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbaskerTr->Options.run_amd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
-  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_TRUE;
+  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbaskerTr->Options.user_fill     = (double)BASKER_FILL_USER;
   ShyLUbaskerTr->Options.use_sequential_diag_facto = BASKER_FALSE;
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
-		     std::runtime_error,
-	   "Amesos2_ShyLUBasker Exception: Do not have supported Kokkos node type (OpenMP) enabled for ShyLUBasker");
+     std::runtime_error,
+     "Amesos2_ShyLUBasker Exception: Do not have supported Kokkos node type (OpenMP) enabled for ShyLUBasker");
 #endif
 }
 
@@ -421,6 +423,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
   int ierr = 0; // returned error code
 
   using Teuchos::as;
@@ -431,10 +437,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
 
   if ( single_proc_optimization() && nrhs == 1 ) {
-
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
 
 #ifndef HAVE_TEUCHOS_COMPLEX
     auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
@@ -662,8 +664,8 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     }
   if(parameterList->isParameter("replace_tiny_pivot"))
     {
-      ShyLUbasker->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
-      ShyLUbaskerTr->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
+      ShyLUbasker->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
+      ShyLUbaskerTr->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
     }
   if(parameterList->isParameter("btf_matching"))
     {
@@ -681,6 +683,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.blk_matching = parameterList->get<int>("blk_matching");
       ShyLUbaskerTr->Options.blk_matching = parameterList->get<int>("blk_matching");
+    }
+  if(parameterList->isParameter("matrix_scaling"))
+    {
+      ShyLUbasker->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
+      ShyLUbaskerTr->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
     }
   if(parameterList->isParameter("min_block_size"))
     {
@@ -701,51 +708,53 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       pl->set("IsContiguous", true, 
-	      "Are GIDs contiguous");
+              "Are GIDs contiguous");
       pl->set("num_threads", 1, 
-	      "Number of threads");
+              "Number of threads");
       pl->set("pivot", false,
-	      "Should not pivot");
+              "Should not pivot");
       pl->set("delayed pivot", 0,
-	      "Apply static delayed pivot on a big block");
+              "Apply static delayed pivot on a big block");
       pl->set("pivot_tol", .0001,
-	      "Tolerance before pivot, currently not used");
+              "Tolerance before pivot, currently not used");
       pl->set("symmetric", false,
-	      "Should Symbolic assume symmetric nonzero pattern");
+              "Should Symbolic assume symmetric nonzero pattern");
       pl->set("realloc" , false, 
-	      "Should realloc space if not enough");
+              "Should realloc space if not enough");
       pl->set("verbose", false,
-	      "Information about factoring");
+              "Information about factoring");
       pl->set("verbose_matrix", false,
-	      "Give Permuted Matrices");
+              "Give Permuted Matrices");
       pl->set("btf", true, 
-	      "Use BTF ordering");
+              "Use BTF ordering");
       pl->set("prune", false,
-	      "Use prune on BTF blocks (Not Supported)");
+              "Use prune on BTF blocks (Not Supported)");
       pl->set("btf_matching",  2, 
-             "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
+              "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
       pl->set("blk_matching", 1, 
-             "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
+              "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
+      pl->set("matrix_scaling", 0, 
+              "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
       pl->set("min_block_size",  0, 
-             "Size of the minimum diagonal blocks");
-      pl->set("replace_tiny_pivot",  true, 
-             "Replace tiny pivots during the numerical factorization");
+              "Size of the minimum diagonal blocks");
+      pl->set("replace_tiny_pivot",  false, 
+              "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,
-	      "Use METIS for ND");
+              "Use METIS for ND");
       pl->set("use_nodeNDP", true,
-	      "Use nodeND to compute ND partition");
+              "Use nodeND to compute ND partition");
       pl->set("run_nd_on_leaves", false,
-	      "Run ND on the final leaf-nodes for ND factorization");
+              "Run ND on the final leaf-nodes for ND factorization");
       pl->set("run_amd_on_leaves", false,
-	      "Run AMD on the final leaf-nodes for ND factorization");
+              "Run AMD on the final leaf-nodes for ND factorization");
       pl->set("amd_on_blocks", true,
-	      "Run AMD on each diagonal blocks");
+              "Run AMD on each diagonal blocks");
       pl->set("transpose", false,
-	      "Solve the transpose A");
+              "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,
-	      "Use sequential algorithm to factor each diagonal block");
+              "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
-	      "User-provided padding for the fill ratio");
+              "User-provided padding for the fill ratio");
       valid_params = pl;
     }
   return valid_params;
