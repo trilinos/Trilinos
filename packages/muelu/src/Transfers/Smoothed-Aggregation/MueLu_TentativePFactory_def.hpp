@@ -301,7 +301,7 @@ namespace MueLu {
     // Need to generate the coarse block map
     // NOTE: We assume NSDim == block size here
     // NOTE: We also assume that coarseMap has contiguous GIDs
-    const size_t numCoarsePointRows = coarsePointMap->getLocalNumElements();
+    //const size_t numCoarsePointRows = coarsePointMap->getLocalNumElements();
     const size_t numCoarseBlockRows = coarsePointMap->getLocalNumElements() / NSDim;
     RCP<const Map> coarseBlockMap = MapFactory::Build(coarsePointMap->lib(),
                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -334,7 +334,6 @@ namespace MueLu {
     ArrayRCP<LO> aggToRowMapLO;
     ArrayRCP<GO> aggToRowMapGO;
     if (goodMap) {
-      const bool stay_amalgamated = true;
       amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
       GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
     } else {

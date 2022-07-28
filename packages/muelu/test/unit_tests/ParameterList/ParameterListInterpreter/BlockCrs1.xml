@@ -11,7 +11,7 @@
 
     <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
 
-    <Parameter        name="max levels"                	          type="int"      value="2"/>
+    <Parameter        name="max levels"                	          type="int"      value="3"/>
 
     <!-- This is hardwired in the test generator -->
     <Parameter        name="number of equations"                  type="int"      value="3"/>
