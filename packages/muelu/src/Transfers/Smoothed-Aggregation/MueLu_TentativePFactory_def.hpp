@@ -476,10 +476,6 @@ namespace MueLu {
     } //for (GO agg = 0; agg < numAggs; agg++)
 
     Ptentative = P_wrap;
-
-    Xpetra::IO<SC,LO,GO,NO>::Write("pblock.dat",*Ptentative);
-    Xpetra::IO<SC,LO,GO,NO>::Write("fnullspace.dat",*fineNullspace);
-
 #else
     throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
 #endif

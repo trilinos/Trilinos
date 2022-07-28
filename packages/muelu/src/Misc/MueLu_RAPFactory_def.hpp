@@ -293,13 +293,6 @@ namespace MueLu {
             MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
                         doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
                         RAPparams);
-          printf("RAP: A range/row/summary = %d/%d/%d Ac range/row/summary = %d/%d/%d\n",
-                 (int)A->getRangeMap()->getGlobalNumElements(),(int)A->getRowMap()->getGlobalNumElements(),
-                 (int)A->getGlobalNumRows(),
-                 (int)Ac->getRangeMap()->getGlobalNumElements(),(int)Ac->getRowMap()->getGlobalNumElements(),
-                 (int)Ac->getGlobalNumRows());
-          //          Xpetra::IO<SC,LO,GO,NO>::Write("Ac.dat",*Ac);
-
         }
       
         Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
