@@ -153,6 +153,12 @@ public:
     /// that case, you must call fillComplete() on the graph again
     /// before invoking this CrsMatrix constructor.
     ///
+    /// The matrix is constructed in "closed" fill state and, if the the
+    /// optional "start owned" parameter is set to true, "owned" state. You must
+    /// first call beginAssembly or beginModify if you wish to change its
+    /// entries (the difference between these two can be found elsewhere in the
+    /// documentation).
+    ///
     /// This constructor is marked \c explicit so that you can't
     /// create a FECrsMatrix by accident when passing a FECrsGraph into a
     /// function that takes a FECrsMatrix.
