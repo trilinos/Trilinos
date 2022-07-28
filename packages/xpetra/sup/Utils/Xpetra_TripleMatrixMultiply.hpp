@@ -242,37 +242,59 @@ namespace Xpetra {
           // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
           Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
         }
-        else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P) && helpers::isTpetraBlockCrs(Ac)) {
-          // All matrices are BlockCrs
+        else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
+          // All matrices are BlockCrs (except maybe Ac)
+          // FIXME: For the moment we're just going to clobber the innards of AC, so no reuse. Once we have a reuse kernel,
+          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
           std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpR  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(R);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpP  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(P);
-          Tpetra::BlockCrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraBlockCrs(Ac);
+          //          Tpetra::BlockCrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraBlockCrs(Ac);
 
           using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
           RCP<const CRS> Rcrs = Tpetra::convertToCrsMatrix(tpR);
           RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpA);
           RCP<const CRS> Pcrs = Tpetra::convertToCrsMatrix(tpP);
-          RCP<CRS> Accrs = Tpetra::convertToCrsMatrix(tpAc);
-          Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, haveMultiplyDoFillComplete, label, params);
+          //          RCP<CRS> Accrs = Tpetra::convertToCrsMatrix(tpAc);
+          
+          // FIXME: This lines below only works because we're assuming Ac is Point
+          RCP<CRS> Accrs = Teuchos::rcp(new CRS(Rcrs->getRowMap(),0));
+          const bool do_fill_complete=true;
+          Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, do_fill_complete, label, params);
 
           // Temporary output matrix
-          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_temp = Tpetra::convertToBlockCrsMatrix(*Accrs,Ac.GetStorageBlockSize());
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());
           
+          printf("Ac_t r/r/s=%d/%d/%d\n",
+                 (int)Ac_t->getRangeMap()->getGlobalNumElements(),(int)Ac_t->getRowMap()->getGlobalNumElements(),
+                 (int)Ac_t->getGlobalNumRows());
+
+          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
+          RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
+
           // We can now cheat and replace the innards of Ac
-          // WARNING: This assumes we're size compatible.  If not, well, errors happen.
-          Kokkos::deep_copy(tpAc.getValuesDeviceNonConst(),Ac_temp->getValuesDevice());
-          Kokkos::fence();
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>>(Teuchos::rcpFromRef(Ac));
+          Ac_w->replaceCrsMatrix(Ac_p);
+          //          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(Ac_p));
+          //          Ac = *Ac_w;
+          printf("Ac_w row = %d\n",(int)Ac_w->getRowMap()->getGlobalNumElements());
+          printf("Ac_w range = %d\n",(int)Ac_w->getRangeMap()->getGlobalNumElements());
+          printf("Ac_w summary = %d\n",(int)Ac_w->getGlobalNumRows());
+
+          printf("Ac row = %d\n",(int)Ac.getRowMap()->getGlobalNumElements());
+          printf("Ac range = %d\n",(int)Ac.getRangeMap()->getGlobalNumElements());
+          printf("Ac summary = %d\n",(int)Ac.getGlobalNumRows());
 
         }
         else {
           // Mix and match (not supported)
-          printf("A(%s)=%dx%d\n P(%s)=%dx%d R(%s)=%dx%d Ac(%s)=%dx%d\n",
-                 helpers::isTpetraBlockCrs(A) ? "Block" : "Point",A.getRangeMap()->getGlobalNumElements(),A.getDomainMap()->getGlobalNumElements(),
-                 helpers::isTpetraBlockCrs(P) ? "Block" : "Point",P.getRangeMap()->getGlobalNumElements(),P.getDomainMap()->getGlobalNumElements(),
-                 helpers::isTpetraBlockCrs(R) ? "Block" : "Point",R.getRangeMap()->getGlobalNumElements(),R.getDomainMap()->getGlobalNumElements(),
-                 helpers::isTpetraBlockCrs(Ac) ? "Block" : "Point",Ac.getRangeMap()->getGlobalNumElements(),Ac.getDomainMap()->getGlobalNumElements());
+          printf("A(%s)=%dx%d\n P(%s)=%dx%d R(%s)=%dx%d  Ac(%s)\n",
+                 helpers::isTpetraBlockCrs(A) ? "Block" : "Point",(int)A.getRangeMap()->getGlobalNumElements(),(int)A.getDomainMap()->getGlobalNumElements(),
+                 helpers::isTpetraBlockCrs(P) ? "Block" : "Point",(int)P.getRangeMap()->getGlobalNumElements(),(int)P.getDomainMap()->getGlobalNumElements(),
+                 helpers::isTpetraBlockCrs(R) ? "Block" : "Point",(int)R.getRangeMap()->getGlobalNumElements(),(int)R.getDomainMap()->getGlobalNumElements(),
+                 helpers::isTpetraBlockCrs(Ac) ? "Block" : "Point");
+          fflush(stdout);
 
 
           TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");      

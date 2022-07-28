@@ -489,6 +489,9 @@ public:
                 MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
   
 
+  //! Expert only
+  void replaceCrsMatrix(RCP<CrsMatrix> & M);
+
   //@}
 private:
 
