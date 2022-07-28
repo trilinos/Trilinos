@@ -123,7 +123,7 @@ int Lapack<float>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo,
 template <>
 int Lapack<float>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, float *a, const int lda,
                          int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_ssytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 #else
@@ -214,7 +214,7 @@ int Lapack<double>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo
 template <>
 int Lapack<double>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, double *a, const int lda,
                           int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_dsytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 #else
@@ -312,7 +312,7 @@ int Lapack<Kokkos::complex<float>>::sytrf(cusolverDnHandle_t handle, const cubla
 template <>
 int Lapack<Kokkos::complex<float>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
                                           Kokkos::complex<float> *a, const int lda, int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_csytrf(handle, uplo, m, (rocblas_float_complex *)a, lda, ipiv, dev);
   return r_val;
 #else
@@ -414,7 +414,7 @@ int Lapack<Kokkos::complex<double>>::sytrf(cusolverDnHandle_t handle, const cubl
 template <>
 int Lapack<Kokkos::complex<double>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
                                            Kokkos::complex<double> *a, const int lda, int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_zsytrf(handle, uplo, m, (rocblas_double_complex *)a, lda, ipiv, dev);
   return r_val;
 #else

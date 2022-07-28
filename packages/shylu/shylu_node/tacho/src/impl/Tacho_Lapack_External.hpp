@@ -31,10 +31,6 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 #if defined(KOKKOS_ENABLE_HIP)
 #define TACHO_ENABLE_ROCSOLVER
-/// TODO:: for testing, enable the following macro.
-///        once it is confirmed that the LDL solver function is avail then find this macro
-///        and enable the code and remove the macro stuffs
-//#define TACHO_ENABLE_ROCSOLVER_LATEST
 #endif
 
 #if defined(TACHO_ENABLE_CUSOLVER)
@@ -44,6 +40,9 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #if defined(TACHO_ENABLE_ROCSOLVER)
 #include "rocblas.h"
 #include "rocsolver.h"
+#if (ROCSOLVER_VERSION_MAJOR >= 3) && (ROCSOLVER_VERSION_MINOR >= 16)
+#define TACHO_ENABLE_ROCSOLVER_SYTRF 
+#endif
 #endif
 
 namespace Tacho {
