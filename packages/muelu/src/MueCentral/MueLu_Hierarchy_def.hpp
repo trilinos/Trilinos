@@ -1245,9 +1245,10 @@ namespace MueLu {
           break;
         }
 
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries();
+        LO storageblocksize=Am->GetStorageBlockSize();
+        Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
         nnzPerLevel     .push_back(nnz);
-        rowsPerLevel    .push_back(Am->getGlobalNumRows());
+        rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
 
