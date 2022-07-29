@@ -237,9 +237,14 @@ setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
   //Fill the local matrix of A_ (filtered and permuted)
   //First, construct the rowmap by counting the entries in each row
   row_map_type localRowptrs(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Filtered rowptrs"), numLocalRows + 1);
-  Kokkos::parallel_for(policy_type(0, numLocalRows),
+  Kokkos::parallel_for(policy_type(0, numLocalRows + 1),
       KOKKOS_LAMBDA(local_ordinal_type i)
       {
+        if(i == numLocalRows)
+        {
+          localRowptrs(i) = 0;
+          return;
+        }
         //Count the entries that will be in filtered row i.
         //This means entries which correspond to local, non-singleton rows/columns.
         local_ordinal_type numEntries = 0;
@@ -270,8 +275,6 @@ setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
           }
         }
         localRowptrs(i) = numEntries;
-        if(i == numLocalRows - 1)
-          localRowptrs(i + 1) = 0;
       });
   //Prefix sum to finish computing the rowptrs
   size_type numLocalEntries;
