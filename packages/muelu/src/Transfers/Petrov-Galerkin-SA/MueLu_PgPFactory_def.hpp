@@ -214,6 +214,14 @@ namespace MueLu {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
 
+      // RfromPFactory used to indicate to TogglePFactory that a factory
+      // capable  or producing R can be invoked later. TogglePFactory
+      // replaces dummy value with an index into it's array of prolongators
+      // pointing to the correct prolongator factory. This is later used by
+      // RfromP_Or_TransP to invoke the prolongatorfactory in RestrictionMode
+      int dummy = 7;
+      Set(coarseLevel,"RfromPfactory", dummy);
+
       if (IsPrint(Statistics1))
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
 

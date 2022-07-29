@@ -205,6 +205,12 @@ namespace Amesos2 {
     typename multivec_t::impl_scalar_type * getMVPointer_impl() const;
 
     /**
+     * \brief Clone the multivector
+     */ 
+    Teuchos::RCP<multivec_t>
+    clone() const;
+
+    /**
      * \brief Copies the multivector's data into the user-provided vector.
      *
      *  Each vector of the multivector is placed \c lda apart in the

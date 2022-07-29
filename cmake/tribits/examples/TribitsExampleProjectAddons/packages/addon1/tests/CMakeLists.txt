@@ -5,5 +5,5 @@ tribits_add_advanced_test( test
   TEST_0  EXEC  test
     PASS_REGULAR_EXPRESSION_ALL 
       "Addon1 label is: Addon1"
-      "Addon1 deps are: no_deps"
+      "Addon1 deps are: headeronlytpl"
   )

@@ -136,6 +136,9 @@ namespace BaskerNS
     using Mag = typename STS::magnitudeType;
     const Entry zero (0.0);
     const Entry one (1.0);
+    const Mag eps = STS::eps ();
+    const Mag normA     = BTF_A.gnorm;
+    const Mag normA_blk = BTF_A.anorm;
 
     Int b = S[0][kid]; //Which blk from schedule
     BASKER_MATRIX &L   = LL(b)(0);
@@ -243,17 +246,16 @@ namespace BaskerNS
     }
     //#define MY_DEBUG_BASKER
     #ifdef MY_DEBUG_BASKER
-    #define debug_kid 2
-    if (kid == debug_kid) {
-      printf( " t_nfactor_blk(kid = %d, %dx%d): wsize=%d\n",kid,M.nrow,M.ncol,ws_size );
-      printf( " D = [\n" );
-      for(Int k = 0; k < M.ncol; ++k) {
-        for( i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
-          printf( "%d %d %d %.16e\n", i, M.row_idx(i), k, M.val(i));
-        }
-      }
-      printf( "];\n" );
+    #define debug_kid 1
+    {
+      //printf( " t_nfactor_blk(kid = %d, %dx%d): wsize=%d\n",kid,M.nrow,M.ncol,ws_size );
+      char filename[200];
+      sprintf(filename,"D_%d.dat",kid);
+      M.print_matrix(filename);
     }
+    char filename[200];
+    sprintf(filename,"t_nfactor_blk_%d_%d.dat",kid,M.ncol);
+    FILE *fp = fopen(filename,"w");
     #endif
 
     // initialize perm vector
@@ -435,8 +437,12 @@ namespace BaskerNS
         }
       }//for (i = top; i < ws_size)
       #ifdef MY_DEBUG_BASKER
-      if (kid == debug_kid) {
-        printf( " thread-%d > k=%d maxindex=%d pivot=%e maxv=%e, diag=%e diagj=%d tol=%e (nopivot=%d)\n", kid, k, maxindex, pivot, maxv, digv,digj, Options.pivot_tol,Options.no_pivot);
+      //if (kid == debug_kid)
+      {
+        const Mag eps = STS::eps ();
+        const Mag normA_blk = BTF_A.anorm;
+        fprintf(fp, " thread-%d > k=%d maxindex=%d pivot=%e maxv=%e, diag=%e diagj=%d tol=%e eps*normA=%e*%e=%e (nopivot=%d)\n", 
+                kid, k, maxindex, pivot, maxv, digv,digj, Options.pivot_tol,eps,normA_blk,eps*normA_blk,Options.no_pivot);
         fflush(stdout);
       }
       #endif
@@ -467,24 +473,23 @@ namespace BaskerNS
       ucnt = ws_size - top - lcnt +1;
       if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
       {
-        const Mag eps = STS::eps ();
-        const Mag normA     = BTF_A.gnorm;
-        const Mag normA_blk = BTF_A.anorm;
         if (Options.verbose == BASKER_TRUE)
         {
           cout << endl << endl;
           cout << "---------------------------" << endl;
           cout << "  thread-" << kid 
-               << " Error: Dom Matrix, k = " << k
+               << " Error: Dom Matrix(" << b << "), k = " << k
                << " ( " << M.nrow << " x " << M.ncol << " )"
                << " with nnz = " << M.nnz
                << " is singular"
                << endl;
           cout << "  norm(A)   = " << normA     << " (global)" << endl
                << "  norm(A)   = " << normA_blk << " (block)"  << endl
-               << "  replace_tiny_pivot = " << (Options.replace_tiny_pivot ? " true " : "false" ) << endl;
+               << "  replace_zero_pivot = " << (Options.replace_zero_pivot ? " true " : "false" ) << endl;
           if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  replace tiny pivot with " << normA_blk * eps << endl;
+            cout << "  + replace zero pivot with " << normA_blk * sqrt(eps) << endl;
+          } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+            cout << "  - replace zero pivot with " << normA_blk * eps << endl;
           }
           cout << "  Ptr       = " << M.col_ptr(k) 
                            << " " << M.col_ptr(k+1)-1 << endl;
@@ -497,22 +502,20 @@ namespace BaskerNS
                << "---------------------------" << endl;
           /*if (kid == 0)
           {
-            printf( " D = [\n" );
-            for(Int k = 0; k < M.ncol; ++k) {
-              for( i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
-                printf( "%d %d %d %e\n", i, M.row_idx(i), k, M.val(i));
-              }
-            }
-            printf( "];\n" );
+            M.print_matrix("D.dat");
           }*/
         }
+
         if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          pivot = normA_blk * sqrt(eps);
+          X(maxindex) = pivot;
+          npivots ++;
+        } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
           pivot = normA_blk * eps;
           X(maxindex) = pivot;
           npivots ++;
         } else {
           // replace-tiny-pivot not requested, or the current column is structurally empty after elimination
-          // TODO: should we "add" tiny pivot to diagonal?    
           thread_array(kid).error_type =
             BASKER_ERROR_SINGULAR;
           thread_array(kid).error_blk    = b;
@@ -520,17 +523,36 @@ namespace BaskerNS
           thread_array(kid).error_info   = k;
           return BASKER_ERROR;
         }
+      } else if (Options.replace_tiny_pivot && normA_blk > abs(zero) && abs(pivot) < normA_blk * sqrt(eps)) {
+        if (Options.verbose == BASKER_TRUE)
+        {
+          cout << endl << endl;
+          cout << "---------------------------" << endl;
+          cout << "  thread-" << kid 
+               << " Dom Matrix(" << b << "), k = " << k
+               << " ( " << M.nrow << " x " << M.ncol << " )"
+               << " with nnz = " << M.nnz
+               << " : replace tiny pivot( " << pivot << " -> "
+               << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
+               << endl;
+          cout << "---------------------------" << endl;
+        }
+        if (STS::real(pivot) >= abs(zero)) {
+          pivot = normA_blk * sqrt(eps);
+        } else {
+          pivot = -normA_blk * sqrt(eps);
+        }
+        X(maxindex) = pivot;
+        npivots ++;
       }
-      /*else if (abs(pivot) < BTF_A.gnorm*sqrt(eps)) {
-        cout << " tiny but not zero : " << abs(pivot) << " vs " << BTF_A.gnorm << " * " << sqrt(eps) << " = " << BTF_A.gnorm*sqrt(eps) << endl;
-      }*/
+
       // store pivot
       gperm(maxindex+brow_g) = k+brow_g;
       gpermi(k+brow_g) = maxindex + brow_g;
       #ifdef MY_DEBUG_BASKER
-      if (kid == debug_kid)
+      //if (kid == debug_kid)
       {
-        printf( " + %d: gperm(%d + %d) = %d\n",kid,maxindex,brow_g,k+brow_g );
+        fprintf(fp, " + %d: gperm(%d + %d) = %d\n",kid,maxindex,brow_g,k+brow_g );
       }
       #endif
 
@@ -860,22 +882,22 @@ namespace BaskerNS
     #endif
 
     #ifdef MY_DEBUG_BASKER
-    if (kid == debug_kid) {
-      //print_factor(L,U);
-      printf("L=[\n");
+    fclose(fp);
+    {
+      char filename[200];
+      sprintf(filename,"P_%d.dat",kid);
+      FILE *fp = fopen(filename, "w");
       for (int j = 0; j < L.ncol; j++) {
-        for (int k = L.col_ptr[j]; k < L.col_ptr[j+1]; k++) {
-          printf( "%d %d %e\n",(int)L.row_idx[k],j,L.val[k]);
-        }
+        fprintf(fp,"%d %d\n",gperm(j+brow_g)-brow_g,gpermi(j+brow_g)-brow_g);
       }
-      printf("];\n");
-      printf("U=[\n");
-      for (int j = 0; j < U.ncol; j++) {
-        for (int k = U.col_ptr[j]; k < U.col_ptr[j+1]; k++) {
-          printf( "%d %d %e\n",(int)U.row_idx[k],j,U.val[k]);
-        }
-      }
-      printf("];\n");
+      fclose(fp);
+
+      // D(P(:,2), :) = L(P(:,2), :) * U
+      sprintf(filename,"L_%d.dat",kid);
+      L.print_matrix(filename);
+
+      sprintf(filename,"U_%d.dat",kid);
+      U.print_matrix(filename);
     }
     #endif
 
@@ -1423,13 +1445,11 @@ namespace BaskerNS
           //What we want to think about is how to 
           //do this in a dense way
           //#pragma ivdep (may be slower)
-          //printf( " gperm(%d+%d) = %d, scol=%d, %d:%d\n",(int)j,(int)brow,(int)t, (int)L.scol, (int)L.col_ptr(t-local_offset)+1,(int)pend );
           for(Int p = L.col_ptr(t-local_offset)+1; p < pend; ++p)
           {
             const Int row_idx = L.row_idx(p);
             const Entry update_val = L.val(p)*xj;
 
-            //printf( " %d: row_idx=%d\n",(int)p,(int)row_idx );
             X(row_idx) -= update_val;
             flops += 2;
           }//end for() over each nnz in the column

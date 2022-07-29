@@ -167,8 +167,8 @@ namespace
   
   //! Computes C := A*B or C := A^T*B
   //! B is allowed to be either a (rank-2) matrix, or a higher-rank object.  Either way, B's first (row) index should match A's column count.
-  template<class Rank2View>
-  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, Rank2View &B, Rank2View &C)
+  template<class Rank2View, class BFunctor, int rankB = 2>
+  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, BFunctor &B, Rank2View &C)
   {
     using DeviceType = DefaultTestDeviceType;
     using Scalar = typename Rank2View::value_type;
@@ -185,11 +185,13 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
+    TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(B) != rankB, std::invalid_argument, "run-time rank of B does not match compile-time rank");
+    using  ViewIteratorScalar = ViewIterator<Rank2View, Scalar>;
+    using     BIteratorScalar = FunctorIterator<BFunctor, Scalar, rankB>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
-      ViewIteratorScalar B_viewIterator(B);
-      ViewIteratorScalar C_viewIterator(C);
+      BIteratorScalar     B_viewIterator(B);
+      ViewIteratorScalar  C_viewIterator(C);
       
       for (int B_col_ordinal=0; B_col_ordinal<N2; B_col_ordinal++)
       {
@@ -225,14 +227,48 @@ namespace
 
   //! tests that two bases are equivalent; computes a conversion from one to the other and then uses that to confirm that the equivalence
   //! holds for OPERATOR_VALUE (as it should by construction), as well as the operators passed in in opsToTest.
+  //! If ordinalMap is non-empty, it should contain a mapping from the ordinals in basis1 to those ordinals in basis2 that form a sub-basis spanning the same space as basis1.
   template<class DeviceType, class Basis1, class Basis2>
-  void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, const std::vector<EOperator> &opsToTest,
+  void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, typename Basis1::OrdinalTypeArray1D ordinalMap, const std::vector<EOperator> &opsToTest,
                             const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
   {
-    // first, check that the bases agree on cardinality
-    TEST_EQUALITY(basis1.getCardinality(), basis2.getCardinality());
+    if (ordinalMap.size() == 0)
+    {
+      // first, check that the bases agree on cardinality
+      TEST_EQUALITY(basis1.getCardinality(), basis2.getCardinality());
+    }
+    else
+    {
+      TEST_EQUALITY(basis1.getCardinality(), ordinalMap.extent_int(0));
+    }
     
-    const int basisCardinality = basis1.getCardinality();
+    const int basisCardinality  = basis1.getCardinality();
+    const int basisCardinality2 = basis2.getCardinality();
+    
+    typename Basis1::OrdinalTypeArray1D reverseOrdinalMap;
+    reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap - empty", 0);
+    auto reverseOrdinalMapHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), reverseOrdinalMap);
+    
+    if (ordinalMap.size() > 0)
+    {
+      // then set up reverse ordinal map
+      reverseOrdinalMap = typename Basis1::OrdinalTypeArray1D("reverseOrdinalMap", basisCardinality2);
+      reverseOrdinalMapHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), reverseOrdinalMap);
+      
+      auto ordinalMapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ordinalMap);
+      
+      // initialize with -1; these are ordinals for members in basis2 that are not included in basis1
+      Kokkos::deep_copy(reverseOrdinalMapHost, -1);
+      
+      for (int i=0; i<basisCardinality; i++)
+      {
+        int i_mapped = ordinalMapHost(i);
+        reverseOrdinalMapHost(i_mapped) = i;
+      }
+      Kokkos::deep_copy(reverseOrdinalMap, reverseOrdinalMapHost);
+      printFunctor1(ordinalMap,        out, "ordinalMap");
+      printFunctor1(reverseOrdinalMap, out, "reverseOrdinalMap");
+    }
     
     // get quadrature points for integrating up to 2*polyOrder
     const int quadratureDegree = 2*basis1.getDegree();
@@ -241,14 +277,47 @@ namespace
     using Scalar = WeightScalar;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    
+    using Cubature       = Intrepid2::Cubature<DeviceType, PointScalar, WeightScalar>;
+    using CubatureTensor = Intrepid2::CubatureTensor<DeviceType, PointScalar, WeightScalar>;
+    using CubatureDirect = Intrepid2::CubatureDirect<DeviceType, PointScalar, WeightScalar>;
+    
+    Teuchos::RCP<Cubature> lineTopoQuadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(shards::Line<>::key, quadratureDegree);
+    Teuchos::RCP<Cubature> baseTopoQuadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    
+    Teuchos::RCP<Intrepid2::Cubature<DeviceType, PointScalar, WeightScalar>> quadrature;
+    
+    const int numTensorialExtrusions = basis1.getNumTensorialExtrusions();
+    if (numTensorialExtrusions == 0)
+    {
+      quadrature = baseTopoQuadrature;
+    }
+    else
+    {
+      const CubatureDirect* baseTopoQuadratureDirect = dynamic_cast<CubatureDirect*>(baseTopoQuadrature.get());
+      const CubatureDirect* lineTopoQuadratureDirect = dynamic_cast<CubatureDirect*>(lineTopoQuadrature.get());
+      
+      Teuchos::RCP<CubatureTensor> tensorCubature = Teuchos::rcp( new CubatureTensor(*baseTopoQuadratureDirect, *lineTopoQuadratureDirect));
+      
+      for (int d=1; d<numTensorialExtrusions; d++)
+      {
+        tensorCubature = Teuchos::rcp( new CubatureTensor(*tensorCubature, *lineTopoQuadratureDirect) );
+      }
+      
+      quadrature = tensorCubature;
+    }
+    
     ordinal_type numRefPoints = quadrature->getNumPoints();
-    const int spaceDim = basis1.getBaseCellTopology().getDimension();
-    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
-    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
+    const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
+    
+    auto points  = quadrature->allocateCubaturePoints();
+    auto weights = quadrature->allocateCubatureWeights();
+    
     quadrature->getCubature(points, weights);
     
-    auto pointsHost = getHostCopy(points);
+    using HostExecSpace = Kokkos::HostSpace::execution_space;
+    TensorPoints<PointScalar,HostExecSpace> pointsHost(points);
+    
     out << "Points being tested:\n";
     for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
     {
@@ -265,16 +334,13 @@ namespace
     
     // set up a projection of basis2 onto basis1
     using Scalar = typename Basis1::OutputValueType;
-    auto basis1Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
-    auto basis2Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
+    auto basis1Values = basis1.allocateBasisValues(points, OPERATOR_VALUE);
+    auto basis2Values = basis2.allocateBasisValues(points, OPERATOR_VALUE);
     
     basis1.getValues(basis1Values, points, OPERATOR_VALUE);
     basis2.getValues(basis2Values, points, OPERATOR_VALUE);
     
-//    std::cout << "basis1Values:\n";
-//    printFunctor3(basis1Values, std::cout);
-//    std::cout << "basis2Values:\n";
-//    printFunctor3(basis2Values, std::cout);
+    basis2Values.setOrdinalFilter(ordinalMap);
     
     // integrate basis1 against itself to compute the SPD matrix A that we'll use to set up the basis conversion system
     ViewType<Scalar,DeviceType> basis1_vs_basis1 = getView<Scalar, DeviceType>("basis 1 vs basis 1", basisCardinality, basisCardinality);
@@ -328,14 +394,14 @@ namespace
     }
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
-    ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
+    ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 coefficients", basisCardinality, basisCardinality);
     Kokkos::deep_copy(basis1Coefficients, basis1_vs_basis2);
     solveSystemUsingHostLapack(basis1_vs_basis1, basis1Coefficients);
     
     // for non-"DG" bases, check that the topological associations match up
     // to check for DG-ness of basis, examine how many dofs are associated with the interior
-    shards::CellTopology cellTopo = basis1.getBaseCellTopology();
-    const int interiorDim = cellTopo.getDimension();
+    auto cellTopo = ::Intrepid2::CellTopology::cellTopology(basis1.getBaseCellTopology(), basis1.getNumTensorialExtrusions());
+    const int interiorDim = cellTopo->getDimension();
     const int interiorSubcellOrdinal = 0;
     const int firstDofOrdinalForSubcell = 0;
     
@@ -362,9 +428,14 @@ namespace
       basis2InteriorCardinality = basis2.getDofTag(basis2FirstInterior)(3);
     }
     const bool basis1IsDG = (basis1InteriorCardinality == basisCardinality);
-    const bool basis2IsDG = (basis2InteriorCardinality == basisCardinality);
+    const bool basis2IsDG = (basis2InteriorCardinality == basisCardinality2);
     const bool neitherBasisIsDG = !basis1IsDG && !basis2IsDG;
-    if (neitherBasisIsDG)
+    
+    // Hypercube bases can be defined on a strictly tensorial topology, as opposed to the shards topology.  These have different subcell numbering; and the
+    // block below relies on the subcell numbering being the same between the two.  To do the equivalent thing with differing topologies, we would need a
+    // mapping from one cell topology to the other.  We have something like this in TensorTopologyMap, so it might not be too hard to add this…
+    const bool basesAgreeOnCellTopo = (basis1.getBaseCellTopology() == basis2.getBaseCellTopology()) && (basis1.getNumTensorialExtrusions() == basis2.getNumTensorialExtrusions());
+    if (neitherBasisIsDG && basesAgreeOnCellTopo)
     {
       auto basis1CoefficientsHost = getHostCopy(basis1Coefficients);
       // if neither basis is DG, then we can expect them to have matching counts on basis members
@@ -378,12 +449,32 @@ namespace
         // an entry for subcellDim.  The following guards against that:
         if (basis1.getAllDofOrdinal().extent_int(0) <= subcellDim)
         {
-          // basis1 has no dofs for this subcell dim.  Check that basis2 also does not:
-          TEST_ASSERT(basis2.getAllDofOrdinal().extent_int(0) <= subcellDim);
+          // basis1 has no dofs for this subcell dim.  Check that basis2 also does not, at least among the members that form the sub-basis corresponding to basis1:
+          if (reverseOrdinalMapHost.size() == 0) // basis2 and basis1 are supposed to be equivalent
+          {
+            TEST_ASSERT(basis2.getAllDofOrdinal().extent_int(0) <= subcellDim);
+          }
+          else // basis1 corresponds to a non-trivial sub-basis of basis2
+          {
+            if (basis2.getAllDofOrdinal().extent_int(0) > subcellDim)
+            {
+              const int subcellCount = cellTopo->getSubcellCount(subcellDim);
+              for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
+              {
+                const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+                const int basis2SubcellCardinality = basis2.getDofTag(basis2FirstDofOrdinal)(3);
+                for (int subcellDofOrdinal=0; subcellDofOrdinal<basis2SubcellCardinality; subcellDofOrdinal++)
+                {
+                  const int basis2DofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
+                  TEST_ASSERT(reverseOrdinalMapHost(basis2DofOrdinal) == -1); // indicates that basis2DofOrdinal corresponds to basis 2 member that lies outside the span of basis 1
+                }
+              }
+            }
+          }
           break; // we've already checked all subcell dimensions that have any dofs associated with them
         }
         
-        const int subcellCount = cellTopo.getSubcellCount(subcellDim);
+        const int subcellCount = cellTopo->getSubcellCount(subcellDim);
         for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
         {
           // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
@@ -400,30 +491,56 @@ namespace
           // at index 3, dof tag stores the total dof count associated with the subcell
           const int basis1SubcellCardinality = basis1.getDofTag(basis1FirstDofOrdinal)(3);
           const int basis2SubcellCardinality = basis2.getDofTag(basis2FirstDofOrdinal)(3);
-          TEST_EQUALITY(basis1SubcellCardinality, basis2SubcellCardinality);
-          // if we fail the cardinality check, not much point in checking the coefficients
-          if (basis1SubcellCardinality != basis2SubcellCardinality) continue;
           
           out << "subcell " << subcellOrdinal << " has " << basis1SubcellCardinality << " dofs.\n";
           
           std::vector<ordinal_type> basis1SubcellDofOrdinals(basis1SubcellCardinality);
           std::vector<ordinal_type> basis2SubcellDofOrdinals(basis2SubcellCardinality);
+          int basis2SubcellCardinalityFiltered = 0;
           for (int subcellDofOrdinal=0; subcellDofOrdinal<basis1SubcellCardinality; subcellDofOrdinal++)
           {
             basis1SubcellDofOrdinals[subcellDofOrdinal] = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
-            basis2SubcellDofOrdinals[subcellDofOrdinal] = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
           }
-          for (int subcellDofOrdinal=0; subcellDofOrdinal<basis1SubcellCardinality; subcellDofOrdinal++)
+          for (int subcellDofOrdinal=0; subcellDofOrdinal<basis2SubcellCardinality; subcellDofOrdinal++)
+          {
+            int basis2SubcellDofOrdinal                 = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, subcellDofOrdinal);
+            basis2SubcellDofOrdinals[subcellDofOrdinal] = basis2SubcellDofOrdinal;
+            
+            if ((reverseOrdinalMapHost.size() == 0) || (reverseOrdinalMapHost(basis2SubcellDofOrdinal) != -1))
+            {
+              basis2SubcellCardinalityFiltered++;
+            }
+          }
+          
+          TEST_EQUALITY(basis1SubcellCardinality, basis2SubcellCardinalityFiltered);
+          // if we fail the cardinality check, not much point in checking the coefficients
+          if (basis1SubcellCardinality != basis2SubcellCardinalityFiltered) continue;
+          
+          for (int subcellDofOrdinal=0; subcellDofOrdinal<basis2SubcellCardinality; subcellDofOrdinal++)
           {
             // each column in basis1Coefficients represents the corresponding member of basis 2 in terms of members of basis 1
             const int basis2DofOrdinal = basis2SubcellDofOrdinals[subcellDofOrdinal];
             out << "checking representation of basis2 dof ordinal " << basis2DofOrdinal << std::endl;
             
+            int basis2DofOrdinalFiltered;
+            if (reverseOrdinalMapHost.size() == 0)
+            {
+              basis2DofOrdinalFiltered = basis2DofOrdinal;
+            }
+            else
+            {
+              basis2DofOrdinalFiltered = reverseOrdinalMapHost(basis2DofOrdinal);
+              if (basis2DofOrdinalFiltered == -1)
+              {
+                // indicates a basis 2 member outside the span of basis 1.
+                continue;
+              }
+            }
             // look for at least one member of basis1's representation on the subcell
             bool hasNonzeroCoefficient = false;
             for (const int basis1DofOrdinal : basis1SubcellDofOrdinals)
             {
-              Scalar basisCoefficient = basis1CoefficientsHost(basis1DofOrdinal,basis2DofOrdinal);
+              Scalar basisCoefficient = basis1CoefficientsHost(basis1DofOrdinal,basis2DofOrdinalFiltered);
               bool nonzeroCoefficient = (std::abs(basisCoefficient) > absTol);
               if (nonzeroCoefficient)
               {
@@ -439,25 +556,57 @@ namespace
     
     // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
     auto basis2ValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
-    deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); // true: transpose
+    {
+      const int rankB = basis1Values.rank();
+      using ViewType = decltype(basis1Coefficients);
+      using BType    = decltype(basis1Values);
+      switch(rankB)
+      {
+        case 2: deviceGeneralizedMatrixMultiply<ViewType,BType,2>(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); break;
+        case 3: deviceGeneralizedMatrixMultiply<ViewType,BType,3>(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION((rankB < 2) || (rankB > 3), std::invalid_argument, "Unhandled rank for basis1Values");
+      }
+    }
     
-    testViewFloatingEquality(basis2Values, basis2ValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
+    testViewFloatingEquality(basis2ValuesFromBasis1, basis2Values, relTol, absTol, out, success, "actual", "expected");
     
     for (auto op : opsToTest)
     {
       out << "** Testing operator " << EOperatorToString(op) << " **\n";
-      auto basis1OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
-      auto basis2OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
+      auto basis1OpValues = basis1.allocateBasisValues(points, op);
+      auto basis2OpValues = basis2.allocateBasisValues(points, op);
       
       basis1.getValues(basis1OpValues, points, op);
       basis2.getValues(basis2OpValues, points, op);
       
       // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
       auto basis2OpValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
-      deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1OpValues, basis2OpValuesFromBasis1); // true: transpose
+      int rankB = basis1OpValues.rank();
+      using ViewType = decltype(basis1Coefficients);
+      using BType    = decltype(basis1OpValues);
+      const bool transpose = true;
+      switch(rankB)
+      {
+        case 2: deviceGeneralizedMatrixMultiply<ViewType,BType,2>(basis1Coefficients, transpose, basis1OpValues, basis2OpValuesFromBasis1); break;
+        case 3: deviceGeneralizedMatrixMultiply<ViewType,BType,3>(basis1Coefficients, transpose, basis1OpValues, basis2OpValuesFromBasis1); break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION((rankB < 2) || (rankB > 3), std::invalid_argument, "Unhandled rank for basis1OpValues");
+      }
       
-      testViewFloatingEquality(basis2OpValues, basis2OpValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
+      basis2OpValues.setOrdinalFilter(ordinalMap);
+      testViewFloatingEquality(basis2OpValuesFromBasis1, basis2OpValues, relTol, absTol, out, success, "actual", "expected");
     }
+  }
+
+  //! tests that two bases are equivalent; computes a conversion from one to the other and then uses that to confirm that the equivalence
+  //! holds for OPERATOR_VALUE (as it should by construction), as well as the operators passed in in opsToTest.
+  template<class DeviceType, class Basis1, class Basis2>
+  void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, const std::vector<EOperator> &opsToTest,
+                            const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
+  {
+    typename Basis1::OrdinalTypeArray1D ordinalMap; // empty map
+    testBasisEquivalence<DeviceType,Basis1,Basis2>(basis1, basis2, ordinalMap, opsToTest, relTol, absTol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineNodalVersusHierarchicalCG_HGRAD )
@@ -591,6 +740,29 @@ namespace
       testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronHierarchicalCGVersusHypercube3D_HGRAD )
+  {
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11;
+    const double absTol=1e-11;
+    
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    for (int polyOrder=1; polyOrder<3; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      const int spaceDim = 3;
+      auto hypercubeBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily<DefaultTestDeviceType>>(polyOrder, spaceDim);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, *hypercubeBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalVersusHierarchicalCG_HGRAD )
   {
@@ -625,7 +797,11 @@ namespace
     const double relTol=1e-13; // ____ is sharp on development setup for polyOrder=1; relaxing for potential architectural differences
     const double absTol=1e-13; // ____ is sharp on development setup for polyOrder=1; relaxing for potential architectural differences
 
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 on Hexahedron not supported by BasisValues.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     const int polyOrder = 1;
     CnBasis cnBasis(polyOrder);
     C1Basis c1Basis;
@@ -644,11 +820,165 @@ namespace
 
     // C2 throws an exception for OPERATOR_D5 and OPERATOR_D6, with a message that these are unsupported.
     // I'm not sure why that is, but for that reason we don't test with OPERATOR_D5 here, as we do in other tests
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 on Hexahedron not supported by BasisValues.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4};
     const int polyOrder = 2;
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
     testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD )
+  {
+    const int maxSpaceDim = 7; // we only test polyDegree = 1 for spaceDim > 5, due to test performance considerations
+    const int maxDegree = 2;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-14;
+    const double absTol=1e-14;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        if ((polyDegree > 1) && (spaceDim > 5)) continue; // skip this case in the interest of test performance
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+        auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+        testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeLowestOrderVersusSerendipity_HGRAD )
+  {
+    const int maxSpaceDim = 7; // lowest-order hypercube basis should be identitical to its serendipity basis
+    const int minDegree = 1;
+    const int maxDegree = 1;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-14;
+    const double absTol=1e-14;
+    
+    using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
+        auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
+        
+        testBasisEquivalence<DefaultTestDeviceType>(*hierarchicalBasis, *serendipityBasis, opsToTest, relTol, absTol, out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeHigherOrderVersusSerendipity_HGRAD )
+  {
+    const int maxSpaceDim = 4;
+    const int minDegree = 2;
+    const int maxDegree = 4;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
+        auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
+        
+        testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(), opsToTest, relTol, absTol, out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeHigherOrderVersusSerendipity_HVOL )
+  {
+    const int maxSpaceDim = 4;
+    const int minDegree = 2;
+    const int maxDegree = 4;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
+        auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
+        
+        testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(), opsToTest, relTol, absTol, out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HVOL )
+  {
+    const int maxSpaceDim = 7; // we only test polyDegree = 0,1 for spaceDim > 5, due to test performance considerations
+    const int maxDegreeForCardinalityTests = 2;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher-order bases in higher dimensions)
+    const double relTol=1e-10;
+    const double absTol=1e-10;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HVOL;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        if ((polyDegree > 1) && (spaceDim > 5)) continue; // skip this case in the interest of test performance
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HVOL<HierarchicalBasisFamily>(polyDegree, spaceDim);
+        auto nodalBasis        = getHypercubeBasis_HVOL<NodalBasisFamily>(polyDegree, spaceDim);
+        testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      }
+    }
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
@@ -710,9 +1040,9 @@ namespace
 //      const int faceDim = 2;
 //      for (int intrepid2FaceOrdinal=0; intrepid2FaceOrdinal<4; intrepid2FaceOrdinal++)
 //      {
-//        int vertex0 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
-//        int vertex1 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
-//        int vertex2 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
+//        int vertex0 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
+//        int vertex1 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
+//        int vertex2 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
 //        std::cout << "face " << intrepid2FaceOrdinal << ": " << vertex0 << vertex1 << vertex2 << std::endl;
 //      }
       

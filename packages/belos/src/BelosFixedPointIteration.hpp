@@ -72,37 +72,6 @@ namespace Belos {
     {}
   };
 
-  //! @name FixedPointIteration Exceptions
-  //@{ 
-  
-  /** \brief FixedPointIterationInitFailure is thrown when the FixedPointIteration object is unable to
-   * generate an initial iterate in the FixedPointIteration::initialize() routine. 
-   *
-   * This std::exception is thrown from the FixedPointIteration::initialize() method, which is
-   * called by the user or from the FixedPointIteration::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown, 
-   * FixedPointIteration::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class FixedPointIterationInitFailure : public BelosError {public:
-    FixedPointIterationInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief FixedPointIterateFailure is thrown when the FixedPointIteration object is unable to
-   * compute the next iterate in the FixedPointIteration::iterate() routine. 
-   *
-   * This std::exception is thrown from the FixedPointIteration::iterate() method.
-   *
-   */
-  class FixedPointIterateFailure : public BelosError {public:
-    FixedPointIterateFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-
-
 template<class ScalarType, class MV, class OP>
 class FixedPointIteration : virtual public Iteration<ScalarType,MV,OP> {
 

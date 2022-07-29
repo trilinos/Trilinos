@@ -341,7 +341,7 @@ int main( int argc, char *argv[] )
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-#if defined(HAVE_THYRA_FLOAT)
+#if defined(HAVE_TEUCHOS_INST_FLOAT)
     // Run using float
     result = exampleImplicitlyComposedLinearOperators<float>(
       n0, n1, n2, *out, verbLevel, 1e-5, true );
@@ -353,9 +353,7 @@ int main( int argc, char *argv[] )
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
 
-#ifdef HAVE_THYRA_COMPLEX
-
-#if defined(HAVE_THYRA_FLOAT)
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT)
     // Run using std::complex<float>
     result = exampleImplicitlyComposedLinearOperators<std::complex<float> >(
       n0, n1, n2, *out, verbLevel, 1e-5, false );
@@ -365,15 +363,14 @@ int main( int argc, char *argv[] )
     //    rel_err((-3.00939,-0.836347),(-0.275689,1.45244)) = 1.14148.
     // Since this works just fine for the next complex<double> case, I am
     // going to just skip this test.
-#endif // defined(HAVE_THYRA_FLOAT)
+#endif
 
-
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_DOUBLE)
     // Run using std::complex<double>
     result = exampleImplicitlyComposedLinearOperators<std::complex<double> >(
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
-
-#endif // HAVE_THYRA_COMPLEX
+#endif
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 

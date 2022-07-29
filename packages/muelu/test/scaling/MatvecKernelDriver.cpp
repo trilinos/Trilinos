@@ -71,6 +71,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
 #endif
+#include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
 #include "cublas_v2.h"
@@ -116,6 +117,73 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
   printf("\n");
 }
 
+#if defined(HAVE_MUELU_TPETRA) 
+//==============================================================================
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
+                        Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & ContiguousRowMap,
+                        Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & ContiguousColumnMap,
+                        Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & ContiguousDomainMap) {
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using LO             = LocalOrdinal;
+  using GO             = GlobalOrdinal;
+  using NO             = Node;
+  using map_type       = Tpetra::Map<LO,GO,NO>;
+  using import_type    = Tpetra::Import<LO,GO,NO>;
+  using go_vector_type = Tpetra::Vector<GO,LO,GO,NO>;
+
+
+  // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
+  // DomainMap) and the corresponding permuted ColumnMap.
+  //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+  //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
+  RCP<const map_type> RowMap      = Matrix.getRowMap();
+  RCP<const map_type> DomainMap   = Matrix.getDomainMap();
+  RCP<const map_type> ColumnMap   = Matrix.getColMap();
+  RCP<const import_type> importer = Matrix.getGraph()->getImporter();
+
+  if(RowMap->isContiguous() ) {
+    // If the row map is linear, then we can just use the row map as is.
+    ContiguousRowMap = RowMap;
+  }
+  else {
+    // The row map isn't linear, so we need a new row map
+    ContiguousRowMap = rcp(new map_type(Matrix.getRowMap()->getGlobalNumElements(),
+                                        Matrix.getRowMap()->getLocalNumElements(), 0, Matrix.getRowMap()->getComm()));
+  }
+
+
+  if(DomainMap->isContiguous() ) {
+    // If the domain map is linear, then we can just use the column map as is.
+    ContiguousDomainMap = DomainMap;
+    ContiguousColumnMap = ColumnMap;
+  }
+  else {
+    // The domain map isn't linear, so we need a new domain map
+    ContiguousDomainMap = rcp(new map_type(DomainMap->getGlobalNumElements(),
+                                           DomainMap->getLocalNumElements(), 0, DomainMap->getComm()));
+    if(importer) {    
+      // If there's an importer then we can use it to get a new column map
+      go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getLocalElementList());
+
+      // import the HYPRE GIDs
+      go_vector_type ColGIDsHYPRE(ColumnMap);
+      ColGIDsHYPRE.doImport(MyGIDsHYPRE, *importer, Tpetra::INSERT);
+   
+      // Make a HYPRE numbering-based column map.
+      ContiguousColumnMap = rcp(new map_type(ColumnMap->getGlobalNumElements(),ColGIDsHYPRE.getDataNonConst()(),0, ColumnMap->getComm()));
+    }
+    else {
+      // The problem has matching domain/column maps, and somehow the domain map isn't linear, so just use the new domain map
+      ContiguousColumnMap = rcp(new map_type(ColumnMap->getGlobalNumElements(),ContiguousDomainMap->getLocalElementList(), 0, ColumnMap->getComm()));
+    }
+  }  
+}
+
+#endif
+
+
 // =========================================================================
 // PETSC Testing
 // =========================================================================
@@ -129,7 +197,7 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 class Petsc_SpmV_Pack {
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 public:
   Petsc_SpmV_Pack (const crs_matrix_type& A,
                    const vector_type& X,
@@ -139,10 +207,9 @@ public:
     LO Nx = (LO) X.getMap()->getLocalNumElements();
     LO Ny = (LO) Y.getMap()->getLocalNumElements();
 
-    // NOTE:  Petsc requires contiguous GIDs for the row map
-    if(!A.getRowMap()->isContiguous())
-      throw std::runtime_error("ERROR: Petsc requires contiguous GIDs for row maps");
-  
+    // NOTE:  Petsc requires contiguous GIDs for the row map    
+    Teuchos::RCP<const map_type> c_row_map, c_col_map, c_domain_map;
+    MakeContiguousMaps(A,c_row_map,c_col_map,c_domain_map);
 
     // Note: PETSC appears to favor local indices for vector insertion
     std::vector<PetscInt> l_indices(std::max(Nx,Ny));
@@ -168,7 +235,7 @@ public:
     // A matrix
     // NOTE: This is an overallocation, but that's OK
     PetscInt max_nnz = A.getLocalMaxNumRowEntries();
-    MatCreateAIJ(comm,A.getRowMap()->getLocalNumElements(),A.getDomainMap()->getLocalNumElements(),PETSC_DECIDE,PETSC_DECIDE,
+    MatCreateAIJ(comm,c_row_map->getLocalNumElements(),c_domain_map->getLocalNumElements(),PETSC_DECIDE,PETSC_DECIDE,
                  max_nnz, NULL, max_nnz,NULL, &A_p);
 
 
@@ -178,11 +245,11 @@ public:
       typename crs_matrix_type::local_inds_host_view_type indices;
       A.getLocalRowView(i, indices, values);
       for(LO j = 0; j < (LO) indices.extent(0); j++){
-        new_indices[j] = A.getColMap()->getGlobalElement(indices(j));
+        new_indices[j] = c_col_map->getGlobalElement(indices(j));
       }
       PetscInt GlobalRow[1];
       PetscInt numEntries = (PetscInt) indices.extent(0);
-      GlobalRow[0] = A.getRowMap()->getGlobalElement(i);
+      GlobalRow[0] = c_row_map->getGlobalElement(i);
       
       MatSetValues(A_p,1,GlobalRow, numEntries, new_indices.data(), values.data(),INSERT_VALUES);
     }                   
@@ -211,6 +278,8 @@ private:
 
 #endif
 
+
+
 // =========================================================================
 // HYPRE Testing
 // =========================================================================
@@ -224,7 +293,7 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 class HYPRE_SpmV_Pack {
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 public:
   HYPRE_SpmV_Pack (const crs_matrix_type& A,
                    const vector_type& X,
@@ -235,15 +304,16 @@ public:
     // Time to copy the matrix / vector over to HYPRE datastructures
     const MPI_Comm & comm = *Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A.getRowMap()->getComm())->getRawMpiComm();
 
+
     // NOTE:  Hypre requires contiguous GIDs for the row map
-    if(!A.getRowMap()->isContiguous())
-      throw std::runtime_error("ERROR: HYPRE requires contiguous GIDs for row maps");
+    Teuchos::RCP<const map_type> c_row_map, c_col_map, c_domain_map;
+    MakeContiguousMaps(A,c_row_map,c_col_map,c_domain_map);
     
     // Create matrix
-    int row_lo = A.getRowMap()->getMinGlobalIndex();
-    int row_hi = A.getRowMap()->getMaxGlobalIndex();
-    int dom_lo = A.getDomainMap()->getMinGlobalIndex();
-    int dom_hi = A.getDomainMap()->getMaxGlobalIndex();
+    int row_lo = c_row_map->getMinGlobalIndex();
+    int row_hi = c_row_map->getMaxGlobalIndex();
+    int dom_lo = c_domain_map->getMinGlobalIndex();
+    int dom_hi = c_domain_map->getMaxGlobalIndex();
     HYPRE_CHK_ERR(HYPRE_IJMatrixCreate(comm,row_lo,row_hi,dom_lo,dom_hi, &ij_matrix));
     HYPRE_CHK_ERR(HYPRE_IJMatrixSetObjectType(ij_matrix,HYPRE_PARCSR));
     HYPRE_CHK_ERR(HYPRE_IJMatrixInitialize(ij_matrix));
@@ -256,18 +326,18 @@ public:
       typename crs_matrix_type::local_inds_host_view_type indices;
       A.getLocalRowView(i, indices, values);
       for(LO j = 0; j < (LO) indices.extent(0); j++){
-        new_indices[j] = A.getColMap()->getGlobalElement(indices(j));
+        new_indices[j] = c_col_map->getGlobalElement(indices(j));
       }
       GO GlobalRow[1];
       GO numEntries = (GO) indices.extent(0);
-      GlobalRow[0] = A.getRowMap()->getGlobalElement(i);
+      GlobalRow[0] = c_row_map->getGlobalElement(i);
       HYPRE_CHK_ERR(HYPRE_IJMatrixSetValues(ij_matrix, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
     }
      HYPRE_CHK_ERR(HYPRE_IJMatrixAssemble(ij_matrix));
      HYPRE_CHK_ERR(HYPRE_IJMatrixGetObject(ij_matrix, (void**)&parcsr_matrix));
 
     // Now the x vector
-    GO * dom_indices = const_cast<GO*>(A.getDomainMap()->getLocalElementList().getRawPtr());
+    GO * dom_indices = const_cast<GO*>(c_domain_map->getLocalElementList().getRawPtr());
     HYPRE_CHK_ERR(HYPRE_IJVectorCreate(comm, dom_lo, dom_hi, &x_ij));
     HYPRE_CHK_ERR(HYPRE_IJVectorSetObjectType(x_ij, HYPRE_PARCSR));
     HYPRE_CHK_ERR(HYPRE_IJVectorInitialize(x_ij));
@@ -277,7 +347,7 @@ public:
     
     
     // Now the y vector
-    GO * row_indices = const_cast<GO*>(A.getRowMap()->getLocalElementList().getRawPtr());
+    GO * row_indices = const_cast<GO*>(c_row_map->getLocalElementList().getRawPtr());
     HYPRE_CHK_ERR(HYPRE_IJVectorCreate(comm, row_lo,row_hi, &y_ij));
     HYPRE_CHK_ERR(HYPRE_IJVectorSetObjectType(y_ij, HYPRE_PARCSR));
     HYPRE_CHK_ERR(HYPRE_IJVectorInitialize(y_ij));
@@ -674,6 +744,7 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
 }
 #endif
+
 
 // =========================================================================
 // =========================================================================
@@ -1160,6 +1231,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                     << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
                     << "\n";
         }
+        
+        // We need to both fence and barrier to make sure the kernels do not overlap
+        Kokkos::fence();
         comm->barrier();
       }// end random exp loop
     } // end repeat

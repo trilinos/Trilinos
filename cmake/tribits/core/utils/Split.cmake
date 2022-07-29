@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @FUNCTION: split()
 #
 # Split a string variable into a string array/list variable.

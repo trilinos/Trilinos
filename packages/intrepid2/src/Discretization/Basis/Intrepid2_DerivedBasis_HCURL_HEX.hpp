@@ -89,7 +89,8 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp(new LineVolBasis (polyOrder_x-1,pointType)),
                  Teuchos::rcp(new LineGradBasis(polyOrder_y,pointType)),
-                 Teuchos::rcp(new LineGradBasis(polyOrder_z,pointType)))
+                 Teuchos::rcp(new LineGradBasis(polyOrder_z,pointType)),
+                 true) // true: use shards CellTopology and tags
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -244,7 +245,8 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp( new LineGradBasis(polyOrder_x,pointType)),
                  Teuchos::rcp( new LineVolBasis (polyOrder_y-1,pointType)),
-                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType)))
+                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType)),
+                 true) // true: use shards CellTopology and tags
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -405,8 +407,11 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp(new LineGradBasis(polyOrder_x,pointType)),
                  Teuchos::rcp(new LineGradBasis(polyOrder_y,pointType)),
-                 Teuchos::rcp(new LineVolBasis (polyOrder_z-1,pointType)))
-    {}
+                 Teuchos::rcp(new LineVolBasis (polyOrder_z-1,pointType)),
+                 true) // true: use shards CellTopology and tags
+    {
+      this->functionSpace_ = FUNCTION_SPACE_HCURL;
+    }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
     */

@@ -81,7 +81,6 @@ macro(tribits_set_package_to_ex  PACKAGE_NAME)
 endmacro()
 
 
-#
 # @MACRO: tribits_disable_package_on_platforms()
 #
 # Disable a package automatically for a list of platforms.

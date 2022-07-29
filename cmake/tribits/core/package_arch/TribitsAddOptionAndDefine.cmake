@@ -40,7 +40,6 @@
 include(GlobalSet)
 
 
-#
 # @MACRO: tribits_add_option_and_define()
 #
 # Add an option and a define variable in one shot.

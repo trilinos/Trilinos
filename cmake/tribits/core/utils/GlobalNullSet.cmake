@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: global_null_set()
 #
 # Set a variable as a null internal global (cache) variable (removes

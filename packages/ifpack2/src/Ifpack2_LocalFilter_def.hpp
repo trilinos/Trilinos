@@ -64,13 +64,23 @@ mapPairsAreFitted (const row_matrix_type& A)
 {
   const map_type& rangeMap = * (A.getRangeMap ());
   const map_type& rowMap = * (A.getRowMap ());
-  const bool rangeAndRowFitted = mapPairIsFitted (rangeMap, rowMap);
+  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
 
   const map_type& domainMap = * (A.getDomainMap ());
   const map_type& columnMap = * (A.getColMap ());
-  const bool domainAndColumnFitted = mapPairIsFitted (domainMap, columnMap);
+  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
 
-  return rangeAndRowFitted && domainAndColumnFitted;
+  //Note BMK 6-22: Map::isLocallyFitted is a local-only operation, not a collective.
+  //This means that it can return different values on different ranks. This can cause MPI to hang,
+  //even though it's supposed to terminate globally when any single rank does.
+  //
+  //This function doesn't need to be fast since it's debug-only code.
+  int localSuccess = rangeAndRowFitted && domainAndColumnFitted;
+  int globalSuccess;
+
+  Teuchos::reduceAll<int, int> (*(A.getComm()), Teuchos::REDUCE_MIN, localSuccess, Teuchos::outArg (globalSuccess));
+
+  return globalSuccess == 1;
 }
 
 
@@ -95,13 +105,15 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   using Teuchos::rcp;
 
 #ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! mapPairsAreFitted (*A), std::invalid_argument, "Ifpack2::LocalFilter: "
+  if(! mapPairsAreFitted (*A))
+  {
+    std::cout << "WARNING: Ifpack2::LocalFilter:\n" <<
     "A's Map pairs are not fitted to each other on Process "
     << A_->getRowMap ()->getComm ()->getRank () << " of the input matrix's "
-    "communicator.  "
-    "This means that LocalFilter does not currently know how to work with A.  "
-    "This will change soon.  Please see discussion of Bug 5992.");
+    "communicator.\n"
+    "This means that LocalFilter may not work with A.  "
+    "Please see discussion of Bug 5992.";
+  }
 #endif // HAVE_IFPACK2_DEBUG
 
   // Build the local communicator (containing this process only).

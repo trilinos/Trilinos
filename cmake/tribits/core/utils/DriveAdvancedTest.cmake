@@ -58,11 +58,29 @@ function(print_uptime  PREFIX_STR)
 endfunction()
 
 
-function(print_single_check_result  MSG_BEGIN  TEST_CASE_PASSED_IN)
+function(print_single_check_result  msgBegin  TEST_CASE_PASSED_IN)
   if (TEST_CASE_PASSED_IN)
-    message("${MSG_BEGIN} [PASSED]")
+    message("${msgBegin} [PASSED]")
   else()
-    message("${MSG_BEGIN} [FAILED]")
+    message("${msgBegin} [FAILED]")
+  endif()
+endfunction()
+
+
+function(print_any_regex_pass_match  msgBegin  regexMatch)
+  if (regexMatch)
+    message("${msgBegin} [PASSED]")
+  else()
+    message("${msgBegin} [not matched]")
+  endif()
+endfunction()
+
+
+function(print_any_regex_fail_match  msgBegin  regexMatch)
+  if (regexMatch)
+    message("${msgBegin} [FAILED]")
+  else()
+    message("${msgBegin} [does not match]")
   endif()
 endfunction()
 
@@ -160,10 +178,12 @@ macro(setup_and_run_test_idx_cmnd_block)
 
   # Set up the TEST_<IDX> command block
   join( TEST_CMND_STR " " TRUE ${TEST_${CMND_IDX}_CMND} )
+  string(REPLACE "${LIST_SEPARATOR}" ";" TEST_CMND_STR "${TEST_CMND_STR}")
   message("Running: ${TEST_CMND_STR}\n")
   set(EXEC_CMND COMMAND ${TEST_${CMND_IDX}_CMND})
+  string(REPLACE "${LIST_SEPARATOR}" "\\\;" EXEC_CMND "${EXEC_CMND}")
 
-  # Set up the workig directory that this TEST_<IDX> CMND block will run in
+  # Set up the working directory that this TEST_<IDX> CMND block will run in
 
   set(WORKING_DIR_SET)
   if (TEST_${CMND_IDX}_WORKING_DIRECTORY)
@@ -247,16 +267,16 @@ macro(determine_test_idx_cmnd_block_pass_fail)
       "TEST_${CMND_IDX}: Pass criteria = Pass Any"
       ${TEST_CASE_PASSED} )
   elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION)
-    string(REGEX MATCH "${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}"
-      MATCH_STR "${TEST_CMND_OUT}" )
-    if (MATCH_STR)
-      set(TEST_CASE_PASSED TRUE)
-    else()
-      set(TEST_CASE_PASSED FALSE)
-    endif()
-    print_single_check_result(
-      "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}}"
-      ${TEST_CASE_PASSED})
+    set(TEST_CASE_PASSED FALSE)
+    foreach(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION})
+      string(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}")
+      if (MATCH_STR)
+        set(TEST_CASE_PASSED TRUE)
+      endif()
+      print_any_regex_pass_match(
+        "TEST_${CMND_IDX}: Pass criteria = Match any REGEX {${REGEX_STR}}"
+        "${MATCH_STR}")
+    endforeach()
   elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL)
     set(TEST_CASE_PASSED TRUE)
     foreach(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL})
@@ -270,7 +290,7 @@ macro(determine_test_idx_cmnd_block_pass_fail)
         set(TEST_CASE_PASSED FALSE)
       endif()
       print_single_check_result(
-        "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${REGEX_STR}}"
+        "TEST_${CMND_IDX}: Pass criteria = Match all REGEX {${REGEX_STR}}"
         ${THIS_REGEX_MATCHED} )
     endforeach()
   else()
@@ -286,14 +306,15 @@ macro(determine_test_idx_cmnd_block_pass_fail)
 
   # B) Check for failing regex matching?
   if (TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION)
-    string(REGEX MATCH "${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}"
-      MATCH_STR "${TEST_CMND_OUT}" )
-    if (MATCH_STR)
-      set(TEST_CASE_PASSED FALSE)
-    endif()
-    print_single_check_result(
-      "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}}"
-     ${TEST_CASE_PASSED} )
+    foreach(REGEX_STR ${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION})
+      string(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}")
+      if (MATCH_STR)
+        set(TEST_CASE_PASSED FALSE)
+      endif()
+      print_any_regex_fail_match(
+        "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${REGEX_STR}}"
+        "${MATCH_STR}")
+    endforeach()
   endif()
 
   # C) Check for return code always 0?
@@ -387,7 +408,7 @@ function(drive_advanced_test)
     if (CMND_IDX EQUAL 0)
       set(TEST_NAMES_STR "TEST_0")
     else()
-      append_string_var( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
+      string(APPEND  TEST_NAMES_STR ", TEST_${CMND_IDX}" )
     endif()
   endforeach()
   message("Running test commands: ${TEST_NAMES_STR}")

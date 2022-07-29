@@ -333,7 +333,7 @@ namespace
       }
       for (auto continuousBasis : continuousBasisValues) // corresponds to "defineVertexFunctions" in line basis definitions
       {
-        for (int degree=1; degree<=maxDegree; degree++)
+        for (int degree=2; degree<=maxDegree; degree++)
         {
           testSubBasis(cellTopo, fs, tol, out, success, degree,degree,degree,continuousBasis);
         }

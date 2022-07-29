@@ -37,15 +37,16 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(TribitsAddAdvancedTestHelpers)
 include(TribitsConstants)
 
+include(TribitsPrintList)
 include(AppendStringVar)
 include(PrintVar)
 
 
-#
 # @FUNCTION: tribits_add_advanced_test()
 #
 # Function that creates an advanced test defined by stringing together one or
@@ -75,10 +76,11 @@ include(PrintVar)
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [DISABLED <messageWhyDisabled>]
-#     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
-#       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
+#     [FINAL_PASS_REGULAR_EXPRESSION "<regex>" |
+#       FINAL_FAIL_REGULAR_EXPRESSION "<regex>"]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     [TIMEOUT <maxSeconds>]
+#     [LIST_SEPARATOR <sep>]
 #     [ADDED_TEST_NAME_OUT <testName>]
 #     )
 #
@@ -102,7 +104,7 @@ include(PrintVar)
 #      (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
 #             [DIRECTORY <dir>]
 #         | CMND <cmndExec>)
-#      [ARGS <arg1> <arg2> ... <argn>]
+#      [ARGS "<arg0>" "<arg1>" ... "<argn>"]
 #      [MESSAGE "<message>"]
 #      [WORKING_DIRECTORY <workingDir>]
 #      [SKIP_CLEAN_WORKING_DIRECTORY]
@@ -111,10 +113,10 @@ include(PrintVar)
 #      [OUTPUT_FILE <outputFile>]
 #      [NO_ECHO_OUTPUT]]
 #      [PASS_ANY
-#        | PASS_REGULAR_EXPRESSION "<regex>"
-#        | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
+#        | PASS_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...
+#        | PASS_REGULAR_EXPRESSION_ALL "<regex0>" "<regex1>" ...
 #        | STANDARD_PASS_OUTPUT ]
-#      [FAIL_REGULAR_EXPRESSION "<regex>"]
+#      [FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...]
 #      [ALWAYS_FAIL_ON_NONZERO_RETURN | ALWAYS_FAIL_ON_ZERO_RETURN]
 #      [WILL_FAIL]
 #
@@ -295,11 +297,18 @@ include(PrintVar)
 #     by CMake, then the test will be added by ctest but the ``DISABLED`` test
 #     property will be set (see `tribits_add_test()`_).
 #
-#   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
+#   ``ENVIRONMENT "<var1>=<value1>" "<var2>=<value2>" ...``.
 #
-#     If passed in, the listed environment variables will be set before
-#     calling the test.  This is set using the built-in CTest test property
-#     ``ENVIRONMENT``.
+#     If passed in, the listed environment variables will be set by CTest
+#     before calling the test.  This is set using the built-in CTest test
+#     property ``ENVIRONMENT``.  Note, if the env var values contain
+#     semi-colons ``';'``, then replace the semi-colons ``';'`` with another
+#     separator ``'<sep>'`` and pass in ``LIST_SEPARATOR <sep>`` so ``<sep>``
+#     will be replaced with ``';'`` at point of usage.  If the env var values
+#     contain any spaces, also quote the entire variable/value pair as
+#     ``"<vari>=<valuei>"``.  For example, the env var and value
+#     ``my_env_var="arg1 b;arg2;I have spaces"`` would need to be passed as
+#     ``"my_env_var=arg1 b<sep>arg2<sep>I have spaces"``.
 #
 #   ``TIMEOUT <maxSeconds>``
 #
@@ -307,6 +316,18 @@ include(PrintVar)
 #     to run before being timed-out and killed (see `Setting timeouts for
 #     tests (tribits_add_test())`_).  This is for the full CTest test, not
 #     individual ``TEST_<idx>`` commands!
+#
+#   ``LIST_SEPARATOR <sep>``
+#
+#     String used as placeholder for the semi-colon char ``';'`` in order to
+#     allow pass-through.  For example, if arguments to the ``ARGS`` or
+#     ``ENVIRONMENT`` need to use semi-colons, then replace ``';'`` with
+#     ``'<semicolon>'`` (for example) such as with
+#     ``"somearg=arg1<semicolon>arg2"``, then at the point of usage,
+#     ``'<semicolon>'`` will be replaced with ``';'`` and it will be passed to
+#     the final command as ``"somearg=arg1;arg2"`` (with as many preceding
+#     escape backslashes ``'\'`` in front of ``';'`` as is needed for the
+#     given usage context).
 #
 #   ``ADDED_TEST_NAME_OUT <testName>``
 #
@@ -358,13 +379,22 @@ include(PrintVar)
 #     ``my_python_test.py`` with ``/usr/bin/env pyhton`` at the top, you can't
 #     just use::
 #
-#       CMND <path>/my_python_test.py ARGS <arg0> <arg1> ...
+#       CMND <path>/my_python_test.py ARGS "<arg0>" "<arg1>" ...
 #
 #     The same goes for Perl or any other scripting language.
 #
 #     Instead, you have to use::
 #
 #       CMND ${PYTHON_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
+#
+#  ``ARGS "<arg0>" "<arg1>" ... "<argN>"``
+#
+#    The list of command-line arguments to pass to the ``CMND`` command or
+#    ``EXEC`` executable.  Put each argument ``<argi>`` in quotes ``"<argi>"``
+#    if it contains any spaces.  Also, of any of the individual arguments need
+#    to contain semi-colons ``';'`` such as ``--my-arg=a;b a;c;d``, then pass
+#    that quoted as ``"--my-arg=a<sep>b a<sep>c<sep>d"`` where ``<sep>``
+#    matches the ``<sep>`` argument to the input ``LIST_SEPARATOR <sep>``.
 #
 # By default, the output (stdout/stderr) for each test command is captured and
 # is then echoed to stdout for the overall test.  This is done in order to be
@@ -463,17 +493,17 @@ include(PrintVar)
 #     that is to follow will determine pass or fail based on output from this
 #     command in some way.
 #
-#   ``PASS_REGULAR_EXPRESSION "<regex>"``
+#   ``PASS_REGULAR_EXPRESSION "<regex0>"  "<regex1>" ...``
 #
-#     If specified, the test command will be assumed to pass if it matches the
-#     given regular expression.  Otherwise, it is assumed to fail.  TIPS:
-#     Replace ';' with '[;]' or CMake will interpret this as an array element
-#     boundary.  To match '.', use '[.]'.
+#     If specified, the test command will be assumed to pass if it matches
+#     **any** of the given regular expressions.  Otherwise, it is assumed to
+#     fail.  TIPS: Replace ';' with '[;]' or CMake will interpret this as an
+#     array element boundary.  To match '.', use '[.]'.
 #
-#   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
+#   ``PASS_REGULAR_EXPRESSION_ALL "<regex0>" "<regex1>" ...``
 #
 #     If specified, the test command will be assumed to pass if the output
-#     matches all of the provided regular expressions.  Note that this is not
+#     matches **all** of the provided regular expressions.  Note that this is not
 #     a capability of raw ctest and represents an extension provided by
 #     TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
 #     will interpret this as an array element boundary.
@@ -485,14 +515,14 @@ include(PrintVar)
 #     This as the result of directly passing in ``PASS_REGULAR_EXPRESSION
 #     "End Result: TEST PASSED"``.
 #
-#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
+#   ``FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
-#     If specified, the test command will be assumed to fail if it matches the
-#     given regular expression.  Otherwise, it is assumed to pass.  This will
-#     be applied and take precedence over other above pass criteria.  For
-#     example, if even if ``PASS_REGULAR_EXPRESSION`` or
-#     ``PASS_REGULAR_EXPRESSION_ALL`` match, then the test will be marked as
-#     failed if this fail regex matches the output.
+#     If specified, the test command will be assumed to fail if it matches
+#     **any** of the given regular expressions.  This will be applied and take
+#     precedence over other above pass criteria.  For example, if even if
+#     ``PASS_REGULAR_EXPRESSION`` or ``PASS_REGULAR_EXPRESSION_ALL`` match,
+#     then the test will be marked as failed if any of the fail regexes match
+#     the output.
 #
 #   ``ALWAYS_FAIL_ON_NONZERO_RETURN``
 #
@@ -572,6 +602,15 @@ include(PrintVar)
 #
 # **Test case Pass/Fail (tribits_add_advanced_test())**
 #
+# The logic given below can be used to determine pass/fail criteria for a test
+# case both based on what is printed in the test output **and** the return
+# code for the test block command.  Raw CTest, as of version 3.23, does not
+# allow that.  With raw CTest, one can only set pass/fail criteria based the
+# test output **or** the return code, but not both.  This make
+# `tribits_add_advanced_test()`_ more attractive to use than
+# `tribits_add_test()`_ or raw ``add_test()`` in cases where it is important
+# to check both.
+#
 # The logic for how pass/fail for a ``TEST_<IDX>`` ``EXEC`` or ``CMND`` case
 # is applied is given by::
 #
@@ -579,13 +618,19 @@ include(PrintVar)
 #   TEST_CASE_PASSED = FALSE
 #   If PASS_ANY specified:
 #     TEST_CASE_PASSED = TRUE
-#   Else If PASS_REGULAR_EXPRESSION specified and "<regex>" matches:
-#     TEST_CASE_PASSED = TRUE
+#   Else If PASS_REGULAR_EXPRESSION is specified:
+#     For each "<regexi>" in PASS_REGULAR_EXPRESSION:
+#       If "<regexi>" matches STDOUT:
+#         TEST_CASE_PASSED = TRUE
+#       Endif
+#     Endforeach
 #   Else if PASS_REGULAR_EXPRESSION_ALL specified:
 #     TEST_CASE_PASSED = TRUE
-#     For each "<regexi>":
-#       If "<regixi>" does not match:
+#     For each "<regexi>" in PASS_REGULAR_EXPRESSION_ALL:
+#       If "<regexi>" does not match STDOUT:
 #         TEST_CASE_PASSED = FALSE
+#       Endif
+#     Endforeach
 #   Else
 #     If command return code == 0:
 #       TEST_CASE_PASSED = TRUE
@@ -593,14 +638,18 @@ include(PrintVar)
 #   Endif
 #
 #   # B) Check for failing regex matching?
-#   If FAIL_REGULAR_EXPRESSION specified and "<regex>" matches:
-#     TEST_CASE_PASSED = FALSE
+#   If FAIL_REGULAR_EXPRESSION specified:
+#     For each "<regexi>" in FAIL_REGULAR_EXPRESSION:
+#       If "<regexi>" matches STDOUT:
+#         TEST_CASE_PASSED = FALSE
+#       Endif
+#     Endforeach
 #   Endif
 #
 #   # C) Check for return code always 0 or !=0?
 #   If ALWAYS_FAIL_ON_NONZERO_RETURN specified and return code != 0:
 #     TEST_CASE_PASSED = FALSE
-#   ElseIf ALWAYS_FAIL_ON_ZERO_RETURN specified and return code == 0:
+#   Else If ALWAYS_FAIL_ON_ZERO_RETURN specified and return code == 0:
 #     TEST_CASE_PASSED = FALSE
 #   Endif
 #
@@ -613,6 +662,13 @@ include(PrintVar)
 #     Endif
 #   Endif
 #
+# Note that the above is the exact same logic that CTest uses to determine
+# pass/fail w.r.t. to the CTest properties ``PASS_REGULAR_EXPRESSION``,
+# ``FAIL_REGULAR_EXPRESSION`` and ``WILL_FAIL``.  (It is just that raw
+# CMake/CTest, as of version 3.23, does not support any pass/fail criteria
+# like ``PASS_REGULAR_EXPRESSION_ALL`` or
+# ``ALWAYS_FAIL_ON_NONZERO_RETURN``/``ALWAYS_FAIL_ON_ZERO_RETURN``.)
+#
 # .. _Overall Pass/Fail (tribits_add_advanced_test()):
 #
 # **Overall Pass/Fail (tribits_add_advanced_test())**
@@ -623,26 +679,36 @@ include(PrintVar)
 #
 # However, this can be changed by setting one of the following optional arguments:
 #
-#   ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
+#   ``FINAL_PASS_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
 #     If specified, the test will be assumed to pass if the output matches
-#     ``<regex>``.  Otherwise, it will be assumed to fail.
+#     **any** of the provided regular expressions ``<regexi>``.  (Sets the
+#     CTest property ``PASS_REGULAR_EXPRESSION`` for the overall test.)
 #
-#   ``FINAL_FAIL_REGULAR_EXPRESSION <regex>``
+#   ``FINAL_FAIL_REGULAR_EXPRESSION "<regex0>" "<regex1>" ...``
 #
 #     If specified, the test will be assumed to fail if the output matches
-#     ``<regex>``.  Otherwise, it will be assumed to fail.
+#     **any** of the provided regular expressions ``<regexi>`` regardless if
+#     other criteria would have the test passing.  (Sets the CTest property
+#     ``FAIL_REGULAR_EXPRESSION`` for the overall test.)
+#
+# **NOTE:** It is **not** recommended to set ``FINAL_PASS_REGULAR_EXPRESSION``
+# or ``FINAL_FAIL_REGULAR_EXPRESSION`` directly, but instead to determine
+# pass/fail for each test case individually as described in `TEST_<idx>
+# EXEC/CMND Test Blocks and Arguments (tribits_add_advanced_test())`_ and
+# `Test case Pass/Fail (tribits_add_advanced_test())`_.  Otherwise, the test
+# will confuse most people and the output behavior will seem very strange.
 #
 # .. _Argument Parsing and Ordering (tribits_add_advanced_test()):
 #
 # **Argument Parsing and Ordering (tribits_add_advanced_test())**
 #
-# The basic tool used for parsing the arguments to this function is the macro
-# ``cmake_parse_arguments()`` which has a certain set of behaviors.  The
-# parsing using ``cmake_parse_arguments()`` is actually done in two phases.
-# There is a top-level parsing of the "overall" arguments listed in `Overall
-# Arguments (tribits_add_advanced_test())`_ that also pulls out the test
-# blocks.  Then there is a second level of parsing using
+# The basic tool used for parsing the arguments to this function is the
+# command ``cmake_parse_arguments()`` which has a certain set of behaviors.
+# The parsing using ``cmake_parse_arguments()`` is actually done in two
+# phases.  There is a top-level parsing of the "overall" arguments listed in
+# `Overall Arguments (tribits_add_advanced_test())`_ that also pulls out the
+# test blocks.  Then there is a second level of parsing using
 # ``cmake_parse_arguments()`` for each of the ``TEST_<idx>`` blocks.  Because
 # of this usage, there are a few restrictions that one needs to be aware of
 # when using ``tribits_add_advanced_test()``.  This short sections tries to
@@ -833,11 +899,6 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     set(TEST_NAME ${TEST_NAME_IN})
   endif()
 
-  # Avoid quoted strings lookup variables
-  cmake_policy(SET CMP0054 NEW)
-  # NOTE: For some reason, setting this policy at the top level with TriBITS
-  # in TribitsCMakePolices.cmake does not affect this function.  Therefore, I
-  # have to set it again here.
 
   #
   # A) Parse the overall arguments and figure out how many tests
@@ -852,20 +913,30 @@ function(tribits_add_advanced_test TEST_NAME_IN)
   foreach( TEST_CMND_IDX RANGE ${MAX_NUM_TEST_CMND_IDX})
     list( APPEND TEST_IDX_LIST TEST_${TEST_CMND_IDX} )
   endforeach()
-  #print_var(TEST_IDX_LIST)
+
+  set(optionsList  FAIL_FAST  RUN_SERIAL  SKIP_CLEAN_OVERALL_WORKING_DIRECTORY)
+
+  set(oneValueKeywordsList  DISABLED)
+
+  set(multiValueKeywordsList
+    ${TEST_IDX_LIST}  OVERALL_WORKING_DIRECTORY
+    LIST_SEPARATOR
+    OVERALL_NUM_MPI_PROCS  OVERALL_NUM_TOTAL_CORES_USED
+    CATEGORIES  COMM  HOST  XHOST  HOSTTYPE  XHOSTTYPE  EXCLUDE_IF_NOT_TRUE
+    FINAL_PASS_REGULAR_EXPRESSION  FINAL_FAIL_REGULAR_EXPRESSION
+    TIMEOUT  ENVIRONMENT  KEYWORDS
+    ADDED_TEST_NAME_OUT
+    )
 
   cmake_parse_arguments(
-     #prefix
-     PARSE
-     #options
-     "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
-     # one_value_keywords
-     "DISABLED"
-     # multi_value_keywords
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
-     ${ARGN}
-     )
+    PARSE_ARGV 1  # NOTE: One named argument to skip over
+    PARSE  # prefix
+    "${optionsList}"
+    "${oneValueKeywordsList}"
+    "${multiValueKeywordsList}"
+    )
 
+  tribits_check_for_unparsed_arguments()
   tribits_add_advanced_test_check_exceed_max_num_test_blocks()
 
   if(PARSE_ADDED_TEST_NAME_OUT)
@@ -945,7 +1016,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
   set(TEST_SCRIPT_STR "")
 
-  append_string_var( TEST_SCRIPT_STR
+  string(APPEND  TEST_SCRIPT_STR
     "\n"
     "#\n"
     "# This is a CMake script and must be run as \"cmake -P <SCRIPT_NAME>\"\n"
@@ -960,6 +1031,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     "#\n"
     "\n"
     "set( TEST_NAME ${TEST_NAME} )\n"
+    "set( LIST_SEPARATOR \"${PARSE_LIST_SEPARATOR}\" )\n"
     )
 
   # Loop through each test case
@@ -1001,8 +1073,6 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
     # Parse the test command case
 
-    #print_var(PARSE_TEST_${TEST_CMND_IDX})
-
     # Search to see if we are copying files or not for this TEST_<IDX> block ...
 
     set(PARSE_COPY_FILES_TO_TEST_DIR)
@@ -1035,26 +1105,32 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       tribits_assert_parse_arg_zero_or_one_value(PARSE SOURCE_DIR)
       tribits_assert_parse_arg_zero_or_one_value(PARSE DEST_DIR)
 
-      set(PARSE_EXEC)
-      set(PARSE_CMND)
+      set(PARSE_EXEC "")
+      set(PARSE_CMND "")
 
     else()
 
       # Parse TEST_<IDX> block args for types EXEC and CMND
 
+      set(testBlockOptionsList  NOEXEPREFIX  NOEXESUFFIX  NO_ECHO_OUTPUT  PASS_ANY
+	STANDARD_PASS_OUTPUT  ALWAYS_FAIL_ON_NONZERO_RETURN  ALWAYS_FAIL_ON_ZERO_RETURN
+	WILL_FAIL  ADD_DIR_TO_NAME  SKIP_CLEAN_WORKING_DIRECTORY
+        )
+
+      set(testBlockMultiValueKeywordsList  EXEC  CMND  ARGS  DIRECTORY  MESSAGE
+	WORKING_DIRECTORY  OUTPUT_FILE  NUM_MPI_PROCS  NUM_TOTAL_CORES_USED
+	PASS_REGULAR_EXPRESSION_ALL  FAIL_REGULAR_EXPRESSION  PASS_REGULAR_EXPRESSION
+	)
+
       cmake_parse_arguments(
-         #prefix
-         PARSE
-         #options
-          "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ALWAYS_FAIL_ON_NONZERO_RETURN;ALWAYS_FAIL_ON_ZERO_RETURN;WILL_FAIL;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
-         # one_value_keywords
-         ""
-         # multi_value_keywords
-         "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
+         PARSE  #prefix
+	 "${testBlockOptionsList}"
+	 ""     # one_value_keywords
+	 "${testBlockMultiValueKeywordsList}"
          ${PARSE_TEST_${TEST_CMND_IDX}}
          )
-  
-      tribits_check_for_unparsed_arguments()
+
+      tribits_check_for_unparsed_arguments(PARSE) # ToDo: Use a different prefix!
 
     endif()
 
@@ -1062,11 +1138,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # Set up the command that will be written into the cmake -P *.cmake file
     #
 
-    set(ARGS_STR ${PARSE_ARGS})
-    #print_var(ARGS_STR)
-    #if (PARSE_ARGS)
-    #  tribits_join_exec_process_set_args( ARGS_STR ${PARSE_ARGS} )
-    #endif()
+    set(ARGS_STR "${PARSE_ARGS}")
 
     if (PARSE_EXEC)
 
@@ -1131,7 +1203,6 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
       tribits_add_test_get_test_cmnd_array( TEST_CMND_ARRAY
         "${EXECUTABLE_PATH}" "${NUM_PROCS_USED}" ${ARGS_STR} )
-      #print_var(TEST_CMND_ARRAY)
 
     elseif (PARSE_CMND)
 
@@ -1187,7 +1258,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       string(REPLACE ";" "," FILES_TO_COPY_COMMA_SEP
         "${FILES_TO_COPY_COMMA_SEP}" )
       # NOTE: Above, we have to replace ';' with ',' or the lower commands
-      # append_string_var() will replace ';' with ''.  This is *not* what we
+      # string(APPEND ) will replace ';' with ''.  This is *not* what we
       # want.  In DriveAdvancedTest.cmake, we will replace the ',' with ';'
       # again :-)  
 
@@ -1234,7 +1305,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
       # Write the vars for COPY_FILES_TO_TEST_DIR 
   
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_COPY_FILES_TO_TEST_DIR"
         " \"${FILES_TO_COPY_COMMA_SEP}\")\n"
@@ -1244,13 +1315,13 @@ function(tribits_add_advanced_test TEST_NAME_IN)
           "${TEST_CMND_STR}" )
       endif()
   
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_SOURCE_DIR"
         " \"${COPY_FILES_TO_TEST_DIR_SOURCE_DIR}\")\n"
         )
   
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_DEST_DIR"
         " \"${COPY_FILES_TO_TEST_DIR_DEST_DIR}\")\n"
@@ -1261,9 +1332,8 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       # Write the command to be run for EXEC and CMND blocks ...
 
       tribits_join_exec_process_set_args( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
-      #print_var(TEST_CMND_STR)
-  
-      append_string_var( TEST_SCRIPT_STR
+
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
         )
@@ -1275,7 +1345,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     endif()
 
     if (PARSE_MESSAGE)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_MESSAGE \"${PARSE_MESSAGE}\" )\n"
         )
@@ -1285,25 +1355,25 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       if ("${PARSE_WORKING_DIRECTORY}" STREQUAL "TEST_NAME")
         set(PARSE_WORKING_DIRECTORY ${TEST_NAME})
       endif()
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_WORKING_DIRECTORY \"${PARSE_WORKING_DIRECTORY}\" )\n"
          )
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_SKIP_CLEAN_WORKING_DIRECTORY ${PARSE_SKIP_CLEAN_WORKING_DIRECTORY} )\n"
         )
     endif()
 
     if (PARSE_OUTPUT_FILE)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_OUTPUT_FILE \"${PARSE_OUTPUT_FILE}\" )\n"
         )
     endif()
 
     if (PARSE_NO_ECHO_OUTPUT)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_NO_ECHO_OUTPUT \"${PARSE_NO_ECHO_OUTPUT}\" )\n"
         )
@@ -1312,58 +1382,58 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # Set up pass/fail
 
     if (PARSE_PASS_ANY)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_ANY TRUE )\n"
         )
     elseif (PARSE_STANDARD_PASS_OUTPUT)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION \"End Result: TEST PASSED\" )\n"
         )
     elseif (PARSE_PASS_REGULAR_EXPRESSION)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION \"${PARSE_PASS_REGULAR_EXPRESSION}\" )\n"
         )
     elseif (PARSE_PASS_REGULAR_EXPRESSION_ALL)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL "
         )
       foreach(REGEX_STR ${PARSE_PASS_REGULAR_EXPRESSION_ALL})
-        append_string_var( TEST_SCRIPT_STR
+        string(APPEND  TEST_SCRIPT_STR
           "\"${REGEX_STR}\" "
           )
       endforeach()
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         ")\n"
         )
     endif()
 
     if (PARSE_FAIL_REGULAR_EXPRESSION)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_FAIL_REGULAR_EXPRESSION \"${PARSE_FAIL_REGULAR_EXPRESSION}\" )\n"
         )
     endif()
 
     if (PARSE_ALWAYS_FAIL_ON_NONZERO_RETURN)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN TRUE )\n"
         )
     endif()
 
     if (PARSE_ALWAYS_FAIL_ON_ZERO_RETURN)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN TRUE )\n"
         )
     endif()
 
     if (PARSE_WILL_FAIL)
-      append_string_var( TEST_SCRIPT_STR
+      string(APPEND  TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_WILL_FAIL TRUE )\n"
         )
@@ -1451,7 +1521,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # F.2) Write the cmake -P script
     #
   
-    append_string_var( TEST_SCRIPT_STR
+    string(APPEND  TEST_SCRIPT_STR
       "\n"
       "set(PROJECT_NAME ${PROJECT_NAME})\n"
       "\n"

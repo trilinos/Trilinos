@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: set_and_inc_dirs()
 #
 # Set a variable to an include directory and call ``include_directories()``

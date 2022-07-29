@@ -2,7 +2,6 @@ include("${${PROJECT_NAME}_TRIBITS_DIR}/core/utils/MessageWrapper.cmake")
 include("${${PROJECT_NAME}_TRIBITS_DIR}/core/utils/TribitsStripQuotesFromStr.cmake")
 
 
-#
 # @FUNCTION: tribits_get_raw_git_commit_utc_time()
 #
 # Get the git commit date of a repo at a given commit in UTC in the format
@@ -58,7 +57,6 @@ function(tribits_get_raw_git_commit_utc_time  repo_base_dir  commit_ref
 endfunction()
 
 
-#
 # @FUNCTION: tribits_get_version_date_from_raw_git_commit_utc_time()
 #
 # Takes input of the form "YYYY-MM-DD hh:mm:ss +0000" from the git command::

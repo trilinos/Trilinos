@@ -256,19 +256,6 @@ namespace Intrepid2 {
                                   const unsigned cellTopoKey,
                                   const ordinal_type cellOrt);
 
-      /** \brief  Computes the determinant of the jacobian of the parameterization maps of 1- and 2-subcells with orientation.
-
-          \param  jacobianDet     [out] - pointer to scalar containing the determinant of the jacobian of the orientation map
-          \param  cellTopoKey     [in]  - key of the cell topology of the parameterized domain (1- and 2-subcells)
-          \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
-      */
-      template<typename pointType>
-      KOKKOS_INLINE_FUNCTION
-      static void
-      getJacobianDetOfOrientationMap(pointType* jacobianDet,
-                             const unsigned cellTopoKey,
-                             const ordinal_type cellOrt);
-
 
       /** \brief  Computes the (oriented) subCell tangents
           \param  tangents        [out] - rank-2 (scD,D), tangents of the subcell. scD: subCell dimension, D: parent cell dimension

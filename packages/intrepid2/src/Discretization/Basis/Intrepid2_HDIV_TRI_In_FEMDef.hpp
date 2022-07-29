@@ -187,7 +187,9 @@ template<typename DT, typename OT, typename PT>
 Basis_HDIV_TRI_In_FEM<DT,OT,PT>::
 Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     const EPointType   pointType ) {
-  INTREPID2_TEST_FOR_EXCEPTION(order > Parameters::MaxOrder, std::invalid_argument, "Unsupported polynomial order");
+  // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+  // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+  INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
 
   constexpr ordinal_type spaceDim = 2;
   this->basisCardinality_  = CardinalityHDivTri(order);
