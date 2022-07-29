@@ -57,7 +57,7 @@
 // need this to have the ETI defined macros
 #if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
 #include <MueLu_ExplicitInstantiation.hpp>
-#endif 
+#endif
 
 #if defined(HAVE_MUELU_TPETRA)
 #include <TpetraCore_config.h>
@@ -86,6 +86,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
   // MPI initialization using Teuchos
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+  if (comm->getSize() > 1) {
+    out->setOutputToRootOnly(0);
+  }
+#endif
 
   // Tpetra nodes call Kokkos::execution_space::initialize if the execution
   // space is not initialized, but they don't call Kokkos::initialize.
@@ -145,7 +153,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       // Both Epetra and Tpetra (with double, int, int) enabled
       return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
 #    else
-      std::cout << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
+      *out << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
 #    endif // end Tpetra instantiated on double, int, int
 #  else
       // only Epetra enabled. No Tpetra instantiation possible
@@ -161,6 +169,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       auto inst = xpetraParameters.GetInstantiation();
       if (node == "") {
         typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Node::execution_space::print_configuration(*out, true/*details*/);
+        }
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
@@ -191,8 +204,10 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #ifdef KOKKOS_ENABLE_SERIAL
         typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
-        if (config)
-          Kokkos::Serial().print_configuration(std::cout, true/*details*/);
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::Serial().print_configuration(*out, true/*details*/);
+        }
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
@@ -227,8 +242,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
 
         if (config) {
-          Kokkos::OpenMP().print_configuration(std::cout, true/*details*/);
-          std::cout << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::OpenMP().print_configuration(*out, true/*details*/);
+          *out << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
         }
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
@@ -263,8 +279,10 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #ifdef KOKKOS_ENABLE_CUDA
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
-        if (config)
-          Kokkos::Cuda().print_configuration(std::cout, true/*details*/);
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::Cuda().print_configuration(*out, true/*details*/);
+        }
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
@@ -298,8 +316,10 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #ifdef KOKKOS_ENABLE_HIP
 	typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
 
-        if (config)
-          Kokkos::Experimental::HIP().print_configuration(std::cout, true/*details*/);
+        if (config) {
+          *out << "Node type: " << Node::execution_space::name() << std::endl;
+          Kokkos::Experimental::HIP().print_configuration(*out, true/*details*/);
+        }
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
