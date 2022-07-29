@@ -54,9 +54,8 @@ endif()
 
 # Build the APP and link to Trilinos
 add_executable(MyApp ${CMAKE_CURRENT_SOURCE_DIR}/app.cpp)
-target_include_directories(MyApp PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR} ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
-target_link_libraries(MyApp ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES}) 
+target_link_libraries(MyApp  Trilinos::all_selected_libs)
+# Or, above could have linked to just Tpetra::all_libs
 
 # Set up a test
 enable_testing()
