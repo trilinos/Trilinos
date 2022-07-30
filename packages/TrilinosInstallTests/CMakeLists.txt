@@ -72,6 +72,32 @@ tribits_add_advanced_test(doInstall
   # below example build.
 
 
+tribits_add_advanced_test(find_package_Trilinos
+  OVERALL_NUM_MPI_PROCS 1
+  TEST_0
+    MESSAGE "Configure a dummy project that calls find_package(Trilinos)"
+    CMND "${CMAKE_COMMAND}"
+    ARGS
+      -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/install
+      ${CMAKE_CURRENT_SOURCE_DIR}/find_package_Trilinos
+    PASS_REGULAR_EXPRESSION_ALL
+      "Trilinos_FOUND = '1'"
+      "-- Configuring done"
+      "-- Generating done"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+  ADDED_TEST_NAME_OUT  find_package_Trilinos_name
+  )
+  # NOTE: The above test will run find_package(Trilinos) for **all** of the
+  # enabled packages, not just those needed by the project
+  # simpleBuildAgainstTrilinos below.  This will show if calling
+  # find_package(Trilinos) has any problems itself.
+
+if (find_package_Trilinos_name)
+  set_tests_properties(${find_package_Trilinos_name}
+    PROPERTIES DEPENDS ${doInstall_name} )
+endif()
+
+
 tribits_add_advanced_test(simpleBuildAgainstTrilinos
   OVERALL_NUM_MPI_PROCS 1
   OVERALL_WORKING_DIRECTORY TEST_NAME
