@@ -19,6 +19,10 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_PLACES=cores
 export OMP_PROC_BIND=spread
 
+cd $TRILINOS_SRC
+# watchr can embed SHA with timing data
+export TRILINOS_GIT_SHA=`git rev-parse HEAD`
+
 cd $TRILINOS_BUILD
 
 #Don't fail the whole Jenkins build if tests fail. There will just
