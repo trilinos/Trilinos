@@ -20,7 +20,7 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Faceted_Surface.hpp>
-#include <Akri_LevelSet_Identifier.hpp>
+#include <Akri_Surface_Identifier.hpp>
 #include <Akri_Vec.hpp>
 
 #include <map>
@@ -43,6 +43,7 @@ enum Redistance_Method
 {
   CLOSEST_POINT=0,
   FAST_MARCHING,
+  FAST_ITERATIVE,
   MAX_REDISTANCE_METHOD_TYPE
 };
 
@@ -60,7 +61,7 @@ public:
   const AuxMetaData & aux_meta() const;
 
   const std::string & name() const { return my_name; }
-  LevelSet_Identifier get_identifier() const {return my_identifier; }
+  Surface_Identifier get_identifier() const {return my_identifier; }
   stk::diag::Timer & get_timer() const { return my_timer; }
   stk::diag::Timer & get_parent_timer() const { return my_parent_timer; }
 
@@ -68,9 +69,6 @@ public:
   static void setup(stk::mesh::MetaData & meta);
   static void post_commit_setup(stk::mesh::MetaData & meta);
   virtual void setup();
-
-  static void set_current_coordinates(stk::mesh::MetaData & meta, const FieldRef ref);
-  static FieldRef get_current_coordinates(stk::mesh::MetaData & meta);
 
   void register_fields();
 
@@ -151,10 +149,6 @@ public:
   Faceted_Surface & get_facets() { return *facets; }
   const Faceted_Surface & get_facets() const { return *facets; }
 
-  static std::vector<std::string> the_levelSet_names;
-  static LevelSet_Identifier get_identifier(const std::string & name);
-  static std::string & get_name(const LevelSet_Identifier identifier) { ThrowAssert(identifier.get() < the_levelSet_names.size()); return the_levelSet_names[identifier.get()]; }
-
   void narrow_band_multiplier( double multiplier ) { my_narrow_band_multiplier = multiplier; }
   const double & narrow_band_size() const { return my_narrow_band_size; }
   void narrow_band_size( double size ) { my_narrow_band_size = size; } // publicly deprecated, make private
@@ -194,11 +188,13 @@ public:
   std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() { return my_compute_surface_distance_parts; }
   void set_surface_distance(std::vector<stk::mesh::Part *> surfaces, const double in_distance);
   void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
-  static void initialize(stk::mesh::MetaData & meta, const bool requires_additional_initialization);
-  void initialize(const double time = 0.0, const bool requires_additional_initialization = false);
+  static void initialize(stk::mesh::MetaData & meta);
+  void initialize(const double time = 0.0);
+  static void clear_initialization_data(stk::mesh::MetaData & meta);
+  void clear_initialization_data();
   void redistance();
   void redistance(const stk::mesh::Selector & selector);
-  void fast_marching_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
+  void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
 
   void set_initial_volume(const double v) { my_initial_neg_vol = v; }
   double constrained_redistance(const bool use_initial_vol = false);
@@ -217,17 +213,17 @@ public:
   BoundingBox get_IC_surface_bounding_box();
   IC_Alg& get_IC_alg();
 
-  static LevelSet & build(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer);
+  static LevelSet & build(stk::mesh::MetaData & in_meta, const std::string & ls_name, const stk::diag::Timer & parent_timer);
 
   virtual ~LevelSet();
 
 private:
-  LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, stk::diag::Timer & parent_timer);
+  LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
 
 private:
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
-  const LevelSet_Identifier my_identifier;
+  const Surface_Identifier my_identifier;
   const std::string my_name;
   mutable stk::diag::Timer my_parent_timer;
   mutable stk::diag::Timer my_timer;
@@ -306,30 +302,6 @@ private:
 		 const bool enforce_sign ) const;
 
   bool compute_time_of_arrival() const { return !my_time_of_arrival_element_speed_field_name.empty() || !myTimeOfArrivalBlockSpeeds.empty(); }
-};
-
-class LevelSetManager {
-public:
-  LevelSetManager() {}
-  LevelSetManager(LevelSetManager const&) = delete;
-  LevelSetManager& operator=(LevelSetManager const&) = delete;
-
-  static LevelSetManager & get(stk::mesh::MetaData & meta);
-  static LevelSetManager & get(const stk::mesh::MetaData & meta);
-
-  int numberLevelSets() const { return my_level_sets.size(); }
-  LevelSet & levelSet(const unsigned ordinal) const { ThrowAssert(ordinal < my_level_sets.size()); return *my_level_sets[ordinal]; }
-  bool has_levelSet(const std::string & ls_name) const;
-  void add(LevelSet * ls) { my_level_sets.emplace_back(ls); }
-
-  std::vector< std::unique_ptr<LevelSet> >::const_iterator begin() const { return my_level_sets.begin(); }
-  std::vector< std::unique_ptr<LevelSet> >::const_iterator end() const { return my_level_sets.end(); }
-
-  void set_current_coordinates(FieldRef current_coords) { my_current_coordinates = current_coords; }
-  FieldRef get_current_coordinates() const { return my_current_coordinates; }
-private:
-  std::vector< std::unique_ptr<LevelSet> > my_level_sets;
-  FieldRef my_current_coordinates;
 };
 
 std::string print_sizes(const LevelSet & ls);

@@ -59,6 +59,9 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_BrickAggregationFactory_fwd.hpp"
 
+#include "MueLu_GraphBase.hpp"
+#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -66,11 +69,10 @@
 
 /*!
   @class BrickAggregationFactory
-  @brief Aggregation method for generating "brick" aggregates.
+  @brief Aggregation method for generating "brick" aggregates.  It also does "hotdogs" and "pancakes."
   
-  This factory can generate:
-    - In 2D, 2x2 and 3x3 aggregates
-    - In 3D, 2x2x2 or 3x3x3 aggregates
+  This factory can generate aggregates of size 1, 2 or 3 in each dimension, in any combination.
+
 */
 
 namespace MueLu {
@@ -135,6 +137,9 @@ namespace MueLu {
   private:
     void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coords, const RCP<const Map>& map) const;
     RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& x) const;
+
+    void BuildGraph(Level& currentLevel, const RCP<Matrix>& A) const;
+
 
     bool        isDirichlet(LocalOrdinal LID) const;
     bool           isRoot  (LocalOrdinal LID) const;

@@ -279,8 +279,8 @@ bool all_passed = true;
     vector_basis_gmls.setWeightingType(WeightingFunctionType::Power);
 
     // power to use in that weighting kernel function
-    scalar_basis_gmls.setWeightingPower(2);
-    vector_basis_gmls.setWeightingPower(2);
+    scalar_basis_gmls.setWeightingParameter(2);
+    vector_basis_gmls.setWeightingParameter(2);
 
     // setup quadrature for StaggeredEdgeIntegralSample
     vector_basis_gmls.setOrderOfQuadraturePoints(order);
@@ -362,10 +362,10 @@ bool all_passed = true;
 
         // obtain adjusted value for divergence
         if (constraint_name == "NEUMANN_GRAD_SCALAR") {
-            double b_i_scalar = scalar_basis_gmls.getAlpha0TensorTo0Tensor(DivergenceOfVectorPointEvaluation, i, num_neigh_i);
+            double b_i_scalar = scalar_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo0Tensor(DivergenceOfVectorPointEvaluation, i, num_neigh_i);
             GMLS_Divergence_Scalar = GMLS_Divergence_Scalar + b_i_scalar*g;
 
-            double b_i_vector = vector_basis_gmls.getAlpha0TensorTo0Tensor(DivergenceOfVectorPointEvaluation, i, num_neigh_i);
+            double b_i_vector = vector_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo0Tensor(DivergenceOfVectorPointEvaluation, i, num_neigh_i);
             GMLS_Divergence_Vector = GMLS_Divergence_Vector + b_i_vector*g;
         }
 
@@ -394,16 +394,16 @@ bool all_passed = true;
 
         // Obtain adjusted value
         if (constraint_name == "NEUMANN_GRAD_SCALAR") {
-            double bx_i_scalar = scalar_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 0, num_neigh_i);
-            double by_i_scalar = scalar_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 1, num_neigh_i);
-            double bz_i_scalar = scalar_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 2, num_neigh_i);
+            double bx_i_scalar = scalar_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 0, num_neigh_i);
+            double by_i_scalar = scalar_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 1, num_neigh_i);
+            double bz_i_scalar = scalar_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 2, num_neigh_i);
             Scalar_GMLS_GradX = Scalar_GMLS_GradX + bx_i_scalar*g;
             Scalar_GMLS_GradY = Scalar_GMLS_GradY + by_i_scalar*g;
             Scalar_GMLS_GradZ = Scalar_GMLS_GradZ + bz_i_scalar*g;
 
-            double bx_i_vector = vector_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 0, num_neigh_i);
-            double by_i_vector = vector_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 1, num_neigh_i);
-            double bz_i_vector = vector_basis_gmls.getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 2, num_neigh_i);
+            double bx_i_vector = vector_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 0, num_neigh_i);
+            double by_i_vector = vector_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 1, num_neigh_i);
+            double bz_i_vector = vector_basis_gmls.getSolutionSetHost()->getAlpha0TensorTo1Tensor(GradientOfScalarPointEvaluation, i, 2, num_neigh_i);
             Vector_GMLS_GradX = Vector_GMLS_GradX + bx_i_vector*g;
             Vector_GMLS_GradY = Vector_GMLS_GradY + by_i_vector*g;
             Vector_GMLS_GradZ = Vector_GMLS_GradZ + bz_i_vector*g;

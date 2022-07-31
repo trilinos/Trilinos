@@ -9,13 +9,12 @@
 
 namespace Tacho {
 
-  ///
-  /// Apply Permutation
-  ///
+///
+/// Apply Permutation
+///
 
-  /// various implementation for different uplo and algo parameters
-  template<typename ArgSide, typename ArgTrans, typename ArgAlgo>
-  struct ApplyPermutation;
-}
+/// various implementation for different uplo and algo parameters
+template <typename ArgSide, typename ArgTrans, typename ArgAlgo> struct ApplyPermutation;
+} // namespace Tacho
 
 #endif

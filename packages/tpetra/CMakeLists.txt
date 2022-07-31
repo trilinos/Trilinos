@@ -17,7 +17,7 @@ SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_DEPRECATED_CODE
   TPETRA_ENABLE_DEPRECATED_CODE
-  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled), but note that all existing deprecated code was purged in Dec. 2019."
+  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled)."
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
@@ -42,7 +42,7 @@ ENDIF ()
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
 
 ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
-ASSERT_DEFINED(Kokkos_ENABLE_PTHREAD)
+ASSERT_DEFINED(Kokkos_ENABLE_THREADS)
 ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
 ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
 ASSERT_DEFINED(Kokkos_ENABLE_SYCL)
@@ -276,16 +276,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
   ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor
-  TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable the \"Kokkos refactor\" version of Tpetra.  DO NOT SET THIS EXPLICITLY!  It is ON by default and that is the only supported value."
-  ON
-  )
-IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "The 'classic' version of Tpetra has been deprecated for a long time, and is not longer available.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you should not set it explicitly.)")
-ENDIF ()
-
 ######################################################################
 # Explicit template instantiation (ETI) and test instantiation logic
 ######################################################################
@@ -399,11 +389,11 @@ ELSE()
     IF (Kokkos_ENABLE_SERIAL)
       GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
     ELSE()
-      IF (Kokkos_ENABLE_PTHREAD)
+      IF (Kokkos_ENABLE_THREADS)
         GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
       ELSE()
         MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_SERIAL=ON.")
-      ENDIF()  # Kokkos_ENABLE_PTHREAD
+      ENDIF()  # Kokkos_ENABLE_THREADS
     ENDIF() # Kokkos_ENABLE_SERIAL
   ENDIF() # Kokkos_ENABLE_OPENMP
 ENDIF() # Tpetra_ENABLE_CUDA
@@ -483,18 +473,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
 IF (Tpetra_INST_PTHREAD)
-  IF (NOT Kokkos_ENABLE_PTHREAD)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_PTHREAD=ON [again sic].")
+  IF (NOT Kokkos_ENABLE_THREADS)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_THREADS=ON [again sic].")
   ENDIF ()
   IF (Tpetra_INST_OPENMP)
     MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_PTHREAD
   IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_PTHREAD:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_THREADS:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
   ENDIF()
-  IF (Kokkos_ENABLE_PTHREAD)
-    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_PTHREAD is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
+  IF (Kokkos_ENABLE_THREADS)
+    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_THREADS is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
   ENDIF ()
 ENDIF () # Tpetra_INST_PTHREAD
 
@@ -620,7 +610,7 @@ MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
 IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL)
-  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA.")
+  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_THREADS, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA.")
 ENDIF()
 
 # ============================================================
@@ -1092,15 +1082,9 @@ ENDIF ()
 
 # Decide whether to instantiate / test Scalar = qd_real ("quad
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_QD_REAL option: whether to instantiate / test
 # Scalar = qd_real.
@@ -1113,20 +1097,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_QD_REAL)
 GLOBAL_SET (HAVE_TPETRA_QD_REAL ${Tpetra_INST_QD_REAL})
 
-IF (Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_QD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = dd_real ("double
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_DD_REAL option: whether to instantiate / test
 # Scalar = dd_real.
@@ -1139,8 +1118,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DD_REAL)
 GLOBAL_SET (HAVE_TPETRA_DD_REAL ${Tpetra_INST_DD_REAL})
 
-IF (Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_DD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 #

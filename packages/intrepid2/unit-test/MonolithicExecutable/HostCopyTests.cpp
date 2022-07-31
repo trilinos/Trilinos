@@ -53,7 +53,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Types.hpp"
@@ -190,7 +190,7 @@ namespace
     }
   }
 
-  TEUCHOS_UNIT_TEST(HostCopy, TransformedVectorData)
+  TEUCHOS_UNIT_TEST(HostCopy, TransformedBasisValues)
   {
     using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
@@ -218,10 +218,9 @@ namespace
     const int blockPlusDiagonalLastNonDiagonal = -1; // only diagonal
     Data<Scalar,DeviceType> transform(scalingView,rank,extents,variationTypes,blockPlusDiagonalLastNonDiagonal);
     
-    TransformedVectorData<Scalar,DeviceType> transformedVectorData(transform,vectorData);
+    TransformedBasisValues<Scalar,DeviceType> transformedVectorData(transform,vectorData);
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    TransformedVectorData<Scalar,HostExecSpace> transformedVectorDataHost(transformedVectorData);
+    TransformedBasisValues<Scalar,Kokkos::HostSpace> transformedVectorDataHost(transformedVectorData);
 
     TEST_EQUALITY(transformedVectorData.rank(), transformedVectorDataHost.rank());
     TEST_EQUALITY(transformedVectorData.extent_int(0), transformedVectorDataHost.extent_int(0));

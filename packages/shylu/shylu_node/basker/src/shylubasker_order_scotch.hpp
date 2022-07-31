@@ -269,11 +269,7 @@ namespace BaskerNS
         /*for (Int i = 0; i < num_doms; i++) {
           printf( " post[%d] = %d, ipost[%d]=%d\n",i,post_order(i),i,post_iorder(i) );
         }*/
-        /*printf( " M = [\n" );
-        for(Int i = 0; i < M.nrow; i++) {
-          for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
-        }
-        printf( "];\n" );*/
+        //M.print_matrix("A.dat");
 
         // initial partition
         sg.cblk = 1;
@@ -332,6 +328,15 @@ namespace BaskerNS
           METIS_NodeNDP(metis_size, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
                         num_leaves, options, &(metis_perm_k(0)), &(metis_iperm_k(0)), &(metis_sep_sizes(0)));
           time_metis += timer_metis.seconds();
+          #if 0
+          // debug: merging all the subdomains into one domain
+          //metis_sep_sizes(0) = metis_size;
+          //for (int i=1; i < 2*num_leaves-1; i++) metis_sep_sizes(i) = 0;
+
+          // debug: merging the first two subdomains
+          //metis_sep_sizes(0) += metis_sep_sizes(1);
+          //metis_sep_sizes(1) = 0;
+          #endif
           //for (int i=0; i < 2*num_leaves-1; i++) printf( " > size[%d] = %d\n",i,metis_sep_sizes(i) );
           for(Int i = 0; i < metis_size; i++) {
             sg.peritab[i] = metis_perm_k[i];
@@ -352,8 +357,8 @@ namespace BaskerNS
             }
 
             if (level_k < num_levels) {
-              Int num_leaves = pow(2.0, (double)(level_k));       // number of leaves at this level
-              for (Int leaf_id = 0; leaf_id < num_leaves; leaf_id++) {
+              Int num_leaves_k = pow(2.0, (double)(level_k));       // number of leaves at this level
+              for (Int leaf_id = 0; leaf_id < num_leaves_k; leaf_id++) {
                 Int dom_id = 2 * leaf_id + first_leaf1;
                 Int dom_id1 = dom_id;     // id of left-child after bisection
                 Int dom_id2 = dom_id + 1; // id of right-child after bisection
@@ -1138,12 +1143,14 @@ namespace BaskerNS
     }
 
     //printf( " + permtab, peritab\n" );
+    //FILE *fp = fopen("permtab_p.dat","w");
     for(Int i = 0; i < M.nrow; i++)
     {
       BT.permtab[i] = sg.permtab[i];
       BT.ipermtab[i] = sg.peritab[i];
-      //printf( " + %d, %d\n",BT.permtab[i],BT.ipermtab[i] );
+      //fprintf(fp, " %d, %d\n",BT.permtab[i],BT.ipermtab[i] );
     }
+    //fclose(fp);
 
     //Used for recursing easier
     BT.treetab[BT.nblks-1]   = BT.nblks;

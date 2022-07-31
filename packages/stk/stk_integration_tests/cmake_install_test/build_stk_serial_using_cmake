@@ -55,7 +55,7 @@ exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_serial ${stk_build_dir}
 exe cd ${stk_build_dir}
 exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
 printf "Configuring trilinos/stk (running cmake)...\n";
-exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} CMAKE_CXX_FLAGS="-Wno-pragmas -Wno-unknown-pragmas -Werror" ./run_cmake_stk_serial >& ${stk_config_log}'
+exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} CMAKE_CXX_FLAGS="-Wno-pragmas -Wno-unknown-pragmas" ./run_cmake_stk_serial >& ${stk_config_log}'
 if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
   exit 1;

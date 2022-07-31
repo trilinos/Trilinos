@@ -12,7 +12,16 @@ SET(HEADERS_NEED_IO
   GeneratedMeshToFile.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
+  TextMeshAdjacencyGraph.hpp
+  TextMeshAssembly.hpp
+  TextMeshDataTypes.hpp
+  TextMeshEntityGroup.hpp
   TextMeshFixture.hpp
+  TextMeshFuncs.hpp
+  TextMeshNodeset.hpp
+  TextMeshSideset.hpp
+  TextMeshSidesetSkinner.hpp
+  TextMeshSidesetSplitter.hpp
   TextMeshStkTopologyMapping.hpp
   TextMeshToFile.hpp
   TextMeshUtils.hpp
@@ -34,6 +43,7 @@ SET(SOURCES_NEED_IO
   )
 
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
+  BuildMesh.hpp
   BucketTester.hpp
   MeshFixture.hpp
   MeshFileFixture.hpp
@@ -62,11 +72,14 @@ SET(SOURCES_NEED_MPI
 
 
 SET(HEADERS
+  AssemblyUtils.hpp
+  CommandLineArgs.hpp
   getOption.h
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   )
 SET(SOURCES
+  AssemblyUtils.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
   )

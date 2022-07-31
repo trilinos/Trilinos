@@ -9,8 +9,8 @@
 #ifndef Akri_CDFEM_Support_h
 #define Akri_CDFEM_Support_h
 //
-#include <Akri_LevelSet_Identifier.hpp>
-#include <Akri_Phase_Support.hpp>
+#include "Akri_CDFEM_Support.hpp"
+
 #include <Akri_FieldRef.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Snapper.hpp>
@@ -23,27 +23,7 @@
 
 namespace krino {
 
-class LevelSet;
-class CDFEM_Inequality_Spec;
-
-struct LS_Field
-{
-  LS_Field(const std::string & name_, const LevelSet_Identifier & identifier_, const FieldRef isovar_, const double isoval_, const LevelSet * const ptr_)
-    : name(name_), identifier(identifier_), isovar(isovar_), isoval(isoval_), ptr(ptr_) {
-    ThrowRequireMsg(isovar_.valid(), "Invalid field " + isovar_.name() + " used in CDFEM initialization");
-  }
-
-  // Constructor just for unit tests
-  LS_Field(const std::string & name_, const LevelSet_Identifier & identifier_)
-    : name(name_), identifier(identifier_), isoval(0), ptr(NULL) {
-  }
-
-  std::string name;
-  LevelSet_Identifier identifier;
-  FieldRef isovar;
-  double isoval;
-  const LevelSet * ptr;
-};
+class Phase_Support;
 
 enum Prolongation_Model
 {
@@ -90,27 +70,18 @@ public:
   static bool use_nonconformal_adaptivity(stk::mesh::MetaData & meta) { CDFEM_Support & cdfem_support = get(meta); return cdfem_support.get_interface_maximum_refinement_level() > 0; }
   static std::string cdfem_mesh_displacements_field_name() { return "CDFEM_MESH_DISPLACEMENTS"; }
 
-  static bool is_active(const stk::mesh::MetaData & meta)
-  {
-    return Phase_Support::exists_and_has_phases_defined(meta);
-  }
+  static bool is_active(const stk::mesh::MetaData & meta);
 
   stk::mesh::MetaData & get_mesh_meta() { return my_meta; }
   const stk::mesh::MetaData & get_mesh_meta() const { return my_meta; }
-  int num_ls_fields() const { return my_ls_fields.size(); }
-  const LS_Field & ls_field(int i) const { return my_ls_fields[i]; }
-  LS_Field & ls_field(int i) { return my_ls_fields[i]; }
-  const std::vector<LS_Field> & ls_fields() const { return my_ls_fields; }
   Prolongation_Model get_prolongation_model() const { return my_prolongation_model; }
   void set_prolongation_model(const Prolongation_Model & model) { my_prolongation_model = model; }
   Simplex_Generation_Method get_simplex_generation_method() const { return my_simplex_generation_method; }
   void set_simplex_generation_method(const Simplex_Generation_Method & method);
   bool get_global_ids_are_parallel_consistent() const { return myGlobalIDsAreParallelConsistent; }
   void set_global_ids_are_NOT_parallel_consistent() { myGlobalIDsAreParallelConsistent = false; }
-  const CDFEM_Inequality_Spec * get_death_spec(int ls_index) const { return my_death_specs[ls_index]; }
   void activate_interface_refinement(int minimum_level, int maximum_level);
   void activate_nonconformal_adaptivity(const int num_levels);
-  int get_ls_index(const LevelSet * ls) const;
 
   void create_parts();
 
@@ -123,8 +94,6 @@ public:
   void set_cdfem_snap_displacement_field(const FieldRef field) { myCDFEMSnapDisplacementsField = field; }
   void add_ale_prolongation_field(const FieldRef field);
   void add_interpolation_field(const FieldRef field);
-  // Just for unit test setup purposes
-  void add_ls_field(const LS_Field & to_add, const CDFEM_Inequality_Spec * death_spec = nullptr) { my_ls_fields.push_back(to_add); my_death_specs.push_back(death_spec); }
 
   void set_coords_field(const FieldRef coords_field) { my_coords_field = coords_field; }
   const FieldRef get_coords_field() const { return my_coords_field; }
@@ -134,6 +103,8 @@ public:
   const FieldSet & get_interpolation_fields() const { return my_interpolation_fields; }
   const FieldSet & get_zeroed_fields() const { return my_zeroed_fields; }
   const FieldSet & get_element_fields() const { return my_element_fields; }
+  const FieldSet & get_snap_fields() const { return mySnapFields; }
+  const FieldSet & get_levelset_fields() const { return myLevelSetFields; }
 
   bool add_initial_prolongation_field(const std::string & dest_field_name, const std::string & src_field_name);
   FieldRef get_initial_prolongation_field(const FieldRef field) const;
@@ -184,6 +155,9 @@ public:
   void use_nonconformal_element_size(bool flag) { my_flag_use_nonconformal_element_size = flag; }
   bool use_nonconformal_element_size() const { return my_flag_use_nonconformal_element_size; }
 
+  void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
+  bool do_nearby_refinement_before_interface_refinement() const { return myFlagDoNearbyRefinementBeforeInterfaceRefinement; }
+
   Edge_Degeneracy_Handling get_cdfem_edge_degeneracy_handling() const { return my_cdfem_edge_degeneracy_handling; }
   void set_cdfem_edge_degeneracy_handling( const Edge_Degeneracy_Handling type ) { my_cdfem_edge_degeneracy_handling = type; }
 
@@ -201,19 +175,21 @@ public:
   void set_use_hierarchical_dofs(bool flag) { my_flag_use_hierarchical_dofs = flag; }
   bool get_constrain_CDFEM_to_XFEM_space() const { return my_flag_constrain_CDFEM_to_XFEM_space; }
   void set_constrain_CDFEM_to_XFEM_space(bool flag) { my_flag_constrain_CDFEM_to_XFEM_space = flag; }
+  bool get_use_velocity_to_evaluate_interface_CFL() const { return myFlagUseVelocityToEvaluateInterfaceCFL; }
+  void set_use_velocity_to_evaluate_interface_CFL(bool flag) { myFlagUseVelocityToEvaluateInterfaceCFL = flag; }
+
 
   void force_ale_prolongation_for_field(const std::string & field_name);
 
 private:
   void setup_refinement_marker();
+  void set_snap_fields();
 
 private:
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
 
   FieldRef my_coords_field;
-  std::vector<LS_Field> my_ls_fields;
-  std::vector<const CDFEM_Inequality_Spec *> my_death_specs;
   FieldRef my_cdfem_displacements_field;
   FieldRef myCDFEMSnapDisplacementsField;
   Prolongation_Model my_prolongation_model;
@@ -223,6 +199,8 @@ private:
   FieldSet my_interpolation_fields;
   FieldSet my_zeroed_fields;
   FieldSet my_element_fields;
+  FieldSet mySnapFields;
+  FieldSet myLevelSetFields;
   std::map<std::string, std::string> my_initial_prolongation_field_name_map;
   std::map<FieldRef, FieldRef> my_initial_prolongation_field_map;
   static Edge_Interpolation_Model the_edge_interpolation_model;
@@ -250,6 +228,8 @@ private:
   bool my_flag_use_hierarchical_dofs;
   bool my_flag_constrain_CDFEM_to_XFEM_space;
   bool my_flag_use_nonconformal_element_size;
+  bool myFlagDoNearbyRefinementBeforeInterfaceRefinement;
+  bool myFlagUseVelocityToEvaluateInterfaceCFL;
   mutable stk::diag::Timer my_timer_cdfem;
   mutable stk::diag::Timer my_timer_adapt;
 };

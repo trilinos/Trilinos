@@ -84,15 +84,8 @@ localSolve (Tpetra::MultiVector<
   using Teuchos::CONJ_TRANS;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
-  using MV = Tpetra::MultiVector<
-    typename CrsMatrixType::scalar_type,
-    typename CrsMatrixType::local_ordinal_type,
-    typename CrsMatrixType::global_ordinal_type,
-    typename CrsMatrixType::node_type>;
   using scalar_type = typename CrsMatrixType::scalar_type;
   using STS = Teuchos::ScalarTraits<scalar_type>;
-  using device_type = typename CrsMatrixType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   const char prefix[] = "localSolve: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -998,12 +991,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
                                      rowMap,colMap,domMap,ranMap,
                                      L,U,out);
   if(!gblSuccess) return;
-
-  typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
-  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
-  typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
-  typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
-  typedef typename local_matrix_type::values_type::non_const_type values_type;
 
   typedef typename crs_matrix_type::local_inds_host_view_type const_local_inds_type;
   typedef typename crs_matrix_type::values_host_view_type const_values_type;

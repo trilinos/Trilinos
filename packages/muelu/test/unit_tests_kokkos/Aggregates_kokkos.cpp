@@ -718,6 +718,159 @@ namespace MueLuTests {
 
   } //AllowDroppingToCreateAdditionalDirichletRows
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "running greedy Dirichlet" << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+//    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(30);
+    // Make a Matrix with multiple degrees of freedom per node
+    GlobalOrdinal nx = 8, ny = 8;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers_kokkos::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
+    map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar>  values;
+
+    // Create a dirichlet boundary row.
+    LocalOrdinal localRowToZero = 5; // Corresponds to a Dof on local graph node 2
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<Scalar> newvalues(values.size(),TST::zero());
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    A->fillComplete();
+
+    ArrayRCP<const bool> drows = Utilities::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    RCP<AmalgamationInfo> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<CoalesceDropFactory_kokkos> dropFact;
+    RCP<AmalgamationFactory_kokkos> amalgFact;
+    RCP<UncoupledAggregationFactory_kokkos> aggFact;
+
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(false));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    Array< LO > aggPtr;
+    Array< LO > aggNodes;
+    Array< LO > unaggregated;
+
+    typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizes
+      = aggregates->ComputeAggregateSizes(true);
+
+    auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
+    for( auto i = 0; i<(nx/2*ny/2); i++){
+        TEST_EQUALITY(vertex2AggId(i,0) != MUELU_UNAGGREGATED, true);// check that all nodes are aggregated
+    }
+
+    // Repeat with greedy Dirichlet
+    Level levelGreedyAndNoPreserve;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndNoPreserve);
+    levelGreedyAndNoPreserve.Set("A", A);
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+
+    levelGreedyAndNoPreserve.Request("Aggregates", aggFact.get());
+    levelGreedyAndNoPreserve.Request("UnAmalgamationInfo", amalgFact.get());
+
+    levelGreedyAndNoPreserve.Request(*aggFact);
+    aggFact->Build(levelGreedyAndNoPreserve);
+    aggregates = levelGreedyAndNoPreserve.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
+
+    typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizesGreedy
+      = aggregates->ComputeAggregateSizes(true);
+    // There should be the same number of aggregates in the greedy dirichlet case as in the standard case
+    // though note the aggregates will be smaller in the greedy dirirchlet case.
+    // This may not be true for all problem setups, but is true for the setup in this test case.
+    TEST_EQUALITY( aggSizesGreedy.extent(0) == aggSizes.extent(0), true)
+
+    vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
+    TEST_EQUALITY(vertex2AggId(2,0) == MUELU_UNAGGREGATED, true);// check that the node with the Dof flagged as dirichlet is unaggregated
+
+    // Repeat with greedy Dirichlet and preserve Dirichlet points
+    Level levelGreedyAndPreserve;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndPreserve);
+    levelGreedyAndPreserve.Set("A", A);
+
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
+
+    levelGreedyAndPreserve.Request("Aggregates", aggFact.get());
+    levelGreedyAndPreserve.Request("UnAmalgamationInfo", amalgFact.get());
+
+    levelGreedyAndPreserve.Request(*aggFact);
+    aggFact->Build(levelGreedyAndPreserve);
+    aggregates = levelGreedyAndPreserve.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+
+    typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizesGreedyPreserve
+      = aggregates->ComputeAggregateSizes(true);
+    // check that dirichlet aggs are preserved
+    // there should be more aggregates in the dirichlet preserved case than in the standard case.
+    // This will always be true.
+    TEST_EQUALITY( aggSizesGreedyPreserve.extent(0) > aggSizesGreedy.extent(0), true)
+
+
+    vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView(Xpetra::Access::ReadOnly);
+    for( auto i = 0; i<(nx/2*ny/2); i++){
+        TEST_EQUALITY(vertex2AggId(i,0) != MUELU_UNAGGREGATED, true);// check that all nodes are aggregated
+    }
+
+  }
+
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregationFactory, SC, LO, GO, NO) \
@@ -730,7 +883,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase1, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase3, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, AllowDroppingToCreateAdditionalDirichletRows, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, AllowDroppingToCreateAdditionalDirichletRows, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GreedyDirichlet, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

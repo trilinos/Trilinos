@@ -74,6 +74,8 @@ public:
 
   const Ptr<Constraint<Real>> getLinearConstraint(void) const;
 
+  const Ptr<BoundConstraint<Real>> getBoundConstraint(void) const;
+
   const Ptr<Vector<Real>> getMultiplier(void) const;
 
   const Ptr<Vector<Real>> getResidual(void) const;

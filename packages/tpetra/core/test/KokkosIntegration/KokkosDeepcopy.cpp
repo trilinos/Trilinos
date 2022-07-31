@@ -41,6 +41,9 @@
 // @HEADER
 */
 
+#include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_LocalTestingHelpers.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include <stdio.h>
 #include <mpi.h>
 #include <Kokkos_Core.hpp>
@@ -51,10 +54,12 @@
 #include <list>
 #include "ApiTest.h"
 
+
+
 class DeepCopyTester {
 public:
   DeepCopyTester() {}
-  void run() {
+  void run(int argc, char *argv[])  {
     log("Tpetra Kokkos DeepCopy Regression test start");
 
     std::string cudaSync("cudaDeviceSynchronize");
@@ -62,7 +67,9 @@ public:
     std::string cudaMemcpyAsync("cudaMemcpyAsync");
     ApiTest *counter = ApiTest::getInstance();
     //initialize
+#ifdef HAVE_TPETRACORE_MPI
     MPI_Init(&argc, &argv);
+#endif
     Kokkos::initialize(argc, argv);
     {
       isConsistent = true;
@@ -76,7 +83,7 @@ public:
       counter->setExpectation(cudaSync, 2);
       OnHost2Arg(a, b);
       if (!counter->testExpectations()) {
-	log("OnHost2Arg()");
+        log("OnHost2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -85,7 +92,7 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       OnDevice2Arg(c, d);
       if (!counter->testExpectations()) {
-	log("OnDevice2Arg()");
+        log("OnDevice2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -94,7 +101,7 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       HostToDevice2Arg(a, c);
       if (!counter->testExpectations()) {
-	log("HostToDevice2Arg()");
+        log("HostToDevice2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -103,14 +110,14 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       DeviceToHost2Arg(c, a);
       if (!counter->testExpectations()) {
-	log("DeviceToHost2Arg()");
+	log("DeviceToHost2Arg()",counter);
 	isConsistent = false;
       }
 
       counter->map_zero();
       OnHost3Arg(a, b);
       if (!counter->testExpectations()) {
-	log("OnHost3Arg()");
+	log("OnHost3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -118,7 +125,7 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       OnDevice3Arg(c, d);
       if (!counter->testExpectations()) {
-	log("OnDevice3Arg()");
+	log("OnDevice3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -126,7 +133,7 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       HostToDevice3Arg(a, c);
       if (!counter->testExpectations()) {
-	log("HostToDevice3Arg()");
+	log("HostToDevice3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -134,14 +141,15 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       DeviceToHost3Arg(c, a);
       if (!counter->testExpectations()) {
-	log("DeviceToHost3Arg()");
+	log("DeviceToHost3Arg()",counter);
 	isConsistent = false;
       }
     }
     Kokkos::finalize();
+#ifdef HAVE_TPETRACORE_MPI
     MPI_Finalize();
-
-    return 0;
+#endif
+    return;
   }
 
   bool getConsistency() {
@@ -240,17 +248,28 @@ public:
 
 private:
   bool isConsistent;
-  void log(const std::string& msg) {
+  void log(const std::string& msg, ApiTest *counter=nullptr) {
     std::cout << msg << std::endl;
+    if(counter) counter->printAll();
   }
 };
 
 int main(int argc, char *argv[]) {
-  DeepCopyTester tester;
-  tester.run();
+  bool success=true;
 
-  if (!tester.getConsistency())
-    return -1;
-  return 0;
+  std::ostream &out = std::cout; 
+
+  
+  DeepCopyTester tester;
+  tester.run(argc,argv);
+  TEST_EQUALITY_CONST(tester.getConsistency(),true);
+
+  if (success)
+    out << "\nEnd Result: TEST PASSED" << std::endl;
+  else
+    out << "\nEnd Result: TEST FAILED" << std::endl;
+
+
+  return (success ? 0 : 1);
 }
 

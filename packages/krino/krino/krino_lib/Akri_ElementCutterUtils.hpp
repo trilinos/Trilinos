@@ -15,9 +15,10 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <vector>
 
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
-
 namespace krino {
+
+class ElementCutter;
+class InterfaceGeometry;
 
 void append_intersection_points_from_element_interior(const MasterElement & masterElement,
     const std::vector<stk::mesh::Entity> & nodes,

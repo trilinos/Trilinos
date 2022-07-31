@@ -41,7 +41,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_search_util/PeriodicBoundarySearch.hpp>
 
-typedef stk::mesh::fixtures::HexFixture::CoordFieldType CoordFieldType;
+typedef stk::mesh::fixtures::simple_fields::HexFixture::CoordFieldType CoordFieldType;
 typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
 typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
 
@@ -49,7 +49,8 @@ namespace {
 const double PI     = M_PI;
 const double TWO_PI = 2 * PI;
 
-void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, stk::mesh::Entity node, const stk::mesh::Field<double> & theField, double expected_value )
+void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, stk::mesh::Entity node,
+                                        const stk::mesh::Field<double> & theField, double expected_value)
 {
   if (bulk_data.is_valid(node) && (bulk_data.bucket(node).owned() || bulk_data.bucket(node).shared() ) )
   {
@@ -58,7 +59,8 @@ void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, s
   }
 }
 
-void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_search, stk::mesh::Field<double> & volField)
+void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_search,
+                          stk::mesh::Field<double> & volField)
 {
   //gather to domain node from possibly multiple ranges
   for (size_t i = 0; i < pbc_search.size(); ++i)
@@ -253,11 +255,11 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
 }
 
 void check_single_periodic_assembly(const stk::mesh::BulkData & bulk_data,
-    const stk::mesh::fixtures::HexFixture & fixture,
-    const stk::mesh::Field<double> & volField,
-    unsigned x,
-    unsigned y,
-    unsigned z)
+                                    const stk::mesh::fixtures::simple_fields::HexFixture & fixture,
+                                    const stk::mesh::Field<double> & volField,
+                                    unsigned x,
+                                    unsigned y,
+                                    unsigned z)
 {
   //interior of domain should be 1.0
   for (unsigned i=0; i<x+1u; ++i) {
@@ -365,16 +367,16 @@ TEST(CoarseSearch, PeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<double>(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field_on_mesh(volField, meta_data.universal_part(), nullptr);
 
   meta_data.commit();
@@ -429,12 +431,12 @@ TEST(CoarseSearch, PeriodicBC)
 
 
 void assign_to_parts_for_two_way(const unsigned x, const unsigned y, const unsigned z,
-                                   stk::mesh::fixtures::HexFixture &fixture,
-                                   stk::mesh::BulkData &bulk_data,
-                                   stk::mesh::PartVector &side_0_parts,
-                                   stk::mesh::PartVector &side_1_parts,
-                                   stk::mesh::PartVector &side_2_parts,
-                                   stk::mesh::PartVector &side_3_parts)
+                                 stk::mesh::fixtures::simple_fields::HexFixture &fixture,
+                                 stk::mesh::BulkData &bulk_data,
+                                 stk::mesh::PartVector &side_0_parts,
+                                 stk::mesh::PartVector &side_1_parts,
+                                 stk::mesh::PartVector &side_2_parts,
+                                 stk::mesh::PartVector &side_3_parts)
 {
 
   //add periodic pair for side 0 and side 2
@@ -473,11 +475,11 @@ TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   const unsigned x = 3, y = 3, z = 3;
 
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
@@ -485,7 +487,7 @@ TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<double>(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field_on_mesh(volField, meta_data.universal_part(), nullptr);
 
   meta_data.commit();
@@ -558,17 +560,17 @@ TEST(CoarseSearch, TwoWayMultiPeriodicBC)
 }
 
 void assign_to_parts_for_three_way(const unsigned x, const unsigned y, const unsigned z,
-                                     stk::mesh::fixtures::HexFixture &fixture,
-                                     stk::mesh::BulkData &bulk_data,
-                                     stk::mesh::PartVector &side_0_parts,
-                                     stk::mesh::PartVector &side_1_parts,
-                                     stk::mesh::PartVector &side_2_parts,
-                                     stk::mesh::PartVector &side_3_parts,
-                                     stk::mesh::PartVector &side_4_parts,
-                                     stk::mesh::PartVector &side_5_parts)
+                                   stk::mesh::fixtures::simple_fields::HexFixture &fixture,
+                                   stk::mesh::BulkData &bulk_data,
+                                   stk::mesh::PartVector &side_0_parts,
+                                   stk::mesh::PartVector &side_1_parts,
+                                   stk::mesh::PartVector &side_2_parts,
+                                   stk::mesh::PartVector &side_3_parts,
+                                   stk::mesh::PartVector &side_4_parts,
+                                   stk::mesh::PartVector &side_5_parts)
 {
   assign_to_parts_for_two_way(x, y, z, fixture, bulk_data,
-                                side_0_parts, side_1_parts, side_2_parts, side_3_parts);
+                              side_0_parts, side_1_parts, side_2_parts, side_3_parts);
 
   //add periodic pair for side 4 and side 5
   bulk_data.modification_begin();
@@ -590,11 +592,11 @@ TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
@@ -605,7 +607,7 @@ TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   stk::mesh::Part & side_4 = meta_data.declare_part("side_4", stk::topology::NODE_RANK);
   stk::mesh::Part & side_5 = meta_data.declare_part("side_5", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<double>(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field_on_mesh(volField, meta_data.universal_part(), nullptr);
 
   meta_data.commit();
@@ -675,11 +677,11 @@ TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
 {
   const unsigned x = 3, y = 3, z = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
@@ -732,16 +734,16 @@ TEST(CoarseSearch, RotationalPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<double>(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field_on_mesh(volField, meta_data.universal_part(), nullptr);
 
   meta_data.commit();
@@ -749,7 +751,7 @@ TEST(CoarseSearch, RotationalPeriodicBC)
   const double rotationAngle = -TWO_PI/4.0;
   const double rotationAxis[3] = {0.0, 0.0, 1.0};
   const double axisLocation[3] = {0.0, 0.0, 0.0};
-  stk::mesh::fixtures::CylindricalCoordinateMapping coordMap(1.0, rotationAngle, 4);
+  stk::mesh::fixtures::simple_fields::CylindricalCoordinateMapping coordMap(1.0, rotationAngle, 4);
   fixture.generate_mesh(coordMap);
 
   stk::mesh::PartVector independent_parts(1,&side_0);
@@ -810,16 +812,16 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
 
   stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
   stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
+  CoordFieldType & coords_field = *fixture.m_coord_field;
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<double>(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field_on_mesh(volField, meta_data.universal_part(), nullptr);
 
   meta_data.commit();

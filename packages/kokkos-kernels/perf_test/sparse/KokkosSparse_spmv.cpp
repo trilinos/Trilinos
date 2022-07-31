@@ -75,12 +75,13 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#include <spmv/ArmPL_SPMV.hpp>
-#endif
-
-int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread, int team_size, int vector_length, int schedule, int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
+int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
+                              const char* filename, Ordinal rows_per_thread,
+                              int team_size, int vector_length, int schedule,
+                              int loop) {
+  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal,
+                                  Kokkos::DefaultExecutionSpace, void, Offset>
+      matrix_type;
 
   spmv_additional_data data(test);
 
@@ -98,30 +99,34 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
         numRows, numCols, nnz, 0, 0.01 * numRows);
   }
   SPMVTestData test_data = setup_test(&data, A, rows_per_thread, team_size,
-                                 vector_length, schedule, loop);
+                                      vector_length, schedule, loop);
   for (int i = 0; i < loop; i++) {
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  if(test == ARMPL) {
-    if(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value) {
-      data.set_armpl_spmat(test_data.numRows, test_data.numCols,
-			   test_data.A.graph.row_map.data(), test_data.A.graph.entries.data(),
-			   test_data.A.values.data());
-    } else {
-      throw std::runtime_error("Can't use ArmPL mat-vec for scalar types other than double and float.");
+    if (test == ARMPL) {
+      if (std::is_same<Scalar, double>::value ||
+          std::is_same<Scalar, float>::value) {
+        data.set_armpl_spmat(test_data.numRows, test_data.numCols,
+                             test_data.A.graph.row_map.data(),
+                             test_data.A.graph.entries.data(),
+                             test_data.A.values.data());
+      } else {
+        throw std::runtime_error(
+            "Can't use ArmPL mat-vec for scalar types other than double and "
+            "float.");
+      }
     }
-  }
 #endif
     run_benchmark(test_data);
   }
 
   // Performance Output
-  double matrix_size =
-      1.0 *
-      ((test_data.nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset))) /
-      1024 / 1024;
-  double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
-  double vector_readwrite = (test_data.nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
+  double matrix_size = 1.0 *
+                       ((test_data.nnz * (sizeof(Scalar) + sizeof(Ordinal)) +
+                         numRows * sizeof(Offset))) /
+                       1024 / 1024;
+  double vector_size = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
+  double vector_readwrite =
+      (test_data.nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
 
   double problem_size = matrix_size + vector_size;
   printf(
@@ -135,8 +140,10 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
       (matrix_size + vector_readwrite) / test_data.ave_time * loop / 1024,
       (matrix_size + vector_readwrite) / test_data.max_time / 1024,
       (matrix_size + vector_readwrite) / test_data.min_time / 1024,
-      2.0 * test_data.nnz * loop / test_data.ave_time / 1e9, 2.0 * test_data.nnz / test_data.max_time / 1e9,
-      2.0 * test_data.nnz / test_data.min_time / 1e9, test_data.ave_time / loop * 1000, test_data.max_time * 1000,
+      2.0 * test_data.nnz * loop / test_data.ave_time / 1e9,
+      2.0 * test_data.nnz / test_data.max_time / 1e9,
+      2.0 * test_data.nnz / test_data.min_time / 1e9,
+      test_data.ave_time / loop * 1000, test_data.max_time * 1000,
       test_data.min_time * 1000, test_data.num_errors);
   return (int)test_data.total_error;
 }
@@ -164,8 +171,12 @@ void print_help() {
       "Inspection)\n");
 #endif
   printf("                      mkl, armpl,cusparse    (Vendor Libraries)\n\n");
-  printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
+  printf(
+      "  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ "
+      "default ]).\n");
+  printf(
+      "  -f [file]       : Read in Matrix Market formatted text file "
+      "'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
   printf(
       "  --write-binary  : In combination with -f, generate binary files.\n");
@@ -206,30 +217,20 @@ int main(int argc, char** argv) {
       continue;
     }
 
+    if ((strcmp(argv[i], "--test") == 0)) {
+      i++;
+      if (i == argc) {
+        std::cerr << "Must pass algorithm name after '--test'";
+        exit(1);
+      }
 
-  if((strcmp(argv[i],"--test")==0)) {
-    i++;
-    if(i == argc)
-    {
-      std::cerr << "Must pass algorithm name after '--test'";
-      exit(1);
-    }
-
-
-    if((strcmp(argv[i],"mkl")==0))
-      test = MKL;
-    if((strcmp(argv[i],"armpl")==0))
-      test = ARMPL;
-    if((strcmp(argv[i],"kk")==0))
-      test = KOKKOS;
-    if((strcmp(argv[i],"cusparse")==0))
-      test = CUSPARSE;
-    if((strcmp(argv[i],"kk-kernels")==0))
-      test = KK_KERNELS;
-    if((strcmp(argv[i],"kk-kernels-insp")==0))
-      test = KK_KERNELS_INSP;
-    if((strcmp(argv[i],"kk-insp")==0))
-      test = KK_INSP;
+      if ((strcmp(argv[i], "mkl") == 0)) test = MKL;
+      if ((strcmp(argv[i], "armpl") == 0)) test = ARMPL;
+      if ((strcmp(argv[i], "kk") == 0)) test = KOKKOS;
+      if ((strcmp(argv[i], "cusparse") == 0)) test = CUSPARSE;
+      if ((strcmp(argv[i], "kk-kernels") == 0)) test = KK_KERNELS;
+      if ((strcmp(argv[i], "kk-kernels-insp") == 0)) test = KK_KERNELS_INSP;
+      if ((strcmp(argv[i], "kk-insp") == 0)) test = KK_INSP;
 #ifdef KOKKOS_ENABLE_OPENMP
       if ((strcmp(argv[i], "omp-static") == 0)) test = OMP_STATIC;
       if ((strcmp(argv[i], "omp-dynamic") == 0)) test = OMP_DYNAMIC;

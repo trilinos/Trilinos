@@ -96,6 +96,8 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   hasBlockCrsMatrix_ (false),
   DoBackwardGS_ (false),
   OverlapLevel_ (0),
+  nonsymCombine_(0),
+  schwarzCombineMode_("ZERO"),
   DampingFactor_ (STS::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
@@ -140,8 +142,12 @@ getValidParameters () const
   validParams->set("partitioner: type", "greedy");
   validParams->set("partitioner: local parts", 1);
   validParams->set("partitioner: overlap", 0);
+  validParams->set("partitioner: combine mode", "ZERO"); // use string mode for this
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   validParams->set("partitioner: parts", tmp0);
+  Teuchos::Array<Teuchos::ArrayRCP<typename MatrixType::global_ordinal_type> > tmp1;
+  validParams->set("partitioner: global ID parts", tmp1);
+  validParams->set("partitioner: nonsymmetric overlap combine", false);
   validParams->set("partitioner: maintain sparsity", false);
   validParams->set("fact: ilut level-of-fill", 1.0);
   validParams->set("fact: absolute threshold", 0.0);
@@ -290,6 +296,15 @@ setParameters (const Teuchos::ParameterList& List)
          "has the wrong type.");
     }
   }
+  // when using global ID parts, assume that some blocks overlap even if
+  // user did not explicitly set the overlap level in the input file.
+  if ( ( List.isParameter("partitioner: global ID parts")) && (OverlapLevel_ < 1))  OverlapLevel_ = 1; 
+
+  if (List.isParameter ("partitioner: nonsymmetric overlap combine"))
+    nonsymCombine_ = List.get<bool> ("partitioner: nonsymmetric overlap combine");
+
+  if (List.isParameter ("partitioner: combine mode"))
+    schwarzCombineMode_ = List.get<std::string> ("partitioner: combine mode");
 
   std::string defaultContainer = "TriDi";
   if(std::is_same<ContainerType, Container<MatrixType> >::value)
@@ -657,6 +672,22 @@ initialize ()
           w_ptr[LID] += STS::one();
         }
       }
+      // communicate to sum together W_[k]'s (# of blocks/patches) that update
+      // kth dof) and have this information in overlapped/extended  vector. 
+      //    only needed when Schwarz combine mode is ADD as opposed to ZERO (which is RAS)
+
+      if (schwarzCombineMode_ == "ADD") {
+        typedef Teuchos::RCP<Tpetra::Import<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> const >  import_type;
+        typedef Tpetra::MultiVector<        typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type,  typename MatrixType::global_ordinal_type,typename MatrixType::node_type> scMV;
+        import_type theImport = A_->getGraph()->getImporter();
+        scMV nonOverLapW(theImport->getSourceMap(), 1, false);
+        Teuchos::ArrayRCP<scalar_type> nonOverLapWArray = nonOverLapW.getDataNonConst(0);
+        nonOverLapW.putScalar(STS::zero ());
+        for (int ii = 0; ii < (int) theImport->getSourceMap()->getLocalNumElements(); ii++)  nonOverLapWArray[ii] = w_ptr[ii];
+        nonOverLapW.doExport (*W_,         *theImport, Tpetra::ADD);
+        W_->doImport(         nonOverLapW, *theImport, Tpetra::INSERT);
+
+      }
       W_->reciprocal (*W_);
     }
   } // timing of initialize stops here
@@ -813,7 +844,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     if(ZeroStartingSolution_) {
       auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
       auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
-      Container_->DoOverlappingJacobi(XView, YView, WView, DampingFactor_);
+      Container_->DoOverlappingJacobi(XView, YView, WView, DampingFactor_, nonsymCombine_);
       starting_iteration = 1;
     }
     const scalar_type ONE = STS::one();
@@ -824,7 +855,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
       {
         auto AYView = AY.getLocalViewHost (Tpetra::Access::ReadOnly);
         auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
-        Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
+        Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_,  nonsymCombine_);
       }
     }
   }
@@ -1094,6 +1125,7 @@ describe (Teuchos::FancyOStream& out,
         << "global number of columns: " << A_->getGlobalNumCols () << endl
         << "number of sweeps: " << NumSweeps_ << endl
         << "damping factor: " << DampingFactor_ << endl
+        << "nonsymmetric overlap combine" << nonsymCombine_ << endl
         << "backwards mode: "
         << ((PrecType_ == Ifpack2::Details::GS && DoBackwardGS_) ? "true" : "false")
         << endl

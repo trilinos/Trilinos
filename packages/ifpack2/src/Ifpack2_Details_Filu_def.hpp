@@ -47,6 +47,7 @@
 
 #include "Ifpack2_Details_Filu_decl.hpp"
 #include "Ifpack2_Details_CrsArrays.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include <Kokkos_Timer.hpp>
 #include <shylu_fastilu.hpp>
 
@@ -65,6 +66,13 @@ int Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getSweeps() const
 {
   return localPrec_->getNFact();
+}
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+std::string Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getSpTrsvType() const
+{
+  return localPrec_->getSpTrsvType();
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -92,11 +100,20 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initLocalPrec()
 {
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  localPrec_ = Teuchos::rcp(new LocalFILU(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows,
-        p.nFact, p.nTrisol, p.level, p.omega,
-        p.shift, p.guessFlag ? 1 : 0, p.blockSize));
+  auto matCrs = Ifpack2::Details::getCrsMatrix(this->mat_);
+
+  bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
+                       !p.use_metis;
+  localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+                                          p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
+  #ifdef HAVE_IFPACK2_METIS
+  if (p.use_metis) {
+    localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
+  }
+  #endif
   localPrec_->initialize();
   this->initTime_ = localPrec_->getInitializeTime();
 }
@@ -113,7 +130,7 @@ computeLocalPrec()
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-applyLocalPrec(ScalarArray x, ScalarArray y) const
+applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
   localPrec_->apply(x, y);
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it

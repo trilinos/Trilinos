@@ -9,13 +9,13 @@
 #ifndef Akri_AnalyticSurfaceInterfaceGeometry_h
 #define Akri_AnalyticSurfaceInterfaceGeometry_h
 
+#include <Akri_InterfaceGeometry.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_Surface.hpp>
+#include <Akri_Surface_Identifier.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
-
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
 
 namespace krino {
 
@@ -32,8 +32,7 @@ public:
 
   virtual bool might_have_interior_or_face_intersections() const override { return false; }
   virtual void fill_interior_intersections(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const override {}
-  virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const override
-    { std::vector<InterfaceID> interfaces; interfaces.push_back(InterfaceID(0,0)); return interfaces; }
+  virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const override;
   virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const override
     { std::vector<int> interfaceSigns(1,0); return interfaceSigns; }
@@ -48,25 +47,30 @@ public:
   virtual int sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override { return 0; }
 
+  int get_element_sign() const { return myElementSign; }
+
 private:
   Vector3d parametric_to_global_coordinates(const Vector3d & pCoords) const;
 
   const MasterElement & myMasterElem;
   std::vector<Vector3d> myElementNodeCoords;
   const Surface & mySurface;
+  int myElementSign{0};
 };
 
 class AnalyticSurfaceInterfaceGeometry : public InterfaceGeometry {
 
 public:
-  AnalyticSurfaceInterfaceGeometry(const Surface & surface,
+  AnalyticSurfaceInterfaceGeometry(const Surface_Identifier surfaceIdentifier,
+    const Surface & surface,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
-: mySurface(surface),
-  myActivePart(activePart),
-  myCdfemSupport(cdfemSupport),
-  myPhaseSupport(phaseSupport) {}
+  : mySurface(surface),
+    myActivePart(activePart),
+    myCdfemSupport(cdfemSupport),
+    myPhaseSupport(phaseSupport),
+    mySurfaceIdentifiers({surfaceIdentifier}) {}
 
   virtual ~AnalyticSurfaceInterfaceGeometry() {}
 
@@ -75,6 +79,10 @@ public:
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
+
+  virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
+
+  virtual bool snapped_elements_may_have_new_intersections() const override { return false; }
 
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
       const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
@@ -88,7 +96,7 @@ public:
   virtual void store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
       const std::vector<IntersectionPoint> & intersectionPoints,
       const std::vector<SnapInfo> & independentSnapInfos,
-      const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override {}
+      const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
   virtual const ElementToDomainMap & get_phase_for_uncut_elements() const override { return myUncutElementPhases; }
 
   virtual std::unique_ptr<ElementCutter> build_element_cutter(const stk::mesh::BulkData & mesh,
@@ -97,12 +105,15 @@ public:
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const override;
 
+  const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
+
 private:
   const Surface & mySurface;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;
-  ElementToDomainMap myUncutElementPhases;
+  std::vector<Surface_Identifier> mySurfaceIdentifiers;
+  mutable ElementToDomainMap myUncutElementPhases;
   mutable std::vector<stk::mesh::Entity> myElementsToIntersect;
 };
 

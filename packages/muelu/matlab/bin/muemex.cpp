@@ -59,8 +59,10 @@
 #include "MueLu_MatlabUtils.hpp"
 #include "MueLu_TwoLevelMatlabFactory.hpp"
 #include "MueLu_SingleLevelMatlabFactory.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
+
+#include "BelosLinearProblem.hpp"
+#include "BelosSolverFactory.hpp"
+#include "BelosTpetraAdapter.hpp"
 
 using namespace std;
 using namespace Teuchos;
@@ -280,24 +282,45 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
     {
       throw std::runtime_error("ERROR: failed to set up Belos problem.");
     }
-    std::string solverName = "CG";
+    std::string solverName = "GMRES";
     if(params->isParameter("solver"))
     {
       solverName = params->template get<std::string>("solver");
     }
-    Belos::ReturnType ret;
+    //Convert from basic MueMex solver names to the official Belos names.
+    //At the same time, check that solverName is in the valid set.
+    std::string belosSolverName;
     if(solverName == "GMRES")
     {
-      Belos::PseudoBlockGmresSolMgr<Scalar,Tpetra_MultiVector,Tpetra_Operator> solver(problem, params);
-      ret = solver.solve();
-      iters = solver.getNumIters();
+      belosSolverName = "PseudoBlock GMRES";
     }
     else if(solverName == "CG")
     {
-      Belos::PseudoBlockCGSolMgr<Scalar,Tpetra_MultiVector,Tpetra_Operator> solver(problem, params);
-      ret = solver.solve();
-      iters = solver.getNumIters();
+      belosSolverName = "PseudoBlock CG";
     }
+    else
+    {
+      std::string msg = std::string("ERROR: requested solver \"") + solverName + "\" not supported. Currently supported solvers: CG, GMRES";
+      mexPrintf("%s\n", msg.c_str());
+      output = mxCreateDoubleScalar(0);
+      return output;
+    }
+    Teuchos::RCP<Belos::SolverManager<Scalar, Tpetra_MultiVector, Tpetra_Operator> > solver;
+    Belos::SolverFactory<Scalar, Tpetra_MultiVector, Tpetra_Operator> factory;
+    try
+    {
+      //Just use the default parameters for the solver
+      solver = factory.create (belosSolverName, params);
+    }
+    catch(std::exception& e)
+    {
+      mexPrintf("%s\n", e.what());
+      output = mxCreateDoubleScalar(0);
+      return output;
+    }
+    solver->setProblem(problem);
+    Belos::ReturnType ret = solver->solve();
+    iters = solver->getNumIters();
     if(ret == Belos::Converged)
     {
       mexPrintf("Success, Belos converged!\n");
@@ -1384,6 +1407,13 @@ using namespace MueLu; //...but give mexFunction access to all MueLu members def
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
+  //Lazily initialize Tpetra
+  if(!Tpetra::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    Tpetra::initialize(&argc, &argv);
+  }
   double* id;
   int rv;
   //Arrays representing vectors

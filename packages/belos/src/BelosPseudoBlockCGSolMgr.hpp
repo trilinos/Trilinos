@@ -96,16 +96,6 @@ namespace Belos {
     PseudoBlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief PseudoBlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockCGSolMgr::solve() method.
-   *
-   */
-  class PseudoBlockCGSolMgrOrthoFailure : public BelosError {public:
-    PseudoBlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
 
   // Partial specialization for unsupported ScalarType types.
   // This contains a stub implementation.
@@ -239,6 +229,7 @@ namespace Belos {
       \note Only works if "Estimate Condition Number" is set on parameterlist
     */
     ScalarType getConditionEstimate() const {return condEstimate_;}
+    Teuchos::ArrayRCP<MagnitudeType> getEigenEstimates() const {return eigenEstimates_;}
 
     //! Return the residual status test
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
@@ -301,6 +292,7 @@ namespace Belos {
     // Compute the condition number estimate
     void compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
                                      Teuchos::ArrayView<MagnitudeType> offdiag,
+                                     Teuchos::ArrayRCP<MagnitudeType>& lambdas,
                                      ScalarType & lambda_min,
                                      ScalarType & lambda_max,
                                      ScalarType & ConditionNumber );
@@ -339,13 +331,6 @@ namespace Belos {
     static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
-#if defined(_WIN32) && defined(__clang__)
-    static constexpr std::ostream * outputStream_default_ =
-       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
-#else
-    static constexpr std::ostream * outputStream_default_ = &std::cout;
-#endif
     static constexpr bool genCondEst_default_ = false;
 
     // Current solver values.
@@ -357,6 +342,7 @@ namespace Belos {
     std::string resScale_;
     bool genCondEst_;
     ScalarType condEstimate_;
+    Teuchos::ArrayRCP<MagnitudeType> eigenEstimates_;
 
     // Timers.
     std::string label_;
@@ -370,7 +356,7 @@ namespace Belos {
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -394,7 +380,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -723,7 +709,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Deflation Quorum", static_cast<int>(defQuorum_default_),
       "The number of linear systems that need to converge before\n"
       "they are deflated.  This number should be <= block size.");
-    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
+    pl->set("Output Stream", Teuchos::rcpFromRef(std::cout),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
     pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
@@ -890,7 +876,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
               ScalarType l_min, l_max;
               Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
               Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
-              compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+              compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
 
               // Make sure not to do more condition estimate computations for this solve.
               block_cg_iter->setDoCondEst(false); 
@@ -995,7 +981,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
     ScalarType l_min, l_max;
     Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
     Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
-    compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+    compute_condnum_tridiag_sym(diag,offdiag,eigenEstimates_,l_min,l_max,condEstimate_);
     condEstPerf = true;
   }
 
@@ -1022,6 +1008,7 @@ void
 PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
                              Teuchos::ArrayView<MagnitudeType> offdiag,
+                             Teuchos::ArrayRCP<MagnitudeType>& lambdas,
                              ScalarType & lambda_min,
                              ScalarType & lambda_max,
                              ScalarType & ConditionNumber )
@@ -1041,6 +1028,7 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
   char char_N = 'N';
   Teuchos::LAPACK<int,ScalarType> lapack;
 
+  lambdas.resize(N, 0.0);
   lambda_min = STS::one ();
   lambda_max = STS::one ();
   if( N > 2 ) {
@@ -1051,6 +1039,9 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
        "compute_condnum_tridiag_sym: LAPACK's _PTEQR failed with info = "
        << info << " < 0.  This suggests there might be a bug in the way Belos "
        "is calling LAPACK.  Please report this to the Belos developers.");
+    for (int k = 0; k < N; k++) {
+      lambdas[k] = diag[N - 1 - k];
+    }
     lambda_min = Teuchos::as<ScalarType> (diag[N-1]);
     lambda_max = Teuchos::as<ScalarType> (diag[0]);
   }

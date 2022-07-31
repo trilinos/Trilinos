@@ -20,6 +20,7 @@
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_Phase_Support.hpp>
 
 #include <math.h>
 #include <map>
@@ -32,6 +33,8 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_FastIterativeMethod.hpp>
+#include <Akri_Surface_Manager.hpp>
 
 namespace krino {
 
@@ -47,25 +50,6 @@ bool all_nodes_have_field_data(const stk::mesh::BulkData& stk_bulk, stk::mesh::E
     }
   }
   return true;
-}
-
-std::vector<std::string> LevelSet::the_levelSet_names;
-
-LevelSet_Identifier LevelSet::get_identifier(const std::string & name)
-{
-  std::string upper_name = name;
-  std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
-  for (unsigned i=0; i<the_levelSet_names.size(); ++i)
-  {
-    if (upper_name == the_levelSet_names[i])
-    {
-      return LevelSet_Identifier(i);
-    }
-  }
-
-  const unsigned id = the_levelSet_names.size();
-  the_levelSet_names.push_back(upper_name);
-  return LevelSet_Identifier(id);
 }
 
 stk::mesh::BulkData & LevelSet::mesh()
@@ -116,30 +100,10 @@ IC_Alg& LevelSet::get_IC_alg()
   return *my_IC_alg;
 }
 
-void LevelSet::set_current_coordinates(stk::mesh::MetaData & meta, const FieldRef ref)
-{
-  LevelSetManager & ls_manager = LevelSetManager::get(meta);
-  ls_manager.set_current_coordinates(ref);
-}
-
-FieldRef LevelSet::get_current_coordinates(stk::mesh::MetaData & meta)
-{
-  LevelSetManager & ls_manager = LevelSetManager::get(meta);
-  FieldRef current_coords = ls_manager.get_current_coordinates();
-  if (!current_coords.valid())
-  {
-    const stk::mesh::FieldBase * meta_coords = meta.coordinate_field();
-    ThrowRequireMsg(nullptr != meta_coords, "Coordinates must be defined before calling LevelSet::get_current_coordinates().");
-    ls_manager.set_current_coordinates(meta_coords);
-    current_coords = ls_manager.get_current_coordinates();
-  }
-  return current_coords;
-}
-
 void LevelSet::setup(stk::mesh::MetaData & meta)
 {
-  const LevelSetManager & region_ls = LevelSetManager::get(meta);
-  for (auto&& ls : region_ls)
+  const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+  for (auto&& ls : surfaceManager.get_levelsets())
   {
     ls->setup();
   }
@@ -149,8 +113,8 @@ void LevelSet::post_commit_setup(stk::mesh::MetaData & meta)
 {
   const double max_elem_size = compute_maximum_element_size(meta.mesh_bulk_data());
 
-  const LevelSetManager & region_ls = LevelSetManager::get(meta);
-  for (auto&& ls : region_ls)
+  const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+  for (auto&& ls : surfaceManager.get_levelsets())
   {
     ls->setup();
     if (ls->my_narrow_band_multiplier > 0.)
@@ -244,7 +208,7 @@ void LevelSet::register_fields(void)
       for (auto partPtr : meta().get_mesh_parts())
       {
         if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
-            phase_support.level_set_is_used_by_nonconformal_part(this, phase_support.find_nonconformal_part(*partPtr)))
+            phase_support.level_set_is_used_by_nonconformal_part(get_identifier(), phase_support.find_nonconformal_part(*partPtr)))
         {
           FieldRef distance_ref = aux_meta().register_field( my_distance_name, type_double, stk::topology::NODE_RANK, 1, 1, *partPtr );
           set_old_distance_field( distance_ref );
@@ -511,19 +475,17 @@ LevelSet::advance_semilagrangian(const double deltaTime)
 
 //-----------------------------------------------------------------------------------
 void
-LevelSet::initialize(stk::mesh::MetaData & meta, const bool requires_additional_initialization)
+LevelSet::initialize(stk::mesh::MetaData & meta)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::initialize(void)"); /* %TRACE% */
 
-  const LevelSetManager & region_ls = LevelSetManager::get(meta);
-  for (auto&& ls : region_ls)
-  {
-    ls->initialize(0., requires_additional_initialization);
-  }
+  const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+  for (auto&& ls : surfaceManager.get_levelsets())
+    ls->initialize(0.);
 }
 
 //-----------------------------------------------------------------------------------
 void
-LevelSet::initialize(const double time, const bool requires_additional_initialization)
+LevelSet::initialize(const double time)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::initialize(void)"); /* %TRACE% */
 
   if (trackIsoSurface)
@@ -550,12 +512,12 @@ LevelSet::initialize(const double time, const bool requires_additional_initializ
   /* process analytic surfaces */
   if (my_IC_alg)
   {
-    my_IC_alg->execute(time, requires_additional_initialization);
+    my_IC_alg->execute(time);
   }
 
   if (compute_time_of_arrival())
   {
-    fast_marching_redistance(my_meta.universal_part(), true);
+    fast_methods_redistance(my_meta.universal_part(), true);
   }
   else if (my_perform_initial_redistance)
   {
@@ -569,6 +531,24 @@ LevelSet::initialize(const double time, const bool requires_additional_initializ
   if (my_ic_scale != 1.0) scale_distance(my_ic_scale);
 
   stk::mesh::field_copy(get_distance_field(), get_old_distance_field());
+}
+
+//-----------------------------------------------------------------------------------
+void
+LevelSet::clear_initialization_data(stk::mesh::MetaData & meta)
+{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::clear_initialization_data(stk::mesh::MetaData & meta)"); /* %TRACE% */
+
+  const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+  for (auto&& ls : surfaceManager.get_levelsets())
+    ls->clear_initialization_data();
+}
+
+void
+LevelSet::clear_initialization_data()
+{ /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::clear_initialization_data(stk::mesh::MetaData & meta)"); /* %TRACE% */
+
+  if (my_IC_alg && !get_keep_IC_surfaces())
+    my_IC_alg->clear();
 }
 
 double LevelSet::constrained_redistance(const bool use_initial_vol)
@@ -687,9 +667,9 @@ LevelSet::redistance(const stk::mesh::Selector & selector)
   if (get_distance_field().valid()) get_distance_field().field().modify_on_host();
   if (get_old_distance_field().valid()) get_old_distance_field().field().modify_on_host();
 
-  if (FAST_MARCHING == my_redistance_method)
+  if (FAST_MARCHING == my_redistance_method || FAST_ITERATIVE == my_redistance_method)
   {
-    fast_marching_redistance(selector);
+    fast_methods_redistance(selector);
     return;
   }
   ThrowRequire(CLOSEST_POINT == my_redistance_method);
@@ -755,7 +735,7 @@ LevelSet::get_time_of_arrival_speed(stk::mesh::Entity elem, ParallelErrorMessage
 }
 
 void
-LevelSet::fast_marching_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival)
+LevelSet::fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::fast_marching_redistance(const stk::mesh::Selector & selector)"); /* %TRACE% */
 
   // Unlike redistance() this method provides an approximate (not exact) distance to the isosurface.
@@ -763,10 +743,34 @@ LevelSet::fast_marching_redistance(const stk::mesh::Selector & selector, const b
   // different than a pure distance function because it provides the distance through domain.  It can't see
   // through walls like the redistance() method does.
 
-  if (compute_time_of_arrival) krinolog << "Initializing the level set field to be the time-of-arrival using a fast marching method..." << stk::diag::dendl;
-  else krinolog << "Redistancing the level set field using a fast marching method..." << stk::diag::dendl;
-  Fast_Marching fm(*this, selector, get_timer());
-  fm.redistance();
+  if (my_redistance_method == FAST_MARCHING)
+  {
+    if (compute_time_of_arrival)
+      krinolog << "Initializing the level set field to be the time-of-arrival using a fast marching method..." << stk::diag::dendl;
+    else
+      krinolog << "Redistancing the level set field using a fast marching method..." << stk::diag::dendl;
+
+    Fast_Marching fm(*this, selector, get_timer());
+    fm.redistance();
+  }
+  else
+  {
+    ThrowRequire(my_redistance_method == FAST_ITERATIVE);
+    std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> get_interface_speed;
+    if (compute_time_of_arrival)
+    {
+      krinolog << "Initializing the level set field to be the time-of-arrival using a fast iterative method..." << stk::diag::dendl;
+      get_interface_speed = [&](ParallelErrorMessage& err, stk::mesh::Entity elem) { return get_time_of_arrival_speed(elem, err); };
+    }
+    else
+    {
+      krinolog << "Redistancing the level set field using a fast iterative method..." << stk::diag::dendl;
+    }
+
+    FastIterativeMethod fim(mesh(), selector, get_coordinates_field(), get_distance_field(), get_interface_speed, get_timer());
+    fim.redistance();
+    ThrowAssertMsg(fim.check_converged_solution(), "Fast iterative method did not fully converge.");
+  }
 }
 
 //--------------------------------------------------------------------------------
@@ -1659,13 +1663,13 @@ LevelSet &
 LevelSet::build(
     stk::mesh::MetaData & in_meta,
     const std::string & ls_name,
-    stk::diag::Timer & parent_timer )
+    const stk::diag::Timer & parent_timer )
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::build(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
-  LevelSetManager & region_ls = LevelSetManager::get(in_meta);
+  Surface_Manager & surfaceManager = Surface_Manager::get(in_meta);
 
-  ThrowRequire(!region_ls.has_levelSet(ls_name));
+  ThrowRequire(!surfaceManager.has_levelset(ls_name));
   LevelSet * ls = new LevelSet(in_meta, ls_name, parent_timer);
-  region_ls.add(ls);
+  surfaceManager.add_levelset(ls);
   return *ls;
 }
 
@@ -1673,11 +1677,11 @@ LevelSet::build(
 LevelSet::LevelSet(
     stk::mesh::MetaData & in_meta,
     const std::string & in_name,
-    stk::diag::Timer & parent_timer ) :
+    const stk::diag::Timer & parent_timer ) :
     my_meta(in_meta),
     my_aux_meta(AuxMetaData::get(in_meta)),
-    my_identifier(LevelSet::get_identifier(in_name)),
-    my_name(LevelSet::get_name(my_identifier)),
+    my_identifier(Surface_Manager::get(in_meta).get_identifier(in_name)),
+    my_name(Surface_Manager::get(in_meta).get_name(my_identifier)),
     my_parent_timer(parent_timer),
     my_timer("LevelSet", parent_timer),
     spatial_dimension(in_meta.spatial_dimension()),
@@ -1696,7 +1700,7 @@ LevelSet::LevelSet(
     my_initial_neg_vol(0.0),
     my_needs_reinitialize_every_step(false)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::LevelSet(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer)"); /* %TRACE% */
-  my_coordinates_field = get_current_coordinates(in_meta);
+  my_coordinates_field = my_aux_meta.get_current_coordinates();
 
   // default names for distance and velocity
   // line commands are available for overriding these names
@@ -1736,38 +1740,6 @@ LevelSet::gather_nodal_field(
   }
 
   ThrowAssert( (unsigned)j == ncomp_field * stk_mesh.num_nodes(obj));
-}
-//--------------------------------------------------------------------------------
-LevelSetManager &
-LevelSetManager::get(stk::mesh::MetaData & meta)
-{
-  LevelSetManager * mgr = const_cast<LevelSetManager *>(meta.get_attribute<LevelSetManager>());
-  if (nullptr == mgr)
-  {
-    mgr = new LevelSetManager;
-    meta.declare_attribute_with_delete<LevelSetManager>(mgr);
-  }
-  return *mgr;
-}
-//--------------------------------------------------------------------------------
-LevelSetManager &
-LevelSetManager::get(const stk::mesh::MetaData & meta)
-{
-  LevelSetManager * mgr = const_cast<LevelSetManager *>(meta.get_attribute<LevelSetManager>());
-  ThrowRequireMsg(nullptr != mgr, "No LevelSetManager found for MetaData.");
-  return *mgr;
-}
-//--------------------------------------------------------------------------------
-bool LevelSetManager::has_levelSet(const std::string & ls_name) const
-{
-  for (auto&& ls : my_level_sets)
-  {
-    if (ls->name() == ls_name || ls->get_composite_name() == ls_name)
-    {
-      return true;
-    }
-  }
-  return false;
 }
 //--------------------------------------------------------------------------------
 std::string

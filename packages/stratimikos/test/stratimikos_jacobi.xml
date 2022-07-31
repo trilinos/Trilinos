@@ -13,14 +13,14 @@
       <!-- ========================================= -->
       <!-- Select which Krylov solver should be used -->
 
-      <Parameter name="Solver Type" type="string" value="Pseudo Block CG"/>
+      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
 
       <!-- ================================== -->
       <!-- Parameters for the Krylov solvers  -->
 
       <ParameterList name="Solver Types">
 
-        <ParameterList name="Pseudo Block CG">
+        <ParameterList name="Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1e-1"/>
           <Parameter name="Maximum Iterations" type="int" value="100"/>
           <!-- Verbosity
@@ -40,7 +40,7 @@
       </ParameterList>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="low"/>
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
 
     </ParameterList>

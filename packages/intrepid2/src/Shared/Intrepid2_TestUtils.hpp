@@ -350,7 +350,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   // ! This returns a vector whose entries are vector<int>s containing 1-3 polynomial orders from 1 up to and including those specified
   // ! Intended for testing bases that support anisotropic polynomial degree, such as the hierarchical bases
-  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z=-1)
   {
     std::vector<int> degrees(spaceDim);
     degrees[0] = polyOrder_x;
@@ -360,6 +360,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     int numCases = degrees[0];
     for (unsigned d=1; d<degrees.size(); d++)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(degrees[d] < minDegree, std::invalid_argument, "Unsupported degree/minDegree combination");
       numCases = numCases * (degrees[d] + 1 - minDegree);
     }
     std::vector< std::vector<int> > subBasisDegreeTestCases(numCases);
@@ -566,20 +567,22 @@ The total number of points defined will be a triangular number; if n=numPointsBa
   }
 
   template <class FunctorType1, class FunctorType2, int rank, typename Scalar=typename FunctorType1::value_type, class ExecutionSpace = typename FunctorType1::execution_space>
-  typename std::enable_if< !supports_rank<FunctorType1,rank>::value, void >::type
+  typename std::enable_if< !(supports_rank<FunctorType1,rank>::value && supports_rank<FunctorType2,rank>::value), void >::type
   testFloatingEquality(const FunctorType1 &functor1, const FunctorType2 &functor2, double relTol, double absTol, Teuchos::FancyOStream &out, bool &success,
                        std::string functor1Name = "Functor 1", std::string functor2Name = "Functor 2")
   {
-    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "testFloatingEquality() called on FunctorType1 that does not support the specified rank.\n");
+    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "testFloatingEquality() called on FunctorType1 or FunctorType2 that does not support the specified rank.\n");
   }
 
   //! this method assumes both functors are accesible on device.
   template <class FunctorType1, class FunctorType2, int rank, typename Scalar=typename FunctorType1::value_type, class ExecutionSpace = typename FunctorType1::execution_space>
-  typename std::enable_if< supports_rank<FunctorType1,rank>::value, void >::type
+  typename std::enable_if< (supports_rank<FunctorType1,rank>::value && supports_rank<FunctorType2,rank>::value), void >::type
   testFloatingEquality(const FunctorType1 &functor1, const FunctorType2 &functor2, double relTol, double absTol, Teuchos::FancyOStream &out, bool &success,
                        std::string functor1Name = "Functor 1", std::string functor2Name = "Functor 2")
   {
-    static_assert( supports_rank<FunctorType2,rank>::value, "Both Functor1 and Functor2 must support the specified rank through operator().");
+    static_assert( supports_rank<FunctorType1,rank>::value, "Functor1 must support the specified rank through operator().");
+    static_assert( supports_rank<FunctorType2,rank>::value, "Functor2 must support the specified rank through operator().");
+    
     using Functor1IteratorScalar = FunctorIterator<FunctorType1, Scalar, rank>;
     using Functor2IteratorScalar = FunctorIterator<FunctorType2, Scalar, rank>;
 

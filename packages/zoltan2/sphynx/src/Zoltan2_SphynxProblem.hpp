@@ -50,90 +50,134 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // This file contains the implementation of SphynxProblem.
-// 
+//
 // SphynxProblem is a subset of PartitioningProblem in Zoltan2Core. This subset
-// only consists of the functionality and data members needed by Sphynx. 
-// 
+// only consists of the functionality and data members needed by Sphynx.
+//
 // SphynxProblem acts as an interface between user and the Sphynx algorithm.
-// User creates the SphynxProblem object on her adapter and calls solve() to 
-// get a partitioning solution. 
-// 
+// User creates the SphynxProblem object on her adapter and calls solve() to
+// get a partitioning solution.
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Zoltan2_PartitioningSolution.hpp"
 #include "Zoltan2_Sphynx.hpp"
+#include <Zoltan2_PartitioningProblem.hpp>
 
 namespace Zoltan2 {
 
+
+/*! \brief Set up validators specific to this algorithm
+ */
+static void getSphynxValidParameters(ParameterList & pl)
+{
+
+  RCP<Teuchos::StringValidator> sphynx_preconditionner_type_method_Validator =
+    Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "muelu", "jacobi", "polynomial")));
+
+  pl.set("sphynx_preconditioner_type", "polynomial", "Sphynx preconditioner type", sphynx_preconditionner_type_method_Validator);
+
+
+  RCP<Teuchos::StringValidator> sphynx_initial_guess_method_Validator =
+    Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "random", "constants")));
+
+  pl.set("sphynx_initial_guess", "random", "Sphynx initial guess", sphynx_initial_guess_method_Validator);
+
+  RCP<Teuchos::StringValidator> sphynx_problem_type_method_Validator =
+    Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "combinatorial", "normalized", "generalized")));
+
+  pl.set("sphynx_problem_type", "combinatorial", "Sphynx problem type", sphynx_problem_type_method_Validator);
+
+  RCP<Teuchos::EnhancedNumberValidator<int>> sphynx_verbosity_validator =
+    Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
+  pl.set("sphynx_verbosity", 0, "Sphynx verbosity.", sphynx_verbosity_validator);
+
+  // bool parameter
+  pl.set("sphynx_skip_preprocessing", false, "Sphynx skip preprocessing.", Environment::getBoolValidator());
+  pl.set("sphynx_use_full_ortho", true, "Sphynx use full ortho.", Environment::getBoolValidator());
+}
+
+static void setSphynxValidatorsInList(
+  const Teuchos::ParameterList &plSome,   // in: user's parameters
+  const Teuchos::ParameterList &plAll,    // in: validators for all params
+  Teuchos::ParameterList &plVal)          // out: validators for user's params
+{
+  ParameterList::ConstIterator next = plSome.begin();
+
+  while (next != plSome.end()){
+
+    const std::string &name = next->first;
+    const ParameterEntry &entrySome = plSome.getEntry(name);
+    const ParameterEntry &entryAll = plAll.getEntry(name);
+
+    if (entrySome.isList()){
+      plVal.sublist(name);     // create & get
+      // Don't set validators for sublists; sublists are for TPL's parameters
+    }
+    else{
+      plVal.setEntry(name, entryAll);
+    }
+
+    ++next;
+  }
+}
+
   template <typename Adapter>
-  class SphynxProblem
+  class SphynxProblem : public PartitioningProblem<Adapter>
   {
 
   public:
 
     using part_t = typename Adapter::part_t;
     using weight_t = typename Adapter::scalar_t;
+    typedef typename Adapter::base_adapter_t base_adapter_t; // CHeck to Remove
 
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////// CONSTRUCTORS ////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
     // Constructor where Teuchos communicator is specified
-    SphynxProblem(Teuchos::RCP<Adapter> A, 
-		  Teuchos::RCP<Teuchos::ParameterList> p,
-		  const Teuchos::RCP<const Teuchos::Comm<int> > &comm):
-      inputAdapter_(A),
-      params_(p),
-      comm_(comm),
-      solution_(),
-      numberOfWeights_(),
-      numberOfCriteria_()
+    SphynxProblem(Adapter *A,
+                  Teuchos::ParameterList *p,
+                            RCP<Teuchos::ParameterList> sphynxParams,
+          const RCP<const Teuchos::Comm<int> > &comm):
+      PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
+        // Validation of SphynxParameter
+        ParameterList validParams;
+        try{
+            ParameterList allParameters;
+            getSphynxValidParameters(allParameters);
 
-      numberOfWeights_ = this->inputAdapter_->getNumWeightsPerID();
-      numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
+            setSphynxValidatorsInList(*(sphynxParams_.get()), allParameters, validParams);
+        }
+        Z2_FORWARD_EXCEPTIONS
 
-      Teuchos::ArrayRCP<part_t> *noIds = 
-	new Teuchos::ArrayRCP<part_t> [numberOfCriteria_];
-      Teuchos::ArrayRCP<weight_t> *noSizes = 
-	new Teuchos::ArrayRCP<weight_t> [numberOfCriteria_];
+        sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
+        this->env_->convertStringToInt(*sphynxParams_.get());
 
-      partIds_ = Teuchos::arcp(noIds, 0, numberOfCriteria_, true);
-      partSizes_ = Teuchos::arcp(noSizes, 0, numberOfCriteria_, true);
-    
-      int nparts = -1;
-      const Teuchos::ParameterEntry *pe = params_->getEntryPtr("num_global_parts");
-      if(pe) 
-	nparts = pe->getValue<int>(&nparts);
-    
-      if(nparts == -1)
-	throw std::runtime_error("\nUser did not set num_global_parts"
-				 "in the parameter list!n");
-      
+        int nparts = -1;
+        const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
+        if(pe)
+          nparts = pe->getValue<int>(&nparts);
 
-      envParams_ = Teuchos::rcp(new Teuchos::ParameterList());
-      envParams_->set("num_global_parts", nparts);
-    
-      env_ = Teuchos::rcp(new Environment(*envParams_, comm_));
-      envConst_ = Teuchos::rcp_const_cast<const Environment>(env_);
-
+        if(nparts == -1)
+          throw std::runtime_error("\nUser did not set num_global_parts"
+                                   "in the parameter list!n");
     }
 
 #ifdef HAVE_ZOLTAN2_MPI
     // Constructor where MPI communicator can be specified
-    SphynxProblem(Teuchos::RCP<Adapter> A, 
-		  Teuchos::RCP<Teuchos::ParameterList> p, 
-		  MPI_Comm mpicomm):
-      SphynxProblem(A, p, Teuchos::rcp<const Teuchos::Comm<int>>
-		    (new Teuchos::MpiComm<int>
-		     (Teuchos::opaqueWrapper(mpicomm))))
+    SphynxProblem(Adapter *A, ParameterList *p, RCP<Teuchos::ParameterList> sphynxParams, MPI_Comm mpicomm):
+      SphynxProblem(A, p,sphynxParams,
+                              rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
+                                                    Teuchos::opaqueWrapper(mpicomm))))
     {}
 #endif
 
     // Constructor where communicator is the Teuchos default.
-    SphynxProblem(Teuchos::RCP<Adapter> A, 
-		  Teuchos::RCP<Teuchos::ParameterList> p):
-      SphynxProblem(A, p, Tpetra::getDefaultComm())
+    SphynxProblem(Adapter *A, ParameterList *p, RCP<Teuchos::ParameterList> sphynxParams):
+      SphynxProblem(A, p,sphynxParams, Tpetra::getDefaultComm())
     {}
 
     // Destructor
@@ -143,76 +187,56 @@ namespace Zoltan2 {
     ///////////////////// FORWARD DECLARATIONS  ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
-    void solve();
-
+    void createAlgorithm() override;
+    void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
+                         Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) override;
 
     ///////////////////////////////////////////////////////////////////////////
     /////////////////////// MEMBER FUNCTIONS  /////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
-  
+
     const PartitioningSolution<Adapter> &getSolution() {
-      return *(solution_.getRawPtr());
-    };  
+      return *(this->solution_.getRawPtr());
+    };
 
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////////// DATA MEMBERS ////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
   private:
-  
-    Teuchos::RCP<Adapter> inputAdapter_;
-    Teuchos::RCP<Teuchos::ParameterList> params_;
-    Teuchos::RCP<const Teuchos::Comm<int>> comm_;
-    Teuchos::RCP<Algorithm<Adapter> > algorithm_;
-
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
-    Teuchos::RCP<Environment> env_;
-    Teuchos::RCP<const Environment> envConst_;
+    RCP<ParameterList> sphynxParams_;
 
-    Teuchos::RCP<PartitioningSolution<Adapter> > solution_;
 
-    int numberOfWeights_;   // What user provides
-    int numberOfCriteria_;  // What Sphynx uses
-
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<part_t> > partIds_;
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<weight_t> > partSizes_;
-  
   };
 
   ///////////////////////////////////////////////////////////////////////////
   /////////////////////// MORE MEMBER FUNCTIONS  ////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
 
+
   template <typename Adapter>
-  void SphynxProblem<Adapter>::solve()
+  void SphynxProblem<Adapter>::processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
+                                                     Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) {
+      this->algName_ = std::string("sphynx");
+}
+
+  template <typename Adapter>
+  void SphynxProblem<Adapter>::createAlgorithm()
   {
-    this->algorithm_ = Teuchos::rcp(new Zoltan2::Sphynx<Adapter>(this->envConst_,
-								 this->params_,
-								 this->comm_, 
-								 this->inputAdapter_));
-  
-
-    PartitioningSolution<Adapter> *soln = NULL;
-
-    try{
-    
-      soln = new PartitioningSolution<Adapter>(this->envConst_, this->comm_, numberOfWeights_,
-					       partIds_.view(0, numberOfCriteria_),
-					       partSizes_.view(0, numberOfCriteria_), this->algorithm_);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    solution_ = Teuchos::rcp(soln);
-
-    // Call the algorithm
-
-    try {
-      this->algorithm_->partition(solution_);
-    }
-    Z2_FORWARD_EXCEPTIONS;
+      // Create the algorithm
+      if (this->algName_ == std::string("sphynx")) {
+          this->algorithm_ = Teuchos::rcp(new Zoltan2::Sphynx<Adapter>(this->envConst_,
+                                                                       this->params_,
+                                                                       this->sphynxParams_,
+                                                                       this->comm_,
+                                                                       this->inputAdapter_));
+      }
+      else {
+          throw std::logic_error("partitioning algorithm not supported");
+      }
   }
-
 
 } // namespace Zoltan2
 

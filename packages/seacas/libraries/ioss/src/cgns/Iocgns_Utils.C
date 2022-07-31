@@ -1625,7 +1625,7 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
       }
       if (id == 0) {
         id = Ioss::Utils::extract_id(ss_name);
-        if (id == 0) {
+        if (id == 0 && ss_name != "Unspecified") {
           // Assign a fake_id to this sideset.  No checking to make
           // sure there are no duplicates...
           id = fake_id--;
@@ -1685,7 +1685,7 @@ void Iocgns::Utils::add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db)
           }
           cg_free(dtext);
         }
-        if (!assem_name.empty()) {
+        if (!assem_name.empty() && assem_name != "Unspecified") {
           // Create an assembly with this name...
           auto *assem = new Ioss::Assembly(db, assem_name);
           db->get_region()->add(assem);

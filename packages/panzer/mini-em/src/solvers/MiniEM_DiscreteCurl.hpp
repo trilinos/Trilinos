@@ -70,8 +70,8 @@ void addDiscreteCurlToRequestHandler(
   RCP<const epetraBlockedLinObjFactory > eblof  = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
   if (tblof != Teuchos::null) {
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> matrix;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> map;
 
     RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
 
@@ -180,7 +180,7 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(curlAtDofCoordsNonOriented, curlAtDofCoordsNonOriented_d);
 
     // create the global curl matrix
-    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,basisCoeffsLI.extent(1)));
+    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,hcurlCardinality));
 
     // get IDs for edges and faces
     auto fLIDs_k = face_ugi->getLIDs();
@@ -342,37 +342,37 @@ void addDiscreteCurlToRequestHandler(
 
     // get the HCurl and HDiv bases
     auto face_fieldPattern = face_ugi->getFieldPattern(face_basis_name);
-    auto face_basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(face_fieldPattern,true)->getIntrepidBasis();
+    auto face_basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(face_fieldPattern,true)->getIntrepidBasis()->getHostBasis();
     auto edge_fieldPattern = edge_ugi->getFieldPattern(edge_basis_name);
-    auto edge_basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(edge_fieldPattern,true)->getIntrepidBasis();
+    auto edge_basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(edge_fieldPattern,true)->getIntrepidBasis()->getHostBasis();
 
     // cardinalities
     int hdivCardinality = face_basis->getCardinality();
     int hcurlCardinality = edge_basis->getCardinality();
 
     // allocate some view
-    Kokkos::DynRankView<double,DeviceSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
-    Kokkos::DynRankView<double,DeviceSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
+    Kokkos::DynRankView<double,HostSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
+    Kokkos::DynRankView<double,HostSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
     typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>::HostMirror elemOrts("elemOrts", 1);
     typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes("elemNodes", 1, numElemVertices);
     typename Kokkos::DynRankView<int, DeviceSpace>::HostMirror fOrt("fOrt", hdivCardinality);
     typename Kokkos::DynRankView<double, DeviceSpace>::HostMirror ortJacobian("ortJacobian", 2, 2);
 
     // the ranks of these depend on dimension
-    Kokkos::DynRankView<double,DeviceSpace> dofCoeffs;
-    Kokkos::DynRankView<double,DeviceSpace> refDofCoeffs;
-    Kokkos::DynRankView<double,DeviceSpace> curlAtDofCoordsNonOriented;
-    Kokkos::DynRankView<double,DeviceSpace> curlAtDofCoords;
+    Kokkos::DynRankView<double,HostSpace> dofCoeffs;
+    Kokkos::DynRankView<double,HostSpace> refDofCoeffs;
+    Kokkos::DynRankView<double,HostSpace> curlAtDofCoordsNonOriented;
+    Kokkos::DynRankView<double,HostSpace> curlAtDofCoords;
     if(dim==3){
-      dofCoeffs                  = Kokkos::DynRankView<double,DeviceSpace>("dofCoeffs", 1, hdivCardinality,dim);
-      refDofCoeffs               = Kokkos::DynRankView<double,DeviceSpace>("refDofCoeffs", hdivCardinality,dim);
-      curlAtDofCoordsNonOriented = Kokkos::DynRankView<double,DeviceSpace>("curlAtDofCoordsNonOriented", 1, hcurlCardinality, hdivCardinality, dim);
-      curlAtDofCoords            = Kokkos::DynRankView<double,DeviceSpace>("curlAtDofCoords", 1, hcurlCardinality, hdivCardinality, dim);
+      dofCoeffs                  = Kokkos::DynRankView<double,HostSpace>("dofCoeffs", 1, hdivCardinality,dim);
+      refDofCoeffs               = Kokkos::DynRankView<double,HostSpace>("refDofCoeffs", hdivCardinality,dim);
+      curlAtDofCoordsNonOriented = Kokkos::DynRankView<double,HostSpace>("curlAtDofCoordsNonOriented", 1, hcurlCardinality, hdivCardinality, dim);
+      curlAtDofCoords            = Kokkos::DynRankView<double,HostSpace>("curlAtDofCoords", 1, hcurlCardinality, hdivCardinality, dim);
     } else {
-      dofCoeffs                  = Kokkos::DynRankView<double,DeviceSpace>("dofCoeffs", 1, hdivCardinality);
-      refDofCoeffs               = Kokkos::DynRankView<double,DeviceSpace>("refDofCoeffs", hdivCardinality);
-      curlAtDofCoordsNonOriented = Kokkos::DynRankView<double,DeviceSpace>("curlAtDofCoordsNonOriented", 1, hcurlCardinality, hdivCardinality);
-      curlAtDofCoords            = Kokkos::DynRankView<double,DeviceSpace>("curlAtDofCoords", 1, hcurlCardinality, hdivCardinality);
+      dofCoeffs                  = Kokkos::DynRankView<double,HostSpace>("dofCoeffs", 1, hdivCardinality);
+      refDofCoeffs               = Kokkos::DynRankView<double,HostSpace>("refDofCoeffs", hdivCardinality);
+      curlAtDofCoordsNonOriented = Kokkos::DynRankView<double,HostSpace>("curlAtDofCoordsNonOriented", 1, hcurlCardinality, hdivCardinality);
+      curlAtDofCoords            = Kokkos::DynRankView<double,HostSpace>("curlAtDofCoords", 1, hcurlCardinality, hdivCardinality);
     }
     face_basis->getDofCoeffs(refDofCoeffs);
 
@@ -430,11 +430,11 @@ void addDiscreteCurlToRequestHandler(
 	Kokkos::deep_copy(dofCoeffs, dofCoeffs_h);
 
         //orient basis
-	Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d("elemOrts_d", 1);
-	Kokkos::deep_copy(elemOrts_d, elemOrts);
+	// Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d("elemOrts_d", 1);
+	// Kokkos::deep_copy(elemOrts_d, elemOrts);
         ots::modifyBasisByOrientation(curlAtDofCoords,
                                       curlAtDofCoordsNonOriented,
-                                      elemOrts_d,
+                                      elemOrts,
                                       edge_basis.get());
 
         //get basis coefficients (dofs)

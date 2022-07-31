@@ -60,7 +60,10 @@
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_MultiVectorFactory.hpp> // taw: include MultiVectorFactory before VectorFactory for BlockedMultiVector
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
 #include "Teuchos_ScalarTraits.hpp"
@@ -98,6 +101,39 @@ namespace {
   //
   // UNIT TESTS
   //
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, Constructor_Vector, M, Scalar, LO, GO, Node )
+  {
+    using MapClass = Xpetra::Map<LO, GO, Node>;
+    using MapFactoryClass = Xpetra::MapFactory<LO, GO, Node>;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    typedef typename STS::magnitudeType MT;
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    // generate problem
+    const LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    const RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec = Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+    vec->randomize();
+    RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > mat = Xpetra::MatrixFactory<Scalar,LO,GO,Node>::Build(vec.getConst());
+
+    const MT tol = 1e-12;
+
+    TEST_ASSERT(!mat.is_null());
+    TEST_EQUALITY(nEle, mat->getGlobalNumEntries());
+    TEST_FLOATING_EQUALITY(vec->norm2(), mat->getFrobeniusNorm(), tol);
+
+    const RCP<Xpetra::Vector<Scalar, LO, GO, Node> > diagonal = Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+
+    mat->getLocalDiagCopy(*diagonal);
+    TEST_FLOATING_EQUALITY(vec->norm2(), diagonal->norm2(), tol);
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, Apply, M, Scalar, LO, GO, Node )
   {
@@ -1588,7 +1624,8 @@ namespace {
 #endif
 
 // for common tests (Epetra and Tpetra...)
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
+#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Constructor_Vector , M##LO##GO##Node , SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Apply , M##LO##GO##Node , SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, ReplaceGlobalAndLocalValues, M##LO##GO##Node , SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, leftScale, M##LO##GO##Node , SC, LO, GO, Node ) \

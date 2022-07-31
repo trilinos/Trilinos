@@ -145,7 +145,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -167,7 +167,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -190,7 +190,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -212,7 +212,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -234,7 +234,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -257,7 +257,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -280,7 +280,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -303,7 +303,7 @@ endif() # test created
 #      LABELS
 #        "IntegrationTest;integration;kokkos;staggered"
 #      TIMEOUT
-#        10
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -326,7 +326,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -348,7 +348,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -370,7 +370,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -393,7 +393,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -417,7 +417,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -439,7 +439,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -462,7 +462,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -510,7 +510,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;staggered"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -652,7 +652,7 @@ if (${testName}_CREATED)
       LABELS
         "ConvergenceTest;convergence;manifold"
       TIMEOUT
-        20
+        60
   )
 endif() # test created
 
@@ -673,7 +673,7 @@ if (${testName}_CREATED)
       LABELS
         "ConvergenceTest;convergence;manifold"
       TIMEOUT
-        20
+        60
   )
 endif() # test created
 
@@ -701,7 +701,7 @@ if (${testName}_CREATED)
       LABELS
         "ConvergenceTest;convergence;manifold;staggered"
       TIMEOUT
-        20
+        60
   )
 endif() # test created
 
@@ -724,7 +724,7 @@ if (${testName}_CREATED)
       LABELS
         "UtilityTest;utility;kokkos"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -747,7 +747,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -769,7 +769,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -791,7 +791,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -814,7 +814,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -836,7 +836,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -858,7 +858,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -881,7 +881,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -903,7 +903,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -925,7 +925,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -948,7 +948,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -970,7 +970,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -992,6 +992,6 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created

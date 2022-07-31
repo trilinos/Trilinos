@@ -38,12 +38,16 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
@@ -59,19 +63,25 @@ namespace
 
 double initial_value1[3] = {-1, 2, -0.3};
 
-void createNodalVectorField(stk::mesh::MetaData& meshMetaData, const std::string &field_name)
+void createNodalVectorField(stk::mesh::MetaData& meshMetaData,
+                            const std::string &fieldName,
+                            const std::string &partName)
 {
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &field1 = meshMetaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, field_name);
-    stk::mesh::put_field_on_entire_mesh_with_initial_value(field1, initial_value1);
+    stk::mesh::Field<double> &field1 = meshMetaData.declare_field<double>(stk::topology::NODE_RANK, fieldName);
+    stk::mesh::Part* part = meshMetaData.get_part(partName);
+    ASSERT_TRUE(part != nullptr)<<partName<<" not found";
+    stk::mesh::put_field_on_mesh(field1, *part, 3, initial_value1);
 }
 
-void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
+void createNodalVectorFields(stk::mesh::MetaData& meshMetaData,
+                             const std::string& fieldBaseName,
+                             unsigned numFields,
+                             const std::string& partName)
 {
-    createNodalVectorField(meshMetaData, "disp");
-    createNodalVectorField(meshMetaData, "vel");
-    createNodalVectorField(meshMetaData, "acc");
-    createNodalVectorField(meshMetaData, "force");
-    meshMetaData.commit();
+  for(unsigned i=0; i<numFields; ++i) {
+    std::string fieldName = fieldBaseName+std::to_string(i);
+    createNodalVectorField(meshMetaData, fieldName, partName);
+  }
 }
 
 size_t setFieldData(stk::mesh::BulkData& mesh, stk::mesh::Selector select)
@@ -95,9 +105,12 @@ size_t setFieldData(stk::mesh::BulkData& mesh, stk::mesh::Selector select)
     return num_nodes;
 }
 
-void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::string genMeshSpec = std::string("generated:100x100x100"))
+void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader,
+                           const std::string& genMeshSpec,
+                           unsigned numBlocks,
+                           unsigned numFields)
 {
-    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
       exodusFileName = genMeshSpec;
     }
@@ -112,11 +125,23 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::stri
     }
 
     exodusFileReader.create_input_mesh();
-    stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
-    createNodalVectorFields(stkMeshMetaData);
+    std::shared_ptr<stk::mesh::MetaData> stkMeshMetaData = exodusFileReader.meta_data_ptr();
+    if (numBlocks==1) {
+      createNodalVectorFields(*stkMeshMetaData, "nodalField", numFields, "{universal}");
+    }
+    else {
+      stk::performance_tests::setup_multiple_blocks(*stkMeshMetaData, numBlocks);
+      stk::mesh::PartVector blockParts;
+      stk::mesh::fill_element_block_parts(*stkMeshMetaData, stk::topology::HEX_8, blockParts);
+      for(const stk::mesh::Part* part : blockParts) {
+        std::string fieldBaseName = part->name()+"nodalField";
+        createNodalVectorFields(*stkMeshMetaData, fieldBaseName, numFields, part->name());
+      }
+    }
+    stkMeshMetaData->commit();
 
-    auto arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL));
-    exodusFileReader.set_bulk_data(*arg_bulk_data);
+    std::shared_ptr<stk::mesh::BulkData> arg_bulk_data = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_aura_option(stk::mesh::BulkData::AUTO_AURA).create(stkMeshMetaData);
+    exodusFileReader.set_bulk_data(arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 
     bool delay_field_data_allocation = true;
@@ -145,7 +170,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::stri
       std::cerr << "Finished Reading Mesh" << std::endl;
     }
 
-    stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
+    stk::mesh::Selector allEntities = stkMeshMetaData->universal_part();
     std::vector<size_t> entityCounts;
     stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
     size_t numElements = entityCounts[stk::topology::ELEMENT_RANK];
@@ -187,7 +212,10 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
         const_fields[i] = fields[i];
     }
 
-    double start_time = stk::cpu_time();
+    stk::parallel_machine_barrier(mesh.parallel());
+
+    stk::performance_tests::Timer timer(mesh.parallel());
+    timer.start_timing();
 
     for(int iter=0; iter<num_iters; ++iter) {
         for (size_t ghost_i = 0 ; ghost_i<mesh.ghostings().size() ; ++ghost_i) {
@@ -195,29 +223,16 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
         }
     }
 
-    double stk_comm_time_with_loop = stk::cpu_time() - start_time;
-
-    start_time = stk::cpu_time();
     for(int iter=0; iter<num_iters; ++iter) {
         stk::mesh::communicate_field_data(mesh, const_fields);
     }
 
-    double stk_comm_time_bulk = stk::cpu_time() - start_time;
+    timer.update_timing();
 
-    double max_time_with_loop=0;
-    double max_time_bulk=0;
-    MPI_Reduce(static_cast<void*>(&stk_comm_time_with_loop), static_cast<void*>(&max_time_with_loop), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, mesh.parallel());
-    MPI_Reduce(static_cast<void*>(&stk_comm_time_bulk), static_cast<void*>(&max_time_bulk), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, mesh.parallel());
-
-    if ( my_proc == 0 ) {
-      std::cerr << "Time to do communicate_field_data with loop: " << max_time_with_loop << std::endl;
-      std::cerr << "Time to do communicate_field_data with bulk: " << max_time_bulk << std::endl;
-    }
-
-    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time_bulk);
+    timer.print_timing(num_iters);
 }
 
-void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::mesh::Ghosting& ghosting, int num_iters)
+void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, int num_iters)
 {
     const int my_proc = mesh.parallel_rank();
     if (my_proc == 0) {
@@ -231,21 +246,17 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::
         const_fields[i] = fields[i];
     }
 
-    double start_time = stk::cpu_time();
+    stk::parallel_machine_barrier(mesh.parallel());
+
+    stk::performance_tests::Timer timer(mesh.parallel());
+    timer.start_timing();
 
     for(int iter=0; iter<num_iters; ++iter) {
-        stk::mesh::communicate_field_data(ghosting, const_fields);
+        stk::mesh::communicate_field_data(mesh, const_fields);
     }
 
-    double stk_comm_time = stk::cpu_time() - start_time;
-
-    double max_time=0;
-    MPI_Reduce(static_cast<void*>(&stk_comm_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-    if ( my_proc == 0 ) {
-      std::cerr << "Time to do communicate_field_data ("<<const_fields.size() <<" fields): " << max_time << std::endl;
-    }
-    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
+    timer.update_timing();
+    timer.print_timing(num_iters);
 }
 
 void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const stk::mesh::Ghosting& ghosting, int num_iters, bool syncToHostEveryIter)
@@ -262,26 +273,21 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
         ngpFields.push_back(&stk::mesh::get_updated_ngp_field<double>(*field));
     }
 
-    double startTime = 0.0;
-    double cumulativeTime = 0.0;
+    stk::parallel_machine_barrier(mesh.parallel());
+
+    stk::performance_tests::Timer timer(mesh.parallel());
+    timer.start_timing();
 
     for(int iter=0; iter<num_iters; ++iter) {
         if(syncToHostEveryIter) {
             set_modify_on_device<double>(ngpFields);
         }
 
-        startTime = stk::wall_time();
         stk::mesh::communicate_field_data(mesh, ngpFields, true, true);
-        cumulativeTime += stk::wall_time() - startTime;
     }
 
-    double max_time=0;
-    MPI_Reduce(static_cast<void*>(&cumulativeTime), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-    if ( my_proc == 0 ) {
-      std::cerr << "Time to do communicate_field_data ("<<fields.size() <<" fields): " << max_time << std::endl;
-    }
-    stk::parallel_print_time_for_performance_compare(mesh.parallel(), cumulativeTime);
+    timer.update_timing();
+    timer.print_timing(num_iters);
 }
 
 void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
@@ -309,9 +315,12 @@ TEST(CommunicateFieldData, copy_to_all)
     }
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
 
-    std::string genMeshSpec = "generated:100x100x100|sideset:xXyY";
-    createMetaAndBulkData(exodusFileReader,genMeshSpec);
+    std::string genMeshSpec = "generated:60x60x48|sideset:xXyY";
+    const unsigned numBlocks = 1;
+    const unsigned numFields = 8;
+    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
 
     stkMeshBulkData.modification_begin();
@@ -336,7 +345,7 @@ TEST(CommunicateFieldData, copy_to_all)
 
     std::cerr << oss.str() << std::endl;
 
-    test_communicate_field_data_all_ghosting(stkMeshBulkData, 1000);
+    test_communicate_field_data_all_ghosting(stkMeshBulkData, 300);
 }
 
 
@@ -349,12 +358,33 @@ TEST(CommunicateFieldData, Ghosting)
     }
   
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-
-    createMetaAndBulkData(exodusFileReader);
+    exodusFileReader.use_simple_fields();
+    std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
+    const unsigned numBlocks = 1;
+    const unsigned numFields = 8;
+    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
 
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-    const stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
-    test_communicate_field_data_ghosting(stkMeshBulkData, aura_ghosting, 1000);
+    test_communicate_field_data_ghosting(stkMeshBulkData, 1000);
+}
+
+TEST(CommunicateFieldData, Ghosting_MultiBlock)
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs < 2) {
+      return;
+    }
+  
+    stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
+    std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
+    const unsigned numBlocks = 24;
+    const unsigned numFields = 4;
+    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
+
+    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
+    test_communicate_field_data_ghosting(stkMeshBulkData, 1000);
 }
 
 TEST(CommunicateFieldData, NgpGhosting)
@@ -365,15 +395,18 @@ TEST(CommunicateFieldData, NgpGhosting)
     return;
   }
 
-  int meshDim = stk::unit_test_util::get_command_line_option("-s", 100);
+  int meshDim = stk::unit_test_util::simple_fields::get_command_line_option("-s", 100);
   std::string meshDimStr = std::to_string(meshDim);
-  int iter = stk::unit_test_util::get_command_line_option("-t", 1000);
-  bool syncToHostEveryIter = stk::unit_test_util::get_command_line_option("-h", false);
+  int iter = stk::unit_test_util::simple_fields::get_command_line_option("-t", 1000);
+  bool syncToHostEveryIter = stk::unit_test_util::simple_fields::get_command_line_option("-h", false);
   std::string meshSpec = "generated:" + meshDimStr + "x" + meshDimStr + "x" + meshDimStr;
 
   stk::io::StkMeshIoBroker exodusFileReader(communicator);
+  exodusFileReader.use_simple_fields();
 
-  createMetaAndBulkData(exodusFileReader, meshSpec);
+  const unsigned numBlocks = 1;
+  const unsigned numFields = 8;
+  createMetaAndBulkData(exodusFileReader, meshSpec, numBlocks, numFields);
 
   stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
   createNgpFields(stkMeshBulkData);

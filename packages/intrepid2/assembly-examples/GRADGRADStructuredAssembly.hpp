@@ -1,0 +1,153 @@
+//
+//  GRADGRADStructuredAssembly.hpp
+//  Trilinos
+//
+//  Created by Roberts, Nathan V on 7/2/21.
+//
+
+#ifndef GRADGRADStructuredAssembly_h
+#define GRADGRADStructuredAssembly_h
+
+#include "JacobianFlopEstimate.hpp"
+
+/** \file   GRADGRADStructuredAssembly.hpp
+    \brief  Locally assembles a Poisson matrix -- an array of shape (C,F,F), with formulation (grad e_i, grad e_j), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
+ */
+
+//! Version that takes advantage of new structured integration support, including sum factorization.
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureGRADGRAD(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                             double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  using namespace Intrepid2;
+  
+  using ExecutionSpace = typename DeviceType::execution_space;
+  
+  int numVertices = 1;
+  for (int d=0; d<spaceDim; d++)
+  {
+    numVertices *= 2;
+  }
+  
+  auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
+  initialSetupTimer->start();
+  using namespace std;
+  using FunctionSpaceTools = FunctionSpaceTools<DeviceType>;
+  using IntegrationTools   = IntegrationTools<DeviceType>;
+  // dimensions of the returned view are (C,F,F)
+  auto fs = FUNCTION_SPACE_HGRAD;
+  
+  shards::CellTopology cellTopo = geometry.cellTopology();
+  
+  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
+  
+  int numFields = basis->getCardinality();
+  int numCells = geometry.numCells();
+    
+  // local stiffness matrix:
+  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
+  
+  auto cubature = DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
+  auto tensorCubatureWeights = cubature->allocateCubatureWeights();
+  TensorPoints<PointScalar,DeviceType> tensorCubaturePoints  = cubature->allocateCubaturePoints();
+  
+  cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
+  
+  EOperator op = OPERATOR_GRAD;
+  BasisValues<Scalar,DeviceType> gradientValues = basis->allocateBasisValues(tensorCubaturePoints, op);
+  basis->getValues(gradientValues, tensorCubaturePoints, op);
+  
+  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
+    
+  int cellOffset = 0;
+  
+  auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
+  auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
+  
+  Data<PointScalar,DeviceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
+  Data<PointScalar,DeviceType> jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
+  Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
+  TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
+  
+  // lazily-evaluated transformed gradient values (temporary to allow integralData allocation)
+  auto transformedGradientValuesTemp = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues);
+  auto integralData = IntegrationTools::allocateIntegralData(transformedGradientValuesTemp, cellMeasures, transformedGradientValuesTemp);
+  
+  const int numPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
+  
+  // TODO: make the below determination accurate for diagonal/block-diagonal cases… (right now, will overcount)
+  const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
+  const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
+  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
+  
+  transformIntegrateFlopCount = 0;
+  jacobianCellMeasureFlopCount  = numCells * flopsPerJacobianPerCell;    // jacobian itself
+  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianInvPerCell; // inverse
+  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianDetPerCell; // determinant
+  jacobianCellMeasureFlopCount += numCells * numPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
+  
+  auto refData = geometry.getJacobianRefData(tensorCubaturePoints);
+  
+  initialSetupTimer->stop();
+  while (cellOffset < numCells)
+  {
+    int startCell         = cellOffset;
+    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
+    int endCell           = numCellsInWorkset + startCell;
+    
+    jacobianAndCellMeasureTimer->start();
+    if (numCellsInWorkset != worksetSize)
+    {
+      const int CELL_DIM = 0; // first dimension corresponds to cell
+      jacobian.setExtent(    CELL_DIM, numCellsInWorkset);
+      jacobianDet.setExtent( CELL_DIM, numCellsInWorkset);
+      jacobianInv.setExtent( CELL_DIM, numCellsInWorkset);
+      integralData.setExtent(CELL_DIM, numCellsInWorkset);
+      
+      // cellMeasures is a TensorData object with separateFirstComponent_ = true; the below sets the cell dimension…
+      cellMeasures.setFirstComponentExtentInDimension0(numCellsInWorkset);
+    }
+    
+    geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
+    CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
+    CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
+    
+    // lazily-evaluated transformed gradient values:
+    auto transformedGradientValues = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues);
+    
+    geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
+    ExecutionSpace().fence();
+    jacobianAndCellMeasureTimer->stop();
+    
+    bool sumInto = false;
+    double approximateFlopCountIntegrateWorkset = 0;
+    fstIntegrateCall->start();
+    IntegrationTools::integrate(integralData, transformedGradientValues, cellMeasures, transformedGradientValues, sumInto, &approximateFlopCountIntegrateWorkset);
+    ExecutionSpace().fence();
+    fstIntegrateCall->stop();
+    
+    // copy into cellStiffness container.  (Alternately, do something like allocateIntegralData, but outside this loop, and take a subview to construct the workset integralData.)
+    if (integralData.getUnderlyingViewRank() == 3)
+    {
+      std::pair<int,int> cellRange = {startCell, endCell};
+      auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
+      Kokkos::deep_copy(cellStiffnessSubview, integralData.getUnderlyingView3());
+    }
+    else // underlying view rank is 2; copy to each cell in destination stiffness matrix
+    {
+      auto integralView2 = integralData.getUnderlyingView2();
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields,numFields});
+      Kokkos::parallel_for("copy uniform data to expanded container", policy,
+                       KOKKOS_LAMBDA (const int &cellOrdinal, const int &leftFieldOrdinal, const int &rightFieldOrdinal) {
+        cellStiffness(startCell + cellOrdinal, leftFieldOrdinal, rightFieldOrdinal) = integralView2(leftFieldOrdinal,rightFieldOrdinal);
+      });
+    }
+    
+    transformIntegrateFlopCount  += approximateFlopCountIntegrateWorkset;
+    
+    cellOffset += worksetSize;
+  }
+  return cellStiffness;
+}
+
+#endif /* GRADGRADStructuredAssembly_h */

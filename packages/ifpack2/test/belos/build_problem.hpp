@@ -61,72 +61,13 @@
 #include "read_matrix.hpp"
 #include "build_precond.hpp"
 
-template< class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node >
-Teuchos::RCP<Belos::LinearProblem<Scalar,
-                                  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-                                  Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
-build_problem_mm (Teuchos::ParameterList& test_params,
-                  const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
-                  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b,
-                  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullVec)
-{
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>             TOP;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>          TMV;
-  typedef Belos::OperatorTraits<Scalar,TMV,TOP>                                BOPT;
-  typedef Belos::MultiVecTraits<Scalar,TMV>                                    BMVT;
-  typedef Belos::LinearProblem<Scalar,TMV,TOP>                                 BLinProb;
-  typedef Ifpack2::BorderedOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    IBOP;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                         TMap;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  Teuchos::RCP<const TMap> rowmap = A->getRowMap();
-
-  Teuchos::RCP<TMV> x = Teuchos::rcp(new TMV(rowmap, 1));
-
-  if (b == Teuchos::null) {
-    b = Teuchos::rcp (new TMV (rowmap, 1));
-    x->randomize ();
-    BOPT::Apply (*A, *x, *b);
-    BMVT::MvInit (*x, STS::zero ());
-  }
-  else {
-    x->putScalar (STS::zero ());
-  }
-
-  Teuchos::RCP< BLinProb > problem;
-  Teuchos::RCP<IBOP> borderedA;
-  if (nullVec == Teuchos::null) {
-     problem = Teuchos::rcp (new BLinProb (A, x, b));
-  }
-  else {
-    borderedA = Teuchos::rcp (new IBOP (A));
-    problem = Teuchos::rcp (new BLinProb (borderedA, x, b));
-  }
-
-  std::string tifpack_precond("not specified");
-  Ifpack2::getParameter (test_params, "Ifpack2::Preconditioner", tifpack_precond);
-  std::string prec_side("Left");
-  Ifpack2::getParameter (test_params, "Preconditioner Side", prec_side);
-  if (tifpack_precond != "not specified") {
-    Teuchos::RCP<TOP> precond = build_precond<Scalar,LocalOrdinal,GlobalOrdinal,Node> (test_params, A);
-    if (prec_side == "Left")
-      problem->setLeftPrec (precond);
-    else if (prec_side == "Right")
-      problem->setRightPrec (precond);
-  }
-
-  problem->setProblem ();
-  return problem;
-}
-
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<Belos::LinearProblem<
                Scalar,
                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
 build_problem (Teuchos::ParameterList& test_params,
-               const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-               const Teuchos::RCP<Node>& node = Teuchos::null)
+               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::ArrayView;
   using Teuchos::ParameterList;
@@ -139,16 +80,23 @@ build_problem (Teuchos::ParameterList& test_params,
   typedef Tpetra::Map<LO, GO, Node>                     map_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO, Node>     TMV;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  //typedef Belos::LinearProblem<Scalar, TMV, TOP>        BLinProb; // unused
+  typedef Tpetra::Operator<Scalar,LO,GO,Node>           TOP;
+  typedef Belos::OperatorTraits<Scalar,TMV,TOP>         BOPT;
+  typedef Belos::MultiVecTraits<Scalar,TMV>             BMVT;
+  typedef Belos::LinearProblem<Scalar,TMV,TOP>          BLinProb;
+  typedef Ifpack2::BorderedOperator<Scalar,LO,GO,Node>  IBOP;
+  typedef Teuchos::ScalarTraits<Scalar>                 STS;
 
   RCP<const crs_matrix_type> A;
   RCP<TMV> b = Teuchos::null;
   RCP<TMV> nullVec = Teuchos::null;
 
   std::string mm_file("not specified");
+  std::string map_mm_file("not specified");
   std::string rhs_mm_file("not specified");
   std::string nullMvec_mm_file("not specified");
   Ifpack2::getParameter(test_params, "mm_file", mm_file);
+  Ifpack2::getParameter(test_params, "map_mm_file", map_mm_file);
   Ifpack2::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
   Ifpack2::getParameter(test_params, "hb_file", hb_file);
@@ -168,8 +116,19 @@ build_problem (Teuchos::ParameterList& test_params,
       // fillCompleteParams->set ("Optimize Storage", false);
       fillCompleteParams->set ("Preserve Local Graph", true);
     }
-    A = reader_type::readSparseFile (mm_file, comm, constructorParams,
+    RCP<const map_type> rowMap;
+    RCP<const map_type> colMap = Teuchos::null;
+    if (map_mm_file != "not specified") {
+      if (comm->getRank() == 0) {
+        std::cout << "Matrix Market file for row Map of the sparse matrix A: " << map_mm_file << std::endl;
+      }
+      rowMap = reader_type::readMapFile(map_mm_file, comm);
+      A = reader_type::readSparseFile (mm_file, rowMap, colMap, rowMap, rowMap);
+    }
+    else {
+      A = reader_type::readSparseFile (mm_file, comm, constructorParams,
                                      fillCompleteParams);
+    }
 
     RCP<const map_type> domainMap = A->getDomainMap ();
     RCP<const map_type> rangeMap = A->getRangeMap ();
@@ -224,7 +183,56 @@ build_problem (Teuchos::ParameterList& test_params,
     A = A_constGraph; // Replace A with A_constGraph.
   }
 
-  return build_problem_mm<Scalar,LO,GO,Node> (test_params, A, b, nullVec);
+  Teuchos::RCP<const map_type> rowmap = A->getRowMap();
+
+  Teuchos::RCP<TMV> x = Teuchos::rcp(new TMV(rowmap, 1));
+
+  if (b == Teuchos::null) {
+    bool rhs_unit = false;
+    int rhs_option = 2;
+    b = Teuchos::rcp (new TMV (rowmap, 1));
+    if (rhs_option == 0) {
+      // random B
+      b->randomize ();
+    } else if (rhs_option == 1) {
+      // b = ones
+      b->putScalar (STS::one ());
+    } else {
+      if (rhs_option == 2) {
+        // b = A * random
+        x->randomize ();
+      } else {
+        // b = A * ones
+        x->putScalar (STS::one ());
+      }
+      BOPT::Apply (*A, *x, *b);
+    }
+    if (rhs_unit) {
+      // scale B to unit-norm
+      Teuchos::Array<typename STS::magnitudeType> normsB(b->getNumVectors());
+      b->norm2(normsB);
+      for (size_t j = 0; j < b->getNumVectors(); j++) {
+        b->getVectorNonConst(j)->scale(STS::one() / normsB[j]);
+      }
+    }
+    // X = zero
+    BMVT::MvInit (*x, STS::zero ());
+  }
+  else {
+    x->putScalar (STS::zero ());
+  }
+
+  Teuchos::RCP< BLinProb > problem;
+  Teuchos::RCP<IBOP> borderedA;
+  if (nullVec == Teuchos::null) {
+     problem = Teuchos::rcp (new BLinProb (A, x, b));
+  }
+  else {
+    borderedA = Teuchos::rcp (new IBOP (A));
+    problem = Teuchos::rcp (new BLinProb (borderedA, x, b));
+  }
+
+  return problem;
 }
 
 

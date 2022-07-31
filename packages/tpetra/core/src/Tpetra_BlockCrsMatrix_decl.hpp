@@ -290,14 +290,8 @@ public:
   global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED size_t getNodeNumRows() const override;
-#endif
   size_t getLocalNumRows() const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED size_t getNodeMaxNumRowEntries() const override;
-#endif
   size_t getLocalMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
@@ -478,22 +472,6 @@ public:
   ///
   /// \return 0 if \c localRowInd is valid, else
   ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
-  /// KK: we remove this interface 
-  ///     we cannot give a pointer
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  LO
-  getLocalRowView (const LO localRowInd,
-                   const LO*& colInds,
-                   Scalar*& vals,
-                   LO& numInds) const;
-
-
-  /// \brief Not implemented.
-  void
-  getLocalRowView (LO LocalRow,
-                   Teuchos::ArrayView<const LO> &indices,
-                   Teuchos::ArrayView<const Scalar> &values) const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// KK: this is inherited from row matrix interface and it returns const
   ///      this cannot replace the deprecated pointer interface
   ///      we need nonconst version of this code
@@ -515,19 +493,6 @@ public:
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowCopy (LO LocalRow,
-                   const Teuchos::ArrayView<LO> &Indices,
-                   const Teuchos::ArrayView<Scalar> &Values,
-                   size_t &NumEntries) const override;
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  little_block_type
-  getLocalBlock (const LO localRowInd, const LO localColInd) const;
-#endif
-
   little_block_type
   getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const;
 
@@ -706,13 +671,6 @@ public:
   /// This method uses the offsets of the diagonal entries, as
   /// precomputed by getLocalDiagOffsets(), to speed up copying the
   /// diagonal of the matrix.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
-                                       Kokkos::MemoryUnmanaged>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const;
-#endif
-
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
   LO
@@ -923,73 +881,6 @@ private:
   };
 
 public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // KK: sync modify syntax will not work
-    //     the interface is deprecated bu the functionalities are removed
-  //! \name Implementation of "dual view semantics"
-  //@{
-  //! Mark the matrix's valueas as modified in host space
-  inline void modify_host()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Mark the matrix's valueas as modified in device space
-  inline void modify_device()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Mark the matrix's values as modified in the given memory space.
-  template<class MemorySpace>
-  void modify ()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Whether the matrix's values need sync'ing to host space
-  inline bool need_sync_host() const
-  {
-    //throw std::logic_error("do not use");
-    return false; 
-  }
-
-  //! Whether the matrix's values need sync'ing to device space
-  inline bool need_sync_device() const
-  {
-    //throw std::logic_error("do not use");
-    return false; 
-  }
-
-  //! Whether the matrix's values need sync'ing to the given memory space.
-  template<class MemorySpace>
-  bool need_sync () const
-  {
-    //throw std::logic_error("do not use");
-    return false;
-  }
-
-  //! Sync the matrix's values to host space
-  inline void sync_host()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Sync the matrix's values to device space
-  inline void sync_device()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Sync the matrix's values <i>to</i> the given memory space.
-  template<class MemorySpace>
-  void sync ()
-  {
-    //throw std::logic_error("do not use");
-  }
-#endif
-
-
     typename impl_scalar_type_dualview::t_host::const_type
     getValuesHost() const;
 
@@ -1014,22 +905,6 @@ public:
   /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
   /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
   /// KK: This should be deprecated.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class MemorySpace>
-  typename std::conditional<is_cuda<MemorySpace>::value,
-                            typename impl_scalar_type_dualview::t_dev,
-                            typename impl_scalar_type_dualview::t_host>::type
-  getValues () const
-  {
-    // Unlike std::conditional, if_c has a select method.
-    return Kokkos::Impl::if_c<
-      is_cuda<MemorySpace>::value,
-      typename impl_scalar_type_dualview::t_dev,
-      typename impl_scalar_type_dualview::t_host
-      >::select (this->getValuesDeviceNonConst (), this->getValuesHostNonConst ());
-  }
-#endif
-
     typename impl_scalar_type_dualview::t_host
     getValuesHostNonConst() const;
 
@@ -1164,9 +1039,6 @@ public:
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED virtual size_t getNodeNumCols() const override;
-#endif
   virtual size_t getLocalNumCols() const override;
 
   virtual GO getIndexBase() const override;
@@ -1176,10 +1048,6 @@ public:
 
   //! The local number of stored (structurally nonzero) entries.
   virtual size_t getLocalNumEntries() const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const override;
-#endif
-
   /// \brief The current number of entries on the calling process in the specified global row.
   ///
   /// Note that if the row Map is overlapping, then the calling
@@ -1256,14 +1124,6 @@ public:
                     nonconst_global_inds_host_view_type &Indices,
                     nonconst_values_host_view_type &Values,
                     size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowCopy (GO GlobalRow,
-                    const Teuchos::ArrayView<GO> &Indices,
-                    const Teuchos::ArrayView<Scalar> &Values,
-                    size_t& NumEntries) const override;
-#endif
-
   /// \brief Get a constant, nonpersisting, globally indexed view of
   ///   the given row of the matrix.
   ///
@@ -1288,12 +1148,6 @@ public:
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowView (GO GlobalRow,
-                    Teuchos::ArrayView<const GO>& indices,
-                    Teuchos::ArrayView<const Scalar>& values) const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowView (GO GlobalRow,
                     global_inds_host_view_type & indices,

@@ -88,6 +88,10 @@
 */
 namespace Xpetra {
 
+#ifdef HAVE_XPETRA_THYRA
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class ThyraUtils;
+#endif
+
   typedef std::string viewLabel_t;
 
   template <class Scalar,
@@ -189,7 +193,7 @@ namespace Xpetra {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
-            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
             if(r!=c) is_diagonal_ = false;
@@ -216,7 +220,7 @@ namespace Xpetra {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
-            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
             subDomainMaps[c] = xop->getDomainMap();
             break;
@@ -245,10 +249,10 @@ namespace Xpetra {
             // TODO we do not support nested Thyra operators here!
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
-            Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                 Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(op);
             Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> > xwrap =
-                Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xop));
+              Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> >(xop, true);
             blocks_.push_back(xwrap);
           } else {
             // add empty block
@@ -1486,11 +1490,6 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    local_matrix_type getLocalMatrix () const {
-      return getLocalMatrixDevice();
-    }
-#endif
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrixDevice () const {
       if (Rows() == 1 && Cols () == 1) {
@@ -1604,28 +1603,6 @@ namespace Xpetra {
       // Set current view
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
-
 
   private:
     bool is_diagonal_; ///< If we're diagonal, a bunch of the extraction stuff should work

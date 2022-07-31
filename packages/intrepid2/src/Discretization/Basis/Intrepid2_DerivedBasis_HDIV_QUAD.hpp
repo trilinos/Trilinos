@@ -95,6 +95,7 @@ namespace Intrepid2
                 Teuchos::rcp(new LineGradBasis(polyOrder_y,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
@@ -233,6 +234,7 @@ namespace Intrepid2
                 Teuchos::rcp(new LineHVolBasis(polyOrder_y-1,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.

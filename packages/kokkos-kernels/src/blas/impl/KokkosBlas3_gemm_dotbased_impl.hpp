@@ -96,7 +96,7 @@ struct DotBasedGEMM {
         numCcols(C.extent(1)),
         dotSize(A.extent(0)) {}
 
-  void run(bool conjugateTranspose) {
+  void run(const typename CV::execution_space& space, bool conjugateTranspose) {
     multipleReductionWorkDistribution<ExecSpace, size_C>(
         dotSize, numCrows * numCcols, numDivPerDot);
     const size_C ndots = numCrows * numCcols;  // Number of dot products
@@ -117,11 +117,11 @@ struct DotBasedGEMM {
 
     // Multiply alpha*A^TB and add it to beta*C
     if (conjugateTranspose) {
-      Kokkos::TeamPolicy<TagMultCT, ExecSpace> policyMult(numTeams,
+      Kokkos::TeamPolicy<TagMultCT, ExecSpace> policyMult(space, numTeams,
                                                           Kokkos::AUTO);
       Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
     } else {
-      Kokkos::TeamPolicy<TagMult, ExecSpace> policyMult(numTeams,
+      Kokkos::TeamPolicy<TagMult, ExecSpace> policyMult(space, numTeams,
                                                         Kokkos::AUTO);
       Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
     }

@@ -518,6 +518,13 @@ void put_edge_block_io_part_attribute( stk::mesh::Part &part);
 
 void put_assembly_io_part_attribute( stk::mesh::Part &part);
 
+void create_named_suffix_field_output_type(const std::string & typeName, const std::vector<std::string> & suffices);
+
+void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName);
+
+bool has_field_output_type(const stk::mesh::FieldBase & field);
+const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field);
+
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
 
 std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);

@@ -12,6 +12,23 @@
 namespace Zoltan2
 {
 
+namespace Impl {
+
+  template <typename SC, typename LO, typename GO, typename NO>
+  Teuchos::RCP<const typename Tpetra::CrsMatrix<SC, LO, GO, NO>::crs_graph_type>
+  get_graph(const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > &matrix) {
+    return matrix->getCrsGraph();
+  }
+
+  template <typename SC, typename LO, typename GO, typename NO>
+  Teuchos::RCP<const typename Tpetra::BlockCrsMatrix<SC, LO, GO, NO>::crs_graph_type>
+  get_graph(const Teuchos::RCP<Tpetra::BlockCrsMatrix<SC, LO, GO, NO> > &matrix) {
+    using crs_graph_t = typename Tpetra::BlockCrsMatrix<SC, LO, GO, NO>::crs_graph_type;
+    return Teuchos::rcp(new crs_graph_t(matrix->getCrsGraph()));
+  }
+
+}
+
 // Implementation of CrsColorer<> using Zoltan partial distance-2 coloring.
 // This is distributed-parallel, but not shared.
 template <typename CrsMatrixType>
@@ -32,7 +49,7 @@ public:
 
   // Constructor
   ZoltanCrsColorer(const Teuchos::RCP<matrix_t> &matrix_)
-    : matrix(matrix_), graph(matrix_->getCrsGraph())
+    : matrix(matrix_), graph(Impl::get_graph(matrix_))
   {}
 
   // Destructor

@@ -59,7 +59,6 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -82,10 +81,12 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
-#include "Epetra_MpiComm.h"
-
+#ifdef PANZER_HAVE_EPETRA
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
+#include "AztecOO.h"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#endif
 
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
@@ -93,8 +94,6 @@
 #include "Example_BCStrategy_Factory.hpp"
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "Example_EquationSetFactory.hpp"
-
-#include "AztecOO.h"
 
 #include <sstream>
 
@@ -162,7 +161,6 @@ int main(int argc,char * argv[])
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    Kokkos::initialize(argc,argv);
-   RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
@@ -205,6 +203,12 @@ int main(int argc,char * argv[])
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+   if(!useTpetra){
+#ifndef PANZER_HAVE_EPETRA
+        throw std::runtime_error("Trying to run Panzer MixedPoisson Test with Epetra, but Epetra is disabled!");
+#endif
+   }
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -347,6 +351,7 @@ int main(int argc,char * argv[])
 
    // build the connection manager
    if(!useTpetra) {
+#ifdef PANZER_HAVE_EPETRA
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
      panzer::DOFManagerFactory globalIndexerFactory;
@@ -356,6 +361,7 @@ int main(int argc,char * argv[])
 
      // construct some linear algebra object, build object to pass to evaluators
      linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager_int));
+#endif
    }
    else {
      const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
@@ -611,6 +617,7 @@ int main(int argc,char * argv[])
 
 void solveEpetraSystem(panzer::LinearObjContainer & container)
 {
+#ifdef PANZER_HAVE_EPETRA
    // convert generic linear object container to epetra container
    panzer::EpetraLinearObjContainer & ep_container
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
@@ -637,6 +644,9 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector
    ep_container.get_x()->Scale(-1.0);
+#else
+   throw std::runtime_error("Trying to run Panzer MixedCurlLaplacianExample with Epetra, but Epetra is disabled!");
+#endif
 }
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
@@ -692,7 +702,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 {
   {
     std::string b_basis_type = threeD ? "HDiv" : "HVol";
-    int b_basis_order = threeD ? basis_order : basis_order-1; 
+    int b_basis_order = threeD ? basis_order : basis_order-1;
 
     Teuchos::ParameterList& p = ipb->sublist("CurlLapacian Physics");
     p.set("Type","CurlLaplacian");

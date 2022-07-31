@@ -12,57 +12,56 @@
 
 namespace Tacho {
 
-    class GraphTools_Metis {
-    public:
-      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
+class GraphTools_Metis {
+public:
+  typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
-      typedef Kokkos::View<idx_t*,host_device_type> idx_t_array;
-      typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
+  typedef Kokkos::View<idx_t *, host_device_type> idx_t_array;
+  typedef Kokkos::View<ordinal_type *, host_device_type> ordinal_type_array;
 
-    private:
-        
-      // metis main data structure
-      idx_t _nvts;
-      idx_t_array _xadj, _adjncy, _vwgt;
-      
-      idx_t _options[METIS_NOPTIONS];
+private:
+  // metis main data structure
+  idx_t _nvts;
+  idx_t_array _xadj, _adjncy, _vwgt;
 
-      // metis output
-      idx_t_array _perm_t, _peri_t;
-      ordinal_type_array _perm, _peri;
+  idx_t _options[METIS_NOPTIONS];
 
-      // status flag
-      bool _is_ordered, _verbose;
+  // metis output
+  idx_t_array _perm_t, _peri_t;
+  ordinal_type_array _perm, _peri;
 
-    public:
-      GraphTools_Metis();
-      GraphTools_Metis(const GraphTools_Metis &b);
+  // status flag
+  bool _is_ordered, _verbose;
 
-      ///
-      /// construction of scotch graph
-      ///
-      GraphTools_Metis(const Graph &g);
-      virtual~GraphTools_Metis();
+public:
+  GraphTools_Metis();
+  GraphTools_Metis(const GraphTools_Metis &b);
 
-      ///
-      /// setup metis parameters
-      ///
+  ///
+  /// construction of scotch graph
+  ///
+  GraphTools_Metis(const Graph &g);
+  virtual ~GraphTools_Metis();
 
-      void setVerbose(const bool verbose);
-      void setOption(const int id, const idx_t value);
+  ///
+  /// setup metis parameters
+  ///
 
-      ///
-      /// reorder by metis
-      ///
+  void setVerbose(const bool verbose);
+  void setOption(const int id, const idx_t value);
 
-      void reorder(const ordinal_type verbose = 0);
+  ///
+  /// reorder by metis
+  ///
 
-      ordinal_type_array PermVector()    const;
-      ordinal_type_array InvPermVector() const;
-        
-      std::ostream& showMe(std::ostream &os, const bool detail = false) const;
-    };
+  void reorder(const ordinal_type verbose = 0);
 
-}
+  ordinal_type_array PermVector() const;
+  ordinal_type_array InvPermVector() const;
+
+  std::ostream &showMe(std::ostream &os, const bool detail = false) const;
+};
+
+} // namespace Tacho
 #endif
 #endif

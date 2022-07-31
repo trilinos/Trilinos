@@ -433,48 +433,6 @@ public:
                      BlockMultiVector<Scalar, LO, GO, Node>& Z,
                      const Scalar& beta);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  //@}
-  //! \name Implementation of "dual view semantics"
-  //@{
-
-  /// \brief Update data to the given target memory space, only if
-  ///   data in the "other" space have been marked as modified.
-  ///
-  /// If \c TargetMemorySpace is the same as this object's memory
-  /// space, then copy data from host to device.  Otherwise, copy data
-  /// from device to host.  In either case, only copy if the source of
-  /// the copy has been modified.
-  ///
-  /// This is a one-way synchronization only.  If the target of the
-  /// copy has been modified, this operation will discard those
-  /// modifications.  It will also reset both device and host modified
-  /// flags.
-  ///
-  /// \note This method doesn't know on its own whether you modified
-  ///   the data in either memory space.  You must manually mark the
-  ///   MultiVector as modified in the space in which you modified
-  ///   it, by calling the modify() method with the appropriate
-  ///   template parameter.
-  template<class TargetMemorySpace>
-  TPETRA_DEPRECATED
-  void sync () {
-    mv_.view_.getOriginalDualView().template sync<typename TargetMemorySpace::memory_space> ();
-  }
-
-  /// \brief Update data to the host
-  TPETRA_DEPRECATED
-  void sync_host() {
-    mv_.view_.getOriginalDualView().sync_host ();
-  }
-
-  /// \brief Update data to the device
-  TPETRA_DEPRECATED
-  void sync_device() {
-    mv_.view_.getOriginalDualView().sync_device ();
-  }
-
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
@@ -492,32 +450,6 @@ public:
     return mv_.need_sync_device();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-  /// \brief Mark data as modified on the given memory space.
-  ///
-  /// If <tt>TargetDeviceType::memory_space</tt> is the same as this
-  /// object's memory space, then mark the device's data as modified.
-  /// Otherwise, mark the host's data as modified.
-  template<class TargetMemorySpace>
-  TPETRA_DEPRECATED
-  void modify () {
-    mv_.view_.getOriginalDualView().template modify<typename TargetMemorySpace::memory_space> ();
-  }
-
-  /// \brief Mark data as modified on the host
-  TPETRA_DEPRECATED
-  void modify_host() {
-    mv_.view_.getOriginalDualView().modify_host ();
-  }
-
-  /// \brief Mark data as modified on the device
-  TPETRA_DEPRECATED
-  void modify_device() {
-    mv_.view_.getOriginalDualView().modify_device ();
-  }
-
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   //@}
   //! \name Fine-grained data access
   //@{
@@ -577,45 +509,6 @@ public:
   ///   is invalid on the calling process.
   bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a local index.
-  ///
-  /// \param localRowIndex [in] Local index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given local index of the mesh point
-  ///   is invalid on the calling process.
-  TPETRA_DEPRECATED
-  bool getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals);
-
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a global index.
-  ///
-  /// \param globalRowIndex [in] Global index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given global index of the mesh point
-  ///   is invalid on the calling process.
-  TPETRA_DEPRECATED
-  bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals);
-
-  /// \brief Get a host view of the degrees of freedom at the given
-  ///   mesh point.
-  ///
-  /// Prefer using \c auto to let the compiler compute the return
-  /// type.  This gives us the freedom to change this type in the
-  /// future.  If you insist not to use \c auto, then please use the
-  /// \c little_vec_type typedef to deduce the correct return type;
-  /// don't try to hard-code the return type yourself.
-  TPETRA_DEPRECATED 
-  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex);
-
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   const_little_host_vec_type getLocalBlockHost(
     const LO localRowIndex, 
@@ -681,12 +574,6 @@ protected:
   //@}
 
 protected:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  //! Raw pointer to the MultiVector's data.
-  impl_scalar_type* getRawPtr () const {
-    return mvData_;
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Stride between consecutive local entries in the same column.
   size_t getStrideX () const {
@@ -702,12 +589,6 @@ protected:
   ///   index in the mesh Map.
   bool isValidLocalMeshIndex (const LO meshLocalIndex) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-// Allow BlockVector to access meshMap_
-protected:
-#else
-private:
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Mesh Map given to constructor.
   ///
   /// This is stored by value, not as a Teuchos::RCP, because the
@@ -724,17 +605,6 @@ protected:
   mv_type mv_;
 
 private:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Raw pointer to the above Tpetra::MultiVector's data.
-  ///
-  /// Keeping this is a temporary measure that ensures that the
-  /// replace, sumInto, and view methods are thread-safe.  (Updates to
-  /// ArrayRCP's reference count are not thread safe.)  Eventually,
-  /// this will become a Kokkos::View.  It's safe to keep this,
-  /// because the data belong to the Vector, which we keep for the
-  /// lifetime of the BlockMultiVector.
-  impl_scalar_type* mvData_;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;

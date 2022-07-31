@@ -43,7 +43,12 @@
 #include <ostream>      // for std::ostream
 
 #ifdef __CUDACC__
-#include <math_functions.h>
+    #include <cuda_runtime_api.h>
+    // including math functions via math_functions.h is deprecated in cuda version >= 10.0
+    // the deprecation warning indicates to use cuda_runtime_api.h instead
+    #if CUDART_VERSION < 10000
+        #include <math_functions.h>
+    #endif
 #endif
 
 /*
@@ -189,6 +194,14 @@ namespace Sacado {                                                      \
       typedef OP< typename add_volatile<derived>::type > expr_t;        \
                                                                         \
       return expr_t(expr.derived());                                    \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T> >                                                     \
+    OPNAME (const Vector<T>& vector)                                    \
+    {                                                                   \
+      return OP< Vector<T> >(vector);                                   \
     }                                                                   \
   }                                                                     \
                                                                         \
@@ -517,6 +530,15 @@ namespace Sacado {                                                      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T>, Vector<T> >                                          \
+    OPNAME (const Vector<T>& vector1,                                   \
+            const Vector<T>& vector2)                                   \
+    {                                                                   \
+      return {vector1, vector2};                                        \
+    }                                                                   \
   }                                                                     \
                                                                         \
   template <typename T1, typename T2>                                   \
@@ -751,6 +773,15 @@ namespace Sacado {                                                      \
       typedef OP< typename Expr<T>::derived_type, ConstT > expr_t;      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T>, Vector<T> >                                          \
+    OPNAME (const Vector<T>& vector1,                                   \
+            const Vector<T>& vector2)                                   \
+    {                                                                   \
+      return {vector1, vector2};                                        \
     }                                                                   \
   }                                                                     \
                                                                         \

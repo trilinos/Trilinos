@@ -31,8 +31,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-
-
 #include <gtest/gtest.h>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -40,9 +38,12 @@
 #include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 #include <stk_io/FillMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 #include <vector>
 #include <set>
+
+using stk::unit_test_util::build_mesh;
 
 TEST(EntityAndProcs, find_proc)
 {
@@ -74,8 +75,8 @@ TEST(EntityProcMapping, basic)
   }
 
   const unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:4x4x4",bulk);
 
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) != 0) {
@@ -124,5 +125,31 @@ TEST(EntityProcMapping, basic)
 
   entProcMapping.fill_vec(entityProcVec);
   EXPECT_EQ(3u, entityProcVec.size());
+}
+
+TEST(EntityProcMapping, add_two_remove_one_then_other_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity, 0);
+  mapping.addEntityProc(entity, 2);
+  EXPECT_TRUE(mapping.find(entity,0));
+  EXPECT_TRUE(mapping.find(entity,2));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
+}
+
+TEST(EntityProcMapping, erase_nonexisting_then_previous_proc_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity, 0);
+  EXPECT_TRUE(mapping.find(entity,0));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
 }
 

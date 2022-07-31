@@ -372,6 +372,35 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( CellGeometry, NodeBased_Constructor )
+  {
+    const int spaceDim = 3;
+  
+    using PointScalar = double;
+    using DeviceType = DefaultTestDeviceType;
+    using ExecutionSpace = DeviceType::execution_space;
+    
+    const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());
+
+    using Geometry = CellGeometry<PointScalar, spaceDim, DeviceType>;
+    Geometry::HypercubeNodeOrdering nodeOrdering = Geometry::HYPERCUBE_NODE_ORDER_TENSOR;
+
+    ScalarView<int,DeviceType> cellToNodes;
+    ScalarView<PointScalar,DeviceType> nodes("nodes", 1, 8, spaceDim);
+    Kokkos::parallel_for("fill nodes for CellGeometry", Kokkos::RangePolicy<ExecutionSpace>(0,nodes.extent(1)), 
+    KOKKOS_LAMBDA (const int i) {
+      nodes(0,i,0) = (i%2 == 1) ?     1. : 0.;
+      nodes(0,i,1) = ((i/2)%2 == 1) ? 1. : 0.;
+      nodes(0,i,2) = (i/4 == 1) ?     1. : 0.;
+    });
+
+    const bool claimAffine = false;
+    CellGeometry<PointScalar, spaceDim, DeviceType> cellGeometry(cellTopo, cellToNodes, nodes, claimAffine, nodeOrdering);
+    
+    TEST_EQUALITY(1,         cellGeometry.numCells());
+    TEST_EQUALITY(8,         cellGeometry.numNodesPerCell());
+  }
+
   TEUCHOS_UNIT_TEST( CellGeometry, Jacobian_Uniform_Quads )
   {
     const int spaceDim = 2;

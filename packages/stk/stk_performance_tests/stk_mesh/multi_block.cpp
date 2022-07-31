@@ -91,6 +91,25 @@ void setup_sidesets_between_blocks(stk::mesh::MetaData& meta)
   }
 }
 
+void setup_sidesets_for_blocks(stk::mesh::MetaData& meta)
+{
+  stk::mesh::PartVector elemBlocks;
+  stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
+  const unsigned numBlocks = elemBlocks.size();
+  for(unsigned i = 0; i < numBlocks; i++) {
+    stk::mesh::Part& blockPart = *elemBlocks[i];
+    unsigned partId = blockPart.id();
+
+    std::string sidesetName = "surface_" + std::to_string(partId);
+    stk::mesh::Part& part = meta.declare_part(sidesetName, meta.side_rank());
+    meta.set_part_id(part, partId);
+
+    meta.set_surface_to_block_mapping(&part, {&blockPart});
+
+    stk::io::put_io_part_attribute(part);
+  }
+}
+
 void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsInDimX)
 {
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
@@ -116,6 +135,44 @@ void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsI
     if (blockIdx == numBlocks) {
       blockIdx = 0;
     }
+  }
+
+  bulk.modification_begin();
+
+  for(unsigned i = 1; i < numBlocks; i++) {
+    stk::mesh::Part* newBlock = elemBlocks[i];
+
+    bulk.change_entity_parts(elemsToMove[i], stk::mesh::ConstPartVector{newBlock}, stk::mesh::ConstPartVector{block1Part});
+  }
+
+  bulk.modification_end();
+}
+
+void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigned numElemsInDimX)
+{
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  stk::mesh::PartVector elemBlocks;
+  stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
+  const unsigned numBlocks = elemBlocks.size();
+
+  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+                  "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
+
+  stk::mesh::EntityVector elems;
+  stk::mesh::Selector ownedHexes = meta.get_topology_root_part(stk::topology::HEX_8) &
+                                   meta.locally_owned_part();
+  stk::mesh::get_selected_entities(ownedHexes, bulk.buckets(stk::topology::ELEMENT_RANK), elems);
+  const stk::mesh::Part* block1Part = elemBlocks[0];
+
+  std::vector<stk::mesh::EntityVector> elemsToMove(elemBlocks.size());
+  unsigned numElemsInDimXPerBlock = numElemsInDimX / numBlocks;
+
+  for(stk::mesh::Entity elem : elems) {
+    stk::mesh::EntityId id = bulk.identifier(elem);
+    unsigned blockIdx = ((id - 1)%numElemsInDimX)/numElemsInDimXPerBlock;
+
+    ThrowRequire(blockIdx < numBlocks);
+    elemsToMove[blockIdx].push_back(elem);
   }
 
   bulk.modification_begin();

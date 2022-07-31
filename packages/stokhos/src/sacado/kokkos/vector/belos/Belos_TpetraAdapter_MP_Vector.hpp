@@ -344,7 +344,8 @@ namespace Belos {
       }
 
       // Ensure A and C have constant stride
-      RCP<const MV> Atmp, Ctmp;
+      RCP<const MV> Atmp;
+      RCP<      MV> Ctmp;
       if (A.isConstantStride() == false) Atmp = rcp (new MV (A, Teuchos::Copy));
       else Atmp = rcp(&A,false);
 
@@ -355,8 +356,8 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
-      flat_view_type flat_C_view = Ctmp->template getLocalView<execution_space>();
+      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      flat_view_type flat_C_view = Ctmp->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -468,8 +469,8 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
-      flat_view_type flat_B_view = Btmp->template getLocalView<execution_space>();
+      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      typename flat_view_type::const_type flat_B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
       // Create a view for C on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;

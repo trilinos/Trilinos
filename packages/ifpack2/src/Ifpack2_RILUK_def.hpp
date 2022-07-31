@@ -46,6 +46,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_Sorting.hpp"
@@ -129,7 +130,9 @@ template<class MatrixType>
 void RILUK<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template<class MatrixType>
@@ -511,9 +514,8 @@ void RILUK<MatrixType>::initialize ()
     }
 
     {
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-      if (A_local_crs.is_null ()) {
+      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(A_local_);
+      if(A_local_crs.is_null()) {
         local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
@@ -905,9 +907,8 @@ void RILUK<MatrixType>::compute ()
   }
   else {
     {//Make sure values in A is picked up even in case of pattern reuse
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-      if (A_local_crs.is_null ()) {
+      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(A_local_);
+      if(A_local_crs.is_null()) {
         local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {

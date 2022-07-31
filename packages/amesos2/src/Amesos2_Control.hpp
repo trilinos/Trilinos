@@ -63,6 +63,9 @@ struct Control {
     : verbose_(0)
     , debug_(0)
     , useTranspose_(false)
+    , useIterRefine_(false)
+    , maxNumIterRefines_(2)
+    , verboseIterRefine_(false)
     , addToDiag_("0.0")
     , addZeroToDiag_(false)
     , matrixProperty_(0)
@@ -92,6 +95,14 @@ struct Control {
   /// When solving, use A^T instead of A
   bool useTranspose_;
 
+  /// When solving, use iterative refinement
+  bool useIterRefine_;
+
+  /// How many iterative refinements to perform
+  int maxNumIterRefines_;
+
+  /// Verbosity for iterative refinement
+  bool verboseIterRefine_;
 
   /**
    * \brief Add this value to the diagonal.

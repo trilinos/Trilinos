@@ -54,12 +54,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 //#include <stk_rebalance/ZoltanPartition.hpp>
@@ -72,14 +66,14 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const 
+   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
    Teuchos::RCP<const STK_Interface> mesh_;
 };
 
-// This test was modified to its current lame state when the 
+// This test was modified to its current lame state when the
 // construction of the local element IDs was automated in the
 // STK_Interface. (Independent of order of addition in the mesh
 
@@ -103,7 +97,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
 
    TEUCHOS_ASSERT(numprocs==4);
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    mesh->writeToExodus("TEST.exo");

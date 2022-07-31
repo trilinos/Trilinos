@@ -36,6 +36,23 @@
 namespace stk {
 namespace balance {
 
+std::string vertex_weight_method_name(VertexWeightMethod method) {
+  switch (method) {
+  case (VertexWeightMethod::CONSTANT) : {
+    return "constant";
+  }
+  case (VertexWeightMethod::TOPOLOGY) : {
+    return "topology";
+  }
+  case (VertexWeightMethod::CONNECTIVITY) : {
+    return "connectivity";
+  }
+  default: {
+    return "unknown";
+  }
+  }
+}
+
 // Declaration of static class members does not count as a definition,
 // so they must be initialized outside the class.  However, if they are also
 // constexpr, then they must be initialized at declaration time.  Defining
@@ -47,8 +64,10 @@ namespace balance {
 
 constexpr const char * DefaultSettings::logFile;
 constexpr const char * DefaultSettings::decompMethod;
-constexpr const char * DefaultSettings::contactSearch;
+
 constexpr bool DefaultSettings::useContactSearch;
+constexpr bool DefaultSettings::fixSpiders;
+constexpr bool DefaultSettings::fixMechanisms;
 
 constexpr double DefaultSettings::faceSearchRelTol;
 constexpr double DefaultSettings::faceSearchAbsTol;

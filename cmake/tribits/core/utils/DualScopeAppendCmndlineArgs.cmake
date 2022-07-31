@@ -40,7 +40,7 @@
 include(AppendCmndlineArgs)
 include(DualScopeSet)
 
-#
+
 # @MACRO: dual_scope_append_cmndline_args()
 #
 # Utility function that appends command-line arguments to a variable of

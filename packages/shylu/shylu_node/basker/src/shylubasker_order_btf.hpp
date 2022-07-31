@@ -700,13 +700,21 @@ namespace BaskerNS
       printf("Basker: break_into_parts2 - short circuit for single block case\n");
     #endif
       BTF_A = A;
-      //Options.btf = BASKER_FALSE; // NDE: how is this handled???
-      //if (A.nrow < Options.btf_large) {
-      //  btf_tabs_offset = 0;
-      //} else {
-      //  btf_tabs_offset = 1;
-      //}
       btf_tabs_offset = 1;
+      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      if (Options.run_nd_on_leaves == BASKER_TRUE) {
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker: turning off ND-on-leaves option since no METIS nor SCOTCH (hence sequential)\n");
+        }
+        Options.run_nd_on_leaves = BASKER_FALSE;
+      }
+      #endif
+      if (Options.replace_tiny_pivot == BASKER_TRUE) {
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker: turning off replace-tiny-pivot option since one block (to identify singular matrix)\n");
+        }
+        Options.replace_tiny_pivot = BASKER_FALSE;
+      }
       return 0;
     }
 
@@ -725,7 +733,8 @@ namespace BaskerNS
     Int scol_top          = 0;      // starting column of the BTF_A bloc
     Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
-    #if 0 // use Metis on a large block even with one thread
+    #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+    // use Metis on a large block even with one thread
     if (num_threads == 1) {
       // Short circuit for single thread = no big block A
       scol = 0;
@@ -750,12 +759,10 @@ namespace BaskerNS
       //	   ((double)1/num_threads) +
       //	   ((double)BASKER_BTF_IMBALANCE));
       #if 0 // forcing to have the big A bloock for debug
-      //Int break_size = 0;
-      //Int break_size = 5;
-      Int break_size = 10;
-      //Int break_size = 100;
-      //Int break_size = 500000;
-      printf( " > debug: break_size = %d\n",break_size );
+      double break_work_size = 0.0;
+      //double break_block_size = 0.0;
+      double break_block_size = 10.0;
+      printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
       // A block if it is larger than work esitimate assigned to one thread
       double break_fact = 0.7;

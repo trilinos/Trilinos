@@ -84,11 +84,10 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *verboseStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*verboseStream, false);
-      *verboseStream << "HostSpace::    ";   HostSpaceType::print_configuration(*verboseStream, false);
+      *verboseStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*verboseStream, false);
+      *verboseStream << "HostSpace::    ";   HostSpaceType().print_configuration(*verboseStream, false);
 
       using BasisTypeHost = Basis_HGRAD_HEX_C1_FEM<HostSpaceType,ValueType,ValueType>;
       using ImplBasisType = Impl::Basis_HGRAD_HEX_C1_FEM;

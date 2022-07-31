@@ -10,8 +10,8 @@
 
 namespace Tacho {
 
-  template<typename ValueType, typename DeviceType> 
-  using Solver = Driver<ValueType,typename UseThisDevice<typename DeviceType::execution_space>::type >;
+template <typename ValueType, typename DeviceType>
+using Solver = Driver<ValueType, typename UseThisDevice<typename DeviceType::execution_space>::type>;
 
 }
 

@@ -36,6 +36,14 @@
 #define stk_expreval_function_hpp
 
 #include "Kokkos_Core.hpp"
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+#include "Kokkos_Functional.hpp"
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "stk_expreval/Constants.hpp"
 #include "stk_util/util/string_case_compare.hpp"
 #include "stk_util/util/ReportHandler.hpp"
@@ -182,6 +190,10 @@ double current_time()
 #endif
 }
 
+KOKKOS_INLINE_FUNCTION void hash_combine(std::size_t& seed, double v) {
+  seed ^= Kokkos::pod_hash<double>{}(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
 extern int sRandomRangeHighValue;
 extern int sRandomRangeLowValue;
 
@@ -197,6 +209,19 @@ void random_seed(double x)
 }
 
 /// Non-platform specific (pseudo) random number generator.
+KOKKOS_INLINE_FUNCTION
+double seeded_pseudo_random(std::size_t seed, int& low, int& high)
+{
+  if( low == 0 ) low = ~seed;
+  if( high == 0 ) high = seed;
+
+  high = (high<<8) + (high>>8);
+  high += low;
+  low += high;
+  int val = std::abs(high);
+  return double(val) / double(RAND_MAX);
+}
+
 KOKKOS_INLINE_FUNCTION
 double random0()
 {
@@ -230,37 +255,39 @@ double random1(double seed)
 KOKKOS_INLINE_FUNCTION
 double time_space_random(double t, double x, double y, double z)
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-  random_seed(ts);
-  return random0();
-#else
-  NGP_ThrowErrorMsg("The ts_random function is not supported on GPUs");
-  return 0.0;
-#endif
+  std::size_t seed = 0;
+  hash_combine(seed, t);
+  hash_combine(seed, x);
+  hash_combine(seed, y);
+  hash_combine(seed, z);
+
+  int low = 0;
+  int high = 0;
+  return seeded_pseudo_random(seed, low, high);
 }
 
 KOKKOS_INLINE_FUNCTION
 double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
 {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-  double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-  random_seed(ts);
+  std::size_t seed = 0;
+  hash_combine(seed, t);
+  hash_combine(seed, x);
+  hash_combine(seed, y);
+  hash_combine(seed, z);
+
+  int low = 0;
+  int high = 0;
 
   static const double epsilon = DBL_MIN;
 
   // Box-Muller transformation from two uniform random numbers
   // to a gaussian distribution
-  double u1 = std::fmax(epsilon, random0());
-  double u2 = std::fmax(epsilon, random0());
+  double u1 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
+  double u2 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
 
   double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
 
   return std::fmax(minR, std::fmin(maxR, z0*sigma + mu));
-#else
-  NGP_ThrowErrorMsg("The ts_normal function is not supported on GPUs");
-  return 0.0;
-#endif
 }
 
 /// Returns the angle (input in radians) in degrees.

@@ -158,6 +158,32 @@ namespace Intrepid2
     }
     
     /**
+     \brief Constructor to combine two other TensorData objects
+     \param [in] first - TensorData object with the components for the first dimension(s)
+     \param [in] second - TensorData object with the components for the remaining dimension(s).
+     \param [in] separateFirstComponent - if true, indicates that the first component (from the first TensorData object) will be indexed separately (this is used when the first index corresponds to a cell ordinal)
+     
+       When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
+    */
+    TensorData(const TensorData &first, const TensorData &second, bool separateFirstComponent = false)
+    :
+    separateFirstComponent_(separateFirstComponent),
+    numTensorComponents_(first.numTensorComponents() + second.numTensorComponents())
+    {
+      ordinal_type r = 0;
+      for (ordinal_type r1=0; r1<first.numTensorComponents(); r1++, r++)
+      {
+        tensorComponents_[r] = first.getTensorComponent(r1);
+      }
+      for (ordinal_type r2=0; r2<second.numTensorComponents(); r2++, r++)
+      {
+        tensorComponents_[r] = second.getTensorComponent(r2);
+      }
+      
+      initialize();
+    }
+    
+    /**
      \brief Simple constructor for the case of trivial tensor-product structure (single component)
      \param [in] tensorComponent - the data component.
      
@@ -178,6 +204,26 @@ namespace Intrepid2
     extents_({0,0,0,0,0,0,0}),
     rank_(0)
     {}
+    
+    /**
+     \brief Constructor that takes a subset of the tensorial components of another TensorData container.
+     \param [in] otherTensorData - the original TensorData container
+     \param [in] whichComps - the tensorial component indices to take from the other container.
+     
+     \note this does not copy the data.
+    */
+    TensorData(TensorData otherTensorData, std::vector<int> whichComps)
+    :
+    numTensorComponents_(whichComps.size())
+    {
+      int r = 0;
+      for (const auto & componentOrdinal : whichComps)
+      {
+        tensorComponents_[r++] = otherTensorData.getTensorComponent(componentOrdinal);
+      }
+      
+      initialize();
+    }
     
     //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
     template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,

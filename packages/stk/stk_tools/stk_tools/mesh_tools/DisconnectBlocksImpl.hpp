@@ -73,7 +73,7 @@ struct NodeMapValue
       newNodeId(stk::mesh::InvalidEntityId),
       reconnectNodeId(stk::mesh::InvalidEntityId),
       reconnectGroupId(std::numeric_limits<unsigned>::max())
-      {}
+  {}
   NodeMapValue(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
     : boundaryNode(node),
       oldNodeId(bulk.identifier(node)),
@@ -122,18 +122,18 @@ struct ReconnectNodeInfo {
   std::vector<int> reconnectProcs;
   stk::mesh::EntityVector relatedNodes;
   stk::mesh::PartVector reconnectParts;
-//  ConvexGroup<BlockPair,BlockPairIdGetter,stk::mesh::PartLess> group;
+  //  ConvexGroup<BlockPair,BlockPairIdGetter,stk::mesh::PartLess> group;
 };
 
 typedef std::map<ReconnectMapKey, ReconnectNodeInfo> ReconnectMap;
 
 class NullStream : public std::ostream {
-    class NullBuffer : public std::streambuf {
-    public:
-        int overflow( int c ) { return c; }
-    } m_nb;
+  class NullBuffer : public std::streambuf {
+  public:
+    int overflow( int c ) { return c; }
+  } m_nb;
 public:
-    NullStream() : std::ostream( &m_nb ) {}
+  NullStream() : std::ostream( &m_nb ) {}
 };
 
 struct LinkInfo

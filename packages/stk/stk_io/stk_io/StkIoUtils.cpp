@@ -42,6 +42,7 @@ namespace Teuchos { class any; }
 namespace stk {
 namespace io {
 
+namespace impl {
 
 stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_selector,
                                             const stk::mesh::Selector *output_selector,
@@ -65,13 +66,15 @@ stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_se
     return selector;
 }
 
+} // namespace impl
+
 size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
                     const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     stk::mesh::EntityVector &entities,
                     bool include_shared)
 {
-    stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
+    stk::mesh::Selector selector =  impl::internal_build_selector(params.get_subset_selector(),
                                                             params.get_output_selector(type),
                                                             params.get_shared_selector(),
                                                             part,
@@ -87,7 +90,7 @@ size_t get_entities(stk::io::OutputParams &params,
                         stk::mesh::EntityVector &entities,
                         bool include_shared)
 {
-    stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
+    stk::mesh::Selector selector =  impl::internal_build_selector(params.get_subset_selector(),
                                                             params.get_output_selector(type),
                                                             nullptr,
                                                             part,
@@ -221,12 +224,21 @@ bool storage_type_is_general(const std::string &storage)
        stk::equal_case(storage,"full_tensor_36")  ||
        stk::equal_case(storage,"full_tensor_32")  ||
        stk::equal_case(storage,"full_tensor_22")  ||
+       stk::equal_case(storage,"full_tensor_16")  ||
        stk::equal_case(storage,"full_tensor_12")  ||
        stk::equal_case(storage,"sym_tensor_33")   ||
        stk::equal_case(storage,"sym_tensor_31")   ||
        stk::equal_case(storage,"sym_tensor_21")   ||
+       stk::equal_case(storage,"sym_tensor_13")   ||
+       stk::equal_case(storage,"sym_tensor_11")   ||
+       stk::equal_case(storage,"sym_tensor_10")   ||
+       stk::equal_case(storage,"asym_tensor_03")  ||
+       stk::equal_case(storage,"asym_tensor_02")  ||
+       stk::equal_case(storage,"asym_tensor_01")  ||
        stk::equal_case(storage,"matrix_22")       ||
-       stk::equal_case(storage,"matrix_33")) {
+       stk::equal_case(storage,"matrix_33")       ||
+       stk::equal_case(storage,"quaternion_2d")   ||
+       stk::equal_case(storage,"quaternion_3d")) {
         value = true;
     }
 
@@ -319,7 +331,7 @@ std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_storag
         type = std::make_pair(1, scalar);
     } else if(stk::equal_case(storage,"real")) {
         type = std::make_pair(1, scalar);
-    }else if(stk::equal_case(storage,"vector_2d")) {
+    } else if(stk::equal_case(storage,"vector_2d")) {
         type = std::make_pair(2, vector);
     } else if(stk::equal_case(storage,"vector_3d")) {
         type = std::make_pair(3, vector);
@@ -329,6 +341,8 @@ std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_storag
         type = std::make_pair(5, vector);
     } else if(stk::equal_case(storage,"full_tensor_22")) {
         type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"full_tensor_16")) {
+        type = std::make_pair(7, vector);
     } else if(stk::equal_case(storage,"full_tensor_12")) {
         type = std::make_pair(3, vector);
     } else if(stk::equal_case(storage,"sym_tensor_33")) {
@@ -337,9 +351,25 @@ std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_storag
         type = std::make_pair(4, vector);
     } else if(stk::equal_case(storage,"sym_tensor_21")) {
         type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_13")) {
+        type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_11")) {
+        type = std::make_pair(2, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_10")) {
+        type = std::make_pair(1, vector);
+    } else if(stk::equal_case(storage,"asym_tensor_03")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"asym_tensor_02")) {
+        type = std::make_pair(2, vector);
+    } else if(stk::equal_case(storage,"asym_tensor_01")) {
+        type = std::make_pair(1, vector);
+    } else if(stk::equal_case(storage,"matrix_22")) {
+        type = std::make_pair(4, vector);
     } else if(stk::equal_case(storage,"matrix_33")) {
         type = std::make_pair(9, vector);
-    } else if(stk::equal_case(storage,"matrix_22")) {
+    } else if(stk::equal_case(storage,"quaternion_2d")) {
+        type = std::make_pair(2, vector);
+    } else if(stk::equal_case(storage,"quaternion_3d")) {
         type = std::make_pair(4, vector);
     } else {
         type = parse_square_bracket_case(storage, scalar, vector);

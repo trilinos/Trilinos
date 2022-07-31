@@ -661,14 +661,14 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
         numrhs_ = MVT::GetNumberVecs( *init_res );
         scalevector_.resize( numrhs_ );
         MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
-        scalevalue_ = Teuchos::ScalarTraits<ScalarType>::one();
+        scalevalue_ = Teuchos::ScalarTraits<MagnitudeType>::one();
       }
       else if (scaletype_==NormOfFullPrecInitRes) {
         Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
         numrhs_ = MVT::GetNumberVecs( *init_res );
         scalevector_.resize( numrhs_ );
         MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
-        scalevalue_ = Teuchos::ScalarTraits<ScalarType>::one();
+        scalevalue_ = Teuchos::ScalarTraits<MagnitudeType>::one();
       }
       else if (scaletype_==NormOfFullScaledInitRes) {
         Teuchos::RCP<const MV> init_res = lp.getInitResVec();

@@ -53,6 +53,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+#include <unordered_map>
 //#include <fenv.h>
 
 typedef double RealT;
@@ -84,6 +85,13 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 
+    std::unordered_map<ROL::ETrustRegionU, int, std::hash<int>> success;
+    for ( ROL::ETrustRegionU desc = ROL::TRUSTREGION_U_CAUCHYPOINT;
+          desc < ROL::TRUSTREGION_U_LAST; desc++ ) {
+      success.insert({desc, 0});
+    }
+
+    int totProb = 0;
     for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK;
           objFunc < ROL::TESTOPTPROBLEM_LAST; objFunc++ ) {
       std::vector<ROL::Ptr<ROL::Vector<RealT>>> z;
@@ -95,6 +103,7 @@ int main(int argc, char *argv[]) {
           && objFunc != ROL::TESTOPTPROBLEM_MINIMAX1
           && objFunc != ROL::TESTOPTPROBLEM_MINIMAX2
           && objFunc != ROL::TESTOPTPROBLEM_MINIMAX3) {
+        totProb++;
         // Get Dimension of Problem
         int dim = x0->dimension(); 
         parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
@@ -138,9 +147,29 @@ int main(int argc, char *argv[]) {
           }
           *outStream << std::endl << "Norm of Error: " << err << std::endl;
           //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
+          if (algo->getState()->statusFlag == ROL::EXITSTATUS_CONVERGED)
+            ++success[desc];
         }
       }
     }
+    *outStream << std::endl << std::string(80,'=') << std::endl;
+    *outStream << "Performance Summary" << std::endl;
+    *outStream << "  "
+               << std::setw(25) << std::left << "Algorithm"
+               << std::setw(10) << std::left << "Successes"
+               << std::setw(10) << std::left << "Failures"
+               << std::endl; 
+    *outStream << std::string(80,'-') << std::endl;
+    for ( ROL::ETrustRegionU desc = ROL::TRUSTREGION_U_CAUCHYPOINT;
+          desc < ROL::TRUSTREGION_U_LAST; desc++ ) {
+      *outStream << "  "
+                 << std::setw(25) << std::left << ROL::ETrustRegionUToString(desc)
+                 << std::setw(10) << std::left << success[desc]
+                 << std::setw(10) << std::left << totProb - success[desc]
+                 << std::endl;
+    }
+    *outStream << std::string(80,'=') << std::endl << std::endl;
+    
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;

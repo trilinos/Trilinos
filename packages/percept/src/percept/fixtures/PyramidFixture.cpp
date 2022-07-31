@@ -31,6 +31,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <percept/FieldTypes.hpp>
 #include <percept/PerceptUtils.hpp>
 
@@ -51,8 +52,11 @@
 
     PyramidFixture::PyramidFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, entity_rank_names_and_family_tree())
-      , m_bulkData(m_metaData , comm )
+      , m_bulkDataPtr(stk::mesh::MeshBuilder(comm).set_spatial_dimension(m_spatial_dimension)
+                                                  .set_entity_rank_names(entity_rank_names_and_family_tree())
+                                                  .create())
+      , m_bulkData(*m_bulkDataPtr)
+      , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_pyramid(    m_metaData.declare_part_with_topology( "block_4", stk::topology::PYRAMID_5 ))
       , m_sideset_quad(0), m_sideset_quad_subset(0)
       , m_sideset_tri(0), m_sideset_tri_subset(0)
@@ -80,14 +84,12 @@
           stk::io::put_io_part_attribute(*m_sideset_tri);
           m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
         }
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
-      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, init_c);
-      put_field_on_mesh( m_centroid_field , universal, init_c);
-      put_field_on_mesh( m_temperature_field, universal, init_s);
+      put_field_on_mesh( m_coordinates_field , universal, nullptr);
+      put_field_on_mesh( m_centroid_field , universal, nullptr);
+      put_field_on_mesh( m_temperature_field, universal, nullptr);
 
-      put_field_on_mesh( m_volume_field, m_block_pyramid, init_s);
+      put_field_on_mesh( m_volume_field, m_block_pyramid, nullptr);
 
       stk::io::put_io_part_attribute(  m_block_pyramid );
 

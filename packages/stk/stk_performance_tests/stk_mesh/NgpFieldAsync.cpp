@@ -60,11 +60,11 @@
 
 #define SPEEDUP_DELTA 1.0
 
-class NgpFieldAsyncTest : public stk::unit_test_util::MeshFixture
+class NgpFieldAsyncTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpFieldAsyncTest()
-  : stk::unit_test_util::MeshFixture(),
+  : stk::unit_test_util::simple_fields::MeshFixture(),
     m_numBlocks(1),
     m_numElemsPerDim(100),
     m_numElements(std::pow(m_numElemsPerDim, 3)),
@@ -102,9 +102,9 @@ public:
     std::vector<int> init;
     setup_field_component_data(init);
 
-    auto field1 = &get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEMENT_RANK, "intField1", 1);
-    auto field2 = &get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEMENT_RANK, "intField2", 1);
-    auto field3 = &get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEMENT_RANK, "intField3", 1);
+    auto field1 = &get_meta().declare_field<int>(stk::topology::ELEMENT_RANK, "intField1", 1);
+    auto field2 = &get_meta().declare_field<int>(stk::topology::ELEMENT_RANK, "intField2", 1);
+    auto field3 = &get_meta().declare_field<int>(stk::topology::ELEMENT_RANK, "intField3", 1);
 
     stk::mesh::put_field_on_mesh(*field1, get_meta().universal_part(), m_numComponents, init.data());
     stk::mesh::put_field_on_mesh(*field2, get_meta().universal_part(), m_numComponents, init.data());
@@ -126,7 +126,7 @@ public:
 
       for(unsigned j = 1; j <= numFields; j++) {
         std::string fieldName = "intField" + std::to_string(j);
-        stk::mesh::Field<int>& field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, fieldName, numStates);
+        stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, fieldName, numStates);
         stk::mesh::put_field_on_mesh(field, part, m_numComponents, init.data());
       }
     }
@@ -308,10 +308,10 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 3);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 100);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
   
@@ -386,10 +386,10 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 3);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 100);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
   
@@ -467,10 +467,10 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 3);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 100);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
   
@@ -548,14 +548,14 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 3);
-  unsigned numFields = stk::unit_test_util::get_command_line_option("-f", 3);
-  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 3);
-  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-c", 1);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
+  unsigned numFields = stk::unit_test_util::simple_fields::get_command_line_option("-f", 3);
+  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 3);
+  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-c", 1);
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 100);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
 
@@ -638,14 +638,14 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 3);
-  unsigned numFields = stk::unit_test_util::get_command_line_option("-f", 3);
-  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 3);
-  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-c", 1);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
+  unsigned numFields = stk::unit_test_util::simple_fields::get_command_line_option("-f", 3);
+  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 3);
+  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-c", 1);
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 100);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
 
@@ -731,13 +731,13 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1);
-  unsigned numStreams = stk::unit_test_util::get_command_line_option("-s", 10);
-  unsigned numFields = stk::unit_test_util::get_command_line_option("-f", 10);
-  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 1);
-  unsigned numElemsPerDim = stk::unit_test_util::get_command_line_option("-e", 100);
-  unsigned sleepTime = stk::unit_test_util::get_command_line_option("-m", 50);
-  unsigned waitIteration = stk::unit_test_util::get_command_line_option("-p", 20);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1);
+  unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 10);
+  unsigned numFields = stk::unit_test_util::simple_fields::get_command_line_option("-f", 10);
+  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 1);
+  unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 100);
+  unsigned sleepTime = stk::unit_test_util::simple_fields::get_command_line_option("-m", 50);
+  unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 20);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer2(MPI_COMM_WORLD);
   stk::performance_tests::Timer timer3(MPI_COMM_WORLD);

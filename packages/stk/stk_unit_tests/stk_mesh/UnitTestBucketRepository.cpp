@@ -51,47 +51,28 @@
 
 TEST(BucketRepositoryTest, createBuckets)
 {
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    size_t spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  size_t spatialDim = 3;
+  stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
+  stkMeshMetaData.use_simple_fields();
 
-    stk::mesh::OrdinalVector parts, scratch;
-    parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());
-    parts.push_back(stkMeshMetaData.locally_owned_part().mesh_meta_data_ordinal());
-    parts.push_back(stkMeshMetaData.declare_part("part1").mesh_meta_data_ordinal());
-    parts.push_back(stkMeshMetaData.declare_part("part2").mesh_meta_data_ordinal());
-    stkMeshMetaData.commit();
+  stk::mesh::OrdinalVector parts, scratch;
+  parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());
+  parts.push_back(stkMeshMetaData.locally_owned_part().mesh_meta_data_ordinal());
+  parts.push_back(stkMeshMetaData.declare_part("part1").mesh_meta_data_ordinal());
+  parts.push_back(stkMeshMetaData.declare_part("part2").mesh_meta_data_ordinal());
+  stkMeshMetaData.commit();
 
-    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
-    stk::mesh::impl::EntityRepository entityRepository;
+  stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
+  stk::mesh::impl::EntityRepository entityRepository;
 
-    stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
-    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+  stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
+  stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
 
-    size_t numNodes = 1024;
-    for(size_t i=0; i<numNodes; i++)
-    {
-        stk::mesh::EntityId nodeID = i+1;
-        stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
-        std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
-        bool aNewEntityWasCreated = createResult.second;
-        EXPECT_TRUE(aNewEntityWasCreated);
-        stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
-        stkMeshBulkData.my_set_entity_key(node, nodeKey);
-        partition->add(node);
-    }
-
-    size_t expectedNumBuckets = 2;
-    EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
-
-    const stk::mesh::BucketVector & nodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
-    EXPECT_EQ(expectedNumBuckets, nodeBuckets.size());
-
-    size_t expectedBucketSize = 512;
-    EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
-    EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
-
-    stk::mesh::EntityId nodeID = numNodes+1;
+  size_t numNodes = 1024;
+  for(size_t i=0; i<numNodes; i++)
+  {
+    stk::mesh::EntityId nodeID = i+1;
     stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
     std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
     bool aNewEntityWasCreated = createResult.second;
@@ -99,20 +80,40 @@ TEST(BucketRepositoryTest, createBuckets)
     stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
     stkMeshBulkData.my_set_entity_key(node, nodeKey);
     partition->add(node);
+  }
 
-    expectedNumBuckets = 3;
-    const stk::mesh::BucketVector & newNodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
-    EXPECT_EQ(expectedNumBuckets, newNodeBuckets.size());
-    EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
+  size_t expectedNumBuckets = 2;
+  EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
 
-    EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
-    EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
-    expectedBucketSize = 1;
-    EXPECT_EQ(expectedBucketSize, nodeBuckets[2]->size());
+  const stk::mesh::BucketVector & nodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
+  EXPECT_EQ(expectedNumBuckets, nodeBuckets.size());
 
-    size_t expectedBucketCapacity = 512;
-    EXPECT_EQ(expectedBucketCapacity, nodeBuckets[0]->capacity());
-    EXPECT_EQ(expectedBucketCapacity, nodeBuckets[1]->capacity());
-    EXPECT_EQ(expectedBucketCapacity, nodeBuckets[2]->capacity());
+  size_t expectedBucketSize = 512;
+  EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
+  EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
+
+  stk::mesh::EntityId nodeID = numNodes+1;
+  stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
+  std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
+  bool aNewEntityWasCreated = createResult.second;
+  EXPECT_TRUE(aNewEntityWasCreated);
+  stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
+  stkMeshBulkData.my_set_entity_key(node, nodeKey);
+  partition->add(node);
+
+  expectedNumBuckets = 3;
+  const stk::mesh::BucketVector & newNodeBuckets = bucketRepository.buckets(stk::topology::NODE_RANK);
+  EXPECT_EQ(expectedNumBuckets, newNodeBuckets.size());
+  EXPECT_EQ(expectedNumBuckets, partition->num_buckets());
+
+  EXPECT_EQ(expectedBucketSize, nodeBuckets[0]->size());
+  EXPECT_EQ(expectedBucketSize, nodeBuckets[1]->size());
+  expectedBucketSize = 1;
+  EXPECT_EQ(expectedBucketSize, nodeBuckets[2]->size());
+
+  size_t expectedBucketCapacity = 512;
+  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[0]->capacity());
+  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[1]->capacity());
+  EXPECT_EQ(expectedBucketCapacity, nodeBuckets[2]->capacity());
 
 }

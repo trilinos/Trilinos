@@ -65,10 +65,7 @@ using Teuchos::rcp;
 
 #include "Phalanx_FieldManager.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Comm.h"
-
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(normals,test2d,TYPE)
 
@@ -79,11 +76,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -106,14 +103,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
       coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
       coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
       coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
-      
+
       coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
       coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
       coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
       coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
     });
 
-  Teuchos::RCP<shards::CellTopology> topo = 
+  Teuchos::RCP<shards::CellTopology> topo =
      Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
   int quadOrder = 5;
@@ -132,7 +129,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > normalsPtr;
@@ -141,8 +138,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
      p.set("Name","Norms");
      p.set("IR",quadRule);
      p.set("Side ID",1);
-    
-     RCP<panzer::Normals<EvalType,panzer::Traits> > normEval  
+
+     RCP<panzer::Normals<EvalType,panzer::Traits> > normEval
         = rcp(new panzer::Normals<EvalType,panzer::Traits>(p));
      RCP<PHX::Evaluator<panzer::Traits> > eval = normEval;
 
@@ -192,9 +189,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
      double ny0 = Sacado::scalarValue(normals_h(i,0,1));
 
      for(int v=0;v<quadRule->num_points;v++) {
-        double nx = Sacado::scalarValue(normals_h(i,v,0)); 
-        double ny = Sacado::scalarValue(normals_h(i,v,1)); 
- 
+        double nx = Sacado::scalarValue(normals_h(i,v,0));
+        double ny = Sacado::scalarValue(normals_h(i,v,1));
+
         TEST_FLOATING_EQUALITY(nx*nx+ny*ny,1.0,1e-15);
 
         // check point consistency
@@ -207,7 +204,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   {
      double nx = Sacado::scalarValue(normals_h(0,0,0));
      double ny = Sacado::scalarValue(normals_h(0,0,1));
-   
+
      TEST_FLOATING_EQUALITY(nx,0.0,1e-15);
      TEST_FLOATING_EQUALITY(ny,1.0,1e-15);
   }
@@ -217,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
      double nx = Sacado::scalarValue(normals_h(1,0,0));
      double ny = Sacado::scalarValue(normals_h(1,0,1));
      double sqrt2 = std::sqrt(2.0);
-   
+
      TEST_FLOATING_EQUALITY(nx,1.0/sqrt2,1e-15);
      TEST_FLOATING_EQUALITY(ny,1.0/sqrt2,1e-15);
   }

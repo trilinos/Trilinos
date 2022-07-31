@@ -77,12 +77,10 @@ void ApiTest::incr(std::string key) {
 }
 
 void ApiTest::printAll() {
-  fprintf (stderr, "**************** cuda call analysis ****************\n"); 
-  fprintf (stderr, "call                                           times\n");
+  fprintf (stderr, "%-30s %10s\t %10s\n","kernel","actual","expected");
   for (std::map<std::string, std::pair<int, int> >::iterator it = counter.begin(); 
        it != counter.end(); it++) {
     if (it->second.first != 0 || it->second.second != 0) 
-      fprintf(stderr, "%-50s %d\t%d\n", it->first.c_str(), it->second.first, it->second.second);
+      fprintf(stderr, "%-30s %10d\t%10d\n", it->first.c_str(), it->second.first, it->second.second);
   }
-  fprintf (stderr, "**************** cuda call analysis ****************\n"); 
 }
