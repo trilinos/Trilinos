@@ -54,8 +54,9 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas1_axpby.hpp>
+#include <KokkosBlas1_scal.hpp>
 #include <KokkosBlas1_nrm2.hpp>
-#include <KokkosBlas2_gemv.hpp>
+#include <KokkosBlas3_gemm.hpp>
 #include <Adelus.hpp>
 
 int main(int argc, char *argv[])
@@ -74,13 +75,13 @@ int main(int argc, char *argv[])
   int  matrix_size;
   int  nprocs_per_row;
   int  nptile = 1; // number of processors per node
+  int  numrhs = 1;
 
   double mflops;
 
-  MPI_Comm rowcomm;
+  MPI_Comm rowcomm, colcomm;
 
   static int buf[4];
-  int numrhs;
 
   int i, m, k;
 
@@ -97,8 +98,6 @@ int main(int argc, char *argv[])
   double four_thirds = 4./3.;
 
   double tempc;
-
-  double rhs_nrm, m_nrm;
 
   int result;
 
@@ -126,10 +125,12 @@ int main(int argc, char *argv[])
         buf[1] = atoi(argv[2]);
         // argv[3] should be #procs per node
         buf[2] = atoi(argv[3]);
+        // argv[4] should be #rhs
+        buf[3] = atoi(argv[4]);
       }
       else {
         // default is 1, but sqrt(p) would be better
-        buf[1] = 1; buf[2] = 1;
+        buf[1] = 1; buf[2] = 1; buf[3] = 1;
       }
     }
     else {
@@ -147,6 +148,10 @@ int main(int argc, char *argv[])
         std::cout << "Enter number of processors per node "  << std::endl;
         std::cin >> buf[2];
       }
+      if (buf[3] < 0) {
+        std::cout << "Enter number of rhs vectors "  << std::endl;
+        std::cin >> buf[3];
+      }
     }
   }
 
@@ -163,15 +168,14 @@ int main(int argc, char *argv[])
 
   nptile = buf[2];
 
+  numrhs = buf[3];
+
   if( rank == 0 ) {
     std::cout << " Matrix Size " << matrix_size << std::endl;
     std::cout << " Processors in a row  "  << nprocs_per_row << std::endl;
     std::cout << " Processors in a node  " << nptile << std::endl;
+    std::cout << " Number of RHS vectors " << numrhs << std::endl;
   }
-
-  // Example for 1 RHS
-
-  numrhs = 1;
 
   if( rank == 0) {
     std::cout << " ---- Building Adelus solver ----" << std::endl;
@@ -184,9 +188,10 @@ int main(int argc, char *argv[])
                            myrows, mycols, myfirstrow, myfirstcol,
                            myrhs, my_row, my_col );
 
-  //   Define a new communicator
+  //   Define new communicators: rowcomm and colcomm
 
   MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm);
+  MPI_Comm_split(MPI_COMM_WORLD,my_col,my_row,&colcomm);
 
   std::cout << " ------ PARALLEL Distribution Info for : ---------" <<std::endl;
 
@@ -243,15 +248,23 @@ int main(int argc, char *argv[])
 #ifdef DREAL
   typedef Kokkos::View<double**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  typedef Kokkos::View<double**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
+  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewNrmVectorType_Host;
 #elif defined(SREAL)
   typedef Kokkos::View<float**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  typedef Kokkos::View<float**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
+  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewNrmVectorType_Host;
 #elif defined(SCPLX)
   typedef Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  typedef Kokkos::View<Kokkos::complex<float>**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
+  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>                   ViewNrmVectorType_Host;
 #else
   typedef Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>  ViewMatrixType;
   typedef Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  typedef Kokkos::View<Kokkos::complex<double>**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
+  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>                   ViewNrmVectorType_Host;
 #endif
   typedef typename ViewMatrixType::device_type::execution_space execution_space;
   typedef typename ViewMatrixType::device_type::memory_space memory_space;
@@ -269,15 +282,19 @@ int main(int argc, char *argv[])
 
   ViewVectorType_Host temp2 ( "temp2", myrows );
 
-  ViewVectorType_Host rhs   ( "rhs", matrix_size );
+  ViewMatrixType_Host rhs   ( "rhs", matrix_size, numrhs );
 
-  ViewVectorType_Host temp3 ( "temp3", matrix_size );
+  ViewMatrixType_Host temp3 ( "temp3", matrix_size, numrhs );
 
-  ViewVectorType_Host temp4 ( "temp4", matrix_size );
+  ViewMatrixType_Host temp4 ( "temp4", matrix_size, numrhs );
   
-  ViewVectorType_Host tempp ( "tempp", matrix_size );
+  ViewMatrixType_Host tempp ( "tempp", matrix_size, numrhs );
 
-  ViewVectorType_Host temp22( "temp22", matrix_size );
+  ViewMatrixType_Host temp22( "temp22", matrix_size, numrhs );
+
+  ViewNrmVectorType_Host rhs_nrm( "rhs_nrm", numrhs );
+
+  ViewNrmVectorType_Host m_nrm  ( "m_nrm", numrhs );
 
   // Set Random values
 
@@ -303,9 +320,21 @@ int main(int argc, char *argv[])
     }
   }
 
-  // Sum to Processor 0
+  // Sum from all processes and distribute the result back to all processes in rowcomm
 
   MPI_Allreduce(temp.data(), temp2.data(), myrows, ADELUS_MPI_DATA_TYPE, MPI_SUM, rowcomm);
+
+  int *nrhs_procs_rowcomm;
+  int my_rhs_offset = 0;
+
+  nrhs_procs_rowcomm  = (int*)malloc( nprocs_per_row * sizeof(int));
+  MPI_Allgather(&myrhs, 1, MPI_INT, nrhs_procs_rowcomm, 1, MPI_INT, rowcomm);//gather numbers of rhs of other processes 
+
+  // Find the location of my RHS in the global RHS
+
+  for (i=0; i<my_col; i++) {
+    my_rhs_offset += nrhs_procs_rowcomm[i];
+  }
 
   if( rank == 0 )
     std::cout << " ****   Packing RHS in Matrix   ****" << std::endl;
@@ -313,21 +342,40 @@ int main(int argc, char *argv[])
   // Now put the RHS in the appropriate position
 
   if( myrhs > 0 ) {
-    Kokkos::deep_copy( subview(h_A,Kokkos::ALL(),mycols), temp2 );
-    Kokkos::deep_copy( subview(rhs,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)), temp2 );
+    for (k = 0; k < myrhs; k++) {
+#if defined(DREAL) || defined(ZCPLX)
+      ScalarA scal_factor = static_cast<double>(my_rhs_offset+k+1);
+#else
+      ScalarA scal_factor = static_cast<float>(my_rhs_offset+k+1);
+#endif
+      auto cur_rhs_vec_1d = subview(h_A,Kokkos::ALL(),mycols+k);
+      Kokkos::deep_copy( cur_rhs_vec_1d, temp2 );
+      KokkosBlas::scal(cur_rhs_vec_1d,scal_factor,cur_rhs_vec_1d);
+    }
+    for (k = 0; k < numrhs; k++) {
+#if defined(DREAL) || defined(ZCPLX)
+      ScalarA scal_factor = static_cast<double>(k+1);
+#else
+      ScalarA scal_factor = static_cast<float>(k+1);
+#endif
+      auto cur_rhs_vec_1d = subview(rhs,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),k);
+      Kokkos::deep_copy( cur_rhs_vec_1d, temp2 );
+      KokkosBlas::scal(cur_rhs_vec_1d,scal_factor,cur_rhs_vec_1d);
+    }
   }
 
   // Globally Sum the RHS needed for testing later
 
-  MPI_Allreduce(rhs.data(), temp4.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(rhs.data(), temp4.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, colcomm);
 
   // Pack back into RHS
 
   Kokkos::deep_copy( rhs, temp4 );
 
-  rhs_nrm = KokkosBlas::nrm2(rhs);
+  KokkosBlas::nrm2(rhs_nrm, rhs);
 
-  Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
+  Kokkos::deep_copy( subview(A,   Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)),
+                     subview(h_A, Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
 
   // Create handle
   Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
@@ -350,28 +398,33 @@ int main(int argc, char *argv[])
 
   // Now Check the Solution
 
-  Kokkos::deep_copy( subview(h_A,Kokkos::ALL(),mycols), subview(A,Kokkos::ALL(),mycols) );
+  Kokkos::deep_copy( subview(h_A, Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)),
+                     subview(A,   Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
+
 
   // Pack the Answer into the apropriate position
 
-  if ( myrhs > 0) {
-    Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)), subview(h_A,Kokkos::ALL(),mycols) );
+  if ( myrhs > 0 ) {
+    Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),
+                                     Kokkos::make_pair(my_rhs_offset, my_rhs_offset + myrhs)),
+                       subview(h_A,Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );//different layouts, is it OK?
   }
 
   // All processors get the answer
 
-  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
-  
-  // perform the Matrix vector product
+  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
+  // Perform the Matrix vector product
+  
   ScalarA alpha = 1.0;
   ScalarA beta  = 0.0;
 
-  KokkosBlas::gemv("N", alpha, subview(h_A,Kokkos::ALL(),Kokkos::make_pair(0, mycols)),
-                               subview(temp22,Kokkos::make_pair(myfirstcol - 1, myfirstcol - 1 + mycols)),
-                         beta, subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)));
+  KokkosBlas::gemm("N", "N", alpha, 
+                   subview(h_A,Kokkos::ALL(),Kokkos::make_pair(0, mycols)),
+                   subview(temp22,Kokkos::make_pair(myfirstcol - 1, myfirstcol - 1 + mycols),Kokkos::ALL()),
+                   beta, subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),Kokkos::ALL()));
 
-  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
   if( rank == 0) {
     std::cout <<  "======================================" << std::endl;
@@ -379,9 +432,9 @@ int main(int argc, char *argv[])
 
     ScalarA alpha_ = -1.0;
 
-    KokkosBlas::axpy(alpha_,rhs,temp3);//temp3=temp3-rhs
+    KokkosBlas::axpy(alpha_, rhs, temp3);//temp3=temp3-rhs
 
-    m_nrm = KokkosBlas::nrm2(temp3);
+    KokkosBlas::nrm2(m_nrm, temp3);
   }
 
   // Machine epsilon Calculation
@@ -393,31 +446,33 @@ int main(int argc, char *argv[])
   eps = fabs(tempc-1.0);
 
   if ( rank == 0 ) {
-	std::cout << "   Machine eps  " << eps  << std::endl;
-  }
-
-  if ( rank == 0 ) {
-
-    std::cout << "   ||Ax - b||_2 = " << m_nrm << std::endl;
-
-    std::cout << "   ||b||_2 = " << rhs_nrm << std::endl;
-
-    std::cout << "   ||Ax - b||_2 / ||b||_2  = " << m_nrm/rhs_nrm  << std::endl;
+    std::cout << "   Machine eps  " << eps  << std::endl;
 
     std::cout << "   Threshold = " << eps*1e4  << std::endl;
 
-    if ( m_nrm/rhs_nrm  > (eps*1e4)) {
-      std::cout << " ****    Solution Fails   ****" <<  std::endl;
-      result = 1;
-    }
-    else {
-      std::cout << " ****   Solution Passes   ****" << std::endl;
-      result = 0;
+    for (k = 0; k < numrhs; k++) {
+      std::cout << "   Solution " << k << ":   ||Ax - b||_2 = " << m_nrm(k) << std::endl;
+
+      std::cout << "   Solution " << k << ":   ||b||_2 = " << rhs_nrm(k) << std::endl;
+
+      std::cout << "   Solution " << k << ":   ||Ax - b||_2 / ||b||_2  = " << m_nrm(k)/rhs_nrm(k)  << std::endl;
+
+      if ( m_nrm(k)/rhs_nrm(k)  > (eps*1e4)) {
+        std::cout << " ****   Solution " << k << " Fails   ****" <<  std::endl;
+        result = 1;
+        break;
+      }
+      else {
+        std::cout << " ****   Solution " << k << " Passes   ****" << std::endl;
+        result = 0;
+      }
     }
     std::cout <<  "======================================" << std::endl;
   }
 
   MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  free(nrhs_procs_rowcomm);
 
   }
   Kokkos::finalize();
