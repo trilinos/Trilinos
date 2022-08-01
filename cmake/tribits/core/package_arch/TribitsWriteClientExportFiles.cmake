@@ -591,7 +591,10 @@ function(tribits_append_dependent_package_config_file_includes_and_enables packa
     endif()
     if (packageConfigBaseDir)
       string(APPEND configFileStr
-        "include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n")
+        "if (NOT TARGET ${depPkg}::all_libs)\n"
+        "  include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n"
+        "endif()\n"
+        )
     endif()
   endforeach()
 
