@@ -412,6 +412,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
   MPI_Comm row_comm = ahandle.get_row_comm();
   int me            = ahandle.get_myrank();
   int myrow         = ahandle.get_myrow();
+  int mycol         = ahandle.get_mycol();
   int nprocs_row    = ahandle.get_nprocs_row();
   int nprocs_col    = ahandle.get_nprocs_col();
   int ncols_matrix  = ahandle.get_ncols_matrix();
@@ -470,8 +471,10 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
     t1 = MPI_Wtime();
 #endif
     //Step 1: copy the current column of Z to a temporary view
-    Kokkos::deep_copy( Kokkos::subview(curr_col, Kokkos::make_pair(0, end_row), 0), 
-                       Kokkos::subview(Z, Kokkos::make_pair(0, end_row), k/nprocs_row) );
+    if (mycol == k_col) { //only deep_copy if holding the current column
+      Kokkos::deep_copy( Kokkos::subview(curr_col, Kokkos::make_pair(0, end_row), 0), 
+                         Kokkos::subview(Z, Kokkos::make_pair(0, end_row), k/nprocs_row) );
+    }
 #ifdef GET_TIMING
     copycoltime += (MPI_Wtime()-t1);
 #endif
