@@ -159,7 +159,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
           case 0: {
             // lock
             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-              KOKKOS_IMPL_PAUSE;
+              TACHO_IMPL_PAUSE;
             Kokkos::store_fence();
 
             for (ordinal_type js = 0; js < nb; ++js) {
@@ -241,7 +241,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
           }
           case 0: {
             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-              KOKKOS_IMPL_PAUSE;
+              TACHO_IMPL_PAUSE;
             Kokkos::store_fence();
 
             for (ordinal_type jj = max(ijbeg, offn); jj < nn; ++jj) {

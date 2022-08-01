@@ -3,7 +3,7 @@ MixedSharedStaticLibs
 ======================
 
 The purpose of this package is to demonstrate and test the usage of the the
-arguments SHARED and STATIC with TRIBITS_ADD_LIBRARY().
+arguments SHARED and STATIC with tribits_add_library().
 
 This package has to three subpackages:
 

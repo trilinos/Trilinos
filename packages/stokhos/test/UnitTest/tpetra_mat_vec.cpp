@@ -96,8 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
               Teuchos::VERB_EXTREME);
 
   // Check
-  ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
-  ArrayRCP<Scalar> x_view = y->get1dViewNonConst();
+  auto y_view = y->getLocalViewHost(Tpetra::Access::ReadOnly);
   for (size_t i=0; i<num_my_row; ++i) {
     //const GlobalOrdinal row = myGIDs[i];
     Scalar val = 2.0;
@@ -105,7 +104,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
     // if (row != nrow-1) {
     //   val += 2.0;
     // }
-    TEST_EQUALITY( y_view[i], val );
+    TEST_EQUALITY( y_view(i,0), val );
   }
 }
 
@@ -175,9 +174,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  for (size_t i=0; i<num_my_row; ++i) {
-    b_view[i] = Scalar(1.0);
+  {
+      auto b_view = b->getLocalViewHost(Tpetra::Access::OverwriteAll);
+      for (size_t i=0; i<num_my_row; ++i) {
+          b_view(i, 0) = Scalar(1.0);
+      }
   }
 
   // Solve
@@ -212,7 +213,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   //     [ 0, 0,   ..., 0            ]
   //     [ 1, 1/2, ..., 1/VectorSize ]
   //     ....
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  auto x_view = x->getLocalViewHost(Tpetra::Access::ReadOnly);
   Scalar val = Scalar(0.5);
   for (size_t i=0; i<num_my_row; ++i) {
     // const GlobalOrdinal row = myGIDs[i];
@@ -223,7 +224,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
     //   val = Scalar(0.0);
 
     // Set small values to zero
-    Scalar v = x_view[i];
+    Scalar v = x_view(i,0);
     if (ST::magnitude(v) < tol)
       v = Scalar(0.0);
 

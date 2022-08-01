@@ -5,12 +5,6 @@
 
 #cmakedefine HAVE_THYRA_TPETRA
 
-#cmakedefine HAVE_THYRA_TEUCHOS_BLASFLOAT
-
-#cmakedefine HAVE_THYRA_FLOAT
-
-#cmakedefine HAVE_THYRA_COMPLEX
-
 #cmakedefine HAVE_THYRA_DEBUG
 
 #cmakedefine HAVE_THYRA_EXPLICIT_INSTANTIATION

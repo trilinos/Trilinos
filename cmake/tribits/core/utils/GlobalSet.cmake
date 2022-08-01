@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @MACRO: global_set()
 #
 # Set a variable as an internal global (cache) variable (removes boiler-plate

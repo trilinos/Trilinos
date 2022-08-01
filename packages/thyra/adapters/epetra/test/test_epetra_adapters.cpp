@@ -742,8 +742,7 @@ int main( int argc, char* argv[] )
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
 
-/*
-#ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
+#if 0
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
       Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
       t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
@@ -751,7 +750,6 @@ int main( int argc, char* argv[] )
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
 #endif
-*/
 
       Array<Scalar> T_raw_values( num_mv_cols * num_mv_cols );
       RTOpPack::SubMultiVectorView<Scalar> T_raw( 0, num_mv_cols, 0, num_mv_cols,
@@ -765,8 +763,7 @@ int main( int argc, char* argv[] )
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nT_view =\n" << *T_view;
 
-/*
-#ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
+#if 0
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
       T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
@@ -774,7 +771,6 @@ int main( int argc, char* argv[] )
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
       if(verbose && dumpAll) *out << "\nT_view =\n" << *T_view;
 #endif
-*/
 
     }
 

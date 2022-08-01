@@ -91,8 +91,8 @@ namespace Intrepid2 {
       typedef typename
         Kokkos::DefaultHostExecutionSpace HostSpaceType ;
       
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
 
   *outStream
     << "===============================================================================\n"

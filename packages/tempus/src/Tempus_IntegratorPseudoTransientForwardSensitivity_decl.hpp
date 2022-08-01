@@ -127,15 +127,6 @@ public:
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   Teuchos::RCP<Stepper<Scalar> > getStateStepper() const;
   Teuchos::RCP<Stepper<Scalar> > getSensStepper() const;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Return a copy of the Tempus ParameterList
-  TEMPUS_DEPRECATED
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
-  { return state_integrator_->getTempusParameterList(); }
-  TEMPUS_DEPRECATED
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
-  { state_integrator_->setTempusParameterList(pl); }
-#endif
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
   Teuchos::RCP<const SolutionHistory<Scalar> > getStateSolutionHistory() const;

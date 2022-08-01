@@ -71,6 +71,23 @@ namespace Amesos2 {
   : mv_(m)
   {}
 
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  Teuchos::RCP<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::clone() const
+  {
+      using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      Teuchos::RCP<MV> Y (new MV (mv_->getMap(), mv_->getNumVectors(), false));
+      Y->setCopyOrView (Teuchos::View);
+      return Y;
+  }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   typename MultiVecAdapter<

@@ -40,7 +40,7 @@
 include(GlobalSet)
 include(AssertDefined)
 
-#
+
 # @FUNCTION: append_global_set()
 #
 # Utility macro that appends arguments to a global variable (reduces
