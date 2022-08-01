@@ -113,6 +113,12 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize);
 
+    //! Constructor specifying a previously constructed graph, point maps & blocksize
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointDomainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointRangeMap,
+                         const LocalOrdinal blockSize);
+
 
     //! Constructor for a fused import ( not implemented )
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,

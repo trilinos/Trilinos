@@ -52,6 +52,7 @@
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
+#include "Xpetra_TpetraBlockCrsMatrix.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -289,6 +290,25 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 #endif
+    
+    // Builds a BlockCrsMatrix
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
+        const Teuchos::RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& blockGraph,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+        LocalOrdinal blockSize) {
+  
+      XPETRA_MONITOR("CrsMatrixFactory::BuildBlock");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (domainMap->lib() == UseTpetra) {
+        return rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blockGraph,domainMap,rangeMap,blockSize) );
+      }
+#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(domainMap->lib() == UseEpetra, std::logic_error, "Epetra doesn't support this matrix constructor");
+
+      XPETRA_FACTORY_END;
+    }
 
   };
 
@@ -318,10 +338,9 @@ namespace Xpetra {
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, 0) );
 #endif
-#ifdef HAVE_XPETRA_EPETRA
       if(rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap));
-#endif
+
       XPETRA_FACTORY_END;
     }
 
@@ -542,6 +561,23 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 #endif
+
+    //! Build a BlockCrsMatrix
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
+        const Teuchos::RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& blockGraph,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+        LocalOrdinal blockSize) {
+  
+      XPETRA_MONITOR("CrsMatrixFactory::BuildBlock");
+#ifdef HAVE_XPETRA_TPETRA
+      if (domainMap->lib() == UseTpetra)
+        return rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blockGraph,domainMap,rangeMap,blockSize) );
+#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(domainMap->lib() == UseEpetra, std::logic_error, "Epetra doesn't support this matrix constructor");
+
+      XPETRA_FACTORY_END;
+    }
 
   };
 #endif
@@ -771,6 +807,28 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 #endif
+
+
+    //! Build a BlockCrsMatrix
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
+        const Teuchos::RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& blockGraph,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+        LocalOrdinal blockSize) {
+  
+      XPETRA_MONITOR("CrsMatrixFactory::BuildBlock");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (domainMap->lib() == UseTpetra) {
+        return rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blockGraph,domainMap,rangemap,blockSize) );
+      }
+#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(domainMap->lib() == UseEpetra, std::logic_error, "Epetra doesn't support this matrix constructor");
+
+      XPETRA_FACTORY_END;
+    }
+
+
 
   };
 #endif

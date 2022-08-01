@@ -46,6 +46,7 @@
 #ifndef XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 #define XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 
+
 #include "Xpetra_TpetraBlockCrsMatrix_decl.hpp"
 #include "Xpetra_TpetraCrsGraph.hpp"
 
@@ -116,6 +117,17 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize)
       : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), blockSize))) 
+    { }
+
+
+    //! Constructor specifying a previously constructed graph, point maps & blocksize
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointDomainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointRangeMap,
+                         const LocalOrdinal blockSize)
+      : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), *toTpetra(pointDomainMap), *toTpetra(pointRangeMap),blockSize)))
     { }
 
 
