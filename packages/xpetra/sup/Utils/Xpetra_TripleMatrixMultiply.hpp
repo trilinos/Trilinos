@@ -143,7 +143,7 @@ namespace Xpetra {
         }
         else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
           // All matrices are BlockCrs (except maybe Ac)
-          // FIXME: For the moment we're just going to clobber the innards of AC, so no reuse. Once we have a reuse kernel,
+          // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
           // we'll need to think about refactoring BlockCrs so we can do something smartet here.
           std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpR  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(R);
@@ -157,7 +157,7 @@ namespace Xpetra {
           RCP<const CRS> Pcrs = Tpetra::convertToCrsMatrix(tpP);
           //          RCP<CRS> Accrs = Tpetra::convertToCrsMatrix(tpAc);
           
-          // FIXME: This lines below only works because we're assuming Ac is Point
+          // FIXME: The lines below only works because we're assuming Ac is Point
           RCP<CRS> Accrs = Teuchos::rcp(new CRS(Rcrs->getRowMap(),0));
           const bool do_fill_complete=true;
           Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, do_fill_complete, label, params);
@@ -168,7 +168,7 @@ namespace Xpetra {
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
-          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>>(Teuchos::rcpFromRef(Ac));
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Teuchos::rcpFromRef(Ac));
           Ac_w->replaceCrsMatrix(Ac_p);         
         }
         else {
@@ -284,23 +284,18 @@ namespace Xpetra {
           RCP<const CRS> Pcrs = Tpetra::convertToCrsMatrix(tpP);
           //          RCP<CRS> Accrs = Tpetra::convertToCrsMatrix(tpAc);
           
-          // FIXME: This lines below only works because we're assuming Ac is Point
+          // FIXME: The lines below only works because we're assuming Ac is Point
           RCP<CRS> Accrs = Teuchos::rcp(new CRS(Rcrs->getRowMap(),0));
           const bool do_fill_complete=true;
           Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, do_fill_complete, label, params);
 
           // Temporary output matrix
-          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());
-          
-          printf("Ac_t r/r/s=%d/%d/%d\n",
-                 (int)Ac_t->getRangeMap()->getGlobalNumElements(),(int)Ac_t->getRowMap()->getGlobalNumElements(),
-                 (int)Ac_t->getGlobalNumRows());
-
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());          
           RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
-          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>>(Teuchos::rcpFromRef(Ac));
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Teuchos::rcpFromRef(Ac));
           Ac_w->replaceCrsMatrix(Ac_p);
 
         }
@@ -416,23 +411,18 @@ namespace Xpetra {
           RCP<const CRS> Pcrs = Tpetra::convertToCrsMatrix(tpP);
           //          RCP<CRS> Accrs = Tpetra::convertToCrsMatrix(tpAc);
           
-          // FIXME: This lines below only works because we're assuming Ac is Point
+          // FIXME: The lines below only works because we're assuming Ac is Point
           RCP<CRS> Accrs = Teuchos::rcp(new CRS(Rcrs->getRowMap(),0));
           const bool do_fill_complete=true;
           Tpetra::TripleMatrixMultiply::MultiplyRAP(*Rcrs, transposeR, *Acrs, transposeA, *Pcrs, transposeP, *Accrs, do_fill_complete, label, params);
 
           // Temporary output matrix
-          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());
-          
-          printf("Ac_t r/r/s=%d/%d/%d\n",
-                 (int)Ac_t->getRangeMap()->getGlobalNumElements(),(int)Ac_t->getRowMap()->getGlobalNumElements(),
-                 (int)Ac_t->getGlobalNumRows());
-
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*Accrs,A.GetStorageBlockSize());         
           RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
-          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>>(Teuchos::rcpFromRef(Ac));
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Teuchos::rcpFromRef(Ac));
           Ac_w->replaceCrsMatrix(Ac_p);   
         }
         else {
