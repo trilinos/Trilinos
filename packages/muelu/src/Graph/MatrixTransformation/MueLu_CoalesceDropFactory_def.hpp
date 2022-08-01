@@ -380,7 +380,7 @@ namespace MueLu {
           classicalAlgo = scaled_cut;
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut), not \"" << classicalAlgoStr << "\"");
-        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" classical algorithm = \"" << classicalAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize()<< "storageblocksize = "<<A->GetStorageBlockSize() << std::endl;
+        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" classical algorithm = \"" << classicalAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
         
       } else
         GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
