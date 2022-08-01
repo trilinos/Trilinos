@@ -1,6 +1,8 @@
 # CMAKE File for "adelus_driver" application building against an installed Trilinos
 cmake_minimum_required(VERSION 3.12)
 
+cmake_policy(SET CMP0057 NEW)
+
 # Use Trilinos_PREFIX, if the user set it, to help find Trilinos.
 # The final location will actually be held in Trilinos_DIR which must
 # point at "<prefix>/lib/cmake/Trilinos", but this helps the search.
