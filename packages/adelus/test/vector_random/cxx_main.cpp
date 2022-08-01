@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  /* Send the initilization data to each processor    */
+  // Send the initilization data to each processor
   mlen = 4*sizeof(int);
 
   MPI_Bcast(reinterpret_cast<char *>(buf), mlen, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
                            myrows, mycols, myfirstrow, myfirstcol,
                            myrhs, my_row, my_col );
 
-  //   Define new communicators: rowcomm and colcomm
+  // Define new communicators: rowcomm and colcomm
 
   MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm);
   MPI_Comm_split(MPI_COMM_WORLD,my_col,my_row,&colcomm);
@@ -235,40 +235,40 @@ int main(int argc, char *argv[])
   Kokkos::initialize( argc, argv );
 #endif
   {
-  //  Local size -- myrows  * (mycols + myrhs)
+  // Local size -- myrows  * (mycols + myrhs)
   
-  typedef Kokkos::LayoutLeft Layout;
+  using Layout = Kokkos::LayoutLeft;
 #if defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::CudaSpace TestSpace;
+  using TestSpace = Kokkos::CudaSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::Experimental::HIPSpace TestSpace;
+  using TestSpace = Kokkos::Experimental::HIPSpace;
 #else
-  typedef Kokkos::HostSpace TestSpace;
+  using TestSpace = Kokkos::HostSpace;
 #endif
 #ifdef DREAL
-  typedef Kokkos::View<double**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
-  typedef Kokkos::View<double**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
-  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewNrmVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<double**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<double*,  Layout, Kokkos::HostSpace>;
+  using ViewMatrixType_Host    = Kokkos::View<double**, Layout, Kokkos::HostSpace>;
+  using ViewNrmVectorType_Host = Kokkos::View<double*,  Layout, Kokkos::HostSpace>;
 #elif defined(SREAL)
-  typedef Kokkos::View<float**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
-  typedef Kokkos::View<float**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
-  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewNrmVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<float**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<float*,  Layout, Kokkos::HostSpace>;
+  using ViewMatrixType_Host    = Kokkos::View<float**, Layout, Kokkos::HostSpace>;
+  using ViewNrmVectorType_Host = Kokkos::View<float*,  Layout, Kokkos::HostSpace>;
 #elif defined(SCPLX)
-  typedef Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
-  typedef Kokkos::View<Kokkos::complex<float>**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
-  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>                   ViewNrmVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>;
+  using ViewMatrixType_Host    = Kokkos::View<Kokkos::complex<float>**, Layout, Kokkos::HostSpace>;
+  using ViewNrmVectorType_Host = Kokkos::View<float*,  Layout, Kokkos::HostSpace>;
 #else
-  typedef Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
-  typedef Kokkos::View<Kokkos::complex<double>**, Layout, Kokkos::HostSpace>  ViewMatrixType_Host;
-  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>                   ViewNrmVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>;
+  using ViewMatrixType_Host    = Kokkos::View<Kokkos::complex<double>**, Layout, Kokkos::HostSpace>;
+  using ViewNrmVectorType_Host = Kokkos::View<double*,  Layout, Kokkos::HostSpace>;
 #endif
-  typedef typename ViewMatrixType::device_type::execution_space execution_space;
-  typedef typename ViewMatrixType::device_type::memory_space memory_space;
-  typedef typename ViewMatrixType::value_type ScalarA;
+  using execution_space = typename ViewMatrixType::device_type::execution_space;
+  using memory_space    = typename ViewMatrixType::device_type::memory_space;
+  using ScalarA         = typename ViewMatrixType::value_type;
 
   printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s, value_type %s\n",rank, typeid(execution_space).name(), typeid(memory_space).name(), typeid(ScalarA).name());
 
@@ -324,13 +324,13 @@ int main(int argc, char *argv[])
 
   MPI_Allreduce(temp.data(), temp2.data(), myrows, ADELUS_MPI_DATA_TYPE, MPI_SUM, rowcomm);
 
+  // Find the location of my RHS in the global RHS
+
   int *nrhs_procs_rowcomm;
   int my_rhs_offset = 0;
 
   nrhs_procs_rowcomm  = (int*)malloc( nprocs_per_row * sizeof(int));
-  MPI_Allgather(&myrhs, 1, MPI_INT, nrhs_procs_rowcomm, 1, MPI_INT, rowcomm);//gather numbers of rhs of other processes 
-
-  // Find the location of my RHS in the global RHS
+  MPI_Allgather(&myrhs, 1, MPI_INT, nrhs_procs_rowcomm, 1, MPI_INT, rowcomm);//gather numbers of rhs of other processes
 
   for (i=0; i<my_col; i++) {
     my_rhs_offset += nrhs_procs_rowcomm[i];
@@ -401,13 +401,12 @@ int main(int argc, char *argv[])
   Kokkos::deep_copy( subview(h_A, Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)),
                      subview(A,   Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
 
-
   // Pack the Answer into the apropriate position
 
   if ( myrhs > 0 ) {
     Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),
                                      Kokkos::make_pair(my_rhs_offset, my_rhs_offset + myrhs)),
-                       subview(h_A,Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );//different layouts, is it OK?
+                       subview(h_A,Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
   }
 
   // All processors get the answer
