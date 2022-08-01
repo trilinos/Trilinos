@@ -52,7 +52,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Exceptions.hpp>
 
-#include <Xpetra_IO.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 namespace MueLuTests {
 
@@ -120,6 +120,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
         H->GetLevel(0)->Set("A", A);
         
         mueluFactory.SetupHierarchy(*H);
+
+        // Test to make sure all of the matrices in the Hierarchy are actually Block Matrices
+        // NOTE: Don't check the coarsest level to avoid (a) KLU and (b) lack of transfer operators
+        using helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;        
+        for(int j=0; j<H->GetNumLevels()-1; j++) {
+          RCP<Level> level = H->GetLevel(j);
+
+          RCP<Matrix> Am = level->Get<RCP<Matrix> >("A");
+          TEST_EQUALITY(helpers::isTpetraBlockCrs(Am),true);
+          RCP<Matrix> P = level->Get<RCP<Matrix> >("P");
+          TEST_EQUALITY(helpers::isTpetraBlockCrs(P),true);
+          RCP<Matrix> R = level->Get<RCP<Matrix> >("R");
+          TEST_EQUALITY(helpers::isTpetraBlockCrs(R),true);          
+        }
         
         //TODO: check no unused parameters
         //TODO: check results of Iterate()
