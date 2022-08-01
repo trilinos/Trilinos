@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
   double tempc;
 
-  int result;
+  int result=1;
 
   // Enroll into MPI
 

@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
   double rhs_nrm, m_nrm;
 
-  int result;
+  int result=1;
 
   // Enroll into MPI
 
