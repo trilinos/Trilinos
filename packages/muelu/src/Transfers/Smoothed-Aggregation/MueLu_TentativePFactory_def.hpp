@@ -426,7 +426,8 @@ namespace MueLu {
     // Now let's make a BlockCrs Matrix
     // NOTE: Assumes block size== NSDim
     RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(BlockGraph, coarsePointMap, rangeMap,NSDim);
-    RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+    RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+    if(P_tpetra.is_null()) throw std::runtime_error("BuildPUncoupled: Matrix factory did not return a Tpetra::BlockCrsMatrix");
     RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
 
     /////////////////////////////
