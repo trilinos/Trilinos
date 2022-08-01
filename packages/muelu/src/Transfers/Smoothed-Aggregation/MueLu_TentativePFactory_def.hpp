@@ -279,6 +279,16 @@ namespace MueLu {
   BuildPuncoupledBlockCrs(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                           RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
 #ifdef HAVE_MUELU_TPETRA
+
+    /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
+       be generalized later, if we ever need to do so:
+       1) Null space dimension === block size of matrix:  So no elasticity right now
+       2) QR is not supported:  Under assumption #1, this shouldn't cause problems.
+       3) Maps are "good": Aka the first chunk of the ColMap is the RowMap.
+
+       These assumptions keep our code way simpler and still support the use cases we actually care about.
+     */
+
     RCP<const Map> rowMap     = A->getRowMap();
     RCP<const Map> rangeMap   = A->getRangeMap();
     RCP<const Map> colMap     = A->getColMap();
@@ -295,9 +305,6 @@ namespace MueLu {
     const size_t NSDim     = fineNullspace->getNumVectors();
     ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
 
-    printf("A # point rows = %d #  block rows = %d\n",(int)numFinePointRows,(int)numFineBlockRows);
-
-
     // Need to generate the coarse block map
     // NOTE: We assume NSDim == block size here
     // NOTE: We also assume that coarseMap has contiguous GIDs
@@ -308,9 +315,6 @@ namespace MueLu {
                                                       numCoarseBlockRows,
                                                       coarsePointMap->getIndexBase(),
                                                       coarsePointMap->getComm());    
-    //    Set(currentLevel, "CoarseBlockMap", coarseBlockMap);
-       
-
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
@@ -376,7 +380,6 @@ namespace MueLu {
         // FIXME: Allow for bad maps
         const LO localRow = aggToRowMapLO[aggStart[agg]+j];
         const size_t rowStart = ia[localRow];
-        //printf("Writing (%d,%d) rowStart=%d\n",(int)localRow,(int)agg,(int)rowStart);fflush(stdout);
         ja[rowStart] = offset;
       }      
     }

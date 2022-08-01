@@ -75,6 +75,16 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
+    /* NOTE: Fullblocksize here represents the number of blocks of whatever storage type is represented by the matrix, specifically
+       the GetFixedBlockSize() which should come from the # PDEs specified on the input deck (or null space dimension on finer levels).
+       So for a point matrix, that's the block size.  
+       
+       For a BlockCrsMatrix, that's the number of blocks of the BlockCrs object which make up a logical block for amalgamation.  Here we 
+       divide the GetFixedBlockSize() by the GetStorageBlockSize().  We've only tested fullblocksize=1 in the BlockCrs case, but in theory
+       you could use a larger number here.
+     */
+
+
     LO fullblocksize    = 1;   // block dim for fixed size blocks
     GO offset           = 0;   // global offset of dof gids
     LO blockid          = -1;  // block id in strided map
