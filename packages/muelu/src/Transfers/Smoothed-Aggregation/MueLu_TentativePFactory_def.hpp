@@ -292,7 +292,7 @@ namespace MueLu {
     RCP<const Map> rowMap     = A->getRowMap();
     RCP<const Map> rangeMap   = A->getRangeMap();
     RCP<const Map> colMap     = A->getColMap();
-    const size_t numFinePointRows = rangeMap->getLocalNumElements();
+    //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -425,24 +425,9 @@ namespace MueLu {
 
     // Now let's make a BlockCrs Matrix
     // NOTE: Assumes block size== NSDim
-    // FIXME: Push this all into Xpetra_MatrixFactory
-    RCP<Xpetra::TpetraCrsGraph<LO,GO,NO> > BlockGraph_tcg = rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO,GO,NO> >(BlockGraph);
-    RCP<const Tpetra::CrsGraph<LO,GO,NO> > BlockGraph_t =BlockGraph_tcg->getTpetra_CrsGraph();
-
-    RCP<const Xpetra::TpetraMap<LO,GO,NO> > rangeMap_x = rcp_dynamic_cast<const Xpetra::TpetraMap<LO,GO,NO> >(rangeMap);
-    RCP<const Xpetra::TpetraMap<LO,GO,NO> > coarsePointMap_x = rcp_dynamic_cast<const Xpetra::TpetraMap<LO,GO,NO> >(coarsePointMap->getMap());
-    if(rangeMap_x.is_null()) throw std::runtime_error("TentativePFactory: rangeMap is not a Tpetra Map");    
-    if(coarsePointMap_x.is_null()) throw std::runtime_error("TentativePFactory: coarsePointMap is not a Tpetra Map");
-
-
-    RCP<const Tpetra::Map<LO,GO,NO> > rangeMap_t = rangeMap_x->getTpetra_Map();
-    RCP<const Tpetra::Map<LO,GO,NO> > coarsePointMap_t = coarsePointMap_x->getTpetra_Map();
-       
-    RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp(new Tpetra::BlockCrsMatrix<SC,LO,GO,NO>(*BlockGraph_t, *coarsePointMap_t, *rangeMap_t,NSDim));    
-
-    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(P_tpetra));
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(BlockGraph, coarsePointMap, rangeMap,NSDim);
+    RCP<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
     RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
-
 
     /////////////////////////////
     //      "no-QR" option     //
@@ -452,9 +437,11 @@ namespace MueLu {
     // NOTE: We're not going to do a QR here as we're assuming that blocksize == NSDim
     // NOTE: "goodMap" case only
     Teuchos::Array<Scalar> block(NSDim*NSDim, zero);
+    Teuchos::Array<LO> bcol(1);
 
     GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
-    for (GO agg = 0; agg < numAggs; agg++) {
+    for (LO agg = 0; agg < numAggs; agg++) {
+      bcol[0] = agg;
       const LO aggSize = aggStart[agg+1] - aggStart[agg];
       Xpetra::global_size_t offset = agg*NSDim;
 
@@ -469,7 +456,7 @@ namespace MueLu {
             block[r*NSDim+c] = fineNS[c][localPointRow];
         }
         // NOTE: Assumes columns==aggs and are ordered sequentially
-        P_tpetra->replaceLocalValues(localBlockRow,&agg,block.getRawPtr(),1);
+        P_tpetra->replaceLocalValues(localBlockRow,bcol(),block());
 
       }//end aggSize
         
