@@ -47,6 +47,7 @@
 
 #include "Ifpack2_Details_Filu_decl.hpp"
 #include "Ifpack2_Details_CrsArrays.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include <Kokkos_Timer.hpp>
 #include <shylu_fastilu.hpp>
 
@@ -102,9 +103,9 @@ initLocalPrec()
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  auto matCrs = Teuchos::rcp_dynamic_cast<const TCrsMatrix>(this->mat_);
+  auto matCrs = Ifpack2::Details::getCrsMatrix(this->mat_);
 
-  bool skipSortMatrix = matCrs && matCrs->getCrsGraph()->isSorted() &&
+  bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                        !p.use_metis;
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));

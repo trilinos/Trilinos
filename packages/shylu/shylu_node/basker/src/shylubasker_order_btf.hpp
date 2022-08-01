@@ -759,12 +759,10 @@ namespace BaskerNS
       //	   ((double)1/num_threads) +
       //	   ((double)BASKER_BTF_IMBALANCE));
       #if 0 // forcing to have the big A bloock for debug
-      //Int break_size = 0;
-      //Int break_size = 5;
-      Int break_size = 10;
-      //Int break_size = 100;
-      //Int break_size = 500000;
-      printf( " > debug: break_size = %d\n",break_size );
+      double break_work_size = 0.0;
+      //double break_block_size = 0.0;
+      double break_block_size = 10.0;
+      printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
       // A block if it is larger than work esitimate assigned to one thread
       double break_fact = 0.7;
