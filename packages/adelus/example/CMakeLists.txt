@@ -1,5 +1,5 @@
 # CMAKE File for "adelus_driver" application building against an installed Trilinos
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 
 # Use Trilinos_PREFIX, if the user set it, to help find Trilinos.
 # The final location will actually be held in Trilinos_DIR which must
@@ -28,7 +28,7 @@ MESSAGE("   Trilinos_Fortran_COMPILER = ${Trilinos_Fortran_COMPILER}")
 MESSAGE("   Trilinos_CXX_COMPILER_FLAGS = ${Trilinos_CXX_COMPILER_FLAGS}")
 MESSAGE("   Trilinos_C_COMPILER_FLAGS = ${Trilinos_C_COMPILER_FLAGS}")
 MESSAGE("   Trilinos_Fortran_COMPILER_FLAGS = ${Trilinos_Fortran_COMPILER_FLAGS}")
-MESSAGE("   Trilinos_EXTRA_LINK_FLAGS = ${Trilinos_EXTRA_LINK_FLAGS}")
+MESSAGE("   Trilinos_EXTRA_LD_FLAGS = ${Trilinos_EXTRA_LD_FLAGS}")
 MESSAGE("End of Trilinos details\n")
 
 # Make sure to use same compilers and flags as Trilinos
@@ -36,7 +36,7 @@ SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
 SET(CMAKE_C_COMPILER ${Trilinos_C_COMPILER} )
 SET(CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
 
-SET(CMAKE_CXX_FLAGS  "${Trilinos_CXX_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS} -L$ENV{MPI_ROOT}/lib -lmpi_ibm -fopenmp")
+SET(CMAKE_CXX_FLAGS  "${Trilinos_CXX_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
 SET(CMAKE_C_FLAGS  "${Trilinos_C_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
 SET(CMAKE_Fortran_FLAGS  "${Trilinos_Fortran_COMPILER_FLAGS} ${CMAKE_Fortran_FLAGS}")
 
@@ -56,5 +56,5 @@ ADD_EXECUTABLE(adelus_driver adelus_driver.cpp)
 
 set_property(TARGET adelus_driver PROPERTY CXX_STANDARD 14)
 
-TARGET_LINK_LIBRARIES(adelus_driver ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES} ${Trilinos_EXTRA_LINK_FLAGS})
+TARGET_LINK_LIBRARIES(adelus_driver ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES} ${Trilinos_EXTRA_LD_FLAGS})
 
