@@ -120,6 +120,8 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
+      const int numFunctionsPerFace = polyOrder_ * (polyOrder_-1);
+      const int numFaces            = 4;
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView edge_field_values_at_point, jacobi_values_at_point, other_values_at_point, other_values2_at_point;
       if (fad_size_output_ > 0) {
@@ -181,31 +183,37 @@ namespace Intrepid2
             const int max_ij_sum = polyOrder_ - 1;
             
             // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
-            const int faceFieldOrdinalOffset = fieldOrdinalOffset;
-            for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
+            int faceFieldOrdinalOffset = fieldOrdinalOffset;
+            for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
             {
-              int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
-              const auto &s2 = lambda[ face_family_end_[familyOrdinal-1]];
-              for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
+              const int numFaceFamilies = 2;
+              for (int familyOrdinal=1; familyOrdinal<=numFaceFamilies; familyOrdinal++)
               {
-                for (int i=0; i<ij_sum; i++)
+                int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
+                const auto &s2 = lambda[ face_family_end_[familyOrdinal-1]];
+                for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
                 {
-                  const int j = ij_sum - i; // j >= 1
-                  // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
-                  const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
-                  const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
-                  const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
-                  const double alpha = i*2.0 + 1;
-                  
-                  Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
-                  const auto & jacobiValue = jacobi_values_at_point(j);
-                  output_(fieldOrdinal,pointOrdinal,0) = edgeValue_x * jacobiValue;
-                  output_(fieldOrdinal,pointOrdinal,1) = edgeValue_y * jacobiValue;
-                  
-                  fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
-                }
-              }
-            }
+                  for (int i=0; i<ij_sum; i++)
+                  {
+                    const int j = ij_sum - i; // j >= 1
+                    // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
+                    const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
+                    const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
+                    const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
+                    const double alpha = i*2.0 + 1;
+                    
+                    Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
+                    const auto & jacobiValue = jacobi_values_at_point(j);
+                    output_(fieldOrdinal,pointOrdinal,0) = edgeValue_x * jacobiValue;
+                    output_(fieldOrdinal,pointOrdinal,1) = edgeValue_y * jacobiValue;
+                    
+                    fieldOrdinal += numFaceFamilies; // increment due to the interleaving
+                  } // i
+                } // ij_sum
+                fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
+              } // familyOrdinal
+              faceFieldOrdinalOffset += numFunctionsPerFace;
+            } // faceOrdinal
           }
         } // end OPERATOR_VALUE
           break;
@@ -263,56 +271,63 @@ namespace Intrepid2
           auto & P_2ip1_j    = other_values_at_point;
           
           // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
-          const int faceFieldOrdinalOffset = fieldOrdinalOffset;
-          for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
+          int faceFieldOrdinalOffset = fieldOrdinalOffset;
+          const int numFaceFamilies = 2;
+          for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
           {
-            int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
-            
-            const auto &s0_index = face_family_start_ [familyOrdinal-1];
-            const auto &s1_index = face_family_middle_[familyOrdinal-1];
-            const auto &s2_index = face_family_end_   [familyOrdinal-1];
-            const auto &s0 = lambda[s0_index];
-            const auto &s1 = lambda[s1_index];
-            const auto &s2 = lambda[s2_index];
-            const double jacobiScaling = 1.0; // s0 + s1 + s2
-            
-            const auto & s0_dx = lambda_dx[s0_index];
-            const auto & s0_dy = lambda_dy[s0_index];
-            const auto & s1_dx = lambda_dx[s1_index];
-            const auto & s1_dy = lambda_dy[s1_index];
-            const auto & s2_dx = lambda_dx[s2_index];
-            const auto & s2_dy = lambda_dy[s2_index];
-            
-            const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
-            
-            Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
-            // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-            // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-//                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
-            const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
-            const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
-            OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
-            
-            const int max_ij_sum = polyOrder_ - 1;
-            for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
+            for (int familyOrdinal=1; familyOrdinal<=numFaceFamilies; familyOrdinal++)
             {
-              for (int i=0; i<ij_sum; i++)
+              int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
+              
+              const auto &s0_index = face_family_start_ [familyOrdinal-1];
+              const auto &s1_index = face_family_middle_[familyOrdinal-1];
+              const auto &s2_index = face_family_end_   [familyOrdinal-1];
+              const auto &s0 = lambda[s0_index];
+              const auto &s1 = lambda[s1_index];
+              const auto &s2 = lambda[s2_index];
+              const double jacobiScaling = 1.0; // s0 + s1 + s2
+              
+              const auto & s0_dx = lambda_dx[s0_index];
+              const auto & s0_dy = lambda_dy[s0_index];
+              const auto & s1_dx = lambda_dx[s1_index];
+              const auto & s1_dy = lambda_dy[s1_index];
+              const auto & s2_dx = lambda_dx[s2_index];
+              const auto & s2_dy = lambda_dy[s2_index];
+              
+              const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
+              
+              Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
+              // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+              // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+  //                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
+              const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
+              const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
+              OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
+              
+              const int max_ij_sum = polyOrder_ - 1;
+              for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
               {
-                const int j = ij_sum - i; // j >= 1
-                const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
-              
-                const double alpha = i*2.0 + 1;
+                for (int i=0; i<ij_sum; i++)
+                {
+                  const int j = ij_sum - i; // j >= 1
+                  const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
                 
-                Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
-                Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
-              
-                const PointScalar & edgeValue = P_i(i);
-                output_(fieldOrdinal,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
+                  const double alpha = i*2.0 + 1;
+                  
+                  Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
+                  Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
                 
-                fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
-              }
-            }
-          }
+                  const PointScalar & edgeValue = P_i(i);
+                  // TODO: this should be a vector (3D curl) -- fix it!
+                  output_(fieldOrdinal,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
+                  
+                  fieldOrdinal += numFaceFamilies; // increment due to the interleaving
+                } // i
+              } // ij_sum
+              fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
+            } // familyOrdinal
+            faceFieldOrdinalOffset += numFunctionsPerFace;
+          } // faceOrdinal
         }
           break;
         case OPERATOR_GRAD:
@@ -430,21 +445,25 @@ namespace Intrepid2
       
       // **** face functions **** //
       const int max_ij_sum = polyOrder-1;
-      const int faceFieldOrdinalOffset = fieldOrdinalOffset;
+      int faceFieldOrdinalOffset = fieldOrdinalOffset;
       const int numFaceFamilies = 2;
-      for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=numFaceFamilies; faceFamilyOrdinal++)
+      for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
       {
-        // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
-        int fieldOrdinal = faceFieldOrdinalOffset + faceFamilyOrdinal - 1;
-        for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
+        for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=numFaceFamilies; faceFamilyOrdinal++)
         {
-          for (int i=0; i<ij_sum; i++)
+          // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
+          int fieldOrdinal = faceFieldOrdinalOffset + faceFamilyOrdinal - 1;
+          for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
-            fieldOrdinal += numFaceFamilies; // increment due to the interleaving.
+            for (int i=0; i<ij_sum; i++)
+            {
+              this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
+              fieldOrdinal += numFaceFamilies; // increment due to the interleaving.
+            }
           }
+          fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
         }
-        fieldOrdinalOffset = fieldOrdinal - numFaceFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
+        faceFieldOrdinalOffset += numFaceFunctions / numFaces;
       }
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != numEdgeFunctions + numFaceFunctions, std::invalid_argument, "Internal error: basis enumeration is incorrect");
       
