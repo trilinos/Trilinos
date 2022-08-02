@@ -506,7 +506,9 @@ namespace MueLu {
     const MT zero = Teuchos::ScalarTraits<MT>::zero();
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
-    LO   blkSize   = A->GetFixedBlockSize();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
+    LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
     auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
 
@@ -542,7 +544,7 @@ namespace MueLu {
       boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
 
       // Trivial LWGraph construction
-      graph = rcp(new LWGraph_kokkos(A->getLocalMatrixDevice().graph, A->getRowMap(), A->getColMap(), "graph of A"));
+      graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "graph of A"));
       graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
 
       numTotal = A->getLocalNumEntries();
