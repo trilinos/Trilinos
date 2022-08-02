@@ -70,6 +70,8 @@ tribits_add_advanced_test(doInstall
     CMND "${CMAKE_COMMAND}"
     ARGS --install ${PROJECT_BINARY_DIR}
       --prefix ${PROJECT_BINARY_DIR}/install
+    OUTPUT_FILE  doInstall.out
+    NO_ECHO_OUTPUT
 
   ADDED_TEST_NAME_OUT  doInstall_name
   )
