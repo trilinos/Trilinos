@@ -997,16 +997,16 @@ namespace MueLu {
     RCP<const Map> rowMap     = A->getRowMap();
     RCP<const Map> rangeMap   = A->getRangeMap();
     RCP<const Map> colMap     = A->getColMap();
-    const size_t numFinePointRows = rangeMap->getLocalNumElements();
+    //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
-    const SC     zero      = STS::zero();
+    //    const SC     zero      = STS::zero();
     const SC     one       = STS::one();
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
-    const GO     numAggs   = aggregates->GetNumAggregates();
+    //    const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
     auto aggSizes          = aggregates->ComputeAggregateSizes();
 
@@ -1055,7 +1055,7 @@ namespace MueLu {
     LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
     GO indexBase;
     amalgInfo->GetStridingInformation(fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase);
-    GO globalOffset = amalgInfo->GlobalOffset();
+    //GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
     auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
@@ -1098,7 +1098,7 @@ namespace MueLu {
     // between (local) aggregate id and row map ids (LIDs)
     Kokkos::View<LO*, DeviceType> aggToRowMapLO(Kokkos::ViewAllocateWithoutInitializing("aggtorow_map_LO"), numFineBlockRows);
     {
-      SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
+      SubFactoryMonitor m2(*this, "Create AggToRowMap", coarseLevel);
 
       AggSizeType aggOffsets(Kokkos::ViewAllocateWithoutInitializing("aggOffsets"), numAggregates);
       Kokkos::deep_copy(aggOffsets, Kokkos::subview(aggDofSizes, Kokkos::make_pair(static_cast<size_t>(0), numAggregates)));
@@ -1176,8 +1176,8 @@ namespace MueLu {
                              ja[rowStart] = offset;
                            }
                          });
-
-    {
+    
+    {  
       printf("***Initial ***\n");
       printf("ia = ");
       for(int i=0;i<(int)ia.extent(0);i++)
@@ -1187,6 +1187,7 @@ namespace MueLu {
         printf("%d ",(int)ja[i]);
       printf("\n");
     }
+    
   
     // Compress storage (remove all INVALID, which happen when we skip zeros)
     // We do that in-place
@@ -1196,13 +1197,15 @@ namespace MueLu {
       // Fill i_temp with the correct row starts
       rows_type i_temp(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_rowptr"), numFineBlockRows+1);
       size_t nnz=0;
-      Kokkos::parallel_scan("MueLu:TentativePF:BlockCrs:compress_rows", range_type(0,numFineBlockRows+1),
+      Kokkos::parallel_scan("MueLu:TentativePF:BlockCrs:compress_rows", range_type(0,numFineBlockRows),
                             KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-                              if(final)
+                              if(final) 
                                 i_temp[i] = upd;
                               for (auto j = ia[i]; j < ia[i+1]; j++)
                                 if (ja[j] != INVALID)
                                   upd++;
+                              if(final && i == (LO) numFineBlockRows-1)
+                                i_temp[i] = upd;
                             },nnz);
 
       cols_type j_temp(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_colind"), nnz);
@@ -1222,6 +1225,7 @@ namespace MueLu {
       ia = i_temp;
       ja = j_temp;
     }
+    
     RCP<CrsGraph> BlockGraph = CrsGraphFactory::Build(rowMap,coarseBlockMap,ia,ja);
  
 
@@ -1241,6 +1245,7 @@ namespace MueLu {
       BlockGraph->expertStaticFillComplete(coarseBlockMap,rowMap,dummy_i,dummy_e,FCparams);
     }
 
+    
     {
       printf("*** After ***\n");
       printf("ia = ");
@@ -1251,34 +1256,50 @@ namespace MueLu {
         printf("%d ",(int)ja[i]);
       printf("\n");
     }
-
+    
 
     Xpetra::IO<SC,LO,GO,NO>::Write("pgraph.dat",*BlockGraph);//CMSCMS
-    exit(1);
 
+
+    // Now let's make a BlockCrs Matrix
+    // NOTE: Assumes block size== NSDim
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(BlockGraph, coarsePointMap, rangeMap,NSDim);
+    RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+    if(P_tpetra.is_null()) throw std::runtime_error("BuildPUncoupled: Matrix factory did not return a Tpetra::BlockCrsMatrix");
+    RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
+
+    auto values = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
+    const LO stride = NSDim*NSDim;
+
+    Kokkos::parallel_for("MueLu:TentativePF:BlockCrs:main_loop_noqr", policy,
+                         KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type &thread) {
+                           auto agg = thread.league_rank();
+                           
+                           // size of the aggregate (number of DOFs in aggregate)
+                           LO aggSize = aggRows(agg+1) - aggRows(agg);
+                           Xpetra::global_size_t offset = agg*NSDim;
+
+                           // Q = localQR(:,0)/norm
+                           for (LO j = 0; j < aggSize; j++) {
+                             LO localBlockRow = aggToRowMapLO(aggRows(agg)+j);
+                             LO rowStart = localBlockRow * stride;
+                             for (LO r = 0; r < (LO)NSDim; r++) {
+                               LO localPointRow = localBlockRow*NSDim + r;
+                               for (LO c = 0; c < (LO)NSDim; c++) {
+                                 values[rowStart + r*NSDim + c] = fineNSRandom(localPointRow,c);
+                               }
+                             }
+                           }
+
+                           // R = norm
+                           for(LO j=0; j<(LO)NSDim; j++)
+                             coarseNS(offset+j,j) = one;                                                    
+                         });
+
+  Ptentative = P_wrap;
+  Xpetra::IO<SC,LO,GO,NO>::Write("pmatrix.dat",*Ptentative);//CMSCMS
 #ifdef OLD_AND_BUSTED
 
-
-
-    size_t nnzEstimate = numRows * NSDim;
-
-    vals_type valsAux("Ptent_aux_vals", nnzEstimate);
-    rows_type rows("Ptent_rows", numRows+1);
-    {
-      // Stage 0: fill in views.
-      SubFactoryMonitor m2(*this, "Stage 0 (InitViews)", coarseLevel);
-
-      // The main thing to notice is initialization of vals with INVALID. These
-      // values will later be used to compress the arrays
-      Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", range_type(0, numRows+1),
-                           KOKKOS_LAMBDA(const LO row) {
-                             rowsAux(row) = row*NSDim;
-                           });
-      Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", range_type(0, nnzEstimate),
-                           KOKKOS_LAMBDA(const LO j) {
-                             colsAux(j) = INVALID;
-                           });
-    }
 
     if (NSDim == 1) {
       // 1D is special, as it is the easiest. We don't even need to the QR,
@@ -1296,59 +1317,7 @@ namespace MueLu {
 
       if (doQRStep) {
         Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:main_loop", policy,
-          KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type &thread) {
-            auto agg = thread.league_rank();
-
-            // size of the aggregate (number of DOFs in aggregate)
-            LO aggSize = aggRows(agg+1) - aggRows(agg);
-
-            // Extract the piece of the nullspace corresponding to the aggregate, and
-            // put it in the flat array, "localQR" (in column major format) for the
-            // QR routine. Trivial in 1D.
-            auto norm = impl_ATS::magnitude(zero);
-
-            // Calculate QR by hand
-            // FIXME: shouldn't there be stridedblock here?
-            // FIXME_KOKKOS: shouldn't there be stridedblock here?
-            for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              auto dnorm = impl_ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
-              norm += dnorm*dnorm;
-            }
-            norm = sqrt(norm);
-
-            if (norm == zero) {
-              // zero column; terminate the execution
-              statusAtomic(1) = true;
-              return;
-            }
-
-            // R = norm
-            coarseNS(agg, 0) = norm;
-
-            // Q = localQR(:,0)/norm
-            for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              LO localRow = agg2RowMapLO(aggRows(agg)+k);
-              impl_SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
-
-              rows(localRow+1) = 1;
-              colsAux(localRow) = agg;
-              valsAux(localRow) = localVal;
-
-            }
-          });
-
-        typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-        Kokkos::deep_copy(statusHost, status);
-        for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
-          if (statusHost(i)) {
-            std::ostringstream oss;
-            oss << "MueLu::TentativePFactory::MakeTentative: ";
-            switch (i) {
-              case 0: oss << "!goodMap is not implemented";               break;
-              case 1: oss << "fine level NS part has a zero column";      break;
-            }
-            throw Exceptions::RuntimeError(oss.str());
-          }
+    
 
       } else {
         Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:main_loop_noqr", policy,
