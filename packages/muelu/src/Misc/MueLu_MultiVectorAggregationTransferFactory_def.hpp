@@ -62,7 +62,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<const ParameterList> MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< std::string >           ("Vector name",    "undefined", "Name of the vector that will be transferred on the coarse grid (level key)"); // TODO: how to set a validator without default value?
@@ -73,12 +73,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiVectorTransferFactory(std::string const & vectorName) {
-    SetParameter("Vector name", ParameterEntry(vectorName));
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     const ParameterList & pL = GetParameterList();
     std::string vectorName   = pL.get<std::string>("Vector name");
 
@@ -87,7 +82,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
+  void MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     const ParameterList & pL = GetParameterList();
@@ -106,14 +101,14 @@ namespace MueLu {
     transferOp->apply(*fineVector, *coarseVector);
 
     if (vectorName == "Coordinates")
-      TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Use CoordinatesTransferFactory to transfer coordinates instead of MultiVectorTransferFactory.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Use CoordinatesTransferFactory to transfer coordinates instead of MultiVectorAggregationTransferFactory.");
 
     Set<RCP<MultiVector> >(coarseLevel, vectorName, coarseVector);
 
   } // Build
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
+  ArrayRCP<Scalar> MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
     if (blksize == 1)
       return coordinates;
 
