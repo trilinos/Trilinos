@@ -134,7 +134,6 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, tet10)
     const bool print_debug = false;
     panzer_stk::QuadraticToLinearMeshFactory factory(file_name,MPI_COMM_WORLD,print_debug);
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set<std::string>("Input topology","tet10");
     factory.setParameterList(pl);
     mesh = factory.buildMesh(MPI_COMM_WORLD);
 
@@ -326,7 +325,6 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, tri6)
     const bool print_debug = false;
     panzer_stk::QuadraticToLinearMeshFactory factory(file_name,MPI_COMM_WORLD,print_debug);
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set<std::string>("Input topology","tri6");
     factory.setParameterList(pl);
     mesh = factory.buildMesh(MPI_COMM_WORLD);
 
@@ -506,7 +504,6 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, quad8)
     const bool print_debug = false;
     panzer_stk::QuadraticToLinearMeshFactory factory(file_name,MPI_COMM_WORLD,print_debug);
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set<std::string>("Input topology","quad8");
     factory.setParameterList(pl);
     mesh = factory.buildMesh(MPI_COMM_WORLD);
 

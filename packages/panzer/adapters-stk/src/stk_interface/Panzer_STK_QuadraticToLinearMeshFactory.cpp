@@ -68,6 +68,10 @@ QuadraticToLinearMeshFactory::QuadraticToLinearMeshFactory(const std::string& qu
   // TODO for currently supported input topologies, this should always be true
   // but may need to be generalized in the future
   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
+
+   // check the conversion is supported
+   // and get output topology
+   this->getOutputTopology(); 
 }
 
 QuadraticToLinearMeshFactory::QuadraticToLinearMeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quadMesh,
@@ -79,6 +83,10 @@ QuadraticToLinearMeshFactory::QuadraticToLinearMeshFactory(const Teuchos::RCP<pa
   // TODO for currently supported input topologies, this should always be true
   // but may need to be generalized in the future
   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
+
+   // check the conversion is supported
+   // and get output topology
+   this->getOutputTopology(); 
 }
 
 //! Build the mesh object
@@ -93,13 +101,6 @@ Teuchos::RCP<STK_Interface> QuadraticToLinearMeshFactory::buildMesh(stk::Paralle
      TEUCHOS_ASSERT(result != MPI_UNEQUAL);
    }
 
-   // check the conversion is supported
-   bool badInputTopo = this->checkInputTopology(); 
-
-   TEUCHOS_TEST_FOR_EXCEPTION(badInputTopo, std::logic_error,
-		  "Error! The input mesh topology does not match that indicated in the paramList!" <<
-      "\nThis could also occur if no paramList is provided or if the mesh has different topologies on different blocks!");
-
    // build all meta data
    RCP<STK_Interface> mesh = this->buildUncommitedMesh(parallelMach);
 
@@ -112,19 +113,39 @@ Teuchos::RCP<STK_Interface> QuadraticToLinearMeshFactory::buildMesh(stk::Paralle
    return mesh;
 }
 
-bool QuadraticToLinearMeshFactory::checkInputTopology() const 
+void QuadraticToLinearMeshFactory::getOutputTopology()
 {
   bool errFlag = false;
 
   std::vector<std::string> eblock_names;
   quadMesh_->getElementBlockNames(eblock_names);
 
-  for (auto & eblock : eblock_names) {
-    auto cellTopo = quadMesh_->getCellTopology(eblock);
-    if (*cellTopo != inputTopo_) errFlag = true;
+  // check that we have a supported topology
+  // TODO IS THIS NECESSARY CHECK W ROG
+  if (eblock_names.size()>0) {
+    auto inputTopo = quadMesh_->getCellTopology(eblock_names[0]);
+    if (std::find(supportedInputTopos_.begin(),
+                  supportedInputTopos_.end(),*inputTopo) == supportedInputTopos_.end()) errFlag = true;
+    TEUCHOS_TEST_FOR_EXCEPTION(errFlag,std::logic_error,
+      "ERROR :: Input topology " << *inputTopo << " currently unsupported by QuadraticToLinearMeshFactory!");
+
+    // check that the topology is the same over blocks
+    // TODO not sure this is 100% foolproof
+    for (auto & eblock : eblock_names) {
+      auto cellTopo = quadMesh_->getCellTopology(eblock);
+      if (*cellTopo != *inputTopo) errFlag = true;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(errFlag, std::logic_error, 
+      "ERROR :: The mesh has different topologies on different blocks!");
+
+    outputTopoData_ = outputTopoMap_[inputTopo->getName()];
+
+    nDim_ = outputTopoData_->dimension;
+    nNodes_ = outputTopoData_->node_count;
   }
 
-  return errFlag;
+  return;
 }
 
 Teuchos::RCP<STK_Interface> QuadraticToLinearMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
@@ -164,7 +185,6 @@ void QuadraticToLinearMeshFactory::completeMeshConstruction(STK_Interface & mesh
    }
 
    // now that edges are built, sidesets can be added
-   // TODO BWR also is create edge blocks?
 #ifndef ENABLE_UNIFORM
    this->addSideSets(mesh);
 #endif
@@ -172,6 +192,7 @@ void QuadraticToLinearMeshFactory::completeMeshConstruction(STK_Interface & mesh
    // add nodesets
    this->addNodeSets(mesh);
 
+   // TODO this functionality may be untested
    if(createEdgeBlocks_) {
       this->addEdgeBlocks(mesh);
    }
@@ -193,17 +214,6 @@ void QuadraticToLinearMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::
    // offsetGIDs_ = (paramList->get<std::string>("Offset mesh GIDs above 32-bit int limit") == "ON") ? true : false;
 
    createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
-
-   // get shards CellTopology (data), both are inferred from the input mesh topology
-   std::string inputStr = paramList->get<std::string>("Input topology");
-   inputTopo_ = inputTopoMap_[inputStr];
-   outputTopoData_ = outputTopoMap_[inputStr];
-
-   TEUCHOS_TEST_FOR_EXCEPTION(inputTopo_ == NULL,std::logic_error,
-    "ERROR :: Input topology " << inputStr << " currently unsupported by QuadraticToLinearMeshFactory!");
-
-   nDim_ = outputTopoData_->dimension;
-   nNodes_ = outputTopoData_->node_count;
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
@@ -227,10 +237,6 @@ Teuchos::RCP<const Teuchos::ParameterList> QuadraticToLinearMeshFactory::getVali
 
       // default to false for backward compatibility
       defaultParams->set<bool>("Create Edge Blocks",false,"Create edge blocks in the mesh");
-
-      // input/output topologies
-      defaultParams->set<std::string>("Input topology","quad8",
-                                      "Topology of the mesh to be converted. Must be second order. First order topology is inferred.");
 
       Teuchos::ParameterList & bcs = defaultParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
@@ -276,7 +282,6 @@ void QuadraticToLinearMeshFactory::buildMetaData(stk::ParallelMachine /* paralle
       mesh.addNodeset(n);
   }
 
-  // TODO I think this SHOULD ALWAYS 1 but double check!
   if(createEdgeBlocks_) {
     const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
     std::vector<std::string> element_block_names;
@@ -359,7 +364,6 @@ void QuadraticToLinearMeshFactory::buildElements(stk::ParallelMachine parallelMa
                    << ", gid=" << element_gid << std::endl;
        }
 
-       // TODO this needs to be generalized
        // Register nodes with the mesh
        std::vector<stk::mesh::EntityId> nodes(nNodes_);
        for (size_t i=0; i < nNodes_; ++i) {
@@ -414,11 +418,10 @@ void QuadraticToLinearMeshFactory::addSideSets(STK_Interface & mesh) const
 
      // Loop over edges
      for (const auto q_ent : q_sides) {
-       // TODO CHECK BELOW IF THIS IS TRUE
        // The edge numbering scheme uses the element/node gids, so it
-       // should be consistent between the quad8 and quad4 meshes
+       // should be consistent between the quadratic and linear meshes
        // since we used the same gids. We use this fact to populate
-       // the quad4 sidesets.
+       // the quadratic sidesets.
        stk::mesh::EntityId ent_gid = quadMesh_->getBulkData()->identifier(q_ent);
        stk::mesh::Entity lin_ent = mesh.getBulkData()->get_entity(mesh.getSideRank(),ent_gid);
        mesh.addEntityToSideset(lin_ent,sideset_part);

@@ -1,0 +1,26 @@
+# {PreW = 0.25}
+# {PreT = 0.02}
+# {BrpT = 0.01}
+# {CndW=0.2}
+# {CndT=0.05}
+# {PolT=0.01}
+# {ShdT = 0.02}
+
+reset
+create brick x {PreW + 2 * ShdT} y {PreT + 2 * BrpT + 2 * CndT + 2 * PolT + 2 * ShdT} z {CndW}
+create brick x {PreW} y {PreT + 2 * BrpT + 2 * CndT} z {CndW * .5}
+subtract vol 2 from vol 1 
+
+#surf all size 0.01
+vol all scheme TetMesh
+mesh vol all
+#
+sideset 1 add surf 1 2 3 4 5 6
+sideset 1 name "outer_box"
+sideset 2 add surf 13 14 15 16 17 18 
+sideset 2 name "inner_box"
+#
+block 1 add volume 3
+block all element type tetra10
+set large exodus file on
+export genesis 'tet10.gen' dimension 3 block all overwrite

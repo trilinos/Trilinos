@@ -52,9 +52,6 @@ namespace panzer_stk {
 
 class STK_Interface;
 
-// TODO check this docco
-// TODO all docco!
-
 /** This class reads in a second-order (quadratic) mesh and converts it 
  *  to a first-order (linear) mesh. It will create the cells/nodes/edges, copy the sideset and
  *  nodeset data, and copy a list of user provided cell (not nodal) field data into the mesh.
@@ -90,12 +87,13 @@ protected:
   void copyCellFieldData(STK_Interface & mesh) const;
 
   /**
-   * Ensure the input mesh topology matches the parameter list.
+   * Infer the output topology from the given input mesh.
+   * Also, ensure the input mesh topology matches the parameter list.
    * Currently, each element block must have the same topology.
    */
-  bool checkInputTopology() const;
+  void getOutputTopology();
 
-  Teuchos::RCP<panzer_stk::STK_Interface> quadMesh_;
+  Teuchos::RCP<panzer_stk::STK_Interface> quadMesh_; //! Second order mesh
 
   mutable unsigned int machRank_, machSize_;
 
@@ -109,26 +107,27 @@ protected:
 
   std::string edgeBlockName_;
 
-  shards::CellTopology inputTopo_; //! Input mesh topology 
   const CellTopologyData * outputTopoData_; //! Output mesh topology data 
 
   unsigned int nDim_; //! Dimension of the mesh
   unsigned int nNodes_; //! Nodes in one element of the linear basis
 
-  //! Map from input topology string to input shards topology. The list here is
-  //! currently supported.
-  std::map<std::string,shards::CellTopology> inputTopoMap_ = {
-    {"quad8",shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<8>>())},
-    {"tri6", shards::CellTopology(shards::getCellTopologyData<shards::Triangle<6>>())},
-    {"tet10",shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<10>>())}
+  //! List of currently supported input topologies.
+  std::vector<shards::CellTopology> supportedInputTopos_ = {
+    shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<8>>()),
+    shards::CellTopology(shards::getCellTopologyData<shards::Triangle<6>>()),
+    shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<10>>())
     };
 
-  //! Map from input topology string to the output shards topology data. The list here is
+  //! Map from input topology to the output shards topology data. The list here is
   //! currently supported. Right now, this is one-to-one and may need to be expanded.
-  std::map<std::string,const CellTopologyData *> outputTopoMap_ = {
-    {"quad8",shards::getCellTopologyData<shards::Quadrilateral<4>>()},
-    {"tri6", shards::getCellTopologyData<shards::Triangle<3>>()},
-    {"tet10",shards::getCellTopologyData<shards::Tetrahedron<4>>()}
+  std::map<const std::string,const CellTopologyData *> outputTopoMap_ = {
+    {shards::getCellTopologyData<shards::Quadrilateral<8>>()->name,
+     shards::getCellTopologyData<shards::Quadrilateral<4>>()},
+    {shards::getCellTopologyData<shards::Triangle<6>>()->name,
+     shards::getCellTopologyData<shards::Triangle<3>>()},
+    {shards::getCellTopologyData<shards::Tetrahedron<10>>()->name,
+     shards::getCellTopologyData<shards::Tetrahedron<4>>()}
     };
 };
 

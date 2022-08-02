@@ -177,13 +177,19 @@ ENDIF()
 # This guard induces compilation, but the compilation fails for me.
 # This test appears to have fallen into disrepair.  #3719
 
-## TODO WILL NEED TO FIX THIS
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1 basic3d.gen basic3d.gen.2.0 basic3d.gen.2.1 twoblock_cube.gen twoblock_cube.gen.2.0 twoblock_cube.gen.2.1 quad8.jou quad8.gen 2block_cylinders_30deg.g 2block_cylinders_30deg.stp
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
   EXEDEPS tExodusReaderFactory
   )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_quadconverter
+SOURCE_FILES quad8.gen tet10.gen tri6.gen
+SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
+DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
+EXEDEPS tQuadraticToLinearMeshFactory
+)
 
 IF(${PACKAGE_NAME}_ENABLE_Pamgen)
 
