@@ -90,12 +90,22 @@ namespace Intrepid2
     
     size_t fad_size_output_;
     
-    static const int numVertices     = 3;
-    static const int numEdges        = 3;
+    static const int numVertices     = 4;
+    static const int numEdges        = 6;
     static const int numFaceFamilies = 2;
-    const int edge_start_[numEdges] = {0,1,0}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int face_family_start_[numFaceFamilies]  = {0,1};
+    static const int numFaces        = 4;
+    
+    // index into face_vertices with faceOrdinal * numVertices + vertexNumber
+    const int face_vertices[numFaces*numVertices] = {0,1,2, // face 0
+                                                     0,1,3, // face 1
+                                                     1,2,3, // face 2
+                                                     0,2,3  // face 3
+                                                    };
+        
+    // the following ordering of the edges matches that used by ESEAS
+    const int edge_start_[numEdges] = {0,1,0,0,1,2}; // edge i is from edge_start_[i] to edge_end_[i]
+    const int edge_end_[numEdges]   = {1,2,2,3,3,3}; // edge i is from edge_start_[i] to edge_end_[i]
+    const int face_family_start_ [numFaceFamilies] = {0,1};
     const int face_family_middle_[numFaceFamilies] = {1,2};
     const int face_family_end_   [numFaceFamilies] = {2,0};
     
@@ -155,6 +165,7 @@ namespace Intrepid2
           int fieldOrdinalOffset = 0;
           for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
           {
+            // TODO: correct edge functions for 3D
             const auto & s0    = lambda   [edge_start_[edgeOrdinal]];
             const auto & s0_dx = lambda_dx[edge_start_[edgeOrdinal]];
             const auto & s0_dy = lambda_dy[edge_start_[edgeOrdinal]];
@@ -190,7 +201,21 @@ namespace Intrepid2
               for (int familyOrdinal=1; familyOrdinal<=numFaceFamilies; familyOrdinal++)
               {
                 int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
-                const auto &s2 = lambda[ face_family_end_[familyOrdinal-1]];
+                
+                const auto &s0_vertex_number = face_family_start_ [familyOrdinal-1];
+                const auto &s1_vertex_number = face_family_middle_[familyOrdinal-1];
+                const auto &s2_vertex_number = face_family_end_   [familyOrdinal-1];
+                
+                // index into face_vertices with faceOrdinal * numVertices + vertexNumber
+                const auto &s0_index = face_vertices[faceOrdinal * numVertices + s0_vertex_number];
+                const auto &s1_index = face_vertices[faceOrdinal * numVertices + s1_vertex_number];
+                const auto &s2_index = face_vertices[faceOrdinal * numVertices + s2_vertex_number];
+                
+                const auto & s0 = lambda[s0_index];
+                const auto & s1 = lambda[s0_index];
+                const auto & s2 = lambda[s0_index];
+                const PointScalar jacobiScaling = s0 + s1 + s2;
+                
                 for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
                 {
                   for (int i=0; i<ij_sum; i++)
@@ -198,6 +223,7 @@ namespace Intrepid2
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
                     const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
+                    // TODO: fix this for 3D
                     const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
                     const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
                     const double alpha = i*2.0 + 1;
@@ -279,13 +305,19 @@ namespace Intrepid2
             {
               int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
               
-              const auto &s0_index = face_family_start_ [familyOrdinal-1];
-              const auto &s1_index = face_family_middle_[familyOrdinal-1];
-              const auto &s2_index = face_family_end_   [familyOrdinal-1];
-              const auto &s0 = lambda[s0_index];
-              const auto &s1 = lambda[s1_index];
-              const auto &s2 = lambda[s2_index];
-              const double jacobiScaling = 1.0; // s0 + s1 + s2
+              const auto &s0_vertex_number = face_family_start_ [familyOrdinal-1];
+              const auto &s1_vertex_number = face_family_middle_[familyOrdinal-1];
+              const auto &s2_vertex_number = face_family_end_   [familyOrdinal-1];
+              
+              // index into face_vertices with faceOrdinal * numVertices + vertexNumber
+              const auto &s0_index = face_vertices[faceOrdinal * numVertices + s0_vertex_number];
+              const auto &s1_index = face_vertices[faceOrdinal * numVertices + s1_vertex_number];
+              const auto &s2_index = face_vertices[faceOrdinal * numVertices + s2_vertex_number];
+              
+              const auto & s0 = lambda[s0_index];
+              const auto & s1 = lambda[s0_index];
+              const auto & s2 = lambda[s0_index];
+              const PointScalar jacobiScaling = s0 + s1 + s2;
               
               const auto & s0_dx = lambda_dx[s0_index];
               const auto & s0_dy = lambda_dy[s0_index];
