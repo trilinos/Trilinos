@@ -45,6 +45,7 @@
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
+#include <KokkosKernels_HashmapAccumulator.hpp>
 
 #ifndef _SPILUKHANDLE_HPP
 #define _SPILUKHANDLE_HPP
@@ -87,6 +88,12 @@ class SPILUKHandle {
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
       nnz_lno_view_t;
 
+  typedef typename Kokkos::View<size_type *, Kokkos::HostSpace>
+      nnz_row_view_host_t;
+
+  typedef typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>
+      nnz_lno_view_host_t;
+
   typedef typename std::make_signed<
       typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
   typedef Kokkos::View<signed_integral_t *,
@@ -95,14 +102,19 @@ class SPILUKHandle {
                        typename nnz_row_view_t::memory_traits>
       signed_nnz_lno_view_t;
 
+  typedef Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight,
+                       HandlePersistentMemorySpace>
+      work_view_t;
+
  private:
   nnz_row_view_t level_list;  // level IDs which the rows belong to
   nnz_lno_view_t level_idx;   // the list of rows in each level
   nnz_lno_view_t
       level_ptr;  // the starting index (into the view level_idx) of each level
-  nnz_lno_view_t level_nchunks;  // number of chunks of rows at each level
-  nnz_lno_view_t
+  nnz_lno_view_host_t level_nchunks;  // number of chunks of rows at each level
+  nnz_lno_view_host_t
       level_nrowsperchunk;  // maximum number of rows among chunks at each level
+  work_view_t iw;  // working view for mapping dense indices to sparse indices
 
   size_type nrows;
   size_type nlevels;
@@ -128,6 +140,7 @@ class SPILUKHandle {
         level_ptr(),
         level_nchunks(),
         level_nrowsperchunk(),
+        iw(),
         nrows(nrows_),
         nlevels(0),
         nnzL(nnzL_),
@@ -147,11 +160,12 @@ class SPILUKHandle {
     set_nnzU(nnzU_);
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
-    level_list    = nnz_row_view_t("level_list", nrows_),
-    level_idx     = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr     = nnz_lno_view_t("level_ptr", nrows_ + 1),
-    level_nchunks = nnz_lno_view_t(), level_nrowsperchunk = nnz_lno_view_t(),
-    reset_symbolic_complete();
+    level_list          = nnz_row_view_t("level_list", nrows_),
+    level_idx           = nnz_lno_view_t("level_idx", nrows_),
+    level_ptr           = nnz_lno_view_t("level_ptr", nrows_ + 1),
+    level_nchunks       = nnz_lno_view_host_t(),
+    level_nrowsperchunk = nnz_lno_view_host_t(), reset_symbolic_complete(),
+    iw                  = work_view_t();
   }
 
   virtual ~SPILUKHandle(){};
@@ -170,17 +184,28 @@ class SPILUKHandle {
   nnz_lno_view_t get_level_ptr() const { return level_ptr; }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_level_nchunks() const { return level_nchunks; }
+  nnz_lno_view_host_t get_level_nchunks() const { return level_nchunks; }
 
   void alloc_level_nchunks(const size_type nlevels_) {
-    level_nchunks = nnz_lno_view_t("level_nchunks", nlevels_);
+    level_nchunks = nnz_lno_view_host_t("level_nchunks", nlevels_);
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_level_nrowsperchunk() const { return level_nrowsperchunk; }
+  nnz_lno_view_host_t get_level_nrowsperchunk() const {
+    return level_nrowsperchunk;
+  }
 
   void alloc_level_nrowsperchunk(const size_type nlevels_) {
-    level_nrowsperchunk = nnz_lno_view_t("level_nrowsperchunk", nlevels_);
+    level_nrowsperchunk = nnz_lno_view_host_t("level_nrowsperchunk", nlevels_);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  work_view_t get_iw() const { return iw; }
+
+  void alloc_iw(const size_type nrows_, const size_type ncols_) {
+    iw = work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
+                     nrows_, ncols_);
+    Kokkos::deep_copy(iw, nnz_lno_t(-1));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -238,8 +263,7 @@ class SPILUKHandle {
     if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1)
       std::cout << "SEQLVLSCHD_TP1" << std::endl;
 
-    /*
-    if ( algm == SPILUKAlgorithm::SEQLVLSCHED_TP2 ) {
+    /*if ( algm == SPILUKAlgorithm::SEQLVLSCHED_TP2 ) {
       std::cout << "SEQLVLSCHED_TP2" << std::endl;;
       std::cout << "WARNING: With CUDA this is currently only reliable with
     int-int ordinal-offset pair" << std::endl;
