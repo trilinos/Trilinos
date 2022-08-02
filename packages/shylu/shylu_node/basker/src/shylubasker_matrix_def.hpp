@@ -559,37 +559,17 @@ namespace BaskerNS
       if(col_ptr(k-scol) == BASKER_MAX_IDX)
       {
         col_ptr(k-scol) = temp_count;
-        /*if (kid == 1) {
-          printf("continue called, k: %d  \n", k);
-        }*/
         continue;
       }
 
-      /*if (kid == 1)
-      {
-        printf(" kid=%d: col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", kid,k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
-      }*/
       Mag anorm_k (0.0);
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        /*if (nrow == 289 && ncol == 100)
-        {
-          printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
-        }*/
         if(j >= srow+nrow)
         {
-          // skip lower-off diagonal blocks for U
-          /*if (kid == 3)
-          {
-            printf("break called, k: %d  \n", k);
-          }*/
           break;
         }
-        //printf("writing row_dix: %d i: %d  val: %d nnz: %d srow: %d nrow: %d \n",
-        //	   temp_count, i, j, nnz, 
-        //	   srow, nrow);
-        //BASKER_ASSERT(temp_count < nnz, "2DConvert, too many values");
 
         if(j < srow)
         {
@@ -607,27 +587,16 @@ namespace BaskerNS
           sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",(int)j,(int)srow,(int)kid);
           BASKER_ASSERT(0 == 1, error_msg);
         }
-        /*if (kid == 1) 
-        {
-          printf( " %d:%d:%d: %d %d, %e\n",kid,i,temp_count,j-srow,k,M.val(i) );
-        }*/
         if (keep_zeros || M.val(i) != zero)
         {
           row_idx(temp_count) = j-srow;
           val(temp_count) = M.val(i);
-          /*if (nrow == 289 && ncol == 100) {
-            printf( " (%d %e) k=%d nnz = %d\n",j-srow,M.val(i),k-scol,temp_count );
-          }*/
 
           anorm_k += abs(M.val(i));
           temp_count++;
         }
       }
       anorm = (anorm > anorm_k ? anorm : anorm_k);
-      /*if (kid == 1) 
-      {
-        printf( " %d: col_ptr(%d) = %d\n",kid,k-scol,temp_count );
-      }*/
       col_ptr(k-scol) = temp_count;
     }
 
@@ -691,7 +660,21 @@ namespace BaskerNS
     std::cout << "\n END PRINT " << std::endl;
 
   }//end print()
-
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::print_matrix(const char *filename)
+  {
+    FILE *fp = fopen(filename, "w");
+    if (nrow > 0 && ncol > 0) {
+      for(Int j = 0; j < ncol; j++) {
+        for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+          fprintf(fp,"%d %d %.16e\n", (int)row_idx[k], (int)j, val[k]);
+        }
+      }
+    }
+    fclose(fp);
+  }
 }//end namespace basker
 
 #endif //end BASKER_MATRIX_DEF_HPP
