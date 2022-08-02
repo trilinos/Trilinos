@@ -58,11 +58,19 @@ tribits_package(TrilinosInstallTests)
 
 tribits_add_advanced_test(doInstall
   OVERALL_NUM_MPI_PROCS 1
+
   TEST_0
+    MESSAGE "Removing installation directory if it already exists"
+    CMND "${CMAKE_COMMAND}"
+    ARGS "-DDIR_TO_REMOVE=${PROJECT_BINARY_DIR}/install"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/remove_dir_if_exists.cmake"
+
+  TEST_1
     MESSAGE "Install whatever Trilinos packages have been enabled"
     CMND "${CMAKE_COMMAND}"
     ARGS --install ${PROJECT_BINARY_DIR}
       --prefix ${PROJECT_BINARY_DIR}/install
+
   ADDED_TEST_NAME_OUT  doInstall_name
   )
   # NOTE: Above works even if Trilinos was configured without setting
