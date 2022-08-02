@@ -62,9 +62,8 @@ namespace MueLu {
   @class MultiVectorAggregationTransferFactory class.
   @brief Class for transferring coordinates from a finer level to a coarser one
 
-    This is separate from MultiVectorTransferFactory which potentially can be used for scalar problems.
-    For non-scalar problems, however, we cannot use restriction operator as that essentially is matrix Q
-    from tentative prolongator initialization.
+    This is separate from MultiVectorTransferFactory and CoordinatesTransferFactory
+    as it transfers non-coordinate quantities based only on aggregate information.
 
   ## Input/output of MultiVectorAggregationTransferFactory ##
 
