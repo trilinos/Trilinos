@@ -95,6 +95,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Xpetra_TpetraMap.hpp>
+#include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif
 #ifdef HAVE_XPETRA_EPETRA
@@ -397,6 +398,58 @@ public:
       Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpMat =
         Teuchos::rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpCrsWrap, true);
       return xpMat;
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(isEpetra(op)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    }
+#endif
+    return Teuchos::null;
+  }
+
+  static Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >& op) {
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(isTpetra(op)) {
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getConstTpetraOperator(op);
+
+      Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+          Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraOp));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+      Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+        Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+      return xpOp;
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(isEpetra(op)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    }
+#endif
+    return Teuchos::null;
+  }
+
+  static Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& op) {
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(isTpetra(op)) {
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getTpetraOperator(op);
+
+      Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+          Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraOp));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+      Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+        Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+      return xpOp;
     }
 #endif
 
@@ -1199,6 +1252,64 @@ public:
     return Teuchos::null;
   }
 
+
+  static Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >& op) {
+
+    return toXpetraOperator(Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(op));
+
+// #ifdef HAVE_XPETRA_TPETRA
+//     if(isTpetra(op)) {
+//       typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+//       Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getConstTpetraOperator(op);
+
+//       Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nonConstTpetraOp =
+//         Teuchos::rcp_const_cast<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TpetraOp);
+
+//       Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+//         Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(nonConstTpetraOp));
+//       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+//       Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+//         Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+//       return xpOp;
+//     }
+// #endif
+
+// #ifdef HAVE_XPETRA_EPETRA
+//     if(isEpetra(op)) {
+//       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+//     }
+// #endif
+//     return Teuchos::null;
+  }
+
+  static Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& op) {
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(isTpetra(op)) {
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getTpetraOperator(op);
+
+      Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+          Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraOp));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+      Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+        Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+      return xpOp;
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(isEpetra(op)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    }
+#endif
+    return Teuchos::null;
+  }
+
   static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   toXpetra(const Teuchos::RCP<Thyra::DiagonalLinearOpBase<Scalar> >& op) {
     using Teuchos::rcp_dynamic_cast;
@@ -1959,6 +2070,58 @@ public:
       Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpMat =
         Teuchos::rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpCrsWrap, true);
       return xpMat;
+    }
+#endif
+    return Teuchos::null;
+  }
+
+  static Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >& op) {
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(isTpetra(op)) {
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getConstTpetraOperator(op);
+
+      Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+          Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraOp));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+      Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+        Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+      return xpOp;
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(isEpetra(op)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
+    }
+#endif
+    return Teuchos::null;
+  }
+
+  static Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  toXpetraOperator(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& op) {
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(isTpetra(op)) {
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getTpetraOperator(op);
+
+      Teuchos::RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraOp =
+          Teuchos::rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraOp));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraOp));
+
+      Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp =
+        Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraOp, true);
+      return xpOp;
+    }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(isEpetra(op)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
     }
 #endif
     return Teuchos::null;
