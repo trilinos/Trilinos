@@ -414,8 +414,9 @@ namespace MueLu {
         FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
       else
         FCparams= rcp(new ParameterList);
-      // By default, we don't need global constants for TentativeP
-      FCparams->set("compute global constants",FCparams->get("compute global constants",false));
+      // By default, we don't need global constants for TentativeP, but we do want it for the graph
+      // if we're printing statistics, so let's leave it on for now.
+      FCparams->set("compute global constants",FCparams->get("compute global constants",true));
       std::string levelIDs = toString(levelID);
       FCparams->set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
       RCP<const Export> dummy_e;
