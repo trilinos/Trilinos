@@ -47,6 +47,7 @@
 #define THYRA_MUELU_PRECONDITIONER_FACTORY_DEF_HPP
 
 #include "Thyra_MueLuPreconditionerFactory_decl.hpp"
+#include "MueLu_FakeTpetraRowMatrix.hpp"
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
@@ -162,8 +163,17 @@ namespace Thyra {
       else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
         RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
         paramList.remove(parameterName);
-        RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
-        paramList.set<RCP<XpMat> >(parameterName, M);
+        try {
+          RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          paramList.set<RCP<XpMat> >(parameterName, M);
+        } catch (std::exception& e) {
+          RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
+          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpOp->getOperator()));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
+          auto op = rcp_dynamic_cast<XpOp>(tpFOp);
+          paramList.set<RCP<XpOp> >(parameterName, op);
+        }
         return true;
       } else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName)) {
         RCP<const ThyDiagLinOpBase> thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
@@ -315,8 +325,17 @@ namespace Thyra {
       else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
         RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
         paramList.remove(parameterName);
-        RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
-        paramList.set<RCP<XpMat> >(parameterName, M);
+        try {
+          RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          paramList.set<RCP<XpMat> >(parameterName, M);
+        } catch (std::exception& e) {
+          RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
+          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpOp->getOperator()));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
+          auto op = rcp_dynamic_cast<XpOp>(tpFOp);
+          paramList.set<RCP<XpOp> >(parameterName, op);
+        }
         return true;
       } else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName)) {
         RCP<const ThyDiagLinOpBase> thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
@@ -502,6 +521,17 @@ namespace Thyra {
       std::list<std::string> convertXpetra = {"Coordinates", "Nullspace"};
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
         Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
+
+      for (int lvlNo=0; lvlNo < 10; ++lvlNo) {
+        if (paramList.isSublist("level " + std::to_string(lvlNo) + " user data")) {
+          ParameterList& lvlList = paramList.sublist("level " + std::to_string(lvlNo) + " user data");
+          std::list<std::string> convertKeys;
+          for (auto it = lvlList.begin(); it != lvlList.end(); ++it)
+            convertKeys.push_back(lvlList.name(it));
+          for (auto it = convertKeys.begin(); it != convertKeys.end(); ++it)
+            Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(lvlList,*it);
+        }
+      }
 
       if (useHalfPrecision) {
 #if defined(MUELU_CAN_USE_MIXED_PRECISION)
