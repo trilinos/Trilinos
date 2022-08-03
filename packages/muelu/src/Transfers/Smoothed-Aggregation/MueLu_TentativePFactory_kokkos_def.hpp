@@ -1176,19 +1176,7 @@ namespace MueLu {
                              ja[rowStart] = offset;
                            }
                          });
-    
-    {  
-      printf("***Initial ***\n");
-      printf("ia = ");
-      for(int i=0;i<(int)ia.extent(0);i++)
-        printf("%d ",(int)ia[i]);
-      printf("\nja = ");
-      for(int i=0;i<(int)ja.extent(0);i++)
-        printf("%d ",(int)ja[i]);
-      printf("\n");
-    }
-    
-  
+
     // Compress storage (remove all INVALID, which happen when we skip zeros)
     // We do that in-place
     {
@@ -1205,7 +1193,7 @@ namespace MueLu {
                                 if (ja[j] != INVALID)
                                   upd++;
                               if(final && i == (LO) numFineBlockRows-1)
-                                i_temp[i] = upd;
+                                i_temp[numFineBlockRows] = upd;
                             },nnz);
 
       cols_type j_temp(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_colind"), nnz);
@@ -1246,21 +1234,6 @@ namespace MueLu {
     }
 
     
-    {
-      printf("*** After ***\n");
-      printf("ia = ");
-      for(int i=0;i<(int)ia.extent(0);i++)
-        printf("%d ",(int)ia[i]);
-      printf("\nja = ");
-      for(int i=0;i<(int)ja.extent(0);i++)
-        printf("%d ",(int)ja[i]);
-      printf("\n");
-    }
-    
-
-    Xpetra::IO<SC,LO,GO,NO>::Write("pgraph.dat",*BlockGraph);//CMSCMS
-
-
     // Now let's make a BlockCrs Matrix
     // NOTE: Assumes block size== NSDim
     RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(BlockGraph, coarsePointMap, rangeMap,NSDim);
@@ -1297,167 +1270,7 @@ namespace MueLu {
                          });
 
   Ptentative = P_wrap;
-  Xpetra::IO<SC,LO,GO,NO>::Write("pmatrix.dat",*Ptentative);//CMSCMS
-#ifdef OLD_AND_BUSTED
 
-
-    if (NSDim == 1) {
-      // 1D is special, as it is the easiest. We don't even need to the QR,
-      // just normalize an array. Plus, no worries abot small aggregates.  In
-      // addition, we do not worry about compression. It is unlikely that
-      // nullspace will have zeros. If it does, a prolongator row would be
-      // zero and we'll get singularity anyway.
-      SubFactoryMonitor m2(*this, "Stage 1 (LocalQR)", coarseLevel);
-
-      // Set up team policy with numAggregates teams and one thread per team.
-      // Each team handles a slice of the data associated with one aggregate
-      // and performs a local QR decomposition (in this case real QR is
-      // unnecessary).
-      const Kokkos::TeamPolicy<execution_space> policy(numAggregates, 1);
-
-      if (doQRStep) {
-        Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:main_loop", policy,
-    
-
-      } else {
-        Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:main_loop_noqr", policy,
-          KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type &thread) {
-            auto agg = thread.league_rank();
-
-            // size of the aggregate (number of DOFs in aggregate)
-            LO aggSize = aggRows(agg+1) - aggRows(agg);
-
-            // R = norm
-            coarseNS(agg, 0) = one;
-
-            // Q = localQR(:,0)/norm
-            for (decltype(aggSize) k = 0; k < aggSize; k++) {
-              LO localRow = agg2RowMapLO(aggRows(agg)+k);
-              impl_SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0);
-
-              rows(localRow+1) = 1;
-              colsAux(localRow) = agg;
-              valsAux(localRow) = localVal;
-
-            }
-          });
-      }
-
-      Kokkos::parallel_reduce("MueLu:TentativeP:CountNNZ", range_type(0, numRows+1),
-                              KOKKOS_LAMBDA(const LO i, size_t &nnz_count) {
-                                nnz_count += rows(i);
-                              }, nnz);
-
-    } else { // NSdim > 1
-      // FIXME_KOKKOS: This code branch is completely unoptimized.
-      // Work to do:
-      //   - Optimize QR decomposition
-      //   - Remove INVALID usage similarly to CoalesceDropFactory_kokkos by
-      //     packing new values in the beginning of each row
-      // We do use auxilary view in this case, so keep a second rows view for
-      // counting nonzeros in rows
-
-      {
-        SubFactoryMonitor m2 = SubFactoryMonitor(*this, doQRStep ? "Stage 1 (LocalQR)" : "Stage 1 (Fill coarse nullspace and tentative P)", coarseLevel);
-        // Set up team policy with numAggregates teams and one thread per team.
-        // Each team handles a slice of the data associated with one aggregate
-        // and performs a local QR decomposition
-        const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1); // numAggregates teams a 1 thread
-        LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom),
-            decltype(aggDofSizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO),
-            decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux),
-            decltype(valsAux)>
-                localQRFunctor(fineNSRandom, coarseNS, aggDofSizes, maxAggSize, agg2RowMapLO, statusAtomic,
-                               rows, rowsAux, colsAux, valsAux, doQRStep);
-        Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_qr_loop", policy, localQRFunctor, nnz);
-      }
-
-      typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
-      Kokkos::deep_copy(statusHost, status);
-      for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
-        if (statusHost(i)) {
-          std::ostringstream oss;
-          oss << "MueLu::TentativePFactory::MakeTentative: ";
-          switch(i) {
-            case 0: oss << "!goodMap is not implemented";               break;
-            case 1: oss << "fine level NS part has a zero column";      break;
-          }
-          throw Exceptions::RuntimeError(oss.str());
-        }
-    }
-
-    // Compress the cols and vals by ignoring INVALID column entries that correspond
-    // to 0 in QR.
-
-    // The real cols and vals are constructed using calculated (not estimated) nnz
-    cols_type cols;
-    vals_type vals;
-
-    if (nnz != nnzEstimate) {
-      {
-        // Stage 2: compress the arrays
-        SubFactoryMonitor m2(*this, "Stage 2 (CompressRows)", coarseLevel);
-
-        Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1),
-                              KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-                                upd += rows(i);
-                                if (final)
-                                  rows(i) = upd;
-                              });
-      }
-
-      {
-        SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
-
-        cols = cols_type("Ptent_cols", nnz);
-        vals = vals_type("Ptent_vals", nnz);
-
-        // FIXME_KOKKOS: this can be spedup by moving correct cols and vals values
-        // to the beginning of rows. See CoalesceDropFactory_kokkos for
-        // example.
-        Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", range_type(0,numRows),
-                             KOKKOS_LAMBDA(const LO i) {
-                               LO rowStart = rows(i);
-
-                               size_t lnnz = 0;
-                               for (auto j = rowsAux(i); j < rowsAux(i+1); j++)
-                                 if (colsAux(j) != INVALID) {
-                                   cols(rowStart+lnnz) = colsAux(j);
-                                   vals(rowStart+lnnz) = valsAux(j);
-                                   lnnz++;
-                                 }
-                             });
-      }
-
-    } else {
-      rows = rowsAux;
-      cols = colsAux;
-      vals = valsAux;
-    }
-
-    GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
-
-    {
-      // Stage 3: construct Xpetra::Matrix
-      SubFactoryMonitor m2(*this, "Stage 3 (LocalMatrix+FillComplete)", coarseLevel);
-
-      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getLocalNumElements(), nnz, vals, rows, cols);
-
-      // Managing labels & constants for ESFC
-      RCP<ParameterList> FCparams;
-      if (pL.isSublist("matrixmatrix: kernel params"))
-        FCparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else
-        FCparams = rcp(new ParameterList);
-
-      // By default, we don't need global constants for TentativeP
-      FCparams->set("compute global constants", FCparams->get("compute global constants", false));
-      FCparams->set("Timer Label",              std::string("MueLu::TentativeP-") + toString(levelID));
-
-      auto PtentCrs = CrsMatrixFactory::Build(lclMatrix, rowMap, coarseMap, coarseMap, A->getDomainMap());
-      Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
-    }
-#endif
 #else
     throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
 #endif
