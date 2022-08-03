@@ -1435,8 +1435,9 @@ namespace MueLu {
     }
 
     GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "Hierarchy::ReplaceCoordinateMap: Storage block size does not evenly divide fixed block size");
 
-    size_t blkSize = A->GetFixedBlockSize();
+    size_t blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
     RCP<const Map> nodeMap = A->getRowMap();
     if (blkSize > 1) {
