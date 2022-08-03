@@ -78,7 +78,7 @@ namespace MueLu {
     std::string vectorName   = pL.get<std::string>("Vector name");
 
     fineLevel.DeclareInput(vectorName, GetFactory("Vector factory").get(), this);
-    Input(coarseLevel, "R");
+    Input(fineLevel, "Aggregates");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -122,67 +122,6 @@ namespace MueLu {
     return expandCoord;
 
   } // expandCoordinates
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
-
-    validParamList->set<RCP<const FactoryBase> >("Coordinates",                  Teuchos::null, "Factory for coordinates generation");
-    validParamList->set<RCP<const FactoryBase> >("Aggregates",                   Teuchos::null, "Factory for coordinates generation");
-    validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
-    validParamList->set<bool>                   ("structured aggregation",       false, "Flag specifying that the geometric data is transferred for StructuredAggregationFactory");
-    validParamList->set<bool>                   ("aggregation coupled",          false, "Flag specifying if the aggregation algorithm was used in coupled mode.");
-    validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transferred for GeneralGeometricPFactory");
-    validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
-    validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",           Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
-    validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
-    validParamList->set<RCP<const FactoryBase> >("numDimensions"     ,           Teuchos::null, "Factory providing the number of spatial dimensions of the mesh");
-    validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
-    validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
-    validParamList->set<bool>                   ("hybrid aggregation",           false, "Flag specifying that hybrid aggregation data is transfered for HybridAggregationFactory");
-    validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
-    validParamList->set<bool>                   ("interface aggregation",        false, "Flag specifying that interface aggregation data is transfered for HybridAggregationFactory");
-    validParamList->set<RCP<const FactoryBase> >("coarseInterfacesDimensions",   Teuchos::null, "Factory providing coarseInterfacesDimensions");
-    validParamList->set<RCP<const FactoryBase> >("nodeOnCoarseInterface",        Teuchos::null, "Factory providing nodeOnCoarseInterface");
-
-
-    return validParamList;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-    static bool isAvailableCoords = false;
-
-    const ParameterList& pL = GetParameterList();
-    if(pL.get<bool>("structured aggregation") == true) {
-      if(pL.get<bool>("aggregation coupled") == true) {
-        Input(fineLevel, "gCoarseNodesPerDim");
-      }
-      Input(fineLevel, "lCoarseNodesPerDim");
-      Input(fineLevel, "numDimensions");
-    } else if(pL.get<bool>("Geometric") == true) {
-      Input(coarseLevel, "coarseCoordinates");
-      Input(coarseLevel, "gCoarseNodesPerDim");
-      Input(coarseLevel, "lCoarseNodesPerDim");
-    } else if(pL.get<bool>("hybrid aggregation") == true) {
-      Input(fineLevel, "aggregationRegionTypeCoarse");
-      Input(fineLevel, "lCoarseNodesPerDim");
-      Input(fineLevel, "numDimensions");
-      if(pL.get<bool>("interface aggregation") == true) {
-        Input(fineLevel, "coarseInterfacesDimensions");
-        Input(fineLevel, "nodeOnCoarseInterface");
-      }
-    } else {
-      if (coarseLevel.GetRequestMode() == Level::REQUEST)
-        isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
-
-      if (isAvailableCoords == false) {
-        Input(fineLevel, "Coordinates");
-        Input(fineLevel, "Aggregates");
-        Input(fineLevel, "CoarseMap");
-      }
-    }
-  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {

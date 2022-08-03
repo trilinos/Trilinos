@@ -59,7 +59,7 @@
 #include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_FactoryManager.hpp>
-#include <MueLu_MultiVectorAggregationTransferFactory.hpp>
+#include <MueLu_MultiVectorTransferFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_SmootherFactory.hpp>
@@ -77,7 +77,7 @@ namespace MueLuTests {
     RCP<Factory> TentativePFact = rcp(new TentativePFactory());
     RCP<Factory> TentativeRFact = rcp(new TransPFactory());  // Use Ptent for coordinate projection
 
-    RCP<MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO>("Coordinates"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("Coordinates"));
     mvtf->SetFactory("R", TentativeRFact);
 
     TEST_EQUALITY(mvtf != Teuchos::null, true);
@@ -125,7 +125,7 @@ namespace MueLuTests {
     //    fineLevel.SetFactoryManager(M);
     coarseLevel.SetFactoryManager(M);
 
-    RCP<MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO>("onesVector"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("onesVector"));
     mvtf->SetFactory("R",RFact);
 
     coarseLevel.Request("onesVector",mvtf.get());
@@ -213,7 +213,7 @@ namespace MueLuTests {
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel->Set("onesVector",fineOnes);
-    RCP<MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorAggregationTransferFactory<SC, LO, GO, NO>("onesVector"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("onesVector"));
     mvtf->SetFactory("R",RFact);
     M.SetFactory("onesVector",mvtf);
     AcFact->AddTransferFactory(mvtf);
