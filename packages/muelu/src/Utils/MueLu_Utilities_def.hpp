@@ -324,7 +324,7 @@ namespace MueLu {
     if (tmp_ECrsMtx == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
     return tmp_ECrsMtx->getTpetra_BlockCrsMatrixNonConst();
-  };
+  }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op)   {
@@ -594,7 +594,9 @@ namespace MueLu {
         using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
         const BCRS & tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(Op);
         
-        std::cout<<"WARNING: Utilities::Transpose(): Using inefficient placeholder algorithm for Transpose"<<std::endl;//CMSCMS
+        if(!Op.getRowMap()->getComm()->getRank())
+          std::cout<<"WARNING: Utilities::Transpose(): Using inefficient placeholder algorithm for Transpose"<<std::endl;
+
         RCP<BCRS> At;
         RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpetraOp);
         {
