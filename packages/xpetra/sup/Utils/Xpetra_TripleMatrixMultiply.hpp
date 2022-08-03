@@ -144,8 +144,11 @@ namespace Xpetra {
         else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpR  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(R);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpP  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(P);
@@ -271,8 +274,10 @@ namespace Xpetra {
         else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of AC, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpR  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(R);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpP  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(P);
@@ -398,8 +403,10 @@ namespace Xpetra {
         else if (helpers::isTpetraBlockCrs(R) && helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(P)) {
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of AC, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpR  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(R);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpP  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(P);

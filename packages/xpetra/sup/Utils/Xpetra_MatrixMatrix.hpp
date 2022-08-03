@@ -502,8 +502,10 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         else if (helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(B)) {
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
           using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
@@ -1060,8 +1062,11 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
         else if (helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(B)) {
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
           using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
@@ -1850,10 +1855,13 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           Tpetra::MatrixMatrix::Multiply(tpA, transposeA, tpB, transposeB, tpC, haveMultiplyDoFillComplete, label, params);
         }
         else if (helpers::isTpetraBlockCrs(A) && helpers::isTpetraBlockCrs(B)) {
-// All matrices are BlockCrs (except maybe Ac)
+          // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
-          // we'll need to think about refactoring BlockCrs so we can do something smartet here.
-          std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+          // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
+
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
           const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
           using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
