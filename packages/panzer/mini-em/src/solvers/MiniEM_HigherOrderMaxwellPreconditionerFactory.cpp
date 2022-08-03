@@ -192,56 +192,74 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
    // discrete curl between high-order spaces
    Teko::LinearOp hoC = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Curl"));
 
-   // Schur complement
-   Teko::LinearOp S_E;
-   {
-     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
-     S_E = Teko::explicitAdd(Q_E, CurlCurl);
-   }
-
    // interpolations between FE spaces of different orders
    std::vector<Teko::LinearOp> interpolationsHGrad;
    std::vector<Teko::LinearOp> interpolationsHCurl;
    // discrete gradients
    std::vector<Teko::LinearOp> discreteGradients;
+   // Schur complements
+   std::vector<Teko::LinearOp> schurComplements;
+   // projection of Schur complements
+   std::vector<Teko::LinearOp> projectedSchurComplements;
    {
-     std::string discGradName, interpHcurlName, interpHgradName;
+     std::string discGradName, interpHcurlName, interpHgradName, schurCompName, projectedSchurCompName;
      auto it = pCoarsenSchedule_.begin();
      int p = *it;
      discGradName = "Discrete Gradient";
      discreteGradients.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(discGradName)));
+     schurCompName = "SchurComplement AUXILIARY_EDGE";
+     schurComplements.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(schurCompName)));
+     projectedSchurCompName = "ProjectedSchurComplement AUXILIARY_NODE";
+     projectedSchurComplements.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(projectedSchurCompName)));
+
      describeMatrix(discGradName, *discreteGradients.back(), debug);
+     describeMatrix(schurCompName, *schurComplements.back(), debug);
+     describeMatrix(projectedSchurCompName, *projectedSchurComplements.back(), debug);
      if (dump) {
        writeOut(discGradName+".mm", *discreteGradients.back());
+       writeOut(schurCompName+".mm", *schurComplements.back());
+       writeOut(projectedSchurCompName+".mm", *projectedSchurComplements.back());
      }
      ++it;
      while (it != pCoarsenSchedule_.end()) {
        int q = *it;
-       discGradName = "Discrete Gradient "+std::to_string(*it);
+       discGradName = "Discrete Gradient "+std::to_string(q);
+       schurCompName = "SchurComplement AUXILIARY_EDGE_"+std::to_string(q);
+       projectedSchurCompName = "ProjectedSchurComplement AUXILIARY_NODE_"+std::to_string(q);
        interpHcurlName = "Interpolation Hcurl "+std::to_string(q) + "->" + std::to_string(p);
        interpHgradName = "Interpolation Hgrad "+std::to_string(q) + "->" + std::to_string(p);
        discreteGradients.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(discGradName)));
        interpolationsHGrad.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(interpHgradName)));
        interpolationsHCurl.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(interpHcurlName)));
+       schurComplements.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(schurCompName)));
+       projectedSchurComplements.push_back(getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(projectedSchurCompName)));
 
        describeMatrix(discGradName, *discreteGradients.back(), debug);
        describeMatrix(interpHcurlName, *interpolationsHCurl.back(), debug);
        describeMatrix(interpHgradName, *interpolationsHGrad.back(), debug);
+       describeMatrix(schurCompName, *schurComplements.back(), debug);
+       describeMatrix(projectedSchurCompName, *projectedSchurComplements.back(), debug);
        if (dump) {
          writeOut(discGradName+".mm", *discreteGradients.back());
          writeOut(interpHcurlName+".mm", *interpolationsHCurl.back());
          writeOut(interpHgradName+".mm", *interpolationsHGrad.back());
+         writeOut(schurCompName+".mm", *schurComplements.back());
+         writeOut(projectedSchurCompName+".mm", *projectedSchurComplements.back());
        }
        p = q;
        ++it;
      }
    }
 
+   // Schur complement
+   Teko::LinearOp S_E = schurComplements.front();
+
    // Hgrad mass matrix, mu / dt weight
    Teko::LinearOp M0 = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE_1"));
    // Hcurl mass matrix, unit weight
    Teko::LinearOp M1 = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE_1"));
+   // Hcurl mass matrix, dt/mu weight
+   Teko::LinearOp Ms = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE_1"));
 
    // Get inverse lumped diagonal of M0 -> M0inv
    RCP<const ThyDiagLinOpBase> M0inv;
@@ -270,6 +288,7 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
 
    describeMatrix("M0",*M0,debug);
    describeMatrix("M1",*M1,debug);
+   describeMatrix("Ms",*Ms,debug);
 
    if (dump) {
      writeOut("Q_B.mm",*Q_B);
@@ -282,23 +301,24 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
 
      writeOut("M0.mm",*M0);
      writeOut("M1.mm",*M1);
+     writeOut("Ms.mm",*Ms);
 
-     Teko::LinearOp K2 = Teko::explicitMultiply(Q_B,hoC);
-     Teko::LinearOp diffK;
+     // Teko::LinearOp K2 = Teko::explicitMultiply(Q_B,hoC);
+     // Teko::LinearOp diffK;
 
-     {
-       RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(K2,true);
-       RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
-       RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator(),true);
-       crsOp->scale(dt);
-       diffK = Teko::explicitAdd(K, Teko::scale(-1.0,K2));
+     // {
+     //   RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(K2,true);
+     //   RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
+     //   RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator(),true);
+     //   crsOp->scale(dt);
+     //   diffK = Teko::explicitAdd(K, Teko::scale(-1.0,K2));
 
-       writeOut("K2.mm",*K2);
-       writeOut("diff.mm",*diffK);
+     //   writeOut("K2.mm",*K2);
+     //   writeOut("diff.mm",*diffK);
 
-     }
+     // }
 
-     TEUCHOS_ASSERT(Teko::infNorm(diffK) < 1.0e-8 * Teko::infNorm(K));
+     // TEUCHOS_ASSERT(Teko::infNorm(diffK) < 1.0e-8 * Teko::infNorm(K));
    }
 
 
@@ -313,11 +333,11 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Inverse Q_B"));
      // Are we building a solver or a preconditioner?
      if (useAsPreconditioner) {
-       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+       invQ_B = invLib.getInverseFactory("Q_B Preconditioner")->buildInverse(Q_B);
      } else {
-       Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+       Teko::LinearOp invDiagQ_B = invLib.getInverseFactory("Q_B Preconditioner")->buildInverse(Q_B);
        describeMatrix("invDiagQ_B",*invDiagQ_B,debug);
-       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+       invQ_B = invLib.getInverseFactory("Q_B Solve")->buildInverse(Q_B, invDiagQ_B);
      }
    }
 
@@ -328,71 +348,55 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
 
      RCP<Teko::InverseFactory> S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
      Teuchos::ParameterList  S_E_prec_pl  = *S_E_prec_factory->getParameterList();
-     Teuchos::ParameterList& maxwell1list = S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_);
-     Teuchos::ParameterList& list11       = maxwell1list.sublist("maxwell1: 11list");
-     Teuchos::ParameterList& list22       = maxwell1list.sublist("maxwell1: 22list");
+     Teuchos::ParameterList& muelulist = S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_);
+     // Teuchos::ParameterList& maxwell1list = S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_);
+     // Teuchos::ParameterList& list11       = maxwell1list.sublist("maxwell1: 11list");
+     // Teuchos::ParameterList& list22       = maxwell1list.sublist("maxwell1: 22list");
 
      // Maxwell1 list
-     maxwell1list.set("D0", discreteGradients.front());
+     // maxwell1list.set("D0", discreteGradients.front());
 
      int maxLevels = interpolationsHGrad.size()+1;
 
-     list22.set("max levels", maxLevels);
+     muelulist.set("max levels", maxLevels);
 
-     for (int lvl = 1; lvl < maxLevels; ++lvl) {
+     for (int lvl = 0; lvl < maxLevels; ++lvl) {
        // (2,2) list
-       try {
-         auto xpInterpHgrad = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHGrad[lvl-1]));
-         list22.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHgrad);
-       } catch (std::exception& e) {
-         auto xpInterpHgrad = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHGrad[lvl-1]));
-         list22.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHgrad);
-       }
+       muelulist.sublist("level " + std::to_string(lvl) + " user data").set("NodeMatrix",projectedSchurComplements[lvl]);
+       if (lvl > 0)
+         muelulist.sublist("level " + std::to_string(lvl) + " user data").set("Pnodal",interpolationsHGrad[lvl-1]);
 
        // (1,1) list
-       try {
-         auto xpInterpHcurl = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHCurl[lvl-1]));
-         list11.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHcurl);
-       } catch (std::exception& e) {
-         auto xpInterpHcurl = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHCurl[lvl-1]));
-         list11.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHcurl);
+       if (lvl > 0) {
+         muelulist.sublist("level " + std::to_string(lvl) + " user data").set("A",schurComplements[lvl]);
+         muelulist.sublist("level " + std::to_string(lvl) + " user data").set("P",interpolationsHCurl[lvl-1]);
        }
-
-       try {
-         auto xpLoT = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(discreteGradients[lvl]));
-         list11.sublist("level " + std::to_string(lvl) + " user data").set("D0",xpLoT);
-       } catch (std::exception& e) {
-         auto xpLoT = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(discreteGradients[lvl]));
-         list11.sublist("level " + std::to_string(lvl) + " user data").set("D0",xpLoT);
-       }
+       muelulist.sublist("level " + std::to_string(lvl) + " user data").set("D0",discreteGradients[lvl]);
      }
 
+     muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data").set("M1",M1);
 
-     auto xpM1 = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(M1));
-     list11.sublist("level " + std::to_string(maxLevels-1) + " user data").set("M1",xpM1);
-     list11.sublist("level " + std::to_string(maxLevels-1) + " user data").set("Ms",xpM1);
+     muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data").set("Ms",Ms);
 
-     RCP<XpMV> CoordinatesLO = Xpetra::toXpetra(S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
-     list11.sublist("level " + std::to_string(maxLevels-1) + " user data").set("Coordinates", CoordinatesLO);
+     muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data").set("Coordinates", S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
 
-     RCP<XpMat> xpM0inv = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyDiagLinOpBase>(M0inv));;
-     list11.sublist("level " + std::to_string(maxLevels-1) + " user data").set("M0inv",xpM0inv);
+     muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data").set("M0inv",M0inv);
 
      Teko::InverseLibrary myInvLib = invLib;
 
-     maxwell1list.set("Type",S_E_prec_type_);
-     myInvLib.addInverse("S_E Preconditioner", maxwell1list);
+     muelulist.set("Type",S_E_prec_type_);
+     myInvLib.addInverse("S_E Preconditioner", muelulist);
      S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
 
      // Are we building a solver or a preconditioner?
      if (useAsPreconditioner)
-       invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+       invS_E = S_E_prec_factory->buildInverse(S_E);
      else {
        if (S_E_prec_.is_null())
-         S_E_prec_ = Teko::buildInverse(*S_E_prec_factory,S_E);
+         S_E_prec_ = S_E_prec_factory->buildInverse(S_E);
        else
-         Teko::rebuildInverse(*S_E_prec_factory,S_E, S_E_prec_);
-       invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
+         S_E_prec_factory->rebuildInverse(S_E, S_E_prec_);
+       invS_E = invLib.getInverseFactory("S_E Solve")->buildInverse(S_E,S_E_prec_);
      }
    }
 
@@ -465,7 +469,8 @@ void HigherOrderMaxwellPreconditionerFactory::initializeFromParameterList(const 
    panzer::TokensToInts(pCoarsenSchedule_, pCoarsenScheduleVecStr);
 
    S_E_prec_type_ = pl.sublist("S_E Preconditioner").get<std::string>("Type");
-   TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuMaxwell1");
+   // TEUCHOS_ASSERT(S_E_prec_type_ == "MueLuMaxwell1");
+   TEUCHOS_ASSERT(S_E_prec_type_ == "MueLu");
 
    // Output stream for debug information
    RCP<Teuchos::FancyOStream> debug = Teuchos::null;

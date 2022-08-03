@@ -90,8 +90,40 @@
           </ParameterList>
 
           <ParameterList name="S_E Preconditioner">
-            <Parameter name="Type" type="string" value="MueLuMaxwell1"/>
+            <!-- <Parameter name="Type" type="string" value="MueLuMaxwell1"/> -->
+            <Parameter name="Type" type="string" value="MueLu"/>
             <ParameterList name="Preconditioner Types">
+              <ParameterList name="MueLu">
+                <Parameter name="verbosity" type="string" value="extreme"/>
+                <Parameter name="use kokkos refactor" type="bool" value="false"/>
+
+                <Parameter name="transpose: use implicit" type="bool" value="true"/>
+                <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+                <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+
+                <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
+                <ParameterList name="smoother: params">
+                  <Parameter name="hiptmair: implicit transpose" type="bool" value="true"/>
+
+                  <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
+                  <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
+                  <ParameterList name="hiptmair: smoother list 1">
+                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+                    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+                    <Parameter name="relaxation: use l1" type="bool" value="true"/>
+                  </ParameterList>
+                  <ParameterList name="hiptmair: smoother list 2">
+                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+                    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+                    <Parameter name="relaxation: use l1" type="bool" value="true"/>
+                  </ParameterList>
+                </ParameterList>
+
+                  <!-- <Parameter name="coarse: type" type="string" value="Klu"/> -->
+                  <Parameter name="coarse: type" type="string" value="RefMaxwell"/>
+                  <!-- The parameters for RefMaxwell are read and processed as for the usual first order solver. -->
+              </ParameterList>
+
               <ParameterList name="MueLuMaxwell1">
                 <Parameter name="verbosity" type="string" value="extreme"/>
                 <Parameter name="use kokkos refactor" type="bool" value="false"/>
@@ -100,6 +132,7 @@
 
                 <ParameterList name="maxwell1: 11list">
                   <Parameter name="use kokkos refactor" type="bool" value="false"/>
+                  <Parameter name="transpose: use implicit" type="bool" value="true"/>
                   <Parameter name="multigrid algorithm" type="string" value="smoothed reitzinger"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
 
@@ -128,6 +161,7 @@
 
                 <ParameterList name="maxwell1: 22list">
                   <Parameter name="use kokkos refactor" type="bool" value="false"/>
+                  <Parameter name="transpose: use implicit" type="bool" value="true"/>
                   <Parameter name="multigrid algorithm" type="string"  value="unsmoothed"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
