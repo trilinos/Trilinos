@@ -128,9 +128,7 @@ tribits_add_advanced_test(simpleBuildAgainstTrilinos
   TEST_1
     MESSAGE "Build simpleBuildAgainstTrilinos"
     CMND "${CMAKE_COMMAND}"
-    ARGS
-      --build . --config Debug --target all
-      ${PROJECT_SOURCE_DIR}/demos/simpleBuildAgainstTrilinos
+    ARGS --build .
 
   TEST_2
     MESSAGE "Test simpleBuildAgainstTrilinos"
