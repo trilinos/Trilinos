@@ -110,15 +110,6 @@ namespace MueLu {
 
     // if the coarse map is available, use it. otherwise, construct the map based on aggregates
     RCP<const Map> coarseMap = Get< RCP<const Map> > (fineLevel, "CoarseMap");
-    // if (fineLevel.IsAvailable("CoarseMap")) {
-    //   coarseMap = Get< RCP<const Map> >(fineLevel, "CoarseMap");
-    // } else {
-    //   std::cout << "Number of local aggregates=" << aggregates->GetNumAggregates() << std::endl;
-    //   coarseMap = aggregates->GetMap();
-    //   std::cout << "Number of local map entries=" << coarseMap->getLocalNumElements() << std::endl;
-    //   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //   coarseMap->describe(*fancy,Teuchos::VERB_EXTREME);
-    // }
 
     // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
     // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
