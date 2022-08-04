@@ -194,6 +194,9 @@ typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedSmoo
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorTransferFactory;
 #endif
+#ifdef MUELU_MULTIVECTORAGGREGATIONTRANSFERFACTORY_SHORT
+typedef MueLu::MultiVectorAggregationTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorAggregationTransferFactory;
+#endif
 #ifdef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
 typedef MueLu::NotayAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NotayAggregationFactory;
 #endif

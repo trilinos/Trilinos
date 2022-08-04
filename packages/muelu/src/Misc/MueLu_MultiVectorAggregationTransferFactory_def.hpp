@@ -68,6 +68,7 @@ namespace MueLu {
     validParamList->set< std::string >           ("Vector name",    "undefined", "Name of the vector that will be transferred on the coarse grid (level key)"); // TODO: how to set a validator without default value?
     validParamList->set< RCP<const FactoryBase> >("Vector factory", Teuchos::null, "Factory of the vector");
     validParamList->set< RCP<const FactoryBase> >("Aggregates",     Teuchos::null, "Factory of the aggregates");
+    validParamList->set< RCP<const FactoryBase> >("CoarseMap",     Teuchos::null, "Factory of the coarse map");
 
     return validParamList;
   }
@@ -79,6 +80,7 @@ namespace MueLu {
 
     fineLevel.DeclareInput(vectorName, GetFactory("Vector factory").get(), this);
     Input(fineLevel, "Aggregates");
+    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -88,175 +90,95 @@ namespace MueLu {
     const ParameterList & pL = GetParameterList();
     std::string vectorName   = pL.get<std::string>("Vector name");
 
-    RCP<MultiVector> fineVector = fineLevel.Get< RCP<MultiVector> >(vectorName, GetFactory("Vector factory").get());
-    RCP<Matrix>      transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
-
-    RCP<MultiVector> coarseVector = MultiVectorFactory::Build(transferOp->getRangeMap(), fineVector->getNumVectors());
-    GetOStream(Runtime0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
-
-    RCP<MultiVector> onesVector = MultiVectorFactory::Build(transferOp->getDomainMap(), 1);
-    onesVector->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    RCP<MultiVector> rowSumVector = MultiVectorFactory::Build(transferOp->getRangeMap(), 1);
-    transferOp->apply(*onesVector, *rowSumVector);
-    transferOp->apply(*fineVector, *coarseVector);
-
     if (vectorName == "Coordinates")
       TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Use CoordinatesTransferFactory to transfer coordinates instead of MultiVectorAggregationTransferFactory.");
 
-    Set<RCP<MultiVector> >(coarseLevel, vectorName, coarseVector);
-
-  } // Build
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayRCP<Scalar> MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
-    if (blksize == 1)
-      return coordinates;
-
-    ArrayRCP<SC> expandCoord(coordinates.size()*blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
-
-    for(int i=0; i<coordinates.size(); i++) {
-      for(int j=0; j< blksize; j++) {
-        expandCoord[i*blksize + j] = coordinates[i];
-      }
-    }
-    return expandCoord;
-
-  } // expandCoordinates
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVectorAggregationTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
-    FactoryMonitor m(*this, "Build", coarseLevel);
-
-    using xdMV = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>;
-
-    GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
-
     int numDimensions;
-    RCP<xdMV> coarseCoords;
-    RCP<xdMV> fineCoords;
-    Array<GO> gCoarseNodesPerDir;
-    Array<LO> lCoarseNodesPerDir;
+    RCP<MultiVector> coarseVector;
+    RCP<MultiVector> fineVector;
 
-    const ParameterList& pL = GetParameterList();
+    if (coarseLevel.IsAvailable(vectorName, this)) {
+      GetOStream(Runtime0) << "Reusing " << vectorName << std::endl;
+      return;
+    }
 
-    if(pL.get<bool>("hybrid aggregation") == true) {
-      std::string regionType = Get<std::string>(fineLevel,"aggregationRegionTypeCoarse");
-      numDimensions          = Get<int>(fineLevel, "numDimensions");
-      lCoarseNodesPerDir     = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
-      Set<std::string>(coarseLevel, "aggregationRegionType", regionType);
-      Set<int>        (coarseLevel, "numDimensions",         numDimensions);
-      Set<Array<LO> > (coarseLevel, "lNodesPerDim",          lCoarseNodesPerDir);
+    RCP<Aggregates> aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
+    fineVector = fineLevel.Get<RCP<MultiVector> >(vectorName);
 
-      if((pL.get<bool>("interface aggregation") == true) && (regionType == "uncoupled")) {
-        Array<LO> coarseInterfacesDimensions = Get<Array<LO> >(fineLevel, "coarseInterfacesDimensions");
-        Array<LO> nodeOnCoarseInterface      = Get<Array<LO> >(fineLevel, "nodeOnCoarseInterface");
-        Set<Array<LO> >(coarseLevel, "interfacesDimensions", coarseInterfacesDimensions);
-        Set<Array<LO> >(coarseLevel, "nodeOnInterface",      nodeOnCoarseInterface);
-      }
+    if (aggregates->AggregatesCrossProcessors())
+      TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"MultiVectorAggregationTransferFactory does not support aggregates that cross processors!");
 
-    } else if(pL.get<bool>("structured aggregation") == true) {
-      if(pL.get<bool>("aggregation coupled") == true) {
-        gCoarseNodesPerDir = Get<Array<GO> >(fineLevel, "gCoarseNodesPerDim");
-        Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
-      }
-      lCoarseNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
-      Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
-      numDimensions = Get<int>(fineLevel, "numDimensions");
-      Set<int>(coarseLevel, "numDimensions", numDimensions);
+    // if the coarse map is available, use it. otherwise, construct the map based on aggregates
+    RCP<const Map> coarseMap = Get< RCP<const Map> > (fineLevel, "CoarseMap");
+    // if (fineLevel.IsAvailable("CoarseMap")) {
+    //   coarseMap = Get< RCP<const Map> >(fineLevel, "CoarseMap");
+    // } else {
+    //   std::cout << "Number of local aggregates=" << aggregates->GetNumAggregates() << std::endl;
+    //   coarseMap = aggregates->GetMap();
+    //   std::cout << "Number of local map entries=" << coarseMap->getLocalNumElements() << std::endl;
+    //   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //   coarseMap->describe(*fancy,Teuchos::VERB_EXTREME);
+    // }
 
-    } else if(pL.get<bool>("Geometric") == true) {
-      coarseCoords       = Get<RCP<xdMV> >(coarseLevel, "coarseCoordinates");
-      gCoarseNodesPerDir = Get<Array<GO> >(coarseLevel, "gCoarseNodesPerDim");
-      lCoarseNodesPerDir = Get<Array<LO> >(coarseLevel, "lCoarseNodesPerDim");
-      Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
-      Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
+    // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
+    // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
+    // logical blocks in the matrix
 
-      Set<RCP<xdMV> >(coarseLevel, "Coordinates", coarseCoords);
+    ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
 
-    } else {
-      if (coarseLevel.IsAvailable("Coordinates", this)) {
-        GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
-        return;
-      }
+    LO                  blkSize      = 1;
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-      RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
-      fineCoords                     = Get< RCP<xdMV> >(fineLevel, "Coordinates");
-      RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
+    GO                  indexBase    = coarseMap->getIndexBase();
+    size_t              numElements  = elementAList.size() / blkSize;
+    Array<GO>           elementList(numElements);
 
-      // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
-      // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
-      // logical blocks in the matrix
+    // Amalgamate the map
+    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
+      elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
 
-      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
+    RCP<const Map>   uniqueMap      = fineVector->getMap();
+    RCP<const Map>   coarseMVMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
+    coarseVector   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(coarseMVMap, fineVector->getNumVectors());
 
-      LO                  blkSize      = 1;
-      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
-        blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+    // Create overlapped fine vector to reduce global communication
+    RCP<MultiVector> ghostedVector = fineVector;
+    if (aggregates->AggregatesCrossProcessors()) {
+      RCP<const Map>    nonUniqueMap = aggregates->GetMap();
+      RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      GO                  indexBase    = coarseMap->getIndexBase();
-      size_t              numElements  = elementAList.size() / blkSize;
-      Array<GO>           elementList(numElements);
+      ghostedVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(nonUniqueMap, fineVector->getNumVectors());
+      ghostedVector->doImport(*fineVector, *importer, Xpetra::INSERT);
+    }
 
-      // Amalgamate the map
-      for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-        elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+    // Get some info about aggregates
+    int                         myPID        = uniqueMap->getComm()->getRank();
+    LO                          numAggs      = aggregates->GetNumAggregates();
+    ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+    const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
+    const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 
-      RCP<const Map>   uniqueMap      = fineCoords->getMap();
-      RCP<const Map>   coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-      coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+    // Fill in coarse vector
+    for (size_t j = 0; j < fineVector->getNumVectors(); j++) {
+      ArrayRCP<const SC> fineVectorData = ghostedVector->getData(j);
+      ArrayRCP<SC>     coarseVectorData = coarseVector->getDataNonConst(j);
 
-      // Create overlapped fine coordinates to reduce global communication
-      RCP<xdMV> ghostedCoords = fineCoords;
-      if (aggregates->AggregatesCrossProcessors()) {
-        RCP<const Map>    nonUniqueMap = aggregates->GetMap();
-        RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
-
-        ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
-        ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
-      }
-
-      // Get some info about aggregates
-      int                         myPID        = uniqueMap->getComm()->getRank();
-      LO                          numAggs      = aggregates->GetNumAggregates();
-      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
-      const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
-      const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
-
-      // Fill in coarse coordinates
-      for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-        ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> fineCoordsData = ghostedCoords->getData(j);
-        ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType>     coarseCoordsData = coarseCoords->getDataNonConst(j);
-
-        for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
-          if (procWinner[lnode] == myPID &&
-              lnode < vertex2AggID.size() &&
-              lnode < fineCoordsData.size() && // TAW do not access off-processor coordinates
-              vertex2AggID[lnode] < coarseCoordsData.size() &&
-              Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::isnaninf(fineCoordsData[lnode]) == false) {
-            coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
-          }
-        }
-        for (LO agg = 0; agg < numAggs; agg++) {
-          coarseCoordsData[agg] /= aggSizes[agg];
+      for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
+        if (procWinner[lnode] == myPID &&
+            lnode < vertex2AggID.size() &&
+            lnode < fineVectorData.size() && // do not access off-processor entries
+            vertex2AggID[lnode] < coarseVectorData.size() &&
+            Teuchos::ScalarTraits<SC>::isnaninf(fineVectorData[lnode]) == false) {
+          coarseVectorData[vertex2AggID[lnode]] += fineVectorData[lnode];
         }
       }
-
-      Set<RCP<xdMV> >(coarseLevel, "Coordinates", coarseCoords);
-    } // if pL.get<bool>("Geometric") == true
-
-    int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
-    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
-      std::ostringstream buf;
-      buf << fineLevel.GetLevelID();
-      std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Write(fileName,*fineCoords);
+      for (LO agg = 0; agg < numAggs; agg++) {
+        coarseVectorData[agg] /= aggSizes[agg];
+      }
     }
-    if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
-      std::ostringstream buf;
-      buf << coarseLevel.GetLevelID();
-      std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Write(fileName,*coarseCoords);
-    }
+
+    Set<RCP<MultiVector> >(coarseLevel, vectorName, coarseVector);
   }
 
 } // namespace MueLu

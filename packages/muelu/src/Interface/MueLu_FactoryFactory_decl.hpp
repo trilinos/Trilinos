@@ -111,6 +111,7 @@
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_MultiVectorAggregationTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_NullspacePresmoothFactory.hpp"
@@ -272,6 +273,7 @@ namespace MueLu {
       if (factoryName == "MapTransferFactory")                    return Build2<MapTransferFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")                 return Build2<MatrixAnalysisFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")            return Build2<MultiVectorTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MultiVectorAggregationTransferFactory") return Build2<MultiVectorAggregationTransferFactory> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                             return MueLu::NoFactory::getRCP();
       if (factoryName == "NoSmoother")                            return rcp(new SmootherFactory(Teuchos::null));
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR

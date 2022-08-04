@@ -60,9 +60,11 @@
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_FactoryManager.hpp>
 #include <MueLu_MultiVectorTransferFactory.hpp>
+#include <MueLu_MultiVectorAggregationTransferFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_SmootherFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 
 namespace MueLuTests {
 
@@ -74,13 +76,11 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Factory> TentativePFact = rcp(new TentativePFactory());
-    RCP<Factory> TentativeRFact = rcp(new TransPFactory());  // Use Ptent for coordinate projection
+    RCP<Factory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    RCP<MueLu::MultiVectorAggregationTransferFactory<SC,LO,GO,NO> > mvatf = rcp(new MueLu::MultiVectorAggregationTransferFactory<SC,LO,GO,NO>());
+    mvatf->SetFactory("Aggregates", UncoupledAggFact);
 
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("Coordinates"));
-    mvtf->SetFactory("R", TentativeRFact);
-
-    TEST_EQUALITY(mvtf != Teuchos::null, true);
+    TEST_EQUALITY(mvatf != Teuchos::null, true);
   } // Constructor test
 
   //------------------------------------------------------------------------------------------
@@ -91,53 +91,46 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
-
-    out << "Tests the action of the transfer factory on a vector.  In this test, the transfer is the tentative" << std::endl;
-    out << "prolongator, and the vector is all ones.  So the norm of the resulting coarse grid vector should be" << std::endl;
-    out << "equal to the number of fine degrees of freedom." << std::endl;
+    out << "Tests the action of the transfer factory on a vector." << std::endl;
+    
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
     typedef typename Xpetra::MultiVector<magnitude_type,LO,GO,NO> RealValuedMultiVector;
 
     Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
-    Teuchos::ParameterList galeriList;
-    galeriList.set("nx", nx);
-    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
 
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel.Set("onesVector",fineOnes);
-    fineLevel.Set("Coordinates", coordinates);
-
-    RCP<TentativePFactory>    TentativePFact = rcp(new TentativePFactory());
-    RCP<TransPFactory>        RFact = rcp(new TransPFactory());
 
     RCP<FactoryManager> M = rcp(new FactoryManager());
     M->SetKokkosRefactor(false);
-    M->SetFactory("P", TentativePFact);
-    M->SetFactory("Ptent", TentativePFact);
-    M->SetFactory("R", RFact);
-    //    fineLevel.SetFactoryManager(M);
+    M->SetFactory("Aggregates",aggFact);
     coarseLevel.SetFactoryManager(M);
 
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("onesVector"));
-    mvtf->SetFactory("R",RFact);
+    RCP<MueLu::MultiVectorAggregationTransferFactory<SC,LO,GO,NO> > mvatf = rcp(new MueLu::MultiVectorAggregationTransferFactory<SC,LO,GO,NO>());
+    std::string vectorName = "onesVector"; // parameterEntry complains about char*
+    mvatf->SetParameter("Vector name",Teuchos::ParameterEntry(vectorName));
+    mvatf->SetFactory("Aggregates",aggFact);
+    coarseLevel.Request("onesVector",mvatf.get());
+    
+    mvatf->Build(fineLevel,coarseLevel);
 
-    coarseLevel.Request("onesVector",mvtf.get());
-    coarseLevel.Request("R",RFact.get());
-    coarseLevel.Request("P",TentativePFact.get());
-
-    mvtf->Build(fineLevel,coarseLevel);
-
-    RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
+    RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvatf.get());
+    RCP<Aggregates> aggregates  = fineLevel.Get< RCP<Aggregates> >("Aggregates",aggFact.get());
     Teuchos::Array<magnitude_type> vn(1);
     coarseOnes->norm2(vn);
-    TEST_FLOATING_EQUALITY(vn[0]*vn[0],(Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())),1e-12);
+    LO localNumAggs = aggregates->GetNumAggregates();
+    LO globalNumAggs = 0;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &localNumAggs, &globalNumAggs);
+    TEST_FLOATING_EQUALITY(vn[0]*vn[0],globalNumAggs,1e-12);
   } // Build test
 
   //------------------------------------------------------------------------------------------
