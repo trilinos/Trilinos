@@ -376,7 +376,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
           deep_copy_offset(sendArray, exports, sendArrayOffset, plan.getIndicesTo()[j]*numPackets, numPackets);
-          //memcpy(sendArray.data()+sendArrayOffset, exports.data()+plan.getIndicesTo()[j]*numPackets, numPackets*sizeof(Packet));
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
@@ -395,7 +394,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     if (plan.hasSelfMessage()) {
       for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
         deep_copy_offset(imports, exports, selfReceiveOffset, plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
-        //memcpy(imports.data()+selfReceiveOffset, exports.data()+plan.getIndicesTo()[selfIndex]*numPackets, numPackets*sizeof(Packet));
         ++selfIndex;
         selfReceiveOffset += numPackets;
       }
