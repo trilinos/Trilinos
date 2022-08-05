@@ -91,8 +91,6 @@ namespace BaskerNS
     BTF_E.Finalize();
    
     //finalize array of 2d matrics
-    FREE_MATRIX_VIEW_2DARRAY(AV, tree.nblks);
-    FREE_MATRIX_VIEW_2DARRAY(AL, tree.nblks);
     FREE_MATRIX_2DARRAY(AVM, tree.nblks);
     FREE_MATRIX_2DARRAY(ALM, tree.nblks);
     
@@ -748,55 +746,11 @@ namespace BaskerNS
       fclose(fp);
       printf("];\n");
     }*/
-    /*printf(" AA = [\n" );
-    if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-      for(Int j = 0; j < BTF_A.ncol; j++) {
-        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-        }
-      }
-    }
-    printf("];\n");*/
-
-    /*printf(" BB = [\n" );
-    if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
-      for(Int j = 0; j < BTF_B.ncol; j++) {
-        for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
-        }
-      }
-    }
-    printf("];\n");
-
-    printf(" CC = [\n" );
-    if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
-      for(Int j = 0; j < BTF_C.ncol; j++) {
-        for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-        }
-      }
-    }
-    printf("];\n");
-
-    printf(" DD = [\n" );
-    if (BTF_D.nrow > 0 && BTF_D.ncol > 0) {
-      for(Int j = 0; j < BTF_D.ncol; j++) {
-        for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
-        }
-      }
-    }
-    printf("];\n");
-
-    printf(" EE = [\n" );
-    if (BTF_E.nrow > 0 && BTF_E.ncol > 0) {
-      for(Int j = 0; j < BTF_E.ncol; j++) {
-        for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_E.row_idx[k], j, BTF_E.val[k]);
-        }
-      }
-    }
-    printf("];\n");*/
+    //BTF_A.print_matrix("AA.dat");
+    //BTF_B.print_matrix("BB.dat");
+    //BTF_C.print_matrix("CC.dat");
+    //BTF_D.print_matrix("DD.dat");
+    //BTF_E.print_matrix("EE.dat");
 
     using range_type = Kokkos::pair<int, int>;
     if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
@@ -811,15 +765,6 @@ namespace BaskerNS
         // to revert BLK_MWM ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_mwm_inv(k) = k;
         permute_inv(order_blk_mwm_inv, order_blk_mwm_array, ncol);
-
-        /*printf("\n before reverting\n" );
-        printf(" A = [\n" );
-        for(Int j = 0; j < BTF_A.ncol; j++) {
-          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-           printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-          }
-        }
-        printf("];\n");*/
 
         // --------------------------------------------
         // reset the large A block
@@ -1093,57 +1038,14 @@ namespace BaskerNS
     }
     printf("];\n");*/
 
-    /*printf(" A_ = [\n" );
-    if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-      for(Int j = 0; j < BTF_A.ncol; j++) {
-        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-        }
-      }
-    }
-    printf("];\n");*/
+    //BTF_A.print_matrix("A_.dat");
+    //BTF_B.print_matrix("B_.dat");
+    //BTF_C.print_matrix("C_.dat");
+    //BTF_D.print_matrix("D_.dat");
+    //BTF_E.print_matrix("E_.dat");
 
-    /*printf(" B_ = [\n" );
-    if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
-      for(Int j = 0; j < BTF_B.ncol; j++) {
-        for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
-        }
-      }
-    }
-    printf("];\n");
 
-    printf(" C_ = [\n" );
-    if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
-      for(Int j = 0; j < BTF_C.ncol; j++) {
-        for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-        }
-      }
-    }
-    printf("];\n");
-
-    printf(" D_ = [\n" );
-    if (BTF_D.nrow > 0 && BTF_D.ncol > 0) {
-      for(Int j = 0; j < BTF_D.ncol; j++) {
-        for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
-        }
-      }
-    }
-    printf("];\n");
-
-    printf(" E_ = [\n" );
-    if (BTF_E.nrow > 0 && BTF_E.ncol > 0) {
-      for(Int j = 0; j < BTF_E.ncol; j++) {
-        for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_E.row_idx[k], j, BTF_E.val[k]);
-        }
-      }
-    }
-    printf("];\n");*/
-
-    if (Options.replace_tiny_pivot && BTF_A.nnz > 0) {
+    if ((Options.replace_zero_pivot || Options.replace_tiny_pivot) && BTF_A.nnz > 0) {
       // to compute one-norm of global A and BTF_A
       Kokkos::Timer normA_timer;
       using STS = Teuchos::ScalarTraits<Entry>;
@@ -1191,8 +1093,8 @@ namespace BaskerNS
       for (Int i = 0; i < (Int)A.nrow; i++) {
         order_blk_mwm_array(i) = i;
         order_blk_amd_array(i) = i;
-        scale_row_array(i) = one;
-        scale_col_array(i) = one;
+        scale_row_array(i) = abs(one);
+        scale_col_array(i) = abs(one);
 
         numeric_row_iperm_array(i) = i;
         numeric_col_iperm_array(i) = i;
@@ -1837,53 +1739,6 @@ namespace BaskerNS
       //for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
       //  printf( " + nd(%d)=%d camd(%d)=%d\n",i,part_tree.permtab(i), i,order_csym_array(i));
       //}
-      /*printf("After everything:\n");
-      printf(" qA = [\n" );
-      if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-        for(Int j = 0; j < BTF_A.ncol; j++) {
-          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-            printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-          }
-        }
-      }
-      printf("];\n");
-      printf(" qB = [\n" );
-      if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
-        for(Int j = 0; j < BTF_B.ncol; j++) {
-          for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
-            printf("%d %d %e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
-          }
-        }
-      }
-      printf("];\n");
-      printf(" qC = [\n" );
-      if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
-        for(Int j = 0; j < BTF_C.ncol; j++) {
-          for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-            printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-          }
-        }
-      }
-      printf("];\n");
-      printf(" qD = [\n" );
-      if (BTF_D.nrow > 0 && BTF_D.ncol > 0) {
-        for(Int j = 0; j < BTF_D.ncol; j++) {
-          for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
-            printf("%d %d %e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
-          }
-        }
-      }
-      printf("];\n");
-      printf(" qE = [\n" );
-      if (BTF_E.nrow > 0 && BTF_E.ncol > 0) {
-        for(Int j = 0; j < BTF_E.ncol; j++) {
-          for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
-            printf("%d %d %e\n", BTF_E.row_idx[k], j, BTF_E.val[k]);
-          }
-        }
-      }
-      printf("];\n");*/
-
 
       // compose row permute
       //printf( " > ND and CSYMAMD in numeric setup\n" );
@@ -1915,11 +1770,114 @@ namespace BaskerNS
       permute_with_workspace(numeric_col_iperm_array, order_blk_amd_array, ncol);
       //for (int i = 0; i < ncol; i++) printf( " %d: %d %d\n",i, numeric_row_iperm_array(i),numeric_col_iperm_array(i) );
     }
-    else if(Options.verbose == BASKER_TRUE) {
-      std::cout << " No MWM on diagonal blocks " << std::endl;
+    else {
+      if(Options.verbose == BASKER_TRUE) {
+        std::cout << " No MWM on diagonal blocks " << std::endl;
+      }
+      if (Options.matrix_scaling != 0)
+      {
+        using STS = Teuchos::ScalarTraits<Entry>;
+        using Real = typename STS::magnitudeType;
+        const Real one (1.0);
+        const Real eps = Teuchos::ScalarTraits<Entry>::eps ();
+        const Real normA = BTF_A.anorm;
+
+        Int scol_top = btf_tabs[btf_top_tabs_offset];
+
+        ////////////////////
+        // row and column scale A
+        if (Options.matrix_scaling == 1) {
+          // find diagonal scaling factors 
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            Int col = scol_top+j;
+            scale_row_array[col] = one;
+            scale_col_array[col] = one;
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              if (BTF_A.row_idx[k] == j) {
+                Entry ajj = abs(BTF_A.val[k]);
+                if (abs(ajj) <= eps*normA) {
+                  ajj = eps*normA;
+                }
+                scale_row_array[col] = one / sqrt(ajj);
+                scale_col_array[col] = one / sqrt(ajj);
+              }
+            }
+          }
+
+          // scale matrix with symmetric diagonal scale
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            Int col = scol_top+j;
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              Int row = scol_top+BTF_A.row_idx[k];
+              BTF_A.val[k] *= scale_col_array[col];
+              BTF_A.val[k] *= scale_row_array[row];
+            }
+          }
+        } else {
+          // find max non-zero entry on row
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              Int row = scol_top+BTF_A.row_idx[k];
+              if (abs(scale_row_array[row]) < abs(BTF_A.val[k])) {
+                scale_row_array[row] = abs(BTF_A.val[k]);
+              }
+            }
+          }
+          for(Int i = 0; i < BTF_A.ncol; i++) {
+            Int row = scol_top+i;
+            if (abs(scale_row_array[row]) <= eps*normA) {
+              scale_row_array[row] = eps*normA;
+            }
+            scale_row_array[row] = one / scale_row_array[row];
+          }
+
+          // scale matrix with row scale
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              Int row = scol_top+BTF_A.row_idx[k];
+              BTF_A.val[k] *= scale_row_array[row];
+            }
+          }
+
+          // find max non-zero entry on col, scale matrix
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            // find max entry
+            Int col = scol_top+j;
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              if (abs(scale_col_array[col]) < abs(BTF_A.val[k])) {
+                scale_col_array[col] = abs(BTF_A.val[k]);
+              }
+            }
+            if (abs(scale_col_array[col]) <= eps*normA) {
+              scale_col_array[col] = eps*normA;
+            }
+            // scale
+            scale_col_array[col] = one / scale_col_array[col];
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              BTF_A.val[k] *= scale_col_array[col];
+            }
+          }
+        }
+
+        ////////////////////
+        // row-scale B
+        for(Int j = 0; j < BTF_B.ncol; j++) {
+          for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+            Int row = scol_top+BTF_B.row_idx[k];
+            BTF_B.val[k] *= scale_row_array[row];
+          }
+        }
+        ////////////////////
+        // col-scale E
+        for(Int j = 0; j < BTF_E.ncol; j++) {
+          Int col = scol_top+j;
+          for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
+            BTF_E.val[k] *= scale_col_array[col];
+          }
+        }
+      }
     }
     reset_error();
-
 
     #ifdef BASKER_DEBUG_DIAG
     // Look for zeros on the diagonal - an Option / parameter list option should be used to enable this

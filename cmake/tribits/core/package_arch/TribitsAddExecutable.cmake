@@ -42,19 +42,14 @@ include(TribitsAddExecutableTestHelpers)
 include(TribitsCommonArgsHelpers)
 include(TribitsAddTestHelpers)
 include(TribitsGeneralMacros)
+include(TribitsLibIsTestOnly)
 include(TribitsReportInvalidTribitsUsage)
 
 include(PrintVar)
 include(AppendSet)
 include(CMakeParseArguments)
 
-###
-### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
-### TribitsPackageMacros.cmake before trying to change anything in this file!
-###
 
-
-#
 # @FUNCTION: tribits_add_executable()
 #
 # Function used to create an executable (typically for a test or example),
@@ -180,19 +175,7 @@ include(CMakeParseArguments)
 #     package or any upstream SE packages can *NOT* be listed!  TriBITS
 #     automatically links non ``TESTONLY`` libraries in this package and
 #     upstream packages to the executable.  The only libraries that should be
-#     listed in this argument are either ``TESTONLY`` libraries.  The include
-#     directories for each test-only library will automatically be added
-#     using::
-#
-#       include_directories(${<libi>_INCLUDE_DIRS})
-#
-#     where ``<libi>_INCLUDE_DIRS`` was set by::
-#
-#       tribits_add_library(<libi> ... TESTONLY ...)
-#
-#     Therefore, to link to a defined ``TESTONLY`` library in any upstream
-#     enabled package, one just needs to pass in the library name through
-#     ``TESTONLYLIBS ... <libi> ...`` and that is it!
+#     listed in this argument are either ``TESTONLY`` libraries.
 #
 #   ``IMPORTEDLIBS <lib0> <lib1> ...``
 #
@@ -334,11 +317,138 @@ function(tribits_add_executable EXE_NAME)
     message("")
     message("TRIBITS_ADD_EXECUTABLE: ${EXE_NAME} ${ARGN}")
   endif()
-  
+
+  tribits_add_executable_assert_correct_call_context()
+
   #
-  # Confirm that package and subpackage macros/functions have been called inteh correct order
+  # A) Parse the input arguments
   #
-  
+
+  cmake_parse_arguments(
+    #prefix
+    PARSE
+    #options
+    "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
+    #one_value_keywords
+    ""
+    #multi_value_keywords
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
+    ${ARGN}
+    )
+
+  tribits_check_for_unparsed_arguments()
+
+  # Executable not added by default!
+  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    set(${PARSE_ADDED_EXE_TARGET_NAME_OUT} "" PARENT_SCOPE)
+  endif()
+
+  set(EXE_BINARY_NAME ${EXE_NAME})
+  tribits_add_executable_adjust_exe_name(EXE_BINARY_NAME)
+
+  tribits_add_executable_is_skipped(skipAddExecutable)
+  if (skipAddExecutable)
+    return()
+  endif()
+
+  tribits_add_executable_get_adjusted_sources_list(EXE_SOURCES)
+
+  tribits_add_executable_assert_testonlylibs()
+
+  tribits_add_executable_assert_importedlibs()
+
+  tribits_add_executable_convert_from_deplibs()
+
+  #
+  # B) Add the executable and set its properties
+  #
+
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("TRIBITS_ADD_EXECUTABLE: add_executable(${EXE_BINARY_NAME} ${EXE_SOURCES})")
+  endif()
+  add_executable(${EXE_BINARY_NAME} ${EXE_SOURCES})
+  append_global_set(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${EXE_BINARY_NAME})
+
+  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    set(${PARSE_ADDED_EXE_TARGET_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
+  endif()
+
+  if (PARSE_DEFINES)
+    message(WARNING "WARNING: Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
+      " is deprecated.  Instead, pass them through 'TARGET_DEFINES'.  The 'DEFINES'"
+      " argument was incorrectly implemented by calling add_definitions() which has"
+      " directory scope and not function scope as was documented.  This resulted in"
+      " confusing behavior.  If one wishes to set defines at the directly level,"
+      " just call add_definitions() directly.")
+    add_definitions(${PARSE_DEFINES})
+  endif()
+
+  if (PARSE_TARGET_DEFINES)
+    target_compile_definitions(${EXE_BINARY_NAME} PUBLIC ${PARSE_TARGET_DEFINES})
+  endif()
+
+  if(PARSE_NOEXESUFFIX AND NOT WIN32)
+    set_target_properties(${EXE_BINARY_NAME} PROPERTIES SUFFIX "")
+  else()
+    set_target_properties(${EXE_BINARY_NAME} PROPERTIES SUFFIX
+      ${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX})
+  endif()
+
+  tribits_set_linker_language_from_arg( ${EXE_BINARY_NAME}
+    "${PARSE_LINKER_LANGUAGE}" )
+
+  assert_defined(${PROJECT_NAME}_LINK_SEARCH_START_STATIC)
+  if (${PROJECT_NAME}_LINK_SEARCH_START_STATIC)
+    #message("${EXE_BINARY_NAME}: Adding property LINK_SEARCH_START_STATIC")
+    set_property(TARGET ${EXE_BINARY_NAME} PROPERTY LINK_SEARCH_START_STATIC 1)
+  endif()
+
+  if(PARSE_DIRECTORY)
+    set_target_properties( ${EXE_BINARY_NAME} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${PARSE_DIRECTORY} )
+  endif()
+
+  set_property(TARGET ${EXE_BINARY_NAME} APPEND PROPERTY
+    LABELS ${PACKAGE_NAME}Exes ${PARENT_PACKAGE_NAME}Exes)
+
+  #
+  # C) Link ${EXE_BINARY_NAME} to direct upstream libraries
+  #
+
+  target_link_libraries(${EXE_BINARY_NAME} PUBLIC ${${PACKAGE_NAME}_LIBRARIES})
+  foreach(depPkg IN LISTS ${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES
+      ${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES
+    )
+    target_link_libraries(${EXE_BINARY_NAME} PUBLIC ${depPkg}::all_libs)
+  endforeach()
+  foreach(testOnlyLib ${PARSE_TESTONLYLIBS})
+    target_link_libraries(${EXE_BINARY_NAME} PUBLIC
+      "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${testOnlyLib}")
+  endforeach()
+
+  #
+  # D) Install if asked
+  #
+
+  if(${PROJECT_NAME}_INSTALL_EXECUTABLES AND PARSE_INSTALLABLE)
+    install(
+      TARGETS ${EXE_BINARY_NAME}
+      EXPORT ${PROJECT_NAME}
+        DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}
+      COMPONENT ${PACKAGE_NAME}
+    )
+  endif()
+
+endfunction()
+
+
+# Assert tribits_add_executable() is called in the correct context
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_assert_correct_call_context)
+
   if (CURRENTLY_PROCESSING_SUBPACKAGE)
 
     # This is a subpackage being processed
@@ -373,142 +483,155 @@ function(tribits_add_executable EXE_NAME)
 
   endif()
 
+endfunction()
 
-  #
-  # A) Parse the input arguments
-  #
 
-  cmake_parse_arguments(
-    #prefix
-    PARSE
-    #options
-    "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
-    #one_value_keywords
-    ""
-    #multi_value_keywords
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
-    ${ARGN}
-    )
+# Modify EXE_BINARY_NAME based in passed-in args
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_adjust_exe_name  exeBinaryNameInOut)
 
-  tribits_check_for_unparsed_arguments()
-
-  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
-    set(${PARSE_ADDED_EXE_TARGET_NAME_OUT} PARENT_SCOPE)
+  set(exeBinaryName ${${exeBinaryNameInOut}})
+  if (PARSE_ADD_DIR_TO_NAME)
+    set(dirName "")
+    tribits_create_name_from_current_source_directory(dirName)
+    set(exeBinaryName ${dirName}_${exeBinaryName})
   endif()
 
-  #
-  # B) Exclude building the test executable based on some criteria
-  #
+  if (DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
+    set(exeBinaryName ${PACKAGE_NAME}_${exeBinaryName})
+  endif()
+  set(${exeBinaryNameInOut} ${exeBinaryName} PARENT_SCOPE)
+
+endfunction()
+
+
+# Check if to skip adding the executable based on different criteria
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_is_skipped   skipAddExecutableOut)
+
+  set(skipAddExecutable FALSE)
 
   set(ADD_THE_TEST FALSE)
   set(TEST_NAME ${EXE_NAME})  # For error message
   tribits_add_test_process_categories(ADD_THE_TEST)
   if (NOT ADD_THE_TEST)
-    return()
+    set(skipAddExecutable TRUE)
   endif()
-  set(TEST_NAME)
+  set(TEST_NAME "")
 
   set(ADD_THE_TEST FALSE)
   tribits_add_test_process_host_hosttype(ADD_THE_TEST)
   if (NOT ADD_THE_TEST)
-    return()
+    set(skipAddExecutable TRUE)
   endif()
 
   tribits_process_comm_args(ADD_SERIAL_EXE  ADD_MPI_EXE  ${PARSE_COMM})
   if (NOT ADD_SERIAL_EXE AND NOT ADD_MPI_EXE)
-    return()
+    set(skipAddExecutable TRUE)
   endif()
 
-  #
-  # C) Add the executable
-  #
-
-  set(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
-
-  if (NOT TRIBITS_ADD_EXECUTABLE_UNIT_TESTING)
-    tribits_include_directories(REQUIRED_DURING_INSTALLATION_TESTING
-      ${${PACKAGE_NAME}_INCLUDE_DIRS})
-#    set_property(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
-#      ${${PACKAGE_NAME}_LIBRARY_DIRS})
-  endif()
-
-  set (EXE_SOURCES)
-  set(EXE_BINARY_NAME ${EXE_NAME})
-
-  # If requested create a modifier for the name that will be inserted between
-  # the package name and the given name or exe_name for the test
-  if(PARSE_ADD_DIR_TO_NAME)
-    set(DIRECTORY_NAME "")
-    tribits_create_name_from_current_source_directory(DIRECTORY_NAME)
-    set(EXE_BINARY_NAME ${DIRECTORY_NAME}_${EXE_BINARY_NAME})
-  endif()
-
-  if(DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
-    set(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
-  endif()
-
-  # Exclude the build if requested
   if (${EXE_BINARY_NAME}_EXE_DISABLE)
     message("-- "
       "${EXE_BINARY_NAME} EXE NOT being built due to ${EXE_BINARY_NAME}_EXE_DISABLE="
       "'${${EXE_BINARY_NAME}_EXE_DISABLE}'")
-    return()
+    set(skipAddExecutable TRUE)
   endif()
 
-  # If exe is in subdirectory prepend that dir name to the source files
+  set(${skipAddExecutableOut} ${skipAddExecutable} PARENT_SCOPE)
+
+endfunction()
+
+
+# Get adjusted list of source files
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_get_adjusted_sources_list  exeSourcesOut)
+
+  set(exeSources "")
   if(PARSE_DIRECTORY )
-    foreach( SOURCE_FILE ${PARSE_SOURCES} )
-      if(IS_ABSOLUTE ${SOURCE_FILE})
-        set (EXE_SOURCES ${EXE_SOURCES} ${SOURCE_FILE})
+    foreach( srcFile ${PARSE_SOURCES} )
+      if(IS_ABSOLUTE ${srcFile})
+        list(APPEND exeSources "${srcFile}")
       else()
-        set (EXE_SOURCES ${EXE_SOURCES} ${PARSE_DIRECTORY}/${SOURCE_FILE})
+        list(APPEND exeSources "${PARSE_DIRECTORY}/${srcFile}")
       endif()
     endforeach( )
   else()
-    foreach( SOURCE_FILE ${PARSE_SOURCES} )
-      set (EXE_SOURCES ${EXE_SOURCES} ${SOURCE_FILE})
+    foreach( srcFile ${PARSE_SOURCES} )
+      list(APPEND exeSources "${srcFile}")
     endforeach( )
   endif()
 
+  set(${exeSourcesOut} ${exeSources} PARENT_SCOPE)
+
+endfunction()
+
+
+# Assert tribits_add_executable() TESTONLYLIBS
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_assert_testonlylibs)
   # Assert that TESTONLYLIBS only contains TESTONLY libs!
-  foreach(TESTONLYLIB ${PARSE_TESTONLYLIBS})
-    set(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${TESTONLYLIB}")
-    if (NOT ${PREFIXED_LIB}_INCLUDE_DIRS)
-      message(FATAL_ERROR "ERROR: '${TESTONLYLIB}' in TESTONLYLIBS not a TESTONLY lib!"
+  foreach(testOnlyLib ${PARSE_TESTONLYLIBS})
+    set(prefixedTestOnlyLib "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${testOnlyLib}")
+    tribits_lib_is_testonly(${prefixedTestOnlyLib} libIsTestOnlyLib)
+    if (NOT libIsTestOnlyLib)
+      message(FATAL_ERROR "ERROR: '${testOnlyLib}' in TESTONLYLIBS not a TESTONLY lib!"
         "  If this a regular library in this SE package or in an dependent upstream SE"
         " package then TriBITS will link automatically to it.  If you remove this and it"
         " does not link, then you need to add a new SE package dependency to"
         " this SE package's dependencies file"
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
     elseif(PARSE_INSTALLABLE)
-      message(FATAL_ERROR "ERROR: TESTONLY lib '${TESTONLYLIB}' not allowed with"
+      message(FATAL_ERROR "ERROR: TESTONLY lib '${testOnlyLib}' not allowed with"
         " INSTALLABLE executable!  An INSTALLABLE executable can only depend on"
         " non-TESTONLY libraries!  Otherwise, when shared libs are used, and"
         " TESTONLY library would not be installed and the installed executable"
         " would be unusable!" )
     endif()
   endforeach()
+endfunction()
+
+
+# Assert tribits_add_executable() IMPORTEDLIBS
+#
+# NOTE: This read the variables from the enclosing tribits_add_executable()
+# function call scope.
+#
+function(tribits_add_executable_assert_importedlibs)
 
   # Assert that IMPORTEDLIBS are not TESTONLY libs are not regular package
   # libs!
-  foreach(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
-    set(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
-    if (${PREFIXED_LIB}_INCLUDE_DIRS)
+  foreach(importedLib ${PARSE_IMPORTEDLIBS})
+    set(prefixedImportedLib "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${importedLib}")
+    tribits_lib_is_testonly(${prefixedImportedLib} importedLibIsTestOnlyLib)
+    if (libIsTestOnly)
       message(FATAL_ERROR
-        "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+        "ERROR: Lib '${importedLib}' being passed through"
         " IMPORTEDLIBS is not allowed to be a TESTONLY lib!"
         "  Use TESTONLYLIBS instead!" )
     endif()
-    list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
-    if (NOT FOUND_IDX EQUAL -1)
+    list(FIND ${PACKAGE_NAME}_LIBRARIES "${PACKAGE_NAME}::${prefixedImportedLib}"
+      foundPrefixedImportedLibInPkgLibs_idx)
+    if (NOT foundPrefixedImportedLibInPkgLibs_idx EQUAL -1)
       message(FATAL_ERROR
-        "ERROR: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
+        "ERROR: Lib '${importedLib}' in IMPORTEDLIBS is in"
         " this SE package and is *not* an external lib!"
         "  TriBITS takes care of linking against libs the current"
-        " SE package automatically.  Please remove '${IMPORTEDLIB}' from IMPORTEDLIBS!")
-    elseif (TARGET ${PREFIXED_LIB})
+        " SE package automatically.  Please remove '${importedLib}' from IMPORTEDLIBS!")
+    elseif (TARGET ${prefixedImportedLib})
       message(FATAL_ERROR
-        "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+        "ERROR: Lib '${importedLib}' being passed through"
         " IMPORTEDLIBS is *not* an external library but instead is a library"
         " defined in this CMake project!"
         "  TriBITS takes care of linking against libraries in dependent upstream"
@@ -519,173 +642,44 @@ function(tribits_add_executable EXE_NAME)
     endif()
   endforeach()
 
+endfunction()
+
+
+# Convert from tribits_add_executable() DEPLIBS to IMPORTEDLIBS and TESTONLYLIBS
+#
+# NOTE: This is a macro as it updates local variables in the
+# tribits_add_executable() scope!
+#
+macro(tribits_add_executable_convert_from_deplibs)
+
   # Convert from old DEPLIBS to TESTONLYLIBS and IMPORTEDLIBS
-  foreach(DEPLIB ${PARSE_DEPLIBS})
-    set(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${DEPLIB}")
-    if (${PREFIXED_LIB}_INCLUDE_DIRS)
-      message(WARNING "WARNING: Passing TESTONLY lib '${DEPLIB}' through DEPLIBS"
+  foreach(depLib ${PARSE_DEPLIBS})
+    set(prefixedDepLib "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${depLib}")
+    tribits_lib_is_testonly(${prefixedDepLib} depLibIsTestOnlyLib)
+    if (depLibIsTestOnlyLib)
+      message(WARNING "WARNING: Passing TESTONLY lib '${depLib}' through DEPLIBS"
         " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
         "  DEPLIBS is deprecated!")
-      list(APPEND PARSE_TESTONLYLIBS ${DEPLIB})
-    elseif (TARGET ${PREFIXED_LIB})
-      message(WARNING "WARNING: Passing non-TESTONLY lib '${DEPLIB}' through DEPLIBS"
-      " is deprecated!  The library '${DEPLIB}' appears to be a"
+      list(APPEND PARSE_TESTONLYLIBS ${depLib})
+    elseif (TARGET ${prefixedDepLib})
+      message(WARNING "WARNING: Passing non-TESTONLY lib '${depLib}' through DEPLIBS"
+      " is deprecated!  The library '${depLib}' appears to be a"
       " library defined in this CMake project."
       "  TriBITS takes care of linking against libraries in dependent upstream"
-      " SE packages.  Therefore, please remove '${DEPLIB}' from this list."
+      " SE packages.  Therefore, please remove '${depLib}' from this list."
       "   If you want to link to a library from an upstream SE"
       " package, then add the SE package name to the appropriate category"
       " in this SE package's dependencies file: "
       " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      # ToDo: Convert the above 'WARNING' to 'SEND_ERROR'
     else()
-      message(WARNING "WARNING: Passing external lib '${DEPLIB}' through"
+      message(WARNING "WARNING: Passing external lib '${depLib}' through"
         " DEPLIBS is deprecated!  Instead, pass through IMPORTEDLIBS!"
         "  DEPLIBS is deprecated!"
         "  Please note that only external libs are allowed to be passed through"
         " IMPORTEDLIBS.")
-      list(APPEND PARSE_IMPORTEDLIBS ${DEPLIB})
+      list(APPEND PARSE_IMPORTEDLIBS ${depLib})
     endif()
   endforeach()
 
-  foreach(TESTONLYLIB_IN ${PARSE_TESTONLYLIBS})
-    set(TESTONLYLIB "${LIBRARY_NAME_PREFIX}${TESTONLYLIB_IN}")
-    if (${TESTONLYLIB}_INCLUDE_DIRS)
-      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        message(STATUS "Adding include directories ${TESTONLYLIB}_INCLUDE_DIRS ...")
-      endif()
-      include_directories(${${TESTONLYLIB}_INCLUDE_DIRS})
-    endif()
-  endforeach()
-
-  if (PARSE_DEFINES)
-    message(WARNING "WARNING: Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
-      " is deprecated.  Instead, pass them through 'TARGET_DEFINES'.  The 'DEFINES'"
-      " argument was incorrectly implemented by calling add_definitions() which has"
-      " directory scope and not function scope as was documented.  This resulted in"
-      " confusing behavior.  If one wishes to set defines at the directly level,"
-      " just call add_definitions() directly.")
-    add_definitions(${PARSE_DEFINES})
-  endif()
-
-  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    message("TRIBITS_ADD_EXECUTABLE: add_executable(${EXE_BINARY_NAME} ${EXE_SOURCES})")
-  endif()
-  add_executable(${EXE_BINARY_NAME} ${EXE_SOURCES})
-  append_global_set(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${EXE_BINARY_NAME})
-
-  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
-    set(${PARSE_ADDED_EXE_TARGET_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
-  endif()
-
-  if (PARSE_TARGET_DEFINES)
-    target_compile_definitions(${EXE_BINARY_NAME} PUBLIC ${PARSE_TARGET_DEFINES})
-  endif()
-
-  if(PARSE_NOEXESUFFIX AND NOT WIN32)
-    set_target_properties(${EXE_BINARY_NAME} PROPERTIES SUFFIX "")
-  else()
-    set_target_properties(${EXE_BINARY_NAME} PROPERTIES SUFFIX
-      ${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX})
-  endif()
-
-  tribits_set_linker_language_from_arg( ${EXE_BINARY_NAME}
-    "${PARSE_LINKER_LANGUAGE}" )
-
-  set(LINK_LIBS)
-
-  # First, add in the passed in TESTONLY dependent libraries
-  if (PARSE_TESTONLYLIBS)
-    foreach(LIB ${PARSE_TESTONLYLIBS})
-      list(APPEND LINK_LIBS "${LIBRARY_NAME_PREFIX}${LIB}")
-    endforeach()
-  endif()
-
-  # Second, add the package's own regular libraries
-  if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-    list(APPEND LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
-  else()
-    list(APPEND LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
-  endif()
-
-  # Third, add the IMPORTEDLIBS
-  if (PARSE_IMPORTEDLIBS)
-    list(APPEND LINK_LIBS ${PARSE_IMPORTEDLIBS})
-  endif()
-
-  # Call include_directories() and link_directories(...) for upstream
-  # dependent Packages and TPLs and accumulate the list of libraries that will
-  # need to be linked to.
-
-  if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
-    AND NOT ${PACKAGE_NAME}_INCLUDE_DIRS
-    )
-    # No libraries have been added for this package so
-    # add the upstream package and TPL includes and libraries
-    tribits_sort_and_append_package_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-    tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-  endif()
-
-  tribits_sort_and_append_package_include_and_link_dirs_and_libs(
-    ${PACKAGE_NAME}  TEST  LINK_LIBS)
-
-  if(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-    tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  TEST  LINK_LIBS)
-  else()
-    list(APPEND LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_TPL_LIBRARIES})
-  endif()
-
-  # Last, add last_lib to get extra link options on the link line
-  if (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    list(APPEND LINK_LIBS last_lib)
-  endif()
-
-  if (${PROJECT_NAME}_DUMP_LINK_LIBS)
-      message("-- ${EXE_NAME}:LINK_LIBS='${LINK_LIBS}'")
-  endif()
-
-  target_link_libraries(${EXE_BINARY_NAME} PUBLIC ${LINK_LIBS})
-
-  assert_defined(${PROJECT_NAME}_LINK_SEARCH_START_STATIC)
-  if (${PROJECT_NAME}_LINK_SEARCH_START_STATIC)
-    #message("${EXE_BINARY_NAME}: Adding property LINK_SEARCH_START_STATIC")
-    set_property(TARGET ${EXE_BINARY_NAME} PROPERTY LINK_SEARCH_START_STATIC 1)
-  endif()
-
-  if(PARSE_DIRECTORY)
-    set_target_properties( ${EXE_BINARY_NAME} PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY ${PARSE_DIRECTORY} )
-  endif()
-
-  set_property(TARGET ${EXE_BINARY_NAME} APPEND PROPERTY
-    LABELS ${PACKAGE_NAME}Exes ${PARENT_PACKAGE_NAME}Exes)
-
-  if(${PROJECT_NAME}_INSTALL_EXECUTABLES AND PARSE_INSTALLABLE)
-    install(
-      TARGETS ${EXE_BINARY_NAME}
-      EXPORT ${PROJECT_NAME}
-        DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}
-      COMPONENT ${PACKAGE_NAME}
-    )
-  endif()
-endfunction()
-
-
-#
-# Setup include directories and library dependencies
-#
-
-#if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-#  message("TribitsAddExecutable.cmake")
-#  print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
-#  print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
-#endif()
-#
-#if (NOT TRIBITS_ADD_EXECUTABLE_UNIT_TESTING)
-#  include_directories(REQUIRED_DURING_INSTALLATION_TESTING
-#    ${${PACKAGE_NAME}_INCLUDE_DIRS})
-#  set_property(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
-#    ${${PACKAGE_NAME}_LIBRARY_DIRS})
-#endif()
+endmacro()

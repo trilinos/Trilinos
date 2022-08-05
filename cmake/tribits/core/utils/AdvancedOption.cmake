@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: advanced_option()
 #
 # Macro that sets an option and marks it as advanced (removes boiler-plate and

@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: prepend_set()
 #
 # Utility macro to prepend elements to a variable (reduces boiler-plate code).

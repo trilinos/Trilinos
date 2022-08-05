@@ -5,5 +5,5 @@ tribits_add_advanced_test( test_of_a
   TEST_0 EXEC a_test
     PASS_REGULAR_EXPRESSION_ALL 
       "A label is: A"
-      "A deps are: no_deps"
+      "A deps are: ${EXPECTED_SIMPLECXX_AND_DEPS}"
   )

@@ -109,11 +109,17 @@ if(NOT _CUDA_FAILURE)
   macro(package_add_cuda_library cuda_target)
     tribits_add_library(${cuda_target} ${ARGN} CUDALIBRARY)
   endmacro()
-  global_set(TPL_CUDA_LIBRARY_DIRS)
-  global_set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
-  global_set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
+  set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
+  set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
      ${CUDA_cufft_LIBRARY})
 else()
-  set(TPL_ENABLE_CUDA OFF PARENT_SCOPE)
   message(FATAL_ERROR "\nDid not find acceptable version of CUDA compiler")
 endif()
+
+tribits_tpl_find_include_dirs_and_libraries(CUDA)
+
+unset(TPL_CUDA_INCLUDE_DIRS)
+unset(TPL_CUDA_LIBRARIES)
+
+# NOTE: Above, we need to generate the CUDA::all_libs target and the
+# CUDAConfig.cmake file that will also provide the CUDA::all_libs target.
