@@ -487,7 +487,7 @@ namespace BaskerNS
                << "  norm(A)   = " << normA_blk << " (block)"  << endl
                << "  replace_zero_pivot = " << (Options.replace_zero_pivot ? " true " : "false" ) << endl;
           if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  + replace zero pivot with " << normA_blk * sqrt(eps) << endl;
+            cout << "  + replace tiny pivot with " << normA_blk * sqrt(eps) << endl;
           } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
             cout << "  - replace zero pivot with " << normA_blk * eps << endl;
           }
