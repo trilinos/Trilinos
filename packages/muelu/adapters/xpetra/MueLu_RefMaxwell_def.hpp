@@ -500,110 +500,118 @@ namespace MueLu {
 
           // }
 
-          // if (doRebalancing && !reuse) {
-          // rebalance AH
-          RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: Rebalance AH");
+          if ((numProcsAH < 0) || (numProcsA22 < 0) || (numProcsAH + numProcsA22 > numProcs)) {
+            GetOStream(Warnings0) << "RefMaxwell::compute(): Disabling rebalancing of subsolves, since partition heuristic resulted "
+                                  << "in undesirable number of partitions: " << numProcsAH << ", " << numProcsA22 << std::endl;
+            doRebalancing = false;
+          }
 
-          Level fineLevel, coarseLevel;
-          fineLevel.SetFactoryManager(null);
-          coarseLevel.SetFactoryManager(null);
-          coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
-          fineLevel.SetLevelID(0);
-          coarseLevel.SetLevelID(1);
-          coarseLevel.Set("A",AH_);
-          coarseLevel.Set("P",P11_);
-          coarseLevel.Set("Coordinates",CoordsH_);
-          if (!NullspaceH_.is_null())
-            coarseLevel.Set("Nullspace",NullspaceH_);
-          coarseLevel.Set("number of partitions", numProcsAH);
-          coarseLevel.Set("repartition: heuristic target rows per process", 1000);
+          // check again, as we could have changed the value above
+          if (doRebalancing) {
+            // rebalance AH
+            RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: Rebalance AH");
 
-          coarseLevel.setlib(AH_->getDomainMap()->lib());
-          fineLevel.setlib(AH_->getDomainMap()->lib());
-          coarseLevel.setObjectLabel("RefMaxwell coarse (1,1)");
-          fineLevel.setObjectLabel("RefMaxwell coarse (1,1)");
+            Level fineLevel, coarseLevel;
+            fineLevel.SetFactoryManager(null);
+            coarseLevel.SetFactoryManager(null);
+            coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+            fineLevel.SetLevelID(0);
+            coarseLevel.SetLevelID(1);
+            coarseLevel.Set("A",AH_);
+            coarseLevel.Set("P",P11_);
+            coarseLevel.Set("Coordinates",CoordsH_);
+            if (!NullspaceH_.is_null())
+              coarseLevel.Set("Nullspace",NullspaceH_);
+            coarseLevel.Set("number of partitions", numProcsAH);
+            coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
-          std::string partName = precList11_.get<std::string>("repartition: partitioner", "zoltan2");
-          RCP<Factory> partitioner;
-          if (partName == "zoltan") {
+            coarseLevel.setlib(AH_->getDomainMap()->lib());
+            fineLevel.setlib(AH_->getDomainMap()->lib());
+            coarseLevel.setObjectLabel("RefMaxwell coarse (1,1)");
+            fineLevel.setObjectLabel("RefMaxwell coarse (1,1)");
+
+            std::string partName = precList11_.get<std::string>("repartition: partitioner", "zoltan2");
+            RCP<Factory> partitioner;
+            if (partName == "zoltan") {
 #ifdef HAVE_MUELU_ZOLTAN
-            partitioner = rcp(new ZoltanInterface());
-            // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
-            // partitioner->SetFactory("number of partitions", repartheurFactory);
+              partitioner = rcp(new ZoltanInterface());
+              // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
+              // partitioner->SetFactory("number of partitions", repartheurFactory);
 #else
-            throw Exceptions::RuntimeError("Zoltan interface is not available");
+              throw Exceptions::RuntimeError("Zoltan interface is not available");
 #endif
-          } else if (partName == "zoltan2") {
+            } else if (partName == "zoltan2") {
 #ifdef HAVE_MUELU_ZOLTAN2
-            partitioner = rcp(new Zoltan2Interface());
-            ParameterList partParams;
-            RCP<const ParameterList> partpartParams = rcp(new ParameterList(precList11_.sublist("repartition: params", false)));
-            partParams.set("ParameterList", partpartParams);
-            partitioner->SetParameterList(partParams);
-            // partitioner->SetFactory("number of partitions", repartheurFactory);
+              partitioner = rcp(new Zoltan2Interface());
+              ParameterList partParams;
+              RCP<const ParameterList> partpartParams = rcp(new ParameterList(precList11_.sublist("repartition: params", false)));
+              partParams.set("ParameterList", partpartParams);
+              partitioner->SetParameterList(partParams);
+              // partitioner->SetFactory("number of partitions", repartheurFactory);
 #else
-            throw Exceptions::RuntimeError("Zoltan2 interface is not available");
+              throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
-          }
+            }
 
-          auto repartFactory = rcp(new RepartitionFactory());
-          ParameterList repartParams;
-          repartParams.set("repartition: print partition distribution", precList11_.get<bool>("repartition: print partition distribution", false));
-          repartParams.set("repartition: remap parts", precList11_.get<bool>("repartition: remap parts", true));
-          if (rebalanceStriding >= 1) {
-            bool acceptPart = (SM_Matrix_->getDomainMap()->getComm()->getRank() % rebalanceStriding) == 0;
-            if (SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsAH*rebalanceStriding)
-              acceptPart = false;
-            repartParams.set("repartition: remap accept partition", acceptPart);
-          }
-          repartFactory->SetParameterList(repartParams);
-          // repartFactory->SetFactory("number of partitions", repartheurFactory);
-          repartFactory->SetFactory("Partition", partitioner);
+            auto repartFactory = rcp(new RepartitionFactory());
+            ParameterList repartParams;
+            repartParams.set("repartition: print partition distribution", precList11_.get<bool>("repartition: print partition distribution", false));
+            repartParams.set("repartition: remap parts", precList11_.get<bool>("repartition: remap parts", true));
+            if (rebalanceStriding >= 1) {
+              bool acceptPart = (SM_Matrix_->getDomainMap()->getComm()->getRank() % rebalanceStriding) == 0;
+              if (SM_Matrix_->getDomainMap()->getComm()->getRank() >= numProcsAH*rebalanceStriding)
+                acceptPart = false;
+              repartParams.set("repartition: remap accept partition", acceptPart);
+            }
+            repartFactory->SetParameterList(repartParams);
+            // repartFactory->SetFactory("number of partitions", repartheurFactory);
+            repartFactory->SetFactory("Partition", partitioner);
 
-          auto newP = rcp(new RebalanceTransferFactory());
-          ParameterList newPparams;
-          newPparams.set("type", "Interpolation");
-          newPparams.set("repartition: rebalance P and R", precList11_.get<bool>("repartition: rebalance P and R", false));
-          newPparams.set("repartition: use subcommunicators", true);
-          newPparams.set("repartition: rebalance Nullspace", !NullspaceH_.is_null());
-          newP->SetFactory("Coordinates", NoFactory::getRCP());
-          if (!NullspaceH_.is_null())
-            newP->SetFactory("Nullspace", NoFactory::getRCP());
-          newP->SetParameterList(newPparams);
-          newP->SetFactory("Importer", repartFactory);
+            auto newP = rcp(new RebalanceTransferFactory());
+            ParameterList newPparams;
+            newPparams.set("type", "Interpolation");
+            newPparams.set("repartition: rebalance P and R", precList11_.get<bool>("repartition: rebalance P and R", false));
+            newPparams.set("repartition: use subcommunicators", true);
+            newPparams.set("repartition: rebalance Nullspace", !NullspaceH_.is_null());
+            newP->SetFactory("Coordinates", NoFactory::getRCP());
+            if (!NullspaceH_.is_null())
+              newP->SetFactory("Nullspace", NoFactory::getRCP());
+            newP->SetParameterList(newPparams);
+            newP->SetFactory("Importer", repartFactory);
 
-          auto newA = rcp(new RebalanceAcFactory());
-          ParameterList rebAcParams;
-          rebAcParams.set("repartition: use subcommunicators", true);
-          newA->SetParameterList(rebAcParams);
-          newA->SetFactory("Importer", repartFactory);
+            auto newA = rcp(new RebalanceAcFactory());
+            ParameterList rebAcParams;
+            rebAcParams.set("repartition: use subcommunicators", true);
+            newA->SetParameterList(rebAcParams);
+            newA->SetFactory("Importer", repartFactory);
 
-          coarseLevel.Request("P", newP.get());
-          coarseLevel.Request("Importer", repartFactory.get());
-          coarseLevel.Request("A", newA.get());
-          coarseLevel.Request("Coordinates", newP.get());
-          if (!NullspaceH_.is_null())
-            coarseLevel.Request("Nullspace", newP.get());
-          repartFactory->Build(coarseLevel);
+            coarseLevel.Request("P", newP.get());
+            coarseLevel.Request("Importer", repartFactory.get());
+            coarseLevel.Request("A", newA.get());
+            coarseLevel.Request("Coordinates", newP.get());
+            if (!NullspaceH_.is_null())
+              coarseLevel.Request("Nullspace", newP.get());
+            repartFactory->Build(coarseLevel);
 
-          if (!precList11_.get<bool>("repartition: rebalance P and R", false))
-            ImporterH_ = coarseLevel.Get< RCP<const Import> >("Importer", repartFactory.get());
-          P11_ = coarseLevel.Get< RCP<Matrix> >("P", newP.get());
-          AH_ = coarseLevel.Get< RCP<Matrix> >("A", newA.get());
-          CoordsH_ = coarseLevel.Get< RCP<RealValuedMultiVector> >("Coordinates", newP.get());
-          if (!NullspaceH_.is_null())
-            NullspaceH_ = coarseLevel.Get< RCP<MultiVector> >("Nullspace", newP.get());
+            if (!precList11_.get<bool>("repartition: rebalance P and R", false))
+              ImporterH_ = coarseLevel.Get< RCP<const Import> >("Importer", repartFactory.get());
+            P11_ = coarseLevel.Get< RCP<Matrix> >("P", newP.get());
+            AH_ = coarseLevel.Get< RCP<Matrix> >("A", newA.get());
+            CoordsH_ = coarseLevel.Get< RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+            if (!NullspaceH_.is_null())
+              NullspaceH_ = coarseLevel.Get< RCP<MultiVector> >("Nullspace", newP.get());
 
-          AH_AP_reuse_data_ = Teuchos::null;
-          AH_RAP_reuse_data_ = Teuchos::null;
+            AH_AP_reuse_data_ = Teuchos::null;
+            AH_RAP_reuse_data_ = Teuchos::null;
 
-          if (!disable_addon_ && enable_reuse_) {
-            // Rebalance the addon for next setup
-            RCP<const Import> ImporterH = coarseLevel.Get< RCP<const Import> >("Importer", repartFactory.get());
-            RCP<const Map> targetMap = ImporterH->getTargetMap();
-            ParameterList XpetraList;
-            XpetraList.set("Restrict Communicator",true);
-            Addon_Matrix_ = MatrixFactory::Build(Addon_Matrix_, *ImporterH, *ImporterH, targetMap, targetMap, rcp(&XpetraList,false));
+            if (!disable_addon_ && enable_reuse_) {
+              // Rebalance the addon for next setup
+              RCP<const Import> ImporterH = coarseLevel.Get< RCP<const Import> >("Importer", repartFactory.get());
+              RCP<const Map> targetMap = ImporterH->getTargetMap();
+              ParameterList XpetraList;
+              XpetraList.set("Restrict Communicator",true);
+              Addon_Matrix_ = MatrixFactory::Build(Addon_Matrix_, *ImporterH, *ImporterH, targetMap, targetMap, rcp(&XpetraList,false));
+            }
           }
         }
 #endif // HAVE_MPI
