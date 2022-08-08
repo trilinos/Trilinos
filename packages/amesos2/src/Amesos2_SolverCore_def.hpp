@@ -262,6 +262,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   using host_magni_view  = Kokkos::View<magni_type  *,  Kokkos::LayoutLeft, host_execution_space>;
 
   const scalar_type one(1.0);
+  const scalar_type mone = scalar_type(-one);
   const magni_type eps = STS::eps ();
 
   // get data needed for IR
@@ -378,7 +379,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     // r = b - Ax (on rank-0)
     if (this->root_) {
       Kokkos::deep_copy(R_view, B_view);
-      KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
+      KokkosSparse::spmv("N", mone, crsmat, X_view, one, R_view);
       Kokkos::fence();
     
       if (verbose) {
@@ -427,7 +428,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   if (verbose && this->root_) {
     // r = b - Ax
     Kokkos::deep_copy(R_view, B_view);
-    KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
+    KokkosSparse::spmv("N", mone, crsmat, X_view, one, R_view);
     Kokkos::fence();
     std::cout << " > final residual norm = ";
     for (size_t j = 0; j < nrhs; j++) { 
