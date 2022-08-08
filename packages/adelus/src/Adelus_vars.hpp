@@ -60,14 +60,20 @@ class AdelusHandle {
   using memory_space    = MemorySpace;
 
  private:
+
+  int comm_id;       // communicator id
+  MPI_Comm comm;     // communicator that I belong to
+  MPI_Comm row_comm; // row sub-communicator that I belong to
+  MPI_Comm col_comm; // column sub-communicator that I belong to
+
   int myrank;        // process id information
+
+  int nrows_matrix;  // number of rows in the matrix
+  int ncols_matrix;  // number of cols in the matrix
 
   int nprocs_cube;   // num of procs in the allocated cube
   int nprocs_row;    // num of procs to which a row is assigned
   int nprocs_col;    // num of procs to which a col is assigned
-
-  int nrows_matrix;  // number of rows in the matrix
-  int ncols_matrix;  // number of cols in the matrix
 
   int my_first_row;  // proc position in a row
   int my_first_col;  // proc position in a col
@@ -84,10 +90,7 @@ class AdelusHandle {
   int myrow;         // process id in the col_comm 
   int mycol;         // process id in the row_comm
 
-  MPI_Comm row_comm; // row sub-communicator that I belong to
-  MPI_Comm col_comm; // column sub-communicator that I belong to
-  MPI_Comm comm;     // communicator that I belong to
-  int comm_id;       // communicator id
+
 
  public:
   AdelusHandle( const int comm_id_,
