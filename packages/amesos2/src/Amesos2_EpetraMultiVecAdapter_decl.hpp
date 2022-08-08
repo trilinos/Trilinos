@@ -115,6 +115,8 @@ namespace Amesos2 {
     bool isGloballyIndexed() const;
 
 
+    Teuchos::RCP<Epetra_MultiVector> clone() const;
+
     /**
      * \brief Get a Tpetra::Map that describes this MultiVector
      *

@@ -133,8 +133,8 @@ int InterpolationProjectionQuad(const bool verbose) {
 
   using DynRankViewIntHost = Kokkos::DynRankView<ordinal_type,HostSpaceType>;
 
-  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  ";   ExecSpaceType().print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
   *outStream << "\n";
 
   int errorFlag = 0;
