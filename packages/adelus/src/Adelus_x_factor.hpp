@@ -83,14 +83,13 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute, double *secs)
   int blksz   = ahandle.get_blksz();
   int my_rows = ahandle.get_my_rows();
   int my_cols = ahandle.get_my_cols();
-  int nrhs    = ahandle.get_nrhs();
 
   double run_secs; // time (in secs) during which the prog ran
   double tsecs;    // intermediate storage of timing info
   int totmem = 0;  // Initialize the total memory used
   
 #ifdef PRINT_STATUS
-  printf("Rank %i -- factor_() Begin LU with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), blksz, ahandle.get_myrow(), ahandle.get_mycol(), ahandle.get_nprocs_row(), ahandle.get_nprocs_col(), ahandle.get_nrows_matrix(), ahandle.get_ncols_matrix(), my_rows, my_cols, ahandle.get_my_rhs(), nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- factor_() Begin LU with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), blksz, ahandle.get_myrow(), ahandle.get_mycol(), ahandle.get_nprocs_row(), ahandle.get_nprocs_col(), ahandle.get_nrows_matrix(), ahandle.get_ncols_matrix(), my_rows, my_cols, ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
   // Allocate arrays for factor

@@ -120,11 +120,9 @@ namespace Adelus {
   void FactorSolve( HandleType& ahandle,
                     ZRHSViewType& AA,
                     double* secs ) {
-
-    int rank = ahandle.get_myrank();
 	
 #ifdef PRINT_STATUS
-    printf("FactorSolve (Kokkos View interface) in rank %d\n", rank);
+    printf("FactorSolve (Kokkos View interface) in rank %d\n", ahandle.get_myrank());
 #endif
 
     lusolve_(ahandle, AA, secs);
@@ -146,10 +144,8 @@ namespace Adelus {
                PViewType& permute,
                double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
 #ifdef PRINT_STATUS
-    printf("Factor (Kokkos View interface) in rank %d\n", rank);
+    printf("Factor (Kokkos View interface) in rank %d\n", ahandle.get_myrank());
 #endif
 
     lu_(ahandle, AA, permute, secs);
@@ -174,10 +170,8 @@ namespace Adelus {
               PViewType& permute,
               double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
 #ifdef PRINT_STATUS
-    printf("Solve (Kokkos View interface) in rank %d\n", rank);
+    printf("Solve (Kokkos View interface) in rank %d\n", ahandle.get_myrank());
 #endif
 
     solve_(ahandle, AA, BB, permute, secs);
@@ -200,8 +194,6 @@ namespace Adelus {
                            int* num_rhs,
                            double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<Kokkos::complex<double>**,
@@ -216,7 +208,7 @@ namespace Adelus {
     AA_Internal AA_i(reinterpret_cast<Kokkos::complex<double> *>(AA), my_rows_, my_cols_ + my_rhs_ + 6);
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_devPtr (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_devPtr (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -239,8 +231,6 @@ namespace Adelus {
                             int* num_rhs,
                             double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<Kokkos::complex<double>**,
                          Kokkos::LayoutLeft,
@@ -261,7 +251,7 @@ namespace Adelus {
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with CUDA solve (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with CUDA solve (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
@@ -271,7 +261,7 @@ namespace Adelus {
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with host solve (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with host solve (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -296,8 +286,6 @@ namespace Adelus {
                            int* num_rhs,
                            double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<double**,
@@ -312,7 +300,7 @@ namespace Adelus {
     AA_Internal AA_i(reinterpret_cast<double *>(AA), my_rows_, my_cols_ + my_rhs_ + 6);
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_devPtr (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_devPtr (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -335,8 +323,6 @@ namespace Adelus {
                             int* num_rhs,
                             double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<double**,
                          Kokkos::LayoutLeft,
@@ -357,7 +343,7 @@ namespace Adelus {
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with CUDA solve (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with CUDA solve (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
@@ -367,7 +353,7 @@ namespace Adelus {
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with host solve (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with host solve (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -392,8 +378,6 @@ namespace Adelus {
                            int* num_rhs,
                            double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<Kokkos::complex<float>**,
@@ -408,7 +392,7 @@ namespace Adelus {
     AA_Internal AA_i(reinterpret_cast<Kokkos::complex<float> *>(AA), my_rows_, my_cols_ + my_rhs_ + 6);
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_devPtr (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_devPtr (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -431,8 +415,6 @@ namespace Adelus {
                             int* num_rhs,
                             double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<Kokkos::complex<float>**,
                          Kokkos::LayoutLeft,
@@ -453,7 +435,7 @@ namespace Adelus {
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with CUDA solve (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with CUDA solve (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
@@ -463,7 +445,7 @@ namespace Adelus {
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with host solve (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with host solve (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -488,8 +470,6 @@ namespace Adelus {
                            int* num_rhs,
                            double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<float**,
@@ -504,7 +484,7 @@ namespace Adelus {
     AA_Internal AA_i(reinterpret_cast<float *>(AA), my_rows_, my_cols_ + my_rhs_ + 6);
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_devPtr (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_devPtr (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
@@ -527,8 +507,6 @@ namespace Adelus {
                             int* num_rhs,
                             double* secs ) {
 
-    int rank = ahandle.get_myrank();
-
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<float**,
                          Kokkos::LayoutLeft,
@@ -549,7 +527,7 @@ namespace Adelus {
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with CUDA solve (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with CUDA solve (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
@@ -559,7 +537,7 @@ namespace Adelus {
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
 #ifdef PRINT_STATUS
-    printf("FactorSolve_hostPtr with host solve (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
+    printf("FactorSolve_hostPtr with host solve (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", ahandle.get_myrank(), my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
     lusolve_(ahandle, AA_i, secs);
