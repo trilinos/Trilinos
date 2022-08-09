@@ -396,6 +396,23 @@ namespace MueLu {
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only
 
+      
+      /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+       BlockSize is the number of storage blocks that must kept together during the amalgamation process.
+
+       Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+       numPDEs = BlockSize * storageblocksize.
+       
+       If numPDEs==1
+         Matrix is point storage (classical CRS storage).  storageblocksize=1 and BlockSize=1
+         No other values makes sense.
+
+       If numPDEs>1
+         If matrix uses point storage, then storageblocksize=1  and BlockSize=numPDEs.
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and BlockSize=numPDEs/n.  
+         Thus far, only storageblocksize=numPDEs and BlockSize=1 has been tested.
+      */      
       TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
       const LO BlockSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 

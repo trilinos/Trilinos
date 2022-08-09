@@ -75,14 +75,22 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
-    /* NOTE: Fullblocksize here represents the number of blocks of whatever storage type is represented by the matrix, specifically
-       the GetFixedBlockSize() which should come from the # PDEs specified on the input deck (or null space dimension on finer levels).
-       So for a point matrix, that's the block size.  
+    /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+       fullblocksize is the number of storage blocks that must kept together during the amalgamation process.
+
+       Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+       numPDEs = fullblocksize * storageblocksize.
        
-       For a BlockCrsMatrix, that's the number of blocks of the BlockCrs object which make up a logical block for amalgamation.  Here we 
-       divide the GetFixedBlockSize() by the GetStorageBlockSize().  We've only tested fullblocksize=1 in the BlockCrs case, but in theory
-       you could use a larger number here.
-     */
+       If numPDEs==1
+         Matrix is point storage (classical CRS storage).  storageblocksize=1 and fullblocksize=1
+         No other values makes sense.
+
+       If numPDEs>1
+         If matrix uses point storage, then storageblocksize=1  and fullblockssize=numPDEs.
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and fullblocksize=numPDEs/n.  
+         Thus far, only storageblocksize=numPDEs and fullblocksize=1 has been tested.
+    */
 
 
     LO fullblocksize    = 1;   // block dim for fixed size blocks
@@ -113,6 +121,7 @@ namespace MueLu {
         stridedblocksize = fullblocksize;
       }
       // Correct for the storageblocksize
+      // NOTE:  Before this point fullblocksize is actually numPDEs
       TEUCHOS_TEST_FOR_EXCEPTION(fullblocksize % storageblocksize != 0,Exceptions::RuntimeError,"AmalgamationFactory: fullblocksize needs to be a multiple of A->GetStorageBlockSize()");
       fullblocksize /= storageblocksize;
       stridedblocksize /= storageblocksize;
