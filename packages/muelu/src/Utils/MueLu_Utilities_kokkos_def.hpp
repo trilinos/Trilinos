@@ -125,10 +125,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped) {
+  GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                           typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol, const bool doLumped) {
     Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
     // Some useful type definitions
+    using Matrix            = Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Map               = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+    using Vector            = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using VectorFactory     = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using local_matrix_type = typename Matrix::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using value_type        = typename local_matrix_type::value_type;
@@ -193,6 +197,22 @@ namespace MueLu {
 
     return diag;
   } //GetMatrixDiagonalInverse
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped)
+  {
+    return MueLu::GetMatrixDiagonalInverse<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A,tol,doLumped);
+  }
+
+  template <class Node>
+  Teuchos::RCP<Xpetra::Vector<double,int,int,Node> >
+  Utilities_kokkos<double,int,int,Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped)
+  {
+    return MueLu::GetMatrixDiagonalInverse<double, int, int, Node>(A,tol,doLumped);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
