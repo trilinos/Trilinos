@@ -91,7 +91,7 @@ namespace panzer_stk {
     buildMetaData(*mesh);
 
     mesh->addPeriodicBCs(periodicBCVec_);
-    mesh->setPeriodicSearchFlag(searchFlag_);
+    mesh->setBoundingBoxSearchFlag(useBBoxSearch_);
 
     return mesh;
   }
@@ -153,7 +153,7 @@ namespace panzer_stk {
     ElectricPotential_ = paramList->get<double*>("ElectricPotential");
 
     // read in periodic boundary conditions
-    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,searchFlag_);
+    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,useBBoxSearch_);
   }
 
   //! From ParameterListAcceptor

@@ -1872,7 +1872,7 @@ STK_Interface::getPeriodicNodePairing() const
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > vec;
    Teuchos::RCP<std::vector<unsigned int > > type_vec = rcp(new std::vector<unsigned int>);
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & matchers = getPeriodicBCVector();
-   const bool & searchFlag = getPeriodicSearchFlag();
+   const bool & useBBoxSearch = useBoundingBoxSearch();
    std::vector<std::vector<std::string> > matchedSides(3); // (coord,edge,face)
 
    // build up the vectors by looping over the matched pair
@@ -1887,15 +1887,16 @@ STK_Interface::getPeriodicNodePairing() const
       else
         TEUCHOS_ASSERT(false);
 #ifdef PANZER_HAVE_STKSEARCH
-      // warning if we have the new flag on but dont have STKSEARCH enable?
 
-      // if new flag...
-      if (searchFlag) {
+      if (useBBoxSearch) {
          vec = matchers[m]->getMatchedPair(*this,matchedSides[type],vec);
       } else {
          vec = matchers[m]->getMatchedPair(*this,vec);
       }
 #else 
+      TEUCHOS_TEST_FOR_EXCEPTION(useBBoxSearch,std::logic_error,
+          "panzer::STK_Interface::getPeriodicNodePairing(): Requested bounding box search, but "
+          "did not compile with STK_SEARCH enabled.");
       vec = matchers[m]->getMatchedPair(*this,vec);
 #endif
       type_vec->insert(type_vec->begin(),vec->size()-type_vec->size(),type);

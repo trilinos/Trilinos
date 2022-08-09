@@ -69,7 +69,7 @@ public:
 
    /** Get the flag indicating if the bounding box search is used
    * when matching periodic Ids. */
-   const bool & getSearchFlag() const;
+   const bool & useBoundingBoxSearch() const;
 
    // parameterlistacceptor required functions
    /////////////////////////////////////
@@ -143,8 +143,8 @@ private:
    const std::string condPrefix_;
    const std::string searchStr_;
    
-   // stored search flag
-   bool newSearch_;
+   // stored flag indicating if bounding box search is used for periodic DOF matching
+   bool useBBoxSearch_;
 };
 
 }

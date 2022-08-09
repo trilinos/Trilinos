@@ -188,7 +188,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    buildMetaData(parallelMach, *mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
-   mesh->setPeriodicSearchFlag(searchFlag_);
+   mesh->setBoundingBoxSearchFlag(useBBoxSearch_);
 
    return mesh;
 }
@@ -373,7 +373,7 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    }
 
    // read in periodic boundary conditions
-   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,searchFlag_);
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,useBBoxSearch_);
 
    keepPerceptData_ = paramList->get<bool>("Keep Percept Data");
 

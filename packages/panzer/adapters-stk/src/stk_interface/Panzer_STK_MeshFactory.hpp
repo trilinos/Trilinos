@@ -86,12 +86,12 @@ public:
      */
    static void parsePeriodicBCList(const Teuchos::RCP<Teuchos::ParameterList> & pl,
                                    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & periodicBC,
-                                   bool & searchFlag)
+                                   bool & useBBoxSearch)
    {
       panzer_stk::PeriodicBC_Parser parser;
       parser.setParameterList(pl);
       periodicBC = parser.getMatchers();
-      searchFlag = parser.getSearchFlag();
+      useBBoxSearch = parser.useBoundingBoxSearch();
    }
 
    void enableRebalance(bool enable,const Teuchos::RCP<const Teuchos::ParameterList> & rebalanceList=Teuchos::null) 
@@ -138,8 +138,8 @@ public:
 protected:
    // vector of periodic boundary condition objects
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_; 
-   // flag indicated which periodic search algorithm to use
-   bool searchFlag_;
+   // flag indicating which periodic search algorithm to use (bounding box or direct search)
+   bool useBBoxSearch_;
 
    // for managing rebalance
    bool enableRebalance_;

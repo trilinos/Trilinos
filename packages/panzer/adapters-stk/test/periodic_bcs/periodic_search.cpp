@@ -112,7 +112,7 @@ namespace panzer {
       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
     TEST_ASSERT(mesh!=Teuchos::null);
-    TEST_ASSERT(mesh->getBulkData()->parallel_size()==2);
+    TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     auto myrank = mesh->getBulkData()->parallel_rank();
 
@@ -145,7 +145,7 @@ namespace panzer {
       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
     TEST_ASSERT(mesh!=Teuchos::null);
-    TEST_ASSERT(mesh->getBulkData()->parallel_size()==2);
+    TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     auto myrank = mesh->getBulkData()->parallel_rank();
 
@@ -180,7 +180,7 @@ namespace panzer {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
     TEST_ASSERT(mesh!=Teuchos::null);
-    TEST_ASSERT(mesh->getBulkData()->parallel_size()==2);
+    TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     auto myrank = mesh->getBulkData()->parallel_rank();
 
@@ -215,7 +215,7 @@ namespace panzer {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
     TEST_ASSERT(mesh!=Teuchos::null);
-    TEST_ASSERT(mesh->getBulkData()->parallel_size()==2);
+    TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     std::vector<double> centroid = panzer_stk::periodic_helpers::computeGlobalCentroid(*mesh,"top");
 
@@ -247,7 +247,7 @@ namespace panzer {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
     TEST_ASSERT(mesh!=Teuchos::null);
-    TEST_ASSERT(mesh->getBulkData()->parallel_size()==2);
+    TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     panzer_stk::CoordMatcher x_matcher(0),y_matcher(1),z_matcher(2);
     SphereIdVector topCoordsIds,leftCoordsIds,frontCoordsIds;
@@ -325,7 +325,7 @@ namespace panzer {
       if (doubleLfound[i] != TL_intersection[i]) 
         ++errL;
     }
-    TEST_ASSERT(errL==0);
+    TEST_EQUALITY(errL,0);
 
     // now ensure the unique nodes we found are correct
     std::set_difference(leftIds.begin(),leftIds.end(),
@@ -340,7 +340,7 @@ namespace panzer {
       if (L_unique_exact[i] != uniqueLeftIds[i]) 
         ++errLUnique;
     }
-    TEST_ASSERT(errLUnique==0);
+    TEST_EQUALITY(errLUnique,0);
 
     std::sort(TL_intersection.begin(),TL_intersection.end());
 
@@ -385,7 +385,7 @@ namespace panzer {
       if (doubleFfound[i] != frontRepeatedNodes[i]) 
         ++errF;
     }
-    TEST_ASSERT(errF==0);
+    TEST_EQUALITY(errF,0);
 
     // ensure the unique nodes we found are correct
     std::set_difference(frontIds.begin(),frontIds.end(),
@@ -400,7 +400,7 @@ namespace panzer {
       if (F_unique_exact[i] != uniqueFrontIds[i]) 
         ++errFUnique;
     }
-    TEST_ASSERT(errFUnique==0);
+    TEST_EQUALITY(errFUnique,0);
 
     // now ensure that the final set of unique ids is really unique
 
@@ -453,27 +453,18 @@ namespace panzer {
      panzer_stk::periodic_helpers::transformLocalSearchVector(left,y_matcher,rightCentroid);
      panzer_stk::periodic_helpers::transformLocalSearchVector(bottom,x_matcher,topCentroid);
 
-     size_t x_err = 0;
-
      for (size_t n=0; n<nPoints; ++n){
        double exact[3] = {1.,(double)n,0.};
        auto ptShifted = left[n].first.center();
-       if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-            (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++x_err;
+       for (size_t i=0; i<3; ++i) TEST_FLOATING_EQUALITY(exact[i],ptShifted[i],1e-14);
      }
-
-     TEUCHOS_ASSERT(x_err==0);
-
-     size_t y_err = 0;
 
      for (size_t n=0; n<nPoints; ++n){
        double exact[3] = {(double)n,1.,0.};
        auto ptShifted = bottom[n].first.center();
-       if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-            (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++y_err;
+       for (size_t i=0; i<3; ++i) TEST_FLOATING_EQUALITY(exact[i],ptShifted[i],1e-14);
      }
 
-     TEUCHOS_ASSERT(y_err==0);
   }
 
   TEUCHOS_UNIT_TEST(periodic_search, transformLocalSearchVector_planeMatcher)
@@ -512,7 +503,6 @@ namespace panzer {
      panzer_stk::periodic_helpers::transformLocalSearchVector(yz,yz_matcher,yzCentroid);
      panzer_stk::periodic_helpers::transformLocalSearchVector(xz,xz_matcher,xzCentroid);
 
-     size_t xy_err = 0;
      size_t n = 0;
 
      for (size_t i=0; i<nPoints; ++i){
@@ -520,40 +510,29 @@ namespace panzer {
        double exact[3] = {(double)i,(double)j,1.};
        auto ptShifted = xy[n].first.center();
        ++n;
-       if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-            (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++xy_err;
+       for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
       }
      }
 
-     TEUCHOS_ASSERT(xy_err==0);
-
-     size_t yz_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
            double exact[3] = {1.,(double)i,(double)j};
            auto ptShifted = yz[n].first.center();
            ++n;
-           if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-                (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++yz_err;
+           for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(yz_err==0);
 
-     size_t xz_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
            double exact[3] = {(double)i,1.,(double)j};
            auto ptShifted = xz[n].first.center();
            ++n;
-           if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-                (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++xz_err;
+           for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(xz_err==0);
 
   }
 
@@ -600,7 +579,6 @@ namespace panzer {
      panzer_stk::periodic_helpers::transformLocalSearchVector(zy,xzY_matcher,xyCentroid);
      panzer_stk::periodic_helpers::transformLocalSearchVector(xz,yxZ_matcher,yzCentroid);
 
-     size_t xyZ_err = 0;
      size_t n = 0;
 
      for (size_t i=0; i<nPoints; ++i){
@@ -609,57 +587,42 @@ namespace panzer {
        double exact[3] = {(double)i,0.,(double)j};
        auto ptShifted = yz[n].first.center();
        ++n;
-       if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-            (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++xyZ_err;
+       for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
       }
      }
 
-     TEUCHOS_ASSERT(xyZ_err==0);
-
-     size_t yzX_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
            // zx becomes yx
            double exact[3] = {(double)j,(double)i,0.};
            auto ptShifted = zx[n].first.center();
            ++n;
-           if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-                (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++yzX_err;
+           for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(yzX_err==0);
 
-     size_t xzY_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
            // zy becomes xy
            double exact[3] = {(double)i,(double)j,0.};
            auto ptShifted = zy[n].first.center();
            ++n;
-           if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-                (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++xzY_err;
+           for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(xzY_err==0);
 
-     size_t yxZ_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
            // xz becomes yz
            double exact[3] = {0.,(double)i,(double)j};
            auto ptShifted = xz[n].first.center();
            ++n;
-           if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-                (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++yxZ_err;
+           for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(yxZ_err==0);
 
   }
     TEUCHOS_UNIT_TEST(periodic_search, transformLocalSearchVector_wedgeMatcher)
@@ -699,7 +662,6 @@ namespace panzer {
      panzer_stk::periodic_helpers::transformLocalSearchVector(YZ_sideB,YZ_matcher,YZ_sideACentroid);
      panzer_stk::periodic_helpers::transformLocalSearchVector(XZ_sideB,XZ_matcher,XZ_sideACentroid);
 
-     size_t YZ_err = 0;
      size_t n = 0;
 
      for (size_t i=0; i<nPoints; ++i){
@@ -711,16 +673,11 @@ namespace panzer {
        double exact[3] = {a,c,b};
        auto ptShifted = YZ_sideB[n].first.center();
        ++n;
-       if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-            (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++YZ_err;
+       for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
       }
      }
 
-     TEUCHOS_ASSERT(YZ_err==0);
-
-     size_t XZ_err = 0;
      n = 0;
-
      for (size_t i=0; i<nPoints; ++i){
         for (size_t j=0; j<nPoints; ++j){
           // mirror over XZ (y --> -y)
@@ -730,11 +687,9 @@ namespace panzer {
           double exact[3] = {c,a,b};
           auto ptShifted = XZ_sideB[n].first.center();
           ++n;
-          if ( (std::abs(exact[0]-ptShifted[0]) > 1e-14) || (std::abs(exact[1]-ptShifted[1]) > 1e-14) ||
-               (std::abs(exact[2]-ptShifted[2]) > 1e-14) ) ++XZ_err;
+          for (size_t dim=0; dim<3; ++dim) TEST_FLOATING_EQUALITY(exact[dim],ptShifted[dim],1e-14); 
         }
      }
-     TEUCHOS_ASSERT(XZ_err==0);
 
   }
 

@@ -90,7 +90,7 @@ void fillLocalSearchVector(const STK_Interface & mesh, SphereIdVector & searchVe
    // grab entities owned by requested side
    /////////////////////////////////////////////
    std::stringstream ss;
-   ss << "Can't find part=\"" << sideName << "\"" << std::endl;
+   ss << "Can't find a sideset named \"" << sideName << "\" in the mesh" << std::endl;
    stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
 
    // if ghosted IDs are requested, add in the shared portion

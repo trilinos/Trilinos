@@ -1112,12 +1112,12 @@ public:
 
    /** Return a flag indicating if the bounding box search is used
     * when matching periodic Ids. */ 
-   const bool & getPeriodicSearchFlag() const
-   { return searchFlag_; }
+   const bool & useBoundingBoxSearch() const
+   { return useBBoxSearch_; }
 
    /** Set the periodic search flag. Indicates if the bounding box search is used */
-   void setPeriodicSearchFlag(const bool & searchFlag)
-   { searchFlag_ = searchFlag; return; }
+   void setBoundingBoxSearchFlag(const bool & searchFlag)
+   { useBBoxSearch_ = searchFlag; return; }
 
    /** Add a periodic boundary condition.
      *
@@ -1307,7 +1307,7 @@ protected:
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
-   bool searchFlag_ = false;  // TODO BWR swap this to change default periodic BC search (see also PeriodicBC_Parser.cpp)
+   bool useBBoxSearch_ = false;  // TODO BWR swap this to change default periodic BC search (see also PeriodicBC_Parser.cpp)
 
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;
