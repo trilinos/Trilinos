@@ -51,8 +51,14 @@
 
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_Utilities.hpp>
 
 #include <Xpetra_MatrixMatrix.hpp>
+
+#ifdef HAVE_MUELU_TPETRA
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
+#endif
+
 
 namespace MueLuTests {
 
@@ -144,9 +150,74 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
     TEST_EQUALITY(1,1);
   }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#if defined(HAVE_MUELU_TPETRA)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      Teuchos::ParameterList matrixParams;
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",(GlobalOrdinal)300);// needs to be even
+      
+      RCP<Matrix> PointA = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);  
+      RCP<Matrix> BlockA;
+      {
+        //using CRS  = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+        //using BCRS = Tpetra::BlockCrsMatrix<SC,LO,GO,NO>;
+        using XCRS = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
+
+        auto tA = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraCrs(PointA);
+        auto bA = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*tA,1);      
+        RCP<XCRS> AA   = rcp(new XCRS(bA));
+        BlockA = rcp(new CrsMatrixWrap(rcp_implicit_cast<CrsMatrix>(AA)));
+      }
+
+      out<<"Point: Matrix Size (block) = "<<PointA->getGlobalNumRows()<<" (point) "<<PointA->getRangeMap()->getGlobalNumElements()<<std::endl;
+      out<<"Block: Matrix Size (block) = "<<BlockA->getGlobalNumRows()<<" (point) "<<BlockA->getRangeMap()->getGlobalNumElements()<<std::endl;
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      
+      ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
+      
+      for(int i=0; i< fileList.size(); i++) {
+        // Only run files without "BlockCrs" in their name (since those guys hardwired the block size)
+        auto found = fileList[i].find("BlockCrs");
+        if(found != std::string::npos) continue;
+        
+        out << "Processing file: " << fileList[i] << std::endl;
+        
+        // Point Hierarchy
+        ParameterListInterpreter mueluFactory1("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
+        RCP<Hierarchy> PointH = mueluFactory1.CreateHierarchy();
+        PointH->GetLevel(0)->Set("A", PointA);       
+        mueluFactory1.SetupHierarchy(*PointH);
+
+        // Block Hierachy
+#if 0
+        ParameterListInterpreter mueluFactory2("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
+        RCP<Hierarchy> BlockH = mueluFactory2.CreateHierarchy();
+        BlockH->GetLevel(0)->Set("A", BlockA);       
+        mueluFactory2.SetupHierarchy(*BlockH);
+#endif
+
+        // Check to see that we get the same matrices in both hierarchies
+
+
+        //TODO: check no unused parameters
+        //TODO: check results of Iterate()
+      }
+    }
+#   endif
+    TEST_EQUALITY(1,1);
+  }
+
+
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, PointCrs_vs_BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
