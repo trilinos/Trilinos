@@ -52,7 +52,7 @@ PeriodicBC_Parser::PeriodicBC_Parser()
    : countStr_("Count")
    , condPrefix_("Periodic Condition ")
    , searchStr_("Use BBox Search")
-   , useBBoxSearch_(false) // TODO BWR swap this to change default search (see also STK_interface.hpp)
+   , useBBoxSearch_(false) // TODO swap this to change default search (see also STK_interface.hpp)
 {
 }
 
@@ -143,7 +143,7 @@ Teuchos::RCP<const Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters
                    "Number of set periodic boundary conditions");
       pl->set<std::string>(ss.str(),"MatchCondition bndry1;bndry2",
                    "Boundary condition pairs formatted: <MatchCondition> <bndry1>;<bndry2>");
-      // TODO BWR swap this to change default search (see also STK_interface.hpp)
+      // TODO swap this to change default search (see also STK_interface.hpp)
       pl->set<bool>(searchStr_,false,"Use bounding box search for GID match (requires STKSearch) or not");
    }
 
@@ -157,7 +157,7 @@ Teuchos::RCP<Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters(int c
 
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
    pl->set(countStr_,count);
-   // TODO BWR swap this to change default search (see also STK_interface.hpp)
+   // TODO swap this to change default search (see also STK_interface.hpp)
    pl->set<bool>(searchStr_,false,"Use bounding box search for GID match (requires STKSearch) or not");
 
    for(int k=1;k<=count;k++) {
