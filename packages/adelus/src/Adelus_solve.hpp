@@ -407,7 +407,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 #endif
 #endif
 
-#if defined(GET_TIMING) || defined(PRINT_STATUS))
+#if defined(GET_TIMING) || defined(PRINT_STATUS)
   int me            = ahandle.get_myrank();
 #ifdef GET_TIMING
   MPI_Comm comm     = ahandle.get_comm();
