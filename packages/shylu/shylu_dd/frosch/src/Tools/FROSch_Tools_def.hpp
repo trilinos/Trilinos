@@ -990,7 +990,7 @@ namespace FROSch {
     RCP<Map<LO,GO,NO> > AssembleMapsNonConst(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
         ArrayRCP<ArrayRCP<LO> > &partMappings)
         {
-            FROSCH_DETAILTIMER_START(assembleMapsTime,"AssembleMaps");
+            FROSCH_DETAILTIMER_START(assembleMapsTime,"AssembleMapsNonConst");
             FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
             LO i = 0;
             LO localstart = 0;

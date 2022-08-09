@@ -113,6 +113,11 @@ namespace FROSch {
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
         this->updateLocalOverlappingMatrices_Symbolic();
+        bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
+        if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_ && reuseSymbolicFactorization) {
+            // if reuseSymbolicFactorization=false, we call initializeSubdomainSolver is called during compute
+            this->initializeSubdomainSolver(this->localSubdomainMatrix_);
+        }
 
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
