@@ -670,82 +670,31 @@ evaluateFields(typename TRAITS::EvalData workset)
     using Thyra::VectorBase;
     using Thyra::SpmdVectorBase;
     using Thyra::ProductVectorBase;
-// MPL: OLDWAY
-//    // If blockedContainer_ was not initialized, then no global evaluation data
-//    // container was set, in which case this evaluator becomes a no-op
-//    if (blockedContainer_ == Teuchos::null)
-//      return;
-
-//    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-//    out.setShowProcRank(true);
-//    out.setOutputToRootOnly(-1);
-
-//    std::vector<std::pair<int,GO> > GIDs;
-//    std::vector<LO> LIDs;
-
-//    // for convenience pull out some objects from workset
-//    std::string blockId = this->wda(workset).block_id;
-//    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-
-//    Teuchos::RCP<ProductVectorBase<double> > x;
-//    if (useTimeDerivativeSolutionVector_)
-//      x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-//    else
-//      x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
-
 
     const auto& localCellIds = this->wda(workset).cell_local_ids_k;
     // gather operation for each cell in workset
     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-       LO cellLocalId = localCellIds[worksetCellIndex];
 
-       gidIndexer_->getElementGIDsPair(cellLocalId,GIDs,blockId);
-
-       // caculate the local IDs for this element
-       LIDs.resize(GIDs.size());
-       for(std::size_t i=0;i<GIDs.size();i++) {
-          // used for doing local ID lookups
-          RCP<const MapType> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
-
-          LIDs[i] = x_map->getLocalElement(GIDs[i].second);
-       }
-
-       // loop over the fields to be gathered
-       // MPL oldWay:
-       // Teuchos::ArrayRCP<const double> local_x;
        // MPL newWay:
-       const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
-       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-          // MPL oldWay:
-          // int fieldNum = fieldIds_[fieldIndex];
-          // int indexerId = gidIndexer_->getFieldBlock(fieldNum);
+        const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
+       for (std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
+           auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+           const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
-          // const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-          // grab local data for inputing
-          // RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
-          // block_x->getLocalData(ptrFromRef(local_x));
-
-          // MPL newWay: Class data fields for lambda capture
-
-          auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-          const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+          // Class data fields for lambda capture
           const auto& fieldOffsets = fieldOffsets_[fieldIndex];
           const auto& worksetLIDs = worksetLIDs_;
           const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
 
           // loop over basis functions and fill the fields
           Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
-           for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
-               // MPL oldWay:
-               // int offset = elmtOffset[basis];
-               // int lid = LIDs[offset];
-               // (gatherFields_[fieldIndex])(worksetCellIndex,basis) = local_x[lid];
-
-               // MPL newWay:
-               const int lid = worksetLIDs(cell,fieldOffsets(basis));
-               Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
-           }
-           });
+            for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+                const int lid = worksetLIDs(cell,fieldOffsets(basis));
+                typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
+                typename FieldType::array_type::reference_type tmpFieldVal = fieldValues(cell,basis);
+                Kokkos::atomic_add(&kokkosResidual(lid,0), tmpFieldVal.val());
+            }
+          });
        }
     }
 }
