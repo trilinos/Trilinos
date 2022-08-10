@@ -116,7 +116,8 @@ protected:
   std::vector<shards::CellTopology> supportedInputTopos_ = {
     shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<8>>()),
     shards::CellTopology(shards::getCellTopologyData<shards::Triangle<6>>()),
-    shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<10>>())
+    shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<10>>()),
+    shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<20>>())
     };
 
   //! Map from input topology to the output shards topology data. The list here is
@@ -127,7 +128,9 @@ protected:
     {shards::getCellTopologyData<shards::Triangle<6>>()->name,
      shards::getCellTopologyData<shards::Triangle<3>>()},
     {shards::getCellTopologyData<shards::Tetrahedron<10>>()->name,
-     shards::getCellTopologyData<shards::Tetrahedron<4>>()}
+     shards::getCellTopologyData<shards::Tetrahedron<4>>()},
+    {shards::getCellTopologyData<shards::Hexahedron<20>>()->name,
+     shards::getCellTopologyData<shards::Hexahedron<8>>()}
     };
 };
 

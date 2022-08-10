@@ -185,7 +185,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_quadconverter
-SOURCE_FILES quad8.gen tet10.gen tri6.gen
+SOURCE_FILES quad8.gen tet10.gen tri6.gen hex20.gen
 SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
 DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
 EXEDEPS tQuadraticToLinearMeshFactory
