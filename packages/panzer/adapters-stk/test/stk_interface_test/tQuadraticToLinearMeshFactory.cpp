@@ -64,6 +64,78 @@ bool in_range(const double& x, const double& left, const double& right) {
   return false;
 }
 
+TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, checkFail)
+{
+  using Teuchos::RCP;
+
+  // To run in parallel we need to set an ioss property to split
+  // genesis file across mpi ranks.
+  setenv("IOSS_PROPERTIES", "DECOMPOSITION_METHOD=rib", 1);
+
+  // ********************************
+  // read in a twoblock mesh with different topologies on each block 
+  // ********************************
+  // TODO this test "fails" as expected, but technically the topo
+  // on block 2 is not supported so in the future, this may still fail
+  // but for the wrong reason. i suppose this test will be irrelevant if we
+  // start supporting multiple topos though.
+  {
+    std::string file_name = "meshes/twoblock_cube_multitopo.gen";
+    panzer_stk::STK_ExodusReaderFactory factory(file_name);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+    mesh->setupExodusFile("twoblock_cube_multitopo.exo");
+    mesh->writeToExodus(0.0);
+  }
+
+  // ********************************
+  // should fail
+  // ********************************
+  {
+    std::string file_name = "twoblock_cube_multitopo.exo";
+    RCP<panzer_stk::STK_Interface> mesh;
+
+    // The output above is in split form, not a single
+    // file. need to disable the ioss flag above to read the split
+    // file correctly.
+    unsetenv("IOSS_PROPERTIES");
+
+    const bool print_debug = false;
+    TEST_THROW(panzer_stk::QuadraticToLinearMeshFactory(file_name,MPI_COMM_WORLD,print_debug),std::logic_error);
+  }
+
+  // To run in parallel we need to set an ioss property to split
+  // genesis file across mpi ranks.
+  setenv("IOSS_PROPERTIES", "DECOMPOSITION_METHOD=rib", 1);
+
+  // ********************************
+  // read in a mesh with unsupported (low-order) topology
+  // ********************************
+  {
+    std::string file_name = "meshes/basic3d.gen";
+    panzer_stk::STK_ExodusReaderFactory factory(file_name);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+    mesh->setupExodusFile("basic3d.exo");
+    mesh->writeToExodus(0.0);
+  }
+
+  // ********************************
+  // should fail
+  // ********************************
+  {
+    std::string file_name = "basic3d.exo";
+    RCP<panzer_stk::STK_Interface> mesh;
+    // The output above is in split form, not a single
+    // file. need to disable the ioss flag above to read the split
+    // file correctly.
+    unsetenv("IOSS_PROPERTIES");
+
+    const bool print_debug = false;
+    TEST_THROW(panzer_stk::QuadraticToLinearMeshFactory(file_name,MPI_COMM_WORLD,print_debug),std::logic_error);
+  }
+}
+
 TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, hex20)
 {
   using Teuchos::RCP;
@@ -79,6 +151,8 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, hex20)
     std::string file_name = "meshes/hex20.gen";
     panzer_stk::STK_ExodusReaderFactory factory(file_name);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+    // note :: this mesh has two element blocks (of the same type, as is required by the converter)
 
     std::vector<std::string> block_names;
     mesh->getElementBlockNames(block_names);
@@ -197,7 +271,7 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, hex20)
     int local_size = sides.size();
     int global_size = 0;
     MPI_Allreduce(&local_size,&global_size,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-    TEST_EQUALITY(global_size,1224);
+    TEST_EQUALITY(global_size,720);
 
     // faces are quad4
     for (const auto& side : sides) {
@@ -231,7 +305,7 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, hex20)
     int local_size = sides.size();
     int global_size = 0;
     MPI_Allreduce(&local_size,&global_size,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-    TEST_EQUALITY(global_size,612);
+    TEST_EQUALITY(global_size,354);
 
     // faces are quad4
     for (const auto& side : sides) {

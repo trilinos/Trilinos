@@ -122,15 +122,16 @@ void QuadraticToLinearMeshFactory::getOutputTopology()
 
   // check that we have a supported topology
   // TODO IS THIS NECESSARY CHECK W ROG
+  // would we ever not have a element block on a process?
   if (eblock_names.size()>0) {
     auto inputTopo = quadMesh_->getCellTopology(eblock_names[0]);
     if (std::find(supportedInputTopos_.begin(),
                   supportedInputTopos_.end(),*inputTopo) == supportedInputTopos_.end()) errFlag = true;
     TEUCHOS_TEST_FOR_EXCEPTION(errFlag,std::logic_error,
-      "ERROR :: Input topology " << *inputTopo << " currently unsupported by QuadraticToLinearMeshFactory!");
+      "ERROR :: Input topology " << inputTopo->getName() << " currently unsupported by QuadraticToLinearMeshFactory!");
 
     // check that the topology is the same over blocks
-    // TODO not sure this is 100% foolproof
+    // not sure this is 100% foolproof
     for (auto & eblock : eblock_names) {
       auto cellTopo = quadMesh_->getCellTopology(eblock);
       if (*cellTopo != *inputTopo) errFlag = true;
@@ -255,7 +256,7 @@ void QuadraticToLinearMeshFactory::buildMetaData(stk::ParallelMachine /* paralle
 
   // Required topologies
   auto ctd = outputTopoData_;
-  // TODO will only work for 2D and 3D meshes
+  // will only work for 2D and 3D meshes
   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(nDim_-1,0);
 
   // Add in element blocks

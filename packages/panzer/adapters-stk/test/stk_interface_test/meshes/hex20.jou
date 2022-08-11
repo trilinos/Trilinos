@@ -1,0 +1,29 @@
+# {PreW = 0.25}
+# {PreT = 0.02}
+# {BrpT = 0.01}
+# {CndW=0.2}
+# {CndT=0.05}
+# {PolT=0.01}
+# {ShdT = 0.02}
+
+reset
+create brick x {PreW + 2 * ShdT} y {PreT + 2 * BrpT + 2 * CndT + 2 * PolT + 2 * ShdT} z {CndW}
+create brick x {PreW} y {PreT + 2 * BrpT + 2 * CndT} z {CndW * .5}
+subtract vol 2 from vol 1 
+webcut volume 3 with plane zplane
+
+vol all interval size .05
+vol all scheme TetMesh
+mesh vol all
+THex vol all
+#
+sideset 1 add surf 1 10 11 12 13 2 19 20 21 22 
+sideset 1 name "outer_box"
+sideset 2 add surf 3 6 7 8 4 15 16 17 18
+sideset 2 name "inner_box"
+#
+block 1 add volume 1
+block 2 add volume 2
+block all element type hex20
+set large exodus file on
+export genesis 'hex20.gen' dimension 3 block all overwrite
