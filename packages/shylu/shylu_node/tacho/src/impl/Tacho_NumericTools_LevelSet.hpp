@@ -645,18 +645,18 @@ public:
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    // destroy previously created streams
-    for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = hipStreamDestroy(_streams[i]);
-      checkDeviceStatus("cudaStreamDestroy");
-    }
-    _streams.clear();
     _exec_instances.clear();
 
     if (_is_rocblas_created) {
       _status = rocblas_destroy_handle(_handle_blas);
       checkDeviceLapackStatus("rocblasDestroy");
     }
+
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamDestroy(_streams[i]);
+      checkDeviceStatus("cudaStreamDestroy");
+    }
+    _streams.clear();
 #endif
   }
 
