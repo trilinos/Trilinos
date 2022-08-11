@@ -300,7 +300,7 @@ namespace MueLu {
 
       RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(prolongatorGraph, PointMap, A->getRangeMap(),NSDim);
       RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
-      if(P_tpetra.is_null()) throw std::runtime_error("BuildPUncoupled: Matrix factory did not return a Tpetra::BlockCrsMatrix");
+      if(P_tpetra.is_null()) throw std::runtime_error("BuildConstantP Matrix factory did not return a Tpetra::BlockCrsMatrix");
       RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
 
       // NOTE: Assumes block-diagonal prolongation
