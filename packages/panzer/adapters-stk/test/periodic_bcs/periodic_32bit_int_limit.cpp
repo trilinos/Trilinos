@@ -59,8 +59,8 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
     if (true) {
       RCP<Teuchos::ParameterList> pbc = rcp(new Teuchos::ParameterList);
       pbc->set("Count",2);
-      pbc->set("Periodic Condition 1","xz-all 1e-12: top;bottom");
-      pbc->set("Periodic Condition 2","yz-all 1e-12: left;right");
+      pbc->set("Periodic Condition 1","xz-all 1e-12,3D: top;bottom");
+      pbc->set("Periodic Condition 2","yz-all 1e-12,3D: left;right");
 #ifdef PANZER_HAVE_STKSEARCH
       pbc->set("Use BBox Search",true);
 #endif

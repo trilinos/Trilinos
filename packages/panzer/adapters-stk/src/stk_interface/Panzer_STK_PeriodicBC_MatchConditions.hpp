@@ -151,17 +151,23 @@ class PlaneMatcher {
       TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
 
       // read in string, get double
-      if(params.size()==1) {
+      if(params.size()>0) {
          std::stringstream ss;
          ss << params[0];
          ss >> error_;
          if(params.size()==2){
+           if (params[1] == "3D") { 
+            // Warn user but continue
+            std::cout << "WARNING : Keyword " << params[1] << " not needed for PlaneMatcher" << std::endl; 
+            return;
+           }
            std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
            TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
            relative_ = true;
          }
       }
       // else use default value for error
+      return;
    }
 
 public:
