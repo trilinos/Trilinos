@@ -84,26 +84,32 @@ public:
   static const char* name;      // declaration. Initialization outside.
 
 
-  typedef ShyLUBasker<Matrix,Vector>                                        type;
+  typedef ShyLUBasker<Matrix,Vector>                           type;
 
-  typedef SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>              super_type;
+  typedef SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>       super_type;
 
   // Since typedef's are not inheritted, go grab them
-  typedef typename super_type::scalar_type                      scalar_type;
-  typedef typename super_type::local_ordinal_type        local_ordinal_type;
-  typedef typename super_type::global_ordinal_type      global_ordinal_type;
-  typedef typename super_type::global_size_type            global_size_type;
-  typedef typename super_type::node_type                          node_type;
+  typedef typename super_type::scalar_type                     scalar_type;
+  typedef typename super_type::local_ordinal_type              local_ordinal_type;
+  typedef typename super_type::global_ordinal_type             global_ordinal_type;
+  typedef typename super_type::global_size_type                global_size_type;
+  typedef typename super_type::node_type                       node_type;
 
-  typedef TypeMap<Amesos2::ShyLUBasker,scalar_type>                     type_map;
+  typedef TypeMap<Amesos2::ShyLUBasker,scalar_type>            type_map;
+  typedef typename type_map::type                              shylubasker_type;
+  typedef typename type_map::dtype                             shylubasker_dtype;
 
-  typedef typename type_map::type                                  slu_type;
-  typedef typename type_map::magnitude_type                  magnitude_type;
+  typedef typename type_map::type                              slu_type;
 
-  typedef FunctionMap<Amesos2::ShyLUBasker,slu_type>                function_map;
+  typedef FunctionMap<Amesos2::ShyLUBasker,shylubasker_type>   function_map;
 
-  typedef Matrix                                                matrix_type;
-  typedef MatrixAdapter<matrix_type>                    matrix_adapter_type;
+  typedef Matrix                                               matrix_type;
+  typedef MatrixAdapter<matrix_type>                           matrix_adapter_type;
+
+  typedef Kokkos::DefaultHostExecutionSpace                    HostExecSpaceType;
+//  typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType> host_size_type_array;
+  typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+  typedef Kokkos::View<shylubasker_type*, HostExecSpaceType>   host_value_type_array;
 
 
   ShyLUBasker( Teuchos::RCP<const Matrix> A,
@@ -188,21 +194,27 @@ private:
   // Members
   int num_threads;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for ShyLUBasker
-  Teuchos::Array<slu_type> nzvals_;
+  // The following Kokkos::View's are persisting storage for A's CCS arrays
+  /// Stores the values of the nonzero entries for Umfpack
+  host_value_type_array nzvals_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<local_ordinal_type> rowind_;
+  host_ordinal_type_array rowind_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<local_ordinal_type> colptr_;
+  host_ordinal_type_array colptr_view_;
+
 
   bool is_contiguous_;
 
+  typedef typename Kokkos::View<shylubasker_type**, Kokkos::LayoutLeft, 
+                                typename HostExecSpaceType::memory_space> host_solve_array_t;
 
   /// Persisting 1D store for X
-  mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
+  mutable host_solve_array_t xValues_;
+  int ldx_;
+
   /// Persisting 1D store for B
-  mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
+  mutable host_solve_array_t bValues_;
+  int ldb_;
 
     /*Handle for ShyLUBasker object*/
  
@@ -215,9 +227,9 @@ private:
   */
   typedef Kokkos::OpenMP Exe_Space;
    // Instance for non-transpose solves
-   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space> *ShyLUbasker;
+   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space> *ShyLUbasker;
    // Instance for transpose solves
-   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space> *ShyLUbaskerTr;
+   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space> *ShyLUbaskerTr;
 #else
   #pragma message("Amesos_ShyLUBasker_decl Error: ENABLED SHYLU_NODEBASKER BUT NOT KOKKOS or NOT OPENMP!")
 #endif
@@ -231,13 +243,27 @@ private:
 template <>
 struct solver_traits<ShyLUBasker> {
 #ifdef HAVE_TEUCHOS_COMPLEX
+/*
   typedef Meta::make_list4<float,
                            double,
+                           std::complex<float>,
+                           std::complex<double> > supported_scalars;
+*/
+  typedef Meta::make_list6<float,
+                           double,
+                           Kokkos::complex<float>,
+                           Kokkos::complex<double>,
                            std::complex<float>,
                            std::complex<double> > supported_scalars;
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<ShyLUBasker,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

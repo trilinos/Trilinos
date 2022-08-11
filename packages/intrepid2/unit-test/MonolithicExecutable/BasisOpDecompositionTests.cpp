@@ -62,6 +62,19 @@ namespace
 {
   using namespace Intrepid2;
 
+  // OPERATOR_D1 and OPERATOR_GRAD mean the same thing.  This method allows us to replace D1 with GRAD in testing that we match the expected decomposition.
+  EOperator canonicalOp(const EOperator &op)
+  {
+    if (op == OPERATOR_D1)
+    {
+      return OPERATOR_GRAD;
+    }
+    else
+    {
+      return op;
+    }
+  }
+
   //! tests that hierarchical basis has the expected decomposition into component bases
   template<class Basis>
   void testBasisOpDecomposition(Basis &basis, const EOperator &opToTest, std::vector< std::vector<EOperator> > &expectedOps,
@@ -89,8 +102,10 @@ namespace
         for (ordinal_type basisEntry=0; basisEntry<decomp.numBasisComponents(); basisEntry++)
         {
           // for easier reading of test failures, compare as strings
-          auto expectedOpString = EOperatorToString(expectedOps[vectorEntry][basisEntry]);
-          auto actualOpString   = EOperatorToString(decomp.op(vectorEntry, basisEntry));
+          auto expectedOp       = canonicalOp(expectedOps[vectorEntry][basisEntry]);
+          auto expectedOpString = EOperatorToString(expectedOp);
+          auto actualOp         = canonicalOp(decomp.op(vectorEntry, basisEntry));
+          auto actualOpString   = EOperatorToString(actualOp);
           TEST_EQUALITY( expectedOpString, actualOpString );
         }
       }

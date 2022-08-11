@@ -425,8 +425,6 @@ project with contents::
   |__ bin
   |   |__ Hello-Executable-Name.exe
   |__ include
-  |   |__ Makefile.export.HelloPackage
-  |   |__ Makefile.export.TribitsGreetings
   |   |__ hello_world_lib.hpp
   |__ lib
       |__ cmake

@@ -195,6 +195,14 @@ namespace Sacado {                                                      \
                                                                         \
       return expr_t(expr.derived());                                    \
     }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T> >                                                     \
+    OPNAME (const Vector<T>& vector)                                    \
+    {                                                                   \
+      return OP< Vector<T> >(vector);                                   \
+    }                                                                   \
   }                                                                     \
                                                                         \
   template <typename T>                                                 \
@@ -522,6 +530,15 @@ namespace Sacado {                                                      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T>, Vector<T> >                                          \
+    OPNAME (const Vector<T>& vector1,                                   \
+            const Vector<T>& vector2)                                   \
+    {                                                                   \
+      return {vector1, vector2};                                        \
+    }                                                                   \
   }                                                                     \
                                                                         \
   template <typename T1, typename T2>                                   \
@@ -756,6 +773,15 @@ namespace Sacado {                                                      \
       typedef OP< typename Expr<T>::derived_type, ConstT > expr_t;      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    OP< Vector<T>, Vector<T> >                                          \
+    OPNAME (const Vector<T>& vector1,                                   \
+            const Vector<T>& vector2)                                   \
+    {                                                                   \
+      return {vector1, vector2};                                        \
     }                                                                   \
   }                                                                     \
                                                                         \

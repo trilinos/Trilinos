@@ -17,6 +17,13 @@ namespace Tempus {
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorForwardSensitivity)
 
   // Nonmember ctor
+  template Teuchos::RCP<IntegratorForwardSensitivity<double>>
+  createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double>> &sens_residual_model);
+
+  // Nonmember ctor
   template Teuchos::RCP<IntegratorForwardSensitivity<double> >
   createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>        parameterList,

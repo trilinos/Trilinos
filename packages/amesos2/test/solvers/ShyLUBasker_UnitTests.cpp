@@ -115,16 +115,6 @@ namespace {
   // Where to look for input files
   string filedir;
 
-  TEUCHOS_STATIC_SETUP()
-  {
-    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.setOption("filedir",&filedir,"Directory of matrix files.");
-    clp.addOutputSetupOptions(true);
-    clp.setOption("test-mpi", "test-serial", &testMpi,
-                  "Test MPI by default or force serial test.  In a serial build,"
-                  " this option is ignored and a serial comm is always used." );
-  }
-
   RCP<const Comm<int> > getDefaultComm()
   {
     RCP<const Comm<int> > ret;
@@ -139,6 +129,25 @@ namespace {
   RCP<FancyOStream> getDefaultOStream()
   {
     return( VerboseObjectBase::getDefaultOStream() );
+  }
+
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.setOption("filedir",&filedir,"Directory of matrix files.");
+    clp.addOutputSetupOptions(true);
+    clp.setOption("test-mpi", "test-serial", &testMpi,
+                  "Test MPI by default or force serial test.  In a serial build,"
+                  " this option is ignored and a serial comm is always used." );
+
+    auto out = getDefaultOStream();
+    auto comm = getDefaultComm();
+    auto numRanks = comm->getSize();
+    auto myRank = comm->getRank();
+    if (myRank == 0) {
+      using std::endl;
+      *out << endl << "TEUCHOS_STATIC_SETUP with " << numRanks << " MPI processes" << endl << endl;
+    }
   }
 
 
@@ -161,8 +170,7 @@ namespace {
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
+    const size_t rank = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -209,8 +217,7 @@ namespace {
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
+    const size_t rank = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -244,8 +251,7 @@ namespace {
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
+    const size_t rank = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -331,9 +337,9 @@ namespace {
     A->apply(*X,*B);            // no transpose
 
     Xhat->randomize();
-    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
 
     // Solve A*Xhat = B for Xhat using the Bakser solver
@@ -346,9 +352,9 @@ namespace {
     solver->numericFactorization();
     solver->solve();
 
-    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
     // Check result of solve
     Array<Mag> xhatnorms(numVecs), xnorms(numVecs);

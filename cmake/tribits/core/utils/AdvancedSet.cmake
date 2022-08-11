@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @MACRO: advanced_set()
 #
 # Macro that sets a variable and marks it as advanced (removes boiler-plate

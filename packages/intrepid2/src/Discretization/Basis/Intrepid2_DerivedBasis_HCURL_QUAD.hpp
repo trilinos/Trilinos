@@ -95,6 +95,7 @@ namespace Intrepid2
                 Teuchos::rcp( new LineGradBasis(polyOrder_y,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
@@ -223,6 +224,7 @@ namespace Intrepid2
                 Teuchos::rcp( new LineHVolBasis(polyOrder_y-1,pointType) ))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
@@ -326,7 +328,7 @@ namespace Intrepid2
     using Family1 = Basis_Derived_HCURL_Family1_QUAD<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HCURL_Family2_QUAD<HGRAD_LINE, HVOL_LINE>;
     using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>;
-    
+  public:
     using BasisBase = typename HGRAD_LINE::BasisBase;
 
   protected:

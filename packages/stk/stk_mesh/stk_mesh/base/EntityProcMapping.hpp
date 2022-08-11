@@ -125,13 +125,13 @@ public:
         entityOffsets[entity.local_offset()] = -1;
       }
       else {
-        eap.proc = -1;
         std::vector<int>::iterator iter = std::find(eap.procs.begin(),
                                                     eap.procs.end(),
                                                     proc);
         if (iter != eap.procs.end()) {
           eap.procs.erase(iter);
           if (eap.procs.empty()) {
+            eap.proc = -1;
             eap.entity = Entity();
           }
         }

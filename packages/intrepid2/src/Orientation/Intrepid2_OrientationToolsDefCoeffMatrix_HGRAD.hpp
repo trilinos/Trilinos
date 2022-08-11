@@ -83,10 +83,15 @@ check_getCoeffMatrix_HGRAD(const subcellBasisType& subcellBasis,
   const ordinal_type cellDim = cellTopo.getDimension();
   const ordinal_type subcellDim = subcellTopo.getDimension();
 
-  INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+  INTREPID2_TEST_FOR_EXCEPTION( subcellDim > cellDim,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-      "cellDim must be greater than subcellDim.");
+      "cellDim cannot be smaller than subcellDim.");
+
+  INTREPID2_TEST_FOR_EXCEPTION( subcellDim > 2,
+      std::logic_error,
+      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+      "subCellDim cannot be larger than 2.");
 
   const auto subcellBaseKey = subcellTopo.getBaseKey();
 
@@ -168,10 +173,14 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
   PointTools::getLattice(refPtsSubcell, subcellTopo, subcellBasis.getDegree(), 1, POINTTYPE_WARPBLEND);
 
   // map the points into the parent, cell accounting for orientation
-  auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
   Kokkos::DynRankView<value_type,host_device_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
-  mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+  if(cellDim == subcellDim) //the cell is a side of dimension 1 or 2.
+    mapToModifiedReference(refPtsCell,refPtsSubcell,subcellBaseKey,subcellOrt);
+  else {
+    auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
+    mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+  }
 
   //
   // Bases evaluation on the reference points

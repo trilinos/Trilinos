@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.6.01](https://github.com/kokkos/kokkos-kernels/tree/3.6.01) (2022-05-23)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.6.00...3.6.01)
+
+### Bug Fixes and Improvements:
+
+- Improve spiluk numeric phase to avoid race conditions and processing in chunks [\#1390](https://github.com/kokkos/kokkos-kernels/pull/1390)
+- Improve sptrsv symbolic phase performance (level scheduling) [\#1380](https://github.com/kokkos/kokkos-kernels/pull/1380)
+- Restore BLAS-1 MV paths for 1 column [\#1354](https://github.com/kokkos/kokkos-kernels/pull/1354)
+- Fix check that view has const type [\#1370](https://github.com/kokkos/kokkos-kernels/pull/1370)
+- Fix check that view has const type part 2 [\#1394](https://github.com/kokkos/kokkos-kernels/pull/1394)
+
 ## [3.6.00](https://github.com/kokkos/kokkos-kernels/tree/3.6.00) (2022-02-18)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.5.00...3.6.00)
 

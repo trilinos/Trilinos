@@ -227,6 +227,11 @@ namespace Intrepid2 {
       return "Intrepid2_HGRAD_LINE_C1_FEM";
     }
 
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
+    }
+
   };
 
 }// namespace Intrepid2

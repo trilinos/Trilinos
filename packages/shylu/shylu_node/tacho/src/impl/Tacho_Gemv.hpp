@@ -1,3 +1,21 @@
+// clang-format off
+/* =====================================================================================
+Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
+certain rights in this software.
+
+SCR#:2790.0
+
+This file is part of Tacho. Tacho is open source software: you can redistribute it
+and/or modify it under the terms of BSD 2-Clause License
+(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
+provided under the main directory
+
+Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
+
+Sandia National Laboratories, Albuquerque, NM, USA
+===================================================================================== */
+// clang-format on
 #ifndef __TACHO_GEMV_HPP__
 #define __TACHO_GEMV_HPP__
 
@@ -9,64 +27,17 @@
 
 namespace Tacho {
 
-    ///
-    /// Gemm:
-    ///
+///
+/// Gemm:
+///
 
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgTrans, typename ArgAlgo>
-    struct Gemv;
+/// various implementation for different uplo and algo parameters
+template <typename ArgTrans, typename ArgAlgo> struct Gemv;
 
-    /// task construction for the above chol implementation
-    /// Gemm<ArgTransA,ArgTransB,ArgAlgo>::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
-    template<typename SchedulerType,
-             typename ScalarType,
-             typename DenseMatrixViewType,
-             typename ArgTrans,
-             typename ArgAlgo>
-    struct TaskFunctor_Gemv {
-    public:
-      typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::member_type member_type;
-      
-      typedef ScalarType scalar_type;
-      
-      typedef DenseMatrixViewType dense_block_type;
-      typedef typename dense_block_type::future_type future_type;
-      typedef typename future_type::value_type value_type;
+struct GemvAlgorithm {
+  using type = ActiveAlgorithm::type;
+};
 
-    private:
-      scalar_type _alpha, _beta;
-      dense_block_type _A, _B, _C;
-
-    public:
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Gemv() = delete;
-
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Gemv(const scalar_type alpha,
-                       const dense_block_type &A,
-                       const dense_block_type &B,
-                       const scalar_type beta,
-                       const dense_block_type &C)
-        : _alpha(alpha),
-          _beta(beta),
-          _A(A),
-          _B(B),
-          _C(C) {}
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(member_type &member, value_type &r_val) {
-        const int ierr = Gemv<ArgTrans,ArgAlgo>
-          ::invoke(member, _alpha, _A, _B, _beta, _C);
-        
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            _C.set_future();
-            r_val = ierr;
-          });
-      }
-    };
-
-}
+} // namespace Tacho
 
 #endif

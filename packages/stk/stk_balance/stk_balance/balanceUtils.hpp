@@ -110,6 +110,7 @@ public:
   virtual int getGraphVertexWeight(stk::topology type) const;
   virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
   virtual GraphOption getGraphOption() const;
+  virtual double getGraphEdgeWeightMultiplier() const;
 
   virtual void setVertexWeightMethod(VertexWeightMethod method);
   virtual VertexWeightMethod getVertexWeightMethod() const;
@@ -198,6 +199,7 @@ public:
   virtual void setEdgeWeightForSearch(double w) { }
   virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
   virtual void setToleranceForFaceSearch(double tol) { }
+  virtual void setGraphEdgeWeightMultiplier(double multiplier);
 
   void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
   bool get_use_nested_decomp() const { return m_useNestedDecomp; }
@@ -216,6 +218,7 @@ private:
   mutable const stk::mesh::Field<double> * m_diagnosticElementWeightsField;
   mutable const stk::mesh::Field<double> * m_vertexConnectivityWeightField;
   VertexWeightMethod m_vertexWeightMethod;
+  double m_graphEdgeWeightMultiplier;
 };
 
 class BasicGeometricSettings : public BalanceSettings

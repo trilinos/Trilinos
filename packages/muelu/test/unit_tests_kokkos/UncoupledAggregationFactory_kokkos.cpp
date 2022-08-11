@@ -136,10 +136,109 @@ namespace MueLuTests {
 
   } // Build
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    #   include <MueLu_UseShortNames.hpp>
+      MUELU_TESTING_SET_OSTREAM;
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+      out << "version: " << MueLu::Version() << std::endl;
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+
+      // Make a Matrix with multiple degrees of freedom per node
+      GlobalOrdinal nx = 20, ny = 20;
+
+      // Describes the initial layout of matrix rows across processors.
+      Teuchos::ParameterList galeriList;
+      galeriList.set("nx", nx);
+      galeriList.set("ny", ny);
+
+      const GO nxx = 200;
+      using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+      Teuchos::CommandLineProcessor clp(false);
+      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+      Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+
+      RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
+      RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+
+      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+      A->SetFixedBlockSize(2);
+
+      Level aLevel;
+      TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+      aLevel.Request("A");
+      aLevel.Set("A",A);
+
+      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+      aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: coloring algorithm",
+          Teuchos::ParameterEntry(std::string("mis2 coarsening")));
+
+      aLevel.Request(*aggFact);
+
+      aggFact->Build(aLevel);
+
+
+  } // Build_MIS2_Coarsen
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    #   include <MueLu_UseShortNames.hpp>
+      MUELU_TESTING_SET_OSTREAM;
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+      out << "version: " << MueLu::Version() << std::endl;
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+
+      // Make a Matrix with multiple degrees of freedom per node
+      GlobalOrdinal nx = 20, ny = 20;
+
+      // Describes the initial layout of matrix rows across processors.
+      Teuchos::ParameterList galeriList;
+      galeriList.set("nx", nx);
+      galeriList.set("ny", ny);
+
+      const GO nxx = 200;
+      using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+      Teuchos::CommandLineProcessor clp(false);
+      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+      Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+
+      RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
+      RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+
+      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+      A->SetFixedBlockSize(2);
+
+      Level aLevel;
+      TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+      aLevel.Request("A");
+      aLevel.Set("A",A);
+
+      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+      aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: coloring algorithm",
+          Teuchos::ParameterEntry(std::string("mis2 aggregation")));
+
+      aLevel.Request(*aggFact);
+
+      aggFact->Build(aLevel);
+
+
+  } // Build_MIS2_Aggregate
 
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 

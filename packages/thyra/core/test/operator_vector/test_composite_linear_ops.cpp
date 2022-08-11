@@ -583,14 +583,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !run_composite_linear_ops_tests<float>(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
-#endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
+#endif
     if( !run_composite_linear_ops_tests<double>(comm,n,useSpmd,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_THYRA_COMPLEX)
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !run_composite_linear_ops_tests<std::complex<float> >(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
-#endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
+#endif
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_DOUBLE)
     if( !run_composite_linear_ops_tests<std::complex<double> >(comm,n,useSpmd,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #if defined(HAVE_TEUCHOS_GNU_MP) && !defined(USE_MPI) // mpf_class can not be used with MPI yet!

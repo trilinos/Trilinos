@@ -433,17 +433,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (Tpetra_ENABLE_DEPRECATED_CODE)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_createDeepCopy
-    SOURCES
-      CrsMatrix_createDeepCopy.cpp
-    COMM serial mpi
-    NUM_MPI_PROCS 1-4
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnpackMerge
   SOURCES

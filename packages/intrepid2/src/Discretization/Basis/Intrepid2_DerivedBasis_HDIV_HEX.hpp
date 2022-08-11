@@ -93,7 +93,8 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp( new LineGradBasis(polyOrder_x,pointType)),
                  Teuchos::rcp( new LineHVolBasis(polyOrder_y-1,pointType)),
-                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType)))
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType)),
+                 true) // true: use shards CellTopology and tags
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }
@@ -227,7 +228,8 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp( new LineHVolBasis(polyOrder_x-1,pointType) ),
                  Teuchos::rcp( new LineGradBasis(polyOrder_y,pointType) ),
-                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType) ))
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType) ),
+                 true) // true: use shards CellTopology and tags
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }
@@ -366,7 +368,8 @@ namespace Intrepid2
     :
     TensorBasis3(Teuchos::rcp( new LineHVolBasis(polyOrder_x-1,pointType) ),
                  Teuchos::rcp( new LineHVolBasis(polyOrder_y-1,pointType) ),
-                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType) ))
+                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType) ),
+                 true) // true: use shards CellTopology and tags
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }

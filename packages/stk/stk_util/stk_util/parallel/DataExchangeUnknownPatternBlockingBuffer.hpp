@@ -55,9 +55,9 @@ class DataExchangeUnknownPatternBlockingBuffer : public ManagedBufferBase<T>
       m_exchanger(comm, tag_hint)
     {}
 
-    void execute()
+    void execute(int numRecvsExpected=DataExchangeUnknownPatternNonBlocking::Unknown)
     {
-      m_exchanger.execute(m_sendBufs, m_recvBufs);
+      m_exchanger.execute(m_sendBufs, m_recvBufs, numRecvsExpected);
     }
 
 
@@ -74,10 +74,10 @@ class DataExchangeUnknownPatternBlockingCommBuffer : public ManagedCommBufferBas
       m_exchanger(comm, tag_hint)
     {}
 
-    void execute()
+    void execute(int numRecvsExpected=DataExchangeUnknownPatternNonBlocking::Unknown)
     {
       clear_recv_bufs();
-      m_exchanger.execute(m_sendBufStorage, m_recvBufStorage);
+      m_exchanger.execute(m_sendBufStorage, m_recvBufStorage, numRecvsExpected);
       set_recv_buffer_storage();
       reset_send_commbufs();
     }

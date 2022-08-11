@@ -248,6 +248,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SparsityFilter
     ContainerFactory
     TriDiContainer
+    Details::AdditiveSchwarzFilter
     Details::Chebyshev
     Details::ChebyshevKernel
     Details::DenseSolver

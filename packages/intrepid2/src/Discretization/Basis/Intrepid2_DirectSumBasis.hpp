@@ -98,6 +98,8 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getBasisType() != basis2->getBasisType(), std::invalid_argument, "basis1 and basis2 must agree in basis type");
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getBaseCellTopology().getKey() != basis2->getBaseCellTopology().getKey(),
                                  std::invalid_argument, "basis1 and basis2 must agree in cell topology");
+      INTREPID2_TEST_FOR_EXCEPTION(basis1->getNumTensorialExtrusions() != basis2->getNumTensorialExtrusions(),
+                                   std::invalid_argument, "basis1 and basis2 must agree in number of tensorial extrusions");
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getCoordinateSystem() != basis2->getCoordinateSystem(),
                                  std::invalid_argument, "basis1 and basis2 must agree in coordinate system");
       
@@ -119,25 +121,30 @@ namespace Intrepid2
         int degreeLength = basis1_->getPolynomialDegreeLength();
         INTREPID2_TEST_FOR_EXCEPTION(degreeLength != basis2_->getPolynomialDegreeLength(), std::invalid_argument, "Basis1 and Basis2 must agree on polynomial degree length");
         
-        this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("DirectSumBasis degree lookup",this->basisCardinality_,degreeLength);
+        this->fieldOrdinalPolynomialDegree_   = OrdinalTypeArray2DHost("DirectSumBasis degree lookup",    this->basisCardinality_,degreeLength);
+        this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("DirectSumBasis H^1 degree lookup",this->basisCardinality_,degreeLength);
         // our field ordinals start with basis1_; basis2_ follows
         for (int fieldOrdinal1=0; fieldOrdinal1<basis1_->getCardinality(); fieldOrdinal1++)
         {
           int fieldOrdinal = fieldOrdinal1;
-          auto polynomialDegree = basis1->getPolynomialDegreeOfField(fieldOrdinal1);
+          auto polynomialDegree   = basis1->getPolynomialDegreeOfField(fieldOrdinal1);
+          auto polynomialH1Degree = basis1->getH1PolynomialDegreeOfField(fieldOrdinal1);
           for (int d=0; d<degreeLength; d++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinal,d) = polynomialDegree(d);
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinal,d) = polynomialDegree(d);
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinal,d) = polynomialH1Degree(d);
           }
         }
         for (int fieldOrdinal2=0; fieldOrdinal2<basis2_->getCardinality(); fieldOrdinal2++)
         {
           int fieldOrdinal = basis1->getCardinality() + fieldOrdinal2;
           
-          auto polynomialDegree = basis2->getPolynomialDegreeOfField(fieldOrdinal2);
+          auto polynomialDegree   = basis2->getPolynomialDegreeOfField(fieldOrdinal2);
+          auto polynomialH1Degree = basis2->getH1PolynomialDegreeOfField(fieldOrdinal2);
           for (int d=0; d<degreeLength; d++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinal,d) = polynomialDegree(d);
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinal,d) = polynomialDegree(d);
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinal,d) = polynomialH1Degree(d);
           }
         }
       }
@@ -431,6 +438,11 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported outputValues rank");
       }
+    }
+    
+    virtual int getNumTensorialExtrusions() const override
+    {
+      return basis1_->getNumTensorialExtrusions();
     }
   };
 } // end namespace Intrepid2

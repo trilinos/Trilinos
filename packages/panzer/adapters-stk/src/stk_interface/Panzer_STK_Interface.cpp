@@ -52,6 +52,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
 // #include <stk_rebalance/Rebalance.hpp>
@@ -423,7 +424,8 @@ void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
 
-   bulkData_ = rcp(new stk::mesh::BulkData(*metaData_, *mpiComm_->getRawMpiComm()));
+   std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(*mpiComm_->getRawMpiComm()).create(Teuchos::get_shared_ptr(metaData_));
+   bulkData_ = rcp(bulkUPtr.release());
 }
 
 void STK_Interface::beginModification()

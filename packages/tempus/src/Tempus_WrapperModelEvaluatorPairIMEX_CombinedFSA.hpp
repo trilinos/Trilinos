@@ -38,8 +38,8 @@ public:
     forwardModel_ = forwardModel;
     appExplicitModel_ = forwardModel_->getExplicitModel();
     appImplicitModel_ = forwardModel_->getImplicitModel();
-    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, pList));
-    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, pList));
+    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_, appExplicitModel_, pList));
+    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_, appImplicitModel_, pList));
     Base::setup(fsaExplicitModel_, fsaImplicitModel_);
   }
 

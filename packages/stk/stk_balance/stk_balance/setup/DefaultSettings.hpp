@@ -68,6 +68,8 @@ struct DefaultSettings {
   static constexpr double smFaceSearchVertexMultiplier {10.0};
   static constexpr double smFaceSearchEdgeWeight {3.0};
 
+  static constexpr double graphEdgeWeightMultiplier {1.0};
+
   static constexpr const char * vertexWeightBlockMultiplier {""};
 
   static constexpr VertexWeightMethod vertexWeightMethod {VertexWeightMethod::TOPOLOGY};

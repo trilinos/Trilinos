@@ -64,6 +64,23 @@ namespace panzer {
 
 namespace {
 
+void buildLocalOrientations(const int num_cells,
+                            const Kokkos::View<const panzer::LocalOrdinal*,PHX::Device> & local_cell_ids,
+                            const Teuchos::RCP<const OrientationsInterface> & orientations_interface,
+                            std::vector<Intrepid2::Orientation> & workset_orientations)
+{
+  // from a list of cells in the workset, extract the subset of orientations that correspond
+
+  const auto & local_orientations = *orientations_interface->getOrientations();
+  workset_orientations.resize(num_cells);
+
+  // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
+  auto local_cell_ids_host = Kokkos::create_mirror_view(local_cell_ids);
+  Kokkos::deep_copy(local_cell_ids_host, local_cell_ids);
+  for(int i=0; i<num_cells; ++i)
+    workset_orientations[i] = local_orientations[local_cell_ids_host[i]];
+}
+
 void
 applyBV2Orientations(const int num_cells,
                      BasisValues2<double> & basis_values,
@@ -81,17 +98,10 @@ applyBV2Orientations(const int num_cells,
   if(basis_values.orientationsApplied())
     return;
 
-  const auto & local_orientations = *orientations_interface->getOrientations();
+  // pull out the subset of orientations required for this workset
   std::vector<Intrepid2::Orientation> workset_orientations(num_cells);
+  buildLocalOrientations(num_cells,local_cell_ids,orientations_interface, workset_orientations);
 
-  auto local_cell_ids_h = Kokkos::create_mirror_view(local_cell_ids);
-  Kokkos::deep_copy(local_cell_ids_h, local_cell_ids);
-
-  // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
-  auto local_cell_ids_host = Kokkos::create_mirror_view(local_cell_ids);
-  Kokkos::deep_copy(local_cell_ids_host, local_cell_ids);
-  for(int i=0; i<num_cells; ++i)
-    workset_orientations[i] = local_orientations[local_cell_ids_host[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
 }
 
@@ -357,7 +367,11 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
     else
       biv->setup(bir, iv.getCubaturePointsRef(false), iv.getJacobian(false), iv.getJacobianDeterminant(false), iv.getJacobianInverse(false));
 
-    biv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    // pull out the subset of orientations required for this workset
+    std::vector<Intrepid2::Orientation> workset_orientations;
+    buildLocalOrientations(numOwnedCells()+numGhostCells(),getLocalCellIDs(),options_.orientations_, workset_orientations);
+
+    biv->setOrientations(workset_orientations, numOwnedCells()+numGhostCells());
     biv->setWeightedMeasure(iv.getWeightedMeasure(false));
     biv->setCellVertexCoordinates(cell_vertex_coordinates);
 
@@ -489,7 +503,11 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     bpv->setupUniform(bir, pv.coords_ref, pv.jac, pv.jac_det, pv.jac_inv);
 
-    bpv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    // pull out the subset of orientations required for this workset
+    std::vector<Intrepid2::Orientation> workset_orientations;
+    buildLocalOrientations(numOwnedCells()+numGhostCells(),getLocalCellIDs(),options_.orientations_, workset_orientations);
+
+    bpv->setOrientations(workset_orientations, numOwnedCells()+numGhostCells());
     bpv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {

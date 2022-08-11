@@ -50,6 +50,14 @@
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
+// This is not as general as possible, but should be good enough for most builds.
+#if (defined(HAVE_MUELU_TPETRA) && \
+     ((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+      (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+      (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))))
+# define MUELU_CAN_USE_MIXED_PRECISION
+#endif
+
 namespace Thyra {
 
   using Teuchos::RCP;
@@ -82,7 +90,7 @@ namespace Thyra {
     typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       thyTpV;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>    tMV;
     typedef Tpetra::MultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node> tMagMV;
-# if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+# if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision          HalfMagnitude;
     typedef Tpetra::MultiVector<HalfMagnitude, LocalOrdinal, GlobalOrdinal, Node> tHalfMagMV;
 # endif
@@ -138,7 +146,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
         return true;
       }
-# if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
       else if (paramList.isType<RCP<tHalfMagMV> >(parameterName)) {
         RCP<tHalfMagMV> tpetra_hX = paramList.get<RCP<tHalfMagMV> >(parameterName);
         paramList.remove(parameterName);
@@ -211,7 +219,7 @@ namespace Thyra {
     typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       thyTpV;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>    tMV;
     typedef Tpetra::MultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node> tMagMV;
-# if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision          HalfMagnitude;
     typedef Tpetra::MultiVector<HalfMagnitude, LocalOrdinal, GlobalOrdinal, Node> tHalfMagMV;
 # endif
@@ -270,7 +278,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
         return true;
       }
-# if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
       else if (paramList.isType<RCP<tHalfMagMV> >(parameterName)) {
         RCP<tHalfMagMV> tpetra_hX = paramList.get<RCP<tHalfMagMV> >(parameterName);
         paramList.remove(parameterName);
@@ -404,7 +412,7 @@ namespace Thyra {
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMV;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType                 Magnitude;
     typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node >       XpmMV;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef Xpetra::TpetraHalfPrecisionOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpHalfPrecOp;
     typedef typename XpHalfPrecOp::HalfScalar                                     HalfScalar;
     typedef Xpetra::Operator<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>          XpHalfOp;
@@ -496,7 +504,7 @@ namespace Thyra {
         Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
       if (useHalfPrecision) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
 
         // CAG: There is nothing special about the combination double-float,
         //      except that I feel somewhat confident that Trilinos builds
@@ -563,7 +571,7 @@ namespace Thyra {
       // reuse old MueLu hierarchy stored in MueLu Xpetra operator and put in new matrix
       RCP<ThyXpOp> thyXpOp = rcp_dynamic_cast<ThyXpOp>(thyra_precOp, true);
       xpPrecOp = rcp_dynamic_cast<XpOp>(thyXpOp->getXpetraOperator(), true);
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
       RCP<XpHalfPrecOp> xpHalfPrecOp = rcp_dynamic_cast<XpHalfPrecOp>(xpPrecOp);
       if (!xpHalfPrecOp.is_null()) {
         RCP<MueLu::Hierarchy<HalfScalar,LocalOrdinal,GlobalOrdinal,Node> > H = rcp_dynamic_cast<MueLuHalfXpOp>(xpHalfPrecOp->GetHalfPrecisionOperator(), true)->GetHierarchy();

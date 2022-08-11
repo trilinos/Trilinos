@@ -59,28 +59,28 @@ namespace Intrepid2 {
   // Orientation
   //
   //
-  template<typename elemNodeViewType>
+  template<typename cellVertViewType>
   inline
   void
-  Orientation::getElementNodeMap(typename elemNodeViewType::non_const_value_type *subCellVerts,
+  Orientation::getCellVertexMap(typename cellVertViewType::non_const_value_type *subCellVerts,
                                  ordinal_type &numVerts,
                                  const shards::CellTopology cellTopo,
-                                 const elemNodeViewType elemNodes,
+                                 const cellVertViewType cellVertices,
                                  const ordinal_type subCellDim,
                                  const ordinal_type subCellOrd) {
     static_assert(Kokkos::Impl::MemorySpaceAccess
-                  <Kokkos::HostSpace,typename elemNodeViewType::device_type::memory_space>::accessible,
-                  "host space cannot access elemNodeViewType");
+                  <Kokkos::HostSpace,typename cellVertViewType::device_type::memory_space>::accessible,
+                  "host space cannot access cellVertViewType");
     switch (subCellDim) {
     case 0: {
       numVerts = 1;
-      subCellVerts[0] = elemNodes(subCellOrd);
+      subCellVerts[0] = cellVertices(subCellOrd);
       break;
     }
     default: {
       numVerts = cellTopo.getVertexCount(subCellDim, subCellOrd);
       for (ordinal_type i=0;i<numVerts;++i)
-        subCellVerts[i] = elemNodes(cellTopo.getNodeMap(subCellDim, subCellOrd, i));
+        subCellVerts[i] = cellVertices(cellTopo.getNodeMap(subCellDim, subCellOrd, i));
       break;
     }
     }
@@ -128,7 +128,7 @@ namespace Intrepid2 {
                                   subCellVerts[1] == subCellVerts[2] ||
                                   subCellVerts[1] == subCellVerts[3] ||
                                   subCellVerts[2] == subCellVerts[3] ), 
-                                ">>> ERROR (Intrepid::Orientation::getGlobalVertexNodes): " \
+                                ">>> ERROR (Intrepid::Orientation::getOrientation): " \
                                 "Invalid subCellVerts, same vertex ids are repeated");
 #endif
       ordinal_type rotation = 0; // find smallest vertex id
@@ -151,40 +151,42 @@ namespace Intrepid2 {
     return ort;
   }
 
-  template<typename elemNodeViewType>
+  template<typename cellVertViewType>
   inline
   Orientation
   Orientation::getOrientation(const shards::CellTopology cellTopo,
-                              const elemNodeViewType elemNodes) {
+                              const cellVertViewType cellVertices,
+                              bool isSide) {
     static_assert(Kokkos::Impl::MemorySpaceAccess
-                  <Kokkos::HostSpace,typename elemNodeViewType::device_type::memory_space>::accessible,
-                  "host space cannot access elemNodeViewType");
+                  <Kokkos::HostSpace,typename cellVertViewType::device_type::memory_space>::accessible,
+                  "host space cannot access cellVertViewType");
 
     Orientation ort;
-    const ordinal_type nedge = cellTopo.getEdgeCount();
+    auto dim = cellTopo.getDimension();
+    const ordinal_type nedge = (isSide && dim==1) ? 1 : cellTopo.getEdgeCount();
 
     if (nedge > 0) {
-      typename elemNodeViewType::non_const_value_type vertsSubCell[2];
+      typename cellVertViewType::non_const_value_type vertsSubCell[2];
       ordinal_type orts[12], nvertSubCell;
       for (ordinal_type i=0;i<nedge;++i) {
-        Orientation::getElementNodeMap(vertsSubCell,
+        Orientation::getCellVertexMap(vertsSubCell,
                                        nvertSubCell,
                                        cellTopo,
-                                       elemNodes,
+                                       cellVertices,
                                        1, i);
         orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
       }
       ort.setEdgeOrientation(nedge, orts);
     }
-    const ordinal_type nface = cellTopo.getFaceCount();
+    const ordinal_type nface = (isSide && dim==2) ? 1 : cellTopo.getFaceCount();
     if (nface > 0) {
-      typename elemNodeViewType::non_const_value_type vertsSubCell[4];
+      typename cellVertViewType::non_const_value_type vertsSubCell[4];
       ordinal_type orts[6], nvertSubCell;
       for (ordinal_type i=0;i<nface;++i) {
-        Orientation::getElementNodeMap(vertsSubCell,
+        Orientation::getCellVertexMap(vertsSubCell,
                                        nvertSubCell,
                                        cellTopo,
-                                       elemNodes,
+                                       cellVertices,
                                        2, i);
         orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
       }
@@ -229,235 +231,6 @@ namespace Intrepid2 {
     }
     return r_val;
   }
-
-  /*
-  template<typename refTanType>
-  inline
-  void
-  Orientation::getReferenceEdgeTangent(const refTanType &tanE,
-                                       const ordinal_type subcellOrd,
-                                       const shards::CellTopology cellTopo,
-                                       const ordinal_type ort,
-                                       const bool is_normalize) {
-    const auto cellBaseKey = cellTopo.getBaseKey();
-    INTREPID2_TEST_FOR_EXCEPTION( !(cellBaseKey == shards::Hexahedron<>::key && subcellOrd < 12) &&
-                                  !(cellBaseKey == shards::Tetrahedron<>::key && subcellOrd < 6) &&
-                                  !(cellBaseKey == shards::Quadrilateral<>::key && subcellOrd < 4) &&
-                                  !(cellBaseKey == shards::Triangle<>::key && subcellOrd < 3),
-                                  std::logic_error,
-                                  "subcell information are not correct" );
-    const ordinal_type i[2][2] = { { 0, 1 },
-                                   { 1, 0 } };    
-    const unsigned int v[2] = { cellTopo.getNodeMap(1, subcellOrd, 0),
-                                cellTopo.getNodeMap(1, subcellOrd, 1) };
-
-    auto normalize = [&](double *vv, ordinal_type iend) {
-      double norm = 0.0;
-      for (ordinal_type ii=0;ii<iend;++ii)
-        norm += vv[ii]*vv[ii];
-      norm = std::sqrt(norm);
-      for (ordinal_type ii=0;ii<iend;++ii)
-        vv[ii] /= norm;
-    };
-
-    auto assign_tangent = [&](refTanType t, double *vv, ordinal_type iend) {
-      for (ordinal_type ii=0;ii<iend;++ii)
-        t(ii) = vv[ii];
-    };
-    
-    double t[3] = {};
-    const int cell_dim = cellTopo.getDimension();
-    if        (cellBaseKey == shards::Hexahedron<>::key) {
-      const double hex_verts[8][3] = { { -1.0, -1.0, -1.0 },
-                                       {  1.0, -1.0, -1.0 },
-                                       {  1.0,  1.0, -1.0 },
-                                       { -1.0,  1.0, -1.0 },
-                                       //
-                                       { -1.0, -1.0,  1.0 },
-                                       {  1.0, -1.0,  1.0 },
-                                       {  1.0,  1.0,  1.0 },
-                                       { -1.0,  1.0,  1.0 } };
-      for (ordinal_type k=0;k<3;++k) {
-        const ordinal_type *ii = &i[ort][0];
-        t[k] = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
-      }
-    } else if (cellBaseKey == shards::Tetrahedron<>::key) {
-      const double tet_verts[4][3] = { {  0.0,  0.0,  0.0 },
-                                       {  1.0,  0.0,  0.0 },
-                                       {  0.0,  1.0,  0.0 },
-                                       {  0.0,  0.0,  1.0 } };
-      for (ordinal_type k=0;k<3;++k) {
-        const ordinal_type *ii = &i[ort][0];
-        t[k] = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
-      }
-    } else if (cellBaseKey == shards::Quadrilateral<>::key) {
-      const double quad_verts[8][3] = { { -1.0, -1.0 },
-                                        {  1.0, -1.0 },
-                                        {  1.0,  1.0 },
-                                        { -1.0,  1.0 } };
-      for (ordinal_type k=0;k<2;++k) {
-        const ordinal_type *ii = &i[ort][0];
-        t[k] = quad_verts[v[ii[1]]][k] - quad_verts[v[ii[0]]][k];
-      }
-    } else if (cellBaseKey == shards::Triangle<>::key) {
-      const double tri_verts[4][3] = { {  0.0,  0.0 },
-                                       {  1.0,  0.0 },
-                                       {  0.0,  1.0 } };
-      for (ordinal_type k=0;k<2;++k) {
-        const ordinal_type *ii = &i[ort][0];
-        t[k] = tri_verts[v[ii[1]]][k] - tri_verts[v[ii[0]]][k];
-      }
-    } else {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    "cellTopo is not supported: try TET and HEX" );
-    }
-
-    if (is_normalize) normalize(t, cell_dim);
-    assign_tangent(tanE, t, cell_dim);
-  }
-
-  template<typename refTanType>
-  inline
-  void
-  Orientation::getReferenceFaceTangents(const refTanType &tanU,
-                                        const refTanType &tanV,
-                                        const ordinal_type subcellOrd,
-                                        const shards::CellTopology cellTopo,
-                                        const ordinal_type ort,
-                                        const bool is_normalize) {
-    const auto cellBaseKey = cellTopo.getBaseKey();
-
-    auto normalize = [&](double *v, ordinal_type iend) {
-      double norm = 0.0;
-      for (ordinal_type i=0;i<iend;++i)
-        norm += v[i]*v[i];
-      norm = std::sqrt(norm);
-      for (ordinal_type i=0;i<iend;++i)
-        v[i] /= norm;
-    };
-
-    auto assign_tangent = [&](refTanType t, double *v, ordinal_type iend) {
-      for (ordinal_type i=0;i<iend;++i)
-        t(i) = v[i];
-    };
-
-    double tu[3], tv[3];
-    if        (cellBaseKey == shards::Hexahedron<>::key) {
-      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 6),
-                                    std::logic_error,
-                                    "subcell information are not correct" );
-      const double hex_verts[8][3] = { { -1.0, -1.0, -1.0 },
-                                       {  1.0, -1.0, -1.0 },
-                                       {  1.0,  1.0, -1.0 },
-                                       { -1.0,  1.0, -1.0 },
-                                       //
-                                       { -1.0, -1.0,  1.0 },
-                                       {  1.0, -1.0,  1.0 },
-                                       {  1.0,  1.0,  1.0 },
-                                       { -1.0,  1.0,  1.0 } };
-      const unsigned int v[4] = { cellTopo.getNodeMap(2, subcellOrd, 0),
-                                  cellTopo.getNodeMap(2, subcellOrd, 1),
-                                  cellTopo.getNodeMap(2, subcellOrd, 2),
-                                  cellTopo.getNodeMap(2, subcellOrd, 3) };
-      const ordinal_type i[8][4] = { { 0, 1, 2, 3 },
-                                     { 1, 2, 3, 0 },
-                                     { 2, 3, 0, 1 },
-                                     { 3, 0, 1, 2 },
-                                     //
-                                     { 0, 3, 2, 1 },
-                                     { 1, 0, 3, 2 },
-                                     { 2, 1, 0, 3 },
-                                     { 3, 2, 1, 0 } };
-      for (ordinal_type k=0;k<3;++k) {
-        const ordinal_type *ii = &i[ort][0];
-
-        tu[k] = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
-        tv[k] = hex_verts[v[ii[3]]][k] - hex_verts[v[ii[0]]][k];
-      }
-
-    } else if (cellBaseKey == shards::Tetrahedron<>::key) {
-      INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 4),
-                                    std::logic_error,
-                                    "subcell information are not correct" );
-      const double tet_verts[4][3] = { {  0.0,  0.0,  0.0 },
-                                       {  1.0,  0.0,  0.0 },
-                                       {  0.0,  1.0,  0.0 },
-                                       {  0.0,  0.0,  1.0 } };
-      const unsigned int v[4] = { cellTopo.getNodeMap(2, subcellOrd, 0),
-                                  cellTopo.getNodeMap(2, subcellOrd, 1),
-                                  cellTopo.getNodeMap(2, subcellOrd, 2) };
-      const ordinal_type i[6][3] = { { 0, 1, 2 },
-                                     { 1, 2, 0 },
-                                     { 2, 0, 1 },
-                                     //
-                                     { 0, 2, 1 },
-                                     { 1, 0, 2 },
-                                     { 2, 1, 0 } };
-      for (ordinal_type k=0;k<3;++k) {
-        const ordinal_type *ii = &i[ort][0];
-
-        tu[k] = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
-        tv[k] = tet_verts[v[ii[2]]][k] - tet_verts[v[ii[0]]][k];
-      }
-
-    } else {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    "cellTopo is not supported: try TET and HEX" );
-    }
-    
-    if (is_normalize) { 
-      normalize(tu, 3);
-      normalize(tv, 3);
-    }
-
-    assign_tangent(tanU, tu, 3);
-    assign_tangent(tanV, tv, 3);
-  }
-
-  template<typename refNormalType>
-  inline
-  void
-  Orientation::getReferenceFaceNormal(const refNormalType &normalV,
-                                      const ordinal_type subcellOrd,
-                                      const shards::CellTopology cellTopo,
-                                      const ordinal_type ort,
-                                      const bool is_normalize) {
-    const auto cellBaseKey = cellTopo.getBaseKey();
-
-    auto normalize = [&](double *v, ordinal_type iend) {
-      double norm = 0.0;
-      for (ordinal_type i=0;i<iend;++i)
-        norm += v[i]*v[i];
-      norm = std::sqrt(norm);
-      for (ordinal_type i=0;i<iend;++i)
-        v[i] /= norm;
-    };
-
-    auto assign_normal = [&](refNormalType n, double *v, ordinal_type iend) {
-      for (ordinal_type i=0;i<iend;++i)
-        n(i) = v[i];
-    };
-
-    double buf[2][3];
-    Kokkos::View<double*,Kokkos::HostSpace> tanU(&buf[0][0], 3);
-    Kokkos::View<double*,Kokkos::HostSpace> tanV(&buf[1][0], 3);
-
-    getReferenceFaceTangents(tanU, tanV,
-                             subcellOrd,
-                             cellTopo,
-                             ort,
-                             false);
-
-    // cross product
-    double v[3];
-    v[0] = tanU(1)*tanV(2) - tanU(2)*tanV(1);
-    v[1] = tanU(2)*tanV(0) - tanU(0)*tanV(2);
-    v[2] = tanU(0)*tanV(1) - tanU(1)*tanV(0);
-
-    if (is_normalize) normalize(v, 3);
-    assign_normal(normalV, v, 3);
-  }
-  */
   
   KOKKOS_INLINE_FUNCTION
   Orientation::Orientation()
@@ -473,9 +246,9 @@ namespace Intrepid2 {
   void
   Orientation::setEdgeOrientation(const ordinal_type numEdge, const ordinal_type edgeOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), 
+    INTREPID2_TEST_FOR_ABORT( !((numEdge == 1) || (3 <= numEdge && numEdge <= 12 )),
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
-                              "Invalid numEdge (3--12)");
+                              "Invalid numEdge");
 #endif
     _edgeOrt = 0;
     for (ordinal_type i=0;i<numEdge;++i)
@@ -486,9 +259,9 @@ namespace Intrepid2 {
   void
   Orientation::getEdgeOrientation(ordinal_type *edgeOrt, const ordinal_type numEdge) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), 
+    INTREPID2_TEST_FOR_ABORT( !((numEdge == 1) || (3 <= numEdge && numEdge <= 12 )),
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
-                              "Invalid numEdge (3--12)");
+                              "Invalid numEdge");
 #endif
     for (ordinal_type i=0;i<numEdge;++i)
       edgeOrt[i] = (_edgeOrt & (1 << i)) >> i;
@@ -498,9 +271,9 @@ namespace Intrepid2 {
   void
   Orientation::setFaceOrientation(const ordinal_type numFace, const ordinal_type faceOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), 
+    INTREPID2_TEST_FOR_ABORT( !((numFace == 1) || (4 <= numFace && numFace <= 6 )),
                               ">>> ERROR (Intrepid::Orientation::setFaceOrientation): "
-                              "Invalid numFace (4--6)");
+                              "Invalid numFace");
 #endif
     _faceOrt = 0;
     for (ordinal_type i=0;i<numFace;++i) {
@@ -513,9 +286,9 @@ namespace Intrepid2 {
   void
   Orientation::getFaceOrientation(ordinal_type *faceOrt, const ordinal_type numFace) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), 
+    INTREPID2_TEST_FOR_ABORT( !((numFace == 1) || (4 <= numFace && numFace <= 6 )),
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
-                              "Invalid numFace (4--6)");
+                              "Invalid numFace");
 #endif
     for (ordinal_type i=0;i<numFace;++i) {
       const ordinal_type s = i*3;

@@ -179,17 +179,21 @@ endmacro()
 #
 macro(tribits_read_all_package_deps_files_create_deps_graph)
 
-  set(${PROJECT_NAME}_SE_PACKAGES) # Packages and subpackages
+  foreach(tribitsExternalPkg  IN  LISTS  ${PROJECT_NAME}_DEFINED_TPLS)
+    tribits_read_external_package_deps_files_add_to_graph(${tribitsExternalPkg})
+  endforeach()
 
-  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  set(${PROJECT_NAME}_SE_PACKAGES "") # Packages and subpackages
+
+  foreach(TRIBITS_PACKAGE  IN  LISTS ${PROJECT_NAME}_PACKAGES)
     tribits_read_toplevel_package_deps_files_add_to_graph(${TRIBITS_PACKAGE}
       ${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
   endforeach()
 
   # Create a reverse SE packages list for later use
-  set(${PROJECT_NAME}_REVERSE_SE_PACKAGES ${${PROJECT_NAME}_SE_PACKAGES})
+  set(${PROJECT_NAME}_REVERSE_SE_PACKAGES  ${${PROJECT_NAME}_SE_PACKAGES})
   if (${PROJECT_NAME}_REVERSE_SE_PACKAGES)
-    list(REVERSE ${PROJECT_NAME}_REVERSE_SE_PACKAGES)
+    list(REVERSE  ${PROJECT_NAME}_REVERSE_SE_PACKAGES)
   endif()
 
   list(LENGTH ${PROJECT_NAME}_SE_PACKAGES ${PROJECT_NAME}_NUM_SE_PACKAGES)
@@ -198,11 +202,36 @@ macro(tribits_read_all_package_deps_files_create_deps_graph)
 endmacro()
 
 
+# @MACRO: tribits_read_external_package_deps_files_add_to_graph()
+#
+# Reads in dependencies for the external packages/TPL ``<tplName>`` and
+# creates the package dependency graph entries for it.
+#
+# Usage::
+#
+#   tribits_read_external_package_deps_files_add_to_graph(<tplName>)
+#
+# This reads in the file ``${<tplName>_DEPENDENCIES_FILE}`` and sets the
+# varaible::
+#
+#   <tplName>_LIB_ALL_DEPENDENCIES
+#
+# See `Function call tree for constructing package dependency graph`_
+#
+macro(tribits_read_external_package_deps_files_add_to_graph  tplName)
+  set(absTplDepsFile "${${PROJECT_NAME}_SOURCE_DIR}/${${tplName}_DEPENDENCIES_FILE}")
+  if (EXISTS "${absTplDepsFile}")
+    tribits_trace_file_processing(TPL  INCLUDE  "${absTplDepsFile}")
+    include(${absTplDepsFile})
+  endif()
+endmacro()
+
+
 # @MACRO: tribits_read_toplevel_package_deps_files_add_to_graph()
 #
 # Usage::
 #
-#  tribits_read_toplevel_package_deps_files_add_to_graph(<packageName>)
+#   tribits_read_toplevel_package_deps_files_add_to_graph(<packageName>)
 #
 # Macro that reads in package dependencies for a top-level package from the
 # file `<packageDir>/cmake/Dependencies.cmake`_ and appends the forward
@@ -476,7 +505,7 @@ function(tribits_set_dep_packages  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
   endif()
 
   set(LIST_TYPE  ${LIB_OR_TEST}_${REQUIRED_OR_OPTIONAL}_DEP_PACKAGES)
-  set(PACKAGE_DEPS_LIST)
+  set(PACKAGE_DEPS_LIST "")
   set(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
   foreach(DEP_PKG ${${LIST_TYPE}})
@@ -809,6 +838,8 @@ macro(tribits_parse_subpackages_append_se_packages_add_options
           print_var(${SUBPACKAGE_FULLNAME}_PARENT_PACKAGE)
           print_var(${SUBPACKAGE_FULLNAME}_PARENT_REPOSITORY)
         endif()
+
+        set(${SUBPACKAGE_FULLNAME}_PACKAGE_BUILD_STATUS INTERNAL)
 
         # Set up the input options for this subpackage
         tribits_insert_standard_package_options(${SUBPACKAGE_FULLNAME}

@@ -40,7 +40,6 @@
 include(CMakeParseArguments)
 
 
-#
 # @MACRO: tribits_include_directories()
 #
 # This function is to override the standard behavior of the built-in CMake

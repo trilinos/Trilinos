@@ -372,23 +372,6 @@ namespace Xpetra {
      */
     virtual size_t getLocalMaxNumRowEntries() const =0;
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
-
 
     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
     virtual bool isLocallyIndexed() const =0;
@@ -596,11 +579,6 @@ namespace Xpetra {
     // ----------------------------------------------------------------------------------
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-    /// \brief Access the underlying local Kokkos::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const = 0;
-#endif
     virtual local_matrix_type getLocalMatrixDevice () const = 0;
     virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 #else

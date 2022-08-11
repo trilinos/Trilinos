@@ -76,11 +76,33 @@ public:
 
   FaceToElement();
 
-  FaceToElement(panzer::ConnManager & conn);
-
-  /** Build the mapping from a mesh topology.
+#ifndef PANZER_HIDE_DEPRECATED_CODE
+  /** This constructor is deprecated in favor of FaceToElement(conn, comm)
+    * which explicitly specifies the communicator.  This constructor is
+    * left here for backward compatibility.
     */
+  [[deprecated]]
+  FaceToElement(panzer::ConnManager & conn);
+#endif
+
+  FaceToElement(panzer::ConnManager & conn,
+                const Teuchos::RCP<const Teuchos::Comm<int>> comm);
+
+#ifndef PANZER_HIDE_DEPRECATED_CODE
+  /** Build the mapping from a mesh topology using MPI_COMM_WORLD.
+    * This method is deprecated in favor of initialize(conn, comm) which
+    * explicitly specifies the communicator.  This method is left here
+    * for backward compatibility.
+    */
+  [[deprecated]]
   void initialize(panzer::ConnManager & conn);
+#endif
+
+  /** Build the mapping from a mesh topology using the provided communicator.
+    */
+  void initialize(panzer::ConnManager & conn,
+                  const Teuchos::RCP<const Teuchos::Comm<int>> comm);
+
 
   GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const 
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,0);}

@@ -169,7 +169,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Galeri_ENABLE_Xpetra)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
     SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml
@@ -191,7 +191,11 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
       NUM_MPI_PROCS 4
       )
 
-    IF (Tpetra_INST_FLOAT)
+    IF (Tpetra_INST_FLOAT
+      AND (NOT Tpetra_INST_COMPLEX_DOUBLE
+	OR (Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_COMPLEX_FLOAT)
+	)
+      )
       TRIBITS_ADD_TEST(
         GaleriDriver
         NAME "Galeri_double_Jacobi_HalfPrecision"

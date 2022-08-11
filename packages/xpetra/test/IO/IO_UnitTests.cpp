@@ -45,6 +45,7 @@
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_as.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
@@ -55,6 +56,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( IO, MMMissingRows, M, MA, Scalar, LO, GO, Node )
   {
+    using Teuchos::as;
 
     // get a comm and node
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
@@ -79,18 +81,19 @@ namespace {
     TEST_EQUALITY(indices.size(), 2);
     TEST_EQUALITY(colmap->getGlobalElement(indices[0]), 0);
     TEST_EQUALITY(colmap->getGlobalElement(indices[1]), 3);
-    TEST_EQUALITY(values[0], 2.);
-    TEST_EQUALITY(values[1], 3.);
+    TEST_EQUALITY(values[0], as<Scalar>(2.));
+    TEST_EQUALITY(values[1], as<Scalar>(3.));
 
     crsA->getLocalRowView(1, indices, values);
     TEST_EQUALITY(indices.size(), 1);
     TEST_EQUALITY(colmap->getGlobalElement(indices[0]), 4);
-    TEST_EQUALITY(values[0], 4.);
+    TEST_EQUALITY(values[0], as<Scalar>(4.));
 
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( IO, BinaryMissingRows, M, MA, Scalar, LO, GO, Node )
   {
+    using Teuchos::as;
 
     // get a comm and node
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
@@ -112,13 +115,13 @@ namespace {
     TEST_EQUALITY(indices.size(), 2);
     TEST_EQUALITY(colmap->getGlobalElement(indices[0]), 0);
     TEST_EQUALITY(colmap->getGlobalElement(indices[1]), 3);
-    TEST_EQUALITY(values[0], 2.);
-    TEST_EQUALITY(values[1], 3.);
+    TEST_EQUALITY(values[0], as<Scalar>(2.));
+    TEST_EQUALITY(values[1], as<Scalar>(3.));
 
     crsA->getLocalRowView(1, indices, values);
     TEST_EQUALITY(indices.size(), 1);
     TEST_EQUALITY(colmap->getGlobalElement(indices[0]), 4);
-    TEST_EQUALITY(values[0], 4.);
+    TEST_EQUALITY(values[0], as<Scalar>(4.));
 
   }
 

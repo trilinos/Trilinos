@@ -39,7 +39,7 @@
 
 include(AppendSet)
 
-#
+
 # @MACRO: append_glob()
 #
 # Utility macro that does a ``file(GLOB ...)`` and appends to an existing list

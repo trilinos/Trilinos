@@ -40,7 +40,7 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
   setenv("IOSS_PROPERTIES", "DECOMPOSITION_METHOD=rib", 1);
 
   Teuchos::RCP<Teuchos::MpiComm<int>> Comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD) );
-  Kokkos::initialize();
+  Kokkos::ScopeGuard();
 
   using topo_RCP = Teuchos::RCP<const shards::CellTopology>;
   using basis_RCP = Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double>>;
@@ -181,6 +181,4 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
       }
     }
   }
-
-  Kokkos::finalize();
 }

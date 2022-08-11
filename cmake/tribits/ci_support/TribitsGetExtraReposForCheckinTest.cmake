@@ -86,7 +86,7 @@ set( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   )
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 include(Split)
 include(AppendStringVar)
 include(SetDefaultAndFromEnv) # Used in ExtraRepositoriesList.cmake file?

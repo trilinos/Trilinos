@@ -207,6 +207,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
+  "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
@@ -288,6 +289,7 @@ namespace MueLu {
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"semicoarsen: piecewise constant\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"semicoarsen: piecewise linear\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: calculate nonsym restriction\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
@@ -628,6 +630,8 @@ namespace MueLu {
       
          ("aggregation: ordering","aggregation: ordering")
       
+         ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
+      
          ("aggregation: drop scheme","aggregation: drop scheme")
       
          ("aggregation: classical scheme","aggregation: classical scheme")
@@ -789,6 +793,8 @@ namespace MueLu {
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
       
          ("semicoarsen: piecewise constant","semicoarsen: piecewise constant")
+      
+         ("semicoarsen: piecewise linear","semicoarsen: piecewise linear")
       
          ("semicoarsen: calculate nonsym restriction","semicoarsen: calculate nonsym restriction")
       
