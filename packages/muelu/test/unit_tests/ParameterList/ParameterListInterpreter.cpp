@@ -57,6 +57,7 @@
 
 #ifdef HAVE_MUELU_TPETRA
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #endif
 
 
@@ -77,6 +78,10 @@ namespace MueLuTests {
     for(int i=0; i< fileList.size(); i++) {
       // Ignore files with "BlockCrs" in their name
       auto found = fileList[i].find("BlockCrs");
+      if(found != std::string::npos) continue;
+
+      // Ignore files with "Comparison" in their name
+      found = fileList[i].find("Comparison");
       if(found != std::string::npos) continue;
 
       out << "Processing file: " << fileList[i] << std::endl;
@@ -151,6 +156,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
   }
 
 
+
+#if defined(HAVE_MUELU_TPETRA)
+template<class Matrix,class MT>
+MT compare_matrices(RCP<Matrix> & Ap, RCP<Matrix> &Ab) {
+  using SC = typename Matrix::scalar_type;
+  using LO = typename Matrix::local_ordinal_type;
+  using GO = typename Matrix::global_ordinal_type;
+  using NO = typename Matrix::node_type;
+  using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
+  SC one   = Teuchos::ScalarTraits<SC>::one();
+  SC zero  = Teuchos::ScalarTraits<SC>::zero();
+
+  RCP<const CRS> Ap_t = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraCrs(Ap);
+  auto Ab_t = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraBlockCrs(Ab);
+  RCP<CRS> Ab_as_point = Tpetra::convertToCrsMatrix<SC,LO,GO,NO>(*Ab_t);  
+
+  RCP<CRS> diff = rcp(new CRS(Ap_t->getCrsGraph()));
+  diff->setAllToScalar(zero);
+  diff->fillComplete();
+  Tpetra::MatrixMatrix::Add<SC,LO,GO,NO>(*Ap_t,false,one,*Ab_as_point,false,-one,diff);
+  return diff->getFrobeniusNorm();
+}
+#endif
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -165,8 +195,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
       RCP<Matrix> PointA = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,Xpetra::UseTpetra);  
       RCP<Matrix> BlockA;
       {
-        //using CRS  = Tpetra::CrsMatrix<SC,LO,GO,NO>;
-        //using BCRS = Tpetra::BlockCrsMatrix<SC,LO,GO,NO>;
         using XCRS = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
 
         auto tA = MueLu::Utilities<SC,LO,GO,NO>::Op2TpetraCrs(PointA);
@@ -182,9 +210,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
       ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
       
       for(int i=0; i< fileList.size(); i++) {
-        // Only run files without "BlockCrs" in their name (since those guys hardwired the block size)
-        auto found = fileList[i].find("BlockCrs");
-        if(found != std::string::npos) continue;
+        // Only run files with "Comparison" in their name
+        auto found = fileList[i].find("Comparison");
+        if(found == std::string::npos) continue;
         
         out << "Processing file: " << fileList[i] << std::endl;
         
@@ -195,15 +223,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
         mueluFactory1.SetupHierarchy(*PointH);
 
         // Block Hierachy
-#if 0
         ParameterListInterpreter mueluFactory2("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
         RCP<Hierarchy> BlockH = mueluFactory2.CreateHierarchy();
         BlockH->GetLevel(0)->Set("A", BlockA);       
         mueluFactory2.SetupHierarchy(*BlockH);
-#endif
 
         // Check to see that we get the same matrices in both hierarchies
+        TEST_EQUALITY(PointH->GetNumLevels(),BlockH->GetNumLevels());
 
+        for(int j=0; j<PointH->GetNumLevels(); j++) {
+          using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+          MT tol = Teuchos::ScalarTraits<MT>::squareroot(Teuchos::ScalarTraits<MT>::eps());
+         
+          RCP<Level> Plevel = PointH->GetLevel(j);
+          RCP<Level> Blevel = BlockH->GetLevel(j);
+
+          // Compare A
+          RCP<Matrix> Ap = Plevel->Get<RCP<Matrix> >("A");
+          RCP<Matrix> Ab = Blevel->Get<RCP<Matrix> >("A");
+          MT norm = compare_matrices<Matrix,MT>(Ap,Ab);
+          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+
+          // Compare P, R
+          if(j>0) {
+            RCP<Matrix> Pp = Plevel->Get<RCP<Matrix> >("P");
+            RCP<Matrix> Pb = Blevel->Get<RCP<Matrix> >("P");
+            norm = compare_matrices<Matrix,MT>(Pp,Pb);
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+
+            RCP<Matrix> Rp = Plevel->Get<RCP<Matrix> >("R");
+            RCP<Matrix> Rb = Blevel->Get<RCP<Matrix> >("R");
+            norm = compare_matrices<Matrix,MT>(Rp,Rb);
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);         
+          }
+        }
 
         //TODO: check no unused parameters
         //TODO: check results of Iterate()
