@@ -53,6 +53,11 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 
+#ifdef HAVE_MUELU_TPETRA
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#endif
+
+
 // Including this one last ensure that the short names of the above headers are defined properly
 #include "MueLu_GeometricInterpolationPFactory_kokkos_decl.hpp"
 
@@ -236,21 +241,87 @@ namespace MueLu {
       StridedMapFactory::Build(prolongatorGraph->getDomainMap(), strideInfo);
 
     *out << "Call prolongator constructor" << std::endl;
+    using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    if(helpers::isTpetraBlockCrs(A)) {
+#ifdef HAVE_MUELU_TPETRA
+      LO NSDim = A->GetStorageBlockSize();
 
-    // Create the prolongator matrix and its associated objects
-    RCP<ParameterList> dummyList = rcp(new ParameterList());
-    P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-    RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
-    PCrs->setAllToScalar(1.0);
-    PCrs->fillComplete();
+      // Build the exploded Map
+      // FIXME: Should look at doing this on device
+      RCP<const Map> BlockMap = prolongatorGraph->getDomainMap();
+      Teuchos::ArrayView<const GO> block_dofs = BlockMap->getLocalElementList();
+      Teuchos::Array<GO> point_dofs(block_dofs.size()*NSDim);
+      for(LO i=0, ct=0; i<block_dofs.size(); i++) {
+        for(LO j=0; j<NSDim; j++) {
+          point_dofs[ct] = block_dofs[i]*NSDim + j;
+          ct++;
+        }
+      }
+      
+      RCP<const Map> PointMap = MapFactory::Build(BlockMap->lib(),
+                                                  BlockMap->getGlobalNumElements() *NSDim,
+                                                  point_dofs(),
+                                                  BlockMap->getIndexBase(),
+                                                  BlockMap->getComm());
+      strideInfo[0]    = A->GetFixedBlockSize();
+      RCP<const StridedMap> stridedPointMap =  StridedMapFactory::Build(PointMap, strideInfo);
 
-    // set StridingInformation of P
-    if (A->IsView("stridedMaps") == true) {
-      P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedDomainMap);
-    } else {
-      P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMap);
+     RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(prolongatorGraph, PointMap, A->getRangeMap(),NSDim);
+      RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+      if(P_tpetra.is_null()) throw std::runtime_error("BuildConstantP: Matrix factory did not return a Tpetra::BlockCrsMatrix");
+      RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
+      
+      const LO stride = strideInfo[0]*strideInfo[0];
+      const LO in_stride = strideInfo[0];
+      typename CrsMatrix::local_graph_type localGraph = prolongatorGraph->getLocalGraphDevice();
+      auto rowptr  = localGraph.row_map;
+      auto indices = localGraph.entries;
+      auto values = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
+
+      using ISC = typename Tpetra::BlockCrsMatrix<SC,LO,GO,NO>::impl_scalar_type;
+      ISC one = Teuchos::ScalarTraits<ISC>::one();
+
+      const Kokkos::TeamPolicy<execution_space> policy(prolongatorGraph->getLocalNumRows(), 1);
+      
+      Kokkos::parallel_for("MueLu:GeoInterpFact::BuildConstantP::fill", policy,
+                           KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type &thread) {
+                           auto row = thread.league_rank();
+                           for(LO j = (LO)rowptr[row]; j<(LO) rowptr[row+1]; j++) {
+                             LO block_offset = j*stride;
+                             for(LO k=0; k<in_stride; k++)
+                               values[block_offset + k*(in_stride+1) ] = one;
+                           }
+                         });
+
+      P = P_wrap;
+      if (A->IsView("stridedMaps") == true) {
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedPointMap);
+      }
+      else {
+        P->CreateView("stridedMaps", P->getRangeMap(),   PointMap);
+      }
+
+#else
+      throw std::runtime_error("GeometricInteroplationFactory::BuildConstantP(): BlockCrs requires Tpetra");
+#endif
+
     }
-
+    else {
+      // Create the prolongator matrix and its associated objects
+      RCP<ParameterList> dummyList = rcp(new ParameterList());
+      P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
+      RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+      PCrs->setAllToScalar(1.0);
+      PCrs->fillComplete();
+      
+      // set StridingInformation of P
+      if (A->IsView("stridedMaps") == true) {
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedDomainMap);
+      } else {
+        P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMap);
+      }
+    }
+      
   } // BuildConstantP
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
