@@ -99,14 +99,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND
       NUM_MPI_PROCS 1
     )
 
-    TRIBITS_ADD_TEST(
-      MortarSurfaceCoupling_DofBased
-      NAME "MeshTyingBlocked_SimpleSmoother_2dof_medium_spai"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple_spai.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=7 --instantiation=${MortarSurfaceCoupling_Instatiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 2
-    )
-
   ENDIF()
 
 ENDIF()
