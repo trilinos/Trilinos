@@ -118,7 +118,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
     // Add debugging information
-    DeviceType::execution_space::print_configuration(GetOStream(Runtime1));
+    typename DeviceType::execution_space().print_configuration(GetOStream(Runtime1));
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 

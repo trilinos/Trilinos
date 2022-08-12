@@ -15,5 +15,5 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_master_element_lib)
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_master_element_lib)
     

@@ -1,3 +1,21 @@
+// clang-format off
+/* =====================================================================================
+Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
+certain rights in this software.
+
+SCR#:2790.0
+
+This file is part of Tacho. Tacho is open source software: you can redistribute it
+and/or modify it under the terms of BSD 2-Clause License
+(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
+provided under the main directory
+
+Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
+
+Sandia National Laboratories, Albuquerque, NM, USA
+===================================================================================== */
+// clang-format on
 /// \file  Tacho_Lapack_External.hpp
 /// \brief Lapack wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -105,7 +123,7 @@ int Lapack<float>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo,
 template <>
 int Lapack<float>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, float *a, const int lda,
                          int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_ssytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 #else
@@ -196,7 +214,7 @@ int Lapack<double>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo
 template <>
 int Lapack<double>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, double *a, const int lda,
                           int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_dsytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 #else
@@ -294,7 +312,7 @@ int Lapack<Kokkos::complex<float>>::sytrf(cusolverDnHandle_t handle, const cubla
 template <>
 int Lapack<Kokkos::complex<float>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
                                           Kokkos::complex<float> *a, const int lda, int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_csytrf(handle, uplo, m, (rocblas_float_complex *)a, lda, ipiv, dev);
   return r_val;
 #else
@@ -396,7 +414,7 @@ int Lapack<Kokkos::complex<double>>::sytrf(cusolverDnHandle_t handle, const cubl
 template <>
 int Lapack<Kokkos::complex<double>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
                                            Kokkos::complex<double> *a, const int lda, int *ipiv, int *dev) {
-#if TACHO_ENABLE_ROCSOLVER_LATEST
+#if defined(TACHO_ENABLE_ROCSOLVER_SYTRF)
   const int r_val = rocsolver_zsytrf(handle, uplo, m, (rocblas_double_complex *)a, lda, ipiv, dev);
   return r_val;
 #else

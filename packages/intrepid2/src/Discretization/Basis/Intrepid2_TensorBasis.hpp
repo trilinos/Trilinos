@@ -1510,18 +1510,18 @@ struct OperatorTensorDecomposition
               
               TensorPoints<PointValueType, DeviceType> basisPoints(basisPointComponents);
               
-              bool useVectorData = (basisValueView.rank() == 3);
+              bool useVectorData2 = (basisValueView.rank() == 3);
 
               BasisValues<OutputValueType,DeviceType> basisValues;
-              if (useVectorData)
+              if (useVectorData2)
               {
                 VectorData<OutputValueType,DeviceType> vectorData(outputData);
                 basisValues = BasisValues<OutputValueType,DeviceType>(vectorData);
               }
               else
               {
-                TensorData<OutputValueType,DeviceType> tensorData(outputData);
-                basisValues = BasisValues<OutputValueType,DeviceType>(tensorData);
+                TensorData<OutputValueType,DeviceType> tensorData2(outputData);
+                basisValues = BasisValues<OutputValueType,DeviceType>(tensorData2);
               }
               
               tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);

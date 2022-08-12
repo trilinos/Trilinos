@@ -192,7 +192,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
         if (config)
-          Kokkos::Serial::print_configuration(std::cout, true/*details*/);
+          Kokkos::Serial().print_configuration(std::cout, true/*details*/);
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
@@ -227,7 +227,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
 
         if (config) {
-          Kokkos::OpenMP::print_configuration(std::cout, true/*details*/);
+          Kokkos::OpenMP().print_configuration(std::cout, true/*details*/);
           std::cout << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
         }
 
@@ -264,7 +264,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
         if (config)
-          Kokkos::Cuda::print_configuration(std::cout, true/*details*/);
+          Kokkos::Cuda().print_configuration(std::cout, true/*details*/);
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
@@ -299,7 +299,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 	typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
 
         if (config)
-          Kokkos::Experimental::HIP::print_configuration(std::cout, true/*details*/);
+          Kokkos::Experimental::HIP().print_configuration(std::cout, true/*details*/);
 
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
