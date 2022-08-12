@@ -91,6 +91,14 @@
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
+#define INIT_KOKKOS_HANDLES
+#if defined(INIT_KOKKOS_HANDLES)
+#include "Kokkos_Core.hpp"
+#include "KokkosKernels_config.h"
+#include "KokkosKernels_Controls.hpp"
+
+#include "KokkosBlas_trtri.hpp"
+#endif
 
 using UN    = unsigned;
 using SC    = double;
@@ -103,6 +111,39 @@ using namespace Teuchos;
 using namespace Xpetra;
 using namespace FROSch;
 using namespace Thyra;
+
+// --------------------------------------------------------------------- //
+static GO
+min3(GO a, GO b, GO c) {
+  return std::min(a, std::min(b, c));
+}
+
+static GO
+max3(GO a, GO b, GO c) {
+  return std::max(a, std::max(b, c));
+}
+
+static void
+cubic_radical_search(GO n, GO & x, GO & y, GO & z) {
+  double best = 0.0;
+
+  for (GO f1 = (GO)(pow(n,1.0/3.0)+0.5); f1 > 0; --f1)
+    if (n % f1 == 0) {
+      GO n1 = n/f1;
+      for (GO f2 = (GO)(pow(n1,0.5)+0.5); f2 > 0; --f2)
+        if (n1 % f2 == 0) {
+          GO f3 = n1 / f2;
+          double current = (double)min3(f1, f2, f3)/max3(f1, f2, f3);
+          if (current > best) {
+            best = current;
+            x = f1;
+            y = f2;
+            z = f3;
+          }
+        }
+    }
+}
+// --------------------------------------------------------------------- //
 
 int main(int argc, char *argv[])
 {
@@ -127,6 +168,8 @@ int main(int argc, char *argv[])
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
     bool useGeoMap = false;
     My_CLP.setOption("useGeoMap","useAlgMap",&useGeoMap,"Use Geometric Map");
+    bool useIrregularGrid = false;
+    My_CLP.setOption("useIrregularGrid","useRegularGrid",&useIrregularGrid,"Use Irregular Process Grid");
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -134,25 +177,41 @@ int main(int argc, char *argv[])
         return(EXIT_SUCCESS);
     }
 
+for (int count = 0; count < 2; count++) {
     CommWorld->barrier();
     RCP<StackedTimer> stackedTimer = rcp(new StackedTimer("Thyra Elasticity Test"));
     TimeMonitor::setStackedTimer(stackedTimer);
 
-    int N = 0;
     int color=1;
-    if (Dimension == 2) {
-        N = (int) (pow(CommWorld->getSize(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
-        if (CommWorld->getRank()<N*N) {
+    int N = 0;
+    GO Nx = 0, Ny = 0, Nz = 0;
+    GO Mx = 0, My = 0, Mz = 0;
+    if (useIrregularGrid) {
+        if (Dimension == 3) {
             color=0;
-        }
-    } else if (Dimension == 3) {
-        N = (int) (pow(CommWorld->getSize(),1/3.) + 100*numeric_limits<double>::epsilon()); // 1/H
-        if (CommWorld->getRank()<N*N*N) {
-            color=0;
+            cubic_radical_search(CommWorld->getSize(), Nx, Ny, Nz);
+            Mx = (M+Nx-1)/Nx;
+            My = (M+Ny-1)/Ny;
+            Mz = (M+Nz-1)/Nz;
+        } else {
+            assert(false);
         }
     } else {
-        assert(false);
+        if (Dimension == 2) {
+            N = (int) (pow(CommWorld->getSize(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
+            if (CommWorld->getRank()<N*N) {
+                color=0;
+            }
+        } else if (Dimension == 3) {
+            N = (int) (pow(CommWorld->getSize(),1/3.) + 100*numeric_limits<double>::epsilon()); // 1/H
+            if (CommWorld->getRank()<N*N*N) {
+                color=0;
+            }
+        } else {
+            assert(false);
+        }
     }
+
 
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
@@ -177,13 +236,26 @@ int main(int argc, char *argv[])
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Laplacian #\n##############################\n" << endl;
 
         ParameterList GaleriList;
-        GaleriList.set("nx", GO(N*M));
-        GaleriList.set("ny", GO(N*M));
-        GaleriList.set("nz", GO(N*M));
-        GaleriList.set("mx", GO(N));
-        GaleriList.set("my", GO(N));
-        GaleriList.set("mz", GO(N));
-
+        if (useIrregularGrid) {
+            GaleriList.set("nx", GO(M));
+            GaleriList.set("ny", GO(M));
+            GaleriList.set("nz", GO(M));
+            GaleriList.set("mx", GO(Nx));
+            GaleriList.set("my", GO(Ny));
+            GaleriList.set("mz", GO(Nz));
+            if (Comm->getRank()==0) {
+              std::cout << Comm->getSize() << " MPIs with M = " << M << " : " 
+                        << " #  (nx * ny * nz) = (" << Nx << "x" << Ny << "x" << Nz << "), (mx * my * mz) = (" << Mx << "x" << My << "x" << Mz << ")"
+                        << std::endl << std::endl;
+            }
+        } else {
+            GaleriList.set("nx", GO(N*M));
+            GaleriList.set("ny", GO(N*M));
+            GaleriList.set("nz", GO(N*M));
+            GaleriList.set("mx", GO(N));
+            GaleriList.set("my", GO(N));
+            GaleriList.set("mz", GO(N));
+        }
         RCP<const Map<LO,GO,NO> > UniqueNodeMap;
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
@@ -227,6 +299,19 @@ int main(int argc, char *argv[])
         xSolution->putScalar(ScalarTraits<SC>::zero());
         xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
+Kokkos::fence();
+/*if (Comm->getRank() == 10) {
+  printf("\n > main <\n" );
+  {
+    ArrayView<const LO> indices;
+    ArrayView<const SC> values;
+    K->getLocalRowView(0,indices,values);
+    for(size_t k = 0; k < indices.size(); k++) {
+      printf("%d: %d %d (%d %d) : %e\n",k,(int)0,(int)indices[k], K->getRowMap()->getGlobalElement(0), K->getColMap()->getGlobalElement(indices[k]), values[k] );
+    }
+    printf("\n");
+  }
+}*/
         CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*K);
         RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
         RCP<MultiVectorBase<SC> >thyraX = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
@@ -250,7 +335,7 @@ int main(int argc, char *argv[])
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
-        Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
+	Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
         Stratimikos::enableFROSch<SC,LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
 
@@ -261,6 +346,27 @@ int main(int argc, char *argv[])
 
         lowsFactory->setOStream(out);
         lowsFactory->setVerbLevel(VERB_HIGH);
+
+#if defined(INIT_KOKKOS_HANDLES)
+  KokkosKernels::Experimental::Controls controls;
+  #if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+    if(CommWorld->getRank() == 0) std::cout << " > getCuBlasHandle()" << std::endl;
+  controls.getCublasHandle();
+  #endif
+  #if defined (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+    if(CommWorld->getRank() == 0) std::cout << " > getCuSparseHandle()" << std::endl;
+  controls.getCusparseHandle();
+  #endif
+  #if defined (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    if(CommWorld->getRank() == 0) std::cout << " > getMagmaHandle()" << std::endl;
+  KokkosBlas::Impl::MagmaSingleton & s = KokkosBlas::Impl::MagmaSingleton::singleton();
+  {
+    Kokkos::View< SC**, Kokkos::DefaultExecutionSpace > dViewL ("Wup",10,10);
+    KokkosBlas::trtri("L", "N", dViewL);
+  }
+  #endif
+  Kokkos::fence();
+#endif
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
 
@@ -279,6 +385,7 @@ int main(int argc, char *argv[])
     StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stackedTimer->report(*out,CommWorld,options);
+}
 
     return(EXIT_SUCCESS);
 

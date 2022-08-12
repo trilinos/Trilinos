@@ -143,7 +143,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#if 1//def HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaWrapper")))));
@@ -209,7 +209,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   // Merge the B and Bimport matrices
   const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#if 1//def HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
 #endif
 
@@ -235,7 +235,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
   kh.destroy_spgemm_handle();
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#if 1//def HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaSort"))));
 #endif
 
@@ -244,7 +244,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#if 1//def HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaESFC"))));
 #endif
 

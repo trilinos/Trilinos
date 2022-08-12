@@ -296,7 +296,8 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START_LEVELID(updateLocalOverlappingMatricesTime,"AlgebraicOverlappingOperator::updateLocalOverlappingMatrices");
         if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_) {
             // using original K_ as input
-            ExtractLocalSubdomainMatrix_Compute(this->K_, this->subdomainMatrix_, this->localSubdomainMatrix_);
+            ExtractLocalSubdomainMatrix_Compute(this->subdomainScatter_, this->K_, this->subdomainMatrix_, this->localSubdomainMatrix_);
+            //ExtractLocalSubdomainMatrix_Compute(this->K_, this->subdomainMatrix_, this->localSubdomainMatrix_);
             this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
         } else {
             if (this->IsComputed_) {
@@ -324,8 +325,8 @@ namespace FROSch {
             FROSCH_DETAILTIMER_START_LEVELID(AlgebraicOverlappin_extractLocalSubdomainMatrix_SymbolicTime,"AlgebraicOverlappinOperator::extractLocalSubdomainMatrix_Symbolic");
             // buid sudomain matrix
             this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
-            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
-            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
+            this->subdomainScatter_ = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
+            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *(this->subdomainScatter_), ADD);
 
             // build local subdomain matrix
             RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));

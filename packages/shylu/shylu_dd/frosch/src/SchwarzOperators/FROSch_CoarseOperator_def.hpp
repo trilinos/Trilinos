@@ -70,6 +70,8 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
+        MPI_Barrier(MPI_COMM_WORLD);
+        {
         FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
         FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
@@ -111,6 +113,7 @@ namespace FROSch {
             FROSCH_NOTIFICATION("FROSch::CoarseOperator",this->Verbose_,"Storing current Coarse Matrix in Parameterlist.");
             this->ParameterList_->set("RCP(Coarse Matrix)", CoarseMatrix_);
             this->ParameterList_->set("bool(CoarseSolveComm)", OnCoarseSolveComm_);
+        }
         }
 
         return 0;

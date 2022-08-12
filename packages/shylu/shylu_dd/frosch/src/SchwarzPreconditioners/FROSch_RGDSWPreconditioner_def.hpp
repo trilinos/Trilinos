@@ -242,10 +242,13 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int RGDSWPreconditioner<SC,LO,GO,NO>::compute()
     {
-        FROSCH_TIMER_START_LEVELID(computeTime,"RGDSWPreconditioner::compute");
         int ret = 0;
+        MPI_Barrier(MPI_COMM_WORLD);
+        {
+        FROSCH_TIMER_START_LEVELID(computeTime,"RGDSWPreconditioner::compute");
         if (0>this->OverlappingOperator_->compute()) ret -= 1;
         if (0>CoarseOperator_->compute()) ret -= 10;
+	}
         return ret;
     }
 

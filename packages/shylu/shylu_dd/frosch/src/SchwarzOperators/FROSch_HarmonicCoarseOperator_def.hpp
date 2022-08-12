@@ -69,7 +69,8 @@ namespace FROSch {
         ConstXMapPtr repeatedMap;
         ConstXMatrixPtr repeatedMatrix;
         if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
-            ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
+            ExtractLocalSubdomainMatrix_Compute(this->coarseScatter_,
+                                                this->K_.getConst(),
                                                 this->coarseSubdomainMatrix_,
                                                 this->coarseLocalSubdomainMatrix_);
             repeatedMap = this->coarseSubdomainMatrix_->getRowMap();
@@ -512,6 +513,8 @@ namespace FROSch {
 
             // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
             SCVec scale(AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(),0.0);
+{
+  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Scale")));
             for (UN i = 0; i < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
                 ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
                 for (UN j = 0; j < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
@@ -519,30 +522,88 @@ namespace FROSch {
                 }
                 scale[i] = 1.0/sqrt(scale[i]);
             }
+}
 
+{
+  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Push-back")));
+#if 1
+            {
+                auto asembledBasis = AssembledInterfaceCoarseSpace_->getAssembledBasis();
+                UN numRows = asembledBasis->getLocalLength();
+                UN numCols = asembledBasis->getNumVectors();
+
+                using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
+                using graph_type   = typename crsmat_type::StaticCrsGraphType;
+                using rowptr_type  = typename graph_type::row_map_type::non_const_type;
+                using indices_type = typename graph_type::entries_type::non_const_type;
+                using values_type  = typename crsmat_type::values_type::non_const_type;
+                using execution_space = typename Map<LO,GO,NO>::local_map_type::execution_space;
+
+                auto localRowMap = rowMap->getLocalMap();
+                auto localRepeatedMap = repeatedMap->getLocalMap();
+
+                auto localMVBasis = asembledBasis->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto localCrsBasis = phiGamma->getLocalMatrixDevice();
+
+                // count nnz
+                rowptr_type rowptr ("rowptr", numRows+1);
+                Kokkos::RangePolicy<execution_space> policy_row (0, numRows);
+                Kokkos::parallel_for(
+                    "detectLinearDependencies::countNnz", policy_row,
+                    KOKKOS_LAMBDA(const UN i) {
+                        UN iD = localRepeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
+                        if (localRowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                            for (UN j=0; j<numCols; j++) {
+                                valueTmp=localMVBasis(j,i);
+                                if (fabs(valueTmp)>tresholdDropping) {
+                                    rowptr(iD+1) ++;
+                                }
+                            }
+                        }
+                    }
+                );
+                Kokkos::fence();
+            }
+#endif
+#if 1
             LO iD;
             SC valueTmp;
             for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
-                GOVec indices;
-                SCVec values;
-                for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
-                    valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
-                    if (fabs(valueTmp)>tresholdDropping) {
-                        indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
-                        values.push_back(valueTmp*scale[j]);
-                    }
-                }
                 iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
-
                 if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                    GOVec indices;
+                    SCVec values;
+                    for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
+                        valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
+                            values.push_back(valueTmp*scale[j]);
+                        }
+                    }
                     phiGamma->insertGlobalValues(iD,indices(),values());
                 }
             }
-            phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap);
+#endif
+}
+{
+  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Fill-complete")));
+            RCP<ParameterList> fillCompleteParams(new ParameterList);
+            fillCompleteParams->set("No Nonlocal Changes", true);
+            phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap,fillCompleteParams);
+}
 
             //Compute Phi^T * Phi
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
+#if 0
             XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiGamma->describe(*fancy,VERB_EXTREME); phiTPhi->describe(*fancy,VERB_EXTREME); //AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
+#else
+            XMatrixPtr phiTPhi;
+{
+    Teuchos::RCP< Teuchos::Time > zeroTimer = Teuchos::TimeMonitor::getNewCounter (" Compute Phi^T * Phi");
+    Teuchos::TimeMonitor LocalTimer (*zeroTimer);
+            phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy);
+}
+#endif
 
             // Extract local part of the matrix
             ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
@@ -1068,8 +1129,8 @@ namespace FROSch {
 
             // buid sudomain matrix
             this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, repeatedMap, this->K_->getGlobalMaxNumRowEntries());
-            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
-            this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
+            this->coarseScatter_ = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
+            this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *(this->coarseScatter_),ADD);
 
             // build local subdomain matrix
             RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
