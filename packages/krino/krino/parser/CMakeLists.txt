@@ -15,5 +15,5 @@ TRIBITS_ADD_LIBRARY(
   DEPLIBS krino_lib krino_region_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_parser_lib)
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_parser_lib)
    
