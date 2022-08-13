@@ -116,6 +116,21 @@ public:
       return 1;
     return 0;
   }
+
+  double getAbsoluteTolerance() const {return error_;}
+
+  void transform(double * ptB, const std::vector<double> & centroidA) const
+  {
+    // Instead of matching directly, shift pt B given the centroid
+    // of side A
+    // For now, we assume at 2D x-y mesh as above so just need
+    // to overwrite the coordinate in the periodic direction
+
+    const int periodicIndex = this->getPeriodicDirection();
+    ptB[periodicIndex] = centroidA[periodicIndex];
+
+    return;
+  }
 };
 
 /** Match coordinates at the same point on a plane
@@ -136,17 +151,23 @@ class PlaneMatcher {
       TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
 
       // read in string, get double
-      if(params.size()==1) {
+      if(params.size()>0) {
          std::stringstream ss;
          ss << params[0];
          ss >> error_;
          if(params.size()==2){
+           if (params[1] == "3D") { 
+            // Warn user but continue
+            std::cout << "WARNING : Keyword " << params[1] << " not needed for PlaneMatcher" << std::endl; 
+            return;
+           }
            std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
            TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
            relative_ = true;
          }
       }
       // else use default value for error
+      return;
    }
 
 public:
@@ -203,6 +224,22 @@ public:
         return 0; // match z,y=periodic in x
     }
   }
+  
+  double getAbsoluteTolerance() const {return error_;}
+
+  void transform(double * ptB, const std::vector<double> & centroidA) const
+  {
+    // Instead of matching directly, shift pt B given the centroid
+    // of side A
+    // For now, we assume the planes are aligned with one of the
+    // coordinate axes so we just need to overwrite the coordinate
+    // in the periodic direction
+
+    const int periodicIndex = this->getPeriodicDirection();
+    ptB[periodicIndex] = centroidA[periodicIndex];
+
+    return;
+  }
 };
 
 /** Match coordinates at the same point in two planes. This handles quarter symmetry.
@@ -258,13 +295,31 @@ public:
       ss << "(" << labels_[index0a_] << labels_[index0b_] << ")" << labels_[index1_] << "-quarter-coord <tol=" << error_ << ">";
       return ss.str();
    }
+
+  double getAbsoluteTolerance() const {return error_;}
+
+  void transform(double * ptB, const std::vector<double> & centroidA) const
+  {
+    // Instead of matching directly, shift pt B given the centroid
+    // of side A
+    // For now, we assume the planes are aligned with one of the
+    // coordinate axes 
+    // We leave ptB[index1_] alone,
+    // put ptB[index0b_] in the index0a_ slot and replace it with 
+    // centroidA[index0b_] which is the fixed value for plane B
+
+    ptB[index0a_] = ptB[index0b_];
+    ptB[index0b_] = centroidA[index0b_];
+
+    return;
+  }
 };
 
 /** Match coordinates for a 3D wedge. The wedge must be meshed such
     that it is mirrored/split over the xz or yz plane. The index is the
     coordinate index that is compared . If the mirror plane is xz, then
     index0=1. If the mirror plane is yz, then index0=0. A mirror plane
-    of xz is specified as "wx" in the string parser. A mirror pland of
+    of xz is specified as "wx" in the string parser. A mirror plane of
     yz is specified as "wy" in the string parser.
   */
 class WedgeMatcher {
@@ -338,6 +393,20 @@ public:
   }
 
   bool isThreeD() const {return is_three_d_;}
+  
+  double getAbsoluteTolerance() const {return error_;}
+
+  void transform(double * ptB, const std::vector<double> & centroidA) const
+  {
+    // Instead of matching directly, shift pt B given the centroid
+    // of side A
+    // For now, we assume the wedge is mirrored over the yz or xz plane
+    // Then we just need to mirror over the plane
+
+    ptB[index0_] = -ptB[index0_];
+
+    return;
+  }
 };
 
 } // end panzer_stk

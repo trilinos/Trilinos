@@ -50,10 +50,21 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 
+#ifdef PANZER_HAVE_STKSEARCH
+#include "stk_search/CoarseSearch.hpp"
+// Copied from PeriodicBoundarySearch
+typedef double Scalar;
+typedef stk::search::IdentProc<stk::mesh::EntityKey> SearchId;
+typedef stk::search::Sphere<Scalar> Sphere;
+typedef std::vector< std::pair<Sphere,SearchId> > SphereIdVector;
+typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
+typedef std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityKey> > SearchPairSet;
+#endif
+
 namespace panzer_stk {
 
 /** These functions are utilities to support the implementation of
-  * peridic boundary conditions.  They should not be used by externally
+  * periodic boundary conditions.  They should not be used by externally
   * as their interface is likely to change.
   */
 namespace periodic_helpers {
@@ -123,6 +134,96 @@ namespace periodic_helpers {
                     const std::vector<std::pair<std::size_t,std::size_t> > & locallyMatchedIds,
                     const STK_Interface & mesh,bool failure);
 
+#ifdef PANZER_HAVE_STKSEARCH
+   /** Construct the local search vector containing the coordinates 
+     * and entity keys of the requested entity (and potentially ghosted entities). 
+     * Optionally, a list of previously matched sides can be included to avoid matching the same node multiple times.
+     * In this case, a list of these nodes can be returned for remapping in the multiperiodic case.
+     * 
+     * \param[in] mesh STK mesh interface
+     * \param[out] searchVector Search vector (to be filled)
+     * \param[in] error Tolerance in the coordinate position for matching
+     * \param[in] sideName Side name to search for
+     * \param[in] type_ Entity type
+     * \param[in] getGhostedIDs Flag for including ghosted nodes in the search vector
+     * \param[in] matchedSides Vector of the sides that have been previously matched. Should be specific to the \p type_ requested.
+     * \param[out] potentialIDsToRemap IDs of the nodes which have been previously matched and are part of the requested side
+     */
+  void fillLocalSearchVector(const STK_Interface & mesh, SphereIdVector & searchVector, const double & error,
+                             const std::string & sideName, const std::string & type_, const bool & getGhostedIDs, 
+                             const std::vector<std::string> & matchedSides, std::vector<SearchId> & potentialIDsToRemap);
+
+  void fillLocalSearchVector(const STK_Interface & mesh, SphereIdVector & searchVector, const double & error,
+                             const std::string & sideName, const std::string & type_, const bool & getGhostedIDs = false);
+
+  /** Compute the centroid of a given side
+   * \param[in] mesh STK mesh interface
+   * \param[in] sideName Side name to search
+   * \returns The vector (3-D) of the computed centroid
+   */
+
+  const std::vector<double> computeGlobalCentroid(const STK_Interface & mesh, const std::string & sideName);
+
+  /** Apply the given matcher's transform to the sideA sphere vector.
+   * Side A's and side B's sphere vectors can then be compared directly for coordinate intersection.
+   * \param[inout] searchVectorSideA Seach vector to transform
+   * \param[in] matcher Periodic matcher with transform rule
+   * \param[in] centroidSideB Centroid of side B
+   */
+  template<typename Matcher> void
+  transformLocalSearchVector(SphereIdVector & searchVectorSideA, const Matcher & matcher, const std::vector<double> & centroidSideB );
+
+  /** Match the nodes on side A with nodes on side B.
+   * If a node has been previously matched, it does not get matched a second time.
+   * Rather, its mapping is updated to respect the mapping between its match and a third node.
+   * \param[in] sideA Side name for side A
+   * \param[in] sideB Side name for side B 
+   * \param[in] mesh STK mesh interface
+   * \param[in] matcher The periodic matcher object (contains matcher rule)
+   * \param[in] matchedSides List of the previously matched sides (side A's)
+   * \param[in] previousMatches Previously matched nodes and their matches
+   * \param[in] type_ Entity type
+   * 
+   * \returns An (updated, if necessary) mapping of local periodic nodes and their matches
+   */
+
+  template <typename Matcher>
+  Teuchos::RCP<std::vector<std::pair<size_t,size_t> > > 
+  matchPeriodicSidesSearch(const std::string & sideA,const std::string & sideB,
+                           const STK_Interface & mesh,
+                           const Matcher & matcher, const std::vector<std::string> & matchedSides,
+                           const std::vector<std::pair<size_t,size_t> > & previousMatches,
+                           const std::string type_ = "coord");
+ 
+  template <typename Matcher>
+  Teuchos::RCP<std::vector<std::pair<size_t,size_t> > > 
+  matchPeriodicSidesSearch(const std::string & sideA, const std::string & sideB,
+                           const STK_Interface & mesh,
+                           const Matcher & matcher, const std::string type_ = "coord");
+
+  /** Update the current A to B map to include previous matches and remap IDs as appropriate.
+   * This should be called when an entity type has already been matched.
+   * Otherwise, \ref appendMapping may be appropriate.
+   * \param[inout] currentMatches The current A to B map
+   * \param[in] previousMatches A to B map from earlier periodic matches
+   * \param[in] IDsToRemap Multiply periodic IDs that need to be remapped
+   * \param[in] mesh STK mesh interface
+   */
+
+  void updateMapping(Teuchos::RCP<std::vector<std::pair<size_t,size_t> > > & currentMatches,
+                     const std::vector<std::pair<size_t,size_t> > & previousMatches,
+                     const std::vector<SearchId> & IDsToRemap, const STK_Interface & mesh);
+
+  /** Update the current A to B map to append previous matches.
+   * This should be called when different entity type has already been matched.
+   * Otherwise, \ref updateMapping may be appropriate.
+   * \param[inout] currentMatches The current A to B map
+   * \param[in] previousMatches A to B map from earlier periodic matches
+   */
+
+  void appendMapping(Teuchos::RCP<std::vector<std::pair<size_t,size_t> > > & currentMatches,
+                     const std::vector<std::pair<size_t,size_t> > & previousMatches);
+#endif
 } // end periodic_helpers
 
 /** Simply returns a vector of pairs that match
@@ -150,8 +251,32 @@ public:
    virtual 
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    getMatchedPair(const STK_Interface & mesh,
-                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > > & currentState = Teuchos::null
                   ) const = 0;
+
+#ifdef PANZER_HAVE_STKSEARCH
+  /** Simply returns a vector of pairs that match
+   * the IDs owned by this processor to their
+   * matching IDs on the periodic boundary.
+   * 
+   * \param[in] mesh STK mesh interface
+   * \param[in] matchedSides List of the previously matched sides
+   * \param[in] currentState RCP to the existing map (may be null)
+   * 
+   * \note This version of getMatchedPair uses STKSearch to accelerate the matching process.
+   *
+   * \returns A vector of pairs. The first entry in the
+   *          pair is the global node ID of a node used
+   *          on this processor. The second is the global
+   *          node ID (not necessarily on this processor)
+   *          that replaces it. 
+   */
+   virtual 
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
+   getMatchedPair(const STK_Interface & mesh, const std::vector<std::string> & matchedSides,
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > > & currentState = Teuchos::null
+                  ) const = 0;
+#endif 
 
    /** Return a one line string that describes this periodic
      * boundary condition.
@@ -199,7 +324,7 @@ public:
      */
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    getMatchedPair(const STK_Interface & mesh,
-                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > > & currentState = Teuchos::null
                   ) const
    { 
       if(currentState==Teuchos::null) 
@@ -207,6 +332,35 @@ public:
       else
          return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState,type_); 
    }
+
+#ifdef PANZER_HAVE_STKSEARCH
+  /** Simply returns a vector of pairs that match
+   * the IDs owned by this processor to their
+   * matching IDs on the periodic boundary.
+   * 
+   * \param[in] mesh STK mesh interface
+   * \param[in] matchedSides List of the previously matched sides
+   * \param[in] currentState RCP to the existing map (may be null)
+   * 
+   * \note This version of getMatchedPair uses STKSearch to accelerate the matching process.
+   *
+   * \returns A vector of pairs. The first entry in the
+   *          pair is the global node ID of a node used
+   *          on this processor. The second is the global
+   *          node ID (not necessarily on this processor)
+   *          that replaces it. 
+   */
+   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
+   getMatchedPair(const STK_Interface & mesh, const std::vector<std::string> & matchedSides,
+                  const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > > & currentState = Teuchos::null
+                  ) const
+   { 
+      if(currentState==Teuchos::null) 
+         return periodic_helpers::matchPeriodicSidesSearch(left_,right_,mesh,matcher_,type_); 
+      else
+         return periodic_helpers::matchPeriodicSidesSearch(left_,right_,mesh,matcher_,matchedSides,*currentState,type_); 
+   }
+#endif
 
    std::string getString() const 
    { 
@@ -253,5 +407,9 @@ buildPeriodicBC_Matcher(const std::string & left, const std::string & right, con
 } // end panzer_stk
 
 #include "Panzer_STK_PeriodicBC_Matcher_impl.hpp"
+
+#ifdef PANZER_HAVE_STKSEARCH
+#include "Panzer_STK_PeriodicBC_Search_impl.hpp"
+#endif
 
 #endif
