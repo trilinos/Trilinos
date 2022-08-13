@@ -69,11 +69,15 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES quick_solve.cpp
   )
 
- TRIBITS_ADD_EXECUTABLE(
-   SimpleSolveFileExample
+TRIBITS_ADD_EXECUTABLE(
+  SimpleSolveFileExample
   SOURCES SimpleSolve_File.cpp
- )
+  )
 
+TRIBITS_ADD_EXECUTABLE(
+  SimpleSolveIRExample
+  SOURCES SimpleSolve_IR.cpp
+  )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE(

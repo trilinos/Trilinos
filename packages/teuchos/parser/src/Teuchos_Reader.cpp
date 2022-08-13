@@ -84,10 +84,10 @@ void Reader::at_token(std::istream& stream) {
       }
       const Grammar::Production& prod = at(grammar->productions, parser_action.production);
       reduction_rhs.clear();
-      for (int i = 0; i < size(prod.rhs); ++i) {
-        add_back(reduction_rhs, at(value_stack, size(value_stack) - size(prod.rhs) + i));
+      for (int i = 0; i < Teuchos::size(prod.rhs); ++i) {
+        add_back(reduction_rhs, at(value_stack, Teuchos::size(value_stack) - Teuchos::size(prod.rhs) + i));
       }
-      resize(value_stack, size(value_stack) - size(prod.rhs));
+      resize(value_stack, Teuchos::size(value_stack) - Teuchos::size(prod.rhs));
       Teuchos::any reduce_result;
       try {
         this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
@@ -101,10 +101,10 @@ void Reader::at_token(std::istream& stream) {
       }
       add_back(value_stack, reduce_result);
       if (sensing_indent) {
-        if (size(prod.rhs)) {
+        if (Teuchos::size(prod.rhs)) {
           resize(symbol_indentation_stack,
-              (size(symbol_indentation_stack) + 1)
-              - size(prod.rhs));
+              (Teuchos::size(symbol_indentation_stack) + 1)
+              - Teuchos::size(prod.rhs));
         } else {
           symbol_indentation_stack.push_back(symbol_indentation_stack.back());
         }
@@ -177,7 +177,7 @@ void Reader::backtrack_to_last_accept(std::istream& stream) {
   while (lexer_text.size() > last_lexer_accept) {
     bool ok = !stream.unget().fail();
     TEUCHOS_ASSERT(ok);
-    resize(lexer_text, size(lexer_text) - 1);
+    resize(lexer_text, Teuchos::size(lexer_text) - 1);
   }
 }
 
@@ -347,7 +347,7 @@ void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
   os << "REDUCE";
   std::string& lhs_text = make_any_ref<std::string>(result);
   const Grammar::Production& prod = at(grammar->productions, prod_i);
-  for (int i = 0; i < size(prod.rhs); ++i) {
+  for (int i = 0; i < Teuchos::size(prod.rhs); ++i) {
     const std::string& rhs_name = at(grammar->symbol_names, at(prod.rhs, i));
     const std::string& rhs_text = any_ref_cast<std::string>(at(rhs, i));
     os << " (" << rhs_name << ")[" << rhs_text << "]";

@@ -53,73 +53,18 @@
 # ************************************************************************
 # @HEADER
 
-# Check for CUDA support
+find_package(CUDA REQUIRED)  # Will abort if not found!
 
-set(_CUDA_FAILURE OFF)
+macro(package_add_cuda_library cuda_target)
+  tribits_add_library(${cuda_target} ${ARGN} CUDALIBRARY)
+endmacro()
 
-# Have CMake find CUDA
-if(NOT _CUDA_FAILURE)
-  find_package(CUDA REQUIRED)
-  if (NOT CUDA_FOUND)
-    set(_CUDA_FAILURE ON)
-  endif()
-endif()
+set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
+set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
+   ${CUDA_cufft_LIBRARY})
 
-# # Test that CUDA compiler works
-# if(NOT _CUDA_FAILURE)
-#   include(TrilinosCUDASupport)
-#   set(SRC "
-#     #include <cuda_runtime.h>
-#     __global__ void vecadd(const float* a, const float* b, float* c, int N)
-#     {
-#         int i = blockDim.x * blockIdx.x + threadIdx.x;
-#         if (i < N) c[i] = a[i] + b[i];
-#     }
-#     __global__ void vecinit(float* x, float val, int N)
-#     {
-#         int i = blockDim.x * blockIdx.x + threadIdx.x;
-#         if (i < N) x[i] = val;
-#     }
-#     int main() {
-#         const int N               = 2048;
-#         const int threadsPerBlock = 256;
-#         const int blocksPerGrid   = 8;
-#         float* a = NULL;
-#         float* b = NULL;
-#         float* c = NULL;
-#         cudamalloc((void**)&a, N);
-#         cudamalloc((void**)&b, N);
-#         cudamalloc((void**)&c, N);
-#         // init
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(a,1.0f,N);
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(b,2.0f,N);
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(c,0.0f,N);
-#         // run
-#         vecAdd<<<blocksPerGrid, threadsPerBlock>>>(a, b, c, N);
-#     }
-#   ")
-#   check_cuda_source_compiles(${SRC} _NVCC_SUCCESS)
-#   if(NOT _NVCC_SUCCESS)
-#     set(_CUDA_FAILURE ON)
-#   endif()
-# endif()
-
-if(NOT _CUDA_FAILURE)
-  # if we haven't met failure
-  macro(package_add_cuda_library cuda_target)
-    tribits_add_library(${cuda_target} ${ARGN} CUDALIBRARY)
-  endmacro()
-  set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
-  set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
-     ${CUDA_cufft_LIBRARY})
-else()
-  message(FATAL_ERROR "\nDid not find acceptable version of CUDA compiler")
-endif()
-
-tribits_tpl_find_include_dirs_and_libraries(CUDA)
+tribits_tpl_find_include_dirs_and_libraries(CUDA
+  REQUIRED_LIBS_NAMES  willNotBeUsed)
 
 unset(TPL_CUDA_INCLUDE_DIRS)
 unset(TPL_CUDA_LIBRARIES)
-
-# NOTE: Above, we need to generate the CUDA::all_libs target and the
-# CUDAConfig.cmake file that will also provide the CUDA::all_libs target.

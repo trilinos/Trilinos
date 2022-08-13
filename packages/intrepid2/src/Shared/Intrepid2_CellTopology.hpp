@@ -512,9 +512,9 @@ namespace Intrepid2
                   ordinalMap[subcell][subsubcell] = cellTopo->getNodeMap(subcell.first, subcell.second, subsubcellOrdinal);
                   continue;
                 }
-                ordinal_type nodeCount = subcellTopo->getNodeCount(subsubcellDim, subsubcellOrdinal);
+                ordinal_type nodeCount_inner = subcellTopo->getNodeCount(subsubcellDim, subsubcellOrdinal);
                 std::set<NodeOrdinal> subcellNodes; // NodeOrdinals index into cellTopo, though!
-                for (NodeOrdinal subsubcNode=0; subsubcNode<nodeCount; subsubcNode++)
+                for (NodeOrdinal subsubcNode=0; subsubcNode<nodeCount_inner; subsubcNode++)
                 {
                   NodeOrdinal subcNode = subcellTopo->getNodeMap(subsubcellDim, subsubcellOrdinal, subsubcNode);
                   NodeOrdinal node = cellTopo->getNodeMap(d, subcellOrdinal, subcNode);

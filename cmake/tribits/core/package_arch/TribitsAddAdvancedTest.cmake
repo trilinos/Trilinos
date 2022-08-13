@@ -463,7 +463,7 @@ include(PrintVar)
 #
 #     If specified, then stdout and stderr for the test case will be sent to
 #     ``<outputFile>``.  By default, the contents of this file will **also**
-#     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
+#     be printed to STDOUT unless ``NO_ECHO_OUTPUT`` is passed as well.
 #
 #     NOTE: Contrary to CMake documentation for execute_process(), STDOUT and
 #     STDERR may not get output in the correct order interleaved correctly,

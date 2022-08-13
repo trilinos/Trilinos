@@ -66,15 +66,16 @@
 #endif
 
 #include "Amesos2_TypeMap.hpp"
+#ifdef _MKL_TYPES_H_
+  #undef _MKL_TYPES_H_
+  #define PARDISOMKL_PREVIOUS_MKL_TYPES_H
+#endif
 
 namespace Amesos2{
   namespace PMKL {
     //Update JDB 6.25.15
     //MKL has changed _INTEGER_t to deprecated
     //MKL has changed _INTEGER_t to define from typedef 
-  #ifdef _MKL_TYPES_H_
-    #undef _MKL_TYPES_H_
-  #endif
     #include <mkl_types.h>
   #ifdef __MKL_DSS_H
     #undef __MKL_DSS_H
@@ -285,4 +286,8 @@ namespace Amesos2 {
 
 } // end namespace Amesos
 
+#ifndef PARDISOMKL_PREVIOUS_MKL_TYPES_H
+  // first time including mkl_types.h
+  #undef _MKL_TYPES_H_
+#endif
 #endif  // AMESOS2_PARDISOMKL_TYPEMAP_HPP
