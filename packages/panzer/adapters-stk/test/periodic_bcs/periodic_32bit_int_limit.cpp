@@ -61,6 +61,9 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
       pbc->set("Count",2);
       pbc->set("Periodic Condition 1","xz-all 1e-12,3D: top;bottom");
       pbc->set("Periodic Condition 2","yz-all 1e-12,3D: left;right");
+#ifdef PANZER_HAVE_STKSEARCH
+      pbc->set("Use BBox Search",true);
+#endif
       pl->sublist("Periodic BCs").setParameters( *pbc );
     }
 

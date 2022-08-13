@@ -219,7 +219,11 @@ endmacro()
 # See `Function call tree for constructing package dependency graph`_
 #
 macro(tribits_read_external_package_deps_files_add_to_graph  tplName)
-  set(absTplDepsFile "${${PROJECT_NAME}_SOURCE_DIR}/${${tplName}_DEPENDENCIES_FILE}")
+  if (IS_ABSOLUTE "${${tplName}_DEPENDENCIES_FILE}")
+    set(absTplDepsFile "${${tplName}_DEPENDENCIES_FILE}")
+  else()
+    set(absTplDepsFile "${${PROJECT_NAME}_SOURCE_DIR}/${${tplName}_DEPENDENCIES_FILE}")
+  endif()
   if (EXISTS "${absTplDepsFile}")
     tribits_trace_file_processing(TPL  INCLUDE  "${absTplDepsFile}")
     include(${absTplDepsFile})

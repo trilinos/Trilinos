@@ -627,12 +627,9 @@ public:
 
   virtual ~NumericToolsLevelSet() {
 #if defined(KOKKOS_ENABLE_CUDA)
-    // destroy previously created streams
-    for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = cudaStreamDestroy(_streams[i]);
-      checkDeviceStatus("cudaStreamDestroy");
-    }
-    _streams.clear();
+    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
+    /// on cuda, deallocting streams first does not cause any errors while hip generates errors.
+    /// here, we just follow the consistent destruction process as hip does.
     _exec_instances.clear();
 
     if (_is_cusolver_dn_created) {
@@ -643,20 +640,27 @@ public:
       _status = cublasDestroy(_handle_blas);
       checkDeviceBlasStatus("cublasDestroy");
     }
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-    // destroy previously created streams
+
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = hipStreamDestroy(_streams[i]);
+      _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
     _streams.clear();
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
     _exec_instances.clear();
 
     if (_is_rocblas_created) {
       _status = rocblas_destroy_handle(_handle_blas);
       checkDeviceLapackStatus("rocblasDestroy");
     }
+
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamDestroy(_streams[i]);
+      checkDeviceStatus("cudaStreamDestroy");
+    }
+    _streams.clear();
 #endif
   }
 

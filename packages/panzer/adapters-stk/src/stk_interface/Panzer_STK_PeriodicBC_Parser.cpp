@@ -51,6 +51,8 @@ namespace panzer_stk {
 PeriodicBC_Parser::PeriodicBC_Parser()
    : countStr_("Count")
    , condPrefix_("Periodic Condition ")
+   , searchStr_("Use BBox Search")
+   , useBBoxSearch_(false) // TODO swap this to change default search (see also STK_interface.hpp)
 {
 }
 
@@ -58,6 +60,11 @@ const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
 PeriodicBC_Parser::getMatchers() const
 {
    return matchers_;
+}
+
+const bool & PeriodicBC_Parser::useBoundingBoxSearch() const
+{
+   return useBBoxSearch_;
 }
 
 void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
@@ -76,6 +83,7 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
    }
 
    int numBCs = pl->get<int>(countStr_);
+   useBBoxSearch_ = pl->get<bool>(searchStr_,useBBoxSearch_);
    pl->validateParameters(*getValidParameters(numBCs));
 
    // loop over boundary conditions
@@ -134,7 +142,9 @@ Teuchos::RCP<const Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters
       pl->set<int>(countStr_,1,
                    "Number of set periodic boundary conditions");
       pl->set<std::string>(ss.str(),"MatchCondition bndry1;bndry2",
-                   "Boundary condition fairs formatted: <MatchCondition> <bndry1>;<bndry2>");
+                   "Boundary condition pairs formatted: <MatchCondition> <bndry1>;<bndry2>");
+      // TODO swap this to change default search (see also STK_interface.hpp)
+      pl->set<bool>(searchStr_,false,"Use bounding box search for GID match (requires STKSearch) or not");
    }
 
    return pl.getConst();
@@ -147,6 +157,8 @@ Teuchos::RCP<Teuchos::ParameterList> PeriodicBC_Parser::getValidParameters(int c
 
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
    pl->set(countStr_,count);
+   // TODO swap this to change default search (see also STK_interface.hpp)
+   pl->set<bool>(searchStr_,false,"Use bounding box search for GID match (requires STKSearch) or not");
 
    for(int k=1;k<=count;k++) {
       std::stringstream ss;

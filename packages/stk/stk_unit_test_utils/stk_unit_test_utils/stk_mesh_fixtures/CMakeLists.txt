@@ -86,5 +86,5 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/stk_mesh_fixtures)
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/stk_mesh_fixtures)
 
