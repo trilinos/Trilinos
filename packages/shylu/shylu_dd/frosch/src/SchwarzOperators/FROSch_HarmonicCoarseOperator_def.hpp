@@ -513,8 +513,6 @@ namespace FROSch {
 
             // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
             SCVec scale(AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(),0.0);
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Scale")));
             for (UN i = 0; i < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
                 ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
                 for (UN j = 0; j < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
@@ -522,11 +520,8 @@ namespace FROSch {
                 }
                 scale[i] = 1.0/sqrt(scale[i]);
             }
-}
 
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Push-back")));
-#if 1
+#if 0
             {
                 auto asembledBasis = AssembledInterfaceCoarseSpace_->getAssembledBasis();
                 UN numRows = asembledBasis->getLocalLength();
@@ -584,26 +579,13 @@ namespace FROSch {
                 }
             }
 #endif
-}
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" detectLinearDependencies - Fill-complete")));
             RCP<ParameterList> fillCompleteParams(new ParameterList);
             fillCompleteParams->set("No Nonlocal Changes", true);
             phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap,fillCompleteParams);
-}
 
             //Compute Phi^T * Phi
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
-#if 0
             XMatrixPtr phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy); //phiGamma->describe(*fancy,VERB_EXTREME); phiTPhi->describe(*fancy,VERB_EXTREME); //AssembledInterfaceCoarseSpace_->getBasisMap()->describe(*fancy,VERB_EXTREME);
-#else
-            XMatrixPtr phiTPhi;
-{
-    Teuchos::RCP< Teuchos::Time > zeroTimer = Teuchos::TimeMonitor::getNewCounter (" Compute Phi^T * Phi");
-    Teuchos::TimeMonitor LocalTimer (*zeroTimer);
-            phiTPhi = MatrixMatrix<SC,LO,GO,NO>::Multiply(*phiGamma,true,*phiGamma,false,*fancy);
-}
-#endif
 
             // Extract local part of the matrix
             ConstXMatrixPtr repeatedPhiTPhi = ExtractLocalSubdomainMatrix(phiTPhi.getConst(),AssembledInterfaceCoarseSpace_->getBasisMap());
