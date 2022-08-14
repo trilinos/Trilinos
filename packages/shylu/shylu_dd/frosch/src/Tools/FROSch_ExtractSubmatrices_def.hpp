@@ -123,12 +123,7 @@ namespace FROSch {
                                              RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
     {
-        //RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainRowMap);
-        RCP<Import<LO,GO,NO> > scatter;
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" ExtractLocalSubdomainMatrix_Compute - Build-import")));
-        scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(), subdomainMatrix->getRowMap());
-}
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(), subdomainMatrix->getRowMap());
         ExtractLocalSubdomainMatrix_Compute(scatter, globalMatrix, subdomainMatrix, localSubdomainMatrix);
     }
 
@@ -142,16 +137,10 @@ namespace FROSch {
         const SC zero = ScalarTraits<SC>::zero();
         auto subdomainRowMap = subdomainMatrix->getRowMap();
 
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" ExtractLocalSubdomainMatrix_Compute - Set-zeros")));
         subdomainMatrix->setAllToScalar(zero);
         subdomainMatrix->resumeFill();
-}
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" ExtractLocalSubdomainMatrix_Compute - Do-import")));
-
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
-}
+
 // "fillComplete" is quite expensive, and it seem to be cheaper to replace values each row at a time
 #if 0 //defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
         if (globalMatrix->getRowMap()->lib() == UseTpetra) 
@@ -193,8 +182,6 @@ namespace FROSch {
             size_t max_nnz = localSubdomainMatrix->getLocalMaxNumRowEntries();
             std::vector<LO> local_cols_vector (max_nnz);
             std::vector<SC> local_vals_vector (max_nnz);
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" ExtractLocalSubdomainMatrix_Compute - Push-back")));
             for (unsigned i=0; i<subdomainRowMap->getLocalNumElements(); i++) {
                 ArrayView<const GO> global_indices;
                 ArrayView<const SC> global_values;
@@ -217,13 +204,9 @@ namespace FROSch {
                     localSubdomainMatrix->replaceLocalValues(i, local_cols(0, new_nnz), local_vals(0, new_nnz));
                 }
             }
-}
-{
-  RCP<TimeMonitor> MMM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(" ExtractLocalSubdomainMatrix_Compute - Fill-complete")));
             RCP<ParameterList> fillCompleteParams(new ParameterList);
             fillCompleteParams->set("No Nonlocal Changes", true);
             localSubdomainMatrix->fillComplete(fillCompleteParams);
-}
         }
 
         return;

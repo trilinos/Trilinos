@@ -69,7 +69,7 @@ namespace FROSch {
         ConstXMapPtr repeatedMap;
         ConstXMatrixPtr repeatedMatrix;
         if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
-            ExtractLocalSubdomainMatrix_Compute(this->coarseScatter_,
+            ExtractLocalSubdomainMatrix_Compute(//this->coarseScatter_,
                                                 this->K_.getConst(),
                                                 this->coarseSubdomainMatrix_,
                                                 this->coarseLocalSubdomainMatrix_);
@@ -642,6 +642,7 @@ namespace FROSch {
             linearDependentVectors.resize(tmp);
         }
 
+#if 0
         FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
         // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
@@ -722,6 +723,7 @@ namespace FROSch {
             << endl;
         }
         FROSCH_DETAILTIMER_STOP(printStatisticsTime);
+#endif
 
         return linearDependentVectors;
     }
