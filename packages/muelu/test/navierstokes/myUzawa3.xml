@@ -153,7 +153,7 @@
     <ParameterList name="myInvApproxFact">
       <Parameter name="factory" type="string" value="InverseApproximationFactory"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
-      <Parameter name="inverse: approximation type" type="string" value="lumping"/>
+      <Parameter name="inverse: approximation type" type="string" value="sparseapproxinverse"/>
     </ParameterList>
 
     <!-- Build Schur Complement factory -->
@@ -161,8 +161,6 @@
       <Parameter name="factory" type="string" value="SchurComplementFactory"/>
       <Parameter name="Ainv" type="string" value="myInvApproxFact"/>
       <Parameter name="omega" type="double" value="1.0"/>
-      <Parameter name="lumping" type="bool" value="false"/>
-      <!-- todo use NoFactory for A -->
     </ParameterList>
 
     <ParameterList name="mySchurSmooFact">
@@ -202,9 +200,9 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"                       type="int"      value="3"/>
-    <Parameter name="coarse: max size"                         type="int"      value="10"/>
-    <Parameter name="verbosity"                             type="string"   value="High"/>
+    <Parameter name="max levels"                            type="int"      value="2"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
+    <Parameter name="verbosity"                             type="string"   value="Extreme"/>
 
     <ParameterList name="AllLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>
