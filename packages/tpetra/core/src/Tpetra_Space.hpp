@@ -10,16 +10,20 @@ namespace Tpetra {
     void drop_exec_spaces();
 
 
-
-
-
+#ifdef KOKKOS_ENABLE_SERIAL
     template<>
     Kokkos::Serial &get_space(int i);
+#endif
 
+
+#ifdef KOKKOS_ENABLE_CUDA
     template<>
     Kokkos::Cuda &get_space(int i);
+#endif
 
+
+#ifdef KOKKOS_ENABLE_OPENMP
     template<>
     Kokkos::OpenMP &get_space(int i);
-
+#endif
 }
