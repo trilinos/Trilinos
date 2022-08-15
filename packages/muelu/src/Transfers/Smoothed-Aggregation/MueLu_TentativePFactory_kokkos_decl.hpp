@@ -153,9 +153,16 @@ namespace MueLu {
 
     //@}
 
-  private:
+
+    // NOTE: All of thess should really be private, but CUDA doesn't like that
+    
+    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo_kokkos> amalgInfo, 
+                                 RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
+
 
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
+
+
 
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
                          RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
@@ -166,9 +173,6 @@ namespace MueLu {
                          RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                          RCP<MultiVector>& coarseNullspace, const int levelID) const;
-
-    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo_kokkos> amalgInfo, 
-                                 RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
     mutable bool bTransferCoordinates_ = false;
 
