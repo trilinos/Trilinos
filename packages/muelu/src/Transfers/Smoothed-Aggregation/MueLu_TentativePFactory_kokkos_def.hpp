@@ -1233,6 +1233,11 @@ namespace MueLu {
       BlockGraph->expertStaticFillComplete(coarseBlockMap,rowMap,dummy_i,dummy_e,FCparams);
     }
 
+    // We can't leave the ia/ja pointers floating around, because of host/device view counting, so
+    // we clear them here
+    ia = rows_type();
+    ja = cols_type();
+
     
     // Now let's make a BlockCrs Matrix
     // NOTE: Assumes block size== NSDim
