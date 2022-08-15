@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST(tQuadraticToLinearFactory, checkFail)
   // read in a twoblock mesh with different topologies on each block 
   // ********************************
   // TODO this test "fails" as expected, but technically the topo
-  // on block 2 is not supported so in the future, this may still fail
+  // on block 2 of the test mesh is not supported so in the future, this may still fail
   // but for the wrong reason. i suppose this test will be irrelevant if we
   // start supporting multiple topos though.
   {

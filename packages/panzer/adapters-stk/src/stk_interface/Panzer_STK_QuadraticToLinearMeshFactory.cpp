@@ -121,30 +121,26 @@ void QuadraticToLinearMeshFactory::getOutputTopology()
   quadMesh_->getElementBlockNames(eblock_names);
 
   // check that we have a supported topology
-  // TODO IS THIS NECESSARY CHECK W ROG
-  // would we ever not have a element block on a process?
-  if (eblock_names.size()>0) {
-    auto inputTopo = quadMesh_->getCellTopology(eblock_names[0]);
-    if (std::find(supportedInputTopos_.begin(),
-                  supportedInputTopos_.end(),*inputTopo) == supportedInputTopos_.end()) errFlag = true;
-    TEUCHOS_TEST_FOR_EXCEPTION(errFlag,std::logic_error,
-      "ERROR :: Input topology " << inputTopo->getName() << " currently unsupported by QuadraticToLinearMeshFactory!");
+  auto inputTopo = quadMesh_->getCellTopology(eblock_names[0]);
+  if (std::find(supportedInputTopos_.begin(),
+                supportedInputTopos_.end(),*inputTopo) == supportedInputTopos_.end()) errFlag = true;
+  TEUCHOS_TEST_FOR_EXCEPTION(errFlag,std::logic_error,
+    "ERROR :: Input topology " << inputTopo->getName() << " currently unsupported by QuadraticToLinearMeshFactory!");
 
-    // check that the topology is the same over blocks
-    // not sure this is 100% foolproof
-    for (auto & eblock : eblock_names) {
-      auto cellTopo = quadMesh_->getCellTopology(eblock);
-      if (*cellTopo != *inputTopo) errFlag = true;
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(errFlag, std::logic_error, 
-      "ERROR :: The mesh has different topologies on different blocks!");
-
-    outputTopoData_ = outputTopoMap_[inputTopo->getName()];
-
-    nDim_ = outputTopoData_->dimension;
-    nNodes_ = outputTopoData_->node_count;
+  // check that the topology is the same over blocks
+  // not sure this is 100% foolproof
+  for (auto & eblock : eblock_names) {
+    auto cellTopo = quadMesh_->getCellTopology(eblock);
+    if (*cellTopo != *inputTopo) errFlag = true;
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(errFlag, std::logic_error, 
+    "ERROR :: The mesh has different topologies on different blocks!");
+
+  outputTopoData_ = outputTopoMap_[inputTopo->getName()];
+
+  nDim_ = outputTopoData_->dimension;
+  nNodes_ = outputTopoData_->node_count;
 
   return;
 }
@@ -162,6 +158,7 @@ Teuchos::RCP<STK_Interface> QuadraticToLinearMeshFactory::buildUncommitedMesh(st
    this->buildMetaData(parallelMach,*mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
+   mesh->setBoundingBoxSearchFlag(useBBoxSearch_);
 
    return mesh;
 }
@@ -217,7 +214,7 @@ void QuadraticToLinearMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::
    createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
 
    // read in periodic boundary conditions
-   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,useBBoxSearch_);
 }
 
 //! From ParameterListAcceptor
