@@ -189,10 +189,10 @@ GlobalMPISession::~GlobalMPISession()
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
   try {
-    Kokkos::finalize_all();
+    Kokkos::finalize();
   }
   catch (const std::runtime_error& e) {
-    std::cerr << "Kokkos::finalize_all failed:\n"
+    std::cerr << "Kokkos::finalize failed:\n"
               << e.what() << "\n";
   }
 #endif
