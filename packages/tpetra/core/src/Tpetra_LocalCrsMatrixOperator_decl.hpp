@@ -44,6 +44,7 @@
 #include "Tpetra_LocalOperator.hpp"
 #include "Tpetra_Space.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -180,23 +181,46 @@ namespace Tpetra {
           This is only the local offsets, so the offsets we want are between
           rowPtr(i) and offRankOffsets_(i)
       */
-      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const {
+      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const ordinal_type i) const {
 
-        // beta * Y
-        for (size_t k = 0; k < Y_.extent(1); ++k) {
-          Y_(i,k) = beta_ * Y_(i,k); 
-        }       
+        if (i >= A_.numRows()) {
+          return;
+        }
 
-        // + alpha A X
+#if 1
+        // this implementation may be best for a single vector (not multivector)
+        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+          MultiVectorScalar sum = 0;
+          for (auto ji = A_.graph.row_map(i); ji < offRankOffsets_(i); ++ji) {
+            value_type A_ij = A_.values(ji);
+            ordinal_type j = A_.graph.entries(ji);
+            sum += A_ij * X_(j, k); 
+          }
+          sum *= alpha_;
+
+          if (0 == beta_) {
+            Y_(i,k) = sum;
+          } else {
+            Y_(i,k) = beta_ * Y_(i,k) + sum;
+          } 
+        }
+#else 
+        // this implementation may be best for a single vector (not multivector)
+        MultiVectorScalar sum = 0;
         for (size_type ji = A_.graph.row_map(i); ji < offRankOffsets_(i); ++ji) {
           value_type A_ij = A_.values(ji);
           ordinal_type j = A_.graph.entries(ji);
-          for (size_t k = 0; k < Y_.extent(1); ++k) {
-            Y_(i,k) += alpha_ * A_ij * X_(j, k); 
-          }
+          sum += A_ij * X_(j, 0); 
         }
-      }
+        sum *= alpha_;
 
+        if (0 == beta_) {
+          Y_(i, 0) = sum;
+        } else {
+          Y_(i, 0) = beta_ * Y_(i, 0) + sum;
+        } 
+#endif
+      }
 
       KOKKOS_INLINE_FUNCTION
       void operator() (TagNonTrans, const team_member& dev) const
@@ -237,36 +261,39 @@ namespace Tpetra {
       }
 
       KOKKOS_INLINE_FUNCTION void operator()(TagConjTrans, const size_t i) const {
-        // typedef Kokkos::Details::ArithTraits<value_type> KAT; 
         #warning conj trans unimplemented
       }
 
       /// \brief Kokkos dispatch of non-transpose
       // void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
       void launch(TagNonTrans, const execution_space &space) {
-#if 0
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
-#else
 
-        const int estNnz = A_.nnz() * 1.00; // entries are mostly on-rank. use simple SpMV off rank
+        const int estNnz = A_.nnz() * 1.00; // entries are mostly on-rank.
 
-        const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
-        int vectorLength = 1;
-        while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
-          vectorLength *= 2;
-        }
-        const int teamSize = 256 / vectorLength;
-        const int rowsPerTeam = teamSize;
-        const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
-
-        if (estNnz > 10000000) {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
-          Kokkos::parallel_for("on-rank", policy, *this);
+        if (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+          if (estNnz > 10000000) {
+            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(space, 0, A_.numRows()), *this);
+          } else {
+            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Static>>(space, 0, A_.numRows()), *this);
+          }
         } else {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-          Kokkos::parallel_for("on-rank", policy, *this);
+          const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
+          int vectorLength = 1;
+          while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
+            vectorLength *= 2;
+          }
+          const int teamSize = 256 / vectorLength;
+          const int rowsPerTeam = teamSize;
+          const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
+
+          if (estNnz > 10000000) {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
+            Kokkos::parallel_for("on-rank", policy, *this);
+          } else {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+            Kokkos::parallel_for("on-rank", policy, *this);
+          }
         }
-#endif
       }
 
       // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
@@ -338,19 +365,23 @@ namespace Tpetra {
           This is only the remote offsets, so the offsets we want are between
           offRankOffsets_(i) and entries(i+1)
       */
-      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const { 
+      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const ordinal_type i) const { 
         // + alpha A x
+
+        if (i >= A_.numRows()) {
+          return;
+        }
 
         // this is good if Y_.extent(1) is 1, since Y and each element of A is accessed
         // only once
-        for (size_t k = 0; k < Y_.extent(1); ++k) {
-          auto Y_ik = Y_(i,k);
-          for (size_type ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
+        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+          MultiVectorScalar sum = 0;
+          for (auto ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
             value_type A_ij = A_.values(ji);
             ordinal_type j = A_.graph.entries(ji);
-            Y_ik += alpha_ * A_ij * X_(j, k); 
+            sum += A_ij * X_(j, k); 
           }
-          Y_(i,k) = Y_ik;
+          Y_(i,k) += alpha_ * sum;
         }
       }
 
@@ -400,28 +431,32 @@ namespace Tpetra {
 
       /// \brief Kokkos dispatch of non-transpose
       void launch(TagNonTrans, const execution_space &space) {
-#if 1
-        Kokkos::parallel_for("off-rank simple", Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
-#else
         const int estNnz = A_.nnz() * 0.05; // mostly on-rank nnz
 
-        const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
-        int vectorLength = 1;
-        while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
-          vectorLength *= 2;
-        }
-        const int teamSize = 256 / vectorLength;
-        const int rowsPerTeam = teamSize;
-        const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
-
-        if (estNnz > 10000000) {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-          Kokkos::parallel_for("off-rank", policy, *this);
+        if (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+          if (estNnz > 10000000) {
+            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(space, 0, A_.numRows()), *this);
+          } else {
+            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Static>>(space, 0, A_.numRows()), *this);
+          }
         } else {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-          Kokkos::parallel_for("off-rank", policy, *this);
+          const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
+          int vectorLength = 1;
+          while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
+            vectorLength *= 2;
+          }
+          const int teamSize = 256 / vectorLength;
+          const int rowsPerTeam = teamSize;
+          const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
+
+          if (estNnz > 10000000) {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+            Kokkos::parallel_for("off-rank", policy, *this);
+          } else {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+            Kokkos::parallel_for("off-rank", policy, *this);
+          }
         }
-#endif
       }
       // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
       void launch(TagNonTrans t) {
