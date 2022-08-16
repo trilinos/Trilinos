@@ -275,8 +275,8 @@ namespace MueLu {
     using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     if(helpers::isTpetraBlockCrs(A)) {
 #ifdef HAVE_MUELU_TPETRA
-      LO one  = Teuchos::ScalarTraits<SC>::one();
-      LO zero = Teuchos::ScalarTraits<SC>::zero();
+      SC one  = Teuchos::ScalarTraits<SC>::one();
+      SC zero = Teuchos::ScalarTraits<SC>::zero();
       LO NSDim = A->GetStorageBlockSize();
 
       // Build the exploded Map
