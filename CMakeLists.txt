@@ -126,3 +126,5 @@ ENDIF()
 IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
+
+message(STATUS "If publishing results using Trilinos, please cite us: https://trilinos.github.io/cite.html")
