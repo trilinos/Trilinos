@@ -6,7 +6,7 @@
 #   cd <any-build-dir>/
 #
 #   source <trilinosDir>/packages/framework/load-gen-config-env.sh \
-#     <full-build-name>
+#     <full-build-name> [--ci-mode]
 #
 # where:
 #
@@ -16,7 +16,7 @@
 #
 # This has the following effect:
 #
-#   * Runs a new bash shell
+#   * Runs a new bash shell (unless pasing in --ci-mode)
 #   * Loads the correct env matching (modules and env vars)
 #   * Writes a cmake fragment file GenConfigSettings.cmake
 #   * Sets the env var TRILINOS_DIR and any other needed vars
@@ -35,7 +35,7 @@
 #   make
 #
 # When finished building, running tests, etc., exist the new shell by typing
-# 'exit[RETURN]'.
+# 'exit[RETURN]' (unless pasing in --ci-mode).
 #
 
 # Assert this script is sourced, not run!
@@ -53,7 +53,7 @@ if [ "$1" == "" ] ; then
   echo "Error, the first argument must be the build name!"
   return
 fi
-FULL_BUILD_NAME=$1
+FULL_BUILD_NAME=$1 ; shift
 
 export TRILINOS_DIR=$(realpath $SCRIPT_BASE_DIR/../..)
 
@@ -69,10 +69,12 @@ source $TRILINOS_DIR/packages/framework/GenConfig/gen-config.sh \
 --cmake-fragment GenConfigSettings.cmake \
 $FULL_BUILD_NAME \
 --force \
+"$@" \
 $TRILINOS_DIR
 
 # NOTE: The above command will not complete until the user types 'exit' after
-# doing the configure, build, testing, etc.
+# doing the configure, build, testing, etc. (unless --ci-mode is passed
+# through).
 
 unset FULL_BUILD_NAME
 unset WORKSPACE
