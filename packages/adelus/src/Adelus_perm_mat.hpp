@@ -81,13 +81,22 @@ namespace Adelus {
         pivot_col = k%nprocs_row;
         k_row = k%nprocs_col;
         rank_row = k_row*nprocs_row;
-        if (me == pivot_col) {
-          int j=k/nprocs_row;
-          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,comm);
+        if (rank_row == pivot_col) {//on the same rank
+          if (me == rank_row) {//I am the right process to do
+            int j=k/nprocs_row;
+            int i=k/nprocs_col;
+            permute(i) = lpiv_view(j); 
+          }
         }
-        if (me == rank_row) {
-          int i=k/nprocs_col;
-          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,comm,&msgstatus);
+        else {//on different ranks
+          if (me == pivot_col) {
+            int j=k/nprocs_row;
+            MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,comm);
+          }
+          if (me == rank_row) {
+            int i=k/nprocs_col;
+            MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,comm,&msgstatus);
+          }
         }
       }
     }
