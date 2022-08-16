@@ -999,14 +999,59 @@ macro(tribits_apply_test_example_enables PACKAGE_NAME)
 endmacro()
 
 
+# Macro to set ${TRIBITS_SUBPACKAGE)_ENABLE_TESTS and
+# ${TRIBITS_SUBPACKAGE)_ENABLE_EXAMPLES based on
+# ${TRIBITS_PARENTPACKAGE)_ENABLE_TESTS or
+# ${TRIBITS_PARENTPACKAGE)_ENABLE_EXAMPLES
+macro(tribits_apply_subpackage_tests_examples_enables  PARENT_PACKAGE_NAME)
+  if ("${${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES}" STREQUAL ""
+    AND ${PARENT_PACKAGE_NAME}_ENABLE_TESTS
+    )
+    message("-- " "Setting"
+      " ${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES=${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}"
+      " because"
+      " ${PARENT_PACKAGE_NAME}_ENABLE_TESTS=${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}")
+    set(${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES ${${PARENT_PACKAGE_NAME}_ENABLE_TESTS})
+  endif()
+  foreach(spkg IN LISTS ${PARENT_PACKAGE_NAME}_SUBPACKAGES)
+    set(fullSpkgName ${PARENT_PACKAGE_NAME}${spkg})
+    if (${PROJECT_NAME}_ENABLE_${fullSpkgName})
+      if (${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
+        if ("${${fullSpkgName}_ENABLE_TESTS}" STREQUAL "")
+          message("-- " "Setting"
+	    " ${fullSpkgName}_ENABLE_TESTS=${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}"
+	    " because parent package"
+	    " ${PARENT_PACKAGE_NAME}_ENABLE_TESTS"
+	    "=${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}")
+          set(${fullSpkgName}_ENABLE_TESTS ${${PARENT_PACKAGE_NAME}_ENABLE_TESTS})
+        endif()
+      endif()
+      if (${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES)
+        if ("${${fullSpkgName}_ENABLE_EXAMPLES}" STREQUAL "")
+          message("-- " "Setting"
+	    " ${fullSpkgName}_ENABLE_EXAMPLES=${${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES}"
+	    " because parent package"
+	    " ${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES"
+	    "=${${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES}")
+          set(${fullSpkgName}_ENABLE_EXAMPLES ${${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES})
+        endif()
+      endif()
+    endif()
+  endforeach()
+endmacro()
+# NOTE: Above, the parent package may not actually be enabled yet
+# (i.e. ${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME} my not be TRUE) if only
+# subpackages needed to be enabled in the forward sweep but we want the tests
+# and examples for subpackage to be enabled if
+# ${PARENT_PACKAGE_NAME}_ENABLE_TESTS=ON or just examples i
+# f${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES=ON
+
+
 macro(tribits_private_enable_forward_package  FORWARD_DEP_PACKAGE_NAME  PACKAGE_NAME)
   tribits_implicit_package_enable_is_allowed( "" ${FORWARD_DEP_PACKAGE_NAME}
     ALLOW_PACKAGE_ENABLE )
-  #message("TRIBITS_PRIVATE_ENABLE_FORWARD_PACKAGE: "
-  #  "${FORWARD_DEP_PACKAGE_NAME} ${PACKAGE_NAME} ${ALLOW_PACKAGE_ENABLE}")
-  # Enable the forward package if it is not already set to ON or OFF
   assert_defined(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
-  if(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME} STREQUAL ""
+  if("${${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME}}" STREQUAL ""
     AND ALLOW_PACKAGE_ENABLE
     )
     message("-- " "Setting ${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME}=ON"
@@ -1017,15 +1062,10 @@ macro(tribits_private_enable_forward_package  FORWARD_DEP_PACKAGE_NAME  PACKAGE_
 endmacro()
 
 
-# Macro used to set ${PROJECT_NAME}_ENABLE_${FWD_PACKAGE_NAME)=ON for all optional
-# and required forward library dependencies of the package ${PACKAGE_NAME}
+# Macro used to set ${PROJECT_NAME}_ENABLE_${FWD_PACKAGE_NAME)=ON for all
 #
 macro(tribits_enable_forward_lib_package_enables PACKAGE_NAME)
 
-  #message("\nPACKAGE_ARCH_ENABLE_FORWARD_PACKAGE_ENABLES ${PACKAGE_NAME}")
-  #print_var(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-
-  # Enable the forward packages if this package is enabled
   assert_defined(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
   if (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
@@ -1042,15 +1082,12 @@ macro(tribits_enable_forward_lib_package_enables PACKAGE_NAME)
 endmacro()
 
 
-# Macro used to set ${PROJECT_NAME}_ENABLE_${FWD_PACKAGE_NAME)=ON for all optional
-# and required forward test/example dependencies of the package ${PACKAGE_NAME}
+# Macro used to set ${PROJECT_NAME}_ENABLE_${FWD_PACKAGE_NAME)=ON for all
+# optional and required forward test dependencies of the package
+# ${PACKAGE_NAME}
 #
 macro(tribits_enable_forward_test_package_enables PACKAGE_NAME)
 
-  #message("\nPACKAGE_ARCH_ENABLE_FORWARD_PACKAGE_ENABLES ${PACKAGE_NAME}")
-  #message("-- " "${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=${${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}}")
-
-  # Enable the forward packages if this package is enabled
   assert_defined(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
   if (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
@@ -1377,6 +1414,18 @@ macro(tribits_adjust_package_enables)
   # NOTE: Above, we enable tests and examples here, before the remaining required
   # packages so that we don't enable tests that don't need to be enabled based
   # on the use of the option ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES.
+
+  message("")
+  message("Enabling subpackage tests/examples based on parent package tests/examples enables ...")
+  message("")
+  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    tribits_apply_subpackage_tests_examples_enables(${TRIBITS_PACKAGE})
+  endforeach()
+  # NOTE: We want to apply this logic here instead of later after the backward
+  # sweep of package enables because we don't want to enable the
+  # tests/examples for a subpackage if it is not needed based on set of
+  # requested subpackages and packages to be enabled and the optional forward
+  # sweep of downstream packages.
 
   #
   # D) Sweep backwards and enable upstream required and optional SE packages

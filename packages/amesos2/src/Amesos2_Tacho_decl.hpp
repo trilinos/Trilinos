@@ -225,6 +225,8 @@ private:
     typename Tacho::Solver<tacho_type, scheduler_type> solver;
 
     // TODO: Implement the paramter options - confirm which we want and which have been implemented
+    int method;
+    int variant;
     // int num_kokkos_threads;
     // int max_num_superblocks;
   } data_;

@@ -78,7 +78,7 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
+${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
 
 # AGS: I moved this to the bottom so that the link order was correct
 # with  -lstk_io_uti before -lstk_io.  I think the DEPLIBS added in

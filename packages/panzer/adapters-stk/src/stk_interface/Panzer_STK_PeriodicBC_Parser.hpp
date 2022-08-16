@@ -67,6 +67,10 @@ public:
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
    getMatchers() const;
 
+   /** Get the flag indicating if the bounding box search is used
+   * when matching periodic Ids. */
+   const bool & useBoundingBoxSearch() const;
+
    // parameterlistacceptor required functions
    /////////////////////////////////////
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -137,6 +141,10 @@ private:
    // stored string values
    const std::string countStr_;
    const std::string condPrefix_;
+   const std::string searchStr_;
+   
+   // stored flag indicating if bounding box search is used for periodic DOF matching
+   bool useBBoxSearch_;
 };
 
 }

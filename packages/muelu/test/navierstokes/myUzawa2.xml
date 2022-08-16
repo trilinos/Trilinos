@@ -153,7 +153,7 @@
     <ParameterList name="myInvApproxFact">
       <Parameter name="factory" type="string" value="InverseApproximationFactory"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
-      <Parameter name="inverse: approximation type" type="string" value="diagonal"/>
+      <Parameter name="inverse: approximation type" type="string" value="lumping"/>
     </ParameterList>
 
     <!-- Build Schur Complement factory -->

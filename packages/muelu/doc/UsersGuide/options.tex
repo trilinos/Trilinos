@@ -207,6 +207,30 @@ An example of line smoothing is provided in \texttt{packages/trilinoscouplings/e
   \end{center}
 \end{table}
 
+\begin{table}[H]
+  \begin{center}
+    \begin{tabular}{p{4.0cm} p{8.5cm} p{1.5cm} p{2.0cm}}
+      Algorithm & Description & Parallel? & Deterministic? \\
+      \toprule
+      \verb!mis2 aggregation! &     Uses distance-2 MIS to perform aggregation similar to non-Kokkos refactor.
+                                    Faster than coloring-based aggregation.
+                                    Cannot control min/max aggregate size. & Yes & Yes \\
+      \verb!mis2 coarsening! &      Uses distance-2 MIS to perform simple coarsening where only independent vertices become aggregate roots.
+                                    This means the coarse ratio is higher than in \verb!mis2 aggregation!.
+                                    Faster than coloring-based aggregation.  Cannot control min/max aggregate size. & Yes & Yes \\
+      \verb!serial! &               Computes a D2 coloring on host, and then does 4-phase aggregation on device. & No & Optional \\
+      \verb!vertex based bit set! & Computes a D2 coloring in parallel with conflicts resolved by neighbors-of-neighbors loop. Then does 4-phase aggregation on device. & Yes & No \\
+      \verb!net based bit set! &    Computes a D2 coloring in parallel with net-based algorithm, which is asymptotically faster than vertex-based (though not always faster in practice).
+                                    Then does 4-phase aggregation on device. & Yes & No \\
+      \bottomrule
+    \end{tabular}
+    \caption{Available choices for \texttt{aggregation: coloring algorithm}. This controls Kokkos-refactored uncoupled aggregation. }
+\label{t:coloring_algs}
+  \end{center}
+\end{table}
+
+Table \ref{t:coloring_algs} lists the available values for \verb!aggregation: coloring algorithm!, which (in Kokkos-refactored uncoupled aggregation) controls how aggregate roots are selected and aggregates are constructed. Under ``Deterministic?'', Yes means the same aggregates are produced for a given graph every run, on any machine. Optional means deterministic only if \verb!aggregation: deterministic! is true, and in this case determinism comes with a speed penalty.
+
 \input{options_aggregation}
 
 % ==================== REBALANCING ====================
