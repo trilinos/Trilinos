@@ -69,7 +69,7 @@ namespace FROSch {
         ConstXMapPtr repeatedMap;
         ConstXMatrixPtr repeatedMatrix;
         if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
-            ExtractLocalSubdomainMatrix_Compute(//this->coarseScatter_,
+            ExtractLocalSubdomainMatrix_Compute(this->coarseScatter_,
                                                 this->K_.getConst(),
                                                 this->coarseSubdomainMatrix_,
                                                 this->coarseLocalSubdomainMatrix_);
@@ -507,81 +507,204 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
         LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
-        if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
-            //Construct matrix phiGamma
-            XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
 
-            // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
-            SCVec scale(AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(),0.0);
-            for (UN i = 0; i < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
-                ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
-                for (UN j = 0; j < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
-                    scale[i] += assembledInterfaceCoarseSpaceData[j]*assembledInterfaceCoarseSpaceData[j];
-                }
-                scale[i] = 1.0/sqrt(scale[i]);
-            }
+        auto asembledBasis = AssembledInterfaceCoarseSpace_->getAssembledBasis();
+        auto basisMap = AssembledInterfaceCoarseSpace_->getBasisMap();
+        auto basisMapUnique = AssembledInterfaceCoarseSpace_->getBasisMapUnique();
+        UN numMVRows = asembledBasis->getLocalLength();
+        UN numCols = asembledBasis->getNumVectors();
+        if (numMVRows > 0 && numCols > 0) {
 
-#if 0
+            XMatrixPtr phiGamma;
+#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+            if (rowMap->lib() == UseTpetra)
             {
-                auto asembledBasis = AssembledInterfaceCoarseSpace_->getAssembledBasis();
-                UN numRows = asembledBasis->getLocalLength();
-                UN numCols = asembledBasis->getNumVectors();
-
                 using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
                 using graph_type   = typename crsmat_type::StaticCrsGraphType;
                 using rowptr_type  = typename graph_type::row_map_type::non_const_type;
                 using indices_type = typename graph_type::entries_type::non_const_type;
                 using values_type  = typename crsmat_type::values_type::non_const_type;
-                using execution_space = typename Map<LO,GO,NO>::local_map_type::execution_space;
+                using local_mv_type = typename MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev_const_um;
+                using local_map_type = typename Map<LO,GO,NO>::local_map_type;
+
+                UN numRows = rowMap->getLocalNumElements();
 
                 auto localRowMap = rowMap->getLocalMap();
                 auto localRepeatedMap = repeatedMap->getLocalMap();
+                auto localBasisMap = basisMap->getLocalMap();
 
-                auto localMVBasis = asembledBasis->getLocalViewDevice(Tpetra::Access::ReadOnly);
-                auto localCrsBasis = phiGamma->getLocalMatrixDevice();
+                auto localMVBasis = asembledBasis->getDeviceLocalView(Xpetra::Access::ReadOnly);
+
+                // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
+                using execution_space = typename Map<LO,GO,NO>::local_map_type::execution_space;
+                using SCView = Kokkos::View<SC*, execution_space>;
+                SCView scale("FROSch::HarmonicCoarseOperator::detectLinearDependencies::scale", numCols);
+                detectLinearDependenciesFunctor<GOVecView, SCView, local_map_type, local_mv_type, rowptr_type, indices_type, values_type>
+                    scale_functor(numMVRows, numCols, scale, localMVBasis);
+                Kokkos::RangePolicy<ScaleTag, execution_space> policy_scale (0, numCols);
+                Kokkos::parallel_for(
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::scale", policy_scale, scale_functor);
 
                 // count nnz
-                rowptr_type rowptr ("rowptr", numRows+1);
-                Kokkos::RangePolicy<execution_space> policy_row (0, numRows);
+                rowptr_type Rowptr ("Rowptr", numRows+1);
+                Kokkos::deep_copy(Rowptr, 0);
+                #if 1
+                detectLinearDependenciesFunctor<GOVecView, SCView, local_map_type, local_mv_type, rowptr_type, indices_type, values_type>
+                    count_functor(numMVRows, numCols, localMVBasis, tresholdDropping, indicesGammaDofsAll,
+                                  localRowMap, localRepeatedMap, Rowptr);
+                Kokkos::RangePolicy<CountNnzTag, execution_space> policy_count (0, numMVRows);
                 Kokkos::parallel_for(
-                    "detectLinearDependencies::countNnz", policy_row,
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::countNnz", policy_count, count_functor);
+                #else
+                Kokkos::RangePolicy<execution_space> policy_row (0, numMVRows);
+                Kokkos::parallel_for(
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::countNnz", policy_row,
                     KOKKOS_LAMBDA(const UN i) {
-                        UN iD = localRepeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
-                        if (localRowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                        LO rowID = indicesGammaDofsAll[i];
+                        GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                        LO iLocal = localRowMap.getLocalElement(iGlobal);
+                        if (iLocal!=-1) { // This should prevent duplicate entries on the interface
                             for (UN j=0; j<numCols; j++) {
-                                valueTmp=localMVBasis(j,i);
+                                SC valueTmp=localMVBasis(i,j);
                                 if (fabs(valueTmp)>tresholdDropping) {
-                                    rowptr(iD+1) ++;
+                                    Rowptr(iLocal+1) ++;
                                 }
                             }
                         }
                     }
                 );
+                #endif
                 Kokkos::fence();
-            }
-#endif
-#if 1
-            LO iD;
-            SC valueTmp;
-            for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
-                iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
-                if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
-                    GOVec indices;
-                    SCVec values;
-                    for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
-                        valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
-                        if (fabs(valueTmp)>tresholdDropping) {
-                            indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
-                            values.push_back(valueTmp*scale[j]);
+
+                UN nnz = 0;
+                #if 1
+                Kokkos::RangePolicy<TotalNnzTag, execution_space> policy_nnz (0, 1+numRows);
+                Kokkos::parallel_reduce(
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::reduceNnz", policy_nnz, count_functor, nnz);
+                #else
+                Kokkos::parallel_reduce("FROSch_HarmonicCoarseOperator::detectLinearDependencies::reduceNnz", 1+numRows,
+                    KOKKOS_LAMBDA(const int &i, UN &lsum) { lsum += Rowptr[i]; },
+                    nnz);
+                #endif
+                Kokkos::fence();
+
+                // make it into offsets
+                KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+                    (1+numRows, Rowptr);
+                Kokkos::fence();
+
+                // allocate local matrix
+                indices_type Indices ("Indices", nnz);
+                values_type  Values  ("Values",  nnz);
+
+                // fill in all the blocks
+                #if 1
+                detectLinearDependenciesFunctor<GOVecView, SCView, local_map_type, local_mv_type, rowptr_type, indices_type, values_type>
+                    fill_functor(numMVRows, numCols, scale, localMVBasis, tresholdDropping, indicesGammaDofsAll,
+                                 localRowMap, localRepeatedMap, Rowptr, Indices, Values);
+                Kokkos::RangePolicy<FillNzEntriesTag, execution_space> policy_fill (0, numMVRows);
+                Kokkos::parallel_for(
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::fillNz", policy_fill, fill_functor);
+                #else
+                Kokkos::parallel_for(
+                    "FROSch_HarmonicCoarseOperator::detectLinearDependencies::countNnz", policy_row,
+                    KOKKOS_LAMBDA(const UN i) {
+                        LO rowID = indicesGammaDofsAll[i];
+                        GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                        LO iLocal = localRowMap.getLocalElement(iGlobal);
+                        if (iLocal!=-1) { // This should prevent duplicate entries on the interface
+                            UN nnz_i = Rowptr(iLocal);
+                            for (UN j=0; j<numCols; j++) {
+                                SC valueTmp=localMVBasis(i,j);
+                                if (fabs(valueTmp)>tresholdDropping) {
+                                    Indices(nnz_i) = j; //localBasisMap.getGlobalElement(j);
+                                    Values(nnz_i) = valueTmp*scale[j];
+                                    nnz_i ++;
+                                }
+                            }
                         }
                     }
-                    phiGamma->insertGlobalValues(iD,indices(),values());
-                }
-            }
+                );
+                #endif
+                Kokkos::fence();
+
+/*char filename[200];
+sprintf(filename,"A_%d.dat",Tpetra::getDefaultComm()->getRank());
+FILE *fp = fopen(filename,"w");
+for (int i=0; i<numRows; i++) {
+  for (int k=Rowptr(i); k<Rowptr(i+1); k++) fprintf(fp,"%d %d %e\n",i,Indices(k),Values(k));
+}
+fclose(fp);*/
+                Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp (new Teuchos::ParameterList());
+                params->set("sorted", false);
+
+                graph_type crsgraph (Indices, Rowptr);
+                crsmat_type crsmat = crsmat_type ("CrsMatrix", numRows, Values, crsgraph);
+
+                phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(crsmat, rowMap, basisMap, basisMapUnique, rangeMap,
+                                                             params);
+            } else
 #endif
-            RCP<ParameterList> fillCompleteParams(new ParameterList);
-            fillCompleteParams->set("No Nonlocal Changes", true);
-            phiGamma->fillComplete(AssembledInterfaceCoarseSpace_->getBasisMapUnique(),rangeMap,fillCompleteParams);
+            {
+                // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
+                SCVec scale(numCols, 0.0);
+                for (UN j = 0; j < numCols; j++) {
+                    ConstSCVecPtr assembledInterfaceCoarseSpaceData = asembledBasis->getData(j);
+                    for (UN i = 0; i < numMVRows; i++) {
+                        scale[j] += assembledInterfaceCoarseSpaceData[i]*assembledInterfaceCoarseSpaceData[i];
+                    }
+                    scale[j] = 1.0/sqrt(scale[j]);
+                }
+
+                //Construct matrix phiGamma
+                phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,basisMap->getLocalNumElements());
+//char filename[200];
+//sprintf(filename,"B_%d.dat",Tpetra::getDefaultComm()->getRank());
+//FILE *fp = fopen(filename,"w");
+                LO iD;
+                SC valueTmp;
+                for (UN i=0; i<asembledBasis->getLocalLength(); i++) {
+                    iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
+                    if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                        GOVec indices;
+                        SCVec values;
+                        for (UN j=0; j<asembledBasis->getNumVectors(); j++) {
+                            valueTmp=asembledBasis->getData(j)[i];
+                            if (fabs(valueTmp)>tresholdDropping) {
+                                indices.push_back(basisMap->getGlobalElement(j));
+                                values.push_back(valueTmp*scale[j]);
+//fprintf(fp,"%d %d %e\n",i,basisMap->getGlobalElement(j),valueTmp*scale[j]);
+                            }
+                        }
+                        phiGamma->insertGlobalValues(iD,indices(),values());
+                    }
+                }
+//fclose(fp);
+                RCP<ParameterList> fillCompleteParams(new ParameterList);
+                fillCompleteParams->set("No Nonlocal Changes", true);
+                phiGamma->fillComplete(basisMapUnique,rangeMap,fillCompleteParams);
+            }
+
+/*{
+ auto map = phiGamma->getRowMap();
+ UN numRows = asembledBasis->getLocalLength();
+
+ char filename[200];
+ sprintf(filename,"C_%d.dat",Tpetra::getDefaultComm()->getRank());
+ FILE *fp = fopen(filename,"w");
+ for (unsigned i=0; i<numRows; i++) {
+    ArrayView<const GO> indices;
+    ArrayView<const SC> values;
+    phiGamma->getLocalRowView(i,indices,values);
+    LO size = indices.size();
+    if (size>0) {
+        for (LO j=0; j<size; j++) {
+            fprintf(fp,"%d %d %e\n",i,indices[j],values[j]);
+        }
+    }
+ }
+ fclose(fp);
+}*/
 
             //Compute Phi^T * Phi
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
@@ -642,7 +765,6 @@ namespace FROSch {
             linearDependentVectors.resize(tmp);
         }
 
-#if 0
         FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
         // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
@@ -723,7 +845,6 @@ namespace FROSch {
             << endl;
         }
         FROSCH_DETAILTIMER_STOP(printStatisticsTime);
-#endif
 
         return linearDependentVectors;
     }
