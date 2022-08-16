@@ -11,6 +11,7 @@
 #include "MiniEM_Utils.hpp"
 #include "MiniEM_MatrixFreeInterpolationOp.hpp"
 #include "MiniEM_MatrixFreeInterpolationOp.cpp"
+#include "matrix_free_tpetra_operator.hpp"
 
 
 Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
@@ -500,6 +501,112 @@ void addInterpolationToRequestHandler(
 
   // add interpolation callback to request handler
   reqHandler->addRequestCallback(Teuchos::rcp(new InterpolationRequestCallback(name, linObjFactory, lo_basis_name, ho_basis_name, op, waitForRequest, dump, worksetSize, matrixFree)));
+}
+
+
+class MatrixFreeRequestCallback : public Teko::RequestCallback<Teko::LinearOp> {
+private:
+
+  std::string name_;
+  const Teuchos::RCP<const panzer_stk::STK_Interface> mesh_;
+  const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory_;
+  const std::string basis_name_;
+  Teko::LinearOp interp_;
+  const size_t worksetSize_;
+
+public:
+
+  MatrixFreeRequestCallback(const std::string& name,
+                            const Teuchos::RCP<const panzer_stk::STK_Interface> mesh,
+                            const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                            const std::string& basis_name,
+                            const bool waitForRequest=true,
+                            const size_t worksetSize=1000,
+                            const bool matrixFree=false)
+    : name_(name), mesh_(mesh), linObjFactory_(linObjFactory), basis_name_(basis_name), worksetSize_(worksetSize)
+  {
+    if (!waitForRequest)
+      build();
+  };
+
+  void build()
+  {
+    {
+      typedef double Scalar;
+      typedef int LocalOrdinal;
+      typedef panzer::GlobalOrdinal GlobalOrdinal;
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
+
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcp_dynamic_cast;
+
+      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
+      typedef panzer::GlobalIndexer UGI;
+
+      RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory_);
+      RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
+      blockedDOFMngr = tblof->getGlobalIndexer();
+
+      // get global indexers for LO and HO dofs
+      std::vector<RCP<UGI> > fieldDOFMngrs = blockedDOFMngr->getFieldDOFManagers();
+      int fieldNum = blockedDOFMngr->getFieldNum(basis_name_);
+      int blockIndex = blockedDOFMngr->getFieldBlock(fieldNum);
+      RCP<panzer::DOFManager> dof_manager = rcp_dynamic_cast<panzer::DOFManager>(blockedDOFMngr->getFieldDOFManagers()[blockIndex],true);
+
+      auto fieldPattern = dof_manager->getFieldPattern(basis_name_);
+      auto basis = rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(fieldPattern,true)->getIntrepidBasis();
+
+      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free setup ") + name_));
+
+      std::pair<Intrepid2::EOperator, Intrepid2::EOperator> physics_operator;
+      physics_operator = std::pair<Intrepid2::EOperator, Intrepid2::EOperator>(Intrepid2::EOperator::OPERATOR_GRAD, Intrepid2::EOperator::OPERATOR_GRAD);
+
+      auto mfOp = rcp(new ProjectionOperator<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(mesh_, dof_manager, physics_operator, basis, worksetSize_));
+      interp_ = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getRangeMap()),
+                                                                                                       Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getDomainMap()),
+                                                                                                       mfOp);
+    }
+  }
+
+  bool handlesRequest(const Teko::RequestMesg & rm)
+  {
+    std::string name = rm.getName();
+
+    return (name==name_);
+  };
+
+  Teko::LinearOp request(const Teko::RequestMesg & rm)
+  {
+    TEUCHOS_ASSERT(handlesRequest(rm));
+    std::string name = rm.getName();
+
+    if(name==name_) {
+      if (interp_.is_null()) {
+        build();
+      }
+      return interp_;
+    } else
+      TEUCHOS_ASSERT(false);
+  };
+
+  void preRequest(const Teko::RequestMesg & rm)
+  {
+    // checking for its existance is as good as pre requesting
+    TEUCHOS_ASSERT(handlesRequest(rm));
+  };
+};
+
+void addMatrixFreeOpToRequestHandler(const std::string& name,
+                                     const Teuchos::RCP<const panzer_stk::STK_Interface> mesh,
+                                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                                     const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
+                                     const std::string& basis_name,
+                                     const bool waitForRequest=true,
+                                     const size_t worksetSize=1000) {
+
+  // add interpolation callback to request handler
+  reqHandler->addRequestCallback(Teuchos::rcp(new MatrixFreeRequestCallback(name, mesh, linObjFactory, basis_name, waitForRequest, worksetSize)));
 }
 
 #endif

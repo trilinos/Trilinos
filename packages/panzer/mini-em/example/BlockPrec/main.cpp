@@ -475,12 +475,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       aux_block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
 
     std::string auxFieldOrder;
+    std::vector<int> pCoarsenSchedule;
     {
       auxFieldOrder = "blocked:";
 
       pCoarsenScheduleStr = assembly_pl.get<std::string>("p coarsen schedule", pCoarsenScheduleStr);
       std::vector<std::string> pCoarsenScheduleVecStr;
-      std::vector<int> pCoarsenSchedule;
       panzer::StringTokenizer(pCoarsenScheduleVecStr, pCoarsenScheduleStr, ",");
       panzer::TokensToInts(pCoarsenSchedule, pCoarsenScheduleVecStr);
       if (basis_order > 1)
@@ -552,15 +552,28 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         if (solver == MUELU_MAXWELL_HO) {
           // Projected Schur complement
           auto projectedSchurComplementPL = Teuchos::ParameterList();
-          projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
-          projectedSchurComplementPL.set("DOF Name", auxNodalField);
-          projectedSchurComplementPL.set("Basis Type", "HGrad");
-          projectedSchurComplementPL.set("Model ID", auxModelID);
-          projectedSchurComplementPL.set("Permittivity", "epsilon");
-          projectedSchurComplementPL.set("Conductivity", "sigma");
-          projectedSchurComplementPL.set("Basis Order", polynomialOrder);
-          projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
-          auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+
+          // Projected Schur complement
+          if (matrixFree && (polynomialOrder > 1)) {
+            addMatrixFreeOpToRequestHandler("Auxiliary Node ProjectedSchurComplement"+opPostfix,
+                                            mesh,
+                                            auxLinObjFactory,
+                                            req_handler,
+                                            auxNodalField,
+                                            true,
+                                            workset_size);
+          } else {
+            auto projectedSchurComplementPL = Teuchos::ParameterList();
+            projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
+            projectedSchurComplementPL.set("DOF Name", auxNodalField);
+            projectedSchurComplementPL.set("Basis Type", "HGrad");
+            projectedSchurComplementPL.set("Model ID", auxModelID);
+            projectedSchurComplementPL.set("Permittivity", "epsilon");
+            projectedSchurComplementPL.set("Conductivity", "sigma");
+            projectedSchurComplementPL.set("Basis Order", polynomialOrder);
+            projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
+            auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
+          }
         }
       }
 
@@ -786,6 +799,32 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           addInterpolationToRequestHandler(name, p->second, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size, useMatrixFree);
         }
       }
+
+      if (matrixFree) {
+        for (auto it = pCoarsenSchedule.begin(); it != pCoarsenSchedule.end(); ++it) {
+          std::string auxNodalField, auxEdgeField, opPostfix;
+          // Are we setting up lower order operators?
+          if (*it != basis_order) {
+            auxNodalField = "AUXILIARY_NODE_" + std::to_string(*it);
+            auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(*it);
+            opPostfix = " "+std::to_string(*it);
+          } else {
+            auxNodalField = "AUXILIARY_NODE";
+            auxEdgeField = "AUXILIARY_EDGE";
+            opPostfix = "";
+          }
+
+          if (*it > 1)
+            addMatrixFreeOpToRequestHandler("ProjectedSchurComplement "+auxNodalField,
+                                            mesh,
+                                            auxLinObjFactory,
+                                            req_handler,
+                                            auxNodalField,
+                                            true,
+                                            workset_size);
+        }
+      }
+
     } else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
       // add discrete gradient
       {
