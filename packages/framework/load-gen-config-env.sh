@@ -16,7 +16,7 @@
 #
 # This has the following effect:
 #
-#   * Runs a new bash shell (unless pasing in --ci-mode)
+#   * Runs a new bash shell (unless passing in --ci-mode)
 #   * Loads the correct env matching (modules and env vars)
 #   * Writes a cmake fragment file GenConfigSettings.cmake
 #   * Sets the env var TRILINOS_DIR and any other needed vars
@@ -35,7 +35,7 @@
 #   make
 #
 # When finished building, running tests, etc., exist the new shell by typing
-# 'exit[RETURN]' (unless pasing in --ci-mode).
+# 'exit[RETURN]' (unless passing in --ci-mode).
 #
 
 # Assert this script is sourced, not run!
