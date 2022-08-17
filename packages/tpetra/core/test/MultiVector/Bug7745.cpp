@@ -81,9 +81,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, DefaultToDefault, Scalar,LO,GO,Node)
   Teuchos::RCP<const map_t> defaultMap = 
            rcp(new map_t(nGlobalEntries, 0, comm));
 
-  std::cout << me << " DEFAULT MAP" << std::endl;
-  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
-
   // Create vectors; see what the result is with CombineMode=ADD
 
   vector_t defaultVecTgt(defaultMap);
@@ -96,9 +93,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, DefaultToDefault, Scalar,LO,GO,Node)
 
   Tpetra::Export<LO,GO,Node> defaultToDefault(defaultMap, defaultMap);
   defaultVecTgt.doExport(defaultVecSrc, defaultToDefault, Tpetra::ADD_ASSIGN);
-
-  std::cout << me << " DEFAULT TO DEFAULT " << std::endl;
-  defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result; all vector entries should be tgtScalar + srcScalar
   auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly);
@@ -143,9 +137,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
   Teuchos::RCP<const map_t> defaultMap = 
            rcp(new map_t(nGlobalEntries, 0, comm));
 
-  std::cout << me << " DEFAULT MAP" << std::endl;
-  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
-
   // One-to-one cyclic map:  deal out entries like cards
 
   int nMyEntries = 0;
@@ -160,9 +151,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
   Teuchos::RCP<const map_t> cyclicMap = 
            rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
 
-  std::cout << me << " CYCLIC MAP" << std::endl;
-  cyclicMap->describe(foo, Teuchos::VERB_EXTREME);
-
   // Create vectors; see what the result is with CombineMode=ADD
 
   vector_t defaultVecTgt(defaultMap);
@@ -175,9 +163,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
 
   Tpetra::Export<LO,GO,Node> cyclicToDefault(cyclicMap, defaultMap);
   defaultVecTgt.doExport(cyclicVecSrc, cyclicToDefault, Tpetra::ADD_ASSIGN);
-
-  std::cout << me << " CYCLIC TO DEFAULT " << std::endl;
-  defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result
 
@@ -224,9 +209,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
     Teuchos::RCP<const map_t> defaultMap = 
              rcp(new map_t(nGlobalEntries, 0, comm));
 
-    std::cout << me << " DEFAULT MAP" << std::endl;
-    defaultMap->describe(foo, Teuchos::VERB_EXTREME);
-
     // Overlap map; some entries are stored on two procs
     int nMyEntries = 0;
     for (size_t i = 0; i < defaultMap->getLocalNumElements()/2; i++) {
@@ -241,9 +223,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
             Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const map_t> overlapMap = 
              rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
-  
-    std::cout << me << " OVERLAP MAP" << std::endl;
-    overlapMap->describe(foo, Teuchos::VERB_EXTREME);
 
     // Create vectors; see what the result is with CombineMode=ADD
 
@@ -257,9 +236,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
 
     Tpetra::Export<LO,GO,Node> overlapToDefault(overlapMap, defaultMap);
     defaultVecTgt.doExport(overlapVecSrc, overlapToDefault, Tpetra::ADD_ASSIGN);
-
-    std::cout << me << " OVERLAP TO DEFAULT " << std::endl;
-    defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++) {
@@ -321,18 +297,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OddEvenToSerial, Scalar,LO,GO,Node)
   Teuchos::RCP<const map_t> oddEvenMap = 
            rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
 
-  std::cout << me << " ODDEVEN MAP" << std::endl;
-  oddEvenMap->describe(foo, Teuchos::VERB_EXTREME);
-
   // Map with all entries on one processor
 
   dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   size_t nSerialEntries = (me == 0 ? nGlobalEntries : 0);
   Teuchos::RCP<const map_t> serialMap = 
            rcp(new map_t(dummy, nSerialEntries, 0, comm));
-
-  std::cout << me << " SERIAL MAP" << std::endl;
-  serialMap->describe(foo, Teuchos::VERB_EXTREME);
 
   // Create vectors; see what the result is with CombineMode=ADD
 
@@ -346,9 +316,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OddEvenToSerial, Scalar,LO,GO,Node)
 
   Tpetra::Export<LO,GO,Node> oddEvenToSerial(oddEvenMap, serialMap);
   serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD_ASSIGN);
-
-  std::cout << me << " ODDEVEN TO SERIAL " << std::endl;
-  serialVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result
 
@@ -399,9 +366,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
     Teuchos::RCP<const map_t> defaultMap = 
              rcp(new map_t(nGlobalEntries, 0, comm));
 
-    std::cout << me << " DEFAULT MAP" << std::endl;
-    defaultMap->describe(foo, Teuchos::VERB_EXTREME);
-
     // Superset map; some entries are stored on two procs
     int nMyEntries = 0;
     for (size_t i = 0; i < defaultMap->getLocalNumElements(); i++) {
@@ -416,9 +380,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
             Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const map_t> supersetMap =
              rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
-  
-    std::cout << me << " SUPERSET MAP" << std::endl;
-    supersetMap->describe(foo, Teuchos::VERB_EXTREME);
 
     // Create vectors; see what the result is with CombineMode=ADD
 
@@ -433,9 +394,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
     Tpetra::Export<LO,GO,Node> supersetToDefault(supersetMap, defaultMap);
     defaultVecTgt.doExport(supersetVecSrc, supersetToDefault,
                            Tpetra::ADD_ASSIGN);
-
-    std::cout << me << " SUPERSET TO DEFAULT " << std::endl;
-    defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
@@ -482,9 +440,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, NoSamesToDefault, Scalar,LO,GO,Node)
     Teuchos::RCP<const map_t> defaultMap = 
              rcp(new map_t(nGlobalEntries, 0, comm));
 
-    std::cout << me << " DEFAULT MAP" << std::endl;
-    defaultMap->describe(foo, Teuchos::VERB_EXTREME);
-
     // Map with no sames or permutes
     int nMyEntries = 0;
     for (size_t i = 0; i < defaultMap->getLocalNumElements(); i++) {
@@ -496,9 +451,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, NoSamesToDefault, Scalar,LO,GO,Node)
             Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const map_t> noSamesMap = 
              rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
-  
-    std::cout << me << " NOSAMES MAP" << std::endl;
-    noSamesMap->describe(foo, Teuchos::VERB_EXTREME);
 
     // Create vectors; see what the result is with CombineMode=ADD
 
@@ -512,9 +464,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, NoSamesToDefault, Scalar,LO,GO,Node)
 
     Tpetra::Export<LO,GO,Node> noSamesToDefault(noSamesMap, defaultMap);
     defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD_ASSIGN);
-
-    std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
-    defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++) {
