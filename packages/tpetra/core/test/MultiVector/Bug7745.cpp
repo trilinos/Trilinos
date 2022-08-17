@@ -151,6 +151,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
   Teuchos::RCP<const map_t> cyclicMap = 
            rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
 
+  // Create vectors; see what the result is with CombineMode=ADD
+
+  vector_t defaultVecTgt(defaultMap);
+  defaultVecTgt.putScalar(tgtScalar);
+
+  vector_t cyclicVecSrc(cyclicMap);
+  cyclicVecSrc.putScalar(srcScalar);
+
+  // Export Cyclic-to-default
+
+  Tpetra::Export<LO,GO,Node> cyclicToDefault(cyclicMap, defaultMap);
+  defaultVecTgt.doExport(cyclicVecSrc, cyclicToDefault, Tpetra::ADD_ASSIGN);
+
   // Check result
 
   auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly);
