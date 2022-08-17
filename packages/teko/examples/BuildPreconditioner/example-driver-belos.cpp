@@ -55,17 +55,9 @@
 // Epetra includes
 #include "mpi.h"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
-
-// EpetraExt includes
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
 #include "Teko_Utilities.hpp"

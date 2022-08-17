@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -50,6 +50,7 @@
 
 #include "Kokkos_Core.hpp"
 
+#ifdef TEKO_HAVE_EPETRA
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #else
@@ -57,10 +58,14 @@
 #endif
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#endif
+
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#include "EpetraExt_RowMatrixOut.h"
+
 #include "MatrixMarket_Tpetra.hpp"
 
 #include "Teko_Utilities.hpp"
@@ -69,7 +74,6 @@
 #include "Teko_InverseFactoryOperator.hpp"
 #include "Teko_JacobiPreconditionerFactory.hpp"
 #include "Teko_PreconditionerInverseFactory.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
 #include "Teko_TpetraOperatorWrapper.hpp"
 #include "Teko_StratimikosFactory.hpp"
 #include "Teko_StridedEpetraOperator.hpp"
@@ -120,7 +124,7 @@ const RCP<Epetra_Operator> buildSystem(const Epetra_Comm & comm,int size)
      indices[0] = gid+iTemp[0];
      indices[1] = gid+iTemp[1];
      indices[2] = gid+iTemp[2];
-     
+
      if(gid==0) {
         vPtr = &values[1];
         iPtr = &indices[1];
@@ -157,7 +161,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildSystem(const Teuchos::RCP<const T
       indices[0] = gid+iTemp[0];
       indices[1] = gid+iTemp[1];
       indices[2] = gid+iTemp[2];
-      
+
       if(gid==0) {
          vPtr = &values[1];
          iPtr = &indices[1];
@@ -205,7 +209,7 @@ const RCP<Epetra_Operator> buildStridedSystem(const Epetra_Comm & comm,int size)
 
         vPtr = (n==0) ? valuesA : valuesB;
         iPtr = indices;
-     
+
         if(gid<numUnks) {
            vPtr++;
            iPtr = &indices[1];
@@ -255,7 +259,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
 
         vPtr = (n==0) ? valuesA : valuesB;
         iPtr = indices;
-     
+
         if(gid<numUnks) {
            vPtr++;
            iPtr = &indices[1];
@@ -275,7 +279,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
   return mat;
 }
 
-TEUCHOS_UNIT_TEST(tStratimikosFactory, test_Defaults) 
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_Defaults)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -328,7 +332,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_Defaults)
   TEST_ASSERT(tester.compare(*precOp,*testOp,Teuchos::ptrFromRef(out)));
 }
 
-TEUCHOS_UNIT_TEST(tStratimikosFactory, test_MultipleCalls) 
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_MultipleCalls)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -371,7 +375,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_MultipleCalls)
   TEST_ASSERT(precOp_b!=Teuchos::null);
 }
 
-TEUCHOS_UNIT_TEST(tStratimikosFactory, test_BlockGaussSeidel) 
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_BlockGaussSeidel)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -433,7 +437,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_BlockGaussSeidel)
   TEST_ASSERT(tester.compare(*precOp,*testOp,Teuchos::ptrFromRef(out)));
 }
 
-TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions) 
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -452,7 +456,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions)
   {
      // build stratimikos factory, adding Teko's version
      Stratimikos::DefaultLinearSolverBuilder stratFactory;
-     
+
      Teko::addTekoToStratimikosBuilder(stratFactory);
      TEST_THROW(Teko::addTekoToStratimikosBuilder(stratFactory),std::logic_error);
      Teko::addTekoToStratimikosBuilder(stratFactory,"Teko-2");
@@ -466,7 +470,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions)
 
      // build stratimikos factory, adding Teko's version
      Stratimikos::DefaultLinearSolverBuilder stratFactory;
-     
+
      Teko::addTekoToStratimikosBuilder(stratFactory,rh);
      TEST_THROW(Teko::addTekoToStratimikosBuilder(stratFactory,rh),std::logic_error);
      Teko::addTekoToStratimikosBuilder(stratFactory,rh,"Teko-2");
@@ -491,7 +495,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions)
   }
 }
 
-TEUCHOS_UNIT_TEST(tStratimikosFactory, test_multi_use) 
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_multi_use)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -530,8 +534,8 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_multi_use)
   RCP<Thyra::PreconditionerBase<double> > prec;
   for(int i=0;i<2;i++) {
      prec = precFactory->createPrec();
-     
-     RCP<const Thyra::LinearOpSourceBase<double> > losb 
+
+     RCP<const Thyra::LinearOpSourceBase<double> > losb
         = rcp(new Thyra::DefaultLinearOpSource<double>(tA));
 
      precFactory->initializePrec(losb,prec.get());
@@ -547,7 +551,7 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_multi_use)
   // try using a single preconditioner multiple times
   prec = precFactory->createPrec();
   for(int i=0;i<2;i++) {
-     RCP<const Thyra::LinearOpSourceBase<double> > losb 
+     RCP<const Thyra::LinearOpSourceBase<double> > losb
         = rcp(new Thyra::DefaultLinearOpSource<double>(tA));
 
      precFactory->initializePrec(losb,prec.get());

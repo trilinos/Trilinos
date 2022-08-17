@@ -7,6 +7,13 @@ IF (ML_ENABLE_TekoSmoothers)
    ADD_SUBDIRECTORY(ML-Teko-Coupling)
 ENDIF()
 
+# Consider 'Teko_ENABLE_Epetra' only if '${PROJECT_NAME}_ENABLE_Epetra=ON'
+# Use global_set, so TEKO_HAVE_EPETRA is visible in other subdirs
+IF(${PROJECT_NAME}_ENABLE_Epetra AND DEFINED Teko_ENABLE_Epetra)
+   global_set(TEKO_HAVE_EPETRA ${Teko_ENABLE_Epetra})
+ELSE()
+   global_set(TEKO_HAVE_EPETRA ${${PROJECT_NAME}_ENABLE_Epetra})
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(example_copyfiles
   SOURCE_FILES nslhs_test.mm

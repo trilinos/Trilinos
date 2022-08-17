@@ -10,7 +10,7 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
+// #include "Thyra_get_Epetra_Operator.hpp"
 
 #include "Teko_LU2x2InverseOp.hpp"
 #include "Teko_Utilities.hpp"
@@ -20,7 +20,7 @@
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_PresLaplaceLSCStrategy.hpp"
 
-#include "EpetraExt_RowMatrixOut.h"
+// #include "EpetraExt_RowMatrixOut.h"
 
 #include "Teuchos_Time.hpp"
 

@@ -6,17 +6,20 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 SET(HEADERS "")
 SET(SOURCES "")
 
-APPEND_GLOB( HEADERS 
-  ./src/Epetra/*.hpp
+APPEND_GLOB( HEADERS
   ./src/Tpetra/*.hpp
   ./src/*.hpp
 )
 
-APPEND_GLOB( SOURCES 
-  ./src/Epetra/*.cpp
+APPEND_GLOB( SOURCES
   ./src/Tpetra/*.cpp
   ./src/*.cpp
 )
+
+IF(TEKO_HAVE_EPETRA)
+  APPEND_GLOB(HEADERS ./src/Epetra/*.hpp)
+  APPEND_GLOB(SOURCES ./src/Epetra/*.cpp)
+ENDIF()
 
 SET(UNIT_TEST_DRIVER
   "${PACKAGE_SOURCE_DIR}/tests/Teko_UnitTestMain.cpp")
@@ -113,7 +116,7 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   SET(TEST_DRIVER_DATA_FILES
     ${TEST_DRIVER_DATA_FILES}
     nsjac.mm
-    nsjac_1.mm  
+    nsjac_1.mm
     )
 ENDIF()
 
@@ -144,18 +147,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StridedEpetraOperator_test
-  SOURCES
-    unit_tests/tStridedEpetraOperator.cpp
-    ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  ARGS ${PARALLEL_ARGS_STRING}
-  NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
+IF(TEKO_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    StridedEpetraOperator_test
+    SOURCES
+      unit_tests/tStridedEpetraOperator.cpp
+      ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    ARGS ${PARALLEL_ARGS_STRING}
+    NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
   )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RequestInterface_test 
+  RequestInterface_test
   SOURCES
     unit_tests/tRequestInterface.cpp
     ${UNIT_TEST_DRIVER}
@@ -165,7 +170,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagnosticLinearOp_test 
+  DiagnosticLinearOp_test
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
     ${UNIT_TEST_DRIVER}
@@ -175,7 +180,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonallyScaledPreconditioner 
+  DiagonallyScaledPreconditioner
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
     ${UNIT_TEST_DRIVER}
@@ -185,7 +190,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InverseFactoryOperator 
+  InverseFactoryOperator
   SOURCES
     unit_tests/tInverseFactoryOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -194,28 +199,40 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ProbingFactory
-  SOURCES
+IF(TEKO_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ProbingFactory
+    SOURCES
     unit_tests/tProbingFactory.cpp
     ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  ARGS ${SERIAL_ARGS_STRING}
-  NUM_MPI_PROCS 1
+    COMM serial mpi
+    ARGS ${SERIAL_ARGS_STRING}
+    NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonalPreconditionerFactory 
-  SOURCES
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    DiagonalPreconditionerFactory
+    SOURCES
     unit_tests/tDiagonalPreconditionerFactory.cpp
     ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  ARGS ${SERIAL_ARGS_STRING}
-  NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS ${SERIAL_ARGS_STRING}
+    NUM_MPI_PROCS 2
   )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ExplicitOps
+    SOURCES
+    unit_tests/tExplicitOps.cpp
+    ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    ARGS ${SERIAL_ARGS_STRING}
+    NUM_MPI_PROCS 2
+  )
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StratimikosFactory 
+  StratimikosFactory
   SOURCES
     unit_tests/tStratimikosFactory.cpp
     ${UNIT_TEST_DRIVER}
@@ -225,17 +242,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExplicitOps 
-  SOURCES
-    unit_tests/tExplicitOps.cpp
-    ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  ARGS ${SERIAL_ARGS_STRING}
-  NUM_MPI_PROCS 2
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ALOperator 
+  ALOperator
   SOURCES
     unit_tests/tALOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -244,15 +251,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ModALPreconditioner
-  SOURCES
-    unit_tests/tModALPreconditioner.cpp
-    ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  ARGS ${SERIAL_ARGS_STRING}
-  NUM_MPI_PROCS 1
-  )
+IF(TEKO_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ModALPreconditioner
+    SOURCES
+      unit_tests/tModALPreconditioner.cpp
+      ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    ARGS ${SERIAL_ARGS_STRING}
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ReorderBlocking
@@ -265,7 +274,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UtilitiesTests 
+  UtilitiesTests
   SOURCES
     unit_tests/tUtilitiesTests.cpp
     ${UNIT_TEST_DRIVER}
