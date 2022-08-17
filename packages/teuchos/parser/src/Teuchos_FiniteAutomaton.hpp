@@ -63,7 +63,6 @@ void make_deterministic(FiniteAutomaton& result, FiniteAutomaton& nfa);
 void simplify_once(FiniteAutomaton& result, FiniteAutomaton const& fa);
 void simplify(FiniteAutomaton& result, FiniteAutomaton const& fa);
 
-FiniteAutomaton make_char_nfa(bool is_deterministic_init, int nstates_reserve);
 void add_char_transition(FiniteAutomaton& fa, int from_state, char at_char, int to_state);
 bool is_symbol(char c);
 int get_symbol(char c);
