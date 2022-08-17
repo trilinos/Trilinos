@@ -925,10 +925,11 @@ namespace BaskerNS
           }
         }
 
-        #ifdef AMD_ON_D
+        #define SHYLU_BASKER_AMD_ON_D
+        #ifdef SHYLU_BASKER_AMD_ON_D
         // --------------------------------------------
         // reset the small D blocks
-        if (btf_top_tabs_offset > 0) {
+        if (btf_top_tabs_offset  > 0) {
           Int d_last = btf_top_tabs_offset;
           Int ncol = btf_tabs(d_last);
 
@@ -942,13 +943,15 @@ namespace BaskerNS
             permute_row(BTF_E, order_blk_amd_d);
           }
 
-          // revert BLK_MWM ordering
-          auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv, 
-                                                 range_type (0, ncol));
-          permute_row(BTF_D, order_blk_mwm_d);
-          if (BTF_E.ncol > 0) {
-            // Apply MWM perm to cols
-            permute_row(BTF_E, order_blk_mwm_d);
+          if (Options.blk_matching != 0) {
+            // revert BLK_MWM ordering
+            auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv, 
+                                                   range_type (0, ncol));
+            permute_row(BTF_D, order_blk_mwm_d);
+            if (BTF_E.ncol > 0) {
+              // Apply MWM perm to cols
+              permute_row(BTF_E, order_blk_mwm_d);
+            }
           }
         }
         #endif
@@ -1100,7 +1103,7 @@ namespace BaskerNS
         numeric_col_iperm_array(i) = i;
       }
 
-      #ifdef AMD_ON_D
+      #ifdef SHYLU_BASKER_AMD_ON_D
       if (btf_top_tabs_offset > 0) {
         Kokkos::Timer mwm_amd_perm_timer;
         Int d_last = btf_top_tabs_offset;
@@ -1116,7 +1119,7 @@ namespace BaskerNS
         }
 
         // ----------------------------------------------------------------------------------------------
-        // recompute MWM and AMD on each block of C
+        // recompute MWM and AMD on each block of D
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
         btf_blk_mwm_amd(0, d_last, BTF_D,
