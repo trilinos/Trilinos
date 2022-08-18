@@ -292,7 +292,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_TEST(
     Driver
     NAME "SchwarzSmoothingWithAverages"
-    ARGS "--linAlgebra=Tpetra --xml=oLapSchwarzEquivBlkSmoo.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1"
+    ARGS "--linAlgebra=Tpetra --xml=blkSmooEquivOlapSchwarz.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1 --userBlks=regularOverLap.dat"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
   )
