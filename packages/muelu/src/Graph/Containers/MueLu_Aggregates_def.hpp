@@ -191,12 +191,12 @@ namespace MueLu {
     for(LO i=0; i<numNodes; i++) {
       LO aggregate = vertex2AggId[i];
       if(aggregate !=INVALID) {
-	aggNodes[aggCurr[aggregate]] = i;
-	aggCurr[aggregate]++;
+        aggNodes[aggCurr[aggregate]] = i;
+        aggCurr[aggregate]++;
       }
       else {
-	unaggregated[currNumUnaggregated] = i;
-	currNumUnaggregated++;
+        unaggregated[currNumUnaggregated] = i;
+        currNumUnaggregated++;
       }
     }
     unaggregated.resize(currNumUnaggregated);
