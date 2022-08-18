@@ -66,12 +66,17 @@ tribits_add_advanced_test(doInstall
       -P "${CMAKE_CURRENT_SOURCE_DIR}/remove_dir_if_exists.cmake"
 
   TEST_1
-    MESSAGE "Install whatever Trilinos packages have been enabled"
+    MESSAGE "Install enabled and built Trilinos packages (NOTE: This test will fail if the project has **any** build errors!)"
     CMND "${CMAKE_COMMAND}"
     ARGS --install ${PROJECT_BINARY_DIR}
       --prefix ${PROJECT_BINARY_DIR}/install
     OUTPUT_FILE  doInstall.out
     NO_ECHO_OUTPUT
+
+  TEST_2
+    MESSAGE "Grep doInstall.out file produced above to see any errors"
+    CMND grep ARGS -A 50 "CMake Error" doInstall.out
+    PASS_ANY
 
   ADDED_TEST_NAME_OUT  doInstall_name
   )
@@ -80,6 +85,11 @@ tribits_add_advanced_test(doInstall
   # command.  However, note that it is not a perfect installation test because
   # the source dir and the build dir will still be sticking around in the
   # below example build.
+
+if (doInstall_name)
+  set_tests_properties(${doInstall_name}
+    PROPERTIES  FIXTURES_SETUP  doInstall_passed)
+endif()
 
 
 tribits_add_advanced_test(find_package_Trilinos
@@ -104,8 +114,10 @@ tribits_add_advanced_test(find_package_Trilinos
 
 if (find_package_Trilinos_name)
   set_tests_properties(${find_package_Trilinos_name}
-    PROPERTIES DEPENDS ${doInstall_name} )
+    PROPERTIES  FIXTURES_REQUIRED  doInstall_passed)
 endif()
+# NOTE: Above, only attempt to run the find_package() test if the install
+# command passed or it is guaranteed to fail.
 
 
 tribits_add_advanced_test(simpleBuildAgainstTrilinos
@@ -144,8 +156,17 @@ tribits_add_advanced_test(simpleBuildAgainstTrilinos
 
 if (simpleBuildAgainstTrilinos_name)
   set_tests_properties(${simpleBuildAgainstTrilinos_name}
-    PROPERTIES DEPENDS ${doInstall_name} )
+    PROPERTIES  FIXTURES_REQUIRED  doInstall_passed)
 endif()
+# NOTE: Above, only attempt to build and test the simpleBuildAgainstTrilinos
+# project if the install command passed or it is guaranteed to fail.  Also
+# note that we could have blocked this based on the find_package() test but
+# that runs find_package(Trilinos) for all of Trilinos while the
+# simpleBuildAgainstTrilinos/CMakeLists.txt file only calls
+# find_package(Trilinos COMPONENTS Tpetra) so it could pass when the full
+# find_package(Trilinos) call fails.  Therefore, it makes sense to run the
+# this test for simpleBuildAgainstTrilinos even if the test for the full
+# find_package(Trilinos) command fails.
 
 
 tribits_package_postprocess()
