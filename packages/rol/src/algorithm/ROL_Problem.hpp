@@ -292,7 +292,7 @@ public:
       @param[in]     printToStream   determines whether to print to the supplied std::ostream
       @param[in,out] outStream       user supplied std::ostream
   */
-  void checkDerivatives(bool printToStream = false, std::ostream &outStream = std::cout) const;
+  void checkDerivatives(bool printToStream = false, std::ostream &outStream = std::cout, const Ptr<Vector<Real>> &x0 = nullPtr, Real scale = Real(1)) const;
 
   /** \brief Run vector, linearity and derivative checks for user-supplied
              vectors, objective function and constraints.
@@ -300,7 +300,7 @@ public:
       @param[in]     printToStream   determines whether to print to the supplied std::ostream
       @param[in,out] outStream       user supplied std::ostream
   */
-  void check(bool printToStream = false, std::ostream &outStream = std::cout) const;
+  void check(bool printToStream = false, std::ostream &outStream = std::cout, const Ptr<Vector<Real>> &x0 = nullPtr, Real scale = Real(1)) const;
 
   /***************************************************************************/
   /*** Finalize and edit methods *********************************************/

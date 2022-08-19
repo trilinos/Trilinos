@@ -602,28 +602,27 @@ void Problem<Real>::checkVectors(bool printToStream, std::ostream &outStream) co
 }
 
 template<typename Real>
-void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream) const {
+void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream, const Ptr<Vector<Real>> &x0, Real scale) const {
   const Real one(1);
   Ptr<Vector<Real>> x, d, v, g, c, w;
   // Objective check
-  x = INPUT_xprim_->clone(); x->randomize(0.0,one); //-one,one);
-  d = INPUT_xprim_->clone(); d->randomize(0.0,one); //-one,one);
-  v = INPUT_xprim_->clone(); v->randomize(0.0,one); //-one,one);
-  g = INPUT_xdual_->clone(); g->randomize(0.0,one); //-one,one);
-  if (printToStream) {
+  x = x0;
+  if (x == nullPtr) { x = INPUT_xprim_->clone(); x->randomize(-one,one); }
+  d = INPUT_xprim_->clone(); d->randomize(-scale,scale);
+  v = INPUT_xprim_->clone(); v->randomize(-scale,scale);
+  g = INPUT_xdual_->clone(); g->randomize(-scale,scale);
+  if (printToStream)
     outStream << std::endl << "  Check objective function" << std::endl << std::endl;
-  }
   INPUT_obj_->checkGradient(*x,*g,*d,printToStream,outStream);
   INPUT_obj_->checkHessVec(*x,*g,*d,printToStream,outStream);
   INPUT_obj_->checkHessSym(*x,*g,*d,*v,printToStream,outStream);
   
   // Constraint check
   for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
-    c = it->second.residual->clone();   c->randomize(-one,one);
-    w = it->second.multiplier->clone(); w->randomize(-one,one);
-    if (printToStream) {
+    c = it->second.residual->clone();   c->randomize(-scale,scale);
+    w = it->second.multiplier->clone(); w->randomize(-scale,scale);
+    if (printToStream)
       outStream << std::endl << "  " << it->first << ": Check constraint function" << std::endl << std::endl;
-    }
     it->second.constraint->checkApplyJacobian(*x,*v,*c,printToStream,outStream);
     it->second.constraint->checkAdjointConsistencyJacobian(*w,*v,*x,printToStream,outStream);
     it->second.constraint->checkApplyAdjointHessian(*x,*w,*v,*g,printToStream,outStream);
@@ -631,11 +630,10 @@ void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream
   
   // Linear constraint check
   for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
-    c = it->second.residual->clone();   c->randomize(-one,one);
-    w = it->second.multiplier->clone(); w->randomize(-one,one);
-    if (printToStream) {
+    c = it->second.residual->clone();   c->randomize(-scale,scale);
+    w = it->second.multiplier->clone(); w->randomize(-scale,scale);
+    if (printToStream)
       outStream << std::endl << "  " << it->first << ": Check constraint function" << std::endl << std::endl;
-    }
     it->second.constraint->checkApplyJacobian(*x,*v,*c,printToStream,outStream);
     it->second.constraint->checkAdjointConsistencyJacobian(*w,*v,*x,printToStream,outStream);
     it->second.constraint->checkApplyAdjointHessian(*x,*w,*v,*g,printToStream,outStream);
@@ -643,12 +641,11 @@ void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream
 }
 
 template<typename Real>
-void Problem<Real>::check(bool printToStream, std::ostream &outStream) const {
+void Problem<Real>::check(bool printToStream, std::ostream &outStream, const Ptr<Vector<Real>> &x0, Real scale) const {
   checkVectors(printToStream,outStream);
-  if (hasLinearEquality_ || hasLinearInequality_) {
+  if (hasLinearEquality_ || hasLinearInequality_)
     checkLinearity(printToStream,outStream);
-  }
-  checkDerivatives(printToStream,outStream);
+  checkDerivatives(printToStream,outStream,x0,scale);
 }
 
 template<typename Real>
