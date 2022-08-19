@@ -614,15 +614,15 @@ namespace MueLuTests {
     // Check ComputeNodesInAggregate
     typename Aggregates_kokkos::LO_view aggPtr, aggNodes, unaggregated;
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    TEST_EQUALITY(aggPtr.extent(0), numAggs+1);
-    // TEST_EQUALITY(unaggregated.extent(0), 0); // 1 unaggregated node in the MPI_4 case
+    TEST_EQUALITY(aggPtr.extent_int(0), numAggs+1);
+    // TEST_EQUALITY(unaggregated.extent_int(0), 0); // 1 unaggregated node in the MPI_4 case
     
     // test aggPtr(i)+aggSizes(i)=aggPtr(i+1)
     typename Aggregates_kokkos::LO_view::HostMirror aggPtr_h = Kokkos::create_mirror_view(aggPtr);
     typename Aggregates_kokkos::aggregates_sizes_type::HostMirror aggSizes_h = Kokkos::create_mirror_view(aggSizes);
     Kokkos::deep_copy(aggPtr_h, aggPtr);
     Kokkos::deep_copy(aggSizes_h, aggSizes);
-    for(LO i=0; i<aggSizes_h.extent(0); ++i)
+    for(LO i=0; i<aggSizes_h.extent_int(0); ++i)
       TEST_EQUALITY(aggPtr_h(i)+aggSizes_h(i), aggPtr_h(i+1));
 
   } //UncoupledPhase3
