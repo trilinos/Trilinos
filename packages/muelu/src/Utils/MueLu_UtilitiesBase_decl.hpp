@@ -197,6 +197,7 @@ namespace MueLu {
     */
     static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow=-1) {
 
+      using STS = Teuchos::ScalarTraits<Scalar>;
       RCP<CrsGraph> sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), expectedNNZperRow);
 
       RCP<Vector> diag = GetMatrixOverlappedDiagonal(*A);
@@ -208,11 +209,12 @@ namespace MueLu {
         ArrayView<const Scalar> Ak;
         A->getLocalRowView(k, Ik, Ak);
 
-        const Scalar Dk = std::abs(D[k]) > 0.0 ? std::abs(D[k]) : 1.0;
+        const Scalar Dk = STS::magnitude(D[k]) > 0.0 ? STS::magnitude(D[k]) : 1.0;
         Array<LocalOrdinal> Iknew;
 
         for(LocalOrdinal i=0; i<Ik.size(); i++)
-          if(k == Ik[i] || std::abs(std::sqrt(Dk)*Ak[i]*std::sqrt(Dk)) > threshold) // keep diagonal, might add fixing
+          // keep diagonal, might add fixing
+          if(k == Ik[i] || STS::magnitude(STS::squareroot(Dk)*Ak[i]*STS::squareroot(Dk)) > STS::magnitude(threshold))
             Iknew.append(Ik[i]);
 
         sparsityPattern->insertLocalIndices(k, ArrayView<const LocalOrdinal>(Iknew.data(), Iknew.length()));
