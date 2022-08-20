@@ -289,7 +289,7 @@ This will do the following:
 
 * Generate wrappers ``build_stats_<op>_wrapper.sh`` for C, C++, and Fortran
   (and for static builds also ``ar``, ``randlib`` and ``ld``) in the build
-  tree that will compute statistics as a byproduct of every invocation of these
+  tree that will compute statics as a byproduct of every invocation of these
   commands.  (The wrappers create a file ``<output-file>.timing`` for every
   generated object, library and executable ``<output-file>`` file.)
 
