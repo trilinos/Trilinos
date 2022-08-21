@@ -427,7 +427,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
     // If taking averages in overlap region, we need to compute
     // the number of procs who have a copy of each overlap dof
-    Teuchos::ArrayRCP<double>  dataNumOverlapCopies;
+    Teuchos::ArrayRCP<scalar_type>  dataNumOverlapCopies;
     if (IsOverlapping_ && AvgOverlap_) {
       if (num_overlap_copies_.get()  == nullptr) {
         num_overlap_copies_.reset (new MV (Y.getMap (), 1, false));
@@ -566,7 +566,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
         // average solution in overlap regions if requested via "schwarz: combine mode" "AVG"
         if (AvgOverlap_) {
-          Teuchos::ArrayRCP<double>  dataC = C->getDataNonConst(0);
+          Teuchos::ArrayRCP<scalar_type>  dataC = C->getDataNonConst(0);
           for (int i = 0; i < (int) C->getMap()->getLocalNumElements(); i++) {
             dataC[i] = dataC[i]/dataNumOverlapCopies[i];
           }
