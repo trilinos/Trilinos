@@ -1,0 +1,50 @@
+<!-- Running
+         mpirun -np 4 MueLu_Driver.exe __linAlgebra=Tpetra __xml=blkSmooEquivOlapSchwarz.xml __belosType=\"Fixed\ Point\" __rowmap=GblkMap.dat __matrix=GblkAmat.dat __rhs=GblkRhs.dat __tol=.1 __userBlks=regularOverLap.dat
+ and     mpirun -np 4 MueLu_Driver.exe __linAlgebra=Tpetra __xml=oLapSchwarzEquivBlkSmoo.xml __belosType=\"Fixed\ Point\" __rowmap=GblkMap.dat __matrix=GblkAmat.dat __rhs=GblkRhs.dat __tol=.1
+
+    should give identical convergence histories as both do overlapping block Jacobi with the same blocks. Here, __ should be replaced by double-hyphen (double-hyphen not allowed in xml comments).
+-->
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <Parameter        name="max levels"                           type="int"      value="1"/>
+  <Parameter        name="coarse: max size"                     type="int"      value="1"/>
+
+  <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <Parameter name="coarse: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="coarse: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="ADD"/>
+    <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
+    <ParameterList name="schwarz: reordering list">
+      <Parameter name="order_method"                    type="string"  value="rcm"/>
+    </ParameterList>
+
+    <Parameter name="subdomain solver name"             type="string" value="BLOCK_RELAXATION"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name= "relaxation: type"                type="string" value="Jacobi"/>
+      <Parameter name= "relaxation: sweeps"                type="int" value="1"/>
+      <Parameter name= "relaxation: zero starting solution"                type="bool" value="false"/>
+      <Parameter name= "partitioner: type"                type="string" value="user"/>
+      <Parameter name= "partitioner: nonsymmetric overlap combine"  type="bool" value="true"/>
+      <Parameter name= "relaxation: damping factor"                type="double" value="1.0"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  REPARTITIONING  =========== -->
+  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan"/>
+  <Parameter        name="repartition: start level"             type="int"      value="2"/>
+  <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
+  <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+  <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+
+</ParameterList>

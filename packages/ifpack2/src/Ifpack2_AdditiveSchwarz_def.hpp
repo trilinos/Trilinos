@@ -425,6 +425,19 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (C_.get () == nullptr || C_->getNumVectors () != numVectors) {
       C_.reset (new MV (Y.getMap (), numVectors, false));
     }
+    // If taking averages in overlap region, we need to compute
+    // the number of procs who have a copy of each overlap dof
+    Teuchos::ArrayRCP<scalar_type>  dataNumOverlapCopies;
+    if (IsOverlapping_ && AvgOverlap_) {
+      if (num_overlap_copies_.get()  == nullptr) {
+        num_overlap_copies_.reset (new MV (Y.getMap (), 1, false));
+        RCP<MV> onesVec( new MV(OverlappingMatrix_->getRowMap(), 1, false) );
+        onesVec->putScalar(Teuchos::ScalarTraits<scalar_type>::one());
+        rcp_dynamic_cast<OverlappingRowMatrix<row_matrix_type>> (OverlappingMatrix_)->exportMultiVector (*onesVec, *(num_overlap_copies_.get ()), CombineMode_);
+      }
+      dataNumOverlapCopies = num_overlap_copies_.get ()->getDataNonConst(0);
+    }
+
     MV* R = R_.get ();
     MV* C = C_.get ();
 
@@ -550,6 +563,14 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
            << "OverlappingMatrix_ is null when it shouldn't be.  "
            "Please report this bug to the Ifpack2 developers.");
         OverlappingMatrix_->exportMultiVector (*OverlappingY, *C, CombineMode_);
+
+        // average solution in overlap regions if requested via "schwarz: combine mode" "AVG"
+        if (AvgOverlap_) {
+          Teuchos::ArrayRCP<scalar_type>  dataC = C->getDataNonConst(0);
+          for (int i = 0; i < (int) C->getMap()->getLocalNumElements(); i++) {
+            dataC[i] = dataC[i]/dataNumOverlapCopies[i];
+          }
+        }
       }
       else {
         // mfh 16 Apr 2014: Make a view of Y with the same Map as
@@ -785,7 +806,15 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
       using vs2e_type = StringToIntegralParameterEntryValidator<CombineMode>;
       RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
 
-      const ParameterEntry& inputEntry = plist->getEntry (cmParamName);
+      ParameterEntry& inputEntry = plist->getEntry (cmParamName);
+      // As AVG is only a Schwarz option and does not exist in Tpetra's
+      // version of CombineMode, we use a separate boolean local to
+      // Schwarz in conjunction with CombineMode_ == ADD to handle
+      // averaging. Here, we change input entry to ADD and set the boolean.
+      if (strncmp(Teuchos::getValue<std::string>(inputEntry).c_str(),"AVG",3) == 0) {
+        inputEntry.template setValue<std::string>("ADD");
+        AvgOverlap_ = true;
+      }
       CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
     }
   }
@@ -802,6 +831,7 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
               if (plist->sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") { 
                  if (CombineMode_ == Tpetra::ADD)  plist->sublist("subdomain solver parameters").set("partitioner: combine mode","ADD");
                  if (CombineMode_ == Tpetra::ZERO) plist->sublist("subdomain solver parameters").set("partitioner: combine mode","ZERO");
+                 AvgOverlap_ = false;     // averaging already taken care of by  the partitioner: nonsymmetric overlap combine option
               }
             }
           }   
