@@ -309,6 +309,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     crsmat = host_crsmat_t("CrsMatrix", nrows, values_view, static_graph);
   }
 
+  //
+  // ** First Solve **
+  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*X), Teuchos::ptrInArg(*B));
+
+
   // auxiliary scalar Kokkos views
   const int ldx = (this->root_ ? X->getGlobalLength() : 0);
   const int ldb = (this->root_ ? B->getGlobalLength() : 0);
@@ -335,10 +340,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
     do_get(not_initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
 
-
-  //
-  // first solve
-  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*X), Teuchos::ptrInArg(*B));
 
   host_magni_view x0norms("x0norms", nrhs);
   host_magni_view bnorms("bnorms", nrhs);
@@ -372,7 +373,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
 
 
   //
-  // iterative refinement
+  // ** Iterative Refinement **
   int numIters = 0;
   int converged = 0; // 0 = has not converged, 1 = converged
   for (numIters = 0; numIters < maxNumIters && converged == 0; ++numIters) {
@@ -409,14 +410,19 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     if (this->root_) {
       KokkosBlas::axpy(one, E_view, X_view);
 
-      // compute norm of corrections for "convergence" check
-      converged = 1;
-      for (size_t j = 0; j < nrhs; j++) { 
-        auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
-        host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
-        enorms(j) = KokkosBlas::nrm2(e_1d);
-        if (enorms(j) > eps * x0norms(j)) {
-          converged = 0;
+      if (numIters < maxNumIters-1) {
+        // compute norm of corrections for "convergence" check
+        converged = 1;
+        for (size_t j = 0; j < nrhs; j++) { 
+          auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
+          host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
+          enorms(j) = KokkosBlas::nrm2(e_1d);
+          if (enorms(j) > eps * x0norms(j)) {
+            converged = 0;
+          }
+        }
+        if (verbose && converged) {
+          std::cout << " converged " << std::endl;
         }
       }
     }
