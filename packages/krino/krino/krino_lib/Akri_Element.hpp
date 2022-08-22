@@ -174,6 +174,7 @@ public:
   int get_interface_index(const InterfaceID interface) const;
   const std::vector<InterfaceID> & get_sorted_cutting_interfaces() const { return myCuttingInterfaces; }
   virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) override;
+  void set_have_interface() { my_have_interface = true; }
 
   bool triangulate(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
   void create_cutter(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry);

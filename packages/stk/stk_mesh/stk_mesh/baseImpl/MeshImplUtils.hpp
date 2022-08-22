@@ -89,6 +89,10 @@ void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRa
     }
 }
 
+const EntityCommListInfo& find_entity(const BulkData& mesh,
+                                      const EntityCommListInfoVector& entities,
+                                      const EntityKey& key);
+
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
@@ -244,16 +248,17 @@ void comm_sync_aura_send_recv(
   EntityProcMapping& entityProcMapping,
   std::vector<bool>& ghostStatus );
 
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int share_proc,
-                             std::vector<EntityProc>& send);
+void comm_sync_nonowned_sends(
+  const BulkData & mesh ,
+  std::vector<EntityProc> & nonOwnedSendGhosts,
+  EntityProcMapping& entityProcMapping);
 
 void insert_upward_relations(const BulkData& bulk_data,
                              const EntityProcMapping& entitySharing,
-                             Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int share_proc,
+                             const Entity entity,
+                             const EntityRank entityRank,
+                             const EntityRank maxRank,
+                             const std::vector<int>& share_proc,
                              EntityProcMapping& send);
 
 void move_unowned_entities_for_owner_to_ghost(
@@ -318,7 +323,7 @@ bool is_good_rank_and_id(const MetaData& meta,
 
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
-                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);
+                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle);
 
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,

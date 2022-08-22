@@ -14,13 +14,16 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp> // for CommBuffer
 #include <stk_coupling/Constants.hpp>
+#include <stk_util/stk_config.h>
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace stk
 {
 namespace coupling
 {
 
-class OldSyncInfo
+
+class STK_DEPRECATED OldSyncInfo
 {
 public:
   OldSyncInfo()
@@ -136,5 +139,7 @@ inline bool OldSyncInfo::has_value<std::string>(const std::string & parameterNam
 
 } // namespace coupling
 } // namespace stk
+
+#endif  /* STK_HIDE_DEPRECATED_CODE */
 
 #endif /* STK_COUPLING_OLDSYNCINFO_HPP */

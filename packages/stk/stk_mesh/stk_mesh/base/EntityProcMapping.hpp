@@ -79,11 +79,23 @@ bool is_valid(Entity entity)
 
 class EntityProcMapping {
 public:
-  EntityProcMapping(unsigned sizeOfEntityIndexSpace)
+  EntityProcMapping(unsigned sizeOfEntityIndexSpace = 1024)
   : entityOffsets(sizeOfEntityIndexSpace, -1),
     entitiesAndProcs()
   {}
 
+  void reset(unsigned sizeOfEntityIndexSpace)
+  {
+    for(int& n : entityOffsets) {
+      if (n != -1) {
+        n = -1;
+      }
+    }
+//    std::fill(entityOffsets.begin(), entityOffsets.end(), -1);
+    entityOffsets.resize(sizeOfEntityIndexSpace, -1);
+    entitiesAndProcs.clear();
+  }
+ 
   void addEntityProc(Entity entity, int proc)
   {
     int offset = entityOffsets[entity.local_offset()];
@@ -178,38 +190,35 @@ public:
     return 0;
   }
 
-  template<typename SetType>
-  void fill_set(SetType& entityProcSet)
+  template<class Alg>
+  void visit_entity_procs(const Alg& alg)
   {
-    entityProcSet.clear();
     for(const EntityAndProcs& entProcs : entitiesAndProcs) {
       if (is_valid(entProcs.entity) && entProcs.proc >= 0) {
-        entityProcSet.insert(EntityProc(entProcs.entity, entProcs.proc));
+        alg(entProcs.entity, entProcs.proc);
       }
       else if (is_valid(entProcs.entity)) {
         for(int p : entProcs.procs) {
-          entityProcSet.insert(EntityProc(entProcs.entity, p));
+          alg(entProcs.entity, p);
         }
       }
     }
   }
 
+  template<typename SetType>
+  void fill_set(SetType& entityProcSet)
+  {
+    entityProcSet.clear();
+    visit_entity_procs([&entityProcSet](Entity ent, int proc){entityProcSet.insert(EntityProc(ent,proc));});
+  }
+
   template<typename VecType>
   void fill_vec(VecType& entityProcVec)
   {
-    entityProcVec.clear();
     size_t lengthEstimate = static_cast<size_t>(std::floor(1.2*entitiesAndProcs.size()));
     entityProcVec.reserve(lengthEstimate);
-    for(const EntityAndProcs& entProcs : entitiesAndProcs) {
-      if (is_valid(entProcs.entity) && entProcs.proc >= 0) {
-        entityProcVec.emplace_back(EntityProc(entProcs.entity, entProcs.proc));
-      }
-      else if (is_valid(entProcs.entity)) {
-        for(int p : entProcs.procs) {
-          entityProcVec.emplace_back(EntityProc(entProcs.entity, p));
-        }
-      }
-    }
+    entityProcVec.clear();
+    visit_entity_procs([&entityProcVec](Entity ent, int proc){entityProcVec.push_back(EntityProc(ent,proc));});
   }
 
 private:

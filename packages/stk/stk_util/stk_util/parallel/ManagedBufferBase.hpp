@@ -121,8 +121,7 @@ class ManagedCommBufferBase
     explicit ManagedCommBufferBase(MPI_Comm comm) :
     m_comm(comm)
     {
-      int commSize;
-      MPI_Comm_size(comm, &commSize);
+      int commSize = parallel_machine_size(comm);
       m_sendBufs.resize(commSize);
       m_sendBufStorage.resize(commSize);
       m_recvBufs.resize(commSize);
@@ -138,6 +137,11 @@ class ManagedCommBufferBase
       if (m_sendsInProgress)
         throw std::runtime_error("cannot access send buffers while sends are in progress (did you forget to complete the sends?)");
 
+      return m_sendBufs[rank];
+    }
+
+    const stk::CommBuffer& get_send_buf(int rank) const
+    { 
       return m_sendBufs[rank];
     }
 

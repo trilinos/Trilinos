@@ -9,6 +9,7 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/Version.hpp>
 #include <stk_util/parallel/CouplingVersions.hpp>
+#include <stk_util/parallel/CouplingVersions_impl.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include <iostream>
@@ -53,6 +54,9 @@ public:
     }
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+    int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    stk::util::impl::set_coupling_version(coupling_version_override);
+    stk::util::impl::set_error_on_reset(false);
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     MPI_Comm splitComm = m_splitComms.get_split_comm();

@@ -19,13 +19,13 @@ class GeometricBalanceSettingsTester : public stk::balance::GraphCreationSetting
 {
 public:
   GeometricBalanceSettingsTester(const std::string& decompMethod)
-    : method(decompMethod) { }
+    : m_method(decompMethod) { }
   virtual ~GeometricBalanceSettingsTester() = default;
 
-  virtual std::string getDecompMethod() const { return method; }
+  virtual std::string getDecompMethod() const { return m_method; }
 
 private:
-  const std::string& method;
+  const std::string& m_method;
 };
 
 class ZoltanGeometricMethods : public stk::unit_test_util::simple_fields::MeshFixture

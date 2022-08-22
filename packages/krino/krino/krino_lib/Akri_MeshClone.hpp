@@ -54,7 +54,7 @@ private:
   static stk::mesh::Entity get_entity_on_other_mesh(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const stk::mesh::BulkData & other_mesh);
 
   stk::mesh::BulkData* my_orig_mesh;
-  std::unique_ptr<stk::mesh::MetaData> my_meta;
+  std::shared_ptr<stk::mesh::MetaData> my_meta;
   std::unique_ptr<stk::mesh::BulkData> my_mesh;
 
   mutable stk::diag::Timer my_timer;

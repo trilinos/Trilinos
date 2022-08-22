@@ -45,7 +45,6 @@ namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 namespace stk { namespace mesh { struct Entity; } }
 
@@ -58,7 +57,6 @@ using stk::mesh::EntityKey;
 using stk::mesh::Entity;
 using stk::mesh::Bucket;
 using stk::mesh::impl::PartRepository;
-using stk::mesh::impl::EntityRepository;
 
 namespace {
 

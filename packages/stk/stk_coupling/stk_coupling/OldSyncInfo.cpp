@@ -11,6 +11,8 @@
 #include <stk_coupling/OldCommSplitting.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // remove October 2022
+
 namespace stk
 {
 namespace coupling
@@ -97,3 +99,4 @@ OldSyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
 
 }
 }
+#endif

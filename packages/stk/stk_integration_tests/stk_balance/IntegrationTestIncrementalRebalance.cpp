@@ -41,7 +41,7 @@ public:
       m_defaultWeight(defaultWeight),
       m_incrementalRebalance(incrementalRebalance)
   {
-    method = "parmetis";
+    m_method = "parmetis";
   }
   virtual ~FieldVertexWeightSettingsWithSearchForParticles() = default;
 
@@ -56,8 +56,8 @@ public:
   virtual double getToleranceForFaceSearch() const { return 0.005; }
   virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
   virtual double getImbalanceTolerance() const { return 1.05; }
-  virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-  virtual std::string getDecompMethod() const { return method; }
+  virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
+  virtual std::string getDecompMethod() const { return m_method; }
   virtual bool incrementalRebalance() const { return m_incrementalRebalance; }
 
   virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const

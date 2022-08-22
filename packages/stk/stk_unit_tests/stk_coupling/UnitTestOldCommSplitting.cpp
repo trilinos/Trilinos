@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <vector>
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // delete October 2022
 namespace {
 
 TEST(UnitTestSplitComm, has_split_comm_false_when_same)
@@ -141,3 +142,5 @@ TEST(UnitTestSplitComm, calc_my_root_and_other_root_ranks_non_contig_comm)
 }
 
 }
+
+#endif

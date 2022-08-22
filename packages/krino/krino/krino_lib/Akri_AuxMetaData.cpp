@@ -297,15 +297,15 @@ AuxMetaData::declare_field(
   stk::mesh::FieldBase * field = NULL;
   const std::type_info & value_type = field_type.type_info();
   if (value_type == typeid(int))
-    field = &my_meta.declare_field< stk::mesh::Field<int, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<int>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(double))
-    field = &my_meta.declare_field< stk::mesh::Field<double, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<double>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(unsigned))
-    field = &my_meta.declare_field< stk::mesh::Field<unsigned, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<unsigned>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(int64_t))
-    field = &my_meta.declare_field< stk::mesh::Field<int64_t, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<int64_t>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(uint64_t))
-    field = &my_meta.declare_field< stk::mesh::Field<uint64_t, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<uint64_t>(entity_rank, fld_name, num_states);
   else {
     ThrowRequireMsg(false, "Unhandled primitive type " << value_type.name());
   }
@@ -332,22 +332,23 @@ AuxMetaData::register_field(
     return FieldRef(fmwk_register_field(fld_name, field_type.name(), field_type.type_info(), field_type.dimension(), entity_rank, num_states, dimension, part, value_type_init));
   }
 
-  const unsigned field_length = field_type.dimension()*dimension;
   if (field_type.name() == FieldType::VECTOR_2D.name())
   {
-    auto & field = my_meta.declare_field< stk::mesh::Field<double, stk::mesh::Cartesian2d> >(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_length, nullptr);
+    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
+    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
+    stk::io::set_field_output_type(field, "Vector_2D");
     return FieldRef(field);
   }
   else if (field_type.name() == FieldType::VECTOR_3D.name())
   {
-    auto & field = my_meta.declare_field< stk::mesh::Field<double, stk::mesh::Cartesian3d> >(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_length, nullptr);
+    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
+    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
+    stk::io::set_field_output_type(field, "Vector_3D");
     return FieldRef(field);
   }
 
   FieldRef field = declare_field(fld_name, field_type, entity_rank, num_states);
-  stk::mesh::put_field_on_mesh(field.field(), part, field_length, value_type_init);
+  stk::mesh::put_field_on_mesh(field.field(), part, field_type.dimension(), dimension, value_type_init);
   return field;
 }
 

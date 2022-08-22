@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_mesh_baseImpl_EntityRepository_hpp
-#define stk_mesh_baseImpl_EntityRepository_hpp
+#ifndef stk_mesh_baseImpl_EntityKeyMapping_hpp
+#define stk_mesh_baseImpl_EntityKeyMapping_hpp
 
 #include <stddef.h>                     // for size_t
 #include <map>                          // for map, map<>::value_compare
@@ -47,7 +47,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-class EntityRepository {
+class EntityKeyMapping {
 
 public:
 
@@ -56,9 +56,9 @@ public:
     typedef EntityKeyEntityVector::const_iterator const_iterator;
     typedef EntityKeyEntityVector::iterator iterator;
 
-    EntityRepository();
+    EntityKeyMapping();
 
-    ~EntityRepository();
+    ~EntityKeyMapping();
 
     Entity get_entity( const EntityKey &key ) const;
 
@@ -112,8 +112,8 @@ public:
     mutable unsigned m_maxUpdateCacheSize;
 
     //disable copy constructor and assignment operator
-    EntityRepository(const EntityRepository &);
-    EntityRepository & operator =(const EntityRepository &);
+    EntityKeyMapping(const EntityKeyMapping &);
+    EntityKeyMapping & operator =(const EntityKeyMapping &);
 };
 
 } // namespace impl
@@ -121,5 +121,5 @@ public:
 } // namespace mesh
 } // namespace stk
 
-#endif // stk_mesh_baseImpl_EntityRepository_hpp
+#endif // stk_mesh_baseImpl_EntityKeyMapping_hpp
 

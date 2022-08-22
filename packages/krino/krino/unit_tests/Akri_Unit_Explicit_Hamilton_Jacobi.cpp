@@ -46,18 +46,18 @@ stk::mesh::BulkData & read_mesh(stk::io::StkMeshIoBroker & stkIo)
 
 void declare_fields(stk::mesh::MetaData & meta, ProblemFields & fields)
 {
-  fields.levelSetField = &meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "LevelSet", 2);
+  fields.levelSetField = &meta.declare_field<double>(stk::topology::NODE_RANK, "LevelSet", 2);
   stk::mesh::put_field_on_mesh(*fields.levelSetField, meta.universal_part(), nullptr);
-  fields.RHS = &meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "RHS", 1);
+  fields.RHS = &meta.declare_field<double>(stk::topology::NODE_RANK, "RHS", 1);
   stk::mesh::put_field_on_mesh(*fields.RHS, meta.universal_part(), nullptr);
-  fields.RHSNorm = &meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "RHSNorm", 1);
+  fields.RHSNorm = &meta.declare_field<double>(stk::topology::NODE_RANK, "RHSNorm", 1);
   stk::mesh::put_field_on_mesh(*fields.RHSNorm, meta.universal_part(), nullptr);
   auto constCoordsField = static_cast<const stk::mesh::Field<double>*>(meta.coordinate_field());
   fields.coordsField = const_cast<stk::mesh::Field<double>*>(constCoordsField);
 
   if (true)
   {
-    fields.speedField = &meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "Speed", 1);
+    fields.speedField = &meta.declare_field<double>(stk::topology::ELEMENT_RANK, "Speed", 1);
     stk::mesh::put_field_on_mesh(*fields.speedField, meta.universal_part(), nullptr);
   }
 }

@@ -291,7 +291,12 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
     stk::mesh::field_copy(my_cdfem_support.get_coords_field(), cdfemSnapField);
 
   const stk::mesh::Selector parentElementSelector = get_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
-  nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(stk_bulk(), parentElementSelector, snapFields, interfaceGeometry, my_cdfem_support.get_global_ids_are_parallel_consistent());
+  nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(stk_bulk(),
+      parentElementSelector,
+      snapFields,
+      interfaceGeometry,
+      my_cdfem_support.get_global_ids_are_parallel_consistent(),
+      my_cdfem_support.get_snapping_sharp_feature_angle_in_degrees());
 
   if (cdfemSnapField.valid())
     stk::mesh::field_axpby(+1.0, my_cdfem_support.get_coords_field(), -1.0, cdfemSnapField);
@@ -384,6 +389,13 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 
   const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
   return status;
+}
+
+static void rebuild_mesh_sidesets(stk::mesh::BulkData & mesh)
+{
+  for (auto && part : mesh.mesh_meta_data().get_parts())
+    if (part->primary_entity_rank() == mesh.mesh_meta_data().side_rank())
+      stk::mesh::reconstruct_sideset(mesh, *part);
 }
 
 bool
@@ -631,10 +643,16 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
 
   // rebuild conformal side parts
   the_new_mesh->stk_bulk().modification_begin();
+  update_node_activation(the_new_mesh->stk_bulk(), the_new_mesh->aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
   the_new_mesh->update_element_side_parts();
   the_new_mesh->stk_bulk().modification_end();
 
   delete_extraneous_inactive_sides(mesh, the_new_mesh->get_parent_part(), the_new_mesh->get_active_part());
+
+  rebuild_mesh_sidesets(mesh);
+
+  ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
+  ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
 }
 
 static bool is_child_elem(const stk::mesh::BulkData & mesh, const stk::mesh::Part & childEdgeNodePart, stk::mesh::Entity elem)
@@ -735,6 +753,19 @@ CDMesh::find_or_build_subelement_edge_node(const stk::mesh::Entity node, const M
   return build_subelement_edge_node(node, ownerMeshElem, idToSubElementNode);
 }
 
+void
+CDMesh::find_or_build_midside_nodes(const stk::topology & elemTopo, const Mesh_Element & ownerMeshElem, const stk::mesh::Entity * elemNodes, const NodeVec & subelemNodes )
+{
+  if (elemTopo.num_nodes() > elemTopo.base().num_nodes())
+  {
+    for (unsigned iEdge=0; iEdge<elemTopo.num_edges(); ++iEdge)
+    {
+      const unsigned * edgeLNN = get_edge_node_ordinals(elemTopo, iEdge);
+      create_midside_node(&ownerMeshElem, subelemNodes[edgeLNN[0]], subelemNodes[edgeLNN[1]], elemNodes[edgeLNN[2]]);
+    }
+  }
+}
+
 const SubElementNode *
 CDMesh::build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode )
 {
@@ -747,8 +778,7 @@ CDMesh::build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Elem
 
   const double position = compute_child_position(mesh, node, immediateParent0->entity(), immediateParent1->entity());
 
-  std::unique_ptr<SubElementEdgeNode> newNode = std::make_unique<SubElementEdgeNode>(&ownerMeshElem, position, immediateParent0, immediateParent1);
-  SubElementNode * edgeNode = add_managed_node(std::move(newNode));
+  const SubElementNode * edgeNode = create_edge_node(&ownerMeshElem, immediateParent0, immediateParent1, position);
   edgeNode->set_entity(stk_bulk(), node);
 
   idToSubElementNode[mesh.identifier(node)] = edgeNode;
@@ -771,8 +801,8 @@ CDMesh::restore_subelements()
   for(const auto & b_ptr : buckets)
   {
     const stk::topology & topo = b_ptr->topology();
-    const unsigned num_nodes = topo.num_nodes();
-    subelem_nodes.reserve(num_nodes);
+    const unsigned num_base_nodes = topo.base().num_nodes();
+    subelem_nodes.reserve(num_base_nodes);
     for(const auto & elem : *b_ptr)
     {
       const stk::mesh::Entity parent = get_parent_element(elem);
@@ -784,28 +814,52 @@ CDMesh::restore_subelements()
       subelem_nodes.clear();
       // TODO: May need to create subelement edge nodes somehow
       const auto * elem_nodes = mesh.begin_nodes(elem);
-      ThrowAssert(mesh.num_nodes(elem) == num_nodes);
-      for(unsigned i=0; i < num_nodes; ++i)
+      for(unsigned i=0; i < num_base_nodes; ++i)
       {
         const SubElementNode * node = find_or_build_subelement_edge_node(elem_nodes[i], *parentMeshElem, idToSubElementNode);
         subelem_nodes.push_back(node);
       }
+      find_or_build_midside_nodes(topo, *parentMeshElem, elem_nodes, subelem_nodes);
 
       std::unique_ptr<SubElement> subelem;
       switch(topo)
       {
       case stk::topology::TRIANGLE_3_2D:
+      case stk::topology::TRIANGLE_6_2D:
         subelem = std::make_unique<SubElement_Tri_3>(subelem_nodes, std::vector<int>{-1, -1, -1}, parentMeshElem);
         break;
       case stk::topology::TETRAHEDRON_4:
+      case stk::topology::TETRAHEDRON_10:
         subelem = std::make_unique<SubElement_Tet_4>(subelem_nodes, std::vector<int>{-1, -1, -1, -1}, parentMeshElem);
         break;
       default:
-        ThrowRuntimeError("At present only Tri3 and Tet4 topologies are supported for restart of CDFEM problems.");
+        ThrowRuntimeError("At present only Tri3, Tri6, Tet4 and Tet10 topologies are supported for restart of CDFEM problems.");
       }
-      ThrowAssert(subelem);
-      subelem->set_entity(stk_bulk(), elem);
+
+      if (topo == stk::topology::TRIANGLE_6_2D || topo == stk::topology::TETRAHEDRON_10)
+      {
+        subelem->build_quadratic_subelements(*this);
+        std::vector<SubElement *> highOrderSubElems;
+        subelem->get_subelements( highOrderSubElems );
+        ThrowRequire(highOrderSubElems.size() == 1);
+        highOrderSubElems[0]->set_entity(stk_bulk(), elem);
+      }
+      else
+      {
+        subelem->set_entity(stk_bulk(), elem);
+      }
+
       const_cast<Mesh_Element *>(parentMeshElem)->add_subelement(std::move(subelem));
+    }
+  }
+
+  std::vector<SubElement *> subelems;
+  for (auto && element : elements)
+  {
+    element->get_subelements( subelems );
+    if (subelems.size() > 1)
+    {
+      element->set_have_interface();
     }
   }
 }
@@ -1049,6 +1103,8 @@ CDMesh::stash_nodal_field_data(const CDMesh & new_mesh) const
       for(auto&& node_part_ptr : node_parts)
       {
         // This is designed to catch side with block_2 + block_1_air, block_1_air + block_1_solid, etc.
+        // These are included so that we can prolongate a node on the block_1_air + block_1_solid + block_2
+        // from a node on that same part ownership.  (This is needed in cases where block_2 has other vars).
         if (node_part_ptr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
             !my_phase_support.is_nonconformal(node_part_ptr) &&
             stk::io::is_part_io_part(*node_part_ptr))
@@ -1083,9 +1139,12 @@ CDMesh::stash_nodal_field_data(const CDMesh & new_mesh) const
       const stk::mesh::PartVector & side_parts = bucket_ptr->supersets();
       for(auto&& side_part_ptr : side_parts)
       {
-        // This is designed to catch side with block_2 + block_1_air, block_1_air + block_1_solid, etc.
+        // This is designed to catch sides like block_1_air + block_1_solid, etc and not block_2 + block_1_air.
+        // If we include the nondecomposed blocks like block_2, this could result in prolongation of a node
+        // on the interface (block_1_air + block_1_solid) from a node on the boundary of the undecomposed block
+        // (block_1_air + block_2).
         if (side_part_ptr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
-            !my_phase_support.is_nonconformal(side_part_ptr) &&
+            my_phase_support.is_conformal(side_part_ptr) &&
             stk::io::is_part_io_part(*side_part_ptr))
         {
           ++num_conformal_parts;
@@ -1344,6 +1403,7 @@ CDMesh::find_prolongation_node(const SubElementNode & dst_node) const
         krinolog << node->entityId() << " ";
       }
       krinolog << stk::diag::dendl;
+      krinolog << "  with required fields " << print_fields(stk_meta(), required_fields) << stk::diag::dendl;
     }
   }
 
@@ -1356,6 +1416,7 @@ CDMesh::find_prolongation_node(const SubElementNode & dst_node) const
       return nullptr;
     }
     // Search for facet failed.  Now try nodes.  This will handle triple points.  Something better that handles an actual edge search might be better in 3d.
+    if (krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Prolongation facet search failed for " << dst_node.entityId() << " with required fields " << print_fields(stk_meta(), required_fields) << stk::diag::dendl;
     const ProlongationNodeData * closest_node = nullptr;
     double closest_dist2 = std::numeric_limits<double>::max();
     for (auto && entry : my_prolong_node_map)
@@ -2941,17 +3002,92 @@ CDMesh::get_parent_nodes_and_weights(stk::mesh::Entity child, stk::mesh::Entity 
 
 //--------------------------------------------------------------------------------
 
-std::function<double(stk::mesh::Entity)> build_get_element_volume_function(const CDMesh & cdmesh)
+std::function<double(stk::mesh::Entity)> build_get_local_length_scale_for_side_function(const CDMesh & cdmesh)
 {
-  auto get_element_size =
-      [&cdmesh](stk::mesh::Entity elem)
+  const stk::mesh::Selector elementSelector = selectUnion(cdmesh.get_phase_support().get_conformal_parts()) & cdmesh.get_active_part() & cdmesh.get_locally_owned_part();
+
+  auto get_length_scale_for_side =
+      [&cdmesh,elementSelector](stk::mesh::Entity side)
       {
-        stk::mesh::Entity volumeElement = cdmesh.get_cdfem_support().use_nonconformal_element_size() ? cdmesh.get_parent_element(elem) : elem;
-        ThrowRequire(cdmesh.stk_bulk().is_valid(volumeElement));
-        const double elemVolume = ElementObj::volume( cdmesh.stk_bulk(), volumeElement, cdmesh.get_coords_field() );
-        return elemVolume;
+        const stk::mesh::BulkData & mesh = cdmesh.stk_bulk();
+        double minElemVolume = 0.;
+        for (auto elem : StkMeshEntities{mesh.begin_elements(side), mesh.end_elements(side)})
+        {
+          if (elementSelector(mesh.bucket(elem)))
+          {
+            stk::mesh::Entity volumeElement = cdmesh.get_cdfem_support().use_nonconformal_element_size() ? cdmesh.get_parent_element(elem) : elem;
+            ThrowRequire(cdmesh.stk_bulk().is_valid(volumeElement));
+            const double elemVol = ElementObj::volume( mesh, volumeElement, cdmesh.get_coords_field() );
+            if (minElemVolume == 0. || elemVol < minElemVolume)
+              minElemVolume = elemVol;
+          }
+        }
+        double lengthScale = 0.;
+        if (minElemVolume > 0.)
+        {
+          const double invDim = 1.0 / mesh.mesh_meta_data().spatial_dimension();
+          lengthScale = std::pow(minElemVolume, invDim);
+        }
+
+        return lengthScale;
       };
-  return get_element_size;
+  return get_length_scale_for_side;
+}
+
+std::function<double(stk::mesh::Entity)> build_get_constant_length_scale_for_side_function(const double lengthScale)
+{
+  auto get_length_scale_for_side =
+      [lengthScale](stk::mesh::Entity side)
+      {
+        return lengthScale;
+      };
+  return get_length_scale_for_side;
+}
+
+std::vector<stk::mesh::Entity> get_unique_owned_volume_elements_using_sides(const CDMesh & cdmesh, const stk::mesh::Selector & interfaceSideSelector)
+{
+  // Not exactly cheap
+  const stk::mesh::BulkData & mesh = cdmesh.stk_bulk();
+  const stk::mesh::Selector elementSelector = selectUnion(cdmesh.get_phase_support().get_conformal_parts()) & cdmesh.get_active_part() & cdmesh.get_locally_owned_part();
+
+  std::vector<stk::mesh::Entity> volumeElements;
+  for( auto&& bucket : mesh.get_buckets(mesh.mesh_meta_data().side_rank(), interfaceSideSelector) )
+  {
+    for (auto && side : *bucket)
+    {
+      for (auto elem : StkMeshEntities{mesh.begin_elements(side), mesh.end_elements(side)})
+      {
+        if (elementSelector(mesh.bucket(elem)))
+        {
+          stk::mesh::Entity volumeElement = cdmesh.get_cdfem_support().use_nonconformal_element_size() ? cdmesh.get_parent_element(elem) : elem;
+          volumeElements.push_back(volumeElement);
+        }
+      }
+    }
+  }
+  stk::util::sort_and_unique(volumeElements);
+  return volumeElements;
+}
+
+double compute_L1_norm_of_side_length_scales(const CDMesh & cdmesh, const stk::mesh::Selector & interfaceSideSelector)
+{
+  const std::vector<stk::mesh::Entity> elementsInNorm = get_unique_owned_volume_elements_using_sides(cdmesh, interfaceSideSelector);
+
+  const double invDim = 1.0 / cdmesh.spatial_dim();
+
+  double sumLengths = 0.;
+  for (auto elem : elementsInNorm)
+  {
+    const double elemVolume = ElementObj::volume( cdmesh.stk_bulk(), elem, cdmesh.get_coords_field() );
+    sumLengths += std::pow(elemVolume, invDim);
+  }
+
+  const double sumCount = elementsInNorm.size();
+
+  const std::array<double,2> localSum{sumLengths, sumCount};
+  std::array<double,2> globalSum;
+  stk::all_reduce_sum(cdmesh.stk_bulk().parallel(), localSum.data(), globalSum.data(), localSum.size());
+  return globalSum[0]/globalSum[1];
 }
 
 Vector3d get_side_average_of_vector(const stk::mesh::BulkData& mesh,
@@ -2998,59 +3134,19 @@ std::function<Vector3d(stk::mesh::Entity)> build_get_side_displacement_from_velo
   return get_element_size;
 }
 
-Vector3d get_side_normal(const stk::mesh::BulkData& mesh,
-    const FieldRef coordsField,
-    stk::mesh::Entity side)
-{
-  const auto * sideNodes = mesh.begin_nodes(side);
-  const stk::topology sideTopology = mesh.bucket(side).topology();
-  if (sideTopology == stk::topology::TRIANGLE_3 || sideTopology == stk::topology::TRIANGLE_6)
-  {
-    const Vector3d v0(field_data<double>(coordsField, sideNodes[0]));
-    const Vector3d v1(field_data<double>(coordsField, sideNodes[1]));
-    const Vector3d v2(field_data<double>(coordsField, sideNodes[2]));
-    return Cross(v1-v0,v2-v0).unit_vector();
-  }
-  else if (sideTopology == stk::topology::LINE_2 || sideTopology == stk::topology::LINE_3)
-  {
-    const Vector3d v0(field_data<double>(coordsField, sideNodes[0]), 2);
-    const Vector3d v1(field_data<double>(coordsField, sideNodes[1]), 2);
-    return crossZ(v1-v0).unit_vector();
-  }
-  ThrowRequireMsg(false, "Unsupported topology " << sideTopology);
-
-  return Vector3d::ZERO;
-}
-
 double get_side_cdfem_cfl(const stk::mesh::BulkData& mesh,
     const FieldRef coordsField,
-    const stk::mesh::Selector & elementSelector,
     const std::function<Vector3d(stk::mesh::Entity)> & get_side_displacement,
-    const std::function<double(stk::mesh::Entity)> & get_element_volume,
+    const std::function<double(stk::mesh::Entity)> & get_length_scale_for_side,
     stk::mesh::Entity side)
 {
   const Vector3d sideCDFEMDisplacement = get_side_displacement(side);
   const Vector3d sideNormal = get_side_normal(mesh, coordsField, side);
   const double sideNormalDisplacement = Dot(sideCDFEMDisplacement, sideNormal);
 
-  double minElemVolume = 0.;
-  for (auto elem : StkMeshEntities{mesh.begin_elements(side), mesh.end_elements(side)})
-  {
-    if (elementSelector(mesh.bucket(elem)))
-    {
-      const double elemVol = get_element_volume(elem);
-      if (minElemVolume == 0. || elemVol < minElemVolume)
-        minElemVolume = elemVol;
-    }
-  }
-  double sideCFL = 0.;
-  if (minElemVolume > 0.)
-  {
-    const double invDim = 1.0 / mesh.mesh_meta_data().spatial_dimension();
-    const double lengthScale = std::pow(minElemVolume, invDim);
-    sideCFL = sideNormalDisplacement / lengthScale;
-  }
-  return sideCFL;
+  const double sideLengthScale = get_length_scale_for_side(side);
+
+  return (sideLengthScale == 0.) ? 0. : sideNormalDisplacement/sideLengthScale;
 }
 
 double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)> & get_side_displacement) const
@@ -3058,16 +3154,30 @@ double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)
   stk::diag::TimeBlock timer__(my_timer_compute_CFL);
 
   const stk::mesh::Selector interfaceSideSelector = my_phase_support.get_all_conformal_surfaces_selector();
-  const stk::mesh::Selector elementSelector = selectUnion(my_phase_support.get_conformal_parts()) & get_active_part() & get_locally_owned_part();
 
-  auto get_element_volume = build_get_element_volume_function(*this);
+  std::function<double(stk::mesh::Entity)> get_length_scale_for_side;
+  if (my_cdfem_support.get_length_scale_type_for_interface_CFL() == CONSTANT_LENGTH_SCALE)
+  {
+    get_length_scale_for_side = build_get_constant_length_scale_for_side_function(my_cdfem_support.get_constant_length_scale_for_interface_CFL());
+  }
+  else if (my_cdfem_support.get_length_scale_type_for_interface_CFL() == LOCAL_LENGTH_SCALE)
+  {
+    get_length_scale_for_side = build_get_local_length_scale_for_side_function(*this);
+  }
+  else
+  {
+    ThrowRequire(my_cdfem_support.get_length_scale_type_for_interface_CFL() == L1_NORM_LENGTH_SCALE);
+    const double lengthScaleNorm = compute_L1_norm_of_side_length_scales(*this, interfaceSideSelector);
+    krinolog << "Using L1 Norm length scale " << lengthScaleNorm << " to compute Interface CFL." << stk::diag::dendl;
+    get_length_scale_for_side = build_get_constant_length_scale_for_side_function(lengthScaleNorm);
+  }
 
   double cfl = 0.;
   for( auto&& bucket : stk_bulk().get_buckets(stk_bulk().mesh_meta_data().side_rank(), interfaceSideSelector) )
   {
     for (auto && side : *bucket)
     {
-      const double sideCFL = get_side_cdfem_cfl(stk_bulk(), get_coords_field(), elementSelector, get_side_displacement, get_element_volume, side);
+      const double sideCFL = get_side_cdfem_cfl(stk_bulk(), get_coords_field(), get_side_displacement, get_length_scale_for_side, side);
       if (sideCFL > 0.)
         cfl = std::max(cfl, sideCFL);
     }
@@ -3242,7 +3352,9 @@ CDMesh::create_element_and_side_entities(std::vector<SideRequest> & side_request
     {
       std::vector<const SubElement *> conformal_subelems;
       elem->get_subelements(conformal_subelems);
-      num_local_subelems += conformal_subelems.size();
+      for (auto && subelem : conformal_subelems)
+        if (0 == subelem->entityId())
+          ++num_local_subelems;
     }
   }
 

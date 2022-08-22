@@ -40,34 +40,37 @@ static stk::mesh::Part * get_nonconformal_part(const Phase_Support & phaseSuppor
   return const_cast<stk::mesh::Part *>(phaseSupport.find_nonconformal_part(*part));
 }
 
-static bool is_part_to_check(const Phase_Support & phaseSupport, const AuxMetaData & auxMeta, const stk::mesh::Part & part)
+bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupport, const AuxMetaData & auxMeta, const stk::mesh::EntityRank targetRank, const stk::mesh::Part & part)
 {
   const stk::mesh::Part & exposedBoundaryPart = auxMeta.exposed_boundary_part();
-  return part.primary_entity_rank() != stk::topology::INVALID_RANK &&
-    (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part)) &&
+  return part.primary_entity_rank() == targetRank &&
+    (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part) || phaseSupport.is_nonconformal(&part)) &&
     part.name().compare(0,7,"refine_") != 0 &&
     !phaseSupport.is_interface(&part);
 }
 
-static stk::mesh::PartVector get_nonconformal_parts_to_check(const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::PartVector & inputParts)
+static stk::mesh::PartVector get_nonconformal_parts_to_check(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::EntityRank targetRank, const std::vector<stk::mesh::Entity> & targetEntities)
 {
   stk::mesh::PartVector partsToCheck;
-  partsToCheck.reserve(inputParts.size());
-  for (auto && part : inputParts)
-    if (is_part_to_check(phaseSupport, auxMeta, *part))
-      partsToCheck.push_back(get_nonconformal_part(phaseSupport, part));
+  for (auto && targetEntity : targetEntities)
+    for (auto && part : mesh.bucket(targetEntity).supersets())
+      if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, targetRank, *part))
+        partsToCheck.push_back(get_nonconformal_part(phaseSupport, part));
   stk::util::sort_and_unique(partsToCheck, stk::mesh::PartLess());
   return partsToCheck;
 }
 
 bool
-parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, stk::mesh::Entity possibleSnapNode, stk::mesh::Entity fixedNode)
+parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData & mesh,
+    const AuxMetaData & auxMeta,
+    const Phase_Support & phaseSupport,
+    const stk::mesh::Entity possibleSnapNode,
+    const stk::mesh::EntityRank targetRank,
+    const stk::mesh::PartVector & nonconformalPartsToCheck)
 {
-  const stk::mesh::PartVector & possibleSnapNodeParts = mesh.bucket(possibleSnapNode).supersets();
-  const stk::mesh::PartVector nonconformalPartsToCheck = get_nonconformal_parts_to_check(auxMeta, phaseSupport, mesh.bucket(fixedNode).supersets());
-  for (auto && possibleSnapNodePart : possibleSnapNodeParts)
+  for (auto && possibleSnapNodePart : mesh.bucket(possibleSnapNode).supersets())
   {
-    if (is_part_to_check(phaseSupport, auxMeta, *possibleSnapNodePart))
+    if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, targetRank, *possibleSnapNodePart))
     {
       stk::mesh::Part * nonconformalPart = get_nonconformal_part(phaseSupport, possibleSnapNodePart);
       if (!stk::mesh::contain(nonconformalPartsToCheck, *nonconformalPart))
@@ -75,6 +78,40 @@ parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData 
     }
   }
   return true;
+}
+
+static stk::topology get_simplex_element_topology(const stk::mesh::BulkData & mesh)
+{
+  return ((mesh.mesh_meta_data().spatial_dimension() == 2) ? stk::topology::TRIANGLE_3_2D : stk::topology::TETRAHEDRON_4);
+}
+
+static void fill_topology_entities(const stk::mesh::BulkData & mesh, const stk::topology & topology, const std::vector<stk::mesh::Entity> & nodes, std::vector<stk::mesh::Entity> & topologyEntities)
+{
+  topologyEntities.clear();
+  if (nodes.size() <= topology.num_nodes())
+  {
+    stk::mesh::get_entities_through_relations(mesh, nodes, topology.rank(), topologyEntities);
+  }
+}
+
+std::vector<bool> which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const std::vector<stk::mesh::Entity> & intersectionPointNodes)
+{
+  std::vector<bool> areIntersectionPointsCompatibleForSnapping(intersectionPointNodes.size(),true);
+  std::vector<stk::mesh::Entity> topologyEntities;
+  stk::topology elemTopology = get_simplex_element_topology(mesh);
+  std::array<stk::topology,2> sideAndElementTopology{{elemTopology.side_topology(), elemTopology}};
+  for (stk::topology topo : sideAndElementTopology)
+  {
+    fill_topology_entities(mesh, topo, intersectionPointNodes, topologyEntities);
+    const stk::mesh::PartVector nonconformalPartsToCheck = get_nonconformal_parts_to_check(mesh, auxMeta, phaseSupport, topo.rank(), topologyEntities);
+    for(size_t iNode=0; iNode<intersectionPointNodes.size(); ++iNode)
+    {
+      areIntersectionPointsCompatibleForSnapping[iNode] =
+          areIntersectionPointsCompatibleForSnapping[iNode] &&
+          parts_are_compatible_for_snapping_when_ignoring_phase(mesh, auxMeta, phaseSupport, intersectionPointNodes[iNode], topo.rank(), nonconformalPartsToCheck);
+    }
+  }
+  return areIntersectionPointsCompatibleForSnapping;
 }
 
 bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & phase, const InterfaceID interface)

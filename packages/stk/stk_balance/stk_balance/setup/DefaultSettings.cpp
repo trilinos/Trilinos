@@ -63,10 +63,10 @@ std::string vertex_weight_method_name(VertexWeightMethod method) {
 // this entire file can be deleted.
 
 constexpr const char * DefaultSettings::logFile;
+constexpr const char * DefaultSettings::outputDirectory;
 constexpr const char * DefaultSettings::decompMethod;
 
 constexpr bool DefaultSettings::useContactSearch;
-constexpr bool DefaultSettings::fixSpiders;
 constexpr bool DefaultSettings::fixMechanisms;
 
 constexpr double DefaultSettings::faceSearchRelTol;
@@ -74,13 +74,24 @@ constexpr double DefaultSettings::faceSearchAbsTol;
 
 constexpr double DefaultSettings::particleSearchTol;
 
+constexpr VertexWeightMethod DefaultSettings::vertexWeightMethod;
+constexpr double DefaultSettings::graphEdgeWeightMultiplier;
 constexpr double DefaultSettings::faceSearchVertexMultiplier;
 constexpr double DefaultSettings::faceSearchEdgeWeight;
+constexpr bool DefaultSettings::fixSpiders;
 
+constexpr VertexWeightMethod DefaultSettings::sdVertexWeightMethod;
+constexpr double DefaultSettings::sdGraphEdgeWeightMultiplier;
+constexpr double DefaultSettings::sdFaceSearchVertexMultiplier;
+constexpr double DefaultSettings::sdFaceSearchEdgeWeight;
+constexpr bool DefaultSettings::sdFixSpiders;
+
+constexpr VertexWeightMethod DefaultSettings::smVertexWeightMethod;
+constexpr double DefaultSettings::smGraphEdgeWeightMultiplier;
 constexpr double DefaultSettings::smFaceSearchVertexMultiplier;
 constexpr double DefaultSettings::smFaceSearchEdgeWeight;
+constexpr bool DefaultSettings::smFixSpiders;
 
 constexpr const char * DefaultSettings::vertexWeightBlockMultiplier;
-
 }
 }

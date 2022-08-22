@@ -270,9 +270,7 @@ Plane::point_signed_distance(const Vector3d &x) const
 BoundingBox
 Plane::get_bounding_box()
 {
-  //bounding box is entire domain
-  return BoundingBox(Vector3d(-std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), -std::numeric_limits<double>::max()),
-      Vector3d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+  return BoundingBox::ENTIRE_DOMAIN;
 }
 
 Random::Random(const unsigned long seed)
@@ -292,32 +290,20 @@ Random::point_signed_distance(const Vector3d &x) const
 BoundingBox
 Random::get_bounding_box()
 {
-  //bounding box is entire domain
-  return BoundingBox(Vector3d(-std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), -std::numeric_limits<double>::max()),
-      Vector3d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+  return BoundingBox::ENTIRE_DOMAIN;
 }
 
-Analytic_Isosurface::Analytic_Isosurface()
-    : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign()
+LevelSet_String_Function::LevelSet_String_Function(const std::string & expression)
+    : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
+      myExpression(expression),
+      myBoundingBox(BoundingBox::ENTIRE_DOMAIN)
 {
-}
-
-BoundingBox
-Analytic_Isosurface::get_bounding_box()
-{
-  return BoundingBox(
-      Vector3d(-1.,-1.,-1.),
-      Vector3d(1.,1.,1.)
-      );
 }
 
 double
-Analytic_Isosurface::point_signed_distance(const Vector3d &coord) const
+LevelSet_String_Function::point_signed_distance(const Vector3d &coord) const
 {
-  const double x = coord[0];
-  const double y = coord[1];
-  const double z = coord[2];
-  return 2.*y*(y*y-3.*x*x)*(1.-z*z) + std::pow(x*x+y*y,2) - (9.*z*z-1.)*(1.-z*z);
+  return myExpression.evaluate(coord);
 }
 
 } // namespace krino

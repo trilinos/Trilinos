@@ -295,6 +295,34 @@ parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & met
   return new MeshSurface(meta, *coords, surface_selector, sign);
 }
 
+LevelSet_String_Function *
+parse_string_function(const Parser::Node & ic_node)
+{
+  std::string expression;
+  if (!ic_node.get_if_present("expression", expression))
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing expression for string_function.\n";
+  }
+
+  LevelSet_String_Function * surf = new LevelSet_String_Function(expression);
+
+  std::vector<double> bounds;
+  if (ic_node.get_if_present("bounding_box", bounds))
+  {
+    if (bounds.size() == 6)
+    {
+      const BoundingBox surfBbox( Vector3d(bounds[0],bounds[1],bounds[2]), Vector3d(bounds[3],bounds[4],bounds[5]) );
+      surf->set_bounding_box(surfBbox);
+    }
+    else
+    {
+      stk::RuntimeDoomedAdHoc() << "bounding_box for string_function must be a vector of length 6 (for both 2D or 3D) (xmin,ymin,zmin, xmax,ymax,zmax).\n";
+    }
+  }
+
+  return surf;
+}
+
 }
 
 Surface *
@@ -307,10 +335,6 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
     if (ic_type == "random")
     {
       return new Random(0);
-    }
-    else if (ic_type == "analytic_isosurface")
-    {
-      return new Analytic_Isosurface();
     }
     return nullptr;
   }
@@ -330,6 +354,10 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
   else if ( parserNode.get_null_if_present("cylinder") )
   {
     return parse_cylinder(parserNode);
+  }
+  else if ( parserNode.get_null_if_present("string_function") )
+  {
+    return parse_string_function(parserNode);
   }
   else if ( parserNode.get_null_if_present("facets") )
   {

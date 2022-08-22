@@ -17,6 +17,7 @@
 #include <stk_util/diag/Timer.hpp>
 
 #include <Akri_Vec.hpp>
+#include <Akri_String_Function_Expression.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Entity; } }
@@ -168,17 +169,23 @@ private:
   void my_srand(unsigned int seed) const {iseed = seed;}
 };
 
-class Analytic_Isosurface: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
+class LevelSet_String_Function: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Analytic_Isosurface();
+  LevelSet_String_Function(const std::string & expression);
 
-  virtual ~Analytic_Isosurface() {}
+  virtual ~LevelSet_String_Function() {}
 
-  virtual Surface_Type type() const override { return SPHERE; }
-  virtual size_t storage_size() const override { return sizeof(Analytic_Isosurface); }
+  virtual Surface_Type type() const override { return STRING_FUNCTION; }
+  virtual size_t storage_size() const override { return sizeof(LevelSet_String_Function); }
 
   virtual double point_signed_distance(const Vector3d &x) const override;
-  virtual BoundingBox get_bounding_box() override;
+  virtual BoundingBox get_bounding_box() override { return myBoundingBox; }
+
+  void set_bounding_box(const BoundingBox & bbox) { myBoundingBox = bbox; }
+
+private:
+  String_Function_Expression myExpression;
+  BoundingBox myBoundingBox;
 };
 
 } // namespace krino

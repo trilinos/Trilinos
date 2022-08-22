@@ -30,7 +30,7 @@ public:
         m_critFields(critFields),
         m_defaultWeight(default_weight)
   {
-    method = "rcb";
+    m_method = "rcb";
     setUseNodeBalancer(true);
     setNodeBalancerTargetLoadBalance(getImbalanceTolerance());
     setNodeBalancerMaxIterations(max_num_nodal_rebal_iters);
@@ -46,8 +46,8 @@ public:
   virtual bool includeSearchResultsInGraph() const override { return false; }
   virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
-  virtual void setDecompMethod(const std::string & input_method) override { method = input_method; }
-  virtual std::string getDecompMethod() const override { return method; }
+  virtual void setDecompMethod(const std::string & input_method) override { m_method = input_method; }
+  virtual std::string getDecompMethod() const override { return m_method; }
   virtual int getNumCriteria() const override { return m_critFields.size(); }
   virtual bool isMultiCriteriaRebalance() const override { return true; }
   virtual bool shouldFixMechanisms() const override { return false; }

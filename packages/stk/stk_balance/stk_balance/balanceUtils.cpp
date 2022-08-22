@@ -1,6 +1,7 @@
 #include "balanceUtils.hpp"
 #include "mpi.h"
 #include "search_tolerance/FaceSearchTolerance.hpp"
+#include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_util/diag/StringUtil.hpp"
@@ -20,6 +21,7 @@ BalanceSettings::BalanceSettings()
   : m_numInputProcessors(0),
     m_numOutputProcessors(0),
     m_isRebalancing(false),
+    m_shouldFixCoincidentElements(true),
     m_initialDecompMethod("RIB"),
     m_useNestedDecomp(false),
     m_shouldPrintDiagnostics(false),
@@ -72,6 +74,18 @@ void BalanceSettings::setVertexWeightMethod(VertexWeightMethod method)
 VertexWeightMethod BalanceSettings::getVertexWeightMethod() const
 {
   return m_vertexWeightMethod;
+}
+
+bool
+BalanceSettings::shouldFixCoincidentElements() const
+{
+  return m_shouldFixCoincidentElements;
+}
+
+void
+BalanceSettings::setShouldFixCoincidentElements(bool fixCoincidentElements)
+{
+  m_shouldFixCoincidentElements = fixCoincidentElements;
 }
 
 bool BalanceSettings::includeSearchResultsInGraph() const
@@ -345,6 +359,39 @@ std::string BalanceSettings::get_log_filename() const
 
 //////////////////////////////////////
 
+GraphCreationSettings::GraphCreationSettings()
+  : m_method(DefaultSettings::decompMethod),
+    m_ToleranceForFaceSearch(DefaultSettings::faceSearchAbsTol),
+    m_ToleranceForParticleSearch(DefaultSettings::particleSearchTol),
+    m_vertexWeightMultiplierForVertexInSearch(DefaultSettings::faceSearchVertexMultiplier),
+    m_edgeWeightForSearch(DefaultSettings::faceSearchEdgeWeight),
+    m_UseConstantToleranceForFaceSearch(false),
+    m_shouldFixSpiders(DefaultSettings::fixSpiders),
+    m_shouldFixMechanisms(DefaultSettings::fixMechanisms),
+    m_spiderBeamConnectivityCountField(nullptr),
+    m_spiderVolumeConnectivityCountField(nullptr),
+    m_outputSubdomainField(nullptr),
+    m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
+    m_useNodeBalancer(false),
+    m_nodeBalancerTargetLoadBalance(1.0),
+    m_nodeBalancerMaxIterations(5)
+{
+  setToleranceFunctionForFaceSearch(
+      std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(DefaultSettings::faceSearchRelTol)
+  );
+}
+
+GraphCreationSettings::GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch,
+                                             const std::string& decompMethod, double multiplierVWSearch)
+  : GraphCreationSettings()
+{
+  m_method = decompMethod;
+  m_ToleranceForFaceSearch = faceSearchTol;
+  m_ToleranceForParticleSearch = particleSearchTol;
+  m_vertexWeightMultiplierForVertexInSearch = multiplierVWSearch;
+  m_edgeWeightForSearch = edgeWeightSearch;
+}
+
 size_t GraphCreationSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
 {
   const int noConnection = 1000;
@@ -367,7 +414,7 @@ size_t GraphCreationSettings::getNumNodesRequiredForConnection(stk::topology ele
 
 double GraphCreationSettings::getGraphEdgeWeightForSearch() const
 {
-  return edgeWeightForSearch;
+  return m_edgeWeightForSearch;
 }
 
 double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
@@ -476,7 +523,7 @@ void GraphCreationSettings::setIncludeSearchResultsInGraph(bool doContactSearch)
 
 double GraphCreationSettings::getToleranceForParticleSearch() const
 {
-  return mToleranceForParticleSearch;
+  return m_ToleranceForParticleSearch;
 }
 
 void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance)
@@ -496,7 +543,7 @@ double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkDat
                                                         const unsigned numFaceNodes) const
 {
   if (m_UseConstantToleranceForFaceSearch) {
-    return mToleranceForFaceSearch;
+    return m_ToleranceForFaceSearch;
   }
   else {
     return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes, numFaceNodes);
@@ -510,35 +557,35 @@ bool GraphCreationSettings::getEdgesForParticlesUsingSearch() const
 
 double GraphCreationSettings::getVertexWeightMultiplierForVertexInSearch() const
 {
-  return vertexWeightMultiplierForVertexInSearch;
+  return m_vertexWeightMultiplierForVertexInSearch;
 }
 
 std::string GraphCreationSettings::getDecompMethod() const
 {
-  return method;
+  return m_method;
 }
 
 void GraphCreationSettings::setDecompMethod(const std::string& input_method)
 {
-  method = input_method;
+  m_method = input_method;
 }
 
 void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 {
   m_UseConstantToleranceForFaceSearch = true;
-  mToleranceForFaceSearch = tol;
+  m_ToleranceForFaceSearch = tol;
 }
 void GraphCreationSettings::setToleranceForParticleSearch(double tol)
 {
-  mToleranceForParticleSearch = tol;
+  m_ToleranceForParticleSearch = tol;
 }
 void GraphCreationSettings::setEdgeWeightForSearch(double w)
 {
-  edgeWeightForSearch = w;
+  m_edgeWeightForSearch = w;
 }
 void GraphCreationSettings::setVertexWeightMultiplierForVertexInSearch(double w)
 {
-  vertexWeightMultiplierForVertexInSearch = w;
+  m_vertexWeightMultiplierForVertexInSearch = w;
 }
 int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology) const
 {

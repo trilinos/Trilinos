@@ -37,13 +37,28 @@
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/EntityCommListInfo.hpp>
+#include "stk_mesh/base/EntityKey.hpp"
+#include "stk_mesh/baseImpl/DeletedEntityCache.hpp"
 
 namespace stk {
+class CommSparse;
 namespace mesh {
 
 class BulkData;
 
 namespace impl {
+
+struct EntityParallelState {
+  int                 from_proc;
+  EntityState         state;
+  EntityCommListInfo  comm_info;
+  bool                remote_owned_closure;
+
+  bool operator<(const EntityParallelState& rhs) const
+  { return comm_info.key < rhs.comm_info.key; }
+};
 
 class MeshModification
 {
@@ -52,7 +67,7 @@ public:
     enum modification_optimization {MOD_END_SORT, MOD_END_NO_SORT };
 
     MeshModification(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), m_entity_states(),
-            m_sync_state(MODIFIABLE), m_sync_count(0), m_did_any_shared_entity_change_parts(false)
+            m_deleted_entity_cache(bulkData), m_sync_state(MODIFIABLE), m_sync_count(0), m_did_any_shared_entity_change_parts(false)
     {
         m_entity_states.push_back(Deleted);
     }
@@ -78,10 +93,12 @@ public:
     void change_entity_owner( const EntityProcVec & arg_change);
 
     void internal_resolve_shared_modify_delete(stk::mesh::EntityVector & entitiesNoLongerShared);
+    void internal_resolve_ghosted_modify_delete(const stk::mesh::EntityVector& entitiesNoLongerShared);
 
     bool did_any_shared_entity_change_parts () const { return m_did_any_shared_entity_change_parts; }
     void set_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = true; }
 
+    //TODO: these should be Entity::entity_value_type
     bool is_entity_deleted(size_t entity_index) const { return m_entity_states[entity_index] == Deleted; }
     bool is_entity_modified(size_t entity_index) const { return m_entity_states[entity_index] == Modified; }
     bool is_entity_created(size_t entity_index) const { return m_entity_states[entity_index] == Created; }
@@ -90,23 +107,41 @@ public:
     stk::mesh::EntityState get_entity_state(size_t entity_index) const { return static_cast<stk::mesh::EntityState>(m_entity_states[entity_index]); }
     void set_entity_state(size_t entity_index, stk::mesh::EntityState state) { m_entity_states[entity_index] = state; }
 
-    void mark_entity_as_deleted(size_t entity_index) {  m_entity_states[entity_index] = Deleted; }
+    void mark_entity_as_deleted(Entity entity, bool is_ghost)
+    {
+        m_entity_states[entity.local_offset()] = Deleted;
+        m_deleted_entity_cache.mark_entity_as_deleted(entity, is_ghost);
+    }
+
     void mark_entity_as_created(size_t entity_index) {  m_entity_states[entity_index] = Created; }
 
     void add_created_entity_state() { m_entity_states.push_back(Created); }
 
+    DeletedEntityCache& get_deleted_entity_cache() { return m_deleted_entity_cache; }
+
+    const DeletedEntityCache& get_deleted_entity_cache() const { return m_deleted_entity_cache; }
 private:
 
+    bool pack_entity_modification( const bool packShared , stk::CommSparse & comm );
+    void communicate_entity_modification( const bool shared , std::vector<EntityParallelState > & data );
     void reset_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = false; }
+    void internal_establish_new_owner(stk::mesh::Entity entity);
+    void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
+    void destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing );
+    void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing);
+    void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing, stk::mesh::EntityVector & entitiesNoLongerShared);
+    void add_entity_to_same_ghosting(Entity entity, Entity connectedGhost);
+    void internal_resolve_formerly_shared_entities(const EntityVector& entitiesNoLongerShared);
     void reset_undeleted_entity_states_to_unchanged();
     void ensure_meta_data_is_committed();
 
-    bool internal_modification_end(modification_optimization opt);
     bool internal_resolve_node_sharing(modification_optimization opt);
     bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
 
     stk::mesh::BulkData &m_bulkData;
     std::vector<stk::mesh::EntityState> m_entity_states;
+    DeletedEntityCache m_deleted_entity_cache;
+
     BulkDataSyncState m_sync_state;
     size_t m_sync_count;
     bool m_did_any_shared_entity_change_parts;

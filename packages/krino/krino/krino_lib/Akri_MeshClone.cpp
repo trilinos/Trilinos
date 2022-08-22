@@ -10,6 +10,8 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
+#include <stk_tools/mesh_clone/ReplaceBulkData.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_io/IossBridge.hpp>
 
@@ -83,16 +85,13 @@ MeshClone::MeshClone( stk::mesh::BulkData & orig_mesh, stk::diag::Timer parent_t
 {
   stk::diag::TimeBlock timer__(my_timer);
   const stk::mesh::MetaData & in_meta = my_orig_mesh->mesh_meta_data();
-  my_meta = std::make_unique<stk::mesh::MetaData>();
+  my_meta = stk::mesh::MeshBuilder().create_meta_data();
   clone_meta_data_parts_and_fields(in_meta, *my_meta);
 
-  my_mesh = std::make_unique<stk::mesh::BulkData>(*my_meta,
-      my_orig_mesh->parallel(),
-      stk::mesh::BulkData::NO_AUTO_AURA
-#ifdef SIERRA_MIGRATION
-      ,my_orig_mesh->add_fmwk_data()
-#endif
-      );
+  my_mesh = stk::mesh::MeshBuilder(my_orig_mesh->parallel())
+                       .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+                       .set_add_fmwk_data(my_orig_mesh->add_fmwk_data())
+                       .create(my_meta);
 
   my_meta->commit();
 
@@ -134,26 +133,8 @@ void MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
 { /* %TRACE[ON]% */ Trace trace__("krino::MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkData & out_mesh, const bool full_overwrite)"); /* %TRACE% */
   if (full_overwrite)
   {
-    // Ugly, but legal and effective.
-    stk::mesh::MetaData & out_meta = out_mesh.mesh_meta_data();
-    out_mesh.~BulkData();
-
-    const stk::mesh::BulkData::AutomaticAuraOption aura_option =
-      in_mesh.is_automatic_aura_on() ?
-      stk::mesh::BulkData::AUTO_AURA :
-      stk::mesh::BulkData::NO_AUTO_AURA;
-
-    new (&out_mesh) stk::mesh::BulkData(out_meta,
-      in_mesh.parallel(),
-      aura_option
-#ifdef SIERRA_MIGRATION
-      ,in_mesh.add_fmwk_data()
-#endif
-      );
-
-    out_mesh.modification_begin();
-    clone_bulk_data_entities(in_mesh, out_mesh, false);
-    out_mesh.modification_end();
+//    std::function<void(stk::mesh::BulkData& outMesh_)> op = [](stk::mesh::BulkData& outMesh_) {};
+    stk::tools::replace_bulk_data(in_mesh, out_mesh/*, op*/);
   }
   else
   {
@@ -172,9 +153,9 @@ void MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
     out_mesh.modification_begin();
     clone_bulk_data_entities(in_mesh, out_mesh, true);
     out_mesh.modification_end();
+    copy_field_data(in_mesh, out_mesh);
   }
 
-  copy_field_data(in_mesh, out_mesh);
 }
 
 

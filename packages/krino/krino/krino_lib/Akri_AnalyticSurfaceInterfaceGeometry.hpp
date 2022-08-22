@@ -27,7 +27,8 @@ class SurfaceElementCutter : public ElementCutter
 public:
   SurfaceElementCutter(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
-    const Surface & surface);
+    const Surface & surface,
+    const double edgeTol);
   virtual ~SurfaceElementCutter() {}
 
   virtual bool might_have_interior_or_face_intersections() const override { return false; }
@@ -55,6 +56,7 @@ private:
   const MasterElement & myMasterElem;
   std::vector<Vector3d> myElementNodeCoords;
   const Surface & mySurface;
+  double myEdgeCrossingTol;
   int myElementSign{0};
 };
 
@@ -65,12 +67,7 @@ public:
     const Surface & surface,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
-  : mySurface(surface),
-    myActivePart(activePart),
-    myCdfemSupport(cdfemSupport),
-    myPhaseSupport(phaseSupport),
-    mySurfaceIdentifiers({surfaceIdentifier}) {}
+    const Phase_Support & phaseSupport);
 
   virtual ~AnalyticSurfaceInterfaceGeometry() {}
 
@@ -113,6 +110,7 @@ private:
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
+  double myEdgeCrossingTol;
   mutable ElementToDomainMap myUncutElementPhases;
   mutable std::vector<stk::mesh::Entity> myElementsToIntersect;
 };

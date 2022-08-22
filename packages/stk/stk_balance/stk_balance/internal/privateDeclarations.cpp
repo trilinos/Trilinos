@@ -1511,6 +1511,89 @@ void compute_relative_node_interface_size_diagnostic(RelativeNodeInterfaceSizeDi
                                         : 0.0);
 }
 
+double getTypicalElemsPerNode(stk::topology type)
+{
+  switch(type)
+  {
+  case stk::topology::PARTICLE:
+    return 1;
+  case stk::topology::LINE_2_1D:
+    return 1;
+  case stk::topology::LINE_3_1D:
+    return 1.0/2.0;
+  case stk::topology::BEAM_2:
+    return 1;
+  case stk::topology::BEAM_3:
+    return 1.0/2.0;
+  case stk::topology::SHELL_LINE_2:
+    return 1;
+  case stk::topology::SHELL_LINE_3:
+    return 1.0/2.0;
+  case stk::topology::SPRING_2:
+    return 1;
+  case stk::topology::SPRING_3:
+    return 1.0/2.0;
+  case stk::topology::TRI_3_2D:
+    return 2;
+  case stk::topology::TRI_4_2D:
+    return 2.0/3.0;
+  case stk::topology::TRI_6_2D:
+    return 2.0/4.0;
+  case stk::topology::SHELL_TRI_3:
+    return 2;
+  case stk::topology::SHELL_TRI_4:
+    return 2.0/3.0;
+  case stk::topology::SHELL_TRI_6:
+    return 2.0/4.0;
+  case stk::topology::QUAD_4_2D:
+    return 1;
+  case stk::topology::QUAD_8_2D:
+    return 1.0/3.0;
+  case stk::topology::QUAD_9_2D:
+    return 1.0/4.0;
+  case stk::topology::SHELL_QUAD_4:
+    return 1;
+  case stk::topology::SHELL_QUAD_8:
+    return 1.0/3.0;
+  case stk::topology::SHELL_QUAD_9:
+    return 1.0/4.0;
+  case stk::topology::TET_4:
+    return 6;
+  case stk::topology::TET_8:
+    return 6.0/13.0;
+  case stk::topology::TET_10:
+    return 6.0/8.0;
+  case stk::topology::TET_11:
+    return 6.0/14.0;
+  case stk::topology::PYRAMID_5:
+    return 6.0/2.0;
+  case stk::topology::PYRAMID_13:
+    return 6.0/13.0;
+  case stk::topology::PYRAMID_14:
+    return 6.0/19.0;
+  case stk::topology::WEDGE_6:
+    return 2;
+  case stk::topology::WEDGE_12:
+    return 2.0/4.0;
+  case stk::topology::WEDGE_15:
+    return 2.0/5.0;
+  case stk::topology::WEDGE_18:
+    return 2.0/8.0;
+  case stk::topology::HEXAHEDRON_8:
+    return 1;
+  case stk::topology::HEXAHEDRON_20:
+    return 1.0/4.0;
+  case stk::topology::HEXAHEDRON_27:
+    return 1.0/8.0;
+  default:
+    if ( type.is_superelement( ))
+    {
+      return 1.0/100.0;
+    }
+    throw("Invalid Element Type In WeightsOfElement");
+  }
+}
+
 double get_connected_node_weight(const stk::mesh::BulkData & bulk, std::vector<stk::mesh::Entity> & connectedNodesBuffer,
                                  const stk::mesh::Entity node)
 {
@@ -1544,7 +1627,9 @@ void spread_weight_across_connected_elements(const stk::mesh::BulkData & bulk, c
     const stk::mesh::Entity element = elements[elemIndex];
     if (bulk.bucket(element).owned()) {
       double * elemWeight = stk::mesh::field_data(elementWeights, element);
-      *elemWeight += nodeWeight / numElements;
+      const unsigned numNodes = bulk.num_nodes(element);
+      const double typicalElemsPerNode = getTypicalElemsPerNode(bulk.bucket(element).topology());
+      *elemWeight += nodeWeight / (numNodes * typicalElemsPerNode);
     }
   }
 }

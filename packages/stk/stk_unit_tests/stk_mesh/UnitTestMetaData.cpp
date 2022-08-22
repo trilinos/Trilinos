@@ -63,8 +63,6 @@ using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::EntityRank;
 using stk::mesh::MeshBuilder;
-using std::cout;
-using std::endl;
 
 namespace {
 
@@ -164,11 +162,10 @@ TEST( UnitTestMetaData, rankHigherThanDefined )
                         );
 }
 
-TEST( UnitTestMetaData, testEntityRepository )
+TEST( UnitTestMetaData, testEntityKeyMapping )
 {
   static const size_t spatial_dimension = 3;
 
-  //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( spatial_dimension );
   meta.use_simple_fields();
   stk::mesh::Part & part = meta.declare_part("another part");

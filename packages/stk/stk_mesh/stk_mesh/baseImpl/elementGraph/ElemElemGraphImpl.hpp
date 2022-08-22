@@ -277,8 +277,7 @@ struct IdViaSidePair
 
 }//namespace impl
 
-const int max_num_sides_per_elem = 10;
-const double inverse_of_max_num_sides_per_elem = 0.1;
+constexpr int max_num_sides_per_elem = 8;
 
 struct GraphEdge
 {
@@ -289,7 +288,7 @@ struct GraphEdge
     }
 
     GraphEdge() :
-        vertex1(std::numeric_limits<impl::LocalId>::max()), vertex2(std::numeric_limits<impl::LocalId>::max())
+        vertex1(impl::INVALID_LOCAL_ID), vertex2(impl::INVALID_LOCAL_ID)
     {}
 
     GraphEdge(const GraphEdge& rhs)
@@ -326,12 +325,12 @@ struct GraphEdge
 
     impl::LocalId elem1() const
     {
-        return vertex1*inverse_of_max_num_sides_per_elem;
+        return vertex1/max_num_sides_per_elem;
     }
 
     impl::LocalId elem2() const
     {
-        return vertex2*inverse_of_max_num_sides_per_elem;
+        return vertex2/max_num_sides_per_elem;
     }
 
     int get_side(const impl::LocalId& vertex) const
@@ -349,6 +348,11 @@ struct GraphEdge
     impl::LocalId vertex1;
     impl::LocalId vertex2;
 };
+
+constexpr bool is_valid(const GraphEdge& lhs)
+{
+    return lhs.vertex1 != impl::INVALID_LOCAL_ID;
+}
 
 using CoincidentElementConnection = GraphEdge;
 
@@ -381,6 +385,17 @@ struct GraphEdgeLessByElem1 {
             return a.side1() < b.side1();
         }
     }
+};
+
+struct GraphEdgeLessByElem2Only
+{
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        impl::LocalId a_elem2 = std::abs(a.elem2());
+        impl::LocalId b_elem2 = std::abs(b.elem2());
+
+        return a_elem2 < b_elem2 || (a_elem2 == b_elem2 && a.side2() < b.side2());
+    }  
 };
 
 inline
@@ -421,7 +436,9 @@ bool operator==(const GraphEdge& a, const GraphEdge& b)
 inline
 std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
 {
-    out << "(" << graphEdge.vertex1 << " -> " << graphEdge.vertex2 << ")";
+    out << "GraphEdge vertices: (" << graphEdge.vertex1 << " -> " << graphEdge.vertex2 
+        << "), element-side pairs: (" << graphEdge.elem1() << ", " << graphEdge.side1() 
+        << ") -> (" << graphEdge.elem2() << ", " << graphEdge.side2() << ")";
     return out;
 }
 
