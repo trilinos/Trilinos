@@ -77,7 +77,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("A", NoFactory::getRCP(), "Matrix to build the approximate inverse on.\n");
 
     validParamList->set<std::string>            ("inverse: approximation type",  "diagonal", "Method used to approximate the inverse.");
-    validParamList->set<Magnitude>              ("inverse: drop tolerance",      1e-8      , "Below threshold values are dropped from the matrix.");
+    validParamList->set<Magnitude>              ("inverse: drop tolerance",      1e-8      , "Values below this threshold  are dropped from the matrix (or fixed if diagonal fixing is active).");
     validParamList->set<bool>                   ("inverse: fixing",              false     , "Keep diagonal and fix small entries with 1.0");
 
     return validParamList;
