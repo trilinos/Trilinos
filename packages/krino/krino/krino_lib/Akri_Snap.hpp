@@ -22,7 +22,8 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const stk::mesh::Selector & elementSelector,
     const FieldSet & interpolationFields,
     const InterfaceGeometry & geometry,
-    const bool globalIDsAreParallelConsistent);
+    const bool globalIDsAreParallelConsistent,
+    const double snappingSharpFeatureAngleInDegrees);
 
 double determine_quality(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,

@@ -35,11 +35,12 @@ static std::function<double(const double)> build_edge_distance_function(const Su
   return distanceFunction;
 }
 
-static double find_crossing_position(const Surface & surface, const Segment3d & edge)
+static double find_crossing_position(const Surface & surface, const Segment3d & edge, const double edgeTol)
 {
   const double phi0 = surface.point_signed_distance(edge.GetNode(0));
   const double phi1 = surface.point_signed_distance(edge.GetNode(1));
-  const auto result = find_root(build_edge_distance_function(surface, edge), 0., 1., phi0, phi1);
+  const int maxIters = 100;
+  const auto result = find_root(build_edge_distance_function(surface, edge), 0., 1., phi0, phi1, maxIters, edgeTol);
   ThrowRequire(result.first);
   return result.second;
 }
@@ -69,9 +70,11 @@ static Vector3d get_centroid(const std::vector<Vector3d> & elemNodesCoords)
 
 SurfaceElementCutter::SurfaceElementCutter(const stk::mesh::BulkData & mesh,
   stk::mesh::Entity element,
-  const Surface & surface)
+  const Surface & surface,
+  const double edgeTol)
 : myMasterElem(MasterElementDeterminer::getMasterElement(mesh.bucket(element).topology())),
-  mySurface(surface)
+  mySurface(surface),
+  myEdgeCrossingTol(edgeTol)
 {
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
   fill_element_node_coordinates(mesh, element, coordsField, myElementNodeCoords);
@@ -95,7 +98,7 @@ bool SurfaceElementCutter::have_crossing(const InterfaceID interface, const Segm
 double SurfaceElementCutter::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
 {
   const Segment3d globalEdge(parametric_to_global_coordinates(edge.GetNode(0)), parametric_to_global_coordinates(edge.GetNode(1)));
-  return find_crossing_position(mySurface, globalEdge);
+  return find_crossing_position(mySurface, globalEdge, myEdgeCrossingTol);
 }
 
 int SurfaceElementCutter::sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const
@@ -116,6 +119,7 @@ Vector3d SurfaceElementCutter::parametric_to_global_coordinates(const Vector3d &
 static void append_surface_edge_intersection_points(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const Surface & surface,
+    const double edgeCrossingTol,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
@@ -150,7 +154,7 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
         if (haveCrossing)
         {
           const InterfaceID interface(0,0);
-          const double location = find_crossing_position(surface, Segment3d(node0Coords, node1Coords));
+          const double location = find_crossing_position(surface, Segment3d(node0Coords, node1Coords), edgeCrossingTol);
           interface.fill_sorted_domains(intersectionPointSortedDomains);
           const std::vector<stk::mesh::Entity> intersectionPointNodes{node0,node1};
           if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
@@ -284,6 +288,21 @@ static void set_domains_for_element_if_it_will_be_uncut_after_snapping(const stk
   }
 }
 
+AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const Surface_Identifier surfaceIdentifier,
+    const Surface & surface,
+    const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport,
+    const Phase_Support & phaseSupport)
+  : mySurface(surface),
+    myActivePart(activePart),
+    myCdfemSupport(cdfemSupport),
+    myPhaseSupport(phaseSupport),
+    mySurfaceIdentifiers({surfaceIdentifier}),
+    myEdgeCrossingTol(0.1*cdfemSupport.get_snapper().get_edge_tolerance())
+{
+  ThrowRequireMsg(myEdgeCrossingTol > 0., "Invalid minimum edge crossing tolerance " << myEdgeCrossingTol);
+}
+
 void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
       const std::vector<IntersectionPoint> & intersectionPoints,
       const std::vector<SnapInfo> & snapInfos,
@@ -306,7 +325,7 @@ std::vector<IntersectionPoint> AnalyticSurfaceInterfaceGeometry::get_edge_inters
 
   const IntersectionPointFilter intersectionPointFilter = keep_all_intersection_points_filter();
   std::vector<IntersectionPoint> intersectionPoints;
-  append_surface_edge_intersection_points(mesh, myElementsToIntersect, mySurface, intersectionPointFilter, intersectionPoints);
+  append_surface_edge_intersection_points(mesh, myElementsToIntersect, mySurface, myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
   return intersectionPoints;
 }
 
@@ -317,7 +336,7 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
   std::vector<IntersectionPoint> & intersectionPoints) const
 {
   prepare_to_process_elements(mesh, elementsToIntersect, nodesToCapturedDomains);
-  append_surface_edge_intersection_points(mesh, myElementsToIntersect, mySurface, intersectionPointFilter, intersectionPoints);
+  append_surface_edge_intersection_points(mesh, myElementsToIntersect, mySurface, myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
 }
 
 std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_cutter(const stk::mesh::BulkData & mesh,
@@ -325,7 +344,7 @@ std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_c
   const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker) const
 {
   std::unique_ptr<ElementCutter> cutter;
-  cutter.reset( new SurfaceElementCutter(mesh, element, mySurface) );
+  cutter.reset( new SurfaceElementCutter(mesh, element, mySurface, myEdgeCrossingTol) );
   return cutter;
 }
 

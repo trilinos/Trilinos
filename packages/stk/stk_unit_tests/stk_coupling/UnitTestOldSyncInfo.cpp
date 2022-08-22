@@ -39,6 +39,8 @@
 #include <stk_coupling/OldSyncInfo.hpp>
 #include <stdexcept>
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // delete October 2022
+
 namespace {
 
 TEST(UnitTestOldSyncInfo, get_and_set)
@@ -180,3 +182,4 @@ TEST(UnitTestOldSyncInfo, exchangeAsymmetric)
 }
 
 }
+#endif

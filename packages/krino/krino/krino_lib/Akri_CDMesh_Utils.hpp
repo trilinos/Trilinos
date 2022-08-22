@@ -19,8 +19,10 @@ class AuxMetaData;
 class Phase_Support;
 class Surface_Identifier;
 
+bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupport, const AuxMetaData & auxMeta, const stk::mesh::EntityRank targetRank, const stk::mesh::Part & part);
 bool parts_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, stk::mesh::Entity possible_snap_node, stk::mesh::Entity fixed_node);
-bool parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, stk::mesh::Entity possible_snap_node, stk::mesh::Entity fixed_node);
+std::vector<bool> which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const std::vector<stk::mesh::Entity> & intersectionPointNodes);
+bool parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::Entity possibleSnapNode, const stk::mesh::EntityRank targetRank, const std::vector<stk::mesh::Entity> & targetEntities);
 bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & phase, const InterfaceID interface);
 bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport);
 PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const Phase_Support & phaseSupport);

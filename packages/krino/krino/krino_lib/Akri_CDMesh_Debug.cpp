@@ -128,6 +128,12 @@ debug_elem_parts_and_relations(const stk::mesh::BulkData & mesh, const Mesh_Elem
   }
 }
 
+static double filter_negative_zero(const double val)
+{
+  if (val == 0.) return 0.;
+  return val;
+}
+
 void
 debug_nodal_parts_and_fields(const stk::mesh::BulkData & mesh, const SubElementNode * node)
 {
@@ -176,13 +182,13 @@ debug_nodal_parts_and_fields(const stk::mesh::BulkData & mesh, const SubElementN
     {
       if (1 == field_length)
       {
-        krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value=" << *data << "\n";
+        krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value=" << filter_negative_zero(*data) << "\n";
       }
       else
       {
         for (unsigned i=0; i<field_length; ++i)
         {
-          krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value[" <<i << "]=" << data[i] << "\n";
+          krinolog << "  Field: field_name=" << field.name() << ", field_state=" << field.state() << ", value[" <<i << "]=" << filter_negative_zero(data[i]) << "\n";
         }
       }
     }

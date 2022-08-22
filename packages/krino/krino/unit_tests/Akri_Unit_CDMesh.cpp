@@ -587,7 +587,14 @@ public:
     NodeToCapturedDomainsMap nodesToSnappedDomains;
     std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), ls_policy.ls_fields());
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(), krino_mesh->get_active_part(), cdfemSupport.get_interpolation_fields(), *interfaceGeometry, cdfemSupport.get_global_ids_are_parallel_consistent());
+    {
+      nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
+          krino_mesh->get_active_part(),
+          cdfemSupport.get_interpolation_fields(),
+          *interfaceGeometry,
+          cdfemSupport.get_global_ids_are_parallel_consistent(),
+          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees());
+    }
     interfaceGeometry->prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
 
     if(!krino_mesh->my_old_mesh)

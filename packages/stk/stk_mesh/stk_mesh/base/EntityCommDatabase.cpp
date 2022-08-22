@@ -472,6 +472,9 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
   const bool result = ( (i != comm_map.end()) && (val == *i) ) ;
 
   if ( result ) {
+    if (m_comm_map_change_listener != nullptr) {
+      m_comm_map_change_listener->removedGhost(key, i->ghost_id, i->proc);
+    }
     comm_map.erase( i );
     bool deleted = false;
     if (comm_map.empty()) {
@@ -515,6 +518,12 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
   const bool result = i != e ;
 
   if ( result ) {
+    if (m_comm_map_change_listener != nullptr) {
+      for(EntityCommInfoVector::iterator it = i; it != e; ++it) {
+        m_comm_map_change_listener->removedGhost(key, it->ghost_id, it->proc);
+      }
+    }
+
     comm_map.erase( i , e );
     bool deleted = false;
     if (comm_map.empty()) {

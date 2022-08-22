@@ -55,6 +55,14 @@ enum Simplex_Generation_Method
   MAX_SIMPLEX_GENERATION_METHOD
 };
 
+enum Interface_CFL_Length_Scale
+{
+  CONSTANT_LENGTH_SCALE=0,
+  LOCAL_LENGTH_SCALE,
+  L1_NORM_LENGTH_SCALE,
+  MAX_LENGTH_SCALE_TYPE
+};
+
 class CDFEM_Support {
 public:
 
@@ -82,6 +90,8 @@ public:
   void set_global_ids_are_NOT_parallel_consistent() { myGlobalIDsAreParallelConsistent = false; }
   void activate_interface_refinement(int minimum_level, int maximum_level);
   void activate_nonconformal_adaptivity(const int num_levels);
+  void set_snapping_sharp_feature_angle_in_degrees(const double snappingSharpFeatureAngleInDegrees) { mySnappingSharpFeatureAngleInDegrees = snappingSharpFeatureAngleInDegrees; }
+  double get_snapping_sharp_feature_angle_in_degrees() const { return mySnappingSharpFeatureAngleInDegrees; }
 
   void create_parts();
 
@@ -175,9 +185,13 @@ public:
   void set_use_hierarchical_dofs(bool flag) { my_flag_use_hierarchical_dofs = flag; }
   bool get_constrain_CDFEM_to_XFEM_space() const { return my_flag_constrain_CDFEM_to_XFEM_space; }
   void set_constrain_CDFEM_to_XFEM_space(bool flag) { my_flag_constrain_CDFEM_to_XFEM_space = flag; }
+
+  void set_constant_length_scale_for_interface_CFL(double lengthScale) { myConstantLengthScaleForInterfaceCFL = lengthScale; }
+  double get_constant_length_scale_for_interface_CFL() const { return myConstantLengthScaleForInterfaceCFL; }
+  void set_length_scale_type_for_interface_CFL(Interface_CFL_Length_Scale lengthScaleType) { myLengthScaleTypeForInterfaceCFL = lengthScaleType; }
+  Interface_CFL_Length_Scale get_length_scale_type_for_interface_CFL() const { return myLengthScaleTypeForInterfaceCFL; }
   bool get_use_velocity_to_evaluate_interface_CFL() const { return myFlagUseVelocityToEvaluateInterfaceCFL; }
   void set_use_velocity_to_evaluate_interface_CFL(bool flag) { myFlagUseVelocityToEvaluateInterfaceCFL = flag; }
-
 
   void force_ale_prolongation_for_field(const std::string & field_name);
 
@@ -225,6 +239,9 @@ private:
   CDFEM_Snapper my_cdfem_snapper;
   double my_cdfem_dof_edge_tol;
   double my_internal_face_stabilization_multiplier;
+  double mySnappingSharpFeatureAngleInDegrees;
+  Interface_CFL_Length_Scale myLengthScaleTypeForInterfaceCFL;
+  double myConstantLengthScaleForInterfaceCFL;
   bool my_flag_use_hierarchical_dofs;
   bool my_flag_constrain_CDFEM_to_XFEM_space;
   bool my_flag_use_nonconformal_element_size;

@@ -21,6 +21,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_CreateInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
@@ -58,6 +59,7 @@ Region::Region(Simulation & owning_simulation, const std::string & regionName)
 { /* %TRACE[ON]% */ Trace trace__("krino::Region::Region()"); /* %TRACE% */
   my_simulation.add_region(this);
   myIOBroker = std::make_unique<stk::io::StkMeshIoBroker>(stk::EnvData::parallel_comm());
+  myIOBroker->use_simple_fields();
 
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   entity_rank_names.push_back("FAMILY_TREE");
@@ -156,8 +158,9 @@ void Region::commit()
   }
   else
   {
-    auto shared_bulk = std::make_shared<stk::mesh::BulkData>(meta,stk::EnvData::parallel_comm(),auto_aura_option);
+    std::shared_ptr<stk::mesh::BulkData> shared_bulk = stk::mesh::MeshBuilder(stk::EnvData::parallel_comm()).set_aura_option(auto_aura_option).create(std::shared_ptr<stk::mesh::MetaData>(&meta,[](auto ptrWeWontDelete){}));
     my_bulk = shared_bulk.get();
+    my_bulk->mesh_meta_data().use_simple_fields();
     stk_IO().set_bulk_data( shared_bulk );
     stk_IO().populate_bulk_data();
   }
@@ -630,7 +633,7 @@ Region::associate_input_mesh(const std::string & model_name, bool assert_32bit_i
     entity_rank_names.push_back("FAMILY_TREE");
     my_generated_mesh = std::make_unique<BoundingBoxMesh>(generated_mesh_element_type,entity_rank_names);
     my_meta = &my_generated_mesh->meta_data();
-    stk::mesh::Field<double, stk::mesh::Cartesian> & coords_field = my_meta->declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
+    stk::mesh::Field<double> & coords_field = my_meta->declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
     stk::mesh::put_field_on_mesh(coords_field, my_meta->universal_part(), generated_mesh_element_type.dimension(), nullptr);
   }
   else

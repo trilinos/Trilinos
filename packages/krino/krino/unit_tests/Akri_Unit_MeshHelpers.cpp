@@ -8,6 +8,8 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -104,6 +106,13 @@ void test_and_cleanup_internal_side(stk::mesh::BulkData & mesh, const stk::mesh:
 }
 }
 
+auto create_2D_mesh(const stk::ParallelMachine & pm)
+{
+  std::unique_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(pm).set_spatial_dimension(2).create();
+  bulk->mesh_meta_data().use_simple_fields();
+  return bulk;
+}
+
 TEST(MeshHelpers, DeclareElementSide)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -118,9 +127,10 @@ TEST(MeshHelpers, DeclareElementSide)
    *    1---2---3
    */
 
-  unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+
+  auto meshPtr = create_2D_mesh(pm);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
@@ -205,9 +215,9 @@ TEST(MeshHelpers, FullyCoincidentVolumeElements)
   // ranks 0 and 1 will have any elements. We test larger number of processors to ensure that
   // we get a parallel-consistent result to avoid potential parallel hangs in the full app.
 
-  unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+  auto meshPtr = create_2D_mesh(pm);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& active_part = meta.declare_part("active");
@@ -231,9 +241,9 @@ TEST(MeshHelpers, PartiallyCoincidentActiveVolumeElements)
 
   // This test will create a two element mesh (quad4 elements) on 1 or 2 processors.
 
-  unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+  auto meshPtr = create_2D_mesh(pm);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& active_part = meta.declare_part("active");
@@ -257,9 +267,9 @@ TEST(MeshHelpers, NotCoincidentActiveDegenerateVolumeElements)
 
   // This test will create a two element mesh (quad4 elements) on 1 or 2 processors.
 
-  unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+  auto meshPtr = create_2D_mesh(pm);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& active_part = meta.declare_part("active");

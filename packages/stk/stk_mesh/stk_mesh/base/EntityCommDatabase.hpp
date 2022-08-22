@@ -62,6 +62,7 @@ namespace mesh {
 class CommMapChangeListener {
 public:
     virtual ~CommMapChangeListener(){}
+    virtual void removedGhost(const EntityKey& key, unsigned ghostId, int proc) = 0;
     virtual void removedKey(const EntityKey& key) = 0;
 };
 
@@ -128,17 +129,17 @@ PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_
 }
 
 inline
-PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, const Ghosting & ghosting)
+PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, unsigned ghostingOrdinal)
 {
   EntityCommInfoVector::const_iterator ghostBegin = commInfo.begin();
   EntityCommInfoVector::const_iterator ghostEnd, end = commInfo.end();
-  while(ghostBegin != end && ghostBegin->ghost_id != ghosting.ordinal()) {
+  while(ghostBegin != end && ghostBegin->ghost_id != ghostingOrdinal) {
     ++ghostBegin;
   } 
   
   if (ghostBegin != end) {
     ghostEnd = ghostBegin+1;
-    while(ghostEnd != end && ghostEnd->ghost_id == ghosting.ordinal()) {
+    while(ghostEnd != end && ghostEnd->ghost_id == ghostingOrdinal) {
       ++ghostEnd;
     } 
     return PairIterEntityComm( ghostBegin , ghostEnd );

@@ -230,7 +230,7 @@ public:
     void my_internal_resolve_ghosted_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
+        this->m_meshModification.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_parallel_create()
@@ -278,12 +278,6 @@ public:
     void my_set_state(stk::mesh::Entity entity, stk::mesh::EntityState entity_state)
     {
         set_state(entity,entity_state);
-    }
-
-    void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
-    {
-        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
-        delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
     }
 
     void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, const std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>& new_send)

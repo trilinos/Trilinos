@@ -13,6 +13,7 @@
 namespace krino {
 
 void expect_eq(const Vector3d & gold, const Vector3d & result, const double relativeTol=1.e-6);
+void expect_eq_absolute(const Vector3d & gold, const Vector3d & result, const double absoluteTol=1.e-6);
 
 }
 

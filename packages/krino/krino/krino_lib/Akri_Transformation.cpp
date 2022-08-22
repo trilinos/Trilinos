@@ -84,13 +84,8 @@ Transformation::initialize()
 void
 Transformation::update( const double time ) const
 {
-  if (time == my_last_update)
+  if (my_last_update > 0. && time == my_last_update)
   {
-    return;
-  }
-  if (my_last_update < 0.0)
-  {
-    my_last_update = time;
     return;
   }
 

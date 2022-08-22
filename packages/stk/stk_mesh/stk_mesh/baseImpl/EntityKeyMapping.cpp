@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
+#include <stk_mesh/baseImpl/EntityKeyMapping.hpp>
 #include <stddef.h>                     // for NULL
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <vector>
@@ -74,7 +74,7 @@ private:
   const EntityKey& m_key;
 };
 
-EntityRepository::EntityRepository()
+EntityKeyMapping::EntityKeyMapping()
  : m_entities(stk::topology::NUM_RANKS),
    m_create_cache(stk::topology::NUM_RANKS),
    m_update_cache(stk::topology::NUM_RANKS),
@@ -84,11 +84,11 @@ EntityRepository::EntityRepository()
 {
 }
 
-EntityRepository::~EntityRepository()
+EntityKeyMapping::~EntityKeyMapping()
 {
 }
 
-void EntityRepository::clear_all_cache()
+void EntityKeyMapping::clear_all_cache()
 {
   EntityRank nRanks = static_cast<EntityRank>(m_create_cache.size());
   for(EntityRank rank=stk::topology::BEGIN_RANK; rank<nRanks; ++rank) {
@@ -96,7 +96,7 @@ void EntityRepository::clear_all_cache()
   }
 }
 
-void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
+void EntityKeyMapping::clear_destroyed_entity_cache(EntityRank rank) const
 {
   if (!m_destroy_cache[rank].empty()) {
     std::vector<EntityKey>& destroy = m_destroy_cache[rank];
@@ -135,7 +135,7 @@ void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
   }
 }
 
-void EntityRepository::clear_updated_entity_cache(EntityRank rank) const
+void EntityKeyMapping::clear_updated_entity_cache(EntityRank rank) const
 {
   if (!m_update_cache[rank].empty()) {
     std::vector<std::pair<EntityKey,EntityKey> >& update = m_update_cache[rank];
@@ -154,7 +154,7 @@ void EntityRepository::clear_updated_entity_cache(EntityRank rank) const
   }
 }
 
-void EntityRepository::clear_created_entity_cache(EntityRank rank) const
+void EntityKeyMapping::clear_created_entity_cache(EntityRank rank) const
 {
   if (!m_create_cache[rank].empty()) {
     std::sort(m_create_cache[rank].begin(), m_create_cache[rank].end());
@@ -167,7 +167,7 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
   }
 }
 
-void EntityRepository::clear_cache(EntityRank rank) const
+void EntityKeyMapping::clear_cache(EntityRank rank) const
 {
   clear_created_entity_cache(rank);
 
@@ -177,7 +177,7 @@ void EntityRepository::clear_cache(EntityRank rank) const
 }
 
 std::pair<stk::mesh::entity_iterator,bool>
-EntityRepository::add_to_cache(const EntityKey& key)
+EntityKeyMapping::add_to_cache(const EntityKey& key)
 {
     bool inserted_new_entity = false;
     EntityRank rank = key.rank();
@@ -208,7 +208,7 @@ EntityRepository::add_to_cache(const EntityKey& key)
     return std::make_pair(iter, inserted_new_entity);
 }
 
-stk::mesh::entity_iterator EntityRepository::get_from_cache(const EntityKey& key) const
+stk::mesh::entity_iterator EntityKeyMapping::get_from_cache(const EntityKey& key) const
 {
   if (!m_create_cache[key.rank()].empty()) {
     EntityKeyEntityVector& cache = m_create_cache[key.rank()];
@@ -222,7 +222,7 @@ stk::mesh::entity_iterator EntityRepository::get_from_cache(const EntityKey& key
 }
 
 std::pair<stk::mesh::entity_iterator ,bool>
-EntityRepository::internal_create_entity( const EntityKey & key)
+EntityKeyMapping::internal_create_entity( const EntityKey & key)
 {
   if (key.rank() > entity_rank_count()) {
     m_entities.resize(key.rank());
@@ -242,7 +242,7 @@ EntityRepository::internal_create_entity( const EntityKey & key)
   return add_to_cache(key);
 }
 
-Entity EntityRepository::get_entity(const EntityKey &key) const
+Entity EntityKeyMapping::get_entity(const EntityKey &key) const
 {
   EntityRank rank = key.rank();
   if (!m_destroy_cache[rank].empty()) {
@@ -279,7 +279,7 @@ Entity EntityRepository::get_entity(const EntityKey &key) const
   return (iter != entities.end() && (iter->first==key)) ? iter->second : Entity() ;
 }
 
-void EntityRepository::update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity)
+void EntityKeyMapping::update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity)
 {
   EntityRank rank = new_key.rank();
   clear_created_entity_cache(rank);
@@ -292,7 +292,7 @@ void EntityRepository::update_entity_key(EntityKey new_key, EntityKey old_key, E
   m_update_cache[rank].emplace_back(old_key, new_key);
 }
 
-void EntityRepository::destroy_entity(EntityKey key, Entity entity)
+void EntityKeyMapping::destroy_entity(EntityKey key, Entity entity)
 { 
   EntityRank rank = key.rank();
   clear_created_entity_cache(rank);

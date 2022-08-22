@@ -56,7 +56,6 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 
 

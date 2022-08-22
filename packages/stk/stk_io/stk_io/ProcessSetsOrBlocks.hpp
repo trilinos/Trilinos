@@ -189,7 +189,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name);
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity);
 
-void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 template <typename INT>
 void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
@@ -324,9 +324,9 @@ void process_hidden_nodesets(Ioss::Region &io, stk::mesh::BulkData & bulk)
 void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior);
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
-void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
-void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta);
 void build_assembly_hierarchies(Ioss::Region &region, stk::mesh::MetaData &meta);
 

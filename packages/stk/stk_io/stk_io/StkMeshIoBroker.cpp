@@ -212,6 +212,22 @@ stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field() const
     return * coord_field;
 }
 
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks() const
+{
+  return get_filter_empty_input_entity_blocks(m_activeMeshIndex);
+}
+
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks(size_t input_file_index) const
+{
+  validate_input_file_index(input_file_index);
+  auto ioss_input_region = m_inputFiles[input_file_index]->get_input_io_region();
+
+  bool retainEmptyBlocks = (ioss_input_region->get_assemblies().size() > 0);
+  const Ioss::PropertyManager &properties = ioss_input_region->get_database()->get_property_manager();
+  Ioss::Utils::check_set_bool_property(properties, "RETAIN_EMPTY_BLOCKS", retainEmptyBlocks);
+  return !retainEmptyBlocks;
+}
+
 size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
 {
     auto input_file = Teuchos::rcp(new InputFile(ioss_input_region));
@@ -477,11 +493,22 @@ void StkMeshIoBroker::create_input_mesh()
         initialize_spatial_dimension(meta_data(), spatial_dimension, m_rankNames);
     }
 
+    TopologyErrorHandler handler;
+    if(get_filter_empty_input_entity_blocks()) {
+      handler = [](stk::mesh::Part &part) {
+        std::ostringstream msg ;
+        msg << "\n\nERROR: Entity Block " << part.name() << " has invalid topology\n\n";
+        throw std::runtime_error( msg.str() );
+      };
+    } else {
+      handler = [](stk::mesh::Part &part) { };
+    }
+
     process_nodeblocks(*region,    meta_data());
-    process_elementblocks(*region, meta_data());
+    process_elementblocks(*region, meta_data(), handler);
     process_sidesets(*region,      meta_data());
-    process_face_blocks(*region,   meta_data());
-    process_edge_blocks(*region,   meta_data());
+    process_face_blocks(*region,   meta_data(), handler);
+    process_edge_blocks(*region,   meta_data(), handler);
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
         process_nodesets(*region,  meta_data());
@@ -666,8 +693,8 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
     bool ints64bit = db_api_int_size(region) == 8;
     bool processAllInputNodes = true;
-    if(region->property_exists(stk::io::s_process_all_input_nodes)) {
-        processAllInputNodes = region->get_property(stk::io::s_process_all_input_nodes).get_int();
+    if(region->property_exists(stk::io::s_processAllInputNodes)) {
+        processAllInputNodes = region->get_property(stk::io::s_processAllInputNodes).get_int();
     }
 
     if (ints64bit) {

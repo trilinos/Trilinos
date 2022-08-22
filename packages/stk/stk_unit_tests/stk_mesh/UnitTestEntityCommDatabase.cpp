@@ -46,15 +46,22 @@ TEST(EntityCommDatabase, testCommMapChangeListener)
   stk::mesh::EntityCommDatabase commDB;
   stk::mesh::EntityCommListInfoVector comm_list;
   std::vector<stk::mesh::EntityComm*> entityComms(200);
-  stk::mesh::CommListUpdater comm_list_updater(comm_list, entityComms);
+  std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityCommInfo>> removedGhosts;
+  stk::mesh::CommListUpdater comm_list_updater(comm_list, entityComms, removedGhosts);
   commDB.setCommMapChangeListener(&comm_list_updater);
 
   int owner = 0;
   stk::mesh::EntityKey key(stk::topology::NODE_RANK, 99);
   unsigned ghost_id = 3;
-  int proc = 4;
-  stk::mesh::EntityCommInfo value(ghost_id, proc);
-  commDB.insert(key, value, owner);
+  commDB.insert(key, stk::mesh::EntityCommInfo(ghost_id, 2), owner);
+  commDB.insert(key, stk::mesh::EntityCommInfo(ghost_id, 3), owner);
+  commDB.insert(key, stk::mesh::EntityCommInfo(ghost_id, 4), owner);
+
+  EXPECT_FALSE(commDB.erase(key, stk::mesh::EntityCommInfo(ghost_id, 1)));
+  EXPECT_TRUE(commDB.erase(key, stk::mesh::EntityCommInfo(ghost_id, 3)));
+  EXPECT_EQ(1u, removedGhosts.size());
+  EXPECT_TRUE(commDB.erase(key, stk::mesh::EntityCommInfo(ghost_id, 2)));
+  EXPECT_EQ(2u, removedGhosts.size());
 
   //CommListUpdater only manages removing entries from comm-list,
   //so we must add an entry manually to set up the test.

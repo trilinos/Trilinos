@@ -30,7 +30,7 @@ class Transformation {
 public:
   Transformation()
     : my_translational_velocity(Vector3d::ZERO), my_rotational_velocity(Vector3d::ZERO),
-      my_reference_point(Vector3d::ZERO), my_last_update(-1.0), my_update_orientation(), my_update_offset(Vector3d::ZERO) {}
+      my_reference_point(Vector3d::ZERO), my_last_update(0.0), my_update_orientation(), my_update_offset(Vector3d::ZERO) {}
   virtual ~Transformation() {}
 
   void set_translational_velocity(const Vector3d & v) { my_translational_velocity = v; }
