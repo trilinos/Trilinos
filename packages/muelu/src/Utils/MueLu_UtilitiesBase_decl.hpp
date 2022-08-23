@@ -198,26 +198,29 @@ namespace MueLu {
     static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow=-1) {
 
       using STS = Teuchos::ScalarTraits<Scalar>;
-      RCP<CrsGraph> sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), expectedNNZperRow);
+      RCP<CrsGraph> sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), expectedNNZperRow <= 0 ? A->getGlobalMaxNumRowEntries() : expectedNNZperRow);
 
       RCP<Vector> diag = GetMatrixOverlappedDiagonal(*A);
       ArrayRCP<const Scalar> D = diag->getData(0);
 
-      for(LocalOrdinal k=0; k<sparsityPattern->getLocalNumRows(); k++)
+      for(size_t row=0; row<A->getLocalNumRows(); row++)
       {
-        ArrayView<const LocalOrdinal> Ik;
-        ArrayView<const Scalar> Ak;
-        A->getLocalRowView(k, Ik, Ak);
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> vals;
+        A->getLocalRowView(row, indices, vals);
 
-        const Scalar Dk = STS::magnitude(D[k]) > 0.0 ? STS::magnitude(D[k]) : 1.0;
-        Array<LocalOrdinal> Iknew;
+        GlobalOrdinal globalRow = A->getRowMap()->getGlobalElement(row);
+        LocalOrdinal col = A->getColMap()->getLocalElement(globalRow);
 
-        for(LocalOrdinal i=0; i<Ik.size(); i++)
-          // keep diagonal, might add fixing
-          if(k == Ik[i] || STS::magnitude(STS::squareroot(Dk)*Ak[i]*STS::squareroot(Dk)) > STS::magnitude(threshold))
-            Iknew.append(Ik[i]);
+        const Scalar Dk = STS::magnitude(D[col]) > 0.0 ? STS::magnitude(D[col]) : 1.0;
+        Array<GlobalOrdinal> indicesNew;
 
-        sparsityPattern->insertLocalIndices(k, ArrayView<const LocalOrdinal>(Iknew.data(), Iknew.length()));
+        for(size_t i=0; i<size_t(indices.size()); i++)
+          // keep diagonal per default
+          if(col == indices[i] || STS::magnitude(STS::squareroot(Dk)*vals[i]*STS::squareroot(Dk)) > STS::magnitude(threshold))
+            indicesNew.append(A->getColMap()->getGlobalElement(indices[i]));
+
+        sparsityPattern->insertGlobalIndices(globalRow, ArrayView<const GlobalOrdinal>(indicesNew.data(), indicesNew.length()));
       }
       sparsityPattern->fillComplete();
 
