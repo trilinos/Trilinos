@@ -2773,10 +2773,10 @@ public:
     {
       using policy_type = Kokkos::TeamPolicy<host_exec>;
       size_t scratch_per_row = sizeof(GO) * maxRowNumEnt + sizeof (LO) * maxRowNumEnt + numBytesPerValue * maxRowNumScalarEnt
-        + 2 * sizeof(GO) // Yeah, this is a fudge factor
+        + 2 * sizeof(GO); // Yeah, this is a fudge factor
 
       const auto policy = policy_type (numImportLIDs, 1, 1)     
-        .set_scratch_size (0, Kokkos::PerTeam (scratch_size_per_row);
+        .set_scratch_size (0, Kokkos::PerTeam (scratch_per_row));
       using host_scratch_space = typename host_exec::scratch_memory_space;
       
       using pair_type = Kokkos::pair<size_t, size_t>;
