@@ -583,7 +583,7 @@ namespace Tpetra {
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbes of MPI pocesses.
+    // runs with large numbers of MPI processes.
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
