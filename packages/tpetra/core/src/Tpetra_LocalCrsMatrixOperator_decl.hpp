@@ -337,12 +337,6 @@ namespace Tpetra {
     
     
     private:
-      MultiVectorScalar alpha_;
-      local_matrix_device_type A_;
-      x_type X_;
-      MultiVectorScalar beta_;
-      y_type Y_;
-      OffsetDeviceViewType offRankOffsets_;
 
       typedef typename local_matrix_device_type::non_const_value_type value_type;
       typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
@@ -351,6 +345,14 @@ namespace Tpetra {
       typedef typename team_policy::member_type team_member;
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
 
+
+      MultiVectorScalar alpha_;
+      local_matrix_device_type A_;
+      x_type X_;
+      MultiVectorScalar beta_;
+      y_type Y_;
+      OffsetDeviceViewType offRankOffsets_;
+
     public:
       OffRankSpmvFunctor(const MultiVectorScalar &alpha, 
       const local_matrix_device_type &A, 
@@ -358,7 +360,8 @@ namespace Tpetra {
       const MultiVectorScalar &beta, 
       y_type &Y,
       const OffsetDeviceViewType &offRankOffsets) 
-        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y), offRankOffsets_(offRankOffsets) {}
+        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y), offRankOffsets_(offRankOffsets) {
+        }
 
       /*! \brief contribution of row i
 
@@ -374,9 +377,11 @@ namespace Tpetra {
 
         // this is good if Y_.extent(1) is 1, since Y and each element of A is accessed
         // only once
+        const auto jie = A_.graph.row_map(i+1);
+        const auto jis = offRankOffsets_(i);
         for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
           MultiVectorScalar sum = 0;
-          for (auto ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
+          for (auto ji = jis; ji < jie; ++ji) {
             value_type A_ij = A_.values(ji);
             ordinal_type j = A_.graph.entries(ji);
             sum += A_ij * X_(j, k); 
