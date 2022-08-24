@@ -1,6 +1,6 @@
 # CMAKE File for "MyApp" application building against an installed Trilinos
 
-cmake_minimum_required(VERSION 3.17.1)
+cmake_minimum_required(VERSION 3.0)
 
 # Declare project but don't process compilers yet
 #
