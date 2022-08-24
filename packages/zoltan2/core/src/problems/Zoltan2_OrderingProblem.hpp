@@ -283,7 +283,8 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
   graphFlags.set(BUILD_LOCAL_GRAPH);
 
   if (method.compare("rcm") == 0) {
-    AlgRCM<base_adapter_t> alg(this->baseInputAdapter_, this->params_, this->comm_, this->envConst_, graphFlags);
+    AlgRCM<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                               this->comm_, this->envConst_, graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("natural") == 0) {
@@ -297,12 +298,14 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("sorted_degree") == 0) {
-    AlgSortedDegree<base_adapter_t> alg(this->graphModel_, this->params_,
-      this->comm_);
+    AlgSortedDegree<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                        this->comm_, this->envConst_,
+                                        graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("metis") == 0) {
-    AlgMetis<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    AlgMetis<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                 this->comm_, this->envConst_, graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("minimum_degree") == 0) {
@@ -362,6 +365,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   if ((method == std::string("rcm")) ||
       (method == std::string("sorted_degree")) ||
+      (method == std::string("metis")) ||
       (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
