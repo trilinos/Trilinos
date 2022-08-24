@@ -352,10 +352,15 @@ namespace Tpetra {
           "makeMatrix: row map is null.  "
           "Please report this bug to the Tpetra developers.");
 
+        size_t maxNumEntriesPerRow = 0;
+        for (size_t i = 0; i < myNumEntriesPerRow.size(); ++i) {
+          maxNumEntriesPerRow = std::max(maxNumEntriesPerRow, myNumEntriesPerRow[i]);
+        }
+
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+          rcp (new sparse_matrix_type (pRowMap, maxNumEntriesPerRow,
                                        constructorParams));
 
         // List of the global indices of my rows.
@@ -452,6 +457,8 @@ namespace Tpetra {
         myRowPtr = null;
         myColInd = null;
         myValues = null;
+
+
 
         if (callFillComplete) {
           A->fillComplete (domainMap, rangeMap);
@@ -602,6 +609,16 @@ namespace Tpetra {
         for(size_t i=0;i<endrow-startrow;i++)
           numEntriesPerRow[i]=rowPtr[i+1]-rowPtr[i];
 
+  // distributor
+  Teuchos::ParameterList dlist("Tpetra::Distributor");
+  dlist.set("Send type", "Isend");
+  // graph
+  Teuchos::ParameterList glist("Tpetra::CrsGraph");
+  glist.set("Import", dlist);
+  glist.set("Export", dlist);
+  // CrsMatrix
+  RCP<Teuchos::ParameterList> mlist = Teuchos::parameterList(glist);
+
         // Distribute the matrix data.  Each processor has to add the
         // rows that it owns.  If you try to make Proc 0 call
         // insertGlobalValues() for _all_ the rows, not just those it
@@ -625,7 +642,7 @@ namespace Tpetra {
           pRowMap, pRangeMap, pDomainMap, callFillComplete);*/
         RCP<sparse_matrix_type> pMatrix =
           makeMatrix (numEntriesPerRow, rowPtr, colInd, values,
-                      pRowMap, pRangeMap, pDomainMap, callFillComplete);
+                      pRowMap, pRangeMap, pDomainMap, mlist, mlist);
         // Only use a reduce-all in debug mode to check if pMatrix is
         // null.  Otherwise, just throw an exception.  We never expect
         // a null pointer here, so we can save a communication.
