@@ -1672,7 +1672,7 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs_Mixed, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -1789,6 +1789,7 @@ namespace MueLuTests {
     TEST_EQUALITY(0,0);
   }
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, CheckNullspaceDimension, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
@@ -1835,7 +1836,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs_Mixed, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node) \
     
 

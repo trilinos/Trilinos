@@ -497,6 +497,28 @@ namespace Xpetra {
   }
 
 
+  // Expert only
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceCrsMatrix(RCP<CrsMatrix> & M) {
+    // Clear the old view table
+    Teuchos::Hashtable<viewLabel_t, RCP<MatrixView> > dummy_table;
+    Matrix::operatorViewTable_ = dummy_table;
+
+    finalDefaultView_ = M->isFillComplete();
+    // Set matrix data
+    matrixData_ = M;
+    
+
+    // Default view
+    CreateDefaultView();
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetStorageBlockSize() const {
+    return matrixData_->GetStorageBlockSize();
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::residual(
             const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X, 

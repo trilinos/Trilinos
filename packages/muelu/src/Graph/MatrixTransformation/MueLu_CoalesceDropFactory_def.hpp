@@ -370,7 +370,7 @@ namespace MueLu {
           distanceLaplacianAlgo = scaled_cut_symmetric;
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut), not \"" << distanceLaplacianAlgoStr << "\"");
-        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+        GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize()<< std::endl;
       } else if (algo == "classical") {
         if (classicalAlgoStr == "default")
           classicalAlgo = defaultAlgo;
@@ -396,6 +396,27 @@ namespace MueLu {
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only
 
+      
+      /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+       BlockSize is the number of storage blocks that must kept together during the amalgamation process.
+
+       Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+       numPDEs = BlockSize * storageblocksize.
+       
+       If numPDEs==1
+         Matrix is point storage (classical CRS storage).  storageblocksize=1 and BlockSize=1
+         No other values makes sense.
+
+       If numPDEs>1
+         If matrix uses point storage, then storageblocksize=1  and BlockSize=numPDEs.
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and BlockSize=numPDEs/n.  
+         Thus far, only storageblocksize=numPDEs and BlockSize=1 has been tested.
+      */      
+      TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
+      const LO BlockSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
+
+
       /************************** RS or SA-style Classical Dropping (and variants) **************************/
       if (algo == "classical") {
         if (predrop_ == null) {
@@ -417,7 +438,7 @@ namespace MueLu {
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !useSignedClassicalRS && !useSignedClassicalSA && A->hasCrsGraph()) {
+        if ( BlockSize==1 && threshold == STS::zero() && !useSignedClassicalRS && !useSignedClassicalSA && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -442,10 +463,10 @@ namespace MueLu {
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
-        } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
-                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph()) ||
-                    (A->GetFixedBlockSize() == 1 && useSignedClassicalRS) ||
-                    (A->GetFixedBlockSize() == 1 && useSignedClassicalSA) ) {	  
+        } else if ( (BlockSize == 1 && threshold != STS::zero()) ||
+                    (BlockSize == 1 && threshold == STS::zero() && !A->hasCrsGraph()) ||
+                    (BlockSize == 1 && useSignedClassicalRS) ||
+                    (BlockSize == 1 && useSignedClassicalSA) ) {	  
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
           // OR a matrix without a CrsGraph
@@ -721,7 +742,7 @@ namespace MueLu {
            }
 #endif
           }//end generateColoringGraph
-        } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
+        } else if (BlockSize > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
@@ -853,7 +874,7 @@ namespace MueLu {
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize); // full block size
 
-        } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
+        } else if (BlockSize > 1 && threshold != STS::zero()) {
           // Case 4:  Multiple DOF/node problem with dropping
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();

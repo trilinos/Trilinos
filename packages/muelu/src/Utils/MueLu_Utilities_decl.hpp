@@ -97,6 +97,8 @@ class Epetra_Vector;
 
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 #include <Tpetra_FECrsMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Map.hpp>
@@ -198,6 +200,14 @@ namespace MueLu {
 
     static const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2TpetraCrs(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op);
     static       Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2NonConstTpetraCrs(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op);
+
+    static RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraBlockCrs(RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op);
+   static RCP<      Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2NonConstTpetraBlockCrs(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op);
+
+   static const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2TpetraBlockCrs(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op);
+    static       Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2NonConstTpetraBlockCrs(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op);
+
+
 
     static RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraRow(RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op);
     static RCP<      Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2NonConstTpetraRow(RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op);
@@ -532,6 +542,76 @@ namespace MueLu {
 #endif
     }
 
+
+    static RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraBlockCrs(RCP<const Matrix> Op)  {
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2TpetraBlockCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
+      // Get the underlying Tpetra Mtx
+      RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+      if (crsOp == Teuchos::null)
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+      const RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsOp->getCrsMatrix());
+      if (tmp_ECrsMtx == Teuchos::null)
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_ECrsMtx->getTpetra_BlockCrsMatrix();
+#endif
+    }
+
+    static RCP<      Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2NonConstTpetraBlockCrs(RCP<Matrix> Op){
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2NonConstTpetraBlockCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
+      RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+      if (crsOp == Teuchos::null)
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+      const RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsOp->getCrsMatrix());
+      if (tmp_ECrsMtx == Teuchos::null)
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_ECrsMtx->getTpetra_BlockCrsMatrixNonConst();
+#endif
+    };
+
+    static const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2TpetraBlockCrs(const Matrix& Op)   {
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2TpetraBlockCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
+      try {
+        const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
+        try {
+          const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
+          return *tmp_ECrsMtx.getTpetra_BlockCrsMatrix();
+        } catch (std::bad_cast&) {
+          throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
+        }
+      } catch (std::bad_cast&) {
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+      }
+#endif
+    }
+    static       Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2NonConstTpetraBlockCrs(Matrix& Op) {
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2NonConstTpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
+      try {
+        CrsMatrixWrap& crsOp = dynamic_cast<CrsMatrixWrap&>(Op);
+        try {
+          Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmp_ECrsMtx = dynamic_cast<Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*crsOp.getCrsMatrix());
+          return *tmp_ECrsMtx.getTpetra_BlockCrsMatrixNonConst();
+        } catch (std::bad_cast&) {
+          throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraBlockCrsMatrix failed");
+        }
+      } catch (std::bad_cast&) {
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+      }
+#endif
+    }
+
+
     static RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraRow(RCP<const Operator> Op)   {
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
@@ -799,9 +879,11 @@ namespace MueLu {
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
             throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
 #else
-            try {
+            using Helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+            /***************************************************************/
+            if(Helpers::isTpetraCrs(Op)) {
               const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
-
+              
               // Compute the transpose A of the Tpetra matrix tpetraOp.
               RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
               Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
@@ -825,9 +907,43 @@ namespace MueLu {
 
               return AAAA;
             }
-            catch (std::exception& e) {
-              std::cout << "threw exception '" << e.what() << "'" << std::endl;
-              throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
+              /***************************************************************/
+            else if(Helpers::isTpetraBlockCrs(Op)) {
+              using BCRS = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+              using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+              const BCRS & tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(Op);
+
+              if(!Op.getRowMap()->getComm()->getRank())
+                std::cout<<"WARNING: Utilities::Transpose(): Using inefficient placeholder algorithm for Transpose"<<std::endl;
+
+              RCP<BCRS> At;
+              RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpetraOp);
+              {
+                Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Acrs,label);
+
+                using Teuchos::ParameterList;
+                using Teuchos::rcp;
+                RCP<ParameterList> transposeParams = params.is_null () ?
+                  rcp (new ParameterList) :
+                  rcp (new ParameterList (*params));
+                transposeParams->set ("sort", false);
+                RCP<CRS> Atcrs = transposer.createTranspose(transposeParams);
+                
+                At = Tpetra::convertToBlockCrsMatrix(*Atcrs,Op.GetStorageBlockSize());
+              }
+              RCP<Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(At));
+              RCP<CrsMatrix>                                                           AAA  = rcp_implicit_cast<CrsMatrix>(AA);
+              RCP<Matrix>                                                              AAAA = rcp( new CrsMatrixWrap(AAA));
+              
+              if (Op.IsView("stridedMaps"))
+                AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true/*doTranspose*/);
+
+              return AAAA;
+
+            }
+            /***************************************************************/
+            else {
+              throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs or BlockCrs matrix");
             }
 #endif
 #else

@@ -52,6 +52,9 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
+#ifdef HAVE_MUELU_TPETRA
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#endif
 
 // Including this one last ensure that the short names of the above headers are defined properly
 #include "MueLu_GeometricInterpolationPFactory_decl.hpp"
@@ -110,8 +113,7 @@ namespace MueLu {
       Input(fineLevel, "Coordinates");
       Input(fineLevel, "coarseCoordinatesFineMap");
       Input(fineLevel, "coarseCoordinatesMap");
-    }
-
+    }     
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -155,6 +157,7 @@ namespace MueLu {
       SubFactoryMonitor sfm(*this, "BuildCoordinates", coarseLevel);
       RCP<const Map> coarseCoordsFineMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesFineMap");
       RCP<const Map> coarseCoordsMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesMap");
+
       fineCoordinates   = Get< RCP<realvaluedmultivector_type> >(fineLevel, "Coordinates");
       coarseCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,Node>::Build(coarseCoordsFineMap,
                                                                                   fineCoordinates->getNumVectors());
@@ -171,6 +174,7 @@ namespace MueLu {
     }
 
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;
+
 
     if(interpolationOrder == 0) {
       SubFactoryMonitor sfm(*this, "BuildConstantP", coarseLevel);
@@ -222,8 +226,19 @@ namespace MueLu {
       RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
                                                                    fineNullspace->getNumVectors());
-      P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
-               Teuchos::ScalarTraits<SC>::zero());
+      
+      using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      if(helpers::isTpetraBlockCrs(A)) {
+        // FIXME: BlockCrs doesn't currently support transpose apply, so we have to do this the hard way
+        RCP<Matrix> Ptrans = Utilities::Transpose(*P);
+        Ptrans->apply(*fineNullspace, *coarseNullspace, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
+                 Teuchos::ScalarTraits<SC>::zero());
+      }
+      else {
+        P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
+                 Teuchos::ScalarTraits<SC>::zero());
+      }
+
       Set(coarseLevel, "Nullspace", coarseNullspace);
     }
 
@@ -257,19 +272,78 @@ namespace MueLu {
 
     *out << "Call prolongator constructor" << std::endl;
 
-    // Create the prolongator matrix and its associated objects
-    RCP<ParameterList> dummyList = rcp(new ParameterList());
-    P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-    RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
-    PCrs->setAllToScalar(1.0);
-    PCrs->fillComplete();
+    using helpers=Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    if(helpers::isTpetraBlockCrs(A)) {
+#ifdef HAVE_MUELU_TPETRA
+      SC one  = Teuchos::ScalarTraits<SC>::one();
+      SC zero = Teuchos::ScalarTraits<SC>::zero();
+      LO NSDim = A->GetStorageBlockSize();
 
-    // set StridingInformation of P
-    if (A->IsView("stridedMaps") == true) {
-      P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedDomainMap);
-    } else {
-      P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMap);
+      // Build the exploded Map
+      RCP<const Map> BlockMap = prolongatorGraph->getDomainMap();
+      Teuchos::ArrayView<const GO> block_dofs = BlockMap->getLocalElementList();
+      Teuchos::Array<GO> point_dofs(block_dofs.size()*NSDim);
+      for(LO i=0, ct=0; i<block_dofs.size(); i++) {
+        for(LO j=0; j<NSDim; j++) {
+          point_dofs[ct] = block_dofs[i]*NSDim + j;
+          ct++;
+        }
+      }
+      
+      RCP<const Map> PointMap = MapFactory::Build(BlockMap->lib(),
+                                                  BlockMap->getGlobalNumElements() *NSDim,
+                                                  point_dofs(),
+                                                  BlockMap->getIndexBase(),
+                                                  BlockMap->getComm());
+      strideInfo[0]    = A->GetFixedBlockSize();
+      RCP<const StridedMap> stridedPointMap =  StridedMapFactory::Build(PointMap, strideInfo);
+
+      RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(prolongatorGraph, PointMap, A->getRangeMap(),NSDim);
+      RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+      if(P_tpetra.is_null()) throw std::runtime_error("BuildConstantP Matrix factory did not return a Tpetra::BlockCrsMatrix");
+      RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
+
+      // NOTE: Assumes block-diagonal prolongation
+      Teuchos::Array<LO> temp(1);
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::Array<Scalar> block(NSDim*NSDim, zero);
+      for(LO i=0; i<NSDim; i++)
+        block[i*NSDim+i] = one;
+      for(LO i=0; i<(int)prolongatorGraph->getLocalNumRows(); i++) {
+        prolongatorGraph->getLocalRowView(i,indices);
+        for(LO j=0; j<(LO)indices.size();j++) {
+          temp[0] = indices[j];
+          P_tpetra->replaceLocalValues(i,temp(),block());
+        }
+      }
+
+      P = P_wrap;
+      if (A->IsView("stridedMaps") == true) {
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedPointMap);
+      }
+      else {
+        P->CreateView("stridedMaps", P->getRangeMap(),   PointMap);
+      }
+
+#else
+      throw std::runtime_error("GeometricInteroplationFactory::Build(): BlockCrs requires Tpetra");
+#endif
+
     }
+    else {
+      // Create the prolongator matrix and its associated objects
+      RCP<ParameterList> dummyList = rcp(new ParameterList());
+      P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
+      RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+      PCrs->setAllToScalar(1.0);
+      PCrs->fillComplete();          
+
+      // set StridingInformation of P    
+      if (A->IsView("stridedMaps") == true)
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), stridedDomainMap);
+      else 
+        P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMap);
+    }      
 
   } // BuildConstantP
 
@@ -293,7 +367,7 @@ namespace MueLu {
 
     // Compute 2^numDimensions using bit logic to avoid round-off errors
     const int numInterpolationPoints = 1 << numDimensions;
-    const int dofsPerNode = A->GetFixedBlockSize();
+    const int dofsPerNode = A->GetFixedBlockSize()/ A->GetStorageBlockSize();;
 
     RCP<ParameterList> dummyList = rcp(new ParameterList());
     P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));

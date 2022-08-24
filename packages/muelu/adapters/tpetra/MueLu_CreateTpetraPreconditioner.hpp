@@ -171,6 +171,25 @@ namespace MueLu {
     MueLu::ReuseXpetraPreconditioner<SC,LO,GO,NO>(A, H);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
+                                 MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op) {
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
+
+    RCP<Hierarchy> H = Op.GetHierarchy();
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(inA));
+    TEUCHOS_TEST_FOR_EXCEPTION(temp==Teuchos::null, Exceptions::RuntimeError, "ReuseTpetraPreconditioner: cast from Tpetra::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
+    RCP<Matrix> A = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
+
+    MueLu::ReuseXpetraPreconditioner<SC,LO,GO,NO>(A, H);
+  }
+
 
 
 } //namespace

@@ -132,7 +132,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
-        Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
+                      Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
     Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();

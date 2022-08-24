@@ -567,7 +567,7 @@ namespace MueLuTests {
   } // banded
 
 
- TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_Relaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_Relaxation_ViaPoint, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -592,6 +592,32 @@ namespace MueLuTests {
     }
   }
 
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_Relaxation_AsBlock, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      Teuchos::ParameterList matrixParams, ifpack2Params;
+
+      matrixParams.set("matrixType","Laplace1D");
+      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
+
+      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixParams,Xpetra::UseTpetra);     
+      ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
+      
+      Ifpack2Smoother smoother("RELAXATION",ifpack2Params);
+      
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      smoother.Setup(level);
+
+      TEST_EQUALITY(1,1);
+    }
+  }
+
+
 
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
@@ -605,7 +631,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BandedRelaxation,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockRelaxation_Autosize,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_Relaxation,SC,LO,GO,NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_Relaxation_ViaPoint,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_Relaxation_AsBlock,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

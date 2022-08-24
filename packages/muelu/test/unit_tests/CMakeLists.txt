@@ -445,8 +445,9 @@ ENDIF()
 
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
+ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
-  ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
   ADD_SUBDIRECTORY(ParameterList/CreateSublists/)
 ENDIF()
