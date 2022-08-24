@@ -183,16 +183,16 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
   Kokkos::deep_copy(wgtsKokkosHost, wgtsKokkos);
 
 
-  if (!fail && gidsKokkosHost.extent(0) != nLocalIds) {
+  if (!fail && gidsKokkosHost.extent(0) != static_cast<size_t>(nLocalIds)) {
     std::cerr << rank << ") getIdentifierList IDs "
               << gidsKokkosHost.extent(0) << " "
               << nLocalIds << std::endl;
     fail = 5;
   }
 
-  if (!fail && wgtsKokkosHost.extent(0) != 0) {
+  if (!fail && wgtsKokkosHost.extent(1) != 0) {
     std::cerr << rank << ") getIdentifierList Weights "
-              << wgtsKokkosHost.extent(0) << " "
+              << wgtsKokkosHost.extent(1) << " "
               << 0 << std::endl;
     fail = 6;
   }
