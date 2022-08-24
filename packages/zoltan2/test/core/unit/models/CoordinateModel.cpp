@@ -46,6 +46,8 @@
 // Testing of CoordinateModel
 //
 
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
@@ -274,12 +276,54 @@ void testCoordinateModel(std::string &fname, int nWeights,
     printFailureCode(*comm, fail);
 
 
-  Kokkos::View<const gno_t *, typename node_t::device_type> IdsKokkos;
+  ////////////////////////////////
+  //////////// KOKKOS ////////////
+  ////////////////////////////////
+  Kokkos::View<const zgno_t *, typename znode_t::device_type> gidsKokkos;
 
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> xyzKokkos;
-  Kokkos::View<scalar_t **, typename node_t::device_type> wgtsKokkos;
+  Kokkos::View<zscalar_t **, Kokkos::LayoutLeft, typename znode_t::device_type> xyzKokkos;
+  Kokkos::View<zscalar_t **, typename znode_t::device_type> wgtsKokkos;
 
-  model->getCoordinatesKokkos(IdsKokkos, xyzKokkos, wgtsKokkos);
+  model->getCoordinatesKokkos(gidsKokkos, xyzKokkos, wgtsKokkos);
+
+  if (!fail && gidsKokkos.extent(0) != static_cast<size_t>(nLocalIds))
+    fail = 10;
+
+  auto gidsKokkos_host = Kokkos::create_mirror_view(gidsKokkos);
+  Kokkos::deep_copy(gidsKokkos_host, gidsKokkos);
+
+  for (int i=0; !fail && i < nLocalIds; i++){
+    if (gidsKokkos_host(i) != idList[i])
+      fail = 11;
+  }
+
+  if (!fail && wgtsKokkos.extent(1) != static_cast<size_t>(nWeights))
+    fail = 12;
+
+  auto xyzKokkos_host = Kokkos::create_mirror_view(xyzKokkos);
+  Kokkos::deep_copy(xyzKokkos_host, xyzKokkos);
+
+  for (int dim=0; !fail && dim < coordDim; dim++){
+    for (int i=0; !fail && i < nLocalIds; i++){
+      if (xyzKokkos_host(i, dim) != vals[dim][i])
+        fail = 13;
+    }
+  }
+
+  auto wgtsKokkos_host = Kokkos::create_mirror_view(wgtsKokkos);
+  Kokkos::deep_copy(wgtsKokkos_host, wgtsKokkos);
+
+  for (int wdim=0; !fail && wdim < nWeights; wdim++){
+    for (int i=0; !fail && i < nLocalIds; i++){
+      if (wgtsKokkos_host(i, wdim) != coordWeights[wdim][i])
+        fail = 14;
+    }
+  }
+
+  gfail = globalFail(*comm, fail);
+
+  if (gfail)
+    printFailureCode(*comm, fail);
 }
 
 int main(int narg, char *arg[])
