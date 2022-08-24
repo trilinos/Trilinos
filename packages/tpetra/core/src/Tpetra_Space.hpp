@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TPETRA_SPACE_HPP
+#define TPETRA_SPACE_HPP
 
 #include <Kokkos_Core.hpp>
 
@@ -27,3 +28,5 @@ namespace Tpetra {
     Kokkos::OpenMP &get_space(int i);
 #endif
 }
+
+#endif // TPETRA_SPACE_HPP
