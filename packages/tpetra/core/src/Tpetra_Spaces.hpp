@@ -7,6 +7,7 @@
 #include <functional>
 
 #include <Kokkos_Core.hpp>
+#include "Tpetra_Details_Behavior.hpp"
 
 /*! \file
 
@@ -36,7 +37,7 @@ struct std::hash<Kokkos::Cuda>
    Assuming the instance ID uniquely distinguishes execution spaces
 */
 namespace Kokkos {
-    bool operator==(const Kokkos::Cuda &lhs, const Kokkos::Cuda &rhs) {
+    inline bool operator==(const Kokkos::Cuda &lhs, const Kokkos::Cuda &rhs) {
         return lhs.impl_instance_id() == rhs.impl_instance_id();
     }
 }
@@ -56,9 +57,6 @@ namespace Tpetra {
 
 namespace detail {
 
-    // print a warning to stderr if more than this many spaces are used
-    constexpr int NUM_SPACES_WARN_LIMIT = 128;
-
     // query the runtime to map Tpetra::Priorities to the implementation priority
     void lazy_init();
     void finalize();
@@ -70,20 +68,19 @@ struct CudaPriorityRange {
     int medium = 0; // cudaDeviceGetStreamPriorityRange has 0 for the default priority
     int high;
 };
-
 extern CudaPriorityRange cudaPriorityRange;
 #endif // KOKKOS_ENABLE_CUDA
 
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
-std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track for optimized inter-space sync
+extern std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+extern std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track for optimized inter-space sync
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
-std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+extern std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
-std::vector<Kokkos::OpenMP> openMPSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+extern std::vector<Kokkos::OpenMP> openMPSpaces[static_cast<int>(Priority::NUM_LEVELS)];
 #endif
 
 
@@ -154,7 +151,7 @@ Space &get(int i) {
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
     }
-    if (i >= detail::NUM_SPACES_WARN_LIMIT) {
+    if (i >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
         std::cerr << "WARNING: requested space " << i << std::endl;
     }
 
@@ -176,7 +173,7 @@ Kokkos::Cuda &get(int i) {
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
     }
-    if (i >= detail::NUM_SPACES_WARN_LIMIT) {
+    if (i >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
         std::cerr << "WARNING: requested space " << i << std::endl;
     }
 

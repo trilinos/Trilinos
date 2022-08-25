@@ -4895,6 +4895,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
+    // on-rank SpMV does not happen in the default space, so make sure it's finished before we do off-rank
+    // in the default space
+    if (Details::Behavior::overlapCommunicationAndComputation()) {
+      Spaces::exec_space_wait(onRankSpace, defaultSpace);
+    }
+
     /* Either the import is complete and start the off-rank part,
        or the import is complete and do the full SpMV
     */
@@ -4921,13 +4927,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // both on-rank and off-rank apply happen in a non-default exec space
     // to ensure that it overlaps with the default stream.
     // make sure both are done before export
-    // CWP: TODO, LocalCrsMatrix implicitly uses exec space 0 for on-rank columns,
-    // but this argument should be carried through localApplyOnRank once it's working
-    // properly
-    if (Details::Behavior::overlapCommunicationAndComputation()) {
-      // defaultSpace.fence("wait(localApplyOnRank)");
-      Spaces::exec_space_wait(onRankSpace, defaultSpace);
-    }
+    // if (Details::Behavior::overlapCommunicationAndComputation()) {
+    //   defaultSpace.fence("wait(localApplyOffRank)");
+    // }
 
     // If we have a nontrivial Export object, we must perform an
     // Export.  In that case, the local multiply result will go into

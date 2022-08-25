@@ -275,6 +275,11 @@ public:
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
   static bool overlapCommunicationAndComputation();
 
+  /// \brief Warn if more than this many Kokkos spaces are accessed.
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_SPACE_ID_WARN_LIMIT</tt> environment variable.
+  static size_t spacesIdWarnLimit();
 
 };
 

@@ -12,7 +12,21 @@ namespace Spaces {
 
 namespace detail {
 
+// Tpetra's managed spaces
+#ifdef KOKKOS_ENABLE_CUDA
+/*extern*/ std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+/*extern*/ std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track for optimized inter-space sync
+#endif
+#ifdef KOKKOS_ENABLE_SERIAL
+/*extern*/ std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+/*extern*/ std::vector<Kokkos::OpenMP> openMPSpaces[static_cast<int>(Priority::NUM_LEVELS)];
+#endif
+
+#ifdef KOKKOS_ENABLE_CUDA
 /*extern*/ CudaPriorityRange cudaPriorityRange;
+#endif
 
 void lazy_init() {
     #ifdef KOKKOS_ENABLE_CUDA
