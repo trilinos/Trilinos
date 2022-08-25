@@ -52,6 +52,7 @@
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_LocalCrsMatrixOperator.hpp"
+#include "Tpetra_Spaces.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -4718,8 +4719,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using Teuchos::rcpFromRef;
     const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
-
+    typedef typename Node::execution_space exec_space;
     
+    // the space for our on-rank SpMV
+    exec_space onRankSpace = 
+      Tpetra::Spaces::get<exec_space, Tpetra::Spaces::Priority::low>(0);
+
+    // the space used by the rest of Tpetra
+    exec_space defaultSpace;
 
     // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
     // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
@@ -4859,10 +4866,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (Details::Behavior::overlapCommunicationAndComputation()) {
       ProfilingRegion regionImport ("Tpetra::CrsMatrix::applyNonTranspose: localApplyOnRank");
       if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
-        this->localApplyOnRank(X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
         // this->localApplyOnRank(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
-        this->localApplyOnRank(X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
+        this->localApplyOnRank(onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
         // this->localApplyOnRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
@@ -4894,7 +4901,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
       if (Details::Behavior::overlapCommunicationAndComputation()) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        this->localApplyOffRank(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
+        // Kokkos::fence(Tpetra::Space::get_space()); // TODO, ensure local part is done before starting remote
+        this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
@@ -4902,7 +4910,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     } else {
       if (Details::Behavior::overlapCommunicationAndComputation()) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        this->localApplyOffRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
+        // Kokkos::fence(Tpetra::Space::get_space()); // TODO, ensure local part is done before starting remote
+        this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
@@ -4916,7 +4925,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // but this argument should be carried through localApplyOnRank once it's working
     // properly
     if (Details::Behavior::overlapCommunicationAndComputation()) {
-      get_space<execution_space>(0).fence("wait(localApplyOnRank)");
+      // defaultSpace.fence("wait(localApplyOnRank)");
+      Spaces::exec_space_wait(onRankSpace, defaultSpace);
     }
 
     // If we have a nontrivial Export object, we must perform an
@@ -5105,6 +5115,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   {
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::NO_TRANS;
+    typedef typename Node::execution_space exec_space;
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
@@ -5172,8 +5183,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Y = alpha Al X + beta Y
     // Y = alpha Ar X + 1 * Y
     if (Details::Behavior::overlapCommunicationAndComputation()) {
-      localApplyOnRank(X, Y, mode, alpha, beta);
-      localApplyOffRank(X, Y, mode, alpha);
+      exec_space defaultSpace;
+      localApplyOnRank(defaultSpace, X, Y, mode, alpha, beta);
+      localApplyOffRank(defaultSpace, X, Y, mode, alpha);
     } else {
       LocalOrdinal nrows = getLocalNumRows();
       LocalOrdinal maxRowImbalance = 0;
@@ -5192,7 +5204,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  localApplyOffRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+  localApplyOffRank (typename Node::execution_space &execSpace,
+                     const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                      MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
                      const Teuchos::ETransp mode,
                      const Scalar& alpha) const
@@ -5214,17 +5227,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
     // std::cerr << "CWP: applyRemoteColumns()" << std::endl;
-    matrix_lcl->applyRemoteColumns (X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
+    matrix_lcl->applyRemoteColumns (execSpace, X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  localApplyOnRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-                     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
-                     const Teuchos::ETransp mode,
-                     const Scalar& alpha,
-                     const Scalar& beta) const
+  localApplyOnRank (typename Node::execution_space &execSpace,
+                    const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
+                    const Teuchos::ETransp mode,
+                    const Scalar& alpha,
+                    const Scalar& beta) const
   {
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::NO_TRANS;
@@ -5247,7 +5261,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
     // std::cerr << "CWP: applyLocalColumns()" << std::endl;
-    matrix_lcl->applyLocalColumns (X_lcl, Y_lcl, mode, alpha, beta, offRankOffsets);
+    matrix_lcl->applyLocalColumns (execSpace, X_lcl, Y_lcl, mode, alpha, beta, offRankOffsets);
   }
 
 

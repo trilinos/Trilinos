@@ -1,4 +1,4 @@
-#include "Tpetra_Space.hpp"
+#include "Tpetra_Spaces.hpp"
 
 #include <vector>
 #include <iostream>
@@ -8,7 +8,7 @@
 
 namespace Tpetra {
 
-
+namespace Spaces {
 
 namespace detail {
 
@@ -28,10 +28,8 @@ void lazy_init() {
 } // namespace detail
 
 
-
-
-void drop_exec_spaces() {
-    LOG_INFO("drop_exec_spaces");
+void finalize() {
+    LOG_INFO("finalize");
 #ifdef KOKKOS_ENABLE_CUDA
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
         detail::cudaSpaces[i].clear();
@@ -49,7 +47,8 @@ void drop_exec_spaces() {
 #endif
 }
 
-}
+} // namespace Spaces
+} // namespace Tpetra
 
 #undef LOG_WARN
 #undef LOG_INFO

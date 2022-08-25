@@ -39,7 +39,7 @@
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
-#include "Tpetra_Space.hpp"
+#include "Tpetra_Spaces.hpp"
 
 #ifdef HAVE_TPETRACORE_MPI
 #  include <Teuchos_DefaultMpiComm.hpp> // this includes mpi.h too

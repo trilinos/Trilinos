@@ -42,7 +42,7 @@
 
 #include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
 #include "Tpetra_LocalOperator.hpp"
-#include "Tpetra_Space.hpp"
+#include "Tpetra_Spaces.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -268,7 +268,7 @@ namespace Tpetra {
       // void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
       void launch(TagNonTrans, const execution_space &space) {
 
-        const int estNnz = A_.nnz() * 1.00; // entries are mostly on-rank.
+        const int estNnz = A_.nnz() * 0.95; // entries are mostly on-rank.
 
         if (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
           if (estNnz > 10000000) {
@@ -296,19 +296,19 @@ namespace Tpetra {
         }
       }
 
-      // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
+      // \brief Kokkos dispatch of non-transpose in default space
       void launch(TagNonTrans t) {
-        launch(t, get_space<execution_space>(0));
+        launch(t, execution_space());
       }
 
       /// \brief Kokkos dispatch of transpose
-      void launch(TagTrans) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans>(0, A_.numRows()), *this);
+      void launch(TagTrans, execution_space &space) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans, execution_space>(space, 0, A_.numRows()), *this);
       }
 
       /// \brief Kokkos dispatch of conjugate transpose
-      void launch(TagConjTrans) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans>(0, A_.numRows()), *this);
+      void launch(TagConjTrans, execution_space &space) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans, execution_space>(space, 0, A_.numRows()), *this);
       }
     };
 
@@ -463,19 +463,19 @@ namespace Tpetra {
           }
         }
       }
-      // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
+      // \brief Kokkos dispatch of non-transpose in default execution space
       void launch(TagNonTrans t) {
-        launch(t, get_space<execution_space>(0));
+        launch(t, execution_space());
       }
 
       /// \brief Kokkos dispatch of transpose
-      void launch(TagTrans) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans>(0, A_.numRows()), *this);
+      void launch(TagTrans, const execution_space &space) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans, execution_space>(space, 0, A_.numRows()), *this);
       }
 
       /// \brief Kokkos dispatch of conjugate transpose
-      void launch(TagConjTrans) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans>(0, A_.numRows()), *this);
+      void launch(TagConjTrans, const execution_space &space) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans, execution_space>(space, 0, A_.numRows()), *this);
       }
     };
 
@@ -519,7 +519,8 @@ namespace Tpetra {
     */ 
     template<typename OffsetDeviceViewType>
     void
-    applyRemoteColumns (Kokkos::View<const mv_scalar_type**, array_layout,
+    applyRemoteColumns (execution_space &execSpace,
+           Kokkos::View<const mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
            Kokkos::View<mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
@@ -532,15 +533,15 @@ namespace Tpetra {
       ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
-          orsf.launch(typename ORSF::TagTrans{});
+          orsf.launch(typename ORSF::TagTrans{}, execSpace);
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          orsf.launch(typename ORSF::TagNonTrans{});
+          orsf.launch(typename ORSF::TagNonTrans{}, execSpace);
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {
-          orsf.launch(typename ORSF::TagConjTrans{});
+          orsf.launch(typename ORSF::TagConjTrans{}, execSpace);
           return;
         }
         default:
@@ -559,7 +560,8 @@ namespace Tpetra {
     */ 
     template<typename OffsetDeviceViewType>
     void
-    applyLocalColumns (Kokkos::View<const mv_scalar_type**, array_layout,
+    applyLocalColumns (execution_space &execSpace,
+           Kokkos::View<const mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
            Kokkos::View<mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
@@ -572,15 +574,15 @@ namespace Tpetra {
       ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
-          orsf.launch(typename ORSF::TagTrans{});
+          orsf.launch(typename ORSF::TagTrans{}, execSpace);
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          orsf.launch(typename ORSF::TagNonTrans{});
+          orsf.launch(typename ORSF::TagNonTrans{}, execSpace);
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {
-          orsf.launch(typename ORSF::TagConjTrans{});
+          orsf.launch(typename ORSF::TagConjTrans{}, execSpace);
           return;
         }
         default:

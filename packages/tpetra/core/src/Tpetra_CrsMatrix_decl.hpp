@@ -2865,7 +2865,8 @@ public:
     with communication.
     */
     void
-    localApplyOnRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+    localApplyOnRank ( typename Node::execution_space &execSpace,
+                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                 MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
@@ -2879,7 +2880,8 @@ public:
         of A corresponding to off-rank X entries (X entries that will be imported).
     */
     void
-    localApplyOffRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+    localApplyOffRank (typename Node::execution_space &execSpace,
+                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                 MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one ()) const;
