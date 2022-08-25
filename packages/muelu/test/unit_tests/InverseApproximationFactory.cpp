@@ -356,7 +356,7 @@ namespace MueLuTests {
       RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
       TEST_EQUALITY(Ainv->getGlobalNumEntries(), 117519);
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.316898282733437e+06, 2e3*TMT::eps());
+      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.316898282733437e+06, 2e4*TMT::eps());
     }
 
   } //InverseSpaiConstructor
