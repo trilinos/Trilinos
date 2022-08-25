@@ -17,6 +17,9 @@ include(AppHelperFuncs)
 
 getTribitsExProjStuffForApp()
 
+# Show that we can see exported cache vars
+message("-- WithSubpackagesA_SPECIAL_VALUE = '${WithSubpackagesA_SPECIAL_VALUE}'")
+
 # Enable the compilers now that we have gotten them from the *Config.cmake file
 enable_language(C)
 enable_language(CXX)
