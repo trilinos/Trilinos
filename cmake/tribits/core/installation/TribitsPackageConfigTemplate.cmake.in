@@ -45,6 +45,15 @@
 #
 ##############################################################################
 
+if(CMAKE_VERSION VERSION_LESS 3.3)
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE
+    "${PACKAGE_NAME} requires CMake 3.3 or later for 'if (... IN_LIST ...)'"
+    )
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+  return()
+endif()
+cmake_minimum_required(VERSION 3.3...${TRIBITS_CMAKE_MINIMUM_REQUIRED})
+
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
 ## ---------------------------------------------------------------------------

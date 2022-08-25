@@ -204,12 +204,12 @@ function(assert_project_set_group_and_permissions_on_install_base_dir)
         "***\n"
         "*** ERROR in ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR!\n"
         "***\n"
-	"\n"
-	"${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}\n"
+        "\n"
+        "${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR=${${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR}\n"
         "\n"
         "is not a strict base dir of:\n"
-	"\n"
-	"CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\n"
+        "\n"
+        "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\n"
         "\n"
         "Either remove ${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR from the cache or set it to be a base dir of CMAKE_INSTALL_PREFIX!\n"
         "\n"
@@ -2079,7 +2079,7 @@ macro(tribits_configure_enabled_packages)
         endif()
       else()
         set(${TRIBITS_PACKAGE}_BINARY_DIR
-	  ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
+          ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
       endif()
       if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         print_var(${TRIBITS_PACKAGE}_BINARY_DIR)
@@ -2139,7 +2139,7 @@ macro(tribits_configure_enabled_packages)
           "${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         if (NOT ${TRIBITS_PACKAGE}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
           add_subdirectory(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
-	else()
+        else()
           include("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         endif()
         if (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
@@ -2307,15 +2307,15 @@ macro(tribits_setup_packaging_and_distribution)
       # package has to have this file to work correctly it should be
       # guaranteed to be there.
       string(REGEX MATCH "[.][.]/" RELATIVE_PATH_CHARS_MATCH
-	${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
+        ${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
       if ("${RELATIVE_PATH_CHARS_MATCH}" STREQUAL "")
         set(CPACK_SOURCE_IGNORE_FILES
-	  "${PROJECT_SOURCE_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR}/"
+          "${PROJECT_SOURCE_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR}/"
           ${CPACK_SOURCE_IGNORE_FILES})
       else()
         find_path(ABSOLUTE_PATH  CMakeLists.txt  PATHS
           "${PROJECT_SOURCE_DIR}/${${TRIBITS_PACKAGE}_REL_SOURCE_DIR}"
-	  NO_DEFAULT_PATH)
+          NO_DEFAULT_PATH)
         if ("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
           message(AUTHOR_WARNING "Relative path found for disabled package"
             " ${TRIBITS_PACKAGE} but package was missing a CMakeLists.txt file."

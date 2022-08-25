@@ -505,7 +505,7 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
             "-- ${LIB_NOT_FOUND_MSG_PREFIX} Did not find a lib in the lib set \"${LIBNAME_SET}\""
              " for the TPL '${TPL_NAME}'!")
           if (MUST_FIND_ALL_LIBS)
-	    set(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
+            set(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
           else()
             break()
           endif()
