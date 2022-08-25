@@ -946,6 +946,40 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
+  importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Import<LO, GO, Node>& importer,
+                         const Teuchos::RCP<const map_type>& domainMap,
+                         const Teuchos::RCP<const map_type>& rangeMap,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+
+    // Right now, we make many assumptions...
+    TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
+                               "Right now, assuming destMatrix is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!domainMap.is_null(), std::invalid_argument,
+                               "Right now, assuming domainMap is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!rangeMap.is_null(), std::invalid_argument,
+                               "Right now, assuming rangeMap is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.is_null(), std::invalid_argument,
+                               "Right now, assuming params is null.");
+
+    // BlockCrsMatrix requires a complete graph at construction.
+    // So first step is to import and fill complete the destGraph.
+    RCP<crs_graph_type> destGraph = rcp (new crs_graph_type (importer.getTargetMap(), 0));
+    destGraph->doImport(this->getCrsGraph(), importer, Tpetra::INSERT);
+    destGraph->fillComplete();
+
+    // Final step, create and import the destMatrix.
+    destMatrix = rcp (new this_type (*destGraph, getBlockSize()));
+    destMatrix->doImport(*this, importer, Tpetra::INSERT);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
     auto val_d = val_.getDeviceView(Access::OverwriteAll);
@@ -2738,23 +2772,25 @@ public:
     errorDuringUnpack () = 0;
     {
       using policy_type = Kokkos::TeamPolicy<host_exec>;
-      const auto policy = policy_type (numImportLIDs, 1, 1)
-        .set_scratch_size (0, Kokkos::PerTeam (sizeof (GO) * maxRowNumEnt +
-                                               sizeof (LO) * maxRowNumEnt +
-                                               numBytesPerValue * maxRowNumScalarEnt));
+      size_t scratch_per_row = sizeof(GO) * maxRowNumEnt + sizeof (LO) * maxRowNumEnt + numBytesPerValue * maxRowNumScalarEnt
+        + 2 * sizeof(GO); // Yeah, this is a fudge factor
+
+      const auto policy = policy_type (numImportLIDs, 1, 1)     
+        .set_scratch_size (0, Kokkos::PerTeam (scratch_per_row));
       using host_scratch_space = typename host_exec::scratch_memory_space;
+      
       using pair_type = Kokkos::pair<size_t, size_t>;
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
          [=] (const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
-
           Kokkos::View<GO*, host_scratch_space> gblColInds
             (member.team_scratch (0), maxRowNumEnt);
           Kokkos::View<LO*, host_scratch_space> lclColInds
             (member.team_scratch (0), maxRowNumEnt);
           Kokkos::View<impl_scalar_type*, host_scratch_space> vals
             (member.team_scratch (0), maxRowNumScalarEnt);
+          
 
           const size_t offval = offset(i);
           const LO lclRow = importLIDsHost(i);
