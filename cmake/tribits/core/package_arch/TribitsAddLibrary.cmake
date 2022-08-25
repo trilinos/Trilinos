@@ -701,7 +701,7 @@ function(tribits_add_library_assert_deplibs)
     else()
       message(WARNING "WARNING: The case PARSE_TESTONLY=${PARSE_TESTONLY},"
         " depLibAlreadyInPkgLibs=${depLibAlreadyInPkgLibs},"
-	  " depLibIsTestOnlyLib=${depLibIsTestOnlyLib}, has"
+          " depLibIsTestOnlyLib=${depLibIsTestOnlyLib}, has"
         " not yet been handled!")
     endif()
 
@@ -781,7 +781,7 @@ function(tribits_add_library_determine_install_lib_and_or_headers
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       message("-- " "Skipping installation of headers and libraries"
         " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and"
-	  " BUILD_SHARED_LIBS=FALSE ...")
+          " BUILD_SHARED_LIBS=FALSE ...")
     endif()
     set(installLib OFF)
     set(installHeaders OFF)
@@ -789,7 +789,7 @@ function(tribits_add_library_determine_install_lib_and_or_headers
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       message("-- " "Skipping installation of headers but installing libraries"
         " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and"
-	  " BUILD_SHARED_LIBS=TRUE ...")
+        " BUILD_SHARED_LIBS=TRUE ...")
     endif()
     set(installHeaders OFF)
   endif()

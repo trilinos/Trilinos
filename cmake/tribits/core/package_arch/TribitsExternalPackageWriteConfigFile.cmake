@@ -328,7 +328,7 @@ function(tribits_extpkg_add_find_upstream_dependencies_str
      )
     foreach (upstreamTplDepEntry IN LISTS ${tplName}_LIB_ENABLED_DEPENDENCIES)
       tribits_extpkg_get_dep_name_and_vis(
-	"${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
+        "${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
       if ("${${upstreamTplDepName}_DIR}" STREQUAL "")
         message(FATAL_ERROR "ERROR: ${upstreamTplDepName}_DIR is empty!")
       endif()
@@ -336,9 +336,9 @@ function(tribits_extpkg_add_find_upstream_dependencies_str
         "if (NOT TARGET ${upstreamTplDepName}::all_libs)\n"
         "  set(${upstreamTplDepName}_DIR \"\${CMAKE_CURRENT_LIST_DIR}/../${upstreamTplDepName}\")\n"
         "  find_dependency(${upstreamTplDepName} REQUIRED CONFIG \${${tplName}_SearchNoOtherPathsArgs})\n"
-	"  unset(${upstreamTplDepName}_DIR)\n"
+        "  unset(${upstreamTplDepName}_DIR)\n"
         "endif()\n"
-	"\n"
+        "\n"
         )
     endforeach()
     string(APPEND configFileFragStr
@@ -705,7 +705,7 @@ function(tribits_extpkg_append_upstream_target_link_libraries_str
       "target_link_libraries(${prefix_libname}\n")
     foreach (upstreamTplDepEntry IN LISTS ${tplName}_LIB_ENABLED_DEPENDENCIES)
       tribits_extpkg_get_dep_name_and_vis(
-	"${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
+        "${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
       if (upstreamTplDepVis STREQUAL "PUBLIC")
         string(APPEND configFileStr
           "  INTERFACE ${upstreamTplDepName}::all_libs  # i.e. PUBLIC\n")

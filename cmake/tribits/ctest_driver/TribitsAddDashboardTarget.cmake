@@ -196,7 +196,7 @@ macro(tribits_add_dashboard_target)
         # NOTE: Above, if ${PROJECT_NAME}_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
         # -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
         # never be turned on again which means that the list of packages will be set explicitly below.
-	)
+        )
 
       set(DASHBOARD_TARGET_CTEST_DRIVER_CMND_NUM "B) ")
 
@@ -226,7 +226,7 @@ macro(tribits_add_dashboard_target)
         COMMAND echo
         COMMAND echo "See the results at http://${CTEST_DROP_SITE}${CTEST_DROP_LOCATION}&display=project\#Experimental"
         COMMAND echo
-	)
+        )
 
     endif()
 
