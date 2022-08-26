@@ -3,8 +3,6 @@
 
 #include <vector>
 #include <iostream>
-#include <unordered_map>
-#include <functional>
 #include <sstream>
 
 #include <Kokkos_Core.hpp>
@@ -19,29 +17,6 @@ Even if a space does not support priorities (e.g. Kokkos::Serial),
 spaces <Priority::high, 0> and <Priority::low, 0> are different.
 
 */
-
-/* define a hash of Kokkos::Cuda so it can be used in an std::unordered map
-   Assuming the instance ID uniquely distinguishes execution spaces
-*/
-template<>
-struct std::hash<Kokkos::Cuda>
-{
-    std::size_t operator()(Kokkos::Cuda const& s) const noexcept
-    {
-        // Invoke expression for non-static member function needs an eplicit instance to operate on
-        // This std::result_of (invoke_result in C++20) just is the type that Kokkos uses as an instance ID in case they change it
-        return std::hash<std::result_of<decltype(&Kokkos::Cuda::impl_instance_id)(Kokkos::Cuda)>::type>{}(s.impl_instance_id());
-    }
-};
-
-/* define equality for Kokkos::Cuda so it can be used in an std::unordered map
-   Assuming the instance ID uniquely distinguishes execution spaces
-*/
-namespace Kokkos {
-    inline bool operator==(const Kokkos::Cuda &lhs, const Kokkos::Cuda &rhs) {
-        return lhs.impl_instance_id() == rhs.impl_instance_id();
-    }
-}
 
 
 namespace Tpetra {
@@ -89,7 +64,6 @@ extern cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
 extern std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-extern std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track which stream is associated with a Kokkos::Cuda space
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
 extern std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
@@ -202,7 +176,6 @@ Kokkos::Cuda &get(int i) {
         cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio);
         Kokkos::Cuda space (stream, true /*Kokkos will manage this stream*/);
         detail::spaces<Space, priority>().push_back(space);
-        detail::cudaStreams[space] = stream;
     }
     return detail::spaces<Space, priority>()[i];
 
@@ -244,8 +217,8 @@ void exec_space_wait(S1 &waitee, S2 &waiter) {
        the state of a shared event
        this means we only need one event even if many exec_space_waits are in flight at the same time
     */
-    cudaEventRecord(detail::execSpaceWaitEvent, detail::cudaStreams[waitee]);
-    cudaStreamWaitEvent(detail::cudaStreams[waiter], detail::execSpaceWaitEvent, 0 /*flags*/);
+    cudaEventRecord(detail::execSpaceWaitEvent, waitee.cuda_stream());
+    cudaStreamWaitEvent(waiter.cuda_stream(), detail::execSpaceWaitEvent, 0 /*flags*/);
 }
 #endif
 

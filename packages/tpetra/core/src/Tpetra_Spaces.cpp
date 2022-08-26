@@ -15,7 +15,6 @@ namespace detail {
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
 /*extern*/ std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-/*extern*/ std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track for optimized inter-space sync
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
 /*extern*/ std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
@@ -45,7 +44,6 @@ void finalize() {
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
         detail::cudaSpaces[i].clear();
     }
-    detail::cudaStreams.clear();
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
