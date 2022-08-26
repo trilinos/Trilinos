@@ -26,24 +26,22 @@ namespace detail {
 
 #ifdef KOKKOS_ENABLE_CUDA
 /*extern*/ CudaPriorityRange cudaPriorityRange;
+/*extern*/ cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
 #endif
 
-void lazy_init() {
-    #ifdef KOKKOS_ENABLE_CUDA
-    if (!cudaPriorityRange.isSet)  {
-        cudaDeviceGetStreamPriorityRange(&cudaPriorityRange.low, &cudaPriorityRange.high);
-        LOG_INFO("LOPRIO: " << cudaPriorityRange.low);
-        LOG_INFO("HIPRIO: " << cudaPriorityRange.high);
-        cudaPriorityRange.isSet = true;
-    }
-    #endif
+void initialize() {
+#ifdef KOKKOS_ENABLE_CUDA
+    CUDA_RUNTIME(cudaEventCreateWithFlags(&execSpaceWaitEvent, cudaEventDisableTiming));
+    CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaPriorityRange.low, &cudaPriorityRange.high));
+    LOG_INFO("CUDA Priority: low:    " << cudaPriorityRange.low);
+    LOG_INFO("CUDA Priority: medium: " << cudaPriorityRange.medium);
+    LOG_INFO("CUDA Priority: high:   " << cudaPriorityRange.high);
+#endif
 }
-
-} // namespace detail
-
 
 void finalize() {
 #ifdef KOKKOS_ENABLE_CUDA
+    CUDA_RUNTIME(cudaEventDestroy(detail::execSpaceWaitEvent));
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
         detail::cudaSpaces[i].clear();
     }
@@ -61,6 +59,7 @@ void finalize() {
 #endif
 }
 
+} // namespace detail
 } // namespace Spaces
 } // namespace Tpetra
 

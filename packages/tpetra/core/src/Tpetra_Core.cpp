@@ -242,6 +242,9 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
     }
+
+    Spaces::detail::initialize();
+    
     tpetraIsInitialized_ = true;
   }
 
@@ -260,6 +263,9 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
     }
+
+    Spaces::detail::initialize();
+
     tpetraIsInitialized_ = true;
 
     // Set the default communicator.  We set it here, after the above
@@ -302,6 +308,9 @@ namespace Tpetra {
       const int myRank = comm->getRank ();
       initKokkosIfNeeded (argc, argv, myRank);
     }
+
+    Spaces::detail::initialize();
+
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;
   }
@@ -311,6 +320,9 @@ namespace Tpetra {
     if (! tpetraIsInitialized_) {
       return; // user didn't call initialize(), so do nothing at all
     }
+
+    // Clean up any Kokkos execution space management
+    Spaces::detail::finalize();
 
     // Tpetra should only finalize Kokkos if it initialized Kokkos.
     // See Github Issue #434.

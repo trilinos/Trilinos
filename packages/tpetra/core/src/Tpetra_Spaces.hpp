@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
+#include <sstream>
 
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_Behavior.hpp"
@@ -44,22 +45,34 @@ namespace Kokkos {
 
 
 namespace Tpetra {
+namespace Spaces {
 
-    namespace Spaces {
-
-        enum class Priority {
-            low = 0,
-            medium = 1,
-            high = 2,
-            NUM_LEVELS = 3 // not to be used as a priority
-        };
-
-    void finalize();
+enum class Priority {
+    low = 0,
+    medium = 1,
+    high = 2,
+    NUM_LEVELS = 3 // not to be used as a priority
+};
 
 namespace detail {
 
-    // query the runtime to map Tpetra::Priorities to the implementation priority
-    void lazy_init();
+#ifdef KOKKOS_ENABLE_CUDA
+inline void success_or_throw(cudaError_t err, const char *file, const int line) {
+    if (err != cudaSuccess) {
+        std::stringstream ss;
+        ss << file << ":" << line << ": ";
+        ss << cudaGetErrorString(err);
+        throw std::runtime_error(ss.str());
+    }
+}
+#define CUDA_RUNTIME(x) Tpetra::Spaces::detail::success_or_throw((x), __FILE__, __LINE__)
+#endif // KOKKOS_ENABLE_CUDA
+
+/* query the runtime to map Tpetra::Priorities to the implementation priority
+   set up `cudaEvent_t`s 
+*/
+void initialize();
+void finalize();
 
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -70,12 +83,13 @@ struct CudaPriorityRange {
     int high;
 };
 extern CudaPriorityRange cudaPriorityRange;
+extern cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
 #endif // KOKKOS_ENABLE_CUDA
 
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
 extern std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-extern std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track for optimized inter-space sync
+extern std::unordered_map<Kokkos::Cuda, cudaStream_t> cudaStreams; // track which stream is associated with a Kokkos::Cuda space
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
 extern std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
@@ -169,8 +183,6 @@ template <typename Space, Priority priority = Priority::medium,
 detail::IsCuda<Space> = true >
 Kokkos::Cuda &get(int i) {
 
-    detail::lazy_init();
-
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
     }
@@ -224,20 +236,16 @@ void exec_space_wait(S1 &waitee, S2 &waiter) {
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
+
 template <typename S1, typename S2,
 detail::BothCuda<S1, S2> = true>
 void exec_space_wait(S1 &waitee, S2 &waiter) {
-
-    // TODO:move to init
-    cudaEvent_t e1;
-    cudaEventCreateWithFlags(&e1, cudaEventDisableTiming);
-
-    cudaEventRecord(e1, detail::cudaStreams[waitee]);
-    cudaStreamWaitEvent(detail::cudaStreams[waiter], e1, 0 /*flags*/);
-
-    // TODO: move to cleanup
-    // can't do this right here
-    cudaEventDestroy(e1);
+    /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
+       the state of a shared event
+       this means we only need one event even if many exec_space_waits are in flight at the same time
+    */
+    cudaEventRecord(detail::execSpaceWaitEvent, detail::cudaStreams[waitee]);
+    cudaStreamWaitEvent(detail::cudaStreams[waiter], detail::execSpaceWaitEvent, 0 /*flags*/);
 }
 #endif
 

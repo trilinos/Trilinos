@@ -4887,6 +4887,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
+
+
     // finish an input if it was started
     if (mustImport && Details::Behavior::overlapCommunicationAndComputation()) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: endImport");
