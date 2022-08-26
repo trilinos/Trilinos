@@ -2307,7 +2307,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 2");
+                Kokkos::parallel_for("F_IntegratePointValueCache rank 2", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2323,7 +2323,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_Integrate rank 2");
+                Kokkos::parallel_for("F_Integrate rank 2", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2342,7 +2342,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 3");
+                Kokkos::parallel_for("F_IntegratePointValueCache rank 3", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2358,7 +2358,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_Integrate rank 3");
+                Kokkos::parallel_for("F_Integrate rank 3", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {

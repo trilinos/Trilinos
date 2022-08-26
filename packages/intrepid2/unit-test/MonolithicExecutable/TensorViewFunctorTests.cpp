@@ -101,7 +101,7 @@ namespace
     }
     
     FunctorType functor(tensor_actual, view1, view2, tensorPoints, weight);
-    Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
+    Kokkos::parallel_for("TensorViewFunctor", policy, functor);
     
     switch (tensor_expected.rank())
     {

@@ -49,7 +49,6 @@
 #ifndef Intrepid2_DirectSumBasis_h
 #define Intrepid2_DirectSumBasis_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 namespace Intrepid2

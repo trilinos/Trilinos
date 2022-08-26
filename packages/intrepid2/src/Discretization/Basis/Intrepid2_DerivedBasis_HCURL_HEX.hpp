@@ -54,7 +54,6 @@
 #ifndef Intrepid2_DerivedBasis_HCURL_HEX_h
 #define Intrepid2_DerivedBasis_HCURL_HEX_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include "Intrepid2_Polynomials.hpp"
