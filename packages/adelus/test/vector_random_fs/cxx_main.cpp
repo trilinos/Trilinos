@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 
   // Get Info to build the matrix on a processor
 
-  Adelus::GetDistribution( MPI_COMM_WORLD, 
+  Adelus::GetDistribution( MPI_COMM_WORLD,
                            nprocs_per_row, matrix_size, numrhs,
                            myrows, mycols, myfirstrow, myfirstcol,
                            myrhs, my_row, my_col );
@@ -266,15 +266,20 @@ int main(int argc, char *argv[])
   using ViewMatrixType_Host    = Kokkos::View<Kokkos::complex<double>**, Layout, Kokkos::HostSpace>;
   using ViewNrmVectorType_Host = Kokkos::View<double*,  Layout, Kokkos::HostSpace>;
 #endif
+
+  using ViewIntType_Host= Kokkos::View<int*, Layout, Kokkos::HostSpace>;
+
   using execution_space = typename ViewMatrixType::device_type::execution_space;
   using memory_space    = typename ViewMatrixType::device_type::memory_space;
   using ScalarA         = typename ViewMatrixType::value_type;
 
   printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s, value_type %s\n",rank, typeid(execution_space).name(), typeid(memory_space).name(), typeid(ScalarA).name());
 
-  ViewMatrixType A( "A", myrows, mycols + myrhs + 6 );
-	
+  ViewMatrixType A( "A", myrows, mycols );
+  ViewMatrixType B( "B", myrows, myrhs + 6 );
+
   ViewMatrixType::HostMirror h_A = Kokkos::create_mirror( A );
+  ViewMatrixType::HostMirror h_B = Kokkos::create_mirror( B );
 
   // Some temp arrays
 
@@ -295,6 +300,8 @@ int main(int argc, char *argv[])
   ViewNrmVectorType_Host rhs_nrm( "rhs_nrm", numrhs );
 
   ViewNrmVectorType_Host m_nrm  ( "m_nrm", numrhs );
+
+  ViewIntType_Host h_permute( "h_permute", matrix_size);// Permutation array for factor and solve done independently
 
   // Set Random values
 
@@ -337,7 +344,7 @@ int main(int argc, char *argv[])
   }
 
   if( rank == 0 )
-    std::cout << " ****   Packing RHS in Matrix   ****" << std::endl;
+    std::cout << " ****   Backing up RHS   ****" << std::endl;
 
   // Now put the RHS in the appropriate position
 
@@ -348,7 +355,7 @@ int main(int argc, char *argv[])
 #else
       ScalarA scal_factor = static_cast<float>(my_rhs_offset+k+1);
 #endif
-      auto cur_rhs_vec_1d = subview(h_A,Kokkos::ALL(),mycols+k);
+      auto cur_rhs_vec_1d = subview(h_B,Kokkos::ALL(),k);
       Kokkos::deep_copy( cur_rhs_vec_1d, temp2 );
       KokkosBlas::scal(cur_rhs_vec_1d,scal_factor,cur_rhs_vec_1d);
     }
@@ -374,47 +381,69 @@ int main(int argc, char *argv[])
 
   KokkosBlas::nrm2(rhs_nrm, rhs);
 
-  Kokkos::deep_copy( subview(A,   Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)),
-                     subview(h_A, Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
+  Kokkos::deep_copy( B, h_B );
+
 
   // Create handle
   Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
     ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
 
-  // Now Solve the Problem
+  // Now Factor the matrix
 
   if( rank == 0 )
-    std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
+    std::cout << " ****   Beginning Matrix Factor   ****" << std::endl;
 
-  Adelus::FactorSolve (ahandle, A, &secs);
+  Adelus::Factor (ahandle, A, h_permute, &secs);
 
   if( rank == 0) {
-    std::cout << " ----  Solution time  ----   " << secs << "  in secs. " << std::endl;
+    std::cout << " ----  Factor time  ----   " << secs << "  in secs. " << std::endl;
 
     mflops = 2./3.*pow(matrix_size,3.)/secs/1000000.;
 
     std::cout << " *****   MFLOPS   *****  " << mflops << std::endl;
   }
 
+  // Call Solve (1st time)
+
+  if( rank == 0 )
+    std::cout << " ****   Beginning Matrix Solve (1st)   ****" << std::endl;
+
+  Adelus::Solve (ahandle, A, B, h_permute, &secs);
+
+  if( rank == 0)
+    std::cout << " ----  Solution time (1st)  ----   " << secs << "  in secs. " << std::endl;
+
+  // Restore the orig. RHS for testing Adelus::Solve() on a pre-computed LU factorization
+  Kokkos::deep_copy( B, h_B );
+
+  // Call Solve (2nd time)
+  if( rank == 0 )
+    std::cout << " ****   Beginning Matrix Solve (2nd)   ****" << std::endl;
+
+  Adelus::Solve (ahandle, A, B, h_permute, &secs);
+
+  if( rank == 0)
+    std::cout << " ----  Solution time (2nd)  ----   " << secs << "  in secs. " << std::endl;
+
   // Now Check the Solution
 
-  Kokkos::deep_copy( subview(h_A, Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)),
-                     subview(A,   Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
+  Kokkos::deep_copy( h_B, B );
+
 
   // Pack the Answer into the apropriate position
 
   if ( myrhs > 0 ) {
     Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),
                                      Kokkos::make_pair(my_rhs_offset, my_rhs_offset + myrhs)),
-                       subview(h_A,Kokkos::ALL(),Kokkos::make_pair(mycols, mycols + myrhs)) );
+                       subview(h_B,Kokkos::ALL(),Kokkos::make_pair(0, myrhs)) );
   }
 
   // All processors get the answer
 
   MPI_Allreduce(tempp.data(), temp22.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
-
-  // Perform the Matrix vector product
   
+  // Perform the Matrix vector product
+
   ScalarA alpha = 1.0;
   ScalarA beta  = 0.0;
 
@@ -445,7 +474,7 @@ int main(int argc, char *argv[])
   eps = fabs(tempc-1.0);
 
   if ( rank == 0 ) {
-    std::cout << "   Machine eps  " << eps  << std::endl;
+	std::cout << "   Machine eps  " << eps  << std::endl;
 
     std::cout << "   Threshold = " << eps*1e4  << std::endl;
 

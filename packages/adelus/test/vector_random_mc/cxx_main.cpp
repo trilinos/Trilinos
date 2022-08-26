@@ -64,7 +64,8 @@ int main(int argc, char *argv[])
   char processor_name[MPI_MAX_PROCESSOR_NAME];
   int name_len;
   int rank, size;
-  
+  int sub_rank/*, sub_size*/;
+
   int  myrows;
   int  mycols;
   int  myfirstrow;
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
   double mflops;
 
-  MPI_Comm rowcomm, colcomm;
+  MPI_Comm sub_comm, rowcomm, colcomm;
 
   static int buf[4];
 
@@ -108,11 +109,18 @@ int main(int argc, char *argv[])
   MPI_Comm_size (MPI_COMM_WORLD, &size);             /* get number of processes */
   MPI_Get_processor_name(processor_name, &name_len); /* get name of the processor */
 
+  // Divide the global comm into 2 halves communicators
+  int my_color = rank/(size/2);//NOTE: colors for first and second communicators
+  int my_key   = rank%(size/2);//NOTE: rank in each new communicator
+  MPI_Comm_split (MPI_COMM_WORLD, my_color, my_key, &sub_comm);
+  MPI_Comm_rank (sub_comm, &sub_rank);
+  //MPI_Comm_size (sub_comm, &sub_size);
+
   // Initialize Input buffer
 
   for(i=0;i<4;i++) buf[i]=-1;
 
-  std::cout << "proc " << rank << " (" << processor_name << ") is alive of " << size << " Processors" << std::endl;
+  std::cout << "proc " << rank << " (sub rank " << sub_rank << ") (" << processor_name << ") is alive of " << size << " Processors" << std::endl;
 
   if( rank == 0 ) {
     // Check for commandline input
@@ -183,19 +191,20 @@ int main(int argc, char *argv[])
 
   // Get Info to build the matrix on a processor
 
-  Adelus::GetDistribution( MPI_COMM_WORLD, 
+  Adelus::GetDistribution( sub_comm, 
                            nprocs_per_row, matrix_size, numrhs,
                            myrows, mycols, myfirstrow, myfirstcol,
                            myrhs, my_row, my_col );
 
   // Define new communicators: rowcomm and colcomm
 
-  MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm);
-  MPI_Comm_split(MPI_COMM_WORLD,my_col,my_row,&colcomm);
+  MPI_Comm_split(sub_comm,my_row,my_col,&rowcomm);
+  MPI_Comm_split(sub_comm,my_col,my_row,&colcomm);
 
   std::cout << " ------ PARALLEL Distribution Info for : ---------" <<std::endl;
 
   std::cout << "   Processor  " << rank << std::endl
+       << "    sub-rank " << sub_rank << std::endl
        << "    my rows  " << myrows << std::endl
        << "    my cols  " << mycols << std::endl
        << "    my rhs  " << myrhs << std::endl
@@ -379,7 +388,7 @@ int main(int argc, char *argv[])
 
   // Create handle
   Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
-    ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
+    ahandle(my_color, sub_comm, matrix_size, nprocs_per_row, numrhs );
 
   // Now Solve the Problem
 
@@ -411,7 +420,7 @@ int main(int argc, char *argv[])
 
   // All processors get the answer
 
-  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(tempp.data(), temp22.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, sub_comm);
 
   // Perform the Matrix vector product
   
@@ -423,12 +432,13 @@ int main(int argc, char *argv[])
                    subview(temp22,Kokkos::make_pair(myfirstcol - 1, myfirstcol - 1 + mycols),Kokkos::ALL()),
                    beta, subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows),Kokkos::ALL()));
 
-  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(tempp.data(), temp3.data(), matrix_size*numrhs, ADELUS_MPI_DATA_TYPE, MPI_SUM, sub_comm);
 
   if( rank == 0) {
     std::cout <<  "======================================" << std::endl;
     std::cout << " ---- Error Calculation ----" << std::endl;
-
+  }
+  if( sub_rank == 0) {
     ScalarA alpha_ = -1.0;
 
     KokkosBlas::axpy(alpha_, rhs, temp3);//temp3=temp3-rhs
@@ -448,28 +458,32 @@ int main(int argc, char *argv[])
     std::cout << "   Machine eps  " << eps  << std::endl;
 
     std::cout << "   Threshold = " << eps*1e4  << std::endl;
-
+  }
+  if ( sub_rank == 0 ) {
     for (k = 0; k < numrhs; k++) {
-      std::cout << "   Solution " << k << ":   ||Ax - b||_2 = " << m_nrm(k) << std::endl;
+      std::cout << "   Solution " << k << ":   ||Ax - b||_2 = " << m_nrm(k) << " on comm " << my_color << std::endl;
 
-      std::cout << "   Solution " << k << ":   ||b||_2 = " << rhs_nrm(k) << std::endl;
+      std::cout << "   Solution " << k << ":   ||b||_2 = " << rhs_nrm(k) << " on comm " << my_color << std::endl;
 
-      std::cout << "   Solution " << k << ":   ||Ax - b||_2 / ||b||_2  = " << m_nrm(k)/rhs_nrm(k)  << std::endl;
+      std::cout << "   Solution " << k << ":   ||Ax - b||_2 / ||b||_2  = " << m_nrm(k)/rhs_nrm(k) << " on comm " << my_color  << std::endl;
 
       if ( m_nrm(k)/rhs_nrm(k)  > (eps*1e4)) {
-        std::cout << " ****   Solution " << k << " Fails   ****" <<  std::endl;
+        std::cout << " ****   Solution " << k << " Fails   ****" << " on comm " << my_color << std::endl;
         result = 1;
         break;
       }
       else {
-        std::cout << " ****   Solution " << k << " Passes   ****" << std::endl;
+        std::cout << " ****   Solution " << k << " Passes   ****" << " on comm " << my_color << std::endl;
         result = 0;
       }
     }
+  }
+  if ( rank == 0 ) {
     std::cout <<  "======================================" << std::endl;
   }
 
-  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&result, 1, MPI_INT, 0, sub_comm);
+  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   free(nrhs_procs_rowcomm);
 
