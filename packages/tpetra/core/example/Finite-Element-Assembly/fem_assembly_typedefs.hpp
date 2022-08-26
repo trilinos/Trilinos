@@ -41,7 +41,6 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
-#include "Kokkos_View.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"

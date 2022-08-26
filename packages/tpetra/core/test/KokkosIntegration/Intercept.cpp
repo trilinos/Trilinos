@@ -11,8 +11,6 @@
 #include <dlfcn.h>
 #include <mpi.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
 
 /*
 cudaDeviceSynchronize
