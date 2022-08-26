@@ -66,7 +66,11 @@ initializeKokkos ()
     }
     Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
     checkOldCudaLaunchBlocking();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
     std::atexit (Kokkos::finalize_all);
+#else
+    std::atexit (Kokkos::finalize);
+#endif
   }
 }
 
