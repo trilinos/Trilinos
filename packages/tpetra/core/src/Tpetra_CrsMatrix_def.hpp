@@ -4866,9 +4866,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (Details::Behavior::overlapCommunicationAndComputation()) {
       ProfilingRegion regionImport ("Tpetra::CrsMatrix::applyNonTranspose: localApplyOnRank");
       if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
+        // ensure any in-flight default stream stuff is done
+        Spaces::exec_space_wait(defaultSpace, onRankSpace);
         this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
         // this->localApplyOnRank(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
+        Spaces::exec_space_wait(defaultSpace, onRankSpace);
         this->localApplyOnRank(onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
         // this->localApplyOnRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
