@@ -54,12 +54,13 @@ namespace Tpetra {
             NUM_LEVELS = 3 // not to be used as a priority
         };
 
+    void finalize();
 
 namespace detail {
 
     // query the runtime to map Tpetra::Priorities to the implementation priority
     void lazy_init();
-    void finalize();
+
 
 #ifdef KOKKOS_ENABLE_CUDA
 struct CudaPriorityRange {

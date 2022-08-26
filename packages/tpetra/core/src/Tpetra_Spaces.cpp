@@ -43,11 +43,11 @@ void lazy_init() {
 
 
 void finalize() {
-    LOG_INFO("finalize");
 #ifdef KOKKOS_ENABLE_CUDA
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
         detail::cudaSpaces[i].clear();
     }
+    detail::cudaStreams.clear();
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
