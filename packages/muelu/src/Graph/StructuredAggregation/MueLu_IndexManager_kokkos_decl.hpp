@@ -51,7 +51,6 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_View.hpp>
 
 #include "Teuchos_OrdinalTraits.hpp"
 

@@ -57,9 +57,6 @@
 #include "KokkosSparse_spgemm_handle.hpp"               // for StringToSPGEM...
 #include "KokkosSparse_spgemm_numeric.hpp"              // for spgemm_numeric
 #include "KokkosSparse_spgemm_symbolic.hpp"             // for spgemm_symbolic
-#include "Kokkos_ExecPolicy.hpp"                        // for RangePolicy
-#include "Kokkos_Macros.hpp"                            // for KOKKOS_LAMBDA
-#include "Kokkos_View.hpp"                              // for View
 #include "Teuchos_CommandLineProcessor.hpp"             // for CommandLinePr...
 #include "Teuchos_ENull.hpp"                            // for ENull::null
 #include "Teuchos_FancyOStream.hpp"                     // for FancyOStream
