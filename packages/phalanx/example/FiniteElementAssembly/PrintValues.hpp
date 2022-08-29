@@ -6,7 +6,6 @@
 #include <string>
 #include <ostream>
 #include <fstream>
-#include "Kokkos_View.hpp"
 
 namespace phx_example {
 

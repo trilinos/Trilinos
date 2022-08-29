@@ -50,7 +50,6 @@
 #include <type_traits>
 #include "Phalanx_any.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"

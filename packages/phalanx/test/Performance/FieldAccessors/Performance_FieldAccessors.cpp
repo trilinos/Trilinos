@@ -49,7 +49,6 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Kokkos_View.hpp"
 
 // From test/Utilities directory
 #include "Traits.hpp"

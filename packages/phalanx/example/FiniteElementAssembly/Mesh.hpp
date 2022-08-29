@@ -46,7 +46,6 @@
 #define PHX_EXAMPLE_MESH_BUILDER_HPP
 
 #include "Phalanx_config.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace phx_example {

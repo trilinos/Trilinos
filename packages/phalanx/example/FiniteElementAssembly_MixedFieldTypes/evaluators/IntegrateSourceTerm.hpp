@@ -46,7 +46,6 @@
 
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
-#include "Kokkos_View.hpp"
 
 template<typename EvalT, typename Traits>
 class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,

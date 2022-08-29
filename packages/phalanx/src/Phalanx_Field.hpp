@@ -51,7 +51,6 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Sacado.hpp"

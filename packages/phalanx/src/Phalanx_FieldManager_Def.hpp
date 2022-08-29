@@ -54,7 +54,6 @@
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_Field.hpp"
-#include "Kokkos_View.hpp"
 
 // **************************************************************
 template<typename Traits>

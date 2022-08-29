@@ -3,7 +3,6 @@
 #include <type_traits>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
