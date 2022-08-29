@@ -130,6 +130,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
           "-DKokkos_ARCH_KEPLER35:BOOL=ON"
           "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
           "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
+          # Intrepid2 tests make Geminga hang
+          "-DIntrepid2_ENABLE_TESTS:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
