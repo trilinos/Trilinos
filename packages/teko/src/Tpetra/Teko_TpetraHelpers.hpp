@@ -78,9 +78,9 @@ typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
 namespace TpetraHelpers {
 
-/** \brief Fill a Thyra vector with the contents of a tpetra vector. This prevents the
+/** \brief Fill a Thyra vector with the contents of a Tpetra vector. This prevents the
   *
-  * Fill a Thyra vector with the contents of a tpetra vector. This prevents the need
+  * Fill a Thyra vector with the contents of a Tpetra vector. This prevents the need
   * to reallocate memory using a create_MultiVector routine. It also allows an aritrary
   * Thyra vector to be filled.
   *
@@ -180,7 +180,7 @@ public:
      * processor as specified by RowMap().
      *
      * \param[in] zeroIndices Set of indices to zero out (must be local).
-     * \param[in] op           Underlying tpetra operator to use.
+     * \param[in] op           Underlying Tpetra operator to use.
      */
    ZeroedOperator(const std::vector<GO> & zeroIndices,const Teuchos::RCP<const Tpetra::Operator<ST,LO,GO,NT> > & op);
 
