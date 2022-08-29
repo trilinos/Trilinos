@@ -955,7 +955,6 @@ namespace MueLu {
          paramList.isParameter("coarse: type")   ||
          paramList.isParameter("coarse: params");
      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
-       this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
        manager.SetFactory("CoarseSolver", Teuchos::null);
 
      } else if (isCustomCoarseSolver) {
