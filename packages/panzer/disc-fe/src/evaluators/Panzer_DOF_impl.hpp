@@ -165,11 +165,11 @@ evaluateFields(typename TRAITS::EvalData workset)
     const int spaceDim  = array.extent(3);
     if(spaceDim==3) {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
-      Kokkos::parallel_for(policy,functor,this->getName());
+      Kokkos::parallel_for(this->getName(),policy,functor);
     }
     else {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
-      Kokkos::parallel_for(policy,functor,this->getName());
+      Kokkos::parallel_for(this->getName(),policy,functor);
     }
 
   }
@@ -339,11 +339,11 @@ evaluateFields(typename TRAITS::EvalData workset)
       const int spaceDim  = array.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
-	Kokkos::parallel_for(policy,functor,this->getName());
+	Kokkos::parallel_for(this->getName(),policy,functor);
       }
       else {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
-	Kokkos::parallel_for(policy,functor,this->getName());
+	Kokkos::parallel_for(this->getName(),policy,functor);
       }
     }
   }

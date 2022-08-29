@@ -229,7 +229,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
   auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
   auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
-  Kokkos::parallel_for(policy,f,this->getName());
+  Kokkos::parallel_for(this->getName(),policy,f);
 }
 
 //**********************************************************************
@@ -335,7 +335,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
     auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
     auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
-    Kokkos::parallel_for(policy,f,this->getName());
+    Kokkos::parallel_for(this->getName(),policy,f);
     return;
   }
 

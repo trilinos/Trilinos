@@ -226,7 +226,7 @@ evaluateFields(typename Traits::EvalData workset)
   bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
   evaluateGrad_withSens<ScalarT, Array> eval(dof_gradient,dof_value,grad_basis,use_shared_memory);
   auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::Device>(workset.num_cells);
-  Kokkos::parallel_for(policy, eval, "panzer::DOFGradient::evaluateFields");
+  Kokkos::parallel_for("panzer::DOFGradient::evaluateFields", policy, eval);
 }
 
 //**********************************************************************
