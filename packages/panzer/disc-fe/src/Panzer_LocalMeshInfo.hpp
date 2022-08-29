@@ -43,7 +43,6 @@
 #ifndef PANZER_LOCAL_MESH_INFO_HPP
 #define PANZER_LOCAL_MESH_INFO_HPP
 
-#include "Kokkos_View.hpp"
 #include "PanzerCore_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Shards_CellTopology.hpp"
