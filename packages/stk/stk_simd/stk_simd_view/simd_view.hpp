@@ -34,9 +34,7 @@
 #ifndef STK_SIMD_VIEW_H
 #define STK_SIMD_VIEW_H
 
-#include <Kokkos_Macros.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_View.hpp>
 #include <stk_simd/Simd.hpp>
 #include <stk_simd/Traits.hpp>
 #include <stk_simd_view/simd_layout.hpp>
