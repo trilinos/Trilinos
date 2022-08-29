@@ -43,7 +43,6 @@
 #define KOKKOS_VIEW_UQ_PCE_UTILS_HPP
 
 #include "Kokkos_View_Utils.hpp"
-#include "Kokkos_View.hpp"
 
 namespace Sacado {
   namespace UQ {

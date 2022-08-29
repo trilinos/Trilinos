@@ -42,8 +42,6 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
-//#include "Kokkos_View.hpp"
-//#include "Kokkos_Layout.hpp"
 #include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
