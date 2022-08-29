@@ -1205,17 +1205,17 @@ struct IOhelpers {
     using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
     // row, domain and range map of the operator
-    map = IO::ReadMap(hierarchicalParams.get<std::string>("map"), lib, comm);
+    map = IO::ReadMap(hierarchicalParams.get<std::string>("map"), lib, comm, readBinary);
     // colmap of near field
-    near_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("near colmap"), lib, comm);
+    near_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("near colmap"), lib, comm, readBinary);
     // 1-to-1 map for the cluster coefficients
-    clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("coefficient map"), lib, comm);
+    clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("coefficient map"), lib, comm, readBinary);
     // overlapping map for the cluster coefficients
-    ghosted_clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
+    ghosted_clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted coefficient map"), lib, comm, readBinary);
     // 1-to-1 map for the clusters
-    clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("cluster map"), lib, comm);
+    clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("cluster map"), lib, comm, readBinary);
     // overlapping map for the clusters
-    ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm);
+    ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm, readBinary);
 
     // blocked cluster map
     clusterSizes = Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
@@ -1328,7 +1328,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     const bool readLocal = hierarchicalParams.get<bool>("read local", false);
 
     // colmap of auxiliary operator
-    RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm);
+    RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
 
     // Auxiliary matrix used for multigrid construction
     const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
