@@ -73,6 +73,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-Dpackage_enables:FILEPATH={self.arg_filename_packageenables}",
                f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}",
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
+               "-DCTEST_USE_LAUNCHERS:BOOL=ON"
              ]
 
         self.message( "--- ctest version:")

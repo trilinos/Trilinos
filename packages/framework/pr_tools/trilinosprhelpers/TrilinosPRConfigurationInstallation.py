@@ -72,7 +72,8 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
                           os.path.join(self.arg_workspace_dir,
                                        self.config_script),
                       '-Dpackage_enables=' + self.arg_filename_packageenables,
-                      '-Dsubprojects_file=' + self.arg_filename_subprojects
+                      '-Dsubprojects_file=' + self.arg_filename_subprojects,
+                      '-DCTEST_USE_LAUNCHERS:BOOL=ON'
                     ]
 
         print("--- ctest command:")
