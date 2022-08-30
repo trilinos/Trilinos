@@ -123,8 +123,8 @@ int main( int argc, char* argv[] ) {
   num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
 
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = num_cores*num_hyper_threads;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(num_cores*num_hyper_threads);
   Kokkos::initialize( init_args );
   //Kokkos::print_configuration(std::cout);
 

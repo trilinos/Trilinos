@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
     if (threads) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::InitArguments init_args;
-      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_num_threads(num_cores*num_hyper_threads);
       Kokkos::initialize( init_args );
 
       std::cout << std::endl
@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::InitArguments init_args;
-      init_args.device_id = device_id;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_device_id(device_id);
       Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
