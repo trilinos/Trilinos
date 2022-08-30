@@ -998,10 +998,7 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
-                         const Import<LO, GO, Node>& importer,
-                         const Teuchos::RCP<const map_type>& domainMap,
-                         const Teuchos::RCP<const map_type>& rangeMap,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params) const
+                         const Import<LO, GO, Node>& importer) const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -1009,19 +1006,15 @@ public:
 
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
-                               "Right now, assuming destMatrix is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!domainMap.is_null(), std::invalid_argument,
-                               "Right now, assuming domainMap is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!rangeMap.is_null(), std::invalid_argument,
-                               "Right now, assuming rangeMap is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!params.is_null(), std::invalid_argument,
-                               "Right now, assuming params is null.");
-
+                               "destMatrix is required to be null.");
+ 
     // BlockCrsMatrix requires a complete graph at construction.
     // So first step is to import and fill complete the destGraph.
-    RCP<crs_graph_type> destGraph = rcp (new crs_graph_type (importer.getTargetMap(), 0));
-    destGraph->doImport(this->getCrsGraph(), importer, Tpetra::INSERT);
-    destGraph->fillComplete();
+    RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
+    RCP<crs_graph_type> destGraph = importAndFillCompleteCrsGraph<crs_graph_type>(srcGraph, importer,
+                                                                                  srcGraph->getDomainMap(),
+                                                                                  srcGraph->getRangeMap());
+
 
     // Final step, create and import the destMatrix.
     destMatrix = rcp (new this_type (*destGraph, getBlockSize()));
