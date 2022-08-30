@@ -16,9 +16,9 @@ int main(int argc, char* argv[])
   Int n = 3;
   Int nnz = 5;
 
-  Kokkos::InitArguments init_args;
+  Kokkos::InitializationSettings init_args;
   const Int nthreads = 1;
-  init_args.num_threads = nthreads;
+  init_args.set_num_threads(nthreads);
   Kokkos::initialize( init_args );
   {
 

@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
   
   //Starting up Kokkos
   int nthreads = 4; // We will not use all 4 in all tests
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = nthreads;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(nthreads);
   Kokkos::initialize(init_args);
   std::cout << "Kokkos Settings" << std::endl;
   std::cout << "hwloc aval: " 

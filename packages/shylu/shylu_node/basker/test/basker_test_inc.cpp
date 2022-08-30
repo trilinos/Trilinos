@@ -8,7 +8,6 @@
  
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -42,8 +41,8 @@ int main(int argc, char* argv[])
  
   cout << "basker_test: using " << numthreads << "threads" << endl;
   #ifdef BASKER_KOKKOS
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = numthreads;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(nthreads);
   Kokkos::initialize(init_args);
   cout << "---------------USING KOKKOS-------------" << endl;
   #else

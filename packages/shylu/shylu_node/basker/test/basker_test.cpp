@@ -40,8 +40,8 @@ int main(int argc, char* argv[])
   //std::string fname = "matrix1.mtx";
  
   cout << "basker_test: using " << numthreads << "threads" << endl;
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = numthreads;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(nthreads);
   Kokkos::initialize( init_args );
 
   {
