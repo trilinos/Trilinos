@@ -43,25 +43,29 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_REGIONRFACTORY_DEF_HPP
-#define MUELU_REGIONRFACTORY_DEF_HPP
+#ifndef MUELU_REGIONRFACTORY_KOKKOS_DEF_HPP
+#define MUELU_REGIONRFACTORY_KOKKOS_DEF_HPP
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include "Kokkos_UnorderedMap.hpp"
+
+#include "MueLu_RegionRFactory_kokkos_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 
-// #include "MueLu_PFactory.hpp"
-// #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Types.hpp"
+
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MasterList.hpp"
+#include "MueLu_Utilities_kokkos.hpp"
 
-#include "MueLu_RegionRFactory_decl.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  RCP<const ParameterList> RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -81,7 +85,7 @@ namespace MueLu {
   } // GetValidParameterList()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     Input(fineLevel, "A");
@@ -93,7 +97,7 @@ namespace MueLu {
   } // DeclareInput()
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Build(Level& fineLevel, Level& coarseLevel) const {
 
     // Set debug outputs based on environment variable
@@ -105,7 +109,7 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    *out << "Starting RegionRFactory::Build." << std::endl;
+    *out << "Starting RegionRFactory_kokkos::Build." << std::endl;
 
     // First get the inputs from the fineLevel
     const int numDimensions = Get<int>(fineLevel, "numDimensions");
@@ -144,9 +148,9 @@ namespace MueLu {
     RCP<Matrix> R;
 
     if(numDimensions == 1) {
-      throw std::runtime_error("RegionRFactory no implemented for 1D case yet.");
+      throw std::runtime_error("RegionRFactory_kokkos no implemented for 1D case yet.");
     } else if(numDimensions == 2) {
-      throw std::runtime_error("RegionRFactory no implemented for 2D case yet.");
+      throw std::runtime_error("RegionRFactory_kokkos no implemented for 2D case yet.");
     } else if(numDimensions == 3) {
       Build3D(numDimensions, lFineNodesPerDim, A, fineCoordinates,
               R, coarseCoordinates, lCoarseNodesPerDim);
@@ -194,7 +198,7 @@ namespace MueLu {
   } // Build()
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Build3D(const int numDimensions,
           Teuchos::Array<LocalOrdinal>& lFineNodesPerDim,
           const RCP<Matrix>& A,
@@ -216,7 +220,6 @@ namespace MueLu {
     } else {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
-
 
     // Now compute number of coarse grid points
     for(int dim = 0; dim < numDimensions; ++dim) {
@@ -250,6 +253,12 @@ namespace MueLu {
 
     coarseCoordinates = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(coordRowMap,
                                                                                  numDimensions);
+
+    // Get device views of coordinates
+    auto fineCoordsView   = fineCoordinates  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+
+
     Array<ArrayRCP<const real_type> > fineCoordData(numDimensions);
     Array<ArrayRCP<real_type> > coarseCoordData(numDimensions);
     for(int dim = 0; dim < numDimensions; ++dim) {
@@ -278,7 +287,7 @@ namespace MueLu {
       *(lCoarseNodesPerDim[2] - 2);
 
     const LO nnz = (numCorners*cornerStencilLength + numEdges*edgeStencilLength
-		    + numFaces*faceStencilLength + numInteriors*interiorStencilLength)*blkSize;
+            + numFaces*faceStencilLength + numInteriors*interiorStencilLength)*blkSize;
 
     // Having the number of rows and columns we can genrate
     // the appropriate maps for our operator.
@@ -326,8 +335,8 @@ namespace MueLu {
               entries_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l)  = coeffs[k + 2]*coeffs[j + 2]*coeffs[i + 2];
-	    }
-	  }
+        }
+      }
         }
       }
       for(LO l = 0; l < blkSize; ++l) {
@@ -350,7 +359,7 @@ namespace MueLu {
               entries_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l) = columnOffset
                 + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l)  = coeffs[k]*coeffs[j + 2]*coeffs[i + 2];
-	    }
+        }
           }
         }
       }
@@ -373,7 +382,7 @@ namespace MueLu {
             for(LO i = 0; i < 3; ++i) {
               entries_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		   + j*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
+           + j*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
               values_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l)  = coeffs[k + 2]*coeffs[j + 2]*coeffs[i];
             }
           }
@@ -422,7 +431,7 @@ namespace MueLu {
             for(LO i = 0; i < 3; ++i) {
               entries_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		   + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
+           + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l)  = coeffs[k + 2]*coeffs[j]*coeffs[i + 2];
             }
           }
@@ -453,7 +462,7 @@ namespace MueLu {
         }
       }
       for(LO l = 0; l < blkSize; ++l) {
-	row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*(l+1);
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*(l+1);
       }
       for(int dim = 0; dim <numDimensions; ++dim) {
         coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
@@ -465,21 +474,21 @@ namespace MueLu {
       coordColumnOffset = (lFineNodesPerDim[1]*lFineNodesPerDim[0] - 1);
       columnOffset = coordColumnOffset*blkSize;
       entryOffset = (edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset +
-		     cornerStencilLength + (lCoarseNodesPerDim[0] - 2)*edgeStencilLength)*blkSize;
+             cornerStencilLength + (lCoarseNodesPerDim[0] - 2)*edgeStencilLength)*blkSize;
       for(LO l = 0; l < blkSize; ++l) {
         for(LO k = 0; k < 3; ++k) {
           for(LO j = 0; j < 3; ++j) {
             for(LO i = 0; i < 3; ++i) {
               entries_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		   + (j - 2)*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
+           + (j - 2)*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
               values_h(entryOffset + k*9 + j*3 + i + cornerStencilLength*l)  = coeffs[k + 2]*coeffs[j]*coeffs[i];
             }
           }
         }
       }
       for(LO l = 0; l < blkSize; ++l) {
-	row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*(l+1);
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*(l+1);
       }
       for(int dim = 0; dim <numDimensions; ++dim) {
         coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
@@ -532,10 +541,10 @@ namespace MueLu {
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
@@ -546,7 +555,7 @@ namespace MueLu {
         coordColumnOffset = ((lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0] + (edgeIdx + 1)*3);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset
-			+ cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
+            + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 3; ++j) {
@@ -557,23 +566,23 @@ namespace MueLu {
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
 
         // Edge 2
         coordRowIdx = ((lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + edgeIdx + 1);
+               + edgeIdx + 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (edgeIdx + 1)*3);
+                 + (edgeIdx + 1)*3);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
-			+ cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
+            + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 3; ++j) {
@@ -584,39 +593,39 @@ namespace MueLu {
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
 
         // Edge 3
         coordRowIdx = ((lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0] + edgeIdx + 1);
+               + (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0] + edgeIdx + 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0] + (edgeIdx + 1)*3);
+                 + (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0] + (edgeIdx + 1)*3);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  =  (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
-			 + edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset
-			 + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
+             + edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset
+             + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 3; ++j) {
               for(LO i = 0; i < 5; ++i) {
                 entries_h(entryOffset + k*15 + j*5 + i + edgeStencilLength*l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
+             + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + k*15 + j*5 + i + edgeStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
@@ -645,21 +654,21 @@ namespace MueLu {
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
 
         // Edge 1
-	coordRowIdx = ((edgeIdx + 1)*lCoarseNodesPerDim[0] + lCoarseNodesPerDim[0] - 1);
+        coordRowIdx = ((edgeIdx + 1)*lCoarseNodesPerDim[0] + lCoarseNodesPerDim[0] - 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[0] + lFineNodesPerDim[0] - 1);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (edgeLineOffset + edgeIdx*faceLineOffset
-			+ edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
+            + edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 5; ++j) {
@@ -670,23 +679,23 @@ namespace MueLu {
               }
             }
           }
-	}
+        }
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*(l+1);
-	}
+        }
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
         }
 
         // Edge 2
         coordRowIdx = ((lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + (edgeIdx + 1)*lCoarseNodesPerDim[0]);
+               + (edgeIdx + 1)*lCoarseNodesPerDim[0]);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (edgeIdx + 1)*3*lFineNodesPerDim[0]);
+                 + (edgeIdx + 1)*3*lFineNodesPerDim[0]);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
-			+ edgeLineOffset + edgeIdx*faceLineOffset)*blkSize;
+            + edgeLineOffset + edgeIdx*faceLineOffset)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 5; ++j) {
@@ -707,21 +716,21 @@ namespace MueLu {
 
         // Edge 3
         coordRowIdx = ((lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + (edgeIdx + 1)*lCoarseNodesPerDim[0] + lCoarseNodesPerDim[0] - 1);
+               + (edgeIdx + 1)*lCoarseNodesPerDim[0] + lCoarseNodesPerDim[0] - 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (edgeIdx + 1)*3*lFineNodesPerDim[0] + lFineNodesPerDim[0] - 1);
+                 + (edgeIdx + 1)*3*lFineNodesPerDim[0] + lFineNodesPerDim[0] - 1);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
-			+ edgeLineOffset + edgeIdx*faceLineOffset
-			+ edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
+            + edgeLineOffset + edgeIdx*faceLineOffset
+            + edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 3; ++k) {
             for(LO j = 0; j < 5; ++j) {
               for(LO i = 0; i < 3; ++i) {
                 entries_h(entryOffset + k*15 + j*3 + i + edgeStencilLength*l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
+             + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + k*15 + j*3 + i + edgeStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
               }
             }
@@ -753,7 +762,7 @@ namespace MueLu {
             for(LO j = 0; j < 3; ++j) {
               for(LO i = 0; i < 3; ++i) {
                 entries_h(entryOffset + k*9 + j*3 + i + edgeStencilLength*l) = columnOffset
-		  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
+          + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + k*9 + j*3 + i + edgeStencilLength*l)  = coeffs[k]*coeffs[j + 2]*coeffs[i + 2];
               }
             }
@@ -768,10 +777,10 @@ namespace MueLu {
 
         // Edge 1
         coordRowIdx = ((edgeIdx + 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + lCoarseNodesPerDim[0] - 1);
+               + lCoarseNodesPerDim[0] - 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + lFineNodesPerDim[0] - 1);
+                 + lFineNodesPerDim[0] - 1);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + faceLineOffset - edgeStencilLength
                         + edgeIdx*interiorPlaneOffset)*blkSize;
@@ -795,13 +804,13 @@ namespace MueLu {
 
         // Edge 2
         coordRowIdx = ((edgeIdx + 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0]);
+               + (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0]);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]
                              + (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0]);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + edgeIdx*interiorPlaneOffset + faceLineOffset
-			+ (lCoarseNodesPerDim[1] - 2)*interiorLineOffset)*blkSize;
+            + (lCoarseNodesPerDim[1] - 2)*interiorLineOffset)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           for(LO k = 0; k < 5; ++k) {
             for(LO j = 0; j < 3; ++j) {
@@ -824,7 +833,7 @@ namespace MueLu {
         coordRowIdx = ((edgeIdx + 2)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0] - 1);
         rowIdx = coordRowIdx*blkSize;
         coordColumnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + lFineNodesPerDim[1]*lFineNodesPerDim[0] - 1);
+                 + lFineNodesPerDim[1]*lFineNodesPerDim[0] - 1);
         columnOffset = coordColumnOffset*blkSize;
         entryOffset  = (facePlaneOffset + (edgeIdx + 1)*interiorPlaneOffset - edgeStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
@@ -833,7 +842,7 @@ namespace MueLu {
               for(LO i = 0; i < 3; ++i) {
                 entries_h(entryOffset + k*9 + j*3 + i + edgeStencilLength*l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
+             + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + k*9 + j*3 + i + edgeStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
               }
             }
@@ -848,288 +857,334 @@ namespace MueLu {
       }
     }
 
+    //TODO: KOKKOS parallel_for used from here. Not sure if it should be used for edges.
+    Kokkos::deep_copy(row_map, row_map_h);
+    Kokkos::deep_copy(entries, entries_h);
+    Kokkos::deep_copy(values,  values_h);
+
+    // Create views on device for nodes per dim
+    LOTupleView lFineNodesPerDim_d("lFineNodesPerDim");
+    LOTupleView lCoarseNodesPerDim_d("lCoarseNodesPerDim");
+
+    typename Kokkos::View<LO[3], device_type>::HostMirror lCoarseNodesPerDim_h = Kokkos::create_mirror_view( lCoarseNodesPerDim_d );
+    typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDim_h   = Kokkos::create_mirror_view( lFineNodesPerDim_d );
+
+    for(int dim = 0; dim < numDimensions; ++dim) {
+      lCoarseNodesPerDim_h(dim) = lCoarseNodesPerDim[dim];
+      lFineNodesPerDim_h(dim) = lFineNodesPerDim[dim];
+    }
+
+    Kokkos::deep_copy(lCoarseNodesPerDim_d, lCoarseNodesPerDim_h);
+    Kokkos::deep_copy(lFineNodesPerDim_d, lFineNodesPerDim_h);
+
+
     // Faces in 0-1 plane
     if((lCoarseNodesPerDim[0] - 2 > 0) && (lCoarseNodesPerDim[1] - 2 > 0)) {
 
-      Array<LO> gridIdx(3);
-      LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
-      for(LO faceIdx=0; faceIdx < (lCoarseNodesPerDim[1]-2)*(lCoarseNodesPerDim[0]-2); ++faceIdx) {
-
-        // Face 0
-        coordRowIdx = ((gridIdx[1] + 1)*lCoarseNodesPerDim[0] + gridIdx[0] + 1);
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset = 3*((gridIdx[1] + 1)*lFineNodesPerDim[0] + gridIdx[0] + 1);
-        columnOffset = coordColumnOffset*blkSize;
-        entryOffset  = (edgeLineOffset + edgeStencilLength
-			+ gridIdx[1]*faceLineOffset + gridIdx[0]*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 5; ++i) {
-                entries_h(entryOffset + k*25 + j*5 + i + faceStencilLength*l) = columnOffset
-                  + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
-                values_h(entryOffset + k*25 + j*5 + i + faceStencilLength*l)  = coeffs[k + 2]*coeffs[j]*coeffs[i];
+      Kokkos::parallel_for("Faces in 0-1 plane region R",
+        Kokkos::RangePolicy<typename device_type::execution_space>(0, (lCoarseNodesPerDim[1]-2)*(lCoarseNodesPerDim[0]-2) ),
+        KOKKOS_LAMBDA(const LO faceIdx) {
+            LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
+            LO gridIdx[3] = {0,0,0};
+            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            // Last step in the loop
+            // update the grid indices
+            // for next grid point
+            for(LO i = 0; i < faceIdx; i++){
+              ++gridIdx[0];
+              if(gridIdx[0] == lCoarseNodesPerDim_d(0) - 2) {
+                gridIdx[0] = 0;
+                ++gridIdx[1];
               }
             }
-          }
-        }
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-        }
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
 
-        // Face 1
-        coordRowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0];
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0];
-        columnOffset = coordColumnOffset*blkSize;
-        entryOffset  += (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 5; ++i) {
-                entries_h(entryOffset + k*25 + j*5 + i + faceStencilLength*l) = columnOffset
-                  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
-                values_h(entryOffset + k*25 + j*5 + i + faceStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
+            // Face 0
+            coordRowIdx = ((gridIdx[1] + 1)*lCoarseNodesPerDim_d(0) + gridIdx[0] + 1);
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset = 3*((gridIdx[1] + 1)*lFineNodesPerDim_d(0) + gridIdx[0] + 1);
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  = (edgeLineOffset + edgeStencilLength
+                + gridIdx[1]*faceLineOffset + gridIdx[0]*faceStencilLength)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 3; ++k) {
+                for(LO j = 0; j < 5; ++j) {
+                  for(LO i = 0; i < 5; ++i) {
+                    entries(entryOffset + k*25 + j*5 + i + faceStencilLength*l) = columnOffset
+                      + (k*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0) + (j - 2)*lFineNodesPerDim_d(0) + i - 2)*blkSize + l;
+                    values(entryOffset + k*25 + j*5 + i + faceStencilLength*l)  = coeffs_d[k + 2]*coeffs_d[j]*coeffs_d[i];
+                  }
+                }
               }
             }
-          }
-        }
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-        }
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
 
-        // Last step in the loop
-        // update the grid indices
-        // for next grid point
-        ++gridIdx[0];
-        if(gridIdx[0] == lCoarseNodesPerDim[0] - 2) {
-          gridIdx[0] = 0;
-          ++gridIdx[1];
-        }
-      }
+            // Face 1
+            coordRowIdx += (lCoarseNodesPerDim_d(2) - 1)*lCoarseNodesPerDim_d(1)*lCoarseNodesPerDim_d(0);
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset += (lFineNodesPerDim_d(2) - 1)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0);
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  += (facePlaneOffset + (lCoarseNodesPerDim_d(2) - 2)*interiorPlaneOffset)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 3; ++k) {
+                for(LO j = 0; j < 5; ++j) {
+                  for(LO i = 0; i < 5; ++i) {
+                    entries(entryOffset + k*25 + j*5 + i + faceStencilLength*l) = columnOffset
+                      + ((k - 2)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                 + (j - 2)*lFineNodesPerDim_d(0) + i - 2)*blkSize + l;
+                    values(entryOffset + k*25 + j*5 + i + faceStencilLength*l)  = coeffs_d[k]*coeffs_d[j]*coeffs_d[i];
+                  }
+                }
+              }
+            }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
+
+      });// parallel_for faces in 0-1 plane
     }
 
     // Faces in 0-2 plane
     if((lCoarseNodesPerDim[0] - 2 > 0) && (lCoarseNodesPerDim[2] - 2 > 0)) {
 
-      Array<LO> gridIdx(3);
-      LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
-      for(LO faceIdx=0; faceIdx < (lCoarseNodesPerDim[2]-2)*(lCoarseNodesPerDim[0]-2); ++faceIdx) {
-
-        // Face 0
-        coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0] + (gridIdx[0] + 1));
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset = ((gridIdx[2] + 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-                             + gridIdx[0] + 1)*3;
-        columnOffset = coordColumnOffset*blkSize;
-        entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + edgeStencilLength
-			+ gridIdx[0]*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
-                entries_h(entryOffset + k*15 + j*5 + i + faceStencilLength*l) = columnOffset
-                  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
-                values_h(entryOffset + k*15 + j*5 + i + faceStencilLength*l)  = coeffs[k]*coeffs[j + 2]*coeffs[i];
+      Kokkos::parallel_for("Faces in 0-2 plane region R",
+        Kokkos::RangePolicy<typename device_type::execution_space>(0, (lCoarseNodesPerDim[2]-2)*(lCoarseNodesPerDim[0]-2) ),
+        KOKKOS_LAMBDA(const LO faceIdx) {
+            LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
+            LO gridIdx[3] = {0,0,0};
+            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            // Last step in the loop
+            // update the grid indices
+            // for next grid point
+            for(LO i = 0; i < faceIdx; i++){
+              ++gridIdx[0];
+              if(gridIdx[0] == lCoarseNodesPerDim_d(0) - 2) {
+                gridIdx[0] = 0;
+                ++gridIdx[2];
               }
             }
-          }
-        }
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-        }
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
 
-        // Face 1
-        coordRowIdx += (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0];
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset += (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0];
-        columnOffset = coordColumnOffset*blkSize;
-        entryOffset  += (faceLineOffset + (lCoarseNodesPerDim[1] - 2)*interiorLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
-                entries_h(entryOffset + k*15 + j*5 + i + faceStencilLength*l) = columnOffset
-		  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
-                values_h(entryOffset + k*15 + j*5 + i + faceStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
+            // Face 0
+            coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim_d(1)*lCoarseNodesPerDim_d(0) + (gridIdx[0] + 1));
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset = ((gridIdx[2] + 1)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                                 + gridIdx[0] + 1)*3;
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + edgeStencilLength
+                + gridIdx[0]*faceStencilLength)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 5; ++k) {
+                for(LO j = 0; j < 3; ++j) {
+                  for(LO i = 0; i < 5; ++i) {
+                    entries(entryOffset + k*15 + j*5 + i + faceStencilLength*l) = columnOffset
+                      + ((k - 2)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0) + j*lFineNodesPerDim_d(0) + i - 2)*blkSize + l;
+                    values(entryOffset + k*15 + j*5 + i + faceStencilLength*l)  = coeffs_d[k]*coeffs_d[j + 2]*coeffs_d[i];
+                  }
+                }
               }
             }
-          }
-        }
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-      	}
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
 
-        // Last step in the loop
-        // update the grid indices
-        // for next grid point
-        ++gridIdx[0];
-        if(gridIdx[0] == lCoarseNodesPerDim[0] - 2) {
-          gridIdx[0] = 0;
-          ++gridIdx[2];
-        }
-      }
+            // Face 1
+            coordRowIdx += (lCoarseNodesPerDim_d(1) - 1)*lCoarseNodesPerDim_d(0);
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset += (lFineNodesPerDim_d(1) - 1)*lFineNodesPerDim_d(0);
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  += (faceLineOffset + (lCoarseNodesPerDim_d(1) - 2)*interiorLineOffset)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 5; ++k) {
+                for(LO j = 0; j < 3; ++j) {
+                  for(LO i = 0; i < 5; ++i) {
+                    entries(entryOffset + k*15 + j*5 + i + faceStencilLength*l) = columnOffset
+              + ((k - 2)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                 + (j - 2)*lFineNodesPerDim_d(0) + i - 2)*blkSize + l;
+                    values(entryOffset + k*15 + j*5 + i + faceStencilLength*l)  = coeffs_d[k]*coeffs_d[j]*coeffs_d[i];
+                  }
+                }
+              }
+            }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
+
+      });// parallel_for faces in 0-2 plane
     }
 
     // Faces in 1-2 plane
     if((lCoarseNodesPerDim[1] - 2 > 0) && (lCoarseNodesPerDim[2] - 2 > 0)) {
 
-      Array<LO> gridIdx(3);
-      LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
-      for(LO faceIdx=0; faceIdx < (lCoarseNodesPerDim[2]-2)*(lCoarseNodesPerDim[1]-2); ++faceIdx) {
-
-        // Face 0
-        coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]
-		       + (gridIdx[1] + 1)*lCoarseNodesPerDim[0]);
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset = ((gridIdx[2] + 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (gridIdx[1] + 1)*lFineNodesPerDim[0])*3;
-      	columnOffset = coordColumnOffset*blkSize;
-        entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + faceLineOffset
-			+ gridIdx[1]*interiorLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
-                entries_h(entryOffset + k*15 + j*3 + i + faceStencilLength*l) = columnOffset
-                  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
-                values_h(entryOffset + k*15 + j*3 + i + faceStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i + 2];
+      Kokkos::parallel_for("Faces in 1-2 plane region R",
+        Kokkos::RangePolicy<typename device_type::execution_space>(0, (lCoarseNodesPerDim[2]-2)*(lCoarseNodesPerDim[1]-2) ),
+        KOKKOS_LAMBDA(const LO faceIdx) {
+            LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
+            LO gridIdx[3] = {0,0,0};
+            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            // Last step in the loop
+            // update the grid indices
+            // for next grid point
+            for(LO i = 0; i < faceIdx; i++){
+              ++gridIdx[1];
+              if(gridIdx[1] == lCoarseNodesPerDim_d(1) - 2) {
+                gridIdx[1] = 0;
+                ++gridIdx[2];
               }
             }
-          }
-        }
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-        }
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
 
-        // Face 1
-        coordRowIdx += (lCoarseNodesPerDim[0] - 1);
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset += (lFineNodesPerDim[0] - 1);
-        columnOffset = coordColumnOffset*blkSize;
-        entryOffset  += (faceStencilLength + (lCoarseNodesPerDim[0] - 2)*interiorStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
-                entries_h(entryOffset + k*15 + j*3 + i + faceStencilLength*l) = columnOffset
-		  + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
-                values_h(entryOffset + k*15 + j*3 + i + faceStencilLength*l)  = coeffs[k]*coeffs[j]*coeffs[i];
+            // Face 0
+            coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim_d(1)*lCoarseNodesPerDim_d(0)
+                   + (gridIdx[1] + 1)*lCoarseNodesPerDim_d(0));
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset = ((gridIdx[2] + 1)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                     + (gridIdx[1] + 1)*lFineNodesPerDim_d(0))*3;
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + faceLineOffset
+                + gridIdx[1]*interiorLineOffset)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 5; ++k) {
+                for(LO j = 0; j < 5; ++j) {
+                  for(LO i = 0; i < 3; ++i) {
+                    entries(entryOffset + k*15 + j*3 + i + faceStencilLength*l) = columnOffset
+                      + ((k - 2)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0) + (j - 2)*lFineNodesPerDim_d(0) + i)*blkSize + l;
+                    values(entryOffset + k*15 + j*3 + i + faceStencilLength*l)  = coeffs_d[k]*coeffs_d[j]*coeffs_d[i + 2];
+                  }
+                }
               }
             }
-          }
-      	}
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
-      	}
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
 
-        // Last step in the loop
-        // update the grid indices
-        // for next grid point
-        ++gridIdx[1];
-        if(gridIdx[1] == lCoarseNodesPerDim[1] - 2) {
-          gridIdx[1] = 0;
-          ++gridIdx[2];
-        }
-      }
+            // Face 1
+            coordRowIdx += (lCoarseNodesPerDim_d(0) - 1);
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset += (lFineNodesPerDim_d(0) - 1);
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset  += (faceStencilLength + (lCoarseNodesPerDim_d(0) - 2)*interiorStencilLength)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO k = 0; k < 5; ++k) {
+                for(LO j = 0; j < 5; ++j) {
+                  for(LO i = 0; i < 3; ++i) {
+                    entries(entryOffset + k*15 + j*3 + i + faceStencilLength*l) = columnOffset
+                    + ((k - 2)*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                    + (j - 2)*lFineNodesPerDim_d(0) + i - 2)*blkSize + l;
+                    values(entryOffset + k*15 + j*3 + i + faceStencilLength*l)  = coeffs_d[k]*coeffs_d[j]*coeffs_d[i];
+                  }
+                }
+              }
+            }
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + faceStencilLength*(l+1);
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
+
+      });// parallel_for faces in 1-2 plane
     }
 
     if(numInteriors > 0) {
+
       // Allocate and compute arrays
       // containing column offsets
       // and values associated with
       // interior points
       LO countRowEntries = 0;
       Array<LO> coordColumnOffsets(125);
+      Kokkos::View<LO[125]> coordColumnOffsets_d("coordColOffset");
+      auto coordColumnOffsets_h = Kokkos::create_mirror_view( coordColumnOffsets_d );
+
       for(LO k = -2; k < 3; ++k) {
         for(LO j = -2; j < 3; ++j) {
           for(LO i = -2; i < 3; ++i) {
-            coordColumnOffsets[countRowEntries] = k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-	      + j*lFineNodesPerDim[0] + i;
+            coordColumnOffsets_h(countRowEntries) = k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
+          + j*lFineNodesPerDim[0] + i;
             ++countRowEntries;
           }
         }
       }
+      Kokkos::deep_copy(coordColumnOffsets_d, coordColumnOffsets_h);
 
       LO countValues = 0;
       Array<SC> interiorValues(125);
+      Kokkos::View<SC*> interiorValues_d("interiorValues",125);
+      auto interiorValues_h = Kokkos::create_mirror_view( interiorValues_d );
       for(LO k = 0; k < 5; ++k) {
         for(LO j = 0; j < 5; ++j) {
           for(LO i = 0; i < 5; ++i) {
-            interiorValues[countValues] = coeffs[k]*coeffs[j]*coeffs[i];
+            interiorValues_h(countValues) = coeffs[k]*coeffs[j]*coeffs[i];
             ++countValues;
-	  }
-        }
-      }
-
-      LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
-      Array<LO> gridIdx(3);
-      for(LO interiorIdx = 0; interiorIdx < numInteriors; ++interiorIdx) {
-        coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim[0]*lCoarseNodesPerDim[1]
-		       + (gridIdx[1] + 1)*lCoarseNodesPerDim[0]
-		       + gridIdx[0] + 1);
-        rowIdx = coordRowIdx*blkSize;
-        coordColumnOffset = ((gridIdx[2] + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]
-			     + (gridIdx[1] + 1)*3*lFineNodesPerDim[0] + (gridIdx[0] + 1)*3);
-      	columnOffset = coordColumnOffset*blkSize;
-        entryOffset = (facePlaneOffset + faceLineOffset + faceStencilLength
-                       + gridIdx[2]*interiorPlaneOffset + gridIdx[1]*interiorLineOffset
-                       + gridIdx[0]*interiorStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + interiorStencilLength*(l+1);
-      	}
-        // Fill the column indices
-        // and values in the approproate
-        // views.
-        for(LO l = 0; l < blkSize; ++l) {
-          for(LO entryIdx = 0; entryIdx < interiorStencilLength; ++entryIdx) {
-            entries_h(entryOffset + entryIdx + interiorStencilLength*l) = columnOffset + coordColumnOffsets[entryIdx]*blkSize + l;
-            values_h(entryOffset + entryIdx + interiorStencilLength*l) = interiorValues[entryIdx];
-	  }
-        }
-        for(int dim = 0; dim <numDimensions; ++dim) {
-          coarseCoordData[dim][coordRowIdx] = fineCoordData[dim][coordColumnOffset];
-        }
-
-        // Last step in the loop
-        // update the grid indices
-        // for next grid point
-        ++gridIdx[0];
-        if(gridIdx[0] == lCoarseNodesPerDim[0] - 2) {
-          gridIdx[0] = 0;
-          ++gridIdx[1];
-          if(gridIdx[1] == lCoarseNodesPerDim[1] - 2) {
-            gridIdx[1] = 0;
-            ++gridIdx[2];
           }
         }
       }
-    }
+      Kokkos::deep_copy(interiorValues_d, interiorValues_h);
 
-    Kokkos::deep_copy(row_map, row_map_h);
-    Kokkos::deep_copy(entries, entries_h);
-    Kokkos::deep_copy(values,  values_h);
+      Kokkos::parallel_for("interior idx region R",Kokkos::RangePolicy<typename device_type::execution_space>(0, numInteriors),
+        KOKKOS_LAMBDA(const LO interiorIdx) {
+            LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
+            LO gridIdx[3];
+            gridIdx[0] = 0; gridIdx[1] = 0; gridIdx[2] = 0;
+            // First step in the loop
+            // update the grid indices
+            // for the grid point
+            for(LO i=0; i<interiorIdx; i++){
+              ++gridIdx[0];
+              if(gridIdx[0] == lCoarseNodesPerDim_d(0) - 2) {
+                gridIdx[0] = 0;
+                ++gridIdx[1];
+                if(gridIdx[1] == lCoarseNodesPerDim_d(1) - 2) {
+                  gridIdx[1] = 0;
+                  ++gridIdx[2];
+                }
+              }
+            }
+
+            coordRowIdx = ((gridIdx[2] + 1)*lCoarseNodesPerDim_d(0)*lCoarseNodesPerDim_d(1)
+                   + (gridIdx[1] + 1)*lCoarseNodesPerDim_d(0)
+                   + gridIdx[0] + 1);
+            rowIdx = coordRowIdx*blkSize;
+            coordColumnOffset = ((gridIdx[2] + 1)*3*lFineNodesPerDim_d(1)*lFineNodesPerDim_d(0)
+                     + (gridIdx[1] + 1)*3*lFineNodesPerDim_d(0) + (gridIdx[0] + 1)*3);
+            columnOffset = coordColumnOffset*blkSize;
+            entryOffset = (facePlaneOffset + faceLineOffset + faceStencilLength
+                           + gridIdx[2]*interiorPlaneOffset + gridIdx[1]*interiorLineOffset
+                           + gridIdx[0]*interiorStencilLength)*blkSize;
+            for(LO l = 0; l < blkSize; ++l) {
+              row_map(rowIdx + 1 + l) = entryOffset + interiorStencilLength*(l+1);
+            }
+            // Fill the column indices
+            // and values in the approproate
+            // views.
+            for(LO l = 0; l < blkSize; ++l) {
+              for(LO entryIdx = 0; entryIdx < interiorStencilLength; ++entryIdx) {
+                entries(entryOffset + entryIdx + interiorStencilLength*l) = columnOffset + coordColumnOffsets_d(entryIdx)*blkSize + l;
+                values(entryOffset + entryIdx + interiorStencilLength*l) = interiorValues_d(entryIdx);
+              }
+            }
+            for(int dim = 0; dim <numDimensions; ++dim) {
+              coarseCoordsView(coordRowIdx,dim) = fineCoordsView(coordColumnOffset, dim);
+            }
+
+      });// Kokkos::parallel_for interior idx
+      //
+    }
 
     local_graph_type localGraph(entries, row_map);
     local_matrix_type localR("R", numCols, values, localGraph);
@@ -1145,6 +1200,6 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_REGIONRFACTORY_SHORT
+#define MUELU_REGIONRFACTORY_KOKKOS_SHORT
 #endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_REGIONRFACTORY_DEF_HPP
