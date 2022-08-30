@@ -16,7 +16,7 @@ ASSERT_EXIT({{ statement } ::exit(EXIT_SUCCESS); }, ::testing::ExitedWithCode(0)
 // KokkosParser tests go here because they modify the Kokkos backend
 //
 TEST (KokkosInitialize, NoArgsGiven) { 
-    Kokkos::InitArguments args;
+    Kokkos::InitializationSettings args;
     ASSERT_NO_DEATH({
             // default constructor is hidden for KokkosParser
             // but still visible from this test
