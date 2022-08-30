@@ -773,6 +773,22 @@ void Teuchos::setIntParameter(
 }
 
 
+void Teuchos::setLongLongParameter(
+  std::string const& paramName,
+  long long const value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  )
+{
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
+  const RCP<const ParameterEntryValidator> paramEntryValidator =
+    anyNumberParameterEntryValidator(
+      AnyNumberParameterEntryValidator::PREFER_LONG_LONG, acceptedTypes
+      );
+  paramList->set(paramName, value, docString, paramEntryValidator);
+}
+
+
 void Teuchos::setDoubleParameter(
   std::string const& paramName,
   double const& value, std::string const& docString,
@@ -822,6 +838,26 @@ int Teuchos::getIntParameter(
   // Try the do the conversion which might fail!
   const AnyNumberParameterEntryValidator myAnyNumValidator;
   return myAnyNumValidator.getInt(entry,paramName,paramList.name());
+}
+
+
+long long Teuchos::getLongLongParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RCP<const AnyNumberParameterEntryValidator>
+    anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
+      entry.validator()
+      );
+  if ( !is_null(anyNumValidator) )
+    return anyNumValidator->getLongLong(entry,paramName,paramList.name());
+  if ( typeid(long long) == entry.getAny().type() )
+    return any_cast<long long>(entry.getAny());
+  // Try the do the conversion which might fail!
+  const AnyNumberParameterEntryValidator myAnyNumValidator;
+  return myAnyNumValidator.getLongLong(entry,paramName,paramList.name());
 }
 
 
