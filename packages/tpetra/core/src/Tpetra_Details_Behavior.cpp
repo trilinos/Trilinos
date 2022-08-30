@@ -563,7 +563,7 @@ bool Behavior::skipCopyAndPermuteIfPossible ()
 bool Behavior::overlapCommunicationAndComputation ()
 {
   constexpr char envVarName[] = "TPETRA_OVERLAP";
-  constexpr bool defaultValue(false);
+  constexpr bool defaultValue(true);
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
