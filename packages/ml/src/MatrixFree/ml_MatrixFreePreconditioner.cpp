@@ -234,6 +234,7 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
     std::cerr << "Found 0 aggregates, perhaps the problem is too small." << std::endl;
     ML_CHK_ERR(-2);
   }
+  ML_qr_fix_Destroy();
 
   *R = ML_Operator_Create(Comm_ML());
 
@@ -461,6 +462,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   int NumAggregates = BlockPtent_ML->invec_leng;
   ML_Operator_Destroy(&BlockRtent_ML);
   ML_Operator_Destroy(&CoarseGraph_ML);
+  ML_Operator_Destroy(&Graph_ML);
 
   AddAndResetStartTime("construction of block C, R, and P", true);
   if (verbose_) std::cout << std::endl;
@@ -559,6 +561,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   int* BlockNodeList = Graph.ColMap().MyGlobalElements();
 
   // finally get rid of the ML_Aggregate structure.
+  ML_qr_fix_Destroy();
   ML_Aggregate_Destroy(&BlockAggr_ML);
 
   const Epetra_Map& FineMap = Operator_.OperatorDomainMap();

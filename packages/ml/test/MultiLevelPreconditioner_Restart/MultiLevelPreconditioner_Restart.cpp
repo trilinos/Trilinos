@@ -107,6 +107,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver2.Iterate(1550, 1e-12);
 
 
+  delete MLPrec2;
 
   // ==================================================== //
   // compute difference between the two ML solutions //

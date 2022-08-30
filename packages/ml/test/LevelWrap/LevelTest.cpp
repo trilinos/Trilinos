@@ -86,6 +86,8 @@ void BuildProlongator(Epetra_CrsMatrix &A,Epetra_CrsMatrix *&P) {
   ML_Operator2EpetraCrsMatrix(P_ML,P,nnz,true,time,0,false);
   P->OptimizeStorage();
 
+  ML_qr_fix_Destroy();
+  ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&A_ML);
   ML_Operator_Destroy(&P_ML);
   ML_Comm_Destroy(&ml_comm_);
@@ -256,6 +258,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
+  delete P;
   delete Matrix;
   delete Map;
 
