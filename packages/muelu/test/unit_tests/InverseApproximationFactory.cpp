@@ -324,9 +324,9 @@ namespace MueLuTests {
         ArrayView<const LocalOrdinal> indices;
         ArrayView<const Scalar> values;
         Ainv->getLocalRowView(0, indices, values);
-        TEST_FLOATING_EQUALITY(values[0], 1.0000000000000002e-01, 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[1], -1.6666666666666673e-02, 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[2], 4.6666666666666688e-03, 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[0], Teuchos::as<Scalar>(1.0000000000000002e-01), 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[1], Teuchos::as<Scalar>(-1.6666666666666673e-02), 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[2], Teuchos::as<Scalar>(4.6666666666666688e-03), 1e2*TMT::eps());
       }
     }
 
