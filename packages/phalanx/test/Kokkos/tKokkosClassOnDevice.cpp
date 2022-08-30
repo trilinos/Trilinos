@@ -1,5 +1,4 @@
 #include "Kokkos_Core.hpp"
-#include "Kokkos_View.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
