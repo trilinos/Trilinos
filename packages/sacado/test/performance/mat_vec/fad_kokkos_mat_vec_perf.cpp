@@ -634,9 +634,8 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-    Kokkos::InitArguments init_args;
-    init_args.num_threads = cores_per_numa;
-    init_args.num_numa = numa;
+    Kokkos::InitializationSettings init_args;
+    init_args.set_num_threads(cores_per_numa);
 
     Kokkos::initialize(init_args);
 
