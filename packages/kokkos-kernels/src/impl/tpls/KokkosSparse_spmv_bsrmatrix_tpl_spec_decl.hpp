@@ -42,10 +42,11 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
-#define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#ifndef KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
 
 #include "KokkosKernels_Controls.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
@@ -57,26 +58,7 @@ namespace Impl {
 #if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
 
-namespace BSR {
-inline void mkl_safe_call(int errcode) {
-  if (errcode != SPARSE_STATUS_SUCCESS)
-    throw std::runtime_error("MKL returned non-success error code");
-}
-
-inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
-  switch (toupper(mode_kk)) {
-    case 'N': return SPARSE_OPERATION_NON_TRANSPOSE;
-    case 'T': return SPARSE_OPERATION_TRANSPOSE;
-    case 'H': return SPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    default:;
-  }
-  throw std::invalid_argument(
-      "Invalid mode for MKL (should be one of N, T, H)");
-}
-}  // namespace BSR
-
-using BSR::mkl_safe_call;
-using BSR::mode_kk_to_mkl;
+using KokkosSparse::Impl::mode_kk_to_mkl;
 
 inline matrix_descr getDescription() {
   matrix_descr A_descr;
@@ -91,13 +73,14 @@ inline void spmv_block_impl_mkl(sparse_operation_t op, float alpha, float beta,
                                 const int* Aentries, const float* Avalues,
                                 const float* x, float* y) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_s_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), const_cast<float*>(Avalues)));
 
   matrix_descr A_descr = getDescription();
-  mkl_safe_call(mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
 }
 
 inline void spmv_block_impl_mkl(sparse_operation_t op, double alpha,
@@ -106,13 +89,14 @@ inline void spmv_block_impl_mkl(sparse_operation_t op, double alpha,
                                 const double* Avalues, const double* x,
                                 double* y) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_d_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), const_cast<double*>(Avalues)));
 
   matrix_descr A_descr = getDescription();
-  mkl_safe_call(mkl_sparse_d_mv(op, alpha, A_mkl, A_descr, x, beta, y));
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_d_mv(op, alpha, A_mkl, A_descr, x, beta, y));
 }
 
 inline void spmv_block_impl_mkl(sparse_operation_t op,
@@ -123,17 +107,17 @@ inline void spmv_block_impl_mkl(sparse_operation_t op,
                                 const Kokkos::complex<float>* x,
                                 Kokkos::complex<float>* y) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_c_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), (MKL_Complex8*)Avalues));
 
-  MKL_Complex8& alpha_mkl = reinterpret_cast<MKL_Complex8&>(alpha);
-  MKL_Complex8& beta_mkl  = reinterpret_cast<MKL_Complex8&>(beta);
-  matrix_descr A_descr    = getDescription();
-  mkl_safe_call(mkl_sparse_c_mv(op, alpha_mkl, A_mkl, A_descr,
-                                reinterpret_cast<const MKL_Complex8*>(x),
-                                beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
+  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
+  matrix_descr A_descr = getDescription();
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_mv(
+      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex8*>(x),
+      beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
 }
 
 inline void spmv_block_impl_mkl(sparse_operation_t op,
@@ -144,17 +128,17 @@ inline void spmv_block_impl_mkl(sparse_operation_t op,
                                 const Kokkos::complex<double>* x,
                                 Kokkos::complex<double>* y) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_z_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), (MKL_Complex16*)Avalues));
 
-  matrix_descr A_descr     = getDescription();
-  MKL_Complex16& alpha_mkl = reinterpret_cast<MKL_Complex16&>(alpha);
-  MKL_Complex16& beta_mkl  = reinterpret_cast<MKL_Complex16&>(beta);
-  mkl_safe_call(mkl_sparse_z_mv(op, alpha_mkl, A_mkl, A_descr,
-                                reinterpret_cast<const MKL_Complex16*>(x),
-                                beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
+  matrix_descr A_descr = getDescription();
+  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_mv(
+      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex16*>(x),
+      beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
 }
 
 inline void spm_mv_block_impl_mkl(sparse_operation_t op, float alpha,
@@ -163,15 +147,15 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op, float alpha,
                                   const float* Avalues, const float* x,
                                   int colx, int ldx, float* y, int ldy) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_s_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), const_cast<float*>(Avalues)));
 
   matrix_descr A_descr = getDescription();
-  mkl_safe_call(mkl_sparse_s_mm(op, alpha, A_mkl, A_descr,
-                                SPARSE_LAYOUT_ROW_MAJOR, x, colx, ldx, beta, y,
-                                ldy));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_mm(op, alpha, A_mkl, A_descr,
+                                              SPARSE_LAYOUT_ROW_MAJOR, x, colx,
+                                              ldx, beta, y, ldy));
 }
 
 inline void spm_mv_block_impl_mkl(sparse_operation_t op, double alpha,
@@ -180,15 +164,15 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op, double alpha,
                                   const double* Avalues, const double* x,
                                   int colx, int ldx, double* y, int ldy) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_d_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), const_cast<double*>(Avalues)));
 
   matrix_descr A_descr = getDescription();
-  mkl_safe_call(mkl_sparse_d_mm(op, alpha, A_mkl, A_descr,
-                                SPARSE_LAYOUT_ROW_MAJOR, x, colx, ldx, beta, y,
-                                ldy));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_mm(op, alpha, A_mkl, A_descr,
+                                              SPARSE_LAYOUT_ROW_MAJOR, x, colx,
+                                              ldx, beta, y, ldy));
 }
 
 inline void spm_mv_block_impl_mkl(sparse_operation_t op,
@@ -200,15 +184,15 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op,
                                   const Kokkos::complex<float>* x, int colx,
                                   int ldx, Kokkos::complex<float>* y, int ldy) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_c_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), (MKL_Complex8*)Avalues));
 
-  MKL_Complex8& alpha_mkl = reinterpret_cast<MKL_Complex8&>(alpha);
-  MKL_Complex8& beta_mkl  = reinterpret_cast<MKL_Complex8&>(beta);
-  matrix_descr A_descr    = getDescription();
-  mkl_safe_call(
+  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
+  matrix_descr A_descr = getDescription();
+  KOKKOSKERNELS_MKL_SAFE_CALL(
       mkl_sparse_c_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
                       reinterpret_cast<const MKL_Complex8*>(x), colx, ldx,
                       beta_mkl, reinterpret_cast<MKL_Complex8*>(y), ldy));
@@ -221,15 +205,15 @@ inline void spm_mv_block_impl_mkl(
     const Kokkos::complex<double>* x, int colx, int ldx,
     Kokkos::complex<double>* y, int ldy) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_z_create_bsr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), (MKL_Complex16*)Avalues));
 
-  matrix_descr A_descr     = getDescription();
-  MKL_Complex16& alpha_mkl = reinterpret_cast<MKL_Complex16&>(alpha);
-  MKL_Complex16& beta_mkl  = reinterpret_cast<MKL_Complex16&>(beta);
-  mkl_safe_call(
+  matrix_descr A_descr = getDescription();
+  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
+  KOKKOSKERNELS_MKL_SAFE_CALL(
       mkl_sparse_z_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
                       reinterpret_cast<const MKL_Complex16*>(x), colx, ldx,
                       beta_mkl, reinterpret_cast<MKL_Complex16*>(y), ldy));
@@ -470,7 +454,7 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 //
 // From  https://docs.nvidia.com/cuda/cusparse/index.html#bsrmv
@@ -503,7 +487,7 @@ void spmv_block_impl_cusparse(
     default: {
       std::cerr << "Mode " << mode << " invalid for cusparse[*]bsrmv.\n";
       throw std::invalid_argument("Invalid mode");
-    } break;
+    }
   }
 
 #if (9000 <= CUDA_VERSION)
@@ -578,8 +562,24 @@ void spmv_block_impl_cusparse(
 // - Only blockDim > 1 is supported
 // - Only CUSPARSE_OPERATION_NON_TRANSPOSE is supported
 // - Only CUSPARSE_MATRIX_TYPE_GENERAL is supported.
+// - Only LayoutLeft for X and Y:
+//   for X,Y LayoutLeft we want cuSparse to do
+//   C = A * B + C
+//   and for X,Y LayoutRight we want cuSparse to do
+//   trans(C) = A * trans(B) + trans(C)
+//   -> t(t(C)) = t(A * t(B)) + t(t(C))
+//   ->       C = t(t(B)) * t(A) + C
+//   ->       C = B * t(A) + C
+//   This is impossible in cuSparse without explicitly transposing C,
+//   so we just do not support LayoutRight in cuSparse TPL now
 //
-template <class AMatrix, class XVector, class YVector>
+template <
+    class AMatrix, class XVector, class YVector,
+    std::enable_if_t<std::is_same<Kokkos::LayoutLeft,
+                                  typename XVector::array_layout>::value &&
+                         std::is_same<Kokkos::LayoutLeft,
+                                      typename YVector::array_layout>::value,
+                     bool> = true>
 void spm_mv_block_impl_cusparse(
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
@@ -599,12 +599,14 @@ void spm_mv_block_impl_cusparse(
     default: {
       std::cerr << "Mode " << mode << " invalid for cusparse[*]bsrmv.\n";
       throw std::invalid_argument("Invalid mode");
-    } break;
+    }
   }
 
   int colx = static_cast<int>(x.extent(1));
-  int ldx  = static_cast<int>(x.stride_1());
-  int ldy  = static_cast<int>(y.stride_1());
+
+  // ldx and ldy should be the leading dimension of X,Y respectively
+  const int ldx = static_cast<int>(x.extent(0));
+  const int ldy = static_cast<int>(y.extent(0));
 
 #if (9000 <= CUDA_VERSION)
 
@@ -761,29 +763,31 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
                            Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
-#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE,  \
-                                      COMPILE_LIBRARY)                         \
+// cuSparse TPL does not support LayoutRight for this operation
+// only specialize for LayoutLeft
+#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, SPACE,          \
+                                      ETI_AVAIL)                               \
   template <>                                                                  \
   struct SPMV_MV_BSRMATRIX<                                                    \
       SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const, SCALAR const**,   \
-      LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,                             \
+      Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, SPACE>,                 \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,          \
-      SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,                   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, true, COMPILE_LIBRARY> {  \
+      SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, SPACE>,       \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, false, true, ETI_AVAIL> {       \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
     using AMatrix = BsrMatrix<SCALAR const, ORDINAL const, device_type,        \
                               memory_trait_type, OFFSET const>;                \
     using XVector = Kokkos::View<                                              \
-        SCALAR const**, LAYOUT, device_type,                                   \
+        SCALAR const**, Kokkos::LayoutLeft, device_type,                       \
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;       \
-    using YVector =                                                            \
-        Kokkos::View<SCALAR**, LAYOUT, device_type, memory_trait_type>;        \
+    using YVector  = Kokkos::View<SCALAR**, Kokkos::LayoutLeft, device_type,   \
+                                 memory_trait_type>;                          \
     using Controls = KokkosKernels::Experimental::Controls;                    \
                                                                                \
     using coefficient_type = typename YVector::non_const_value_type;           \
@@ -802,55 +806,32 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
   };
 
 #if (9000 <= CUDA_VERSION)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
+                              Kokkos::CudaUVMSpace, false)
+
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
@@ -858,6 +839,6 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 }  // namespace Experimental
 }  // namespace KokkosSparse
 
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#endif  // KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#endif  // KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP

@@ -156,9 +156,9 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
           nnz_lno_t current_col_index = 0;
           const size_type col_begin   = row_mapA[row_index];
-          const nnz_lno_t nnza = nnz_lno_t(row_mapA[row_index + 1] - col_begin);
+          const nnz_lno_t row_size    = row_mapA[row_index + 1] - col_begin;
 
-          for (nnz_lno_t colind = 0; colind < nnza; ++colind) {
+          for (nnz_lno_t colind = 0; colind < row_size; ++colind) {
             size_type a_col = colind + col_begin;
             nnz_lno_t rowB  = entriesA[a_col];
             scalar_t valA   = valuesA[a_col];

@@ -43,9 +43,10 @@
 */
 
 #include "Kokkos_Random.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -58,12 +59,8 @@
 
 #include "KokkosSparse_sptrsv_aux.hpp"
 
-using namespace KokkosKernels;
-using namespace KokkosKernels::Impl;
-using namespace KokkosKernels::Experimental;
-using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
-using namespace KokkosSparse::PerfTest::Experimental;
+namespace KSExp = KokkosSparse::Experimental;
+namespace KSPTE = KokkosSparse::PerfTest::Experimental;
 
 enum {
   CUSPARSE,
@@ -130,7 +127,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     std::cout << " > Read a triangular-matrix filename " << matrix_filename
               << std::endl;
     host_crsmat_t M =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
+        KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
             matrix_filename.c_str());
     const size_type nrows = M.graph.numRows();
     // transpose the matrix to be stored in CCS
@@ -153,10 +150,10 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     cols_view_t entries("colmap_view", nnzL);
     values_view_t values("values_view", nnzL);
     // transpose L
-    transpose_matrix<in_row_map_view_t, in_cols_view_t, in_values_view_t,
-                     row_map_view_t, cols_view_t, values_view_t, row_map_view_t,
-                     host_execution_space>(nrows, nrows, row_mapM, entriesM,
-                                           valuesM, row_map, entries, values);
+    KokkosSparse::Impl::transpose_matrix<
+        in_row_map_view_t, in_cols_view_t, in_values_view_t, row_map_view_t,
+        cols_view_t, values_view_t, row_map_view_t, host_execution_space>(
+        nrows, nrows, row_mapM, entriesM, valuesM, row_map, entries, values);
 
     // store L in CSC
     host_graph_t static_graph(entries, row_map);
@@ -211,24 +208,24 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           if (test == SUPERNODAL_NAIVE) {
             std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows,
-                                     true);
-            khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows,
-                                     true);
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
+                                     nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
+                                     nrows, true);
           } else if (test == SUPERNODAL_DAG) {
             std::cout << " > create handle for SUPERNODAL_DAG" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                     true);
-            khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                     true);
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
+                                     nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
+                                     nrows, true);
           } else if (test == SUPERNODAL_SPMV_DAG) {
             std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG,
-                                     nrows, true);
-            khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG,
-                                     nrows, true);
+            khL.create_sptrsv_handle(
+                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
+            khU.create_sptrsv_handle(
+                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
           }
           // verbose (optional, default is false)
           khL.set_sptrsv_verbose(verbose);
@@ -253,13 +250,13 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // graph/dag)
           khU.get_sptrsv_handle()->set_column_major(
               !khL.get_sptrsv_handle()->is_column_major());
-          sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree, L.graph,
-                                     &khL, L.graph, &khU);
+          KSExp::sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree,
+                                            L.graph, &khL, L.graph, &khU);
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data
           // structure to our sptrsv data structure)
-          sptrsv_compute(&khL, L);
+          KSExp::sptrsv_compute(&khL, L);
 
           // ==============================================
           // Preaparing for the first solve
@@ -283,7 +280,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // ==============================================
           // do L solve
           timer.reset();
-          sptrsv_solve(&khL, sol, rhs);
+          KSExp::sptrsv_solve(&khL, sol, rhs);
           Kokkos::fence();
           std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
@@ -295,7 +292,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // Error Check ** on host **
           Kokkos::fence();
           std::cout << std::endl;
-          if (!check_errors(tol, A, rhs_host, sol_host)) {
+          if (!KSPTE::check_errors(tol, A, rhs_host, sol_host)) {
             num_failed++;
           }
 
@@ -307,7 +304,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           Kokkos::fence();
           for (int i = 0; i < loop; i++) {
             timer.reset();
-            sptrsv_solve(&khL, sol, rhs);
+            KSExp::sptrsv_solve(&khL, sol, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;

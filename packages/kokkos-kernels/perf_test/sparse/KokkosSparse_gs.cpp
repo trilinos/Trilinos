@@ -52,6 +52,7 @@
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosKernels_config.h>
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <iostream>
 #include <random>
 #include <vector>
@@ -177,7 +178,7 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
                                     rowmap.data(), numRows + 1));
   crsMat_t A("A", numRows, numRows, totalEntries, valuesView, rowmapView,
              entriesView);
-  A = KokkosKernels::sort_and_merge_matrix(A);
+  A = KokkosSparse::sort_and_merge_matrix(A);
   if (params.graph_symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
     // can be tested for symmetric=false)
@@ -203,7 +204,7 @@ void runGS(const GS_Parameters& params) {
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   crsMat_t A;
   if (params.matrix_path)
-    A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
         params.matrix_path);
   else
     A = generateLongRowMatrix<crsMat_t>(params);

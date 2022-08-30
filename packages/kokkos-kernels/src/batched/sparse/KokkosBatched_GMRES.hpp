@@ -60,7 +60,9 @@
 /// \param handle [in]: a handle which provides different information such as
 /// the tolerance or the maximal number of iterations of the solver.
 
+#include <KokkosBatched_Krylov_Solvers.hpp>
 #include "KokkosBatched_Krylov_Handle.hpp"
+#include "KokkosBatched_GMRES_Serial_Impl.hpp"
 #include "KokkosBatched_GMRES_Team_Impl.hpp"
 #include "KokkosBatched_GMRES_TeamVector_Impl.hpp"
 
@@ -68,14 +70,18 @@ namespace KokkosBatched {
 
 template <typename MemberType, typename ArgMode>
 struct GMRES {
-  template <typename OperatorType, typename VectorViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const OperatorType &A, const VectorViewType &B,
-      const VectorViewType &X,
-      const KrylovHandle<typename VectorViewType::non_const_value_type>
-          &handle) {
+  template <typename OperatorType, typename VectorViewType,
+            typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const OperatorType &A,
+                                           const VectorViewType &B,
+                                           const VectorViewType &X,
+                                           const KrylovHandleType &handle) {
     int status = 0;
-    if (std::is_same<ArgMode, Mode::Team>::value) {
+    if (std::is_same<ArgMode, Mode::Serial>::value) {
+      status = SerialGMRES::template invoke<OperatorType, VectorViewType>(
+          A, B, X, handle);
+    } else if (std::is_same<ArgMode, Mode::Team>::value) {
       status =
           TeamGMRES<MemberType>::template invoke<OperatorType, VectorViewType>(
               member, A, B, X, handle);

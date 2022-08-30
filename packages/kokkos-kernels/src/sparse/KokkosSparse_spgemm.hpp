@@ -81,6 +81,47 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
               entriesC);
 }
 
+// Symbolic phase for block SpGEMM (BSR matrices)
+template <class KernelHandle, class AMatrixType, class BMatrixType,
+          class CMatrixType>
+void block_spgemm_symbolic(KernelHandle& kh, const AMatrixType& A,
+                           const bool transposeA, const BMatrixType& B,
+                           const bool transposeB, CMatrixType& C) {
+  using row_map_type = typename CMatrixType::row_map_type::non_const_type;
+  using entries_type = typename CMatrixType::index_type::non_const_type;
+  using values_type  = typename CMatrixType::values_type::non_const_type;
+
+  auto blockDim = A.blockDim();
+  if (blockDim != B.blockDim()) {
+    throw std::invalid_argument(
+        "Block SpGEMM must be called for matrices with the same block size");
+  }
+
+  row_map_type row_mapC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "non_const_lnow_row"),
+      A.numRows() + 1);
+
+  KokkosSparse::Experimental::spgemm_symbolic(
+      &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+      A.graph.entries, transposeA, B.graph.row_map, B.graph.entries, transposeB,
+      row_mapC);
+
+  entries_type entriesC;
+  values_type valuesC;
+  const size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+  if (c_nnz_size) {
+    entriesC = entries_type(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
+        c_nnz_size);
+    valuesC =
+        values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),
+                    c_nnz_size * blockDim * blockDim);
+  }
+
+  C = CMatrixType("C=AB", A.numRows(), B.numCols(), c_nnz_size, valuesC,
+                  row_mapC, entriesC, blockDim);
+}
+
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
                     const BMatrix& B, const bool Bmode, CMatrix& C) {
@@ -92,6 +133,21 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);
+}
+
+template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
+void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
+                          const BMatrix& B, const bool Bmode, CMatrix& C) {
+  auto blockDim = A.blockDim();
+  if (blockDim != B.blockDim() or blockDim != C.blockDim()) {
+    throw std::invalid_argument(
+        "Block SpGEMM must be called for matrices with the same block size");
+  }
+
+  KokkosSparse::Experimental::spgemm_numeric(
+      &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+      A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
+      B.values, Bmode, C.graph.row_map, C.graph.entries, C.values, blockDim);
 }
 
 }  // namespace KokkosSparse

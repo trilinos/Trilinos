@@ -84,6 +84,7 @@ void impl_test_nrm2_mv(int N, int K) {
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 
   KokkosBlas::nrm2(r, a);
+  Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type nonconst_result = r(k);
     EXPECT_NEAR_KK(nonconst_result, expected_result[k],
@@ -91,6 +92,7 @@ void impl_test_nrm2_mv(int N, int K) {
   }
 
   KokkosBlas::nrm2(r, c_a);
+  Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type const_result = r(k);
     EXPECT_NEAR_KK(const_result, expected_result[k], eps * expected_result[k]);

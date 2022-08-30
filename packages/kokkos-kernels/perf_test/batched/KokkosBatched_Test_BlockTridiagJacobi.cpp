@@ -3,10 +3,8 @@
 #include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-#if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+#if !(defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_CUDA_LAMBDA))
 #define KOKKOSBATCHED_TEST_BLOCKTRIDIAGJACOBI
-#endif
 #endif
 
 #if defined(KOKKOSBATCHED_TEST_BLOCKTRIDIAGJACOBI)
@@ -75,38 +73,86 @@ typedef Vector<SIMD<value_type>, internal_vector_length> internal_vector_type;
 typedef value_type internal_vector_type;
 #endif
 
-template <typename ActiveMemorySpace>
+template <typename ExecutionSpace>
 struct InverseDiagonalsModeAndAlgo;
 
-template <>
-struct InverseDiagonalsModeAndAlgo<Kokkos::HostSpace> {
+struct InverseDiagonalsModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level3::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct InverseDiagonalsModeAndAlgo<Kokkos::CudaSpace> {
+struct InverseDiagonalsModeAndAlgo<Kokkos::Serial>
+    : InverseDiagonalsModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct InverseDiagonalsModeAndAlgo<Kokkos::Threads>
+    : InverseDiagonalsModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_ONPENMP)
+template <>
+struct InverseDiagonalsModeAndAlgo<Kokkos::Threads>
+    : InverseDiagonalsModeAndAlgoHostImpl {};
+#endif
+
+struct InverseDiagonalsModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level3::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct InverseDiagonalsModeAndAlgo<Kokkos::Cuda>
+    : InverseDiagonalsModeAndAlgoDeviceImpl {};
 #endif
 
-template <typename ActiveMemorySpace>
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct InverseDiagonalsModeAndAlgo<Kokkos::Experimental::HIP>
+    : InverseDiagonalsModeAndAlgoDeviceImpl {};
+#endif
+
+template <typename ExecutionSpace>
 struct SolveModeAndAlgo;
 
-template <>
-struct SolveModeAndAlgo<Kokkos::HostSpace> {
+struct SolveModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level2::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct SolveModeAndAlgo<Kokkos::CudaSpace> {
+struct SolveModeAndAlgo<Kokkos::Serial> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct SolveModeAndAlgo<Kokkos::Threads> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct SolveModeAndAlgo<Kokkos::OpenMP> : SolveModeAndAlgoHostImpl {};
+#endif
+
+struct SolveModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level2::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
+    : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 int main(int argc, char *argv[]) {
@@ -282,8 +328,7 @@ int main(int argc, char *argv[]) {
           policy.set_scratch_size(
               0, Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)),
           KOKKOS_LAMBDA(const member_type &member) {
-            typedef InverseDiagonalsModeAndAlgo<
-                Kokkos::Impl::ActiveExecutionMemorySpace>
+            typedef InverseDiagonalsModeAndAlgo<Kokkos::DefaultExecutionSpace>
                 default_mode_and_algo_type;
             typedef default_mode_and_algo_type::mode_type mode_type;
             typedef default_mode_and_algo_type::algo_type algo_type;
@@ -365,8 +410,7 @@ int main(int argc, char *argv[]) {
                   0,
                   Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)),
               KOKKOS_LAMBDA(const member_type &member) {
-                typedef SolveModeAndAlgo<
-                    Kokkos::Impl::ActiveExecutionMemorySpace>
+                typedef SolveModeAndAlgo<Kokkos::DefaultExecutionSpace>
                     default_mode_and_algo_type;
                 typedef default_mode_and_algo_type::mode_type mode_type;
                 typedef default_mode_and_algo_type::algo_type algo_type;

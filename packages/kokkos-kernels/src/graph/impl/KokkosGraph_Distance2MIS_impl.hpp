@@ -48,6 +48,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Bitset.hpp"
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <cstdint>
 
 namespace KokkosGraph {
@@ -597,7 +598,7 @@ struct D2_MIS_FixedPriority {
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "RowStatus"), numVerts);
     colStatus = status_view_t(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "ColStatus"), numVerts);
-    KokkosKernels::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(
+    KokkosSparse::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(
         rowmap, minDegree, maxDegree);
     // Compute row statuses
     Kokkos::parallel_for(range_pol(0, numVerts),

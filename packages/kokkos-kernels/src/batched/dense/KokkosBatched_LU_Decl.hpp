@@ -51,4 +51,7 @@ struct LU {
 
 }  // namespace KokkosBatched
 
+#include "KokkosBatched_LU_Serial_Impl.hpp"
+#include "KokkosBatched_LU_Team_Impl.hpp"
+
 #endif

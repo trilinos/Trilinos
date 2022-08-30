@@ -5,9 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
-
+#include "KokkosBlas1_set_impl.hpp"
+#include "KokkosBlas1_serial_scal_impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemv_Serial_Internal.hpp"
 
@@ -42,9 +41,10 @@ SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    SerialSetInternal::invoke(m, zero, b, bs0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, b, bs0);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -79,9 +79,10 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
   constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
 
   if (alpha == zero)
-    SerialSetInternal::invoke(m, zero, b, bs0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, b, bs0);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     /// case GPU: team size is large and blocksize (mb,nb) is small
@@ -135,9 +136,10 @@ SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    SerialSetInternal::invoke(m, zero, b, bs0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, b, bs0);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT b0 = b;
@@ -170,9 +172,10 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    SerialSetInternal::invoke(m, zero, b, bs0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, b, bs0);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, 0);

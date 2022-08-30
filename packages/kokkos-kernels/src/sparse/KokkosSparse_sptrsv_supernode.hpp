@@ -63,7 +63,7 @@
 #include "KokkosBatched_Trmm_Decl.hpp"
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 
 namespace KokkosSparse {
@@ -597,8 +597,8 @@ host_graph_t generate_supernodal_graph(bool col_major, graph_t &graph,
 #endif
 
   // sort column ids per row
-  KokkosKernels::sort_crs_graph<Kokkos::HostSpace::execution_space,
-                                row_map_view_host_t, cols_view_host_t>(hr, hc);
+  KokkosSparse::sort_crs_graph<Kokkos::HostSpace::execution_space,
+                               row_map_view_host_t, cols_view_host_t>(hr, hc);
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = timer.seconds();
   std::cout << "   > Generate Supernodal Graph: sort graph     : "

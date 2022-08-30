@@ -70,6 +70,8 @@
 #cmakedefine KOKKOSKERNELS_INST_FLOAT
 /* Whether to build kernels for scalar type Kokkos::Experimental::half_t */
 #cmakedefine KOKKOSKERNELS_INST_HALF
+/* Whether to build kernels for scalar type Kokkos::Experimental::bhalf_t */
+#cmakedefine KOKKOSKERNELS_INST_BHALF
 /* Whether to build kernels for scalar type complex<double> */
 #cmakedefine KOKKOSKERNELS_INST_COMPLEX_DOUBLE
 /* Whether to build kernels for scalar type complex<float> */

@@ -46,8 +46,14 @@
 #define KOKKOSBLAS1_SCAL_HPP_
 
 #include <KokkosBlas1_scal_spec.hpp>
+#include <KokkosBlas1_serial_scal_impl.hpp>
+#include <KokkosBlas1_team_scal_impl.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
+
+///
+/// General/Host Scale
+///
 
 namespace KokkosBlas {
 
@@ -107,6 +113,51 @@ void scal(const RMV& R, const AV& a, const XMV& X) {
   Impl::Scal<RMV_Internal, AV_Internal, XMV_Internal>::scal(
       R_internal, a_internal, X_internal);
 }
+
+///
+/// Serial Scale
+///
+
+struct SerialScale {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType& A) {
+    return Impl::SerialScaleInternal::invoke(
+        A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1());
+  }
+};
+
+///
+/// Team Scale
+///
+
+template <typename MemberType>
+struct TeamScale {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
+                                           const ScalarType alpha,
+                                           const AViewType& A) {
+    return Impl::TeamScaleInternal::invoke(member, A.extent(0), A.extent(1),
+                                           alpha, A.data(), A.stride_0(),
+                                           A.stride_1());
+  }
+};
+
+///
+/// TeamVector Scale
+///
+
+template <typename MemberType>
+struct TeamVectorScale {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
+                                           const ScalarType alpha,
+                                           const AViewType& A) {
+    return Impl::TeamVectorScaleInternal::invoke(member, A.extent(0),
+                                                 A.extent(1), alpha, A.data(),
+                                                 A.stride_0(), A.stride_1());
+  }
+};
 
 }  // namespace KokkosBlas
 

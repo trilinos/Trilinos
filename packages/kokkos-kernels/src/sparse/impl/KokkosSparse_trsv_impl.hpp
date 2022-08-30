@@ -218,6 +218,7 @@ void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind   = A.graph.entries;
   typename CrsMatrixType::values_type val  = A.values;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
 
   // If local_ordinal_type is unsigned and numRows is 0, the loop
   // below will have entirely the wrong number of iterations.
@@ -232,15 +233,18 @@ void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
       X(r, j) = Y(r, j);
     }
-    const offset_type beg = ptr(r);
-    const offset_type end = ptr(r + 1);
-    // We assume the diagonal entry is first in the row.
-    const matrix_scalar_type A_rr = val(beg);
-    for (offset_type k = beg + static_cast<offset_type>(1); k < end; ++k) {
+    const offset_type beg   = ptr(r);
+    const offset_type end   = ptr(r + 1);
+    matrix_scalar_type A_rr = STS::zero();
+    for (offset_type k = beg; k < end; ++k) {
       const matrix_scalar_type A_rc = val(k);
       const local_ordinal_type c    = ind(k);
-      for (local_ordinal_type j = 0; j < numVecs; ++j) {
-        X(r, j) -= A_rc * X(c, j);
+      if (r == c) {
+        A_rr += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
       }
     }  // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
@@ -254,15 +258,18 @@ void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
       X(r, j) = Y(r, j);
     }
-    const offset_type beg = ptr(r);
-    const offset_type end = ptr(r + 1);
-    // We assume the diagonal entry is first in the row.
-    const matrix_scalar_type A_rr = val(beg);
-    for (offset_type k = beg + 1; k < end; ++k) {
+    const offset_type beg   = ptr(r);
+    const offset_type end   = ptr(r + 1);
+    matrix_scalar_type A_rr = STS::zero();
+    for (offset_type k = beg; k < end; ++k) {
       const matrix_scalar_type A_rc = val(k);
       const local_ordinal_type c    = ind(k);
-      for (local_ordinal_type j = 0; j < numVecs; ++j) {
-        X(r, j) -= A_rc * X(c, j);
+      if (r == c)
+        A_rr += A_rc;
+      else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
       }
     }  // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {

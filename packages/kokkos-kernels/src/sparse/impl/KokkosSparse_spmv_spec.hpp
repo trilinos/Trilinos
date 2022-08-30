@@ -111,6 +111,8 @@ struct spmv_mv_eti_spec_avail {
 // Include the actual specialization declarations
 #include <KokkosSparse_spmv_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_eti_spec_avail.hpp>
+
+#include <KokkosSparse_spmv_mv_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_mv_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
@@ -204,7 +206,8 @@ struct SPMV_MV {
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const char mode[], const coefficient_type& alpha,
+  static void spmv_mv(const KokkosKernels::Experimental::Controls& controls,
+                      const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y);
 };
@@ -261,7 +264,8 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false, false,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const char mode[], const coefficient_type& alpha,
+  static void spmv_mv(const KokkosKernels::Experimental::Controls& /*controls*/,
+                      const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
@@ -287,7 +291,8 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true, false,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const char mode[], const coefficient_type& alpha,
+  static void spmv_mv(const KokkosKernels::Experimental::Controls& /*controls*/,
+                      const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
     static_assert(std::is_integral<AT>::value,
@@ -377,6 +382,8 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true, false,
 
 #include <KokkosSparse_spmv_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_eti_spec_decl.hpp>
+
+#include <KokkosSparse_spmv_mv_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSSPARSE_IMPL_SPMV_SPEC_HPP_

@@ -158,7 +158,9 @@ int main(int argc, char** argv) {
                           // as number of threads
   const int device_id = params.use_cuda - 1;
 
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   bool useOMP  = params.use_openmp != 0;
   bool useCUDA = params.use_cuda != 0;

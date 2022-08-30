@@ -49,8 +49,8 @@
 #include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosGraph_MIS2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -159,7 +159,7 @@ void test_dist2_coloring(lno_t numVerts, size_type nnz, lno_t bandwidth,
       KokkosKernelsHandle<size_type, lno_t, double, execution_space,
                           memory_space, memory_space>;
   // Generate graph, and add some out-of-bounds columns
-  crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
+  crsMat A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
   auto G = A.graph;
   // Symmetrize the graph
@@ -216,7 +216,7 @@ void test_bipartite_symmetric(lno_t numVerts, size_type nnz, lno_t bandwidth,
       KokkosKernelsHandle<size_type, lno_t, double, execution_space,
                           memory_space, memory_space>;
   // Generate graph, and add some out-of-bounds columns
-  crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
+  crsMat A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
   auto G = A.graph;
   // Symmetrize the graph
@@ -273,13 +273,13 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz,
       KokkosKernelsHandle<size_type, lno_t, double, execution_space,
                           memory_space, memory_space>;
   // Generate graph
-  crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
+  crsMat A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
   auto G = A.graph;
   rowmap_t t_rowmap("rowmap^T", numCols + 1);
   entries_t t_entries("entries^T", G.entries.extent(0));
-  KokkosKernels::Impl::transpose_graph<c_rowmap_t, c_entries_t, rowmap_t,
-                                       entries_t, rowmap_t, execution_space>(
+  KokkosSparse::Impl::transpose_graph<c_rowmap_t, c_entries_t, rowmap_t,
+                                      entries_t, rowmap_t, execution_space>(
       numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
   // TODO: remove me, shouldn't be needed even with UVM
   execution_space().fence();

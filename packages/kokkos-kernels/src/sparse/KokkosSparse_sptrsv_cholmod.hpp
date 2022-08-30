@@ -56,7 +56,7 @@
     defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
 #include "cholmod.h"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
 
 namespace KokkosSparse {

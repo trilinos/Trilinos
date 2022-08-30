@@ -55,6 +55,7 @@
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 void print_options(std::ostream &os, const char *app_name,
                    unsigned int indent = 0) {
@@ -376,16 +377,14 @@ void run_multi_mem_experiment(Parameters params) {
   if (params.a_mem_space == 1) {
     fast_crstmat_t a_fast_crsmat;
     a_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
     a_fast_crsgraph = a_fast_crsmat.graph;
     num_cols        = a_fast_crsmat.numCols();
 
   } else {
     slow_crstmat_t a_slow_crsmat;
     a_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
     a_slow_crsgraph = a_slow_crsmat.graph;
     num_cols        = a_slow_crsmat.numCols();
   }
@@ -537,7 +536,9 @@ int main(int argc, char **argv) {
       params.use_openmp;  // Assumption is that use_openmp variable is provided
                           // as number of threads
   const int device_id = std::max(params.use_cuda, params.use_hip) - 1;
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
 
 #if defined(KOKKOS_ENABLE_OPENMP)

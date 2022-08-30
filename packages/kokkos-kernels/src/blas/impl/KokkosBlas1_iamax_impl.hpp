@@ -96,13 +96,6 @@ struct V_Iamax_Functor {
     update = Kokkos::reduction_identity<typename RV::value_type>::max() + 1;
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type& update,
-                                   const volatile value_type& source) const {
-    mag_type source_val = IPT::norm(m_x(source - 1));
-    mag_type update_val = IPT::norm(m_x(update - 1));
-    if (update_val < source_val) update = source;
-  }
-
   KOKKOS_INLINE_FUNCTION void join(value_type& update,
                                    const value_type& source) const {
     mag_type source_val = IPT::norm(m_x(source - 1));

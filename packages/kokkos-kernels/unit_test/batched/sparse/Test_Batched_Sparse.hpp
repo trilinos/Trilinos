@@ -2,6 +2,8 @@
 #define TEST_BATCHED_SPARSE_HPP
 
 // Serial kernels
+#include "Test_Batched_SerialGMRES.hpp"
+#include "Test_Batched_SerialGMRES_Real.hpp"
 #include "Test_Batched_SerialSpmv.hpp"
 #include "Test_Batched_SerialSpmv_Real.hpp"
 

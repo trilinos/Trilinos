@@ -49,6 +49,7 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <iostream>
 
 #define MAXVAL 1
@@ -263,9 +264,8 @@ void run_pcg(int *cmdline, const char *mtx_file) {
   default_lno_t *xadj, *adj;
   default_scalar *ew;
 
-  KokkosKernels::Impl::read_matrix<default_lno_t, default_lno_t,
-                                   default_scalar>(&nv, &ne, &xadj, &adj, &ew,
-                                                   mtx_file);
+  KokkosSparse::Impl::read_matrix<default_lno_t, default_lno_t, default_scalar>(
+      &nv, &ne, &xadj, &adj, &ew, mtx_file);
 
   typedef
       typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t,
@@ -370,17 +370,16 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  Kokkos::InitArguments init_args;  // Construct with default args, change
-                                    // members based on exec space
+  // Construct with default args, change members based on exec space
+  Kokkos::InitializationSettings init_args;
 
-  init_args.device_id = cmdline[CMD_DEVICE];
+  init_args.set_device_id(cmdline[CMD_DEVICE]);
+  init_args.set_num_threads(
+      std::max(cmdline[CMD_USE_THREADS], cmdline[CMD_USE_OPENMP]));
   if (cmdline[CMD_USE_NUMA] && cmdline[CMD_USE_CORE_PER_NUMA]) {
-    init_args.num_threads =
-        std::max(cmdline[CMD_USE_THREADS], cmdline[CMD_USE_OPENMP]);
-    init_args.num_numa = cmdline[CMD_USE_NUMA];
-  } else {
-    init_args.num_threads =
-        std::max(cmdline[CMD_USE_THREADS], cmdline[CMD_USE_OPENMP]);
+    KokkosKernels::Impl::throw_runtime_exception(
+        "NUMA init arg is no longer supported by Kokkos");
+    // init_args.num_numa = cmdline[CMD_USE_NUMA];
   }
 
   Kokkos::initialize(init_args);

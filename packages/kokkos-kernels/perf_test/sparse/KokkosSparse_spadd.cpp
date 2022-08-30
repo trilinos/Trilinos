@@ -45,8 +45,9 @@
 #include <iostream>
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Handle.hpp"
-#include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -57,21 +58,6 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
 #include <mkl_spblas.h>
-
-inline void spadd_mkl_internal_safe_call(sparse_status_t mklStatus,
-                                         const char* name,
-                                         const char* file = nullptr,
-                                         const int line   = 0) {
-  if (SPARSE_STATUS_SUCCESS != mklStatus) {
-    std::ostringstream oss;
-    oss << "MKL call \"" << name << "\" encountered error at " << file << ":"
-        << line << '\n';
-    Kokkos::abort(oss.str().c_str());
-  }
-}
-
-#define SPADD_MKL_SAFE_CALL(call) \
-  spadd_mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&     \
@@ -125,19 +111,19 @@ void run_experiment(const Params& params) {
   lno_t n = params.n;
   if (params.amtx.length()) {
     std::cout << "Loading A from " << params.amtx << '\n';
-    A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
         params.amtx.c_str());
     m = A.numRows();
     n = A.numCols();
   } else {
     std::cout << "Randomly generating A\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   if (params.bmtx.length()) {
     std::cout << "Loading B from " << params.bmtx << '\n';
-    B = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(
+    B = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
         params.bmtx.c_str());
   } else if (params.bDiag) {
     std::cout << "Generating B as diagonal matrix.\n";
@@ -168,8 +154,8 @@ void run_experiment(const Params& params) {
   } else {
     std::cout << "Randomly generating B\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   // Make sure dimensions are compatible
   if (A.numRows() != B.numRows() || A.numCols() != B.numCols()) {
@@ -200,8 +186,8 @@ void run_experiment(const Params& params) {
   if (params.sorted) {
     std::cout << "Assuming input matrices are sorted (explicitly sorting just "
                  "in case)\n";
-    KokkosKernels::sort_crs_matrix(A);
-    KokkosKernels::sort_crs_matrix(B);
+    KokkosSparse::sort_crs_matrix(A);
+    KokkosSparse::sort_crs_matrix(B);
   } else
     std::cout << "Assuming input matrices are not sorted.\n";
   kh.create_spadd_handle(params.sorted);
@@ -259,11 +245,11 @@ void run_experiment(const Params& params) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
         (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
         A.values.data()));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
         (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
         B.values.data()));
@@ -326,9 +312,9 @@ void run_experiment(const Params& params) {
 #endif
       } else if (params.use_mkl) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        SPADD_MKL_SAFE_CALL(mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,
-                                             Amkl, 1.0, Bmkl, &Cmkl));
-        SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
+            SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
 #endif
       } else {
         spadd_numeric(
@@ -351,8 +337,8 @@ void run_experiment(const Params& params) {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
   }
 #endif
 
@@ -377,8 +363,8 @@ void run_experiment(const Params& params) {
     std::cout << "Writing C (" << m << "x" << n << ") to " << params.cmtx
               << "\n";
     crsMat_t C("C", m, n, c_nnz, valuesC, row_mapC, entriesC);
-    KokkosKernels::Impl::write_kokkos_crst_matrix<crsMat_t>(
-        C, params.cmtx.c_str());
+    KokkosSparse::Impl::write_kokkos_crst_matrix<crsMat_t>(C,
+                                                           params.cmtx.c_str());
   }
 }
 
@@ -490,7 +476,9 @@ int main(int argc, char** argv) {
                           // as number of threads
   const int device_id = params.use_cuda - 1;
 
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
   // Kokkos::print_configuration(std::cout);
 
   // First, make sure that requested TPL (if any) is actually available

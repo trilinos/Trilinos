@@ -54,6 +54,30 @@ inline void throw_runtime_exception(const std::string &msg) {
   throw std::runtime_error(msg);
 }
 
+#if defined(KOKKOS_ENABLE_HIP)
+inline void hip_internal_error_throw(hipError_t e, const char *name,
+                                     const char *file, const int line) {
+  std::ostringstream out;
+  out << name << " error( " << hipGetErrorName(e)
+      << "): " << hipGetErrorString(e);
+  if (file) {
+    out << " " << file << ":" << line;
+  }
+  throw_runtime_exception(out.str());
+}
+
+inline void hip_internal_safe_call(hipError_t e, const char *name,
+                                   const char *file = nullptr,
+                                   const int line   = 0) {
+  if (hipSuccess != e) {
+    hip_internal_error_throw(e, name, file, line);
+  }
+}
+
+#define KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(call) \
+  hip_internal_safe_call(call, #call, __FILE__, __LINE__)
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosKernels
 

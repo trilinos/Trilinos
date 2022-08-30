@@ -93,6 +93,7 @@ void impl_test_nrm2_squared_mv(int N, int K) {
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 
   KokkosBlas::nrm2_squared(r, a);
+  Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type nonconst_result = r(k);
     typename AT::mag_type divisor =
@@ -103,6 +104,7 @@ void impl_test_nrm2_squared_mv(int N, int K) {
   }
 
   KokkosBlas::nrm2_squared(r, c_a);
+  Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type const_result = r(k);
     typename AT::mag_type divisor =

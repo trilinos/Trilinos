@@ -4,7 +4,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-#include "KokkosBatched_Set_Decl.hpp"
+#include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_Gemv_Decl.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
@@ -49,7 +49,7 @@ struct Functor_TestBatchedTeamVectorQR {
                          [&](const int &i) { aa(i, i) += add_this; });
 
     /// xx = 1
-    TeamVectorSet<MemberType>::invoke(member, one, xx);
+    KokkosBlas::TeamVectorSet<MemberType>::invoke(member, one, xx);
     member.team_barrier();
 
     /// bb = AA*xx

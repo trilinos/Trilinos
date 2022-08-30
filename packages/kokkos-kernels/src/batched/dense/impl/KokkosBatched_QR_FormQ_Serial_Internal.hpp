@@ -4,7 +4,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBatched_SetIdentity_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
 

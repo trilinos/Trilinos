@@ -5,8 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 namespace KokkosBatched {
 
@@ -35,10 +35,12 @@ TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamVectorSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, n, zero, B, bs0,
+                                                    bs1);
   else {
     if (alpha != one)
-      TeamVectorScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, alpha, B,
+                                                        bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -96,10 +98,12 @@ TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    TeamVectorSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, n, zero, B, bs0,
+                                                    bs1);
   else {
     if (alpha != one)
-      TeamVectorScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, alpha, B,
+                                                        bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT B0 = B;

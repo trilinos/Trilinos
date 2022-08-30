@@ -61,6 +61,7 @@ void impl_test_iamax(int N) {
     ViewType0D r("Iamax::Result 0-D View on host");
 
     KokkosBlas::iamax(r, a);
+    Kokkos::fence();
     size_type nonconst_max_loc = r();
     ASSERT_EQ(nonconst_max_loc, expected_max_loc);
 
@@ -151,6 +152,7 @@ void impl_test_iamax_mv(int N, int K) {
         r("Iamax::Result View on host", K);
 
     KokkosBlas::iamax(r, a);
+    Kokkos::fence();
 
     for (int k = 0; k < K; k++) {
       size_type nonconst_result = r(k);
@@ -159,6 +161,7 @@ void impl_test_iamax_mv(int N, int K) {
     }
 
     KokkosBlas::iamax(r, c_a);
+    Kokkos::fence();
 
     for (int k = 0; k < K; k++) {
       size_type const_result = r(k);

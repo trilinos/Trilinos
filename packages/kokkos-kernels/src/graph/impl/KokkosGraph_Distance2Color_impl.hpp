@@ -51,7 +51,6 @@
 #include <type_traits>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_UniqueToken.hpp>
 
 #include <KokkosKernels_Uniform_Initialized_MemoryPool.hpp>
 #include <KokkosKernels_HashmapAccumulator.hpp>

@@ -201,88 +201,125 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type YScalar;
 
+  enum class Method {
+    Fallback,    ///< Don't use tensor cores
+    TensorCores  ///< use tensor cores
+  };
+
+  /// Precision to use in the tensor core implementation
+  enum class Precision {
+    Automatic,  ///< Use Double, unless operations match mixed precision
+    Double,     ///< fp64 += fp64 * fp64
+    Mixed       ///< fp32 += fp16 * fp16
+  };
+
   static void spmv_mv_bsrmatrix(
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
-    // user explicitly requests a particular precision
-    bool requestMixed  = false;
-    bool requestDouble = false;
-    if (controls.isParameter("tc_precision")) {
-      if (controls.getParameter("tc_precision") == "mixed") {
-        requestMixed = true;
-      } else if (controls.getParameter("tc_precision") == "double") {
-        requestDouble = true;
-      }
+    Method method = Method::Fallback;
+    {
+      typedef typename AMatrix::non_const_value_type AScalar;
+      typedef typename XVector::non_const_value_type XScalar;
+      // try to use tensor cores if requested
+      if (controls.getParameter("algorithm") == "experimental_bsr_tc")
+        method = Method::TensorCores;
+      // can't use tensor cores for complex
+      if (Kokkos::Details::ArithTraits<YScalar>::is_complex)
+        method = Method::Fallback;
+      if (Kokkos::Details::ArithTraits<XScalar>::is_complex)
+        method = Method::Fallback;
+      if (Kokkos::Details::ArithTraits<AScalar>::is_complex)
+        method = Method::Fallback;
+      // can't use tensor cores outside GPU
+      if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename AMatrix::execution_space>())
+        method = Method::Fallback;
+      if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename XVector::execution_space>())
+        method = Method::Fallback;
+      if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>())
+        method = Method::Fallback;
+      // can't use tensor cores unless mode is no-transpose
+      if (mode[0] != KokkosSparse::NoTranspose[0]) method = Method::Fallback;
+#if KOKKOS_HALF_T_IS_FLOAT
+      // disable tensor cores when Kokkos half is actually a float
+      method = Method::Fallback;
+#endif  // KOKKOS_HALF_T_IS_FLOAT
     }
-    //
-    bool use_tc = false;
-    if ((controls.isParameter("algorithm")) &&
-        (controls.getParameter("algorithm") == "experimental_bsr_tc")) {
-      if (Kokkos::Details::ArithTraits<YScalar>::is_complex == false)
-        use_tc = true;
-    }
-#endif
+#endif  // AMPERE || VOLTA
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_AMPERE)
-    typedef typename XVector::non_const_value_type XScalar;
-    typedef typename AMatrix::non_const_value_type AScalar;
-    typedef Kokkos::Experimental::half_t Half;
+    {
+      typedef Kokkos::Experimental::half_t Half;
+      typedef typename AMatrix::non_const_value_type AScalar;
+      typedef typename XVector::non_const_value_type XScalar;
 
-    /* Ampere has double += double * double and float += half * half
+      /* Ampere has double += double * double and float += half * half
 
-    use whichever is requested.
-    If none requested, used mixed precision if the inputs are mixed, otherwise
-    use double
-    */
+      use whichever is requested.
+      If none requested, used mixed precision if the inputs are mixed, otherwise
+      use double
+      */
+      if (Method::TensorCores == method) {
+        Precision precision = Precision::Automatic;
+        if (controls.getParameter("tc_precision") == "mixed")
+          precision = Precision::Mixed;
+        else if (controls.getParameter("tc_precision") == "double")
+          precision = Precision::Double;
 
-    // input precision matches a tensor core fragment type
-    constexpr bool operandsHalfHalfFloat = std::is_same<AScalar, Half>::value &&
-                                           std::is_same<XScalar, Half>::value &&
-                                           std::is_same<YScalar, float>::value;
-
-    if (use_tc) {
-      if (requestMixed) {
-        BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half, YVector,
-                                          float, 16, 16, 16>::dispatch(alpha, A,
-                                                                       X, beta,
-                                                                       Y);
-        return;
-      } else if (requestDouble) {
-        BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector, double,
-                                          YVector, double, 8, 8,
-                                          4>::dispatch(alpha, A, X, beta, Y);
-        return;
-      } else if (operandsHalfHalfFloat) {
-        BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half, YVector,
-                                          float, 16, 16, 16>::dispatch(alpha, A,
-                                                                       X, beta,
-                                                                       Y);
-        return;
-      } else {
-        BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector, double,
-                                          YVector, double, 8, 8,
-                                          4>::dispatch(alpha, A, X, beta, Y);
-        return;
+        switch (precision) {
+          case Precision::Mixed: {
+            BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half,
+                                              YVector, float, 16, 16,
+                                              16>::dispatch(alpha, A, X, beta,
+                                                            Y);
+            return;
+          }
+          case Precision::Double: {
+            BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector, double,
+                                              YVector, double, 8, 8,
+                                              4>::dispatch(alpha, A, X, beta,
+                                                           Y);
+            return;
+          }
+          case Precision::Automatic:  // fallthrough
+          default: {
+            constexpr bool operandsHalfHalfFloat =
+                std::is_same<AScalar, Half>::value &&
+                std::is_same<XScalar, Half>::value &&
+                std::is_same<YScalar, float>::value;
+            if (operandsHalfHalfFloat) {
+              BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half,
+                                                YVector, float, 16, 16,
+                                                16>::dispatch(alpha, A, X, beta,
+                                                              Y);
+              return;
+            } else {
+              BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector,
+                                                double, YVector, double, 8, 8,
+                                                4>::dispatch(alpha, A, X, beta,
+                                                             Y);
+              return;
+            }
+          }
+        }
       }
     }
 #elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA)
-    /* Volta has float += half * half
-       use it for all matrices
-    */
-    if (use_tc) {
-      if (requestDouble) {
-        KokkosKernels::Impl::throw_runtime_exception(
-            "KokkosSparse::spmv[algorithm=experimental_bsr_tc] "
-            "tc_precision=double unsupported KOKKOS_ARCH_VOLTA");
+    {
+      /* Volta has float += half * half
+         use it for all matrices
+      */
+      if (Method::TensorCores == method) {
+        BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half, YVector,
+                                          float, 16, 16, 16>::dispatch(alpha, A,
+                                                                       X, beta,
+                                                                       Y);
+        return;
       }
-      BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half, YVector,
-                                        float, 16, 16, 16>::dispatch(alpha, A,
-                                                                     X, beta,
-                                                                     Y);
-      (void)requestMixed;  // unused
-      return;
     }
 #endif  // KOKKOS_ARCH
 

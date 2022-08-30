@@ -50,7 +50,7 @@
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -86,25 +86,11 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
   /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
-  cusparseIndexType_t myCusparseOffsetType;
-  if (std::is_same<offset_type, int>::value)
-    myCusparseOffsetType = CUSPARSE_INDEX_32I;
-  else if (std::is_same<offset_type, int64_t>::value ||
-           std::is_same<offset_type, size_t>::value)
-    myCusparseOffsetType = CUSPARSE_INDEX_64I;
-  else
-    throw std::logic_error(
-        "Offset type of CrsMatrix isn't supported by cuSPARSE, yet TPL layer "
-        "says it is");
-  cusparseIndexType_t myCusparseEntryType;
-  if (std::is_same<entry_type, int>::value)
-    myCusparseEntryType = CUSPARSE_INDEX_32I;
-  else if (std::is_same<entry_type, int64_t>::value)
-    myCusparseEntryType = CUSPARSE_INDEX_64I;
-  else
-    throw std::logic_error(
-        "Ordinal (entry) type of CrsMatrix isn't supported by cuSPARSE, yet "
-        "TPL layer says it is");
+  const cusparseIndexType_t myCusparseOffsetType =
+      cusparse_index_type_t_from<offset_type>();
+  const cusparseIndexType_t myCusparseEntryType =
+      cusparse_index_type_t_from<entry_type>();
+
   cudaDataType myCudaDataType;
   if (std::is_same<value_type, float>::value)
     myCudaDataType = CUDA_R_32F;
@@ -134,15 +120,27 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  size_t bufferSize     = 0;
-  void* dBuffer         = NULL;
+  size_t bufferSize = 0;
+  void* dBuffer     = NULL;
+#if CUSPARSE_VERSION >= 11201
+  cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
   cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
   if (controls.isParameter("algorithm")) {
     const std::string algName = controls.getParameter("algorithm");
     if (algName == "default")
+#if CUSPARSE_VERSION >= 11201
+      alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
       alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
     else if (algName == "merge")
+#if CUSPARSE_VERSION >= 11201
+      alg = CUSPARSE_SPMV_CSR_ALG2;
+#else
       alg = CUSPARSE_CSRMV_ALG2;
+#endif
   }
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
       cusparseHandle, myCusparseOperation, &alpha, A_cusparse, vecX, &beta,
@@ -361,8 +359,8 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
                            Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
-#endif
+#endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
@@ -373,7 +371,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 // rocSPARSE
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 #include <rocsparse.h>
-#include "KokkosKernels_SparseUtils_rocsparse.hpp"
+#include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -530,33 +528,13 @@ KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
+#include "KokkosSparse_Utils_mkl.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
 
 #if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
-
-// Note 12/03/21 - lbv:
-// mkl_safe_call and mode_kk_to_mkl should
-// be moved to some sparse or mkl utility
-// header. It is likely that these will be
-// reused for other kernels.
-inline void mkl_safe_call(int errcode) {
-  if (errcode != SPARSE_STATUS_SUCCESS)
-    throw std::runtime_error("MKL returned non-success error code");
-}
-
-inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
-  switch (toupper(mode_kk)) {
-    case 'N': return SPARSE_OPERATION_NON_TRANSPOSE;
-    case 'T': return SPARSE_OPERATION_TRANSPOSE;
-    case 'H': return SPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    default:;
-  }
-  throw std::invalid_argument(
-      "Invalid mode for MKL (should be one of N, T, H)");
-}
 
 inline void spmv_mkl(sparse_operation_t op, float alpha, float beta, int m,
                      int n, const int* Arowptrs, const int* Aentries,
@@ -566,11 +544,12 @@ inline void spmv_mkl(sparse_operation_t op, float alpha, float beta, int m,
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
   A_descr.mode = SPARSE_FILL_MODE_FULL;
   A_descr.diag = SPARSE_DIAG_NON_UNIT;
-  mkl_safe_call(mkl_sparse_s_create_csr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_csr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       const_cast<float*>(Avalues)));
-  mkl_safe_call(mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
 }
 
 inline void spmv_mkl(sparse_operation_t op, double alpha, double beta, int m,
@@ -581,11 +560,12 @@ inline void spmv_mkl(sparse_operation_t op, double alpha, double beta, int m,
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
   A_descr.mode = SPARSE_FILL_MODE_FULL;
   A_descr.diag = SPARSE_DIAG_NON_UNIT;
-  mkl_safe_call(mkl_sparse_d_create_csr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       const_cast<double*>(Avalues)));
-  mkl_safe_call(mkl_sparse_d_mv(op, alpha, A_mkl, A_descr, x, beta, y));
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_d_mv(op, alpha, A_mkl, A_descr, x, beta, y));
 }
 
 inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<float> alpha,
@@ -599,15 +579,15 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<float> alpha,
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
   A_descr.mode = SPARSE_FILL_MODE_FULL;
   A_descr.diag = SPARSE_DIAG_NON_UNIT;
-  mkl_safe_call(mkl_sparse_c_create_csr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_csr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       (MKL_Complex8*)Avalues));
-  MKL_Complex8& alpha_mkl = reinterpret_cast<MKL_Complex8&>(alpha);
-  MKL_Complex8& beta_mkl  = reinterpret_cast<MKL_Complex8&>(beta);
-  mkl_safe_call(mkl_sparse_c_mv(op, alpha_mkl, A_mkl, A_descr,
-                                reinterpret_cast<const MKL_Complex8*>(x),
-                                beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
+  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_mv(
+      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex8*>(x),
+      beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
 }
 
 inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
@@ -621,15 +601,15 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
   A_descr.mode = SPARSE_FILL_MODE_FULL;
   A_descr.diag = SPARSE_DIAG_NON_UNIT;
-  mkl_safe_call(mkl_sparse_z_create_csr(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_csr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       (MKL_Complex16*)Avalues));
-  MKL_Complex16& alpha_mkl = reinterpret_cast<MKL_Complex16&>(alpha);
-  MKL_Complex16& beta_mkl  = reinterpret_cast<MKL_Complex16&>(beta);
-  mkl_safe_call(mkl_sparse_z_mv(op, alpha_mkl, A_mkl, A_descr,
-                                reinterpret_cast<const MKL_Complex16*>(x),
-                                beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
+  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_mv(
+      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex16*>(x),
+      beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
 }
 
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \

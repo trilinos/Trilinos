@@ -55,14 +55,14 @@ namespace Impl {
 #define KOKKOSBLAS_TRTRI_BLAS_HOST(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA,     \
                                    MEM_SPACE, ETI_SPEC_AVAIL)                  \
   template <class ExecSpace>                                                   \
-  struct TRTRI<Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                   \
+  struct TRTRI<Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,       \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
                Kokkos::View<SCALAR_TYPE**, LAYOUTA,                            \
                             Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
                true, ETI_SPEC_AVAIL> {                                         \
     typedef SCALAR_TYPE SCALAR;                                                \
-    typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                      \
+    typedef Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RViewType;                                                             \
     typedef Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                         \
@@ -104,14 +104,14 @@ namespace Impl {
 #define KOKKOSBLAS_TRTRI_BLAS_MAGMA(SCALAR_TYPE, BASE_SCALAR_TYPE, MAGMA_FN,   \
                                     LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)        \
   template <class ExecSpace>                                                   \
-  struct TRTRI<Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                   \
+  struct TRTRI<Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,       \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
                Kokkos::View<SCALAR_TYPE**, LAYOUTA,                            \
                             Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
                true, ETI_SPEC_AVAIL> {                                         \
     typedef SCALAR_TYPE SCALAR;                                                \
-    typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                      \
+    typedef Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,          \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RViewType;                                                             \
     typedef Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                         \

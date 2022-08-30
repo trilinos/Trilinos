@@ -108,8 +108,8 @@ SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
 
       // SCAL -- x=ax
       // A((j+1):n,j) = A_ii * A((j+1):n,j)
-      SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec,
-                                  as0, as1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n,
+                                                    A_ii, A_col_vec, as0, as1);
     }
   }
   return 0;
@@ -157,8 +157,8 @@ SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(
 
       // SCAL -- x=ax
       // A((j+1):n,j) = A_ii * A((j+1):n,j)
-      SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec,
-                                  as0, as1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n,
+                                                    A_ii, A_col_vec, as0, as1);
     }
   }
   return 0;

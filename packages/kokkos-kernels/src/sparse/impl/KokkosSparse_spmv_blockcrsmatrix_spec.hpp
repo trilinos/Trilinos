@@ -101,10 +101,10 @@ struct spmv_mv_blockcrsmatrix_eti_spec_avail {
       const SCALAR_TYPE, const ORDINAL_TYPE,                              \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
-      SCALAR_TYPE const *, LAYOUT_TYPE,                                   \
+      SCALAR_TYPE const **, LAYOUT_TYPE,                                  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,     \
-      SCALAR_TYPE *, LAYOUT_TYPE,                                         \
+      SCALAR_TYPE **, LAYOUT_TYPE,                                        \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                         \
     enum : bool { value = true };                                         \

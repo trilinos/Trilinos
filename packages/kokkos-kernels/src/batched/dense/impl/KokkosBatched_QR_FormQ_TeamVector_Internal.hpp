@@ -4,7 +4,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBatched_SetIdentity_Internal.hpp"
 #include "KokkosBatched_ApplyQ_TeamVector_Internal.hpp"
 
@@ -36,7 +36,8 @@ struct TeamVectorQR_FormQ_Internal {
 
     // set identity
     if (is_Q_zero)
-      TeamVectorSetInternal::invoke(member, m, value_type(1), Q, qs0 + qs1);
+      KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, value_type(1),
+                                                      Q, qs0 + qs1);
     else
       TeamVectorSetIdentityInternal::invoke(member, m, n, Q, qs0, qs1);
     member.team_barrier();

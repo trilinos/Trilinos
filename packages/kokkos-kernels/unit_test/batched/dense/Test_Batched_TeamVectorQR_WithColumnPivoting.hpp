@@ -4,7 +4,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-#include "KokkosBatched_Set_Decl.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_ApplyPivot_Decl.hpp"
 #include "KokkosBatched_Gemv_Decl.hpp"

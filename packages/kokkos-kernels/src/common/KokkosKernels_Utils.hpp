@@ -49,7 +49,6 @@
 
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosKernels_VectorUtils.hpp"
 
@@ -516,7 +515,7 @@ struct PropogataMaxValstoZeros {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile idx &update, volatile const idx &input) const {
+  void join(idx &update, const idx &input) const {
     if (input > update) update = input;
   }
 };
@@ -1261,7 +1260,7 @@ struct ReduceRowSizeFunctor {
     }
   }
   KOKKOS_INLINE_FUNCTION
-  void join(volatile size_type &dst, const volatile size_type &src) const {
+  void join(size_type &dst, const size_type &src) const {
     if (dst < src) {
       dst = src;
     }
@@ -1306,7 +1305,7 @@ struct ReduceMaxRowFunctor {
     }
   }
   KOKKOS_INLINE_FUNCTION
-  void join(volatile value_type &dst, const volatile value_type &src) const {
+  void join(value_type &dst, const value_type &src) const {
     if (dst < src) {
       dst = src;
     }
@@ -1351,9 +1350,7 @@ struct IsEqualFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile int &dst, const volatile int &src) const {
-    dst = dst & src;
-  }
+  void join(int &dst, const int &src) const { dst = dst & src; }
   KOKKOS_INLINE_FUNCTION
   void init(int &dst) const { dst = 1; }
 };
@@ -1466,11 +1463,6 @@ struct array_sum_reduce {
       operator+=(const ValueType &src) {
     for (int i = 0; i < N; i++) data[i] += src.data[i];
     return *this;
-  }
-  KOKKOS_INLINE_FUNCTION  // volatile add operator
-      void
-      operator+=(const volatile ValueType &src) volatile {
-    for (int i = 0; i < N; i++) data[i] += src.data[i];
   }
 };
 

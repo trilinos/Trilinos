@@ -77,6 +77,8 @@ class JacobiPrec {
   KOKKOS_INLINE_FUNCTION
   ~JacobiPrec() {}
 
+  KOKKOS_INLINE_FUNCTION void setComputedInverse() { computed_inverse = true; }
+
   template <typename MemberType, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void computeInverse(const MemberType &member) const {
     auto one     = Kokkos::Details::ArithTraits<MagnitudeType>::one();
@@ -141,8 +143,30 @@ class JacobiPrec {
     computed_inverse = true;
   }
 
-  template <typename MemberType, typename XViewType, typename YViewType,
-            typename ArgTrans, typename ArgMode, int sameXY>
+  KOKKOS_INLINE_FUNCTION void computeInverse() const {
+    auto one     = Kokkos::Details::ArithTraits<MagnitudeType>::one();
+    auto epsilon = Kokkos::Details::ArithTraits<MagnitudeType>::epsilon();
+    int tooSmall = 0;
+
+    for (int i = 0; i < n_operators; ++i)
+      for (int j = 0; j < n_colums; ++j) {
+        if (Kokkos::abs<ScalarType>(diag_values(i, j)) <= epsilon) {
+          ++tooSmall;
+          diag_values(i, j) = one;
+        } else
+          diag_values(i, j) = one / diag_values(i, j);
+      }
+
+    if (tooSmall > 0)
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
+          "magnitude and have been replaced by one, \n",
+          (int)tooSmall);
+    computed_inverse = true;
+  }
+
+  template <typename ArgTrans, typename ArgMode, int sameXY,
+            typename MemberType, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
                                     const XViewType &X,
                                     const YViewType &Y) const {
@@ -153,6 +177,19 @@ class JacobiPrec {
 
     KokkosBatched::HadamardProduct<MemberType, ArgMode>::template invoke<
         ValuesViewType, XViewType, YViewType>(member, diag_values, X, Y);
+  }
+
+  template <typename ArgTrans, int sameXY, typename XViewType,
+            typename YViewType>
+  KOKKOS_INLINE_FUNCTION void apply(const XViewType &X,
+                                    const YViewType &Y) const {
+    if (!computed_inverse) {
+      this->computeInverse();
+    }
+
+    KokkosBatched::SerialHadamardProduct::template invoke<ValuesViewType,
+                                                          XViewType, YViewType>(
+        diag_values, X, Y);
   }
 };
 

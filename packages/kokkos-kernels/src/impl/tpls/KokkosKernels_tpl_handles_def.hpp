@@ -69,7 +69,7 @@ CusparseSingleton& CusparseSingleton::singleton() {
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#include "KokkosKernels_SparseUtils_rocsparse.hpp"
+#include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosKernels {
 namespace Impl {

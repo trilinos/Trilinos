@@ -11,7 +11,7 @@ namespace KokkosBatched {
 /// Serial Copy
 ///
 
-template <typename ArgTrans, int rank = 2>
+template <typename ArgTrans = Trans::NoTranspose, int rank = 2>
 struct SerialCopy {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,

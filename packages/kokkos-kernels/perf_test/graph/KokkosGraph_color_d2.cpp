@@ -65,6 +65,7 @@
 #include <KokkosGraph_Distance2Color.hpp>
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;
 
@@ -595,7 +596,7 @@ void experiment_driver(const D2Parameters& params) {
   using graph_t  = typename crsMat_t::StaticCrsGraphType;
 
   crsMat_t A =
-      KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
+      KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
   graph_t Agraph = A.graph;
   int num_cols   = A.numCols();
 
@@ -631,7 +632,9 @@ int main(int argc, char* argv[]) {
     device_id = params.use_cuda - 1;
   else if (params.use_hip)
     device_id = params.use_hip - 1;
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   // Print out verbose information about the configuration of the run.
   // Kokkos::print_configuration(std::cout);

@@ -46,6 +46,7 @@
 #define KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
 
 #include "KokkosKernels_Error.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
@@ -320,10 +321,8 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     // no barrier - each warp uses independent shared memory
 
     // load from the shared memory
-#ifdef __CUDA_ARCH__
     load_matrix_sync(fy, &sy(warpIdx_y, warpIdx_x, 0, 0), FRAG_N,
                      nvcuda::wmma::mem_row_major);
-#endif
 
     auto rowView = a.block_row_Const(blockIdx_i);
 
@@ -363,17 +362,12 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           const AOrdinal bj = bk + tj;
 
           // fill shmem with 0 outside of the block boundary
-#ifdef __CUDA_ARCH__
           if (bi < a.blockDim() && bj < a.blockDim()) {
             sa(ti / FRAG_M, ti % FRAG_M, tj) =
                 AFragScalar(alpha * ap[bi * a.blockDim() + bj]);
           } else {
             sa(ti / FRAG_M, ti % FRAG_M, tj) = AFragScalar(0);
           }
-#else
-          (void)bi;
-          (void)bj;
-#endif
         }
 
         // collaborative load of X fragments into shared memory
@@ -391,7 +385,6 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           // load 0 outside of the block boundary
           // x is not necessarily a multiple of block size, so make sure access
           // is in bounds
-#ifdef __CUDA_ARCH__
           if (bi < a.blockDim() && bj < a.blockDim() &&
               unsigned(blockIdx_j * a.blockDim() + bj) < x.extent(1)) {
             // tile is some fragments in the j/n direction that are frag_n wide
@@ -400,15 +393,10 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           } else {
             sx(tj / FRAG_N, ti, tj % FRAG_N) = XFragScalar(0);
           }
-#else
-          (void)bi;
-          (void)bj;
-#endif
         }
         mbr.team_barrier();
 
         // load correct fragment from shared memory and accumulate
-#ifdef __CUDA_ARCH__
         // only need to do any math if our fragment will write a result back to
         // Y
         if (ay_i < static_cast<AOrdinal>(y.extent(0)) &&
@@ -417,17 +405,12 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           load_matrix_sync(fx, &sx(warpIdx_x, 0, 0), FRAG_N);
           mma_sync(fy, fa, fx, fy);
         }
-#endif
       }
-      (void)j;
-      (void)ap;
     }  // loop through blocks in row of A
 
-#ifdef __CUDA_ARCH__
     // store Y fragments into shared memory
     store_matrix_sync(&sy(warpIdx_y, warpIdx_x, 0, 0), fy, FRAG_N,
                       nvcuda::wmma::mem_row_major);
-#endif
     // team loads its fragments of Y that make up part or all of the block of Y
     // it's responsible for. each warp loads the part corresponding to its y
     // fragment
@@ -447,21 +430,16 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       }
     }
     mbr.team_barrier();
-
-    // Suppress unused var warnings
-    // TODO (@cwpearson): Should this functor only compile on device?
-    (void)fx;
-    (void)fa;
-    (void)fy;
   }
 };
 
-/* Instantiate some common template parameter values
-   for BsrMatrixSpMVTensorCoreFunctor.
-   This is a struct instead of a function for template...using shorthand
-   Discriminates between complex (supported) and non-complex (unsupported)
-   scalar types, and throws a runtime error for unsupported types
-*/
+/// \brief Avoid instantiating tensor core functor for unsupported types
+///
+/// Instantiate some common template parameter values
+/// for BsrMatrixSpMVTensorCoreFunctor.
+/// This is a struct instead of a function for template...using shorthand
+/// Discriminates between non-complex/on-GPU (supported) and otherwise
+/// (unsupported) scalar types, and throws a runtime error for unsupported types
 template <typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
@@ -517,10 +495,11 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
     KokkosKernels::Impl::throw_runtime_exception(
-        "unsupported for complex types");
+        "Tensor core SpMV is only supported for non-complex types in GPU "
+        "execution spaces");
   }
 
-  /*true if T1, T2, or T3 are complex*/
+  /*true if none of T1, T2, or T3 are complex*/
   template <typename T1, typename T2, typename T3>
   struct none_complex {
     const static bool value = !Kokkos::ArithTraits<T1>::is_complex &&
@@ -528,11 +507,22 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
                               !Kokkos::ArithTraits<T3>::is_complex;
   };
 
+  /*true if T1::execution_space, T2, or T3 are all GPU exec space*/
+  template <typename T1, typename T2, typename T3>
+  struct all_gpu {
+    const static bool value = KokkosKernels::Impl::kk_is_gpu_exec_space<T1>() &&
+                              KokkosKernels::Impl::kk_is_gpu_exec_space<T2>() &&
+                              KokkosKernels::Impl::kk_is_gpu_exec_space<T3>();
+  };
+
   static void dispatch(YScalar alpha, AMatrix a, XMatrix x, YScalar beta,
                        YMatrix y) {
-    using tag =
-        std::integral_constant<bool,
-                               none_complex<AScalar, XScalar, YScalar>::value>;
+    // tag will be false unless all conditions are met
+    using tag = std::integral_constant<
+        bool, none_complex<AScalar, XScalar, YScalar>::value &&
+                  all_gpu<typename AMatrix::execution_space,
+                          typename XMatrix::execution_space,
+                          typename YMatrix::execution_space>::value>;
     tag_dispatch(tag{}, alpha, a, x, beta, y);
   }
 };
@@ -552,7 +542,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 #include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include "KokkosBlas2_team_gemv_spec.hpp"
@@ -649,7 +639,7 @@ struct BSR_GEMV_Functor {
     const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
     ;
     if (beta != val_one) {
-      KokkosBatched::TeamVectorScaleInternal::invoke(
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(
           dev, block_dim, beta, Y_cur.data(),
           static_cast<int>(Y_cur.stride_0()));
     }
@@ -979,6 +969,8 @@ struct BSR_GEMV_Transpose_Functor {
                                Kokkos::atomic_add(&Y_cur(ijk),
                                                   shared_view(ijk));
                              });
+        //
+        dev.team_barrier();
       }
     } else {
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
@@ -1008,6 +1000,8 @@ struct BSR_GEMV_Transpose_Functor {
                              [&](const ordinal_type &ijk) {
                                Kokkos::atomic_add(&Y_cur(ijk), shared_y[ijk]);
                              });
+        //
+        dev.team_barrier();
       }
     }
   }
@@ -1282,7 +1276,7 @@ struct BSR_GEMM_Functor {
 
     const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
     if (beta != val_one) {
-      KokkosBatched::TeamVectorScaleInternal::invoke(
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(
           dev, block_dim, num_rhs, beta, Y_cur.data(),
           static_cast<int>(Y_cur.stride_0()),
           static_cast<int>(Y_cur.stride_1()));

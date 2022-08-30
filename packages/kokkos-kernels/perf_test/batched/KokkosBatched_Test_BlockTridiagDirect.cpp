@@ -3,16 +3,6 @@
 #include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-#if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
-#if defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-#define KOKKOSBATCHED_TEST_BLOCKTRIDIAGDIRECT
-#endif
-#endif
-#endif
-
-#if defined(KOKKOSBATCHED_TEST_BLOCKTRIDIAGDIRECT)
-
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
@@ -47,11 +37,13 @@
 
 #define KOKKOSBATCHED_USE_128BIT_MEMORY_INST
 
-typedef Kokkos::DefaultExecutionSpace exec_space;
-typedef typename exec_space::memory_space memory_space;
-typedef Kokkos::DefaultHostExecutionSpace host_space;
+using exec_space_type   = Kokkos::DefaultExecutionSpace;
+using memory_space_type = exec_space_type::memory_space;
+using host_space_type   = Kokkos::DefaultHostExecutionSpace;
 
-typedef double value_type;
+using value_type  = double;
+using policy_type = Kokkos::TeamPolicy<exec_space_type>;
+using member_type = typename policy_type::member_type;
 
 /// 128*128*128/16*5 * (2*8) / 16
 ///
@@ -60,10 +52,10 @@ typedef double value_type;
 using namespace KokkosBatched;
 
 static constexpr int vector_length =
-    DefaultVectorLength<value_type, memory_space>::value;
+    DefaultVectorLength<value_type, memory_space_type>::value;
 #if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
 static constexpr int internal_vector_length =
-    DefaultInternalVectorLength<value_type, memory_space>::value;
+    DefaultInternalVectorLength<value_type, memory_space_type>::value;
 #else
 static constexpr int internal_vector_length = 1;
 #endif
@@ -75,39 +67,160 @@ typedef Vector<SIMD<value_type>, internal_vector_length> internal_vector_type;
 typedef value_type internal_vector_type;
 #endif
 
-template <typename ActiveMemorySpace>
+template <typename ExecutionSpace>
 struct FactorizeModeAndAlgo;
 
-template <>
-struct FactorizeModeAndAlgo<Kokkos::HostSpace> {
+struct FactorizeModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level3::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct FactorizeModeAndAlgo<Kokkos::CudaSpace> {
+struct FactorizeModeAndAlgo<Kokkos::Serial> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Threads> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::OpenMP> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+struct FactorizeModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level3::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Cuda> : FactorizeModeAndAlgoDeviceImpl {};
 #endif
 
-template <typename ActiveMemorySpace>
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Experimental::HIP>
+    : FactorizeModeAndAlgoDeviceImpl {};
+#endif
+
+template <typename ExecutionSpace>
 struct SolveModeAndAlgo;
 
-template <>
-struct SolveModeAndAlgo<Kokkos::HostSpace> {
+struct SolveModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level2::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct SolveModeAndAlgo<Kokkos::CudaSpace> {
+struct SolveModeAndAlgo<Kokkos::Serial> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct SolveModeAndAlgo<Kokkos::Threads> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct SolveModeAndAlgo<Kokkos::OpenMP> : SolveModeAndAlgoHostImpl {};
+#endif
+
+struct SolveModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level2::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
 #endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
+    : SolveModeAndAlgoDeviceImpl {};
+#endif
+
+template <class VT>
+struct SetTridiagToIdentity {
+ private:
+  VT __AA;
+
+ public:
+  SetTridiagToIdentity(VT AA) : __AA(AA) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(member, __AA.extent(1)), [&](const int &j) {
+          Kokkos::parallel_for(
+              Kokkos::ThreadVectorRange(member, __AA.extent(5)),
+              [&](const int &v) {
+                for (int k = 0, kend = __AA.extent(3); k < kend; ++k)
+                  __AA(i, j, 1, k, k, v) = 1;
+              });
+        });
+  }
+};
+
+template <class VT, class LT>
+struct Factorize {
+ private:
+  VT __AA;
+  LT __L;
+
+ public:
+  Factorize(VT AA, LT L) : __AA(AA), __L(L) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    typedef FactorizeModeAndAlgo<Kokkos::DefaultExecutionSpace>
+        default_mode_and_algo_type;
+    typedef default_mode_and_algo_type::mode_type mode_type;
+    typedef default_mode_and_algo_type::algo_type algo_type;
+
+    const int i = member.league_rank();
+
+    Kokkos::parallel_for(
+        Kokkos::ThreadVectorRange(member, __AA.extent(5)), [&](const int &v) {
+          auto AAA = Kokkos::subview(__AA, i, Kokkos::ALL(), Kokkos::ALL(),
+                                     Kokkos::ALL(), Kokkos::ALL(), v);
+
+          /// subview patterns
+          auto A = Kokkos::subview(AAA, 0, 1, Kokkos::ALL(), Kokkos::ALL());
+          auto B = Kokkos::subview(AAA, 0, 2, Kokkos::ALL(), Kokkos::ALL());
+          auto C = Kokkos::subview(AAA, 0, 0, Kokkos::ALL(), Kokkos::ALL());
+          auto D = Kokkos::subview(AAA, 0, 1, Kokkos::ALL(), Kokkos::ALL());
+
+          if (__L == 1) {
+            A.assign_data(&AAA(0, 1, 0, 0));
+            LU<member_type, mode_type, algo_type>::invoke(member, A);
+          } else {
+            for (int k = 0; k < (__L - 1); ++k) {
+              A.assign_data(&AAA(k, 1, 0, 0));
+              B.assign_data(&AAA(k, 2, 0, 0));
+              C.assign_data(&AAA(k, 0, 0, 0));
+              D.assign_data(&AAA(k + 1, 1, 0, 0));
+
+              LU<member_type, mode_type, algo_type>::invoke(member, A);
+              Trsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
+                   Diag::Unit, mode_type, algo_type>::invoke(member, 1.0, A, B);
+              Trsm<member_type, Side::Right, Uplo::Upper, Trans::NoTranspose,
+                   Diag::NonUnit, mode_type, algo_type>::invoke(member, 1.0, A,
+                                                                C);
+              Gemm<member_type, Trans::NoTranspose, Trans::NoTranspose,
+                   mode_type, algo_type>::invoke(member, -1.0, C, B, 1.0, D);
+            }
+            LU<member_type, mode_type, algo_type>::invoke(member, D);
+          }
+        });
+  }
+};
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
@@ -149,53 +262,56 @@ int main(int argc, char *argv[]) {
     ///
 
     /// double 16
-    Kokkos::View<vector_type *****, Kokkos::LayoutRight, exec_space> Av(
+    Kokkos::View<vector_type *****, Kokkos::LayoutRight, exec_space_type> Av(
         "A", N / vector_length, L, 3, Blk, Blk);
 
     /// double
-    Kokkos::View<value_type ******, Kokkos::LayoutRight, exec_space> As(
+    Kokkos::View<value_type ******, Kokkos::LayoutRight, exec_space_type> As(
         (value_type *)Av.data(), Av.extent(0), Av.extent(1), Av.extent(2),
         Av.extent(3), Av.extent(4), vector_length);
 
     /// double 2
-    Kokkos::View<internal_vector_type ******, Kokkos::LayoutRight, exec_space>
+    Kokkos::View<internal_vector_type ******, Kokkos::LayoutRight,
+                 exec_space_type>
         Ai((internal_vector_type *)Av.data(), Av.extent(0), Av.extent(1),
            Av.extent(2), Av.extent(3), Av.extent(4),
            vector_length / internal_vector_length);
     /// double 16
-    Kokkos::View<vector_type ****, Kokkos::LayoutRight, exec_space> xv(
+    Kokkos::View<vector_type ****, Kokkos::LayoutRight, exec_space_type> xv(
         "x", N / vector_length, Nvec, L, Blk);
 
     /// double
-    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space> xs(
+    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space_type> xs(
         (value_type *)xv.data(), xv.extent(0), xv.extent(1), xv.extent(2),
         xv.extent(3), vector_length);
 
     /// double 2
-    Kokkos::View<internal_vector_type *****, Kokkos::LayoutRight, exec_space>
+    Kokkos::View<internal_vector_type *****, Kokkos::LayoutRight,
+                 exec_space_type>
         xi((internal_vector_type *)xv.data(), xv.extent(0), xv.extent(1),
            xv.extent(2), xv.extent(3), vector_length / internal_vector_length);
 
     /// double 16
-    Kokkos::View<vector_type ****, Kokkos::LayoutRight, exec_space> bv(
+    Kokkos::View<vector_type ****, Kokkos::LayoutRight, exec_space_type> bv(
         "b", N / vector_length, Nvec, L, Blk);
 
     /// double
-    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space> bs(
+    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space_type> bs(
         (value_type *)bv.data(), bv.extent(0), bv.extent(1), bv.extent(2),
         bv.extent(3), vector_length);
 
     /// double 2
-    Kokkos::View<internal_vector_type *****, Kokkos::LayoutRight, exec_space>
+    Kokkos::View<internal_vector_type *****, Kokkos::LayoutRight,
+                 exec_space_type>
         bi((internal_vector_type *)bv.data(), bv.extent(0), bv.extent(1),
            bv.extent(2), bv.extent(3), vector_length / internal_vector_length);
 
     /// double copy of A
-    Kokkos::View<value_type ******, Kokkos::LayoutRight, exec_space> Acopy(
+    Kokkos::View<value_type ******, Kokkos::LayoutRight, exec_space_type> Acopy(
         "Acopy", As.extent(0), As.extent(1), As.extent(2), As.extent(3),
         As.extent(4), As.extent(5));
 
-    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space> rs(
+    Kokkos::View<value_type *****, Kokkos::LayoutRight, exec_space_type> rs(
         "rs", bs.extent(0), bs.extent(1), bs.extent(2), bs.extent(3),
         bs.extent(4));
 
@@ -217,24 +333,9 @@ int main(int argc, char *argv[]) {
       cudaProfilerStart();
 #endif
       timer.reset();
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
       policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
-      Kokkos::parallel_for(
-          "setTridiagToIdentity", policy,
-          KOKKOS_LAMBDA(const member_type &member) {
-            const int i = member.league_rank();
-            Kokkos::parallel_for(
-                Kokkos::TeamThreadRange(member, AA.extent(1)),
-                [&](const int &j) {
-                  Kokkos::parallel_for(
-                      Kokkos::ThreadVectorRange(member, AA.extent(5)),
-                      [&](const int &v) {
-                        for (int k = 0, kend = AA.extent(3); k < kend; ++k)
-                          AA(i, j, 1, k, k, v) = 1;
-                      });
-                });
-          });
+      Kokkos::parallel_for("setTridiagToIdentity", policy,
+                           SetTridiagToIdentity<decltype(AA)>(AA));
       Kokkos::fence();
       const double t = timer.seconds();
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
@@ -246,7 +347,7 @@ int main(int argc, char *argv[]) {
     /// randomize input
     {
       const value_type one(1);
-      Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
+      Kokkos::Random_XorShift64_Pool<exec_space_type> random(13245);
       Kokkos::fill_random(As, random, one);
       Kokkos::fill_random(bs, random, one);
 
@@ -261,9 +362,7 @@ int main(int argc, char *argv[]) {
       cudaProfilerStart();
 #endif
       timer.reset();
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
-      int team_size     = 0;
+      int team_size = 0;
       if (Blk < 8) {
         team_size = 32 / AA.extent(5);
       } else if (Blk < 12) {
@@ -273,59 +372,9 @@ int main(int argc, char *argv[]) {
       }
 
       policy_type policy(AA.extent(0), team_size, AA.extent(5));
-      Kokkos::parallel_for(
-          "factorize", policy.set_scratch_size(0, Kokkos::PerTeam(S)),
-          KOKKOS_LAMBDA(const member_type &member) {
-            typedef FactorizeModeAndAlgo<
-                Kokkos::Impl::ActiveExecutionMemorySpace>
-                default_mode_and_algo_type;
-            typedef default_mode_and_algo_type::mode_type mode_type;
-            typedef default_mode_and_algo_type::algo_type algo_type;
-
-            const int i = member.league_rank();
-
-            Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(member, AA.extent(5)),
-                [&](const int &v) {
-                  auto AAA =
-                      Kokkos::subview(AA, i, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL(), v);
-
-                  /// subview patterns
-                  auto A =
-                      Kokkos::subview(AAA, 0, 1, Kokkos::ALL(), Kokkos::ALL());
-                  auto B =
-                      Kokkos::subview(AAA, 0, 2, Kokkos::ALL(), Kokkos::ALL());
-                  auto C =
-                      Kokkos::subview(AAA, 0, 0, Kokkos::ALL(), Kokkos::ALL());
-                  auto D =
-                      Kokkos::subview(AAA, 0, 1, Kokkos::ALL(), Kokkos::ALL());
-
-                  if (L == 1) {
-                    A.assign_data(&AAA(0, 1, 0, 0));
-                    LU<member_type, mode_type, algo_type>::invoke(member, A);
-                  } else {
-                    for (int k = 0; k < (L - 1); ++k) {
-                      A.assign_data(&AAA(k, 1, 0, 0));
-                      B.assign_data(&AAA(k, 2, 0, 0));
-                      C.assign_data(&AAA(k, 0, 0, 0));
-                      D.assign_data(&AAA(k + 1, 1, 0, 0));
-
-                      LU<member_type, mode_type, algo_type>::invoke(member, A);
-                      Trsm<member_type, Side::Left, Uplo::Lower,
-                           Trans::NoTranspose, Diag::Unit, mode_type,
-                           algo_type>::invoke(member, 1.0, A, B);
-                      Trsm<member_type, Side::Right, Uplo::Upper,
-                           Trans::NoTranspose, Diag::NonUnit, mode_type,
-                           algo_type>::invoke(member, 1.0, A, C);
-                      Gemm<member_type, Trans::NoTranspose, Trans::NoTranspose,
-                           mode_type, algo_type>::invoke(member, -1.0, C, B,
-                                                         1.0, D);
-                    }
-                    LU<member_type, mode_type, algo_type>::invoke(member, D);
-                  }
-                });
-          });
+      Kokkos::parallel_for("factorize",
+                           policy.set_scratch_size(0, Kokkos::PerTeam(S)),
+                           Factorize<decltype(AA), decltype(L)>(AA, L));
       Kokkos::fence();
       const double t = timer.seconds();
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
@@ -343,9 +392,7 @@ int main(int argc, char *argv[]) {
       cudaProfilerStart();
 #endif
       timer.reset();
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
-      int team_size     = 0;
+      int team_size = 0;
       if (Blk < 8) {
         team_size = 32 / AA.extent(5);
       } else if (Blk < 12) {
@@ -359,7 +406,7 @@ int main(int argc, char *argv[]) {
         Kokkos::parallel_for(
             "solve", policy.set_scratch_size(0, Kokkos::PerTeam(S)),
             KOKKOS_LAMBDA(const member_type &member) {
-              typedef SolveModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace>
+              typedef SolveModeAndAlgo<Kokkos::DefaultExecutionSpace>
                   default_mode_and_algo_type;
               typedef default_mode_and_algo_type::mode_type mode_type;
               typedef default_mode_and_algo_type::algo_type algo_type;
@@ -488,8 +535,6 @@ int main(int argc, char *argv[]) {
     ///
     if (1) {
       typedef KokkosBatched::Algo::Level2::Unblocked algo_type;
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
       policy_type policy(Acopy.extent(0), Kokkos::AUTO(), Acopy.extent(5));
       Kokkos::parallel_for(
           "compute residual", policy, KOKKOS_LAMBDA(const member_type &member) {
@@ -639,7 +684,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-#else
-int main() { return 0; }
-#endif

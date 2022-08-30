@@ -1141,8 +1141,7 @@ struct UpperTriSupernodalFunctor {
         KokkosBatched::TeamTrsm<
             member_type, KokkosBatched::Side::Left, KokkosBatched::Uplo::Lower,
             KokkosBatched::Trans::Transpose, KokkosBatched::Diag::NonUnit,
-            KokkosBatched::Algo::Trsm::Unblocked>::template invoke(team, one,
-                                                                   Ujj, Xjj);
+            KokkosBatched::Algo::Trsm::Unblocked>::invoke(team, one, Ujj, Xjj);
       }
       team.team_barrier();
     }

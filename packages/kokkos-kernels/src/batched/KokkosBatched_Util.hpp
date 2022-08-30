@@ -123,9 +123,7 @@ struct Flush {
   void init(value_type &update) { update = 0; }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile value_type &update, const volatile value_type &input) {
-    update += input;
-  }
+  void join(value_type &update, const value_type &input) { update += input; }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i, value_type &update) const { update += _buf[i]; }
@@ -201,7 +199,8 @@ struct SIMD {
                     std::is_same<T, std::complex<float> >::value ||
                     std::is_same<T, Kokkos::complex<double> >::value ||
                     std::is_same<T, std::complex<double> >::value ||
-                    std::is_same<T, Kokkos::Experimental::half_t>::value,
+                    std::is_same<T, Kokkos::Experimental::half_t>::value ||
+                    std::is_same<T, Kokkos::Experimental::bhalf_t>::value,
                 "KokkosKernels:: Invalid SIMD<> type.");
   using value_type = T;
 };
@@ -718,6 +717,17 @@ KOKKOS_INLINE_FUNCTION
   iMatrix = iTemp / numRows;
 }
 
+template <typename OrdinalType, typename layout>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<std::is_same<layout, Kokkos::LayoutStride>::value,
+                            void>::type
+    getIndices(const OrdinalType iTemp, const OrdinalType /*numRows*/,
+               const OrdinalType numMatrices, OrdinalType &iRow,
+               OrdinalType &iMatrix) {
+  iRow    = iTemp / numMatrices;
+  iMatrix = iTemp % numMatrices;
+}
+
 template <class ViewType>
 KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v, const int *order) {
   constexpr int rank         = 2;
@@ -842,10 +852,9 @@ KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
 
 template <class ViewValueType, class ScalarType>
 KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
-                                               ScalarType alpha,
+                                               ScalarType /*alpha*/,
                                                const AlphaTag::No &) {
   return reg_c;
-  (void)alpha;
 }
 
 template <class ViewType, class SizeType, class ViewValueType, class ScalarType,

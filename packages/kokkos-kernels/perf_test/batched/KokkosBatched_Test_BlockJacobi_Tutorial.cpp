@@ -3,16 +3,6 @@
 #include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-#if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
-#if defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-#define KOKKOSBATCHED_TEST_BLOCKJACOBI
-#endif
-#endif
-#endif
-
-#if defined(KOKKOSBATCHED_TEST_BLOCKJACOBI)
-
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 
@@ -78,6 +68,152 @@ val_type computeResidual(const ManyMatrixType &A, const ManyVectorType &x,
   }
   return residual;
 }
+
+namespace ConstructBlockJacobi {
+template <class VT>
+struct Task1Factorize {
+ private:
+  VT __A;
+
+ public:
+  Task1Factorize(VT A) : __A(A) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    auto AA     = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    TeamLU<member_type, Algo::Level3::Unblocked>::invoke(member, AA);
+  }
+};
+
+template <class VT>
+struct Task1SetIdentity {
+ private:
+  VT __A;
+
+ public:
+  Task1SetIdentity(VT A) : __A(A) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    auto AA     = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    TeamSetIdentity<member_type>::invoke(member, AA);
+  }
+};
+
+template <class VTA, class VTT>
+struct Task1SolveLowerTriangular {
+ private:
+  VTA __A;
+  VTT __T;
+
+ public:
+  Task1SolveLowerTriangular(VTA A, VTT T) : __A(A), __T(T) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    const val_type one(1);
+    auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto TT = Kokkos::subview(__T, i, Kokkos::ALL(), Kokkos::ALL());
+    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
+             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one, TT, AA);
+  }
+};
+
+template <class VTA, class VTT>
+struct Task1SolveUpperTriangular {
+ private:
+  VTA __A;
+  VTT __T;
+
+ public:
+  Task1SolveUpperTriangular(VTA A, VTT T) : __A(A), __T(T) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    const val_type one(1);
+    auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto TT = Kokkos::subview(__T, i, Kokkos::ALL(), Kokkos::ALL());
+    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
+             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, one, TT,
+                                                             AA);
+  }
+};
+}  // namespace ConstructBlockJacobi
+
+template <class VTA, class VTX, class VTB>
+struct Task1ApplyBlockJacobi {
+ private:
+  VTA __A;
+  VTX __x;
+  VTB __b;
+
+ public:
+  Task1ApplyBlockJacobi(VTA A, VTX x, VTB b) : __A(A), __x(x), __b(b) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    const val_type one(1), zero(0);
+    auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto xx = Kokkos::subview(__x, i, Kokkos::ALL());
+    auto bb = Kokkos::subview(__b, i, Kokkos::ALL());
+    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(
+        member, one, AA, bb, zero, xx);
+  }
+};
+
+template <class VTA, class VTT>
+struct Task2FactorizeInvert {
+ private:
+  VTA __A;
+  VTT __T;
+
+ public:
+  Task2FactorizeInvert(VTA A, VTT T) : __A(A), __T(T) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const val_type one(1);
+    const int i = member.league_rank();
+    auto AA     = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto TT     = Kokkos::subview(__T, i, Kokkos::ALL(), Kokkos::ALL());
+
+    TeamLU<member_type, Algo::Level3::Unblocked>::invoke(member, AA);
+    TeamCopy<member_type, Trans::NoTranspose>::invoke(member, AA, TT);
+    TeamSetIdentity<member_type>::invoke(member, AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
+             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one, TT, AA);
+    TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
+             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, one, TT,
+                                                             AA);
+  }
+};
+
+template <class VTA, class VTX, class VTB>
+struct Task2ApplyBlockJacobi {
+ private:
+  VTA __A;
+  VTX __x;
+  VTB __b;
+
+ public:
+  Task2ApplyBlockJacobi(VTA A, VTX x, VTB b) : __A(A), __x(x), __b(b) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type &member) const {
+    const int i = member.league_rank();
+    const val_type one(1), zero(0);
+    auto AA = Kokkos::subview(__A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto xx = Kokkos::subview(__x, i, Kokkos::ALL());
+    auto bb = Kokkos::subview(__b, i, Kokkos::ALL());
+    TeamGemv<member_type, Trans::NoTranspose, Algo::Level2::Unblocked>::invoke(
+        member, one, AA, bb, zero, xx);
+  }
+};
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
@@ -159,44 +295,21 @@ int main(int argc, char *argv[]) {
         timer.reset();
         Kokkos::parallel_for(
             "task1.factorize", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              auto AA     = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              TeamLU<member_type, Algo::Level3::Unblocked>::invoke(member, AA);
-            });
+            ConstructBlockJacobi::Task1Factorize<decltype(A)>(A));
         Kokkos::deep_copy(T, A);
         Kokkos::parallel_for(
             "task1.set-identity", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              auto AA     = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              TeamSetIdentity<member_type>::invoke(member, AA);
-            });
+            ConstructBlockJacobi::Task1SetIdentity<decltype(A)>(A));
         Kokkos::fence();
         Kokkos::parallel_for(
             "task1.solve-lower-triangular", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              const val_type one(1);
-              auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              auto TT = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
-              TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                       Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one,
-                                                                    TT, AA);
-            });
+            ConstructBlockJacobi::Task1SolveLowerTriangular<decltype(A),
+                                                            decltype(T)>(A, T));
         Kokkos::fence();
         Kokkos::parallel_for(
             "task1.solve-upper-triangular", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              const val_type one(1);
-              auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              auto TT = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
-              TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                       Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member,
-                                                                       one, TT,
-                                                                       AA);
-            });
+            ConstructBlockJacobi::Task1SolveUpperTriangular<decltype(A),
+                                                            decltype(T)>(A, T));
         Kokkos::fence();
         const double t = timer.seconds();
         printf(
@@ -211,16 +324,8 @@ int main(int argc, char *argv[]) {
         policy_type policy(A.extent(0), Kokkos::AUTO());
         Kokkos::parallel_for(
             "task1.apply-block-jacobi", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              const val_type one(1), zero(0);
-              auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              auto xx = Kokkos::subview(x, i, Kokkos::ALL());
-              auto bb = Kokkos::subview(b, i, Kokkos::ALL());
-              TeamGemv<member_type, Trans::NoTranspose,
-                       Algo::Level2::Unblocked>::invoke(member, one, AA, bb,
-                                                        zero, xx);
-            });
+            Task1ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x,
+                                                                         b));
         const double t = timer.seconds();
         printf(
             "task 1: application of jacobi time = %f , # of applications per "
@@ -256,23 +361,7 @@ int main(int argc, char *argv[]) {
         timer.reset();
         Kokkos::parallel_for(
             "task2.factorize-invert", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const val_type one(1);
-              const int i = member.league_rank();
-              auto AA     = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              auto TT     = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
-
-              TeamLU<member_type, Algo::Level3::Unblocked>::invoke(member, AA);
-              TeamCopy<member_type, Trans::NoTranspose>::invoke(member, AA, TT);
-              TeamSetIdentity<member_type>::invoke(member, AA);
-              TeamTrsm<member_type, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                       Diag::Unit, Algo::Level3::Unblocked>::invoke(member, one,
-                                                                    TT, AA);
-              TeamTrsm<member_type, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                       Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member,
-                                                                       one, TT,
-                                                                       AA);
-            });
+            Task2FactorizeInvert<decltype(A), decltype(T)>(A, T));
         Kokkos::fence();
         const double t = timer.seconds();
         printf(
@@ -287,16 +376,8 @@ int main(int argc, char *argv[]) {
         policy_type policy(A.extent(0), Kokkos::AUTO());
         Kokkos::parallel_for(
             "task2.apply-block-jacobi", policy,
-            KOKKOS_LAMBDA(const member_type &member) {
-              const int i = member.league_rank();
-              const val_type one(1), zero(0);
-              auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-              auto xx = Kokkos::subview(x, i, Kokkos::ALL());
-              auto bb = Kokkos::subview(b, i, Kokkos::ALL());
-              TeamGemv<member_type, Trans::NoTranspose,
-                       Algo::Level2::Unblocked>::invoke(member, one, AA, bb,
-                                                        zero, xx);
-            });
+            Task2ApplyBlockJacobi<decltype(A), decltype(x), decltype(b)>(A, x,
+                                                                         b));
         const double t = timer.seconds();
         printf(
             "task 2: application of jacobi time = %f , # of applications per "
@@ -318,7 +399,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-#else
-int main() { return 0; }
-#endif

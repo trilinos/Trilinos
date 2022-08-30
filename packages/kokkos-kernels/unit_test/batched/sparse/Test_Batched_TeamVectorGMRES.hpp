@@ -15,7 +15,7 @@ namespace Test {
 namespace TeamVectorGMRES {
 
 template <typename DeviceType, typename ValuesViewType, typename IntView,
-          typename VectorViewType>
+          typename VectorViewType, typename KrylovHandleType>
 struct Functor_TestBatchedTeamVectorGMRES {
   const ValuesViewType _D;
   const IntView _r;
@@ -24,15 +24,21 @@ struct Functor_TestBatchedTeamVectorGMRES {
   const VectorViewType _B;
   const VectorViewType _Diag;
   const int _N_team;
-  KrylovHandle<typename ValuesViewType::value_type> handle;
+  KrylovHandleType _handle;
 
-  KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamVectorGMRES(const ValuesViewType &D, const IntView &r,
                                      const IntView &c, const VectorViewType &X,
                                      const VectorViewType &B,
                                      const VectorViewType &diag,
-                                     const int N_team)
-      : _D(D), _r(r), _c(c), _X(X), _B(B), _Diag(diag), _N_team(N_team) {}
+                                     const int N_team, KrylovHandleType &handle)
+      : _D(D),
+        _r(r),
+        _c(c),
+        _X(X),
+        _B(B),
+        _Diag(diag),
+        _N_team(N_team),
+        _handle(handle) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
@@ -57,10 +63,11 @@ struct Functor_TestBatchedTeamVectorGMRES {
 
     Operator A(d, _r, _c);
     PrecOperator P(diag);
+    P.setComputedInverse();
 
     KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator,
                                                                 VectorViewType>(
-        member, A, b, x, P, handle);
+        member, A, b, x, P, _handle);
   }
 
   inline void run() {
@@ -72,18 +79,35 @@ struct Functor_TestBatchedTeamVectorGMRES {
     Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
                                           Kokkos::AUTO(), Kokkos::AUTO());
 
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _X.extent(1));
-    size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
+    const int N                 = _D.extent(0);
+    const int n                 = _X.extent(1);
+    const int maximum_iteration = _handle.get_max_iteration();
 
-    handle.set_max_iteration(10);
+    _handle.set_ortho_strategy(0);
+    _handle.set_compute_last_residual(false);
+    _handle.set_tolerance(1e-8);
 
-    int maximum_iteration = handle.get_max_iteration();
+    _handle.Arnoldi_view = typename KrylovHandleType::ArnoldiViewType(
+        "", N, maximum_iteration, n + maximum_iteration + 3);
 
-    policy.set_scratch_size(0, Kokkos::PerTeam(5 * bytes_0 + 5 * bytes_1));
+    using ScalarType = typename ValuesViewType::non_const_value_type;
+    using Layout     = typename ValuesViewType::array_layout;
+    using EXSP       = typename ValuesViewType::execution_space;
+
+    using ViewType2D = Kokkos::View<ScalarType **, Layout, EXSP>;
+
+    size_t bytes_1D   = ViewType2D::shmem_size(_N_team, 1);
+    size_t bytes_2D_1 = ViewType2D::shmem_size(_N_team, _X.extent(1));
+    size_t bytes_2D_2 = ViewType2D::shmem_size(_N_team, maximum_iteration + 1);
+
+    size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
+    size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
+
+    size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
+    size_t bytes_diag = bytes_2D_1;
+    size_t bytes_tmp  = 2 * bytes_2D_1 + 2 * bytes_1D + bytes_2D_2;
     policy.set_scratch_size(
-        1, Kokkos::PerTeam(maximum_iteration * bytes_0 +
-                           ((maximum_iteration + 3) * maximum_iteration) *
-                               bytes_1));
+        0, Kokkos::PerTeam(bytes_tmp + bytes_diag + bytes_int));
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
@@ -113,6 +137,13 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   using MagnitudeType =
       typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
   using NormViewType = Kokkos::View<MagnitudeType *, Layout, EXSP>;
+
+  using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
+  using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;
+  using IntViewType      = Kokkos::View<int *, Layout, EXSP>;
+
+  using KrylovHandleType =
+      KrylovHandle<Norm2DViewType, IntViewType, Scalar3DViewType>;
 
   NormViewType sqr_norm_0("sqr_norm_0", N);
   NormViewType sqr_norm_j("sqr_norm_j", N);
@@ -162,6 +193,9 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   Kokkos::deep_copy(r_host, r);
   Kokkos::deep_copy(D_host, D);
 
+  const int n_iterations = 10;
+  KrylovHandleType handle(N, N_team, n_iterations);
+
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
@@ -169,8 +203,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
                                                        sqr_norm_0_host);
   Functor_TestBatchedTeamVectorGMRES<DeviceType, ValuesViewType, IntView,
-                                     VectorViewType>(D, r, c, X, B, Diag,
-                                                     N_team)
+                                     VectorViewType, KrylovHandleType>(
+      D, r, c, X, B, Diag, N_team, handle)
       .run();
 
   Kokkos::fence();

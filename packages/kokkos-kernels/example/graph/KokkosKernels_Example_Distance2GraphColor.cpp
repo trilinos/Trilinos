@@ -526,7 +526,9 @@ int main(int argc, char* argv[]) {
       params.use_openmp;  // Assumption is that use_openmp variable is provided
                           // as number of threads
   const int device_id = 0;
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   // Print out information about the configuration of the run if verbose_level
   // >= 5

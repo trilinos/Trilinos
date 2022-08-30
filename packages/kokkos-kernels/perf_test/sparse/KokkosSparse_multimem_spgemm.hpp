@@ -44,6 +44,7 @@
 
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_run_spgemm.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 namespace KokkosKernels {
 
@@ -74,12 +75,10 @@ void run_multi_mem_spgemm(Parameters params) {
 
   if (params.a_mem_space == 1) {
     a_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
   } else {
     a_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
   }
 
   if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) == 0) &&
@@ -90,13 +89,11 @@ void run_multi_mem_spgemm(Parameters params) {
   } else if (params.b_mem_space == 1) {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
   } else {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
   }
 
   if (params.a_mem_space == 1) {
@@ -222,18 +219,18 @@ void run_multi_mem_spgemm(Parameters params) {
 
   if (c_mat_file != NULL) {
     if (params.c_mem_space == 1) {
-      KokkosKernels::sort_crs_matrix(c_fast_crsmat);
+      KokkosSparse::sort_crs_matrix(c_fast_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)(c_fast_crsmat.numRows()),
           (size_type)(c_fast_crsmat.graph.entries.extent(0)),
           c_fast_crsmat.graph.row_map.data(),
           c_fast_crsmat.graph.entries.data(), c_fast_crsmat.values.data(),
           c_mat_file);
     } else {
-      KokkosKernels::sort_crs_matrix(c_slow_crsmat);
+      KokkosSparse::sort_crs_matrix(c_slow_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)c_slow_crsmat.numRows(),
           (size_type)c_slow_crsmat.graph.entries.extent(0),
           c_slow_crsmat.graph.row_map.data(),
