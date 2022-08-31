@@ -52,7 +52,6 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
-// Epetra includes
 #include "mpi.h"
 
 #include "Tpetra_CrsMatrix.hpp"
@@ -63,8 +62,6 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
 #include "Teko_LSCPreconditionerFactory.hpp"
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
