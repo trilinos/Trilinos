@@ -65,13 +65,11 @@ read_matrix_mm(const std::string& mm_file,
     throw std::runtime_error("Failed to open file "+mm_file);
   }
 
-  std::ifstream& in = *infile;
-
   //first skip over the file header, which has
   //lines beginning with '%'.
   std::string line;
   do {
-    getline(in, line);
+    getline(*infile, line);
   } while(line[0] == '%');
 
   //now get the matrix dimensions.
@@ -105,8 +103,8 @@ read_matrix_mm(const std::string& mm_file,
   int g_row=-1, last_row=-1;
   double val=0;
 
-  while(!in.eof()) {
-    getline(in, line);
+  while(!infile->eof()) {
+    getline(*infile, line);
     std::istringstream isstr(line);
     isstr >> irow >> icol >> val;
   
@@ -131,7 +129,7 @@ read_matrix_mm(const std::string& mm_file,
   }
 
   A->FillComplete();
-
+  delete infile;
   return A;
 }
 
@@ -150,13 +148,11 @@ read_vector_mm(const std::string& mm_file,
       throw std::runtime_error("Failed to open file "+mm_file);
     }
 
-    std::ifstream& in = *infile;
-
     //first skip over the file header, which has
     //lines beginning with '%'.
     std::string line;
     do {
-      getline(in, line);
+      getline(*infile, line);
     } while(line[0] == '%');
 
     //now get the matrix dimensions.
@@ -186,7 +182,7 @@ read_vector_mm(const std::string& mm_file,
 
     std::string line;
     std::ifstream& in = *infile;
-    while(!in.eof()) {
+    while(!infile->eof()) {
       getline(in, line);
       std::istringstream isstr(line);
       isstr >> val;
@@ -196,7 +192,7 @@ read_vector_mm(const std::string& mm_file,
       b->ReplaceGlobalValue(irow++, icol, val);
     }
   }
-
+  delete infile;
   return b;
 }
 
@@ -210,6 +206,7 @@ void read_matrix_hb(const std::string& hb_file,
   Epetra_Vector* xexact = NULL;
   Trilinos_Util_ReadHb2Epetra(const_cast<char*>(hb_file.c_str()), Comm, Map,
                              A, x, b, xexact);
+  delete Map;
   delete x;
   delete xexact;
 }
