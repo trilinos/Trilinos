@@ -106,6 +106,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES aniso2dx.mat
   SOURCE_FILES aniso2dy.mat
   SOURCE_FILES iso2d.mat
+  SOURCE_FILES beam.mm
+  SOURCE_FILES filter.mm
   SOURCE_FILES fuego0.mm
   SOURCE_FILES fuego1.mm
   SOURCE_FILES nonsym.mm

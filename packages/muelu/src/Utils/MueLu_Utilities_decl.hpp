@@ -59,6 +59,8 @@
 #include <Xpetra_TpetraOperator.hpp>
 #endif
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_CrsGraph_fwd.hpp>
+#include <Xpetra_CrsGraphFactory_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
@@ -217,6 +219,8 @@ namespace MueLu {
 #endif
 
     static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >          Crs2Op(RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op) { return UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(Op); }
+    static RCP<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, const Scalar threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow) {return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedMatrix(A, threshold, keepDiagonal, expectedNNZperRow); }
+    static RCP<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >               GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow) {return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedGraph(A, threshold, expectedNNZperRow); }
     static Teuchos::ArrayRCP<Scalar>                                             GetMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonal(A); }
     static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >          GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonalInverse(A,tol,valReplacement); }
     static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false, const bool useAverageAbsDiagVal = false)
@@ -324,20 +328,21 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
   private:
-    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
-    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
-    typedef Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
-    typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+    using CrsGraph = Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+    using CrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using CrsMatrix = Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Matrix = Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Operator = Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Vector = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVector = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Map = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
 #ifdef HAVE_MUELU_TPETRA
-    typedef Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOperator;
+    using TpetraOperator = Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef HAVE_MUELU_EPETRA
-    typedef Xpetra::EpetraMapT<GlobalOrdinal,Node> EpetraMap;
-    typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> EpetraMultiVector;
-    typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> EpetraCrsMatrix;
+    using EpetraMap = Xpetra::EpetraMapT<GlobalOrdinal,Node>;
+    using EpetraMultiVector = Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>;
+    using EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>;
 #endif
   public:
 
@@ -691,6 +696,8 @@ namespace MueLu {
 #endif
 
     static RCP<Matrix>                                                           Crs2Op(RCP<CrsMatrix> Op) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(Op); }
+    static RCP<CrsMatrixWrap>                                                    GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, const Scalar threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow) {return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedMatrix(A, threshold, keepDiagonal, expectedNNZperRow); }
+    static RCP<CrsGraph>                                                         GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow) {return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedGraph(A, threshold, expectedNNZperRow); }
     static Teuchos::ArrayRCP<Scalar>                                             GetMatrixDiagonal(const Matrix& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonal(A); }
     static RCP<Vector>                                                           GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonalInverse(A,tol,valReplacement); }
     static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false, const bool useAverageAbsDiagVal = false)

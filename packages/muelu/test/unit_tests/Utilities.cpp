@@ -45,17 +45,18 @@
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Comm.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_BlockReorderManager.hpp>
 #include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <MueLu_config.hpp>
-
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Version.hpp>
-
 #include <MueLu_Utilities.hpp>
 
 // This file is intended to house all the tests for MueLu_Utilities.hpp.
@@ -460,6 +461,7 @@ namespace MueLuTests {
     }
 #endif
   }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetInverse,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -490,6 +492,53 @@ namespace MueLuTests {
     TEST_EQUALITY(tv->norm1(),Teuchos::ScalarTraits<Scalar>::zero());
     TEST_EQUALITY(tv->norm2(),Teuchos::ScalarTraits<Scalar>::zero());
     TEST_EQUALITY(tv->normInf(),Teuchos::ScalarTraits<Scalar>::zero());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetThresholdedMatrix,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+      MUELU_TESTING_SET_OSTREAM;
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+      using TST = Teuchos::ScalarTraits<SC>;
+      using magnitude_type = typename TST::magnitudeType;
+      using TMT = Teuchos::ScalarTraits<magnitude_type>;
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      // Don't test for complex - matrix reader won't work
+      if (TST::isComplex) {success=true; return;}
+      RCP<Matrix> Ain = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/filter.mm", lib, comm);
+
+      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> Aout =
+              MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedMatrix(Ain, 1e-5, true, -1);
+
+      TEST_EQUALITY(Aout->getCrsGraph()->getGlobalNumEntries(), Teuchos::as<size_t>(13));
+      TEST_FLOATING_EQUALITY(Aout->getFrobeniusNorm(), Teuchos::as<magnitude_type>(7.549834435270750), 1e2*Teuchos::ScalarTraits<Scalar>::eps());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetThresholdedGraph,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+      MUELU_TESTING_SET_OSTREAM;
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+      using TST = Teuchos::ScalarTraits<SC>;
+      using magnitude_type = typename TST::magnitudeType;
+      using TMT = Teuchos::ScalarTraits<magnitude_type>;
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      // Don't test for complex - matrix reader won't work
+      if (TST::isComplex) {success=true; return;}
+      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/filter.mm", lib, comm);
+
+      RCP<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>> graph =
+              MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetThresholdedGraph(A, 1e-5, -1);
+
+      TEST_EQUALITY(graph->getGlobalNumEntries(), Teuchos::as<size_t>(13));
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,TransposeNonsymmetricConstMatrix,Scalar,LocalOrdinal,GlobalOrdinal,Node)
@@ -578,6 +627,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetInverse,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetThresholdedMatrix,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetThresholdedGraph,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,TransposeNonsymmetricConstMatrix,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
