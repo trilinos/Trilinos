@@ -191,6 +191,8 @@ int check_rowpermute_crsmatrix_local_diagonal(Epetra_Comm& Comm,
     cout << B << endl;
   }
 
+  delete [] p;
+
   return(0);
 }
 
@@ -264,6 +266,8 @@ int check_rowpermute_crsgraph_local_diagonal(Epetra_Comm& Comm,
     cout <<"************* permuted graph Bgrph: ****************"<<endl;
     cout << Bgrph << endl;
   }
+
+  delete [] p;
 
   return(0);
 }
@@ -427,6 +431,8 @@ int check_rowpermute_crsmatrix_global_diagonal(Epetra_Comm& Comm,
     cout << Bglobal << endl;
   }
 
+  delete [] p;
+
   return(0);
 }
 
@@ -584,6 +590,8 @@ int check_rowpermute_multivector_local(Epetra_Comm& Comm,
     cout <<"************* permuted MultiVector Pv: ****************"<<endl;
     cout << Pv << endl;
   }
+
+  delete [] p;
 
   return(0);
 }
