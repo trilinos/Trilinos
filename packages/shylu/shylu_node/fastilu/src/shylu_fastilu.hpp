@@ -59,7 +59,8 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
 #include <KokkosKernels_Sorting.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosSparse_Utils.hpp>
+#include <KokkosSparse_SortCrs.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_sptrsv.hpp>
 #include <KokkosSparse_trsv.hpp>
@@ -535,7 +536,7 @@ class FastILUPrec
             #endif
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = typename HostSpace::execution_space;
-            KokkosKernels::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
+            KokkosSparse::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
               (aRowMap_, aColIdx_);
             #ifdef FASTILU_INIT_TIMER
             host_space().fence();
@@ -631,7 +632,7 @@ class FastILUPrec
             }
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             //using host_space = Kokkos::HostSpace::execution_space;
-            //KokkosKernels::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
+            //KokkosSparse::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
             //  (aRowMap_, aColIdx_, aVal_);
             //host_space().fence();
 
@@ -694,7 +695,7 @@ class FastILUPrec
             }
             //Sort each row of A by ColIdx
             if (!skipSortMatrix || useMetis) {
-              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
+              KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
             }
 
             //Copy the host matrix into the initialized a;
@@ -907,7 +908,7 @@ class FastILUPrec
             #endif
 
             // sort
-            KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+            KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
               (uRowMap, uColIdx, uVal);
             ExecSpace().fence();
             #ifdef FASTILU_TIMER
@@ -1633,13 +1634,13 @@ class FastILUPrec
             #if 1
             // transpose
             Kokkos::deep_copy(utRowMap, 0);
-            KokkosKernels::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
+            KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
               (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
             // sort, if the triangular solve algorithm requires a sorted matrix.
             // Currently, only Fast does not require this.
             bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast;
             if(sortRequired) {
-              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+              KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
                 (utRowMap, utColIdx, utVal);
             }
             if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {

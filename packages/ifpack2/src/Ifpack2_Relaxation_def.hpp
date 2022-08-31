@@ -806,7 +806,6 @@ void Relaxation<MatrixType>::initialize ()
 namespace Impl {
 template <typename BlockDiagView>
 struct InvertDiagBlocks {
-  typedef int value_type;
   typedef typename BlockDiagView::size_type Size;
 
 private:
@@ -853,10 +852,6 @@ public:
     Tpetra::GETRI(D_cur, ipiv, work, info);
     if (info) ++jinfo;
   }
-
-  // Report the number of blocks with errors.
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type& dst, volatile value_type const& src) const { dst += src; }
 };
 }
 
