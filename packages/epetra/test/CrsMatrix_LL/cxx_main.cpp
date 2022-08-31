@@ -934,6 +934,7 @@ cout << A2;
     }
 
     delete Map2;
+    delete A1;
   }
 
 

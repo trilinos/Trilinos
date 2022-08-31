@@ -184,6 +184,7 @@ int main(int argc, char *argv[]) {
 
   ierr += checkResults(A, transA, xexact, verbose);
 
+  delete transA;
   delete A;
   delete b;
   delete x;
@@ -237,6 +238,7 @@ int main(int argc, char *argv[]) {
 
   ierr += checkResults(Avbr, transA, xexact, verbose);
 
+  delete transA;
   delete Avbr;
   delete b;
   delete x;
