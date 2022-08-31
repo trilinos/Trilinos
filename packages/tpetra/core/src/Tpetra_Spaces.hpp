@@ -173,7 +173,8 @@ Kokkos::Cuda &get(int i) {
             case Priority::low: prio = detail::cudaPriorityRange.low; break;
             default: throw std::runtime_error("unexpected Tpetra Space priority");
         }
-        cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio);
+        std::cerr << __FILE__ << ":" << __LINE__ << ": create stream with prio " << prio << "\n";
+        CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
         Kokkos::Cuda space (stream, true /*Kokkos will manage this stream*/);
         detail::spaces<Space, priority>().push_back(space);
     }
@@ -217,8 +218,8 @@ void exec_space_wait(S1 &waitee, S2 &waiter) {
        the state of a shared event
        this means we only need one event even if many exec_space_waits are in flight at the same time
     */
-    cudaEventRecord(detail::execSpaceWaitEvent, waitee.cuda_stream());
-    cudaStreamWaitEvent(waiter.cuda_stream(), detail::execSpaceWaitEvent, 0 /*flags*/);
+    CUDA_RUNTIME(cudaEventRecord(detail::execSpaceWaitEvent, waitee.cuda_stream()));
+    CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), detail::execSpaceWaitEvent, 0 /*flags*/));
 }
 #endif
 

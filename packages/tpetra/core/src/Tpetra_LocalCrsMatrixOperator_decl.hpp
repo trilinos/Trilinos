@@ -268,8 +268,8 @@ namespace Tpetra {
       // void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
       void launch(TagNonTrans, const execution_space &space) {
 
+#if 1 // fancy one
         const int estNnz = A_.nnz() * 0.95; // entries are mostly on-rank.
-
         if (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
           if (estNnz > 10000000) {
             Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(space, 0, A_.numRows()), *this);
@@ -294,6 +294,10 @@ namespace Tpetra {
             Kokkos::parallel_for("on-rank", policy, *this);
           }
         }
+#else // boring one
+        Kokkos::RangePolicy<execution_space, TagNonTrans> policy(space, 0, A_.numRows());
+        Kokkos::parallel_for("on-rank", policy, *this);
+#endif
       }
 
       // \brief Kokkos dispatch of non-transpose in default space

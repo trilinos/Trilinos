@@ -269,11 +269,22 @@ public:
   /// <tt>TPETRA_SKIP_COPY_AND_PERMUTE</tt> environment variable.
   static bool skipCopyAndPermuteIfPossible();
 
-  /// \brief Overlap communication and computation.
+  /// \brief Overlap communication and computation in residual
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
+
   static bool overlapCommunicationAndComputation();
+
+  /// \brief Overlap communication and computation in SpMV
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_OVERLAP_SPMV</tt> environment variable.
+  ///
+  /// Merging this with overlapCommunicationAndComputation causes
+  /// certain tests to fail, as the residual is designed to overlap
+  /// correctly only in certain circumstances
+  static bool overlapSpmvCommunicationAndComputation();
 
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///

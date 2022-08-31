@@ -4721,6 +4721,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
     typedef typename Node::execution_space exec_space;
     
+    std::cerr << __FILE__ << ":" << __LINE__ << ": in applyNonTranspose\n";
+    std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.isConstantStride()=" << Y_in.isConstantStride() << "\n";
+    std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
+
+    const bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
+    // const bool overlap = true;
+
     // the space for our on-rank SpMV
     exec_space onRankSpace = 
       Tpetra::Spaces::get<exec_space, Tpetra::Spaces::Priority::low>(0);
@@ -4753,16 +4760,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
     const bool mustImport = !importer.is_null();
     const bool mustExport = !exporter.is_null();
+    std::cerr << __FILE__ << ":" << __LINE__ << ": mustImport=" << mustImport << "\n";
+    std::cerr << __FILE__ << ":" << __LINE__ << ": mustExport=" << mustExport << "\n";
+
 
     // If beta == 0, then the output MV will be overwritten; none of
     // its entries should be read.  (Sparse BLAS semantics say that we
     // must ignore any Inf or NaN entries in Y_in, if beta is zero.)
     // This matters if we need to do an Export operation; see below.
     const bool yIsOverwritten = (beta == ZERO);
+    std::cerr << __FILE__ << ":" << __LINE__ << ": yIsOverwritten=" << yIsOverwritten << "\n";
 
     // We treat the case of a replicated MV output specially.
-    const bool Y_is_replicated =
+    const bool yIsReplicated =
       (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
+    std::cerr << __FILE__ << ":" << __LINE__ << ": yIsReplicated=" << yIsReplicated << "\n";
 
     // This is part of the special case for replicated MV output.
     // We'll let each process do its thing, but do an all-reduce at
@@ -4770,7 +4782,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // but Proc 0 makes the math work out for the all-reduce.  (This
     // assumes that the replicated data is correctly replicated, so
     // that the data are the same on all processes.)
-    if (Y_is_replicated && this->getComm ()->getRank () > 0) {
+    if (yIsReplicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
     }
 
@@ -4798,6 +4810,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // Map MV (if it hasn't already been created, else fetch the
         // cached copy).  This avoids creating a new MV each time.
         RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
+        std::cerr << __FILE__ << ":" << __LINE__ << ": X_in -> X_colMap\n";
         Tpetra::deep_copy (*X_colMapNonConst, X_in);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
         xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
@@ -4805,8 +4818,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       else {
         // The domain and column Maps are the same, so do the local
         // multiply using the domain Map input MV X_in.
+        std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMap = rcpFromRef (X_in)\n";
         X_colMap = rcpFromRef (X_in);
-        xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
+        xyDefinitelyAlias = X_colMap.getRawPtr () == &Y_in;
       }
       
     } else { // need to Import source (multi)vector
@@ -4817,7 +4831,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       X_colMapNonConst = getColumnMapMultiVector (X_in);
       xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
     }
-    
+    std::cerr << __FILE__ << ":" << __LINE__ << ": xyDefinitelyAlias=" << xyDefinitelyAlias << "\n";
+
     /* Cases we can't operate directly on input Y
     1. Must do an export
     2. Non-constant stride multivector.
@@ -4855,33 +4870,41 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // If beta == 0, we don't need to copy Y_in into Y_rowMap,
       // since we're overwriting it anyway.
       if (!yIsOverwritten) {
+        std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
         Tpetra::deep_copy (*Y_rowMap, Y_in);
       }
     }
+
+    std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
+    Kokkos::fence();
 
     /* When overlapping comm / comp, start the on-rank part,
       The on-rank part does not need any imported X.
       Use the temporary Y, or the input Y as needed
     */
-    if (Details::Behavior::overlapCommunicationAndComputation()) {
+    if (overlap) {
       ProfilingRegion regionImport ("Tpetra::CrsMatrix::applyNonTranspose: localApplyOnRank");
       if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
         // ensure any in-flight default stream stuff is done
         Spaces::exec_space_wait(defaultSpace, onRankSpace);
+        std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_rowmap, ...)\n";
         this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
-        // this->localApplyOnRank(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
         Spaces::exec_space_wait(defaultSpace, onRankSpace);
+        std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_in, ...)\n";
         this->localApplyOnRank(onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
-        // this->localApplyOnRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
+
+    std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
+    Kokkos::fence();
 
     // actually do the import if necessary
     if (mustImport) {
       // Import from the domain Map MV to the column Map MV.
-      if (Details::Behavior::overlapCommunicationAndComputation()) {
+      if (overlap) {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
+        std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
         X_colMapNonConst->beginImport (X_in, *importer, INSERT);
       } else {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
@@ -4890,49 +4913,60 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
-
-
     // finish an input if it was started
-    if (mustImport && Details::Behavior::overlapCommunicationAndComputation()) {
+    if (mustImport && overlap) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: endImport");
       X_colMapNonConst->endImport(X_in, *importer, INSERT);
-      // std::cerr << "CWP: ended import\n";
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
-    // on-rank SpMV does not happen in the default space, so make sure it's finished before we do off-rank
-    // in the default space
-    if (Details::Behavior::overlapCommunicationAndComputation()) {
-      Spaces::exec_space_wait(onRankSpace, defaultSpace);
-    }
+    std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
+    Kokkos::fence();
 
     /* Either the import is complete and start the off-rank part,
        or the import is complete and do the full SpMV
     */
     if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
-      if (Details::Behavior::overlapCommunicationAndComputation()) {
+      if (overlap) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        // Kokkos::fence(Tpetra::Space::get_space()); // TODO, ensure local part is done before starting remote
+        Spaces::exec_space_wait(onRankSpace, defaultSpace); // ensure local SpMV is done
+        std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_rowmap, ...)\n";
         this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
+        // this->localApplyOnRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        // this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       }
     } else {
-      if (Details::Behavior::overlapCommunicationAndComputation()) {
+      if (overlap) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        // Kokkos::fence(Tpetra::Space::get_space()); // TODO, ensure local part is done before starting remote
+        Spaces::exec_space_wait(onRankSpace, defaultSpace); // ensure local SpMV is done
+        std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_in, ...)\n";
         this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
+
+        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApply(*X_colMap, Y_in, ...)\n";
+        // this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta); // try this
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
+        std::cerr << __FILE__ << ":" << __LINE__ << ": localApply(*X_colMap, Y_in, ...)\n";
         this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
+        // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
+        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(*X_colMap, Y_in, ...)\n";
+        // this->localApplyOnRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
+        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(*X_colMap, Y_in, ...)\n";
+        // this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       }
     }
+
+    std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
+    Kokkos::fence();
 
     // both on-rank and off-rank apply happen in a non-default exec space
     // to ensure that it overlaps with the default stream.
     // make sure both are done before export
-    // if (Details::Behavior::overlapCommunicationAndComputation()) {
+    // if (overlap) {
     //   defaultSpace.fence("wait(localApplyOffRank)");
     // }
 
@@ -4958,10 +4992,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       // Do the Export operation.
       // TODO: why are we sure Y_rowMap was used
+      std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.doExport(Y_rowmap, ...)\n";
       Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
     } else {
       // if used the temporary MV, copy it to the input. otherwise, the input was used directly
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
+        std::cerr << __FILE__ << ":" << __LINE__ << ": Y_rowMap -> Y_in\n";
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       }
     }
@@ -4970,7 +5006,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // contributions from each process.  We set beta = 0 on all
     // processes but Proc 0 initially, so this will handle the scaling
     // factor beta correctly.
-    if (Y_is_replicated) {
+    if (yIsReplicated) {
       ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTranspose: Reduce Y");
       Y_in.reduce ();
     }

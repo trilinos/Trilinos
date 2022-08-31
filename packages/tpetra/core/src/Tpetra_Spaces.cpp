@@ -36,9 +36,11 @@ void initialize() {
     LOG_INFO("CUDA Priority: medium: " << cudaPriorityRange.medium);
     LOG_INFO("CUDA Priority: high:   " << cudaPriorityRange.high);
 #endif
+    LOG_INFO("Tpetra::Spaces::initialize() done");
 }
 
 void finalize() {
+    LOG_INFO("Tpetra::Spaces::finalize()...");
 #ifdef KOKKOS_ENABLE_CUDA
     CUDA_RUNTIME(cudaEventDestroy(detail::execSpaceWaitEvent));
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
@@ -55,6 +57,7 @@ void finalize() {
         detail::serialSpaces[i].clear();
     }
 #endif
+    LOG_INFO("Tpetra::Spaces::finalize() done");
 }
 
 } // namespace detail
