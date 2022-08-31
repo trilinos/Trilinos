@@ -93,9 +93,9 @@ typedef Teko::NT NT;
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
 
 #ifdef TEKO_HAVE_EPETRA
+using Thyra::epetraLinearOp;
 const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d)
 {
    RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,comm));

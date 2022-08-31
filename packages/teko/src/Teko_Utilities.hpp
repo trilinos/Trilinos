@@ -337,7 +337,9 @@ inline LinearOp zero(const VectorSpace & vs)
 { return Thyra::zero<ST>(vs,vs); }
 
 //! Replace nonzeros with a scalar value, used to zero out an operator
+#ifdef TEKO_HAVE_EPETRA
 void putScalar(const ModifiableLinearOp & op,double scalar);
+#endif
 
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp & lo)

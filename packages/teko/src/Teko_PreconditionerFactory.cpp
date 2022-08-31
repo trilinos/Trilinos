@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -59,7 +59,9 @@
 #include "Teko_IterativePreconditionerFactory.hpp"
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
+#ifdef TEKO_HAVE_EPETRA
 #include "Teko_DiagonalPreconditionerFactory.hpp"
+#endif
 #include "Teko_ProbingPreconditionerFactory.hpp"
 #include "Teko_IdentityPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
@@ -108,7 +110,7 @@ void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<do
 
    Preconditioner * blkPrec = dynamic_cast<Preconditioner *>(prec);
    TEUCHOS_ASSERT(blkPrec!=0);
- 
+
    // grab the state object
    RCP<PreconditionerState> state = blkPrec->getStateObject();
    state->setInitialized(false);
@@ -116,7 +118,7 @@ void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<do
    // build the preconditioner
    const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A,*state);
 
-   // set the request handler for the 
+   // set the request handler for the
    setOpRequestHandler(*this,M);
 
    // must first cast that to be initialized
@@ -137,7 +139,7 @@ void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<do
 }
 
 //! wipe clean a already initialized preconditioner object
-void PreconditionerFactory::uninitializePrec(PreconditionerBase<double> * /* prec */, 
+void PreconditionerFactory::uninitializePrec(PreconditionerBase<double> * /* prec */,
                       RCP<const LinearOpSourceBase<double> > * /* fwdOpSrc */,
                       ESupportSolveUse * /* supportSolveUse */) const
 {
@@ -162,7 +164,7 @@ RCP< Teuchos::ParameterList > PreconditionerFactory::getNonconstParameterList()
    return paramList_;
 }
 
-//! Unset the parameter list that was set using setParameterList(). 
+//! Unset the parameter list that was set using setParameterList().
 RCP< Teuchos::ParameterList > PreconditionerFactory::unsetParameterList()
 {
    RCP<Teuchos::ParameterList> _paramList = paramList_;
@@ -203,7 +205,7 @@ void PreconditionerFactory::setOpRequestHandler(const RequestHandlerContainer & 
    else {
       // is null
    }
-   
+
 }
 
 //! for creating the preconditioner factories objects
@@ -214,7 +216,7 @@ CloneFactory<PreconditionerFactory> PreconditionerFactory::precFactoryBuilder_;
   *
   * Builder function for creating preconditioner factories (yes
   * this is a factory factory.
-  * 
+  *
   * \param[in] name     String name of factory to build
   * \param[in] settings Parameter list describing the parameters for the
   *                     factory to build
@@ -223,7 +225,7 @@ CloneFactory<PreconditionerFactory> PreconditionerFactory::precFactoryBuilder_;
   * \returns If the name is associated with a preconditioner
   *          a pointer is returned, otherwise Teuchos::null is returned.
   */
-RCP<PreconditionerFactory> 
+RCP<PreconditionerFactory>
 PreconditionerFactory::buildPreconditionerFactory(const std::string & name,
                                                        const Teuchos::ParameterList & settings,
                                                        const RCP<const InverseLibrary> & invLib)
@@ -241,7 +243,7 @@ PreconditionerFactory::buildPreconditionerFactory(const std::string & name,
       DEBUG_STREAM << "Built " << precFact << std::endl;
    Teko_DEBUG_MSG_END();
 
-   if(precFact==Teuchos::null)  
+   if(precFact==Teuchos::null)
       return Teuchos::null;
 
    // add in the inverse library
@@ -258,7 +260,7 @@ PreconditionerFactory::buildPreconditionerFactory(const std::string & name,
 }
 
 /** \brief Add a preconditioner factory to the builder. This is done using the
-  *        clone pattern. 
+  *        clone pattern.
   *
   * Add a preconditioner factory to the builder. This is done using the
   * clone pattern. If your class does not support the Cloneable interface then
@@ -276,7 +278,7 @@ void PreconditionerFactory::addPreconditionerFactory(const std::string & name,co
    if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
 
    // add clone to builder
-   precFactoryBuilder_.addClone(name,clone); 
+   precFactoryBuilder_.addClone(name,clone);
 }
 
 //! This is where the default objects are put into the precFactoryBuilder_
@@ -312,8 +314,10 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
    clone = rcp(new AutoClone<IterativePreconditionerFactory>());
    precFactoryBuilder_.addClone("Iterative Preconditioner",clone);
 
+#ifdef TEKO_HAVE_EPETRA
    clone = rcp(new AutoClone<DiagonalPreconditionerFactory>());
    precFactoryBuilder_.addClone("Explicit Diagonal Preconditioner",clone);
+#endif
 
    clone = rcp(new AutoClone<DiagnosticPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagnostic Inverse",clone);
@@ -336,10 +340,10 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> & names)
-{ 
+{
    // initialize the defaults if necessary
    if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
-   precFactoryBuilder_.getCloneNames(names); 
+   precFactoryBuilder_.getCloneNames(names);
 }
 
 } // end namespace Teko

@@ -90,9 +90,9 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
 
 #ifdef TEKO_HAVE_EPETRA
+using Thyra::epetraLinearOp;
 const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int size)
 {
    Epetra_Map map(size,0,comm);
