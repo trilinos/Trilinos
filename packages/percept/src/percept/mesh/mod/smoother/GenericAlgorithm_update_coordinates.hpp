@@ -152,8 +152,8 @@ struct A4DMD{
       }
 
       KOKKOS_INLINE_FUNCTION void
-      join (volatile T& dst,
-      const volatile T& src) const
+      join (T& dst,
+      const T& src) const
       {
           if (dst < src) {
               dst = src;

@@ -267,15 +267,6 @@ namespace Ifpack2 {
     static
     KOKKOS_INLINE_FUNCTION
     void
-    operator+=(volatile ArrayValueType<T,N> &a,
-               volatile const ArrayValueType<T,N> &b) {
-      for (int i=0;i<N;++i)
-        a.v[i] += b.v[i];
-    }
-    template<typename T, int N>
-    static
-    KOKKOS_INLINE_FUNCTION
-    void
     operator+=(ArrayValueType<T,N> &a,
                const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i)
@@ -296,12 +287,7 @@ namespace Ifpack2 {
       SumReducer(value_type &val) : value(&val) {}
 
       KOKKOS_INLINE_FUNCTION
-      void join(value_type &dst, value_type &src) const {
-        for (int i=0;i<N;++i)
-          dst.v[i] += src.v[i];
-      }
-      KOKKOS_INLINE_FUNCTION
-      void join(volatile value_type &dst, const volatile value_type &src) const {
+      void join(value_type &dst, value_type const &src) const {
         for (int i=0;i<N;++i)
           dst.v[i] += src.v[i];
       }
