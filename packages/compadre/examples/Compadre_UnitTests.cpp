@@ -26,7 +26,7 @@ TEST (KokkosInitialize, NoArgsGiven) {
 }
 TEST (KokkosInitialize, NoCommandLineArgsGiven) { 
     ASSERT_NO_DEATH({
-            std::vector<std::string> arguments = {"--set_kokkos-threads(4)"};
+            std::vector<std::string> arguments = {"--kokkos-threads=4"};
             auto kp = KokkosParser(arguments);
             kp.finalize();
     });
