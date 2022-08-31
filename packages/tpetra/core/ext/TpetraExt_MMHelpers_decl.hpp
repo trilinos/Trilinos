@@ -44,6 +44,7 @@
 #define TPETRA_MMHELPERS_DECL_HPP
 
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 #include <Teuchos_Array.hpp>
 #include <map>
 #include <set>
@@ -93,6 +94,43 @@ public:
 
 };
 
+/// \class BlockCrsMatrixStruct
+/// \brief Struct that holds views of the contents of a BlockCrsMatrix.
+///
+/// These contents may be a mixture of local and remote rows of the
+/// actual matrix.
+template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node = ::Tpetra::Details::DefaultTypes::node_type>
+class BlockCrsMatrixStruct {
+public:
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
+
+  BlockCrsMatrixStruct (const LocalOrdinal blocksize);
+
+  virtual ~BlockCrsMatrixStruct ();
+
+  void deleteContents ();
+
+  /** \brief Original row map of matrix */
+  Teuchos::RCP<const map_type> origRowMap;
+  /** \brief Desired row map for "imported" version of the matrix */
+  Teuchos::RCP<const map_type> rowMap;
+  /** \brief Col map for the original version of the matrix */
+  Teuchos::RCP<const map_type> colMap;
+  /** \brief Domain map for original matrix */
+  Teuchos::RCP<const map_type> domainMap;
+  /** \brief Colmap garnered as a result of the import */
+  Teuchos::RCP<const map_type> importColMap;
+  /** \brief The imported matrix */
+  Teuchos::RCP<BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  importMatrix;
+  /** \brief The original matrix */
+  Teuchos::RCP<const BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  origMatrix;
+  /** \brief The blocksize of all matrices */
+  const LocalOrdinal blocksize;
+};
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int

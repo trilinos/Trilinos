@@ -71,6 +71,26 @@ deleteContents ()
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockCrsMatrixStruct(const LocalOrdinal blocksize)
+  : blocksize(blocksize)
+{
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~BlockCrsMatrixStruct()
+{
+  deleteContents();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+deleteContents ()
+{
+  importMatrix.reset();
+  origMatrix = Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int dumpCrsMatrixStruct (const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M)
 {
   std::cout << "proc " << M.rowMap->Comm().MyPID()<<std::endl;
@@ -247,6 +267,10 @@ insert_matrix_locations (CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrd
 #define TPETRA_CRSMATRIXSTRUCT_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class CrsMatrixStruct< SCALAR , LO , GO , NODE >;
+
+#define TPETRA_BLOCKCRSMATRIXSTRUCT_INSTANT(SCALAR,LO,GO,NODE) \
+  \
+ template class BlockCrsMatrixStruct< SCALAR , LO , GO , NODE >;
 
 #define TPETRA_CRSWRAPPER_INSTANT(SCALAR,LO,GO,NODE) \
   \
