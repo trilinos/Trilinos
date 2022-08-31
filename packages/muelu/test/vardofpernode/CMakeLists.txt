@@ -24,7 +24,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(VarDofDriver_cp
   7ProcLinear0 7ProcLinear1 7ProcLinear2 7ProcLinear3 7ProcLinear4 7ProcLinear5 7ProcLinear6 7dofPresent0 7dofPresent1 7dofPresent2 7dofPresent3 7dofPresent4 7dofPresent5 7dofPresent6 7proc0 7proc1 7proc2 7proc3 7proc4 7proc5 7proc6
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TRIBITS_ADD_TEST(
         VarDofDriver
         NAME "VarDofDriver"
