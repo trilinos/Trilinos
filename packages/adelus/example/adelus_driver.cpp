@@ -171,7 +171,7 @@ int main( int argc, char* argv[] )
   Kokkos::InitializationSettings args;
   args.set_num_threads(0);
   args.set_device_id(rank%nptile);
-  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.device_id, gpu_count);
+  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.get_device_id(), gpu_count);
 
   MPI_Barrier (MPI_COMM_WORLD);
 
