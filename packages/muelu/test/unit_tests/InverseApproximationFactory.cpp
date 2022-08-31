@@ -344,7 +344,7 @@ namespace MueLuTests {
 
       RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
       invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-10)));
+      invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-8)));
       invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
       // request InverseApproximation operator
@@ -355,8 +355,9 @@ namespace MueLuTests {
 
       RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
       TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getGlobalNumEntries(), 117519);
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.316898282733437e+06, 1e5*TMT::eps());
+      TEST_EQUALITY(Ainv->getGlobalNumEntries(), 115760);
+      // 8.31688788510637e+06
+      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.31688788510637e+06, 1e5*TMT::eps());
     }
 
   } //InverseSpaiConstructor
