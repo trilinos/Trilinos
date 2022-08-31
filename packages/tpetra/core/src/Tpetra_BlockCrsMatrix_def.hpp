@@ -103,16 +103,6 @@ namespace Impl {
   template<typename T>
   static
   KOKKOS_INLINE_FUNCTION
-  void operator+=(volatile BlockCrsRowStruct<T> &a,
-                  volatile const BlockCrsRowStruct<T> &b) {
-    a.totalNumEntries += b.totalNumEntries;
-    a.totalNumBytes   += b.totalNumBytes;
-    a.maxRowLength     = a.maxRowLength > b.maxRowLength ? a.maxRowLength : b.maxRowLength;
-  }
-
-  template<typename T>
-  static
-  KOKKOS_INLINE_FUNCTION
   void operator+=(BlockCrsRowStruct<T> &a, const BlockCrsRowStruct<T> &b) {
     a.totalNumEntries += b.totalNumEntries;
     a.totalNumBytes   += b.totalNumBytes;
@@ -130,7 +120,7 @@ namespace Impl {
     BlockCrsReducer(value_type &val) : value(&val) {}
 
     KOKKOS_INLINE_FUNCTION void join(value_type &dst, value_type &src) const { dst += src; }
-    KOKKOS_INLINE_FUNCTION void join(volatile value_type &dst, const volatile value_type &src) const { dst += src; }
+    KOKKOS_INLINE_FUNCTION void join(value_type &dst, const value_type &src) const { dst += src; }
     KOKKOS_INLINE_FUNCTION void init(value_type &val) const { val = value_type(); }
     KOKKOS_INLINE_FUNCTION value_type& reference() { return *value; }
     KOKKOS_INLINE_FUNCTION result_view_type view() const { return result_view_type(value); }

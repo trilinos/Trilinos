@@ -123,8 +123,8 @@ namespace Impl {
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile result_type& dst,
-          const volatile result_type& src) const
+    join (result_type& dst,
+          const result_type& src) const
     {
       dst.diagCount += src.diagCount;
       dst.maxNumRowEnt = (src.maxNumRowEnt > dst.maxNumRowEnt) ?

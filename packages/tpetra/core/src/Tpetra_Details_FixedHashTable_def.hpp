@@ -174,8 +174,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  join (value_type& dst,
+        const value_type& src) const
   {
     const bool good = dst.first == 0 || src.first == 0;
     dst.first = good ? 0 : dst.first;
@@ -372,8 +372,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  join (value_type& dst,
+        const value_type& src) const
   {
     if (src.maxKey_ > dst.maxKey_) {
       dst.maxKey_ = src.maxKey_;
@@ -490,8 +490,8 @@ public:
 
   //! Combine two intermediate reduction results.
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  join (value_type& dst,
+        const value_type& src) const
   {
     dst = dst + src > 0?1:0;
   }

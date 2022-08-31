@@ -88,8 +88,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  join (value_type& dst,
+        const value_type& src) const
   {
     dst = (src == 1 && dst == 1) ? 1 : 0;
   }
