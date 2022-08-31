@@ -82,7 +82,7 @@ namespace MueLu {
       }
 
       KOKKOS_INLINE_FUNCTION
-      void join (volatile LocalOrdinal& dst, const volatile LocalOrdinal& src) const {
+      void join (LocalOrdinal& dst, const LocalOrdinal& src) const {
         if (dst < src) {
           dst = src;
         }
