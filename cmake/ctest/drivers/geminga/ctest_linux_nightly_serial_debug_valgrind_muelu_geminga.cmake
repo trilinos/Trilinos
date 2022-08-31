@@ -83,6 +83,16 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
 
+
+# Some tests do not valigrind cleanly
+SET(TeuchosCore_MemoryManagement_RCP_Abort_Verify_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+SET(TeuchosCore_testDisablePrintActiveRcpNodesOnExit_noprint_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+SET(TeuchosNumerics_DenseMatrix_example_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+SET(TeuchosCore_TypeConversions_UnitTest_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+
+# This test requires python to valgrind cleanly, which doesn't happen on geminga
+SET(ML_ValidateParameters_compareTestOutput_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #

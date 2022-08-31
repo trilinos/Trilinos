@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }
-
+  delete coords;
   delete A;
   delete Map;
 
