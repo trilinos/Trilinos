@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_DeepCopyCounter.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -5202,6 +5203,39 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyCounterCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    using device_view = typename MV::dual_view_type::t_dev;
+    using host_view   = typename MV::dual_view_type::t_host;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+    x.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+
+    const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    host_view y_h = create_mirror_view(x_d);  
+
+    size_t correct_count;
+    if(x_d.data() != y_h.data()) {
+      //Host and device views are not the same.
+      correct_count = 1;
+    }
+    else {
+      correct_count = 0;
+    }
+
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    size_t count = Tpetra::Details::DeepCopyCounter::stop();   
+
+    TEST_EQUALITY(count,correct_count);
+          
+  }
+
+
 
 #ifdef KOKKOS_ENABLE_OPENMP
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
@@ -5274,7 +5308,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyCounterCheck, LO, GO, SCALAR, NODE )
 
 #ifdef KOKKOS_ENABLE_OPENMP
   // Add special test for OpenMP
