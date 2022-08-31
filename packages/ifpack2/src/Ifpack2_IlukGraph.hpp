@@ -305,13 +305,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                            // Heuristic to get the maximum number of entries per row.
                            int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
                            numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
-                             : Kokkos::Experimental::ceil(static_cast<double>(RowMaxNumIndices)
-                                    * Kokkos::Experimental::pow(overalloc, levelfill));
-#else
                              : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
                                     * Kokkos::pow(overalloc, levelfill));
-#endif
                          });
    
   };
