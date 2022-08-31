@@ -5227,11 +5227,38 @@ namespace {
       correct_count = 0;
     }
 
+
+    // Stop / Start
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
     size_t count = Tpetra::Details::DeepCopyCounter::stop();   
-
     TEST_EQUALITY(count,correct_count);
+
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::DeepCopyCounter::reset();
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,0);
+
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // This guy should not get counted, since the counter is stopped
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(2*count,2*correct_count);
           
   }
 

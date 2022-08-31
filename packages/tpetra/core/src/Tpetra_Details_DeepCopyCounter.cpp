@@ -68,10 +68,11 @@ namespace Details {
 
 
   void DeepCopyCounter::start() {
+    count_active=true;
     Kokkos::Tools::Experimental::set_begin_deep_copy_callback(DeepCopyCounterDetails::kokkosp_begin_deep_copy);
   }
 
- void DeepCopyCounter::reset() {
+  void DeepCopyCounter::reset() {
     count=0;
   }
 
