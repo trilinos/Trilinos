@@ -52,7 +52,7 @@ namespace Details {
                                  uint64_t size) {
 
       if(DeepCopyCounter::count_active) {
-        if(!strcmp(dst_handle.name,src_handle.name)) {
+        if(strcmp(dst_handle.name,src_handle.name)) {
           DeepCopyCounter::count++;
         }
       }
