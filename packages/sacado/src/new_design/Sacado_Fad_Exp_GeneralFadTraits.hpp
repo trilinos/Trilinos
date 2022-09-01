@@ -215,19 +215,7 @@ namespace Teuchos {
 
 // KokkosComm
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-// We are hooking into Kokkos Core internals here
-// Need to define this macro since we include non-public headers
-#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
-#define KOKKOS_IMPL_PUBLIC_INCLUDE
-#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
-#endif
 #include "KokkosExp_View_Fad.hpp"
-#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
-#undef KOKKOS_IMPL_PUBLIC_INCLUDE
-#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
-#endif
-
 #endif
 
 #endif // SACADO_FAD_EXP_GENERALFADTRAITS_HPP
