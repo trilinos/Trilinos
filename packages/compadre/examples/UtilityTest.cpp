@@ -45,18 +45,26 @@ bool all_passed = true;
     // set the number of columns
     int num_cols = 50; // default 50 columns
     if (argc >= 3) {
-        int arg3toi = atoi(args[2]);
-        if (arg3toi > 0) {
-            num_cols = arg3toi;
+        if (args[2] != NULL) {
+            auto arg3toi = atoi(args[2]);
+            if (isdigit(arg3toi)) {
+                if (arg3toi > 0) {
+                    num_cols = arg3toi;
+                }
+            }
         }
     }
 
     // set the number of flags
     int num_flags = 200; // default 200 flags
     if (argc >= 2) {
-        int arg2toi = atoi(args[1]);
-        if (arg2toi > 0) {
-            num_flags = arg2toi;
+        if (args[1] != NULL) {
+            auto arg2toi = atoi(args[1]);
+            if (isdigit(arg2toi)) {
+                if (arg2toi > 0) {
+                    num_flags = arg2toi;
+                }
+            }
         }
     }
     //! [Parse Command Line Arguments]

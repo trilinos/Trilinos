@@ -254,11 +254,11 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
              */
 
             //auto functor_name = Name(gmls_basis_data);
-            //Kokkos::parallel_for(tp, functor_name, "Name");
+            //Kokkos::parallel_for("Name", tp, functor_name);
             if (!_orthonormal_tangent_space_provided) { // user did not specify orthonormal tangent directions, so we approximate them first
                 // coarse tangent plane approximation construction of P^T*P
                 auto functor_compute_coarse_tangent_plane = ComputeCoarseTangentPlane(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_compute_coarse_tangent_plane, "ComputeCoarseTangentPlane");
+                Kokkos::parallel_for("ComputeCoarseTangentPlane", tp, functor_compute_coarse_tangent_plane);
 
                 // if the user provided the reference outward normal direction, then orient the computed or user provided
                 // outward normal directions in the tangent bundle
@@ -266,12 +266,12 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
                     // use the reference outward normal direction provided by the user to orient
                     // the tangent bundle
                     auto functor_fix_tangent_direction_ordering = FixTangentDirectionOrdering(gmls_basis_data);
-                    Kokkos::parallel_for(tp, functor_fix_tangent_direction_ordering, "FixTangentDirectionOrdering");
+                    Kokkos::parallel_for("FixTangentDirectionOrdering", tp, functor_fix_tangent_direction_ordering);
                 }
 
                 // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity for curvature
                 auto functor_assemble_curvature_psqrtw = AssembleCurvaturePsqrtW(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_assemble_curvature_psqrtw, "AssembleCurvaturePsqrtW");
+                Kokkos::parallel_for("AssembleCurvaturePsqrtW", tp, functor_assemble_curvature_psqrtw);
 
                 if (_dense_solver_type == DenseSolverType::LU) {
                     // solves P^T*P against P^T*W with LU, stored in P
@@ -290,7 +290,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
                 // evaluates targets, applies target evaluation to polynomial coefficients for curvature
                 auto functor_get_accurate_tangent_directions = GetAccurateTangentDirections(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_get_accurate_tangent_directions, "GetAccurateTangentDirections");
+                Kokkos::parallel_for("GetAccurateTangentDirections", tp, functor_get_accurate_tangent_directions);
 
                 // Due to converting layout, entries that are assumed zeros may become non-zeros.
                 Kokkos::deep_copy(_P, 0.0);
@@ -305,7 +305,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // this time assembling curvature PsqrtW matrix is using a highly accurate approximation of the tangent, previously calculated
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity for curvature
             auto functor_assemble_curvature_psqrtw = AssembleCurvaturePsqrtW(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_assemble_curvature_psqrtw, "AssembleCurvaturePsqrtW");
+            Kokkos::parallel_for("AssembleCurvaturePsqrtW", tp, functor_assemble_curvature_psqrtw);
 
             if (_dense_solver_type == DenseSolverType::LU) {
                 // solves P^T*P against P^T*W with LU, stored in P
@@ -321,7 +321,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients for curvature
             auto functor_apply_curvature_targets = ApplyCurvatureTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_apply_curvature_targets, "ApplyCurvatureTargets");
+            Kokkos::parallel_for("ApplyCurvatureTargets", tp, functor_apply_curvature_targets);
             Kokkos::fence();
 
             // prestencil weights calculated here. appropriate because:
@@ -329,14 +329,14 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // follows reconstruction of geometry
             // calculate prestencil weights
             auto functor_compute_prestencil_weights = ComputePrestencilWeights(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_compute_prestencil_weights, "ComputePrestencilWeights");
+            Kokkos::parallel_for("ComputePrestencilWeights", tp, functor_compute_prestencil_weights);
 
             // Due to converting layout, entried that are assumed zeros may become non-zeros.
             Kokkos::deep_copy(_P, 0.0);
 
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity
             auto functor_assemble_manifold_psqrtw = AssembleManifoldPsqrtW(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_assemble_manifold_psqrtw, "AssembleManifoldPsqrtW");
+            Kokkos::parallel_for("AssembleManifoldPsqrtW", tp, functor_assemble_manifold_psqrtw);
 
             // solves P*sqrt(weights) against sqrt(weights)*Identity, stored in RHS
             if (_dense_solver_type == DenseSolverType::LU) {
@@ -359,7 +359,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity
             auto functor_assemble_standard_psqrtw = AssembleStandardPsqrtW(gmls_basis_data);
             //printf("size of assemble: %lu\n",  sizeof(functor_assemble_standard_psqrtw));
-            Kokkos::parallel_for(tp, functor_assemble_standard_psqrtw, "AssembleStandardPsqrtW");
+            Kokkos::parallel_for("AssembleStandardPsqrtW", tp, functor_assemble_standard_psqrtw);
             Kokkos::fence();
 
             // solves P*sqrt(weights) against sqrt(weights)*Identity, stored in RHS
@@ -378,7 +378,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             }
 
             auto functor_compute_prestencil_weights = ComputePrestencilWeights(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_compute_prestencil_weights, "ComputePrestencilWeights");
+            Kokkos::parallel_for("ComputePrestencilWeights", tp, functor_compute_prestencil_weights);
             Kokkos::fence();
         }
 
@@ -395,7 +395,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients to store in _alphas
             auto functor_evaluate_manifold_targets = EvaluateManifoldTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_evaluate_manifold_targets, "EvaluateManifoldTargets");
+            Kokkos::parallel_for("EvaluateManifoldTargets", tp, functor_evaluate_manifold_targets);
 
         } else {
 
@@ -405,7 +405,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients to store in _alphas
             auto functor_evaluate_standard_targets = EvaluateStandardTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_evaluate_standard_targets, "EvaluateStandardTargets");
+            Kokkos::parallel_for("EvaluateStandardTargets", tp, functor_evaluate_standard_targets);
         }
 
             
@@ -416,7 +416,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
         const auto tp2 = Kokkos::Experimental::require(tp, work_item_property);
         auto functor_apply_targets = ApplyTargets(gmls_solution_data);
         //printf("size of apply: %lu\n",  sizeof(functor_apply_targets));
-        Kokkos::parallel_for(tp2, functor_apply_targets, "ApplyTargets");
+        Kokkos::parallel_for("ApplyTargets", tp2, functor_apply_targets);
 
 
         _initial_index_for_batch += this_batch_size;
