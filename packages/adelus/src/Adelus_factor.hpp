@@ -81,7 +81,7 @@ template<class HandleType,
          class ZDView,
          class ViewType1D,
          class ViewType2D,
-         class ViewIntType1D>
+         class PViewType>
 inline
 void factor(HandleType& ahandle,           // handle containg metadata
             ZDView&     ZV,                // matrix and rhs
@@ -89,20 +89,21 @@ void factor(HandleType& ahandle,           // handle containg metadata
             ViewType2D& row1_view,         // diagonal row
             ViewType1D& row2_view,         // pivot row
             ViewType1D& row3_view,         // temporary vector for rows
-            ViewIntType1D& pivot_vec_view, // vector storing list of pivot rows
+            PViewType&  pivot_vec_view,    // vector storing list of pivot rows
             int         nrhs,              // total num of RHS (note: set to 0 if factoring matrix only)
             int         my_rhs)            // num of RHS I own (note: set to 0 if factoring matrix only)
 {
-  typedef typename ZDView::value_type value_type;
+  using value_type = typename ZDView::value_type;
+  using pival_type = typename PViewType::value_type;
 #ifdef PRINT_STATUS
-  typedef typename ZDView::device_type::execution_space execution_space;
-  typedef typename ZDView::device_type::memory_space memory_space;
+  using execution_space = typename ZDView::device_type::execution_space;
+  using memory_space    = typename ZDView::device_type::memory_space;
 #endif
 #ifdef ADELUS_HOST_PINNED_MEM_MPI
 #if defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View1DHostPinnType;//CudaHostPinnedSpace
+  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace> View1DHostPinnType;//HIPHostPinnedSpace
+  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -349,7 +350,7 @@ void factor(HandleType& ahandle,           // handle containg metadata
       xpivmsgtime += (MPI_Wtime()-t1);
 #endif
 
-      pivot_vec_view(sav_pivot_vec_i) = pivot.row;
+      pivot_vec_view(sav_pivot_vec_i) = static_cast<pival_type>(pivot.row);
       gpivot_row = pivot.row;
       pivot_mag = abs(pivot.entry);
       if (pivot_mag == 0.0) {
