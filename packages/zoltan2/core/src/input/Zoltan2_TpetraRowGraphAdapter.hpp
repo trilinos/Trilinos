@@ -94,10 +94,6 @@ public:
   typedef UserCoord userCoord_t;
 #endif
 
-  /*! \brief Destructor
-   */
-  ~TpetraRowGraphAdapter() { }
-
   /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the  Tpetra::RowGraph
    *  \param numVtxWeights  the number of weights per vertex (default = 0)

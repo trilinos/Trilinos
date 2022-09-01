@@ -98,16 +98,16 @@ enum GraphEntityType {
 template <typename User, typename UserCoord=User>
   class GraphAdapter : public AdapterWithCoordsWrapper<User, UserCoord> {
 private:
-  enum GraphEntityType primaryEntityType; // Entity (vertex or edge) to
+  enum GraphEntityType primaryEntityType_; // Entity (vertex or edge) to
                                           // be partitioned, ordered,
                                           // colored, matched, etc.
-  enum GraphEntityType adjacencyEntityType; // Entity (edge or vertex)
+  enum GraphEntityType adjacencyEntityType_; // Entity (edge or vertex)
                                             // describing adjacencies;
                                             // typically opposite of
-                                            // primaryEntityType.
+                                            // primaryEntityType_.
   VectorAdapter<UserCoord> *coordinateInput_;  // A VectorAdapter containing
                                                // coordinates of the objects
-                                               // with primaryEntityType;
+                                               // with primaryEntityType_;
                                                // optional.
   bool haveCoordinateInput_;                   // Flag indicating whether
                                                // coordinateInput_ is provided.
@@ -127,13 +127,9 @@ public:
 
   enum BaseAdapterType adapterType() const override {return GraphAdapterType;}
 
-  /*! \brief Destructor
-   */
-  virtual ~GraphAdapter() {};
-
   // Default GraphEntityType is GRAPH_VERTEX.
-  GraphAdapter() : primaryEntityType(GRAPH_VERTEX),
-                   adjacencyEntityType(GRAPH_EDGE),
+  GraphAdapter() : primaryEntityType_(GRAPH_VERTEX),
+                   adjacencyEntityType_(GRAPH_EDGE),
                    coordinateInput_(),
                    haveCoordinateInput_(false) {}
 
@@ -212,9 +208,9 @@ public:
 
 
   /*! \brief Allow user to provide additional data that contains coordinate
-   *         info associated with the MatrixAdapter's primaryEntityType.
+   *         info associated with the MatrixAdapter's primaryEntityType_.
    *         Associated data must have the same parallel distribution and
-   *         ordering of entries as the primaryEntityType.
+   *         ordering of entries as the primaryEntityType_.
    *
    *  \param coordData is a pointer to a VectorAdapter with the user's
    *         coordinate data.
@@ -245,22 +241,22 @@ public:
    *  Valid values are GRAPH_VERTEX or GRAPH_EDGE.
    */
   inline enum GraphEntityType getPrimaryEntityType() const {
-    return this->primaryEntityType;
+    return this->primaryEntityType_;
   }
 
   /*! \brief Sets the primary entity type.  Called by algorithm based on
    *  parameter value in parameter list from application.
-   *  Also sets to adjacencyEntityType to something reasonable:  opposite of
-   *  primaryEntityType.
+   *  Also sets to adjacencyEntityType_ to something reasonable:  opposite of
+   *  primaryEntityType_.
    */
   void setPrimaryEntityType(std::string typestr) {
     if (typestr == "vertex") {
-      this->primaryEntityType = GRAPH_VERTEX;
-      this->adjacencyEntityType = GRAPH_EDGE;
+      this->primaryEntityType_ = GRAPH_VERTEX;
+      this->adjacencyEntityType_ = GRAPH_EDGE;
     }
     else if (typestr == "edge") {
-      this->primaryEntityType = GRAPH_EDGE;
-      this->adjacencyEntityType = GRAPH_VERTEX;
+      this->primaryEntityType_ = GRAPH_EDGE;
+      this->adjacencyEntityType_ = GRAPH_VERTEX;
     }
     else {
       std::ostringstream emsg;
@@ -276,22 +272,22 @@ public:
    *  Valid values are GRAPH_VERTEX or GRAPH_EDGE.
    */
   inline enum GraphEntityType getAdjacencyEntityType() const {
-    return this->adjacencyEntityType;
+    return this->adjacencyEntityType_;
   }
 
   /*! \brief Sets the adjacency entity type.  Called by algorithm based on
    *  parameter value in parameter list from application.
-   *  Also sets to primaryEntityType to something reasonable:  opposite of
-   *  adjacencyEntityType.
+   *  Also sets to primaryEntityType_ to something reasonable:  opposite of
+   *  adjacencyEntityType_.
    */
   void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "vertex") {
-      this->adjacencyEntityType = GRAPH_VERTEX;
-      this->primaryEntityType = GRAPH_EDGE;
+      this->adjacencyEntityType_ = GRAPH_VERTEX;
+      this->primaryEntityType_ = GRAPH_EDGE;
     }
     else if (typestr == "edge") {
-      this->adjacencyEntityType = GRAPH_EDGE;
-      this->primaryEntityType = GRAPH_VERTEX;
+      this->adjacencyEntityType_ = GRAPH_EDGE;
+      this->primaryEntityType_ = GRAPH_VERTEX;
     }
     else {
       std::ostringstream emsg;
