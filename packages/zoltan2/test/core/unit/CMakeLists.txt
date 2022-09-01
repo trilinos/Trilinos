@@ -318,6 +318,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicVectorAdapter
+  SOURCES input/BasicVectorAdapter.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 #
 # Tests for src/problems
 #

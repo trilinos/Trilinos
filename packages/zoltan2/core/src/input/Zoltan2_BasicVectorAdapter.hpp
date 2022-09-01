@@ -163,7 +163,7 @@ public:
    */
 
   BasicVectorAdapter(lno_t numIds, const gno_t *ids,
-    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
+    std::vector<const scalar_t *> &entries, std::vector<int> &entryStride,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(ids),
       numEntriesPerID_(entries.size()), entries_(),
@@ -246,7 +246,17 @@ public:
   void getIDsKokkosView(Kokkos::View<const gno_t *,
     typename node_t::device_type> &ids) const
   {
-    ids = this->kokkos_ids_;
+    ids = this->kIds_;
+  }
+
+  void getIDsHostView(typename BaseAdapter<User>::ConstIdsHostView& ids) const override {
+      auto hostIds = Kokkos::create_mirror_view(this->kIds_);
+      Kokkos::deep_copy(hostIds, this->kIds_);
+      ids = hostIds;
+  }
+
+  void getIDsDeviceView(typename BaseAdapter<User>::ConstIdsDeviceView& ids) const override {
+    ids = this->kIds_;
   }
 
   int getNumWeightsPerID() const { return numWeights_;}
@@ -254,7 +264,7 @@ public:
   virtual void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
     typename node_t::device_type> &wgt) const
   {
-    wgt = kokkos_weights_;
+    wgt = kWeights_;
   }
 
   void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
@@ -267,6 +277,16 @@ public:
     }
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
+  }
+
+  void getWeightsHostView(typename BaseAdapter<User>::WeightsHostView& wgts) const override {
+      auto hostWeights = Kokkos::create_mirror_view(kWeights_);
+      Kokkos::deep_copy(hostWeights, kWeights_);
+      wgts = hostWeights;
+  }
+
+  void getWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView& wgts) const override {
+      wgts = kWeights_;
   }
 
   ////////////////////////////////////////////////////
@@ -289,10 +309,23 @@ public:
 
   void getEntriesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> & entries) const
+    typename AdapterWithCoords<User>::CoordsDeviceView& entries) const
   {
-    entries = kokkos_entries_;
+    entries = kEntries_;
+  }
+
+  void getEntriesHostView(
+    typename AdapterWithCoords<User>::CoordsHostView& entries) const override
+  {
+    auto hostEntries = Kokkos::create_mirror_view(kEntries_);
+    Kokkos::deep_copy(hostEntries, kEntries_);
+    entries = hostEntries;
+  }
+
+  void getEntriesDeviceView(
+    typename AdapterWithCoords<User>::CoordsDeviceView& entries) const override
+  {
+    entries = kEntries_;
   }
 
 private:
@@ -300,34 +333,34 @@ private:
   const gno_t *idList_;
 
   int numEntriesPerID_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > entries_ ;
-
-  Kokkos::View<gno_t *, typename node_t::device_type> kokkos_ids_;
-
-  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> kokkos_entries_;
-
   int numWeights_;
+
+  // Old API variable members
+  ArrayRCP<StridedData<lno_t, scalar_t> > entries_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 
-  Kokkos::View<scalar_t**, typename node_t::device_type> kokkos_weights_;
+  // New API variable members
+  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+  Kokkos::View<gno_t *, typename node_t::device_type> kIds_;
+  Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+    typename node_t::device_type> kEntries_;
+  Kokkos::View<scalar_t**, typename node_t::device_type> kWeights_;
 
   void createBasicVector(
-    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
+    std::vector<const scalar_t *> &entries, std::vector<int> &entryStride,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
   {
     typedef StridedData<lno_t,scalar_t> input_t;
 
     if (numIds_){
       // make kokkos ids
-      kokkos_ids_ = Kokkos::View<gno_t *, typename node_t::device_type>(
+      kIds_ = Kokkos::View<gno_t *, typename node_t::device_type>(
         Kokkos::ViewAllocateWithoutInitializing("ids"), numIds_);
-      auto host_kokkos_ids_ = Kokkos::create_mirror_view(kokkos_ids_);
+      auto host_kIds_ = Kokkos::create_mirror_view(kIds_);
       for(int n = 0; n < numIds_; ++n) {
-        host_kokkos_ids_(n) = idList_[n];
+        host_kIds_(n) = idList_[n];
       }
-      Kokkos::deep_copy(kokkos_ids_, host_kokkos_ids_);
+      Kokkos::deep_copy(kIds_, host_kIds_);
 
       // make coordinates
       int stride = 1;
@@ -340,7 +373,7 @@ private:
 
       // setup kokkos entries
       // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-      kokkos_entries_ = Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+      kEntries_ = Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
         typename node_t::device_type>(
         Kokkos::ViewAllocateWithoutInitializing("entries"),
         numIds_, numEntriesPerID_);
@@ -349,7 +382,7 @@ private:
       const scalar_t * entriesPtr;
 
       auto host_kokkos_entries =
-        Kokkos::create_mirror_view(this->kokkos_entries_);
+        Kokkos::create_mirror_view(this->kEntries_);
 
       for (int idx=0; idx < numEntriesPerID_; idx++) {
         entries_[idx].getStridedList(length, entriesPtr, stride);
@@ -358,7 +391,7 @@ private:
           host_kokkos_entries(fill_index++,idx) = entriesPtr[n*stride];
         }
       }
-      Kokkos::deep_copy(this->kokkos_entries_, host_kokkos_entries);
+      Kokkos::deep_copy(this->kEntries_, host_kokkos_entries);
     }
 
     if (numWeights_) {
@@ -371,14 +404,14 @@ private:
       }
 
       // set up final view with weights
-      kokkos_weights_ = Kokkos::View<scalar_t**,
+      kWeights_ = Kokkos::View<scalar_t**,
         typename node_t::device_type>(
         Kokkos::ViewAllocateWithoutInitializing("kokkos weights"),
         numIds_, numWeights_);
 
       // setup weights
       auto host_weight_temp_values =
-        Kokkos::create_mirror_view(this->kokkos_weights_);
+        Kokkos::create_mirror_view(this->kWeights_);
       for(int idx = 0; idx < numWeights_; ++idx) {
         const scalar_t * weightsPtr;
         size_t length;
@@ -388,7 +421,7 @@ private:
           host_weight_temp_values(fill_index++,idx) = weightsPtr[n];
         }
       }
-      Kokkos::deep_copy(this->kokkos_weights_, host_weight_temp_values);
+      Kokkos::deep_copy(this->kWeights_, host_weight_temp_values);
     }
   }
 };
