@@ -4905,7 +4905,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (overlap) {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
         std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
-        X_colMapNonConst->beginImport (X_in, *importer, INSERT);
+        // X_colMapNonConst->beginImport (X_in, *importer, INSERT);
+        X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, onRankSpace);
       } else {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
         X_colMapNonConst->doImport (X_in, *importer, INSERT);
@@ -4916,7 +4917,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // finish an input if it was started
     if (mustImport && overlap) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: endImport");
-      X_colMapNonConst->endImport(X_in, *importer, INSERT);
+      // X_colMapNonConst->endImport(X_in, *importer, INSERT);
+      X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, onRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 

@@ -341,7 +341,7 @@ namespace Tpetra {
     //! The Kokkos Device type.
     using device_type = typename Node::device_type;
     //! The Kokkos execution space.
-    using execution_space = typename device_type::execution_space;
+    using execution_space = typename Node::execution_space;
 
     //! The type of the Map specialization to use with this class.
     using map_type = Map<local_ordinal_type, global_ordinal_type, node_type>;
@@ -520,7 +520,8 @@ namespace Tpetra {
     beginImport(const SrcDistObject& source,
                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
                 const CombineMode CM,
-                const bool restrictedMode = false);
+                const bool restrictedMode,
+                const execution_space &space = execution_space());
 
     void
     beginExport(const SrcDistObject& source,
@@ -544,7 +545,8 @@ namespace Tpetra {
     endImport(const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               const CombineMode CM,
-              const bool restrictedMode = false);
+              const bool restrictedMode,
+              const execution_space &space = execution_space());
 
     void
     endExport(const SrcDistObject& source,
@@ -779,14 +781,16 @@ namespace Tpetra {
                        const char modeString[],
                        const ReverseOption revOp,
                        const CombineMode CM,
-                       const bool restrictedMode);
+                       const bool restrictedMode,
+                       const execution_space &space = execution_space());
 
     void endTransfer(const SrcDistObject& src,
                      const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
                      const char modeString[],
                      const ReverseOption revOp,
                      const CombineMode CM,
-                     const bool restrictedMode);
+                     const bool restrictedMode,
+                     const execution_space &space = execution_space());
 
     void doPosts(const Details::DistributorPlan& distributorPlan,
                  size_t constantNumPackets,

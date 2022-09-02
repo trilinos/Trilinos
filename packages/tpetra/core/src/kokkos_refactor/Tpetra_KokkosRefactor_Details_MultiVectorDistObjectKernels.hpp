@@ -148,12 +148,13 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     pack (const DstView& dst,
           const SrcView& src,
           const IdxView& idx,
-          const size_t col)
+          const size_t col,
+          const execution_space &space = execution_space())
     {
       typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
       Kokkos::parallel_for
         ("Tpetra::MultiVector pack one col",
-         range_type (0, idx.size ()),
+         range_type (space, 0, idx.size()),
          PackArraySingleColumn (dst, src, idx, col));
     }
   };
@@ -286,7 +287,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                             const SrcView& src,
                             const IdxView& idx,
                             const size_t col,
-                            const bool debug = true)
+                            const bool debug,
+                            const typename DstView::execution_space &space)
   {
     static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
@@ -307,8 +309,21 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
     else {
       typedef PackArraySingleColumn<DstView,SrcView,IdxView> impl_type;
-      impl_type::pack (dst, src, idx, col);
+      impl_type::pack (dst, src, idx, col, space);
     }
+  }
+
+  /*! \brief pack_array_single_column in the default execution space
+  */
+  template <typename DstView, typename SrcView, typename IdxView>
+  void
+  pack_array_single_column (const DstView& dst,
+                            const SrcView& src,
+                            const IdxView& idx,
+                            const size_t col,
+                            const bool debug = true)
+  {
+    pack_array_single_column(dst, src, idx, col, debug, typename DstView::execution_space());
   }
 
   template <typename DstView, typename SrcView, typename IdxView,

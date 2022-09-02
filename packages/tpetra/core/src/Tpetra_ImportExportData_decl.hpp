@@ -146,7 +146,7 @@ namespace Tpetra {
     //! Whether to print verbose debugging output.
     bool verbose_ = false;
 
-    using execution_space = typename Node::device_type::execution_space;
+    using execution_space = typename Node::execution_space;
     using memory_space =
       ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>;
     using device_type = Kokkos::Device<execution_space, memory_space>;

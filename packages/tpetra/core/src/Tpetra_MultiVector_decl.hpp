@@ -2357,6 +2357,22 @@ namespace Tpetra {
        buffer_device_type> /* numPacketsPerLID */,
      size_t& constantNumPackets);
 
+    // base class does not implement this yet
+    void
+    packAndPrepare
+    (const SrcDistObject& sourceObj,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     size_t& constantNumPackets,
+     const typename Node::execution_space &space);
+
     virtual void
     unpackAndCombine
     (const Kokkos::DualView<

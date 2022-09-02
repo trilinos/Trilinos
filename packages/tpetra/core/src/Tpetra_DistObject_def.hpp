@@ -420,7 +420,8 @@ namespace Tpetra {
   beginImport(const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               const CombineMode CM,
-              const bool restrictedMode)
+              const bool restrictedMode,
+              const typename Node::execution_space &space)
   {
     using Details::Behavior;
     using std::endl;
@@ -437,7 +438,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->beginTransfer(source, importer, modeString, DoForward, CM, restrictedMode);
+    this->beginTransfer(source, importer, modeString, DoForward, CM, restrictedMode, space);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -544,7 +545,8 @@ namespace Tpetra {
   endImport(const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
             const CombineMode CM,
-            const bool restrictedMode)
+            const bool restrictedMode,
+            const typename Node::execution_space &space)
   {
     using Details::Behavior;
     using std::endl;
@@ -561,7 +563,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->endTransfer(source, importer, modeString, DoForward, CM, restrictedMode);
+    this->endTransfer(source, importer, modeString, DoForward, CM, restrictedMode, space);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -803,7 +805,8 @@ namespace Tpetra {
                 const char modeString[],
                 const ReverseOption revOp,
                 const CombineMode CM,
-                bool restrictedMode)
+                bool restrictedMode,
+                const execution_space &space)
   {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -1163,7 +1166,8 @@ namespace Tpetra {
               const char modeString[],
               const ReverseOption revOp,
               const CombineMode CM,
-              bool restrictedMode)
+              bool restrictedMode,
+              const execution_space &space)
   {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
