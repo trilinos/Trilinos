@@ -354,13 +354,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                                            comm);
     RCP<Vector> Xserial = VectorFactory::Build(serialMap);
     Xserial->setSeed(251743369);
-    Xserial->randomize();
+    Xserial->randomize(true);// using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
     RCP<Import> randomnessImporter = ImportFactory::Build(serialMap, dofMap);
     X->doImport(*Xserial, *randomnessImporter, Xpetra::INSERT);
   } else {
     // we set seed for reproducibility
     Utilities::SetRandomSeed(*comm);
-    X->randomize();
+    X->randomize(true);// using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
   }
   A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
