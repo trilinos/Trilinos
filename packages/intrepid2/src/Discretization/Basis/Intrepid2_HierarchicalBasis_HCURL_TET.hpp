@@ -149,11 +149,13 @@ namespace Intrepid2
       
       const auto & x = inputPoints_(pointOrdinal,0);
       const auto & y = inputPoints_(pointOrdinal,1);
+      const auto & z = inputPoints_(pointOrdinal,2);
       
       // write as barycentric coordinates:
-      const PointScalar lambda[3]    = {1. - x - y, x, y};
-      const PointScalar lambda_dx[3] = {-1., 1., 0.};
-      const PointScalar lambda_dy[3] = {-1., 0., 1.};
+      const PointScalar lambda[4]    = {1. - x - y - z, x, y, z};
+      const PointScalar lambda_dx[4] = {-1., 1., 0., 0.};
+      const PointScalar lambda_dy[4] = {-1., 0., 1., 0.};
+      const PointScalar lambda_dz[4] = {-1., 0., 0., 1.};
       
       const int num1DEdgeFunctions = polyOrder_; // per edge
       
@@ -165,14 +167,15 @@ namespace Intrepid2
           int fieldOrdinalOffset = 0;
           for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
           {
-            // TODO: correct edge functions for 3D
             const auto & s0    = lambda   [edge_start_[edgeOrdinal]];
             const auto & s0_dx = lambda_dx[edge_start_[edgeOrdinal]];
             const auto & s0_dy = lambda_dy[edge_start_[edgeOrdinal]];
+            const auto & s0_dz = lambda_dz[edge_start_[edgeOrdinal]];
             
             const auto & s1    = lambda   [  edge_end_[edgeOrdinal]];
             const auto & s1_dx = lambda_dx[  edge_end_[edgeOrdinal]];
             const auto & s1_dy = lambda_dy[  edge_end_[edgeOrdinal]];
+            const auto & s1_dz = lambda_dz[  edge_end_[edgeOrdinal]];
             
             Polynomials::shiftedScaledLegendreValues(edge_field_values_at_point, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
             for (int edgeFunctionOrdinal=0; edgeFunctionOrdinal<num1DEdgeFunctions; edgeFunctionOrdinal++)
@@ -180,8 +183,10 @@ namespace Intrepid2
               const auto & legendreValue = edge_field_values_at_point(edgeFunctionOrdinal);
               const PointScalar xWeight = s0 * s1_dx - s1 * s0_dx;
               const PointScalar yWeight = s0 * s1_dy - s1 * s0_dy;
+              const PointScalar zWeight = s0 * s1_dz - s1 * s0_dz;
               output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,0) = legendreValue * xWeight;
               output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,1) = legendreValue * yWeight;
+              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,2) = legendreValue * zWeight;
             }
             fieldOrdinalOffset += num1DEdgeFunctions;
           }
@@ -223,15 +228,16 @@ namespace Intrepid2
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
                     const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
-                    // TODO: fix this for 3D
                     const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
                     const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
+                    const auto & edgeValue_z = output_(edgeBasisOrdinal,pointOrdinal,2);
                     const double alpha = i*2.0 + 1;
                     
                     Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
                     const auto & jacobiValue = jacobi_values_at_point(j);
                     output_(fieldOrdinal,pointOrdinal,0) = edgeValue_x * jacobiValue;
                     output_(fieldOrdinal,pointOrdinal,1) = edgeValue_y * jacobiValue;
+                    output_(fieldOrdinal,pointOrdinal,2) = edgeValue_z * jacobiValue;
                     
                     fieldOrdinal += numFaceFamilies; // increment due to the interleaving
                   } // i
@@ -262,16 +268,23 @@ namespace Intrepid2
             
             const auto & s0_dx = lambda_dx[edge_start_[edgeOrdinal]];
             const auto & s0_dy = lambda_dy[edge_start_[edgeOrdinal]];
+            const auto & s0_dz = lambda_dz[edge_start_[edgeOrdinal]];
             const auto & s1_dx = lambda_dx[  edge_end_[edgeOrdinal]];
             const auto & s1_dy = lambda_dy[  edge_end_[edgeOrdinal]];
+            const auto & s1_dz = lambda_dz[  edge_end_[edgeOrdinal]];
             
-            const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
+            const OutputScalar grad_s0_cross_grad_s1[3] = {s0_dy * s1_dz - s0_dz * s1_dy,
+                                                           s0_dz * s1_dx - s0_dx * s1_dz,
+                                                           s0_dx * s1_dy - s0_dy * s1_dx};
             
             Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
             for (int i=0; i<num1DEdgeFunctions; i++)
             {
               // commented out because in 3D the curl is a vector; we'll fix this when we modify this 2D implementation for 3D
-//              output_(i+fieldOrdinalOffset,pointOrdinal) = (i+2) * P_i(i) * grad_s0_cross_grad_s1;
+              for (int d=0; d<3; d++)
+              {
+                output_(i+fieldOrdinalOffset,pointOrdinal,d) = (i+2) * P_i(i) * grad_s0_cross_grad_s1[d];
+              }
             }
             fieldOrdinalOffset += num1DEdgeFunctions;
           }
