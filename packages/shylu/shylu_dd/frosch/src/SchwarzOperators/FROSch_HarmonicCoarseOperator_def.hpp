@@ -846,10 +846,14 @@ namespace FROSch {
 
         // Jetzt der solver für kII
         if (indicesIDofsAll.size()>0) {
-            ExtensionSolver_ = SolverFactory<SC,LO,GO,NO>::Build(kII,
-                                                                 sublist(this->ParameterList_,"ExtensionSolver"),
-                                                                 string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")"));
-            ExtensionSolver_->initialize();
+            if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
+                ExtensionSolver_->updateMatrix(kII, true);
+            } else {
+                ExtensionSolver_ = SolverFactory<SC,LO,GO,NO>::Build(kII,
+                                                                     sublist(this->ParameterList_,"ExtensionSolver"),
+                                                                     string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")"));
+                ExtensionSolver_->initialize();
+            }
             ExtensionSolver_->compute();
             ExtensionSolver_->apply(*mVtmp,*mVPhiI);
         }
@@ -1169,6 +1173,37 @@ namespace FROSch {
 
             // turn flag on
             this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+
+
+            // -------------------------------------------------------
+            // symbolic for computeExtensions to factor kII
+            GOVec indicesGammaDofsAll(0);
+            GOVec indicesIDofsAll(0);
+            LO tmp = 0;
+
+            for (UN i=0; i<NumberOfBlocks_; i++) {
+                for (UN j=0; j<GammaDofs_[i].size(); j++) {
+                    indicesGammaDofsAll.push_back(tmp+GammaDofs_[i][j]);
+                }
+                for (UN j=0; j<IDofs_[i].size(); j++) {
+                    indicesIDofsAll.push_back(tmp+IDofs_[i][j]);
+                }
+                tmp += GammaDofs_[i].size()+IDofs_[i].size();
+            }
+
+            // extract local submatrices
+            XMatrixPtr kII;
+            XMatrixPtr kIGamma;
+            XMatrixPtr kGammaI;
+            XMatrixPtr kGammaGamma;
+            auto repeatedMatrix = this->coarseLocalSubdomainMatrix_;
+            BuildSubmatrices(repeatedMatrix.getConst(),indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
+
+            // perform symbolic on kII
+            ExtensionSolver_ = SolverFactory<SC,LO,GO,NO>::Build(kII,
+                                                                 sublist(this->ParameterList_,"ExtensionSolver"),
+                                                                 string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")"));
+            ExtensionSolver_->initialize();
         }
     }
     
