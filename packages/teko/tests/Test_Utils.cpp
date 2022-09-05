@@ -465,7 +465,7 @@ bool UnitTest::CheckParallelBools_tpetra(bool myBool,int & failPID)
    char myInt = myBool ? 1 : 0;
    std::vector<char> bools(GetComm_tpetra()->getSize());
 
-   GetComm_tpetra()->gatherAll(1,&myInt,1,&bools[0]);
+   GetComm_tpetra()->gatherAll(1,&myInt,GetComm_tpetra()->getSize(),&bools[0]);
 
    failPID = -1;
 
