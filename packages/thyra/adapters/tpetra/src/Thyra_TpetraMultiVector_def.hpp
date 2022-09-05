@@ -605,7 +605,6 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
     }
 
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraMultiVector_.getConstObj(), *X_tpetra, beta);
-    Kokkos::fence();
   } else {
     SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(M_trans, X, Y, alpha, beta);
   }
