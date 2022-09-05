@@ -69,6 +69,8 @@
 
 #include "tBlockedTpetraOperator.hpp"
 
+#include "Trilinos_Util_CrsMatrixGallery.h"
+
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 

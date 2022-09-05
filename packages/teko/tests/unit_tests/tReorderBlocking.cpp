@@ -51,6 +51,8 @@
 #include <string>
 #include <iostream>
 
+#include "Teko_ConfigDefs.hpp"
+
 #ifdef TEKO_HAVE_EPETRA
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -67,7 +69,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teko-Package includes
-#include "Teko_ConfigDefs.hpp"
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"

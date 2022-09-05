@@ -69,6 +69,8 @@
 
 #include "tStridedTpetraOperator.hpp"
 
+#include "Trilinos_Util_CrsMatrixGallery.h"
+
 #include "Teko_StridedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_ConfigDefs.hpp"

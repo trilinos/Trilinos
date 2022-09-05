@@ -51,6 +51,8 @@
 #include <string>
 #include <iostream>
 
+#include "Teko_Utilities.hpp"
+
 #ifdef TEKO_HAVE_EPETRA
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -63,7 +65,6 @@
 #endif
 
 // Teko-Package includes
-#include "Teko_Utilities.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_IterativePreconditionerFactory.hpp"
