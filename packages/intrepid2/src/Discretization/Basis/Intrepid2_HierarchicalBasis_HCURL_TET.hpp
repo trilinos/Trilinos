@@ -308,6 +308,7 @@ namespace Intrepid2
            */
           // rename the scratch memory to match our usage here:
           auto & P_2ip1_j    = other_values_at_point;
+          auto & L_2ip1_j_dt = other_values2_at_point;
           
           // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
           int faceFieldOrdinalOffset = fieldOrdinalOffset;
@@ -334,20 +335,33 @@ namespace Intrepid2
               
               const auto & s0_dx = lambda_dx[s0_index];
               const auto & s0_dy = lambda_dy[s0_index];
+              const auto & s0_dz = lambda_dz[s0_index];
               const auto & s1_dx = lambda_dx[s1_index];
               const auto & s1_dy = lambda_dy[s1_index];
+              const auto & s1_dz = lambda_dz[s1_index];
               const auto & s2_dx = lambda_dx[s2_index];
               const auto & s2_dy = lambda_dy[s2_index];
+              const auto & s2_dz = lambda_dz[s2_index];
               
-              const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
+              const PointScalar grad_s2[3] = {s2_dx, s2_dy, s2_dz};
+              const PointScalar gradJacobiScaling[3] = {s0_dx + s1_dx + s2_dx,
+                                                        s0_dy + s1_dy + s2_dy,
+                                                        s0_dz + s1_dz + s2_dz};
+              
+              const PointScalar grad_s0_cross_grad_s1[3] = {s0_dy * s1_dz - s0_dz * s1_dy,
+                                                            s0_dz * s1_dx - s0_dx * s1_dz,
+                                                            s0_dx * s1_dy - s0_dy * s1_dx};
+              
+              const PointScalar s0_grad_s1_minus_s1_grad_s0[3] = {s0 * s1_dx - s1 * s0_dx,
+                                                                  s0 * s1_dy - s1 * s0_dy,
+                                                                  s0 * s1_dz - s1 * s0_dz};
               
               Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
               // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-              // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
-  //                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
-              const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
-              const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
-              OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
+              //    - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}](s0+s1,s2) grad (s0+s1+s2),
+              //    - R^{2i+1}_{j-1}(s0+s1;s0+s1+s2) = d/dt L^{2i+1}_j(s0+s1;s0+s1+s2)
+              //    - We have implemented d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
+              //    - E^E_i(s0,s1) = [P_i](s0,s1) (s0 grad s1 - s1 grad s0)
               
               const int max_ij_sum = polyOrder_ - 1;
               for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
@@ -355,16 +369,32 @@ namespace Intrepid2
                 for (int i=0; i<ij_sum; i++)
                 {
                   const int j = ij_sum - i; // j >= 1
-                  const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
                 
                   const double alpha = i*2.0 + 1;
                   
-                  Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
-                  Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
-                
+                  Polynomials::shiftedScaledJacobiValues             (P_2ip1_j,    alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
+                  Polynomials::shiftedScaledIntegratedJacobiValues   (L_2ip1_j,    alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
+                  Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2ip1_j_dt, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
+                  
                   const PointScalar & edgeValue = P_i(i);
-                  // TODO: this should be a vector (3D curl) -- fix it!
-                  output_(fieldOrdinal,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
+                  
+                  PointScalar grad_L_2ip1_j[3];
+                  for (int d=0; d<3; d++)
+                  {
+                    grad_L_2ip1_j[d] = P_2ip1_j(j-1) * edgeValue * grad_s2[d] // [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2)
+                                     + L_2ip1_j_dt(j) * gradJacobiScaling[d]; // [R^{2i+1}_{j-1}](s0+s1,s2) grad (s0+s1+s2)
+                  }
+                  
+                  const PointScalar grad_L_2ip1_j_cross_E_i[3] = { grad_L_2ip1_j[1] * s0_grad_s1_minus_s1_grad_s0[2] - grad_L_2ip1_j[2] * s0_grad_s1_minus_s1_grad_s0[1],
+                                                                   grad_L_2ip1_j[2] * s0_grad_s1_minus_s1_grad_s0[0] - grad_L_2ip1_j[0] * s0_grad_s1_minus_s1_grad_s0[2],
+                                                                   grad_L_2ip1_j[0] * s0_grad_s1_minus_s1_grad_s0[1] - grad_L_2ip1_j[1] * s0_grad_s1_minus_s1_grad_s0[0] };
+                  
+                  for (int d=0; d<3; d++)
+                  {
+                    const OutputScalar edgeCurl_d = (i+2.) * P_i(i) * grad_s0_cross_grad_s1[d];
+                    output_(fieldOrdinal,pointOrdinal,d) = L_2ip1_j(j) * edgeCurl_d   // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1))
+                                                         + grad_L_2ip1_j_cross_E_i[d];
+                  }
                   
                   fieldOrdinal += numFaceFamilies; // increment due to the interleaving
                 } // i
