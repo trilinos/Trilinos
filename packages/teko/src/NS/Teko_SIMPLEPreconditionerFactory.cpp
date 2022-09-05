@@ -50,7 +50,10 @@
 #include "Teko_InverseFactory.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
 #include "Teko_BlockUpperTriInverseOp.hpp"
+#include <stdexcept>
+#ifdef TEKO_HAVE_EPETRA
 #include "Teko_DiagonalPreconditionerFactory.hpp"
+#endif
 
 #include "Teuchos_Time.hpp"
 
@@ -116,6 +119,7 @@ LinearOp SIMPLEPreconditionerFactory
       buildExplicitSchurComplement = false;
    }
    else if(fInverseType_==BlkDiag) {
+#ifdef TEKO_HAVE_EPETRA
      // Block diagonal approximation for H
      DiagonalPreconditionerFactory Hfact;
      DiagonalPrecondState Hstate;
@@ -130,6 +134,11 @@ LinearOp SIMPLEPreconditionerFactory
 
      buildExplicitSchurComplement = true; // NTS: Do I need this?
                                           // Answer - no, but it is documenting whats going on here.
+#else
+     throw std::logic_error("SIMPLEPreconditionerFactory fInverseType_ == "
+                            "BlkDiag but EPETRA is turned off!");
+#endif
+
    }
    else {
       // get generic diagonal
