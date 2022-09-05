@@ -70,8 +70,6 @@ namespace Intrepid2
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HCURL_TET_Functor
   {
-    // TODO: revise this for 3D -- what's below is 2D (tri) implementation
-    
     using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -246,7 +244,39 @@ namespace Intrepid2
               } // familyOrdinal
               faceFieldOrdinalOffset += numFunctionsPerFace;
             } // faceOrdinal
-          }
+          } // face functions block
+          // TODO: implement OPERATOR_VALUE for interior functions
+          
+          // interior functions
+          {
+            const int numInteriorFamilies = 3;
+            const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
+            const int min_ijk_sum = 2;
+            const int max_ijk_sum = polyOrder_-1;
+            for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
+            {
+              // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
+              int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
+              {
+                for (int i=0; i<ijk_sum; i++)
+                {
+                  for (int j=1; j<ijk_sum-i; j++)
+                  {
+                    const int k = ijk_sum - i - j;
+                    for (int d=0; d<3; d++)
+                    {
+                      output_(fieldOrdinal,pointOrdinal,d) = ;
+                    }
+                  }
+                  
+                  fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
+                }
+              }
+              fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set offset to be one past.
+            }
+          } // interior functions block
+          
         } // end OPERATOR_VALUE
           break;
         case OPERATOR_CURL:
@@ -403,6 +433,37 @@ namespace Intrepid2
             } // familyOrdinal
             faceFieldOrdinalOffset += numFunctionsPerFace;
           } // faceOrdinal
+          
+          // TODO: implement curls of interior functions
+          // interior functions
+          {
+            const int numInteriorFamilies = 3;
+            const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
+            const int min_ijk_sum = 2;
+            const int max_ijk_sum = polyOrder_-1;
+            for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
+            {
+              // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
+              int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
+              {
+                for (int i=0; i<ijk_sum; i++)
+                {
+                  for (int j=1; j<ijk_sum-i; j++)
+                  {
+                    const int k = ijk_sum - i - j;
+                    for (int d=0; d<3; d++)
+                    {
+                      output_(fieldOrdinal,pointOrdinal,d) = ;
+                    }
+                  }
+                  
+                  fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
+                }
+              }
+              fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set offset to be one past.
+            }
+          } // interior functions block
         }
           break;
         case OPERATOR_GRAD:
