@@ -106,7 +106,7 @@ public:
   typedef typename
     Tacho::UseThisDevice<host_exec_space_type>::device_type host_device_type;
 
-  typedef Kokkos::TaskScheduler<exec_space_type>             scheduler_type;
+  typedef Tacho::DummyTaskScheduler<exec_space_type>          scheduler_type;
 
   typedef Kokkos::View<size_type*, device_type>       device_size_type_array;
   typedef Kokkos::View<ordinal_type*, device_type> device_ordinal_type_array;
