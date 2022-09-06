@@ -582,62 +582,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     }
 
     indexerNames_ = Teuchos::null;  // Don't need this anymore
-//  const Workset & workset_0 = (*d.worksets_)[0];
-//  const std::string blockId = this->wda(workset_0).block_id;
-
-//  fieldIds_.resize(scatterFields_.size());
-//  fieldOffsets_.resize(scatterFields_.size());
-//  productVectorBlockIndex_.resize(scatterFields_.size());
-//  for (std::size_t fd=0; fd < scatterFields_.size(); ++fd) {
-//    const std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-//    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
-//    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
-//    const auto& fieldGlobalIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
-//    fieldIds_[fd] = fieldGlobalIndexer->getFieldNum(fieldName); // Field number in the sub-global-indexer
-
-//    const std::vector<int>& offsets = globalIndexer_->getGIDFieldOffsets(blockId,globalFieldNum);
-//    fieldOffsets_[fd] = PHX::View<int*>("ScatterResidual_BlockedTpetra(Tangent):fieldOffsets",offsets.size());
-//    auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
-//    for (std::size_t i=0; i < offsets.size(); ++i)
-//      hostOffsets(i) = offsets[i];
-//    Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
-//  }
-
-//  // This is sized differently than the Residual implementation since
-//  // we need the LIDs for all sub-blocks, not just the single
-//  // sub-block for the field residual scatter.
-//  int elementBlockGIDCount = 0;
-//  for (const auto& blockDOFMgr : globalIndexer_->getFieldDOFManagers())
-//    elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
-
-//  worksetLIDs_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(
-//                    "ScatterResidual_BlockedTpetra(Tangent):worksetLIDs_",
-//                    scatterFields_[0].extent(0), elementBlockGIDCount );
-
-//  // Compute the block offsets
-//  const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
-//  const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
-//  blockOffsets_ = PHX::View<LO*>("ScatterResidual_BlockedTpetra(Tangent):blockOffsets_",
-//                                                numBlocks+1); // Number of fields, plus a sentinel
-//  const auto hostBlockOffsets = Kokkos::create_mirror_view(blockOffsets_);
-//  for (int blk=0;blk<numBlocks;blk++) {
-//    int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
-//    hostBlockOffsets(blk) = blockOffset;
-//  }
-//  hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
-//  Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
-
-//  // Make sure the that derivative dimension in the evaluate call is large
-//  // enough to hold all derivatives for each sub block load
-//  int max_blockDerivativeSize = 0;
-//  for (int blk=0;blk<numBlocks;blk++) {
-//    const int blockDerivativeSize = hostBlockOffsets(blk+1) - hostBlockOffsets(blk);
-//    if ( blockDerivativeSize > max_blockDerivativeSize )
-//      max_blockDerivativeSize = blockDerivativeSize;
-//  }
-//  workset_vals_ = Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device>(
-//                    "ScatterResidual_BlockedTpetra(Tangent):workset_vals_",
-//                    scatterFields_[0].extent(0), max_blockDerivativeSize );
 }
 
 // **********************************************************************
