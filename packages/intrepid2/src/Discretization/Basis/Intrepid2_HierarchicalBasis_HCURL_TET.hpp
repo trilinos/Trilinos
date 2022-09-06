@@ -109,7 +109,9 @@ namespace Intrepid2
     const ordinal_type face_family_end_   [numFaceFamilies] = {2,0};
     
     // interior basis functions are computed in terms of certain face basis functions.
-    // this lookup indicates the (positive) offset from the face basis function to the related interior basis function.
+    const ordinal_type faceOrdinalForInterior_[numInteriorFamilies] = {0,2,3};
+    const ordinal_type faceFamilyForInterior_[numInteriorFamilies]  = {0,0,1};
+    // interiorToFaceOffset_ indicates the (positive) offset from the face basis function to the related interior basis function.
     ordinal_type interiorToFaceOffset_[numInteriorFamilies];
     const ordinal_type interiorCoordinateOrdinal_[numInteriorFamilies] = {3,0,1}; // m, where E^b_{ijk} is computed in terms of [L^{2(i+j)}_k](1-lambda_m, lambda_m)
     
@@ -561,8 +563,10 @@ namespace Intrepid2
           // interior functions
           {
             // relabel values containers:
-            const auto & L_2ipj_k = jacobi_values_at_point;
-            const auto & P_2ipj_k = other_values_at_point;
+            auto & L_2ipj = jacobi_values_at_point;
+            auto & P_2ipj = other_values_at_point;
+            auto & L_2ip1 = edge_field_values_at_point;
+            auto & P      = other_values2_at_point;
             
             const int numInteriorFamilies = 3;
             const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
@@ -573,7 +577,9 @@ namespace Intrepid2
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
               
               // the interior functions are blended face functions.  This offset tells us how to get from the ordinal of the interior function to the the corresponding ordinal of the face function.
-              const ordinal_type & faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];
+              const ordinal_type &faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];   // dof ordinal offset
+              const ordinal_type &faceOrdinal       = faceOrdinalForInterior_[interiorFamilyOrdinal-1]; // face ordinal (0,1,2,3)
+              const ordinal_type &faceFamilyOrdinal = faceFamilyForInterior_[interiorFamilyOrdinal-1];  // zero-based face family ordinal (0 or 1)
               
               // lambda_m is used to compute the appropriate weight in terms of Jacobi functions of order k below.
               const auto & m        = interiorCoordinateOrdinal_[interiorFamilyOrdinal-1];
@@ -586,32 +592,39 @@ namespace Intrepid2
               {
                 for (int i=0; i<ijk_sum; i++)
                 {
+                  computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, faceFamilyOrdinal + 1, i, lambda); // +1 because computeFaceIntegratedJacobi() expects a one-based ordinal
+                  // face family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
+                  const ordinal_type edgeOrdinal = faceFamilyOrdinal;
+                  computeEdgeLegendre(P, edgeOrdinal, lambda);
+                  
+                  OutputScalar edgeValue[3];
+                  edgeFunctionValue(edgeValue[0], edgeValue[1], edgeValue[2], edgeOrdinal, P, i, lambda, lambda_dx, lambda_dy, lambda_dz);
+                  
                   for (int j=1; j<ijk_sum-i; j++)
                   {
                     const double alpha = 2 * (i + j);
                     
-                    Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj_k, alpha, polyOrder_-1, lambda_m, jacobiScaling);
-                    Polynomials::shiftedScaledJacobiValues          (P_2ipj_k, alpha, polyOrder_-1, lambda_m, jacobiScaling);
+                    Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj, alpha, polyOrder_-1, lambda_m, jacobiScaling);
+                    Polynomials::shiftedScaledJacobiValues          (P_2ipj, alpha, polyOrder_-1, lambda_m, jacobiScaling);
                     
                     // gradient of [L^{2(i+j)}_k](t0,t1) = [P^{2(i+j)}_{k-1}](t0,t1) grad t1 + [R^{2(i+j}_k](t0,t1) grad (t0+t1).
                     // we have t0 = lambda_m, t1 = 1 - lambda_m, so grad (t0 + t1) = 0.
                     
                     const int k = ijk_sum - i - j;
-                    const auto & L_k      = L_2ipj_k(k);
-                    const auto & P_km1    = P_2ipj_k(k-1);
+                    const auto & L_k      = L_2ipj(k);
+                    const auto & P_km1    = P_2ipj(k-1);
                     
                     const PointScalar grad_L_k[3] = {P_km1 * lambda_dx[m],
                                                      P_km1 * lambda_dy[m],
                                                      P_km1 * lambda_dz[m]};
                     
-                    // TODO: compute E_face (OPERATOR_VALUE, not present in output_)
-                    
-                    PointScalar grad_L_k_cross_E_face[3];
-                    for (int d=0; d<3; d++)
-                    {
-                      grad_L_k_cross_E_face[d] = 0; // TODO: fill this in.
-                    }
-                    
+                    // compute E_face -- OPERATOR_VALUE for the face function corresponding to this interior function
+                    OutputScalar E_face[3];
+                    faceFunctionValue(E_face[0], E_face[1], E_face[2], j, L_2ip1, edgeValue[0], edgeValue[1], edgeValue[2], lambda);
+                                        
+                    PointScalar grad_L_k_cross_E_face[3] = {grad_L_k[1] * E_face[2] - grad_L_k[2] * E_face[1],
+                                                            grad_L_k[2] * E_face[0] - grad_L_k[0] * E_face[2],
+                                                            grad_L_k[0] * E_face[1] - grad_L_k[1] * E_face[0]};
                     for (int d=0; d<3; d++)
                     {
                       const auto & curl_E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
@@ -779,7 +792,6 @@ namespace Intrepid2
           {
             for (int j=1; j<ijk_sum-i; j++)
             {
-              const int k = ijk_sum - i - j;
               this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ijk_sum+1;
             }
             
@@ -830,6 +842,16 @@ namespace Intrepid2
                 tagView(tagNumber*tagSize+3) = numFunctionsPerFace;   // total number of dofs on this face
                 tagNumber++;
               }
+            }
+            
+            // interior
+            for (int functionOrdinal=0; functionOrdinal<numInteriorFunctions; functionOrdinal++)
+            {
+              tagView(tagNumber*tagSize+0) = volumeDim;            // interior dimension
+              tagView(tagNumber*tagSize+1) = 0;                    // volume id
+              tagView(tagNumber*tagSize+2) = functionOrdinal;      // local dof id
+              tagView(tagNumber*tagSize+3) = numInteriorFunctions; // total number of interior dofs
+              tagNumber++;
             }
           }
         }
