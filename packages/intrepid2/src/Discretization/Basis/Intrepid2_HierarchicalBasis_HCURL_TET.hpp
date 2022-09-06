@@ -61,7 +61,7 @@
 
 namespace Intrepid2
 {
-  /** \class  Intrepid2::Hierarchical_HCURL_TET_Functor
+ /** \class  Intrepid2::Hierarchical_HCURL_TET_Functor
       \brief  Functor for computing values for the HierarchicalBasis_HCURL_TET class.
    
    This functor is not intended for use outside of HierarchicalBasis_HCURL_TET.
@@ -83,29 +83,35 @@ namespace Intrepid2
     OutputFieldType  output_;      // F,P
     InputPointsType  inputPoints_; // P,D
     
-    int polyOrder_;
-    int numFields_, numPoints_;
+    ordinal_type polyOrder_;
+    ordinal_type numFields_, numPoints_;
     
     size_t fad_size_output_;
-    
-    static const int numVertices     = 4;
-    static const int numEdges        = 6;
-    static const int numFaceFamilies = 2;
-    static const int numFaces        = 4;
+        
+    static const ordinal_type numVertices         = 4;
+    static const ordinal_type numEdges            = 6;
+    static const ordinal_type numFaceFamilies     = 2;
+    static const ordinal_type numFaces            = 4;
+    static const ordinal_type numInteriorFamilies = 3;
     
     // index into face_vertices with faceOrdinal * numVertices + vertexNumber
-    const int face_vertices[numFaces*numVertices] = {0,1,2, // face 0
-                                                     0,1,3, // face 1
-                                                     1,2,3, // face 2
-                                                     0,2,3  // face 3
-                                                    };
+    const ordinal_type face_vertices[numFaces*numVertices] = {0,1,2, // face 0
+                                                              0,1,3, // face 1
+                                                              1,2,3, // face 2
+                                                              0,2,3  // face 3
+                                                             };
         
     // the following ordering of the edges matches that used by ESEAS
-    const int edge_start_[numEdges] = {0,1,0,0,1,2}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2,3,3,3}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int face_family_start_ [numFaceFamilies] = {0,1};
-    const int face_family_middle_[numFaceFamilies] = {1,2};
-    const int face_family_end_   [numFaceFamilies] = {2,0};
+    const ordinal_type edge_start_[numEdges] = {0,1,0,0,1,2}; // edge i is from edge_start_[i] to edge_end_[i]
+    const ordinal_type edge_end_[numEdges]   = {1,2,2,3,3,3}; // edge i is from edge_start_[i] to edge_end_[i]
+    const ordinal_type face_family_start_ [numFaceFamilies] = {0,1};
+    const ordinal_type face_family_middle_[numFaceFamilies] = {1,2};
+    const ordinal_type face_family_end_   [numFaceFamilies] = {2,0};
+    
+    // interior basis functions are computed in terms of certain face basis functions.
+    // this lookup indicates the (positive) offset from the face basis function to the related interior basis function.
+    ordinal_type interiorToFaceOffset_[numInteriorFamilies];
+    const ordinal_type interiorCoordinateOrdinal_[numInteriorFamilies] = {3,0,1}; // m, where E^b_{ijk} is computed in terms of [L^{2(i+j)}_k](1-lambda_m, lambda_m)
     
     Hierarchical_HCURL_TET_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
@@ -115,21 +121,124 @@ namespace Intrepid2
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       
-      const int numEdgeFunctions     = polyOrder * 6; // 6 edges
-      const int numFaceFunctions     = polyOrder * (polyOrder-1) * 4;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
-      const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
-      const int numInteriorFunctions = numInteriorFunctionsPerFamily * 3; // 3 families of interior functions
-      const int expectedCardinality  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
+      const ordinal_type numEdgeFunctions              = polyOrder * numEdges; // 6 edges
+      const ordinal_type numFaceFunctionsPerFace       = polyOrder * (polyOrder-1);
+      const ordinal_type numFaceFunctions              = numFaceFunctionsPerFace * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
+      const ordinal_type numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
+      const ordinal_type numInteriorFunctions = numInteriorFunctionsPerFamily * numInteriorFamilies; // 3 families of interior functions
+      const ordinal_type expectedCardinality  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
+      
+      // interior family I: computed in terms of face 012 (face ordinal 0), ordinal 0 in face family I.  First interior family is computed in terms of the first set of face functions (note that both sets of families are interleaved, so basis ordinal increments are by numInteriorFamilies and numFaceFamilies, respectively).
+      // interior family II: computed in terms of face 123 (face ordinal 2), ordinal 2 in face family I.
+      // interior family III: computed in terms of face 230 (face ordinal 3), ordinal 3 in face family II.
+      
+      const ordinal_type faceOrdinalForInterior[numInteriorFamilies] = {0,2,3};
+      const ordinal_type faceFamilyForInterior[numInteriorFamilies]  = {0,0,1};
+      
+      for (int i=0; i<numInteriorFamilies; i++)
+      {
+        // all the functions for a given face are grouped together; within a face, families are interleaved.
+        const int offsetFromInteriorStart = i; // where the interior functions begin, relative to 1 past the last face function
+        const int offsetFromFaceStart = faceOrdinalForInterior[i] * numFaceFunctionsPerFace + faceFamilyForInterior[i]; // where the related face functions begin, relative to the first face function.
+        interiorToFaceOffset_[i] = numFaceFunctions + offsetFromInteriorStart - offsetFromFaceStart;
+      }
       
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
       INTREPID2_TEST_FOR_EXCEPTION(numFields_ != expectedCardinality, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     KOKKOS_INLINE_FUNCTION
+    void computeEdgeLegendre(OutputScratchView &P,
+                             const ordinal_type &edgeOrdinal,
+                             const PointScalar* lambda) const
+    {
+      const auto & s0 = lambda[edge_start_[edgeOrdinal]];
+      const auto & s1 = lambda[  edge_end_[edgeOrdinal]];
+      
+      Polynomials::shiftedScaledLegendreValues(P, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void edgeFunctionValue(OutputScalar &edgeValue_x,
+                           OutputScalar &edgeValue_y,
+                           OutputScalar &edgeValue_z,
+                           const ordinal_type &edgeOrdinal,
+                           OutputScratchView &P,
+                           const ordinal_type &i,
+                           const PointScalar* lambda,
+                           const PointScalar* lambda_dx,
+                           const PointScalar* lambda_dy,
+                           const PointScalar* lambda_dz
+                           ) const
+    {
+      const auto & s0    = lambda   [edge_start_[edgeOrdinal]];
+      const auto & s0_dx = lambda_dx[edge_start_[edgeOrdinal]];
+      const auto & s0_dy = lambda_dy[edge_start_[edgeOrdinal]];
+      const auto & s0_dz = lambda_dz[edge_start_[edgeOrdinal]];
+      
+      const auto & s1    = lambda   [  edge_end_[edgeOrdinal]];
+      const auto & s1_dx = lambda_dx[  edge_end_[edgeOrdinal]];
+      const auto & s1_dy = lambda_dy[  edge_end_[edgeOrdinal]];
+      const auto & s1_dz = lambda_dz[  edge_end_[edgeOrdinal]];
+      
+      const auto & P_i = P(i);
+      const PointScalar xWeight = s0 * s1_dx - s1 * s0_dx;
+      const PointScalar yWeight = s0 * s1_dy - s1 * s0_dy;
+      const PointScalar zWeight = s0 * s1_dz - s1 * s0_dz;
+      edgeValue_x = P_i * xWeight;
+      edgeValue_y = P_i * yWeight;
+      edgeValue_z = P_i * zWeight;
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void computeFaceIntegratedJacobi(OutputScratchView &L_2ip1,
+                                     const ordinal_type &zeroBasedFaceOrdinal,
+                                     const ordinal_type &oneBasedFamilyOrdinal,
+                                     const ordinal_type &i,
+                                     const PointScalar* lambda) const
+    {
+      const ordinal_type zeroBasedFamilyOrdinal = oneBasedFamilyOrdinal - 1;
+      
+      const auto &s0_vertex_number = face_family_start_ [zeroBasedFamilyOrdinal];
+      const auto &s1_vertex_number = face_family_middle_[zeroBasedFamilyOrdinal];
+      const auto &s2_vertex_number = face_family_end_   [zeroBasedFamilyOrdinal];
+      
+      // index into face_vertices with faceOrdinal * numVertices + vertexNumber
+      const auto &s0_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s0_vertex_number];
+      const auto &s1_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s1_vertex_number];
+      const auto &s2_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s2_vertex_number];
+      
+      const auto & s0 = lambda[s0_index];
+      const auto & s1 = lambda[s1_index];
+      const auto & s2 = lambda[s2_index];
+      const PointScalar jacobiScaling = s0 + s1 + s2;
+      
+      const double alpha = i*2.0 + 1;
+      Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1, alpha, polyOrder_-1, s2, jacobiScaling);
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void faceFunctionValue(OutputScalar &value_x,
+                           OutputScalar &value_y,
+                           OutputScalar &value_z,
+                           const ordinal_type &j, // j >= 1
+                           const OutputScratchView &L_2ip1, // container in which shiftedScaledIntegratedJacobiValues have been computed for (2i+1) for appropriate face and family
+                           const OutputScalar &edgeValue_x,
+                           const OutputScalar &edgeValue_y,
+                           const OutputScalar &edgeValue_z,
+                           const PointScalar* lambda) const
+    {
+      const auto & L_2ip1_j = L_2ip1(j);
+      value_x = edgeValue_x * L_2ip1_j;
+      value_y = edgeValue_y * L_2ip1_j;
+      value_z = edgeValue_z * L_2ip1_j;
+    }
+    
+    KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
-      const int numFunctionsPerFace = polyOrder_ * (polyOrder_-1);
-      const int numFaces            = 4;
+      const ordinal_type numFunctionsPerFace = polyOrder_ * (polyOrder_-1);
+      const ordinal_type numFaces            = 4;
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView edge_field_values_at_point, jacobi_values_at_point, other_values_at_point, other_values2_at_point;
       if (fad_size_output_ > 0) {
@@ -162,38 +271,34 @@ namespace Intrepid2
         case OPERATOR_VALUE:
         {
           // edge functions
+          
+          // relabel scratch view
+          auto & P = edge_field_values_at_point;
+          
           int fieldOrdinalOffset = 0;
           for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
           {
-            const auto & s0    = lambda   [edge_start_[edgeOrdinal]];
-            const auto & s0_dx = lambda_dx[edge_start_[edgeOrdinal]];
-            const auto & s0_dy = lambda_dy[edge_start_[edgeOrdinal]];
-            const auto & s0_dz = lambda_dz[edge_start_[edgeOrdinal]];
+            computeEdgeLegendre(P, edgeOrdinal, lambda);
             
-            const auto & s1    = lambda   [  edge_end_[edgeOrdinal]];
-            const auto & s1_dx = lambda_dx[  edge_end_[edgeOrdinal]];
-            const auto & s1_dy = lambda_dy[  edge_end_[edgeOrdinal]];
-            const auto & s1_dz = lambda_dz[  edge_end_[edgeOrdinal]];
-            
-            Polynomials::shiftedScaledLegendreValues(edge_field_values_at_point, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
-            for (int edgeFunctionOrdinal=0; edgeFunctionOrdinal<num1DEdgeFunctions; edgeFunctionOrdinal++)
+            for (int i=0; i<num1DEdgeFunctions; i++)
             {
-              const auto & legendreValue = edge_field_values_at_point(edgeFunctionOrdinal);
-              const PointScalar xWeight = s0 * s1_dx - s1 * s0_dx;
-              const PointScalar yWeight = s0 * s1_dy - s1 * s0_dy;
-              const PointScalar zWeight = s0 * s1_dz - s1 * s0_dz;
-              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,0) = legendreValue * xWeight;
-              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,1) = legendreValue * yWeight;
-              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,2) = legendreValue * zWeight;
+              auto &output_x = output_(i+fieldOrdinalOffset,pointOrdinal,0);
+              auto &output_y = output_(i+fieldOrdinalOffset,pointOrdinal,1);
+              auto &output_z = output_(i+fieldOrdinalOffset,pointOrdinal,2);
+              
+              edgeFunctionValue(output_x, output_y, output_z,
+                                edgeOrdinal, P, i,
+                                lambda, lambda_dx, lambda_dy, lambda_dz);
             }
             fieldOrdinalOffset += num1DEdgeFunctions;
           }
           
           // face functions
           {
-            // these functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
-            const double jacobiScaling = 1.0; // s0 + s1 + s2
+            // relabel scratch view
+            auto & L_2ip1 = jacobi_values_at_point;
             
+            // these functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const int max_ij_sum = polyOrder_ - 1;
             
             // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
@@ -215,27 +320,28 @@ namespace Intrepid2
                 const auto &s2_index = face_vertices[faceOrdinal * numVertices + s2_vertex_number];
                 
                 const auto & s0 = lambda[s0_index];
-                const auto & s1 = lambda[s0_index];
-                const auto & s2 = lambda[s0_index];
+                const auto & s1 = lambda[s1_index];
+                const auto & s2 = lambda[s2_index];
                 const PointScalar jacobiScaling = s0 + s1 + s2;
                 
                 for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
                 {
                   for (int i=0; i<ij_sum; i++)
                   {
+                    computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, familyOrdinal, i, lambda);
+                    
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
                     const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
                     const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
                     const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
                     const auto & edgeValue_z = output_(edgeBasisOrdinal,pointOrdinal,2);
-                    const double alpha = i*2.0 + 1;
                     
-                    Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
-                    const auto & jacobiValue = jacobi_values_at_point(j);
-                    output_(fieldOrdinal,pointOrdinal,0) = edgeValue_x * jacobiValue;
-                    output_(fieldOrdinal,pointOrdinal,1) = edgeValue_y * jacobiValue;
-                    output_(fieldOrdinal,pointOrdinal,2) = edgeValue_z * jacobiValue;
+                    auto & output_x = output_(fieldOrdinal,pointOrdinal,0);
+                    auto & output_y = output_(fieldOrdinal,pointOrdinal,1);
+                    auto & output_z = output_(fieldOrdinal,pointOrdinal,2);
+                    
+                    faceFunctionValue(output_x, output_y, output_z, j, L_2ip1, edgeValue_x, edgeValue_y, edgeValue_z, lambda);
                     
                     fieldOrdinal += numFaceFamilies; // increment due to the interleaving
                   } // i
@@ -245,7 +351,6 @@ namespace Intrepid2
               faceFieldOrdinalOffset += numFunctionsPerFace;
             } // faceOrdinal
           } // face functions block
-          // TODO: implement OPERATOR_VALUE for interior functions
           
           // interior functions
           {
@@ -253,20 +358,38 @@ namespace Intrepid2
             const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
             const int min_ijk_sum = 2;
             const int max_ijk_sum = polyOrder_-1;
+            
+            // relabel Jacobi values container:
+            const auto & L_2ipj = jacobi_values_at_point;
             for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
             {
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
-              int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              
+              // the interior functions are blended face functions.  This offset tells us how to get from the ordinal of the interior function to the the corresponding ordinal of the face function.
+              const ordinal_type & faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];
+              
+              // lambda_m is used to compute the appropriate weight in terms of Jacobi functions of order k below.
+              const auto & lambda_m = lambda[interiorCoordinateOrdinal_[interiorFamilyOrdinal-1]];
+              const PointScalar jacobiScaling = 1.0;
+              
+              ordinal_type fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
                 for (int i=0; i<ijk_sum; i++)
                 {
                   for (int j=1; j<ijk_sum-i; j++)
                   {
+                    const double alpha = 2 * (i + j);
+                    
+                    Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj, alpha, polyOrder_-1, lambda_m, jacobiScaling);
+                    
                     const int k = ijk_sum - i - j;
+                    const auto & L_k      = L_2ipj(k);
                     for (int d=0; d<3; d++)
                     {
-                      output_(fieldOrdinal,pointOrdinal,d) = ;
+                      const auto & E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
+                      output_(fieldOrdinal,pointOrdinal,d) = L_k * E_face_d;
                     }
                   }
                   
@@ -437,6 +560,10 @@ namespace Intrepid2
           // TODO: implement curls of interior functions
           // interior functions
           {
+            // relabel values containers:
+            const auto & L_2ipj_k = jacobi_values_at_point;
+            const auto & P_2ipj_k = other_values_at_point;
+            
             const int numInteriorFamilies = 3;
             const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
             const int min_ijk_sum = 2;
@@ -444,18 +571,53 @@ namespace Intrepid2
             for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
             {
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
-              int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              
+              // the interior functions are blended face functions.  This offset tells us how to get from the ordinal of the interior function to the the corresponding ordinal of the face function.
+              const ordinal_type & faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];
+              
+              // lambda_m is used to compute the appropriate weight in terms of Jacobi functions of order k below.
+              const auto & m        = interiorCoordinateOrdinal_[interiorFamilyOrdinal-1];
+              const auto & lambda_m = lambda[m];
+              const PointScalar jacobiScaling = 1.0;
+              
+              ordinal_type fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+              
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
                 for (int i=0; i<ijk_sum; i++)
                 {
                   for (int j=1; j<ijk_sum-i; j++)
                   {
+                    const double alpha = 2 * (i + j);
+                    
+                    Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj_k, alpha, polyOrder_-1, lambda_m, jacobiScaling);
+                    Polynomials::shiftedScaledJacobiValues          (P_2ipj_k, alpha, polyOrder_-1, lambda_m, jacobiScaling);
+                    
+                    // gradient of [L^{2(i+j)}_k](t0,t1) = [P^{2(i+j)}_{k-1}](t0,t1) grad t1 + [R^{2(i+j}_k](t0,t1) grad (t0+t1).
+                    // we have t0 = lambda_m, t1 = 1 - lambda_m, so grad (t0 + t1) = 0.
+                    
                     const int k = ijk_sum - i - j;
+                    const auto & L_k      = L_2ipj_k(k);
+                    const auto & P_km1    = P_2ipj_k(k-1);
+                    
+                    const PointScalar grad_L_k[3] = {P_km1 * lambda_dx[m],
+                                                     P_km1 * lambda_dy[m],
+                                                     P_km1 * lambda_dz[m]};
+                    
+                    // TODO: compute E_face (OPERATOR_VALUE, not present in output_)
+                    
+                    PointScalar grad_L_k_cross_E_face[3];
                     for (int d=0; d<3; d++)
                     {
-                      output_(fieldOrdinal,pointOrdinal,d) = ;
+                      grad_L_k_cross_E_face[d] = 0; // TODO: fill this in.
                     }
+                    
+                    for (int d=0; d<3; d++)
+                    {
+                      const auto & curl_E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
+                      output_(fieldOrdinal,pointOrdinal,d) = L_k * curl_E_face_d + grad_L_k_cross_E_face[d];
+                    }
+                    
                   }
                   
                   fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
