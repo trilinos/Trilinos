@@ -150,6 +150,20 @@ view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
   view_copy( dst_array_type(dst) , src_array_type(src) );
 }
 
+template<class ExecutionSpace,
+         class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const ExecutionSpace& space,
+          const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
+{
+  typedef typename Kokkos::View<DT,DP...>::array_type dst_array_type;
+  typedef typename Kokkos::View<ST,SP...>::array_type src_array_type;
+  view_copy( space, dst_array_type(dst) , src_array_type(src) );
+}
+
 } // namespace Impl
 } // namespace Kokkos
 

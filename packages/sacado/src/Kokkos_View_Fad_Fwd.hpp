@@ -80,6 +80,15 @@ typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
                        >::type
 view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
 
+template<class ExecutionSpace,
+         class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const ExecutionSpace& space,
+          const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
+
 template<class Space, class T, class ... P>
 struct MirrorType;
 template<class Space, class T, class ... P>
