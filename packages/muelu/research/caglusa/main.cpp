@@ -1239,7 +1239,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   std::string xmlHierarchical  = "hierarchical-1d-mm-global.xml";
   std::string xmlMueLu        = "muelu.xml";
-  std::string xmlAuxHierarchy = "aux.xml";
+  std::string xmlAuxHierarchy = "auxiliary.xml";
   clp.setOption("xml",    &xmlHierarchical);
   clp.setOption("xmlMueLu", &xmlMueLu);
   clp.setOption("xmlAux", &xmlAuxHierarchy);
