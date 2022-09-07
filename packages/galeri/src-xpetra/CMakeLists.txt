@@ -18,6 +18,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(HEADERS
   ../src-epetra/Galeri_ConfigDefs.h
+  ../src-epetra/Galeri_Exception.h
   Galeri_XpetraParameters.hpp
 
   Galeri_XpetraProblemFactory.hpp
