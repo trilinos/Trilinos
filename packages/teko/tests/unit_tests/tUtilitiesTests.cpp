@@ -52,12 +52,6 @@
 #include <string>
 #include <iostream>
 
-#ifdef HAVE_MPI
-   #include "Teuchos_DefaultMpiComm.hpp"
-#else
-   #include "Teuchos_DefaultComm.hpp"
-#endif
-
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 
@@ -73,13 +67,6 @@ using Teuchos::rcpFromRef;
 
 TEUCHOS_UNIT_TEST(tUtilitiesTests, clipping)
 {
-  // build global (or serial communicator)
-  #ifdef HAVE_MPI
-     auto eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-  #else
-     auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
-  #endif
-
    RCP<Thyra::VectorSpaceBase<double> > vs = Thyra::defaultSpmdVectorSpace<double>(10);
    RCP<Thyra::MultiVectorBase<double> > x = Thyra::createMembers<double>(vs,2);
 
@@ -132,13 +119,6 @@ TEUCHOS_UNIT_TEST(tUtilitiesTests, clipping)
 
 TEUCHOS_UNIT_TEST(tUtilitiesTests, replaceValues)
 {
-  // build global (or serial communicator)
-  #ifdef HAVE_MPI
-     auto eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-  #else
-     auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
-  #endif
-
    RCP<Thyra::VectorSpaceBase<double> > vs = Thyra::defaultSpmdVectorSpace<double>(10);
    RCP<Thyra::MultiVectorBase<double> > x = Thyra::createMembers<double>(vs,2);
 
@@ -163,13 +143,6 @@ TEUCHOS_UNIT_TEST(tUtilitiesTests, replaceValues)
 
 TEUCHOS_UNIT_TEST(tUtilitiesTests, averages)
 {
-  // build global (or serial communicator)
-  #ifdef HAVE_MPI
-     auto eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-  #else
-     auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
-  #endif
-
    RCP<Thyra::VectorSpaceBase<double> > vs = Thyra::defaultSpmdVectorSpace<double>(9);
    RCP<Thyra::MultiVectorBase<double> > x = Thyra::createMembers<double>(vs,2);
 
