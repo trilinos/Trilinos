@@ -571,7 +571,6 @@ namespace Intrepid2
             faceFieldOrdinalOffset += numFunctionsPerFace;
           } // faceOrdinal
           
-          // TODO: implement curls of interior functions
           // interior functions
           {
             // relabel values containers:
@@ -606,11 +605,12 @@ namespace Intrepid2
                 {
                   computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, faceFamilyOrdinal + 1, i, lambda); // +1 because computeFaceIntegratedJacobi() expects a one-based ordinal
                   // face family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
-                  const ordinal_type edgeOrdinal = faceFamilyOrdinal;
-                  computeEdgeLegendre(P, edgeOrdinal, lambda);
+                  const ordinal_type faceEdgeOrdinal = faceFamilyOrdinal;
+                  const int volumeEdgeOrdinal = face_edges[faceOrdinal * numEdgesPerFace + faceEdgeOrdinal];
+                  computeEdgeLegendre(P, volumeEdgeOrdinal, lambda);
                   
                   OutputScalar edgeValue[3];
-                  edgeFunctionValue(edgeValue[0], edgeValue[1], edgeValue[2], edgeOrdinal, P, i, lambda, lambda_dx, lambda_dy, lambda_dz);
+                  edgeFunctionValue(edgeValue[0], edgeValue[1], edgeValue[2], volumeEdgeOrdinal, P, i, lambda, lambda_dx, lambda_dy, lambda_dz);
                   
                   for (int j=1; j<ijk_sum-i; j++)
                   {
