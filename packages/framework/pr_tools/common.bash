@@ -302,7 +302,7 @@ function get_python_packages() {
     )
     message_std "PRDriver> " ""
     # ${pip_exe:?} install --user ${pip_args[@]}
-    execute_command "${pip_exe:?} install --user ${pip_args[@]}"
+    ${pip_exe:?} install --user "${pip_args[@]}"
 }
 
 
