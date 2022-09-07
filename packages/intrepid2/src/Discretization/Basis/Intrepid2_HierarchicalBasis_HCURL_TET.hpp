@@ -436,7 +436,6 @@ namespace Intrepid2
             Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
             for (int i=0; i<num1DEdgeFunctions; i++)
             {
-              // commented out because in 3D the curl is a vector; we'll fix this when we modify this 2D implementation for 3D
               for (int d=0; d<3; d++)
               {
                 output_(i+fieldOrdinalOffset,pointOrdinal,d) = (i+2) * P_i(i) * grad_s0_cross_grad_s1[d];
@@ -485,8 +484,8 @@ namespace Intrepid2
               const auto &s2_index = face_vertices[faceOrdinal * numVerticesPerFace + s2_vertex_number];
               
               const auto & s0 = lambda[s0_index];
-              const auto & s1 = lambda[s0_index];
-              const auto & s2 = lambda[s0_index];
+              const auto & s1 = lambda[s1_index];
+              const auto & s2 = lambda[s2_index];
               const PointScalar jacobiScaling = s0 + s1 + s2;
               
               const auto & s0_dx = lambda_dx[s0_index];
@@ -541,9 +540,9 @@ namespace Intrepid2
                                      + L_2ip1_j_dt(j) * gradJacobiScaling[d]; // [R^{2i+1}_{j-1}](s0+s1,s2) grad (s0+s1+s2)
                   }
                   
-                  const PointScalar grad_L_2ip1_j_cross_E_i[3] = { grad_L_2ip1_j[1] * s0_grad_s1_minus_s1_grad_s0[2] - grad_L_2ip1_j[2] * s0_grad_s1_minus_s1_grad_s0[1],
-                                                                   grad_L_2ip1_j[2] * s0_grad_s1_minus_s1_grad_s0[0] - grad_L_2ip1_j[0] * s0_grad_s1_minus_s1_grad_s0[2],
-                                                                   grad_L_2ip1_j[0] * s0_grad_s1_minus_s1_grad_s0[1] - grad_L_2ip1_j[1] * s0_grad_s1_minus_s1_grad_s0[0] };
+                  const PointScalar grad_L_2ip1_j_cross_E_i[3] = { grad_L_2ip1_j[1] * edgeValue * s0_grad_s1_minus_s1_grad_s0[2] - grad_L_2ip1_j[2] * edgeValue * s0_grad_s1_minus_s1_grad_s0[1],
+                                                                   grad_L_2ip1_j[2] * edgeValue * s0_grad_s1_minus_s1_grad_s0[0] - grad_L_2ip1_j[0] * edgeValue * s0_grad_s1_minus_s1_grad_s0[2],
+                                                                   grad_L_2ip1_j[0] * edgeValue * s0_grad_s1_minus_s1_grad_s0[1] - grad_L_2ip1_j[1] * edgeValue * s0_grad_s1_minus_s1_grad_s0[0] };
                   
                   for (int d=0; d<3; d++)
                   {
