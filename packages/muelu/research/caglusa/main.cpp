@@ -84,37 +84,49 @@ namespace Tpetra {
     using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
     using vals_type = typename crs_matrix::local_matrix_device_type::values_type;
 
-    auto lclA = A->getLocalMatrixHost();
+    auto lclA = A->getLocalMatrixDevice();
 
     auto rowptr = row_ptr_type("rowptr", lclA.numRows()+1);
 
-    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
-      auto row = lclA.row(rlid);
-      for (LocalOrdinal k = 0; k<row.length; ++k) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
-          rowptr(rlid+1) += 1;
-        }
-      }
-    }
-    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
-      rowptr(rlid+1) += rowptr(rlid);
-    }
+    Kokkos::parallel_for("removeSmallEntries::rowptr1",
+                         Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+                         KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+                           auto row = lclA.row(rlid);
+                           for (LocalOrdinal k = 0; k<row.length; ++k) {
+                             if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+                               rowptr(rlid+1) += 1;
+                             }
+                           }
+                         });
+    LocalOrdinal nnz;
+    Kokkos::parallel_scan("removeSmallEntries::rowptr2",
+                          Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+                          KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
 
-    auto nnz = rowptr(lclA.numRows());
+                            partial_nnz += rowptr(rlid+1);
+                            if (is_final)
+                              rowptr(rlid+1) = partial_nnz;
+
+                          }, nnz);
+
+    // auto nnz = rowptr(lclA.numRows());
+
     auto idx = col_idx_type("idx", nnz);
     auto vals = vals_type("vals", nnz);
 
-    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
-      auto row = lclA.row(rlid);
-      auto I = rowptr(rlid);
-      for (LocalOrdinal k = 0; k<row.length; ++k) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
-          idx(I) = row.colidx(k);
-          vals(I) = row.value(k);
-          I += 1;
-        }
-      }
-    }
+    Kokkos::parallel_for("removeSmallEntries::indicesValues",
+                         Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+                         KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+                           auto row = lclA.row(rlid);
+                           auto I = rowptr(rlid);
+                           for (LocalOrdinal k = 0; k<row.length; ++k) {
+                             if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+                               idx(I) = row.colidx(k);
+                               vals(I) = row.value(k);
+                               I += 1;
+                             }
+                           }
+                         });
 
     auto newA =  Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
     newA->fillComplete(A->getDomainMap(),
@@ -147,13 +159,15 @@ namespace Tpetra {
       LocalOrdinal minClusterSize = Teuchos::OrdinalTraits<LocalOrdinal>::max();
       LocalOrdinal maxClusterSize = 0;
       offsets_ = Kokkos::View<size_t*>("offsets", blockMap_->getLocalNumElements()+1);
-      offsets_(0) = 0;
+      auto offsets_h = Kokkos::create_mirror_view(offsets_);
+      offsets_h(0) = 0;
       for (size_t blockNum = 0; blockNum < blockMap_->getLocalNumElements(); ++blockNum) {
-        offsets_(blockNum+1) = offsets_(blockNum) + lclBlockSizes(blockNum, 0);
+        offsets_h(blockNum+1) = offsets_h(blockNum) + lclBlockSizes(blockNum, 0);
         minClusterSize = std::min(minClusterSize, lclBlockSizes(blockNum, 0));
         maxClusterSize = std::max(maxClusterSize, lclBlockSizes(blockNum, 0));
       }
-      TEUCHOS_ASSERT_EQUALITY(offsets_(blockMap_->getLocalNumElements()), pointMap->getLocalNumElements());
+      Kokkos::deep_copy(offsets_, offsets_h);
+      TEUCHOS_ASSERT_EQUALITY(offsets_h(blockMap_->getLocalNumElements()), pointMap->getLocalNumElements());
       minClusterSize_ = minClusterSize;
       maxClusterSize_ = maxClusterSize;
     }
@@ -563,8 +577,10 @@ namespace Tpetra {
         auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
         auto lcl_numUnknownsPerCluster = numUnknownsPerCluster->getLocalViewHost(Tpetra::Access::ReadOnly);
         auto lcl_ghosted_numUnknownsPerCluster = ghosted_numUnknownsPerCluster->getLocalViewHost(Tpetra::Access::ReadOnly);
-        auto lcl_offsets = kernelApproximations_->blockMap_->offsets_;
-        auto lcl_ghosted_offsets = kernelApproximations_->ghosted_blockMap_->offsets_;
+        auto lcl_offsets = Kokkos::create_mirror_view(kernelApproximations_->blockMap_->offsets_);
+        auto lcl_ghosted_offsets = Kokkos::create_mirror_view(kernelApproximations_->ghosted_blockMap_->offsets_);
+        Kokkos::deep_copy(lcl_offsets, kernelApproximations_->blockMap_->offsets_);
+        Kokkos::deep_copy(lcl_ghosted_offsets, kernelApproximations_->ghosted_blockMap_->offsets_);
 
         int dropped = 0;
         int kept = 0;
