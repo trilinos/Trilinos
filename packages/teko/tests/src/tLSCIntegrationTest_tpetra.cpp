@@ -48,10 +48,6 @@
 
 #include <string>
 
-// ML includes
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
-
 // Teko-Package includes
 #include "Teko_LSCPreconditionerFactory.hpp"
 #include "Teko_InvLSCStrategy.hpp"
@@ -106,14 +102,6 @@ void tLSCIntegrationTest_tpetra::solveList(Teuchos::ParameterList & paramList,in
    gmresList.set( "Maximum Restarts", 15 );                   // Maximum number of restarts allowed
    gmresList.set( "Convergence Tolerance", 1.0e-9 );         // Relative convergence tolerance requested
    paramList.set("Preconditioner Type","Ifpack2");
-
-   Teuchos::ParameterList & MLList = paramList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
-
-   // set default values for smoothed aggregation in MLList
-   //ML_Epetra::SetDefaults("SA",MLList);
-   MLList.set("max levels",6);
-   MLList.set("cycle applications",vcycles);
-   MLList.set("coarse: type","Amesos-KLU");
 }
 
 void tLSCIntegrationTest_tpetra::loadStableSystem()

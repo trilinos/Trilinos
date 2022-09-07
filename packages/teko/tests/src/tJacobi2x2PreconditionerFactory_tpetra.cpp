@@ -698,6 +698,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
    }
 
    {
+#ifdef TEKO_HAVE_EPETRA
       Teuchos::ParameterList p;
       p.set("Inverse Type","ML");
       p.set("Inverse Type 1","Amesos");
@@ -713,7 +714,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
       if(!status)
          os << "Incorrect number of factories constructed" << std::endl;
       allPassed &= status;
-#ifdef TEKO_HAVE_EPETRA
+
       status = (getLowsFactory<Thyra::AmesosLinearOpWithSolveFactory>(facts[0])!=Teuchos::null);
       if(!status)
          os << "Checking if Amesos inverse factory was consctructed" << std::endl;
