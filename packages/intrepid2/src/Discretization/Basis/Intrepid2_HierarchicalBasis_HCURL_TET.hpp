@@ -90,6 +90,7 @@ namespace Intrepid2
         
     static const ordinal_type numVertices         = 4;
     static const ordinal_type numEdges            = 6;
+    static const ordinal_type numEdgesPerFace     = 3;
     static const ordinal_type numFaceFamilies     = 2;
     static const ordinal_type numFaces            = 4;
     static const ordinal_type numVerticesPerFace  = 3;
@@ -101,6 +102,14 @@ namespace Intrepid2
                                                                      1,2,3, // face 2
                                                                      0,2,3  // face 3
                                                                     };
+    
+    // index into face_edges with faceOrdinal * numEdgesPerFace + faceEdgeNumber
+    // (entries are the edge numbers in the tetrahedron)
+    // note that the orientation of each face's third edge is reversed relative to the orientation in the volume
+    const ordinal_type face_edges[numFaces * numEdgesPerFace] = {0,1,2,  // face 0
+                                                                 0,4,3,  // face 1
+                                                                 1,5,4,  // face 2
+                                                                 2,5,3}; // face 3
         
     // the following ordering of the edges matches that used by ESEAS
     const ordinal_type edge_start_[numEdges] = {0,1,0,0,1,2}; // edge i is from edge_start_[i] to edge_end_[i]
@@ -108,6 +117,8 @@ namespace Intrepid2
     const ordinal_type face_family_start_ [numFaceFamilies] = {0,1};
     const ordinal_type face_family_middle_[numFaceFamilies] = {1,2};
     const ordinal_type face_family_end_   [numFaceFamilies] = {2,0};
+    
+     
     
     // interior basis functions are computed in terms of certain face basis functions.
     const ordinal_type faceOrdinalForInterior_[numInteriorFamilies] = {0,2,3};
@@ -336,7 +347,9 @@ namespace Intrepid2
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (s0,s1) (edgeOrdinal 0 in the face); family 2 involves functions from edge (s1,s2) (edgeOrdinal 1 in the face)
                     // TODO: fix this -- need to figure out which edge basis ordinal we actually mean (what's below supposes that there is just one face, that edge 0 in the face is edge 0 in the volume…), or just compute the edge function values directly…
-                    const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
+                    const int faceEdgeOrdinal   = familyOrdinal-1; // family I: use first edge from face; family II: use second edge
+                    const int volumeEdgeOrdinal = face_edges[faceOrdinal * numEdgesPerFace + faceEdgeOrdinal];
+                    const int edgeBasisOrdinal = i + volumeEdgeOrdinal*num1DEdgeFunctions;
                     const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
                     const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
                     const auto & edgeValue_z = output_(edgeBasisOrdinal,pointOrdinal,2);
