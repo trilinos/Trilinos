@@ -334,7 +334,8 @@ namespace Intrepid2
                     computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, familyOrdinal, i, lambda);
                     
                     const int j = ij_sum - i; // j >= 1
-                    // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
+                    // family 1 involves edge functions from edge (s0,s1) (edgeOrdinal 0 in the face); family 2 involves functions from edge (s1,s2) (edgeOrdinal 1 in the face)
+                    // TODO: fix this -- need to figure out which edge basis ordinal we actually mean (what's below supposes that there is just one face, that edge 0 in the face is edge 0 in the volume…), or just compute the edge function values directly…
                     const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
                     const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
                     const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
