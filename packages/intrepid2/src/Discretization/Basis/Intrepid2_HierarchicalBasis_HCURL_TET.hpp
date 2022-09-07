@@ -346,7 +346,6 @@ namespace Intrepid2
                     
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (s0,s1) (edgeOrdinal 0 in the face); family 2 involves functions from edge (s1,s2) (edgeOrdinal 1 in the face)
-                    // TODO: fix this -- need to figure out which edge basis ordinal we actually mean (what's below supposes that there is just one face, that edge 0 in the face is edge 0 in the volume…), or just compute the edge function values directly…
                     const int faceEdgeOrdinal   = familyOrdinal-1; // family I: use first edge from face; family II: use second edge
                     const int volumeEdgeOrdinal = face_edges[faceOrdinal * numEdgesPerFace + faceEdgeOrdinal];
                     const int edgeBasisOrdinal = i + volumeEdgeOrdinal*num1DEdgeFunctions;
@@ -549,7 +548,7 @@ namespace Intrepid2
                   PointScalar grad_L_2ip1_j[3];
                   for (int d=0; d<3; d++)
                   {
-                    grad_L_2ip1_j[d] = P_2ip1_j(j-1) * edgeValue * grad_s2[d] // [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2)
+                    grad_L_2ip1_j[d] = P_2ip1_j(j-1) * grad_s2[d]             // [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2)
                                      + L_2ip1_j_dt(j) * gradJacobiScaling[d]; // [R^{2i+1}_{j-1}](s0+s1,s2) grad (s0+s1+s2)
                   }
                   
