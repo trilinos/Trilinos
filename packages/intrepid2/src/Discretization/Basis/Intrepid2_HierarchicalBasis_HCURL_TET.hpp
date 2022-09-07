@@ -92,14 +92,15 @@ namespace Intrepid2
     static const ordinal_type numEdges            = 6;
     static const ordinal_type numFaceFamilies     = 2;
     static const ordinal_type numFaces            = 4;
+    static const ordinal_type numVerticesPerFace  = 3;
     static const ordinal_type numInteriorFamilies = 3;
     
-    // index into face_vertices with faceOrdinal * numVertices + vertexNumber
-    const ordinal_type face_vertices[numFaces*numVertices] = {0,1,2, // face 0
-                                                              0,1,3, // face 1
-                                                              1,2,3, // face 2
-                                                              0,2,3  // face 3
-                                                             };
+    // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+    const ordinal_type face_vertices[numFaces*numVerticesPerFace] = {0,1,2, // face 0
+                                                                     0,1,3, // face 1
+                                                                     1,2,3, // face 2
+                                                                     0,2,3  // face 3
+                                                                    };
         
     // the following ordering of the edges matches that used by ESEAS
     const ordinal_type edge_start_[numEdges] = {0,1,0,0,1,2}; // edge i is from edge_start_[i] to edge_end_[i]
@@ -126,7 +127,7 @@ namespace Intrepid2
       const ordinal_type numEdgeFunctions              = polyOrder * numEdges; // 6 edges
       const ordinal_type numFaceFunctionsPerFace       = polyOrder * (polyOrder-1);
       const ordinal_type numFaceFunctions              = numFaceFunctionsPerFace * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
-      const ordinal_type numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
+      const ordinal_type numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-2)*(polyOrder-1)*polyOrder/6 : 0; // p choose 3
       const ordinal_type numInteriorFunctions = numInteriorFunctionsPerFamily * numInteriorFamilies; // 3 families of interior functions
       const ordinal_type expectedCardinality  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
       
@@ -205,10 +206,10 @@ namespace Intrepid2
       const auto &s1_vertex_number = face_family_middle_[zeroBasedFamilyOrdinal];
       const auto &s2_vertex_number = face_family_end_   [zeroBasedFamilyOrdinal];
       
-      // index into face_vertices with faceOrdinal * numVertices + vertexNumber
-      const auto &s0_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s0_vertex_number];
-      const auto &s1_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s1_vertex_number];
-      const auto &s2_index = face_vertices[zeroBasedFaceOrdinal * numVertices + s2_vertex_number];
+      // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+      const auto &s0_index = face_vertices[zeroBasedFaceOrdinal * numVerticesPerFace + s0_vertex_number];
+      const auto &s1_index = face_vertices[zeroBasedFaceOrdinal * numVerticesPerFace + s1_vertex_number];
+      const auto &s2_index = face_vertices[zeroBasedFaceOrdinal * numVerticesPerFace + s2_vertex_number];
       
       const auto & s0 = lambda[s0_index];
       const auto & s1 = lambda[s1_index];
@@ -316,10 +317,10 @@ namespace Intrepid2
                 const auto &s1_vertex_number = face_family_middle_[familyOrdinal-1];
                 const auto &s2_vertex_number = face_family_end_   [familyOrdinal-1];
                 
-                // index into face_vertices with faceOrdinal * numVertices + vertexNumber
-                const auto &s0_index = face_vertices[faceOrdinal * numVertices + s0_vertex_number];
-                const auto &s1_index = face_vertices[faceOrdinal * numVertices + s1_vertex_number];
-                const auto &s2_index = face_vertices[faceOrdinal * numVertices + s2_vertex_number];
+                // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+                const auto &s0_index = face_vertices[faceOrdinal * numVerticesPerFace + s0_vertex_number];
+                const auto &s1_index = face_vertices[faceOrdinal * numVerticesPerFace + s1_vertex_number];
+                const auto &s2_index = face_vertices[faceOrdinal * numVerticesPerFace + s2_vertex_number];
                 
                 const auto & s0 = lambda[s0_index];
                 const auto & s1 = lambda[s1_index];
@@ -393,9 +394,8 @@ namespace Intrepid2
                       const auto & E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
                       output_(fieldOrdinal,pointOrdinal,d) = L_k * E_face_d;
                     }
+                    fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
                   }
-                  
-                  fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
                 }
               }
               fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set offset to be one past.
@@ -478,10 +478,10 @@ namespace Intrepid2
               const auto &s1_vertex_number = face_family_middle_[familyOrdinal-1];
               const auto &s2_vertex_number = face_family_end_   [familyOrdinal-1];
               
-              // index into face_vertices with faceOrdinal * numVertices + vertexNumber
-              const auto &s0_index = face_vertices[faceOrdinal * numVertices + s0_vertex_number];
-              const auto &s1_index = face_vertices[faceOrdinal * numVertices + s1_vertex_number];
-              const auto &s2_index = face_vertices[faceOrdinal * numVertices + s2_vertex_number];
+              // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+              const auto &s0_index = face_vertices[faceOrdinal * numVerticesPerFace + s0_vertex_number];
+              const auto &s1_index = face_vertices[faceOrdinal * numVerticesPerFace + s1_vertex_number];
+              const auto &s2_index = face_vertices[faceOrdinal * numVerticesPerFace + s2_vertex_number];
               
               const auto & s0 = lambda[s0_index];
               const auto & s1 = lambda[s0_index];
@@ -631,15 +631,14 @@ namespace Intrepid2
                       output_(fieldOrdinal,pointOrdinal,d) = L_k * curl_E_face_d + grad_L_k_cross_E_face[d];
                     }
                     
+                    fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
                   }
-                  
-                  fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
                 }
               }
               fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set offset to be one past.
             }
           } // interior functions block
-        }
+        } // OPERATOR_CURL
           break;
         case OPERATOR_GRAD:
         case OPERATOR_D1:
@@ -726,7 +725,7 @@ namespace Intrepid2
       
       const int numEdgeFunctions     = polyOrder * numEdges;
       const int numFaceFunctions     = polyOrder * (polyOrder-1) * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
-      const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-1)*polyOrder*(polyOrder+1)/6 - 1 : 0; // (p+1) choose 3 - 1
+      const int numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-2)*(polyOrder-1)*polyOrder/6 : 0; // (p choose 3)
       const int numInteriorFunctions = numInteriorFunctionsPerFamily * 3; // 3 families of interior functions
       this->basisCardinality_  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
       this->basisDegree_       = polyOrder;
@@ -793,9 +792,8 @@ namespace Intrepid2
             for (int j=1; j<ijk_sum-i; j++)
             {
               this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ijk_sum+1;
+              fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
             }
-            
-            fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
           }
         }
         fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
@@ -816,7 +814,6 @@ namespace Intrepid2
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         const ordinal_type edgeDim = 1, faceDim = 2, volumeDim = 3;
 
-        // TODO: revise this for 3D -- what's below is 2D (tri) implementation
         if (useCGBasis) {
           {
             int tagNumber = 0;
