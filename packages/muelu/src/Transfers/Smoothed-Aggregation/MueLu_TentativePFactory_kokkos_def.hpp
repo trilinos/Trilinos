@@ -1002,9 +1002,12 @@ namespace MueLu {
 
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
-    //    const SC     zero      = STS::zero();
-    const SC     one       = STS::one();
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
+
+    typedef Kokkos::ArithTraits<SC>     ATS;
+    using impl_SC = typename ATS::val_type;
+    using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+    const impl_SC one = impl_ATS::one();
 
     //    const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
