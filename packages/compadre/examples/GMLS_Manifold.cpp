@@ -500,7 +500,9 @@ Kokkos::initialize(argc, args);
         double coord[3] = {xval, yval, zval};
 
         // get tangent vector and see if orthgonal to coordinate (it should be on a sphere)
-        for (int j=0; j<dimension-1; ++j) {
+        for (unsigned int j=0; j<static_cast<unsigned int>(dimension-1); ++j) { 
+            // gcc 7 chokes on int(dimension-1) with -Waggressive-loop-optimizations
+            // so we use unsigned int instead
             double tangent_inner_prod = 0;
             for (int k=0; k<dimension; ++k) {
                 tangent_inner_prod += coord[k] * my_GMLS_scalar.getTangentBundle(i, j, k);
