@@ -118,29 +118,65 @@ namespace Intrepid2
     const ordinal_type face_family_middle_[numFaceFamilies] = {1,2};
     const ordinal_type face_family_end_   [numFaceFamilies] = {2,0};
     
-     
+    const ordinal_type numEdgeFunctions_;
+    const ordinal_type numFaceFunctionsPerFace_;
+    const ordinal_type numFaceFunctions_;
+    const ordinal_type numInteriorFunctionsPerFamily_;
+    const ordinal_type numInteriorFunctions_;
     
     // interior basis functions are computed in terms of certain face basis functions.
     const ordinal_type faceOrdinalForInterior_[numInteriorFamilies] = {0,2,3};
     const ordinal_type faceFamilyForInterior_[numInteriorFamilies]  = {0,0,1};
-    // interiorToFaceOffset_ indicates the (positive) offset from the face basis function to the related interior basis function.
-    ordinal_type interiorToFaceOffset_[numInteriorFamilies];
     const ordinal_type interiorCoordinateOrdinal_[numInteriorFamilies] = {3,0,1}; // m, where E^b_{ijk} is computed in terms of [L^{2(i+j)}_k](1-lambda_m, lambda_m)
+    
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type dofOrdinalForFace(const ordinal_type &faceOrdinal,
+                                   const ordinal_type &zeroBasedFaceFamily,
+                                   const ordinal_type &i,
+                                   const ordinal_type &j) const
+    {
+      // determine where the functions for this face start
+      const ordinal_type faceDofOffset = numEdgeFunctions_ + faceOrdinal * numFaceFunctionsPerFace_;
+      
+      // rather than deriving a closed formula in terms of i and j (which is potentially error-prone),
+      // we simply step through a for loop much as we do in the basis computations themselves.  (This method
+      // is not expected to be called so much as to be worth optimizing.)
+      
+      const ordinal_type max_ij_sum = polyOrder_ - 1;
+      
+      ordinal_type fieldOrdinal = faceDofOffset + zeroBasedFaceFamily; // families are interleaved on the face.
+      
+      for (ordinal_type ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
+      {
+        for (ordinal_type ii=0; ii<ij_sum; ii++)
+        {
+          // j will be ij_sum - i; j >= 1.
+          const ordinal_type jj = ij_sum - ii; // jj >= 1
+          if ( (ii == i) && (jj == j))
+          {
+            // have reached the (i,j) we're looking for
+            return fieldOrdinal;
+          }
+          fieldOrdinal += numFaceFamilies; // increment for the interleaving of face families.
+        }
+      }
+      return -1; // error: not found.
+    }
     
     Hierarchical_HCURL_TET_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
       polyOrder_(polyOrder),
-      fad_size_output_(getScalarDimensionForView(output))
+      fad_size_output_(getScalarDimensionForView(output)),
+      numEdgeFunctions_(polyOrder * numEdges),              // 6 edges
+      numFaceFunctionsPerFace_(polyOrder * (polyOrder-1)),  // 2 families, each with p*(p-1)/2 functions per face
+      numFaceFunctions_(numFaceFunctionsPerFace_*numFaces), // 4 faces
+      numInteriorFunctionsPerFamily_((polyOrder > 2) ? (polyOrder-2)*(polyOrder-1)*polyOrder/6 : 0), // p choose 3
+      numInteriorFunctions_(numInteriorFunctionsPerFamily_ * numInteriorFamilies) // 3 families of interior functions
     {
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       
-      const ordinal_type numEdgeFunctions              = polyOrder * numEdges; // 6 edges
-      const ordinal_type numFaceFunctionsPerFace       = polyOrder * (polyOrder-1);
-      const ordinal_type numFaceFunctions              = numFaceFunctionsPerFace * numFaces;  // 4 faces; 2 families, each with p*(p-1)/2 functions per face
-      const ordinal_type numInteriorFunctionsPerFamily = (polyOrder > 2) ? (polyOrder-2)*(polyOrder-1)*polyOrder/6 : 0; // p choose 3
-      const ordinal_type numInteriorFunctions = numInteriorFunctionsPerFamily * numInteriorFamilies; // 3 families of interior functions
-      const ordinal_type expectedCardinality  = numEdgeFunctions + numFaceFunctions + numInteriorFunctions;
+      const ordinal_type expectedCardinality  = numEdgeFunctions_ + numFaceFunctions_ + numInteriorFunctions_;
       
       // interior family I: computed in terms of face 012 (face ordinal 0), ordinal 0 in face family I.  First interior family is computed in terms of the first set of face functions (note that both sets of families are interleaved, so basis ordinal increments are by numInteriorFamilies and numFaceFamilies, respectively).
       // interior family II: computed in terms of face 123 (face ordinal 2), ordinal 2 in face family I.
@@ -148,14 +184,6 @@ namespace Intrepid2
       
       const ordinal_type faceOrdinalForInterior[numInteriorFamilies] = {0,2,3};
       const ordinal_type faceFamilyForInterior[numInteriorFamilies]  = {0,0,1};
-      
-      for (int i=0; i<numInteriorFamilies; i++)
-      {
-        // all the functions for a given face are grouped together; within a face, families are interleaved.
-        const int offsetFromInteriorStart = i; // where the interior functions begin, relative to 1 past the last face function
-        const int offsetFromFaceStart = faceOrdinalForInterior[i] * numFaceFunctionsPerFace + faceFamilyForInterior[i]; // where the related face functions begin, relative to the first face function.
-        interiorToFaceOffset_[i] = numFaceFunctions + offsetFromInteriorStart - offsetFromFaceStart;
-      }
       
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
       INTREPID2_TEST_FOR_EXCEPTION(numFields_ != expectedCardinality, std::invalid_argument, "output field size does not match basis cardinality");
@@ -207,12 +235,10 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     void computeFaceIntegratedJacobi(OutputScratchView &L_2ip1,
                                      const ordinal_type &zeroBasedFaceOrdinal,
-                                     const ordinal_type &oneBasedFamilyOrdinal,
+                                     const ordinal_type &zeroBasedFamilyOrdinal,
                                      const ordinal_type &i,
                                      const PointScalar* lambda) const
     {
-      const ordinal_type zeroBasedFamilyOrdinal = oneBasedFamilyOrdinal - 1;
-      
       const auto &s0_vertex_number = face_family_start_ [zeroBasedFamilyOrdinal];
       const auto &s1_vertex_number = face_family_middle_[zeroBasedFamilyOrdinal];
       const auto &s2_vertex_number = face_family_end_   [zeroBasedFamilyOrdinal];
@@ -342,7 +368,7 @@ namespace Intrepid2
                 {
                   for (int i=0; i<ij_sum; i++)
                   {
-                    computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, familyOrdinal, i, lambda);
+                    computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, familyOrdinal-1, i, lambda);
                     
                     const int j = ij_sum - i; // j >= 1
                     // family 1 involves edge functions from edge (s0,s1) (edgeOrdinal 0 in the face); family 2 involves functions from edge (s1,s2) (edgeOrdinal 1 in the face)
@@ -381,21 +407,24 @@ namespace Intrepid2
             {
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
               
-              // the interior functions are blended face functions.  This offset tells us how to get from the ordinal of the interior function to the the corresponding ordinal of the face function.
-              const ordinal_type & faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];
-              
               // lambda_m is used to compute the appropriate weight in terms of Jacobi functions of order k below.
               const auto & lambda_m = lambda[interiorCoordinateOrdinal_[interiorFamilyOrdinal-1]];
               const PointScalar jacobiScaling = 1.0;
               
               ordinal_type fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
               
+              const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
+              const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
+              
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (int i=0; i<ijk_sum; i++)
+                for (int i=0; i<ijk_sum-1; i++)
                 {
                   for (int j=1; j<ijk_sum-i; j++)
                   {
+                    // the interior functions are blended face functions.  This dof ordinal corresponds to the face function which we blend.
+                    const ordinal_type faceDofOrdinal = dofOrdinalForFace(relatedFaceOrdinal, relatedFaceFamily, i, j);
+                    
                     const double alpha = 2 * (i + j);
                     
                     Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj, alpha, polyOrder_-1, lambda_m, jacobiScaling);
@@ -404,7 +433,7 @@ namespace Intrepid2
                     const auto & L_k      = L_2ipj(k);
                     for (int d=0; d<3; d++)
                     {
-                      const auto & E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
+                      const auto & E_face_d = output_(faceDofOrdinal,pointOrdinal,d);
                       output_(fieldOrdinal,pointOrdinal,d) = L_k * E_face_d;
                     }
                     fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
@@ -587,10 +616,8 @@ namespace Intrepid2
             {
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
               
-              // the interior functions are blended face functions.  This offset tells us how to get from the ordinal of the interior function to the the corresponding ordinal of the face function.
-              const ordinal_type &faceOrdinalOffset = interiorToFaceOffset_[interiorFamilyOrdinal-1];   // dof ordinal offset
-              const ordinal_type &faceOrdinal       = faceOrdinalForInterior_[interiorFamilyOrdinal-1]; // face ordinal (0,1,2,3)
-              const ordinal_type &faceFamilyOrdinal = faceFamilyForInterior_[interiorFamilyOrdinal-1];  // zero-based face family ordinal (0 or 1)
+              const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
+              const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
               
               // lambda_m is used to compute the appropriate weight in terms of Jacobi functions of order k below.
               const auto & m        = interiorCoordinateOrdinal_[interiorFamilyOrdinal-1];
@@ -601,12 +628,12 @@ namespace Intrepid2
               
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (int i=0; i<ijk_sum; i++)
+                for (int i=0; i<ijk_sum-1; i++)
                 {
-                  computeFaceIntegratedJacobi(L_2ip1, faceOrdinal, faceFamilyOrdinal + 1, i, lambda); // +1 because computeFaceIntegratedJacobi() expects a one-based ordinal
+                  computeFaceIntegratedJacobi(L_2ip1, relatedFaceOrdinal, relatedFaceFamily, i, lambda);
                   // face family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
-                  const ordinal_type faceEdgeOrdinal = faceFamilyOrdinal;
-                  const int volumeEdgeOrdinal = face_edges[faceOrdinal * numEdgesPerFace + faceEdgeOrdinal];
+                  const ordinal_type faceEdgeOrdinal = relatedFaceFamily;
+                  const int volumeEdgeOrdinal = face_edges[relatedFaceOrdinal * numEdgesPerFace + faceEdgeOrdinal];
                   computeEdgeLegendre(P, volumeEdgeOrdinal, lambda);
                   
                   OutputScalar edgeValue[3];
@@ -614,6 +641,9 @@ namespace Intrepid2
                   
                   for (int j=1; j<ijk_sum-i; j++)
                   {
+                    // the interior functions are blended face functions.  This dof ordinal corresponds to the face function which we blend.
+                    const ordinal_type faceDofOrdinal = dofOrdinalForFace(relatedFaceOrdinal, relatedFaceFamily, i, j);
+                    
                     const double alpha = 2 * (i + j);
                     
                     Polynomials::shiftedScaledIntegratedJacobiValues(L_2ipj, alpha, polyOrder_-1, lambda_m, jacobiScaling);
@@ -639,7 +669,7 @@ namespace Intrepid2
                                                             grad_L_k[0] * E_face[1] - grad_L_k[1] * E_face[0]};
                     for (int d=0; d<3; d++)
                     {
-                      const auto & curl_E_face_d = output_(fieldOrdinal-faceOrdinalOffset,pointOrdinal,d);
+                      const auto & curl_E_face_d = output_(faceDofOrdinal,pointOrdinal,d);
                       output_(fieldOrdinal,pointOrdinal,d) = L_k * curl_E_face_d + grad_L_k_cross_E_face[d];
                     }
                     
@@ -799,7 +829,7 @@ namespace Intrepid2
         int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
         for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
         {
-          for (int i=0; i<ijk_sum; i++)
+          for (int i=0; i<ijk_sum-1; i++)
           {
             for (int j=1; j<ijk_sum-i; j++)
             {
@@ -815,6 +845,11 @@ namespace Intrepid2
       
       // initialize tags
       {
+        // ESEAS numbers tetrahedron faces differently from Intrepid2
+        // ESEAS:     012, 013, 123, 023
+        // Intrepid2: 013, 123, 032, 021
+        const int intrepid2FaceOrdinals[4] {3,0,1,2}; // index is the ESEAS face ordinal; value is the intrepid2 ordinal
+        
         const auto & cardinality = this->basisCardinality_;
         
         // Basis-dependent initializations
@@ -841,12 +876,13 @@ namespace Intrepid2
               }
             }
             const int numFunctionsPerFace = numFaceFunctions / numFaces;
-            for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
+            for (int faceOrdinalESEAS=0; faceOrdinalESEAS<numFaces; faceOrdinalESEAS++)
             {
+              int faceOrdinalIntrepid2 = intrepid2FaceOrdinals[faceOrdinalESEAS];
               for (int functionOrdinal=0; functionOrdinal<numFunctionsPerFace; functionOrdinal++)
               {
                 tagView(tagNumber*tagSize+0) = faceDim;               // face dimension
-                tagView(tagNumber*tagSize+1) = faceOrdinal;           // face id
+                tagView(tagNumber*tagSize+1) = faceOrdinalIntrepid2;  // face id
                 tagView(tagNumber*tagSize+2) = functionOrdinal;       // local dof id
                 tagView(tagNumber*tagSize+3) = numFunctionsPerFace;   // total number of dofs on this face
                 tagNumber++;
