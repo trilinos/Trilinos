@@ -73,9 +73,9 @@ function execute_command()
         local _runtime=$((_stop-_start))
 
         if [ $err -ne 0 ]; then
-            message_std "PRDriver> " "${red}FAILED $(color 100)(${_runtime} s)${normal}"
+            message_std "PRDriver> " "${red}FAILED ${normal}(${_runtime} s)"
         else
-            message_std "PRDriver> " "${green}OK $(color 100)(${_runtime} s)${normal}"
+            message_std "PRDriver> " "${green}OK ${normal}(${_runtime} s)"
         fi
     else
         message_std "PRDriver> " "${red}ERROR: command '${command:?}' is not executable"
@@ -302,7 +302,7 @@ function get_python_packages() {
     )
     message_std "PRDriver> " ""
     # ${pip_exe:?} install --user ${pip_args[@]}
-    execute_command "${pip_exe:?} install --user ${pip_args[@]}"
+    ${pip_exe:?} install --user "${pip_args[@]}"
 }
 
 
