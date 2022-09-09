@@ -55,7 +55,6 @@
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -181,9 +180,6 @@ namespace Intrepid2
       // interior family I: computed in terms of face 012 (face ordinal 0), ordinal 0 in face family I.  First interior family is computed in terms of the first set of face functions (note that both sets of families are interleaved, so basis ordinal increments are by numInteriorFamilies and numFaceFamilies, respectively).
       // interior family II: computed in terms of face 123 (face ordinal 2), ordinal 2 in face family I.
       // interior family III: computed in terms of face 230 (face ordinal 3), ordinal 3 in face family II.
-      
-      const ordinal_type faceOrdinalForInterior[numInteriorFamilies] = {0,2,3};
-      const ordinal_type faceFamilyForInterior[numInteriorFamilies]  = {0,0,1};
       
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
       INTREPID2_TEST_FOR_EXCEPTION(numFields_ != expectedCardinality, std::invalid_argument, "output field size does not match basis cardinality");
