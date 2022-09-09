@@ -475,11 +475,28 @@ namespace
         }
         
         const int subcellCount = cellTopo->getSubcellCount(subcellDim);
+        auto basis1AllDofOrdinal = basis1.getAllDofOrdinal();
+        auto basis2AllDofOrdinal = basis2.getAllDofOrdinal();
         for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
         {
           // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
-          const int basis1FirstDofOrdinal = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
-          const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          int basis1FirstDofOrdinal, basis2FirstDofOrdinal;
+          if ((subcellDim < basis1AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis1AllDofOrdinal.extent_int(1)))
+          {
+            basis1FirstDofOrdinal = basis1AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          }
+          else
+          {
+            basis1FirstDofOrdinal = -1;
+          }
+          if ((subcellDim < basis2AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis2AllDofOrdinal.extent_int(1)))
+          {
+            basis2FirstDofOrdinal = basis2AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          }
+          else
+          {
+            basis2FirstDofOrdinal = -1;
+          }
           // if there are no dofs on the subcell, we'll get a -1 value
           if ((basis1FirstDofOrdinal == -1) || (basis2FirstDofOrdinal == -1))
           {
