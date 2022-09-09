@@ -709,7 +709,7 @@ namespace Intrepid2
       {
         for (int ij_sum=0; ij_sum <= max_ij_sum; ij_sum++)
         {
-          for (int i=0; i<ij_sum; i++)
+          for (int i=0; i<=ij_sum; i++)
           {
             this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
             fieldOrdinal++;
@@ -728,9 +728,9 @@ namespace Intrepid2
         int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
         for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
         {
-          for (int i=0; i<ijk_sum-1; i++)
+          for (int i=0; i<ijk_sum; i++)
           {
-            for (int j=1; j<ijk_sum-i; j++)
+            for (int j=0; j<ijk_sum-i; j++)
             {
               this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ijk_sum+1;
               fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
