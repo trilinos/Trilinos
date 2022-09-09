@@ -84,6 +84,10 @@ namespace Tpetra {
     using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
     using vals_type = typename crs_matrix::local_matrix_device_type::values_type;
 
+    typedef Kokkos::ArithTraits<Scalar> ATS;
+    using impl_SC = typename ATS::val_type;
+    using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+
     auto lclA = A->getLocalMatrixDevice();
 
     auto rowptr = row_ptr_type("rowptr", lclA.numRows()+1);
@@ -93,7 +97,7 @@ namespace Tpetra {
                          KOKKOS_LAMBDA(const LocalOrdinal rlid) {
                            auto row = lclA.row(rlid);
                            for (LocalOrdinal k = 0; k<row.length; ++k) {
-                             if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+                             if (impl_ATS::magnitude(row.value(k)) > tol) {
                                rowptr(rlid+1) += 1;
                              }
                            }
@@ -120,7 +124,7 @@ namespace Tpetra {
                            auto row = lclA.row(rlid);
                            auto I = rowptr(rlid);
                            for (LocalOrdinal k = 0; k<row.length; ++k) {
-                             if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+                             if (impl_ATS::magnitude(row.value(k)) > tol) {
                                idx(I) = row.colidx(k);
                                vals(I) = row.value(k);
                                I += 1;
@@ -542,7 +546,7 @@ namespace Tpetra {
         auto rowptr = newBasisMatrixT->getLocalRowPtrsHost();
         LocalOrdinal clusterStart = 0;
         LocalOrdinal clusterEnd = 0;
-        for (LocalOrdinal cluster = 0; cluster < lcl_clusterSizes.extent(0); ++cluster) {
+        for (LocalOrdinal cluster = 0; cluster < lcl_clusterSizes.extent_int(0); ++cluster) {
           clusterStart = clusterEnd;
           clusterEnd += lcl_clusterSizes(cluster, 0);
           LocalOrdinal maxEntries = 0;
@@ -552,7 +556,7 @@ namespace Tpetra {
           }
           lcl_numUnknownsPerCluster(cluster, 0) = maxEntries;
         }
-        TEUCHOS_ASSERT_EQUALITY(clusterEnd+1, rowptr.extent(0));
+        TEUCHOS_ASSERT_EQUALITY(clusterEnd+1, rowptr.extent_int(0));
       }
 
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
@@ -594,7 +598,6 @@ namespace Tpetra {
             if (brow.value(k) > 0.5) {
               LocalOrdinal bclid = brow.colidx(k);
               size_t bcsize = lcl_ghosted_clusterSizes(bclid, 0);
-              size_t bsize = brsize*bcsize;
 
               if (brsize * bcsize >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0)) {
                 ++dropped;
@@ -604,13 +607,13 @@ namespace Tpetra {
                 const LocalOrdinal row_end = lcl_offsets(brlid+1);
                 const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
                 const LocalOrdinal col_end = lcl_ghosted_offsets(bclid+1);
-                TEUCHOS_ASSERT_EQUALITY(row_end-row_start, brsize);
-                TEUCHOS_ASSERT_EQUALITY(col_end-col_start, bcsize);
+                TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(row_end-row_start), brsize);
+                TEUCHOS_ASSERT_EQUALITY(Teuchos::as<size_t>(col_end-col_start), bcsize);
                 // loop over rows of kernelApproximations in pointwise indexing
                 for (LocalOrdinal rlid = row_start; rlid <  row_end; ++rlid) {
                   auto diff_row = lcl_diffKernelApprox.row(rlid);
                   auto row = lcl_KernelApprox.row(rlid);
-                  int removed = 0;
+                  size_t removed = 0;
                   for (LocalOrdinal n = 0; n < row.length; ++n) {
                     if ((col_start <= row.colidx(n)) && (col_end > row.colidx(n))) {
                       diff_row.value(n) = row.value(n);
@@ -665,7 +668,7 @@ namespace Tpetra {
           transferMatrices_[i]->blockA_->localApply(*clusterUseCount, *mv_temp, Teuchos::TRANS);
           auto lcl_counts = mv_temp->getLocalViewHost(Tpetra::Access::ReadOnly);
           Scalar lcl_count = zero, gbl_count = zero;
-          for (LocalOrdinal n = 0; n < lcl_counts.extent(0); ++n) {
+          for (LocalOrdinal n = 0; n < lcl_counts.extent_int(0); ++n) {
             lcl_count += lcl_counts(n, 0);
           }
           Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &lcl_count, &gbl_count);
