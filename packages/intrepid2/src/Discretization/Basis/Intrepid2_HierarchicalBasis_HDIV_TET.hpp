@@ -637,8 +637,6 @@ namespace Intrepid2
     }
   };
 
-namespace Intrepid2
-{
   /** \class  Intrepid2::HierarchicalBasis_HDIV_TET
       \brief  For mathematical details of the construction, see:
    
