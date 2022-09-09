@@ -1088,7 +1088,7 @@ namespace
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
     const double relTol=1e-6;
-    const double absTol=1e-10;
+    const double absTol=1e-9;
     
     for (int polyOrder=1; polyOrder<7; polyOrder++)
     {
