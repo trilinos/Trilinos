@@ -109,6 +109,11 @@ namespace Intrepid2
     const ordinal_type faceFamilyForInterior_[numInteriorFamilies]  = {0,0,1};
     const ordinal_type interiorCoordinateOrdinal_[numInteriorFamilies] = {3,0,1}; // m, where V^b_{ijk} is computed in terms of [L^{2(i+j)}_k](1-lambda_m, lambda_m)
     
+    //
+    const ordinal_type interior_face_family_start_ [numInteriorFamilies] = {0,0,1};
+    const ordinal_type interior_face_family_middle_[numInteriorFamilies] = {1,1,2};
+    const ordinal_type interior_face_family_end_   [numInteriorFamilies] = {2,2,0};
+    
     KOKKOS_INLINE_FUNCTION
     ordinal_type dofOrdinalForFace(const ordinal_type &faceOrdinal,
                                    const ordinal_type &zeroBasedFaceFamily,
@@ -185,6 +190,32 @@ namespace Intrepid2
       Polynomials::shiftedScaledJacobiValues(P_2ip1, alpha, polyOrder_-1, s2, jacobiScaling);
     }
     
+    //! The face functions we compute for interior blending can have a different orientation than the ones used for face functions (specifically, for interior family III, we have 230 instead of 023).
+    KOKKOS_INLINE_FUNCTION
+    void computeFaceJacobiForInterior(OutputScratchView &P_2ip1,
+                                      const ordinal_type &zeroBasedInteriorFamilyOrdinal,
+                                      const ordinal_type &i,
+                                      const PointScalar* lambda) const
+    {
+      const ordinal_type & relatedFaceOrdinal = faceOrdinalForInterior_[zeroBasedInteriorFamilyOrdinal];
+      const auto &s0_vertex_number = interior_face_family_start_ [zeroBasedInteriorFamilyOrdinal];
+      const auto &s1_vertex_number = interior_face_family_middle_[zeroBasedInteriorFamilyOrdinal];
+      const auto &s2_vertex_number = interior_face_family_end_   [zeroBasedInteriorFamilyOrdinal];
+      
+      // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+      const auto &s0_index = face_vertices[relatedFaceOrdinal * numVerticesPerFace + s0_vertex_number];
+      const auto &s1_index = face_vertices[relatedFaceOrdinal * numVerticesPerFace + s1_vertex_number];
+      const auto &s2_index = face_vertices[relatedFaceOrdinal * numVerticesPerFace + s2_vertex_number];
+      
+      const auto & s0 = lambda[s0_index];
+      const auto & s1 = lambda[s1_index];
+      const auto & s2 = lambda[s2_index];
+      const PointScalar jacobiScaling = s0 + s1 + s2;
+      
+      const double alpha = i*2.0 + 1;
+      Polynomials::shiftedScaledJacobiValues(P_2ip1, alpha, polyOrder_-1, s2, jacobiScaling);
+    }
+    
     KOKKOS_INLINE_FUNCTION
     void computeFaceLegendre(OutputScratchView &P,
                              const ordinal_type &zeroBasedFaceOrdinal,
@@ -193,6 +224,26 @@ namespace Intrepid2
       // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
       const auto &s0_index = face_vertices[zeroBasedFaceOrdinal * numVerticesPerFace + 0];
       const auto &s1_index = face_vertices[zeroBasedFaceOrdinal * numVerticesPerFace + 1];
+      
+      const auto & s0 = lambda[s0_index];
+      const auto & s1 = lambda[s1_index];
+      const PointScalar legendreScaling = s0 + s1;
+      
+      Polynomials::shiftedScaledLegendreValues(P, polyOrder_-1, s1, legendreScaling);
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void computeFaceLegendreForInterior(OutputScratchView &P,
+                                        const ordinal_type &zeroBasedInteriorFamilyOrdinal,
+                                        const PointScalar* lambda) const
+    {
+      const ordinal_type & relatedFaceOrdinal = faceOrdinalForInterior_[zeroBasedInteriorFamilyOrdinal];
+      const auto &s0_vertex_number = interior_face_family_start_ [zeroBasedInteriorFamilyOrdinal];
+      const auto &s1_vertex_number = interior_face_family_middle_[zeroBasedInteriorFamilyOrdinal];
+      
+      // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
+      const auto &s0_index = face_vertices[relatedFaceOrdinal * numVerticesPerFace + s0_vertex_number];
+      const auto &s1_index = face_vertices[relatedFaceOrdinal * numVerticesPerFace + s1_vertex_number];
       
       const auto & s0 = lambda[s0_index];
       const auto & s1 = lambda[s1_index];
@@ -357,14 +408,14 @@ namespace Intrepid2
                                       const PointScalar* lambda_dy,
                                       const PointScalar* lambda_dz) const
     {
-      // grad [L^alpha_j](t0,t1) = [P^alpha_{j-1}](t0,t1) grad(t1) + [R^alpha_{j-1}](t0,t1) grad(t1+t0)
+      // grad [L^alpha_k](t0,t1) = [P^alpha_{k-1}](t0,t1) grad(t1) + [R^alpha_{k-1}](t0,t1) grad(t1+t0)
       // here, t0 = 1-lambda_m, t1 = lambda_m ==> t1 + t0 = 1 ==> grad(t1+t0) = 0 ==> the R term vanishes.
       
       const ordinal_type &m = interiorCoordinateOrdinal_[zeroBasedFamilyOrdinal];
       
-      L_2ipjp1_dx = P_2ipjp1(j-1) * lambda_dx[m];
-      L_2ipjp1_dy = P_2ipjp1(j-1) * lambda_dy[m];
-      L_2ipjp1_dz = P_2ipjp1(j-1) * lambda_dz[m];
+      L_2ipjp1_dx = P_2ipjp1(k-1) * lambda_dx[m];
+      L_2ipjp1_dy = P_2ipjp1(k-1) * lambda_dy[m];
+      L_2ipjp1_dz = P_2ipjp1(k-1) * lambda_dz[m];
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -434,9 +485,9 @@ namespace Intrepid2
               ordinal_type fieldOrdinal = faceOrdinal * numFaceFunctionsPerFace_;
               computeFaceLegendre(P, faceOrdinal, lambda);
               
-              for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
+              for (int ij_sum=0; ij_sum <= max_ij_sum; ij_sum++)
               {
-                for (int i=0; i<ij_sum; i++)
+                for (int i=0; i<=ij_sum; i++)
                 {
                   computeFaceJacobi(P_2ip1, faceOrdinal, i, lambda);
                   
@@ -476,14 +527,14 @@ namespace Intrepid2
               const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
               const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
             
-              computeFaceLegendre(P, relatedFaceOrdinal, lambda);
+              computeFaceLegendreForInterior(P, interiorFamilyOrdinal-1, lambda);
               computeFaceVectorWeight(vectorWeight_x, vectorWeight_y, vectorWeight_z, relatedFaceOrdinal, lambda, lambda_dx, lambda_dy, lambda_dz);
               
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
                 for (int i=0; i<ijk_sum; i++)
                 {
-                  computeFaceJacobi(P_2ip1, relatedFaceOrdinal, i, lambda);
+                  computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
                   for (int j=0; j<ijk_sum-i; j++)
                   {
                     const ordinal_type k = ijk_sum - i - j;
@@ -560,7 +611,7 @@ namespace Intrepid2
               const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
               
               const int max_ij_sum = polyOrder_ - 1;
-              computeFaceLegendre(P, relatedFaceOrdinal, lambda);
+              computeFaceLegendreForInterior(P, interiorFamilyOrdinal-1, lambda);
               OutputScalar divWeight;
               computeFaceDivWeight(divWeight, relatedFaceOrdinal, lambda_dx, lambda_dy, lambda_dz);
               
@@ -573,7 +624,7 @@ namespace Intrepid2
               {
                 for (ordinal_type i=0; i<ijk_sum; i++)
                 {
-                  computeFaceJacobi(P_2ip1, relatedFaceOrdinal, i, lambda);
+                  computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
                   for (ordinal_type j=0; j<ijk_sum-i; j++)
                   {
                     const ordinal_type k = ijk_sum - i - j;
@@ -695,7 +746,6 @@ namespace Intrepid2
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Hierarchical H(div) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
       
-      int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
       // no vertex functions in H(div)
       
@@ -719,13 +769,13 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal != numEdgeFunctions + numFaceFunctions, std::invalid_argument, "Internal error: basis enumeration is incorrect");
       
       const int numInteriorFamilies = 3;
-      const int interiorFieldOrdinalOffset = fieldOrdinalOffset;
+      const int interiorFieldOrdinalOffset = fieldOrdinal;
       const int min_ijk_sum = 1;
       const int max_ijk_sum = polyOrder-1;
       for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
       {
         // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
-        int fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+        fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
         for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
         {
           for (int i=0; i<ijk_sum; i++)
@@ -737,10 +787,10 @@ namespace Intrepid2
             }
           }
         }
-        fieldOrdinalOffset = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numFaceFamilies past the last face ordinal.  Set offset to be one past.
+        fieldOrdinal = fieldOrdinal - numInteriorFamilies + 1; // due to the interleaving increment, we've gone numInteriorFamilies past the last interior ordinal.  Set fieldOrdinal to be one past.
       }
 
-      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
+      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinal != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
       
       // initialize tags
       {
