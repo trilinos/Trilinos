@@ -512,9 +512,13 @@ namespace Intrepid2
             auto & P_2ip1   = scratch1;
             auto & L_2ipjp1 = scratch2; // L^{2(i+j+1)}, integrated Jacobi
             
-            const int numInteriorFamilies = 3;
-            const int min_ijk_sum = 1;
-            const int max_ijk_sum = polyOrder_-1;
+            const ordinal_type numInteriorFamilies = 3;
+            const ordinal_type min_ijk_sum = 1;
+            const ordinal_type max_ijk_sum = polyOrder_-1;
+            const ordinal_type min_ij_sum  = 0;
+            const ordinal_type min_k       = 1;
+            const ordinal_type min_j       = 0;
+            const ordinal_type min_i       = 0;
             
             OutputScalar vectorWeight_x, vectorWeight_y, vectorWeight_z;
             
@@ -532,15 +536,16 @@ namespace Intrepid2
               
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (int i=0; i<ijk_sum; i++)
+                for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
                 {
-                  computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
-                  for (int j=0; j<ijk_sum-i; j++)
+                  for (int i=min_i; i<=ij_sum-min_j; i++)
                   {
-                    const ordinal_type k = ijk_sum - i - j;
-                    
+                    const ordinal_type j = ij_sum-i;
+                    const ordinal_type k = ijk_sum - ij_sum;
+
+                    computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
                     computeInteriorIntegratedJacobi(L_2ipjp1, i, j, interiorFamilyOrdinal-1, lambda);
-                    
+                      
                     OutputScalar V_x, V_y, V_z;
                     
                     faceFunctionValue(V_x, V_y, V_z, i, j, P, P_2ip1, vectorWeight_x, vectorWeight_y, vectorWeight_z, lambda);
@@ -610,7 +615,6 @@ namespace Intrepid2
               const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
               const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
               
-              const int max_ij_sum = polyOrder_ - 1;
               computeFaceLegendreForInterior(P, interiorFamilyOrdinal-1, lambda);
               OutputScalar divWeight;
               computeFaceDivWeight(divWeight, relatedFaceOrdinal, lambda_dx, lambda_dy, lambda_dz);
@@ -620,14 +624,21 @@ namespace Intrepid2
               
               ordinal_type fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
               
-              for (ordinal_type ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
+              const ordinal_type min_ijk_sum = 1;
+              const ordinal_type max_ijk_sum = polyOrder_-1;
+              const ordinal_type min_ij_sum  = 0;
+              const ordinal_type min_k       = 1;
+              const ordinal_type min_j       = 0;
+              const ordinal_type min_i       = 0;
+              for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (ordinal_type i=0; i<ijk_sum; i++)
+                for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
                 {
-                  computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
-                  for (ordinal_type j=0; j<ijk_sum-i; j++)
+                  for (int i=min_i; i<=ij_sum-min_j; i++)
                   {
-                    const ordinal_type k = ijk_sum - i - j;
+                    const ordinal_type j = ij_sum-i;
+                    const ordinal_type k = ijk_sum - ij_sum;
+                    computeFaceJacobiForInterior(P_2ip1, interiorFamilyOrdinal-1, i, lambda);
                     
                     OutputScalar faceDiv;
                     faceFunctionDiv(faceDiv, i, j, P, P_2ip1, divWeight, lambda);
@@ -770,17 +781,21 @@ namespace Intrepid2
       
       const int numInteriorFamilies = 3;
       const int interiorFieldOrdinalOffset = fieldOrdinal;
-      const int min_ijk_sum = 1;
-      const int max_ijk_sum = polyOrder-1;
+      const ordinal_type min_ijk_sum = 1;
+      const ordinal_type max_ijk_sum = polyOrder_-1;
+      const ordinal_type min_ij_sum  = 0;
+      const ordinal_type min_k       = 1;
+      const ordinal_type min_j       = 0;
+      const ordinal_type min_i       = 0;
       for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
       {
         // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
         fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
         for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
         {
-          for (int i=0; i<ijk_sum; i++)
+          for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
           {
-            for (int j=0; j<ijk_sum-i; j++)
+            for (int i=min_i; i<=ij_sum-min_j; i++)
             {
               this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ijk_sum+1;
               fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
