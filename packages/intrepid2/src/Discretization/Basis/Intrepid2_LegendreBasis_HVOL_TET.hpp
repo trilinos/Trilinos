@@ -114,16 +114,16 @@ namespace Intrepid2
       // [P^{2i+1}_j](lambda_0 + lambda_1, lambda_2) = P^{2i+1}_j(lambda_2; lambda_0 + lambda_1 + lambda_2) = P^{2i+1}_j(y; 1 - z) -- a shifted, scaled Jacobi function
       // [P^{2*(i+j+1)}_k](1-lambda_3,lambda_3) = P^{2*(i+j+1)}_k(lambda_3; 1) = P^{2*(i+j+1)}_k(z; 1) -- another shifted, scaled Jacobi function
       auto pointOrdinal = teamMember.league_rank();
-      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point_1, jacobi_values_at_point_2;
+      OutputScratchView P, P_2p1, P_2ipjp1;
       if (fad_size_output_ > 0) {
-        legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        jacobi_values_at_point_1       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        jacobi_values_at_point_2       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P        = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P_2p1    = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P_2ipjp1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
       }
       else {
-        legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        jacobi_values_at_point_1       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        jacobi_values_at_point_2       = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P        = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P_2p1    = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P_2ipjp1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
       }
       
       const auto & x = inputPoints_(pointOrdinal,0);
@@ -140,7 +140,7 @@ namespace Intrepid2
           // face functions
           {
             const PointScalar tLegendre = lambda[0] + lambda[1];
-            Polynomials::shiftedScaledLegendreValues(legendre_field_values_at_point, polyOrder_, lambda[1], tLegendre);
+            Polynomials::shiftedScaledLegendreValues(P, polyOrder_, lambda[1], tLegendre);
 
             int fieldOrdinalOffset = 0;
             
@@ -161,18 +161,18 @@ namespace Intrepid2
                   const double alpha1          = i * 2.0 + 1.;
                   const PointScalar tJacobi1   = lambda[0] + lambda[1] + lambda[2];
                   const PointScalar & xJacobi1 = lambda[2];
-                  Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point_1, alpha1, polyOrder_, xJacobi1, tJacobi1);
+                  Polynomials::shiftedScaledJacobiValues(P_2p1, alpha1, polyOrder_, xJacobi1, tJacobi1);
                   
                   const double alpha2          = 2. * (i + j + 1.);
                   const PointScalar tJacobi2   = 1.0; // 1 - lambda[3] + lambda[3]
                   const PointScalar & xJacobi2 = lambda[3];
-                  Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point_2, alpha2, polyOrder_, xJacobi2, tJacobi2);
+                  Polynomials::shiftedScaledJacobiValues(P_2ipjp1, alpha2, polyOrder_, xJacobi2, tJacobi2);
                   
-                  const auto & legendreValue = legendre_field_values_at_point(i);
-                  const auto & jacobiValue1  = jacobi_values_at_point_1(j);
-                  const auto & jacobiValue2  = jacobi_values_at_point_2(k);
+                  const auto & P_i        = P(i);
+                  const auto & P_2p1_j    = P_2p1(j);
+                  const auto & P_2ipjp1_k = P_2ipjp1(k);
                   
-                  output_(fieldOrdinalOffset,pointOrdinal) = legendreValue * jacobiValue1 * jacobiValue2;
+                  output_(fieldOrdinalOffset,pointOrdinal) = P_i * P_2p1_j * P_2ipjp1_k;
                   fieldOrdinalOffset++;
                 }
               }
