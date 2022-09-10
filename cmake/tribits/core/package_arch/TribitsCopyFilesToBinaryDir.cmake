@@ -42,7 +42,6 @@ include(TribitsAddTestHelpers)
 include(CMakeParseArguments)
 
 
-#
 # @FUNCTION: tribits_copy_files_to_binary_dir()
 #
 # Function that copies a list of files from a source directory to a

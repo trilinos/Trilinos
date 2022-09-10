@@ -765,6 +765,9 @@ namespace BaskerNS
       btf_matching = 2;
       min_block_size = 0; // no merging blocks
 
+      // Matrix scaling
+      matrix_scaling = 0;
+
       //BTF Ordering Options
       btf             = BASKER_TRUE;
       btf_max_percent = BASKER_BTF_MAX_PERCENT;
@@ -790,7 +793,8 @@ namespace BaskerNS
 
       //Prune (if not pruned, check for numerical cancelatin)
       prune = BASKER_FALSE;
-      replace_tiny_pivot = BASKER_TRUE;
+      replace_zero_pivot = BASKER_TRUE;
+      replace_tiny_pivot = BASKER_FALSE;
 
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
@@ -836,8 +840,11 @@ namespace BaskerNS
     int btf_matching; // carbinality matching before BTF (Symbolic):                0 = none, 1 = Basker, or 2 = Trilinos (default) (3 = MC64 if enable)
     int blk_matching; // max weight matching on each of diagonal blocks (Numeric):  0 = none (default), or 1 = Basker (2 = MC64 if enable)
     Int min_block_size; // min size of blocks
+    // matrix scaling
+    int matrix_scaling; // 0 = no scaling, 1 = symmetric diagonal scaling, 2 = non-symm row-max, and then col-max scaling
 
     // Replace tiny pivott
+    BASKER_BOOL replace_zero_pivot;
     BASKER_BOOL replace_tiny_pivot;
 
     // Option to apply MWM at numeric through "delayed" pivot

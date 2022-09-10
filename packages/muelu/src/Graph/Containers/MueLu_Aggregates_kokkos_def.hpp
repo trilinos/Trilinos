@@ -180,6 +180,58 @@ namespace MueLu {
 
     return graph_;
   }
+  
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void 
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
+    LO numAggs  = GetNumAggregates();
+    LO numNodes = vertex2AggId_->getLocalLength();
+    auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    typename aggregates_sizes_type::const_type aggSizes = ComputeAggregateSizes(true);
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+    aggPtr = LO_view("aggPtr",numAggs+1);
+    aggNodes = LO_view("aggNodes",numNodes);
+    LO_view aggCurr("agg curr",numAggs+1);
+
+    // Construct the "rowptr" and the counter
+    Kokkos::parallel_scan("MueLu:Aggregates:ComputeNodesInAggregate:scan", range_type(0,numAggs+1),
+      KOKKOS_LAMBDA(const LO aggIdx, LO& aggOffset, bool final_pass) {
+        LO count = 0;
+        if(aggIdx < numAggs)
+          count = aggSizes(aggIdx);
+        if(final_pass) {
+          aggPtr(aggIdx) = aggOffset;
+          aggCurr(aggIdx) = aggOffset;
+          if(aggIdx==numAggs)
+            aggCurr(numAggs) = 0; // use this for counting unaggregated nodes
+        }
+        aggOffset += count;
+      });
+
+    // Preallocate unaggregated to the correct size
+    LO numUnaggregated = 0;
+    Kokkos::parallel_reduce("MueLu:Aggregates:ComputeNodesInAggregate:unaggregatedSize", range_type(0,numNodes),
+      KOKKOS_LAMBDA(const LO nodeIdx, LO & count) { 
+        if(vertex2AggId(nodeIdx,0)==INVALID) 
+          count++;
+      }, numUnaggregated);
+    unaggregated = LO_view("unaggregated",numUnaggregated);
+
+    // Stick the nodes in each aggregate's spot
+    Kokkos::parallel_for("MueLu:Aggregates:ComputeNodesInAggregate:for", range_type(0,numNodes),
+      KOKKOS_LAMBDA(const LO nodeIdx) {
+        LO aggIdx = vertex2AggId(nodeIdx,0);
+        if(aggIdx != INVALID) {
+          // atomic postincrement aggCurr(aggIdx) each time
+          aggNodes(Kokkos::atomic_fetch_add(&aggCurr(aggIdx),1)) = nodeIdx;
+        } else {
+          // same, but using last entry of aggCurr for unaggregated nodes
+          unaggregated(Kokkos::atomic_fetch_add(&aggCurr(numAggs),1)) = nodeIdx;
+        }
+      });
+    
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {

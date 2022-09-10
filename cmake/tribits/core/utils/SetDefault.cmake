@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: set_default()
 #
 # Give a local variable a default value if a non-empty value is not already

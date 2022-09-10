@@ -548,11 +548,17 @@ void deep_copy( const ExecSpace &,
     else {
 
       typedef View< typename src_type::non_const_data_type ,
-                    typename src_type::array_layout ,
+                    std::conditional_t<std::is_same<typename src_type::array_layout,
+                                                    Kokkos::LayoutStride>::value,
+                                       Kokkos::LayoutRight,
+                                       typename src_type::array_layout>,
                     typename src_type::execution_space > tmp_src_type;
       typedef typename tmp_src_type::array_type tmp_src_array_type;
       typedef View< typename dst_type::non_const_data_type ,
-                    typename dst_type::array_layout ,
+                    std::conditional_t<std::is_same<typename dst_type::array_layout,
+                                                    Kokkos::LayoutStride>::value,
+                                       Kokkos::LayoutRight,
+                                       typename dst_type::array_layout>,
                     typename dst_type::execution_space > tmp_dst_type;
       typedef typename tmp_dst_type::array_type tmp_dst_array_type;
 

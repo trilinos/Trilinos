@@ -559,10 +559,16 @@ namespace Xpetra {
         return 1;
     }; //TODO: why LocalOrdinal?
 
+
     //! Returns true, if `SetFixedBlockSize` has been called before.
     bool IsFixedBlockSizeSet() const {
       return IsView("stridedMaps");
     };
+
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    virtual LocalOrdinal GetStorageBlockSize() const = 0;
+
 
     // ----------------------------------------------------------------------------------
 

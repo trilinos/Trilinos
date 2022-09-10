@@ -176,8 +176,14 @@ getCoeffMatrix_HVOL(OutputViewType &output, /// this is device view
   
   auto cellTagToOrdinal = cellBasis.getAllDofOrdinal();
 
-  double jacDet;
-  Intrepid2::Impl::OrientationTools::getJacobianDetOfOrientationMap(&jacDet,cellBaseKey,cellOrt);
+  Kokkos::DynRankView<value_type,host_device_type> jac("jacobian",cellDim,cellDim);
+  Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(jac,cellBaseKey,cellOrt);
+  value_type jacDet(0);
+  if(cellDim == 2) {
+    jacDet = jac(0,0)*jac(1,1)-jac(0,1)*jac(1,0);
+  } else { //celldim == 1
+    jacDet = jac(0,0);
+  }
 
   for (ordinal_type i=0;i<cardinality;++i) {
     const ordinal_type ic = cellTagToOrdinal(cellDim, 0, i);

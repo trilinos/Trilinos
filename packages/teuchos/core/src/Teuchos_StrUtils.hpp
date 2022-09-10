@@ -102,9 +102,6 @@ public:
     const Array<std::string>& varNames,
     const Array<std::string>& varValues);
 
-  /** \brief . */
-  static std::string envSubstitute(const std::string& line);
-
   /** \brief Find the substring before a specified substring. For example,
    * before("abcdefghij", "gh") returns "abcdef". */
   static std::string before(const std::string& str, const std::string& sub);

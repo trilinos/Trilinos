@@ -37,9 +37,9 @@
 # ************************************************************************
 # @HEADER
 
+cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
 include(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 project(${PROJECT_NAME} NONE)
 set(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." CACHE PATH "")
 include("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
-cmake_minimum_required(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 tribits_project()

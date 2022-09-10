@@ -1516,7 +1516,10 @@ namespace Tpetra {
     if (this == &map)
       return true;
 
-    // We are going to check if lmap1 is fitted into lmap2
+    // We are going to check if lmap1 is fitted into lmap2:
+    // Is lmap1 (map) a subset of lmap2 (this)?
+    // And do the first lmap1.getLocalNumElements() global elements
+    // of lmap1,lmap2 owned on each process exactly match?
     auto lmap1 = map.getLocalMap();
     auto lmap2 = this->getLocalMap();
 

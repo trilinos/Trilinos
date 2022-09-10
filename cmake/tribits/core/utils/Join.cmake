@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @FUNCTION: join()
 #
 # Join a set of strings into a single string using a join string.

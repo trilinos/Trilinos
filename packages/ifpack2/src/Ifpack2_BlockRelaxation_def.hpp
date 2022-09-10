@@ -1053,6 +1053,11 @@ description () const
   } else {
     out << "INVALID";
   }
+
+  // BlockCrs if we have that
+  if(hasBlockCrsMatrix_)
+    out<<", BlockCrs";
+
   // Print the approximate # rows per part
   int approx_rows_per_part = A_->getLocalNumRows()/Partitioner_->numLocalParts();
   out <<", blocksize: "<<approx_rows_per_part;

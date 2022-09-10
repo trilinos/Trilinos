@@ -40,6 +40,7 @@
 include(AppendSet)
 include(AssertDefined)
 include(MessageWrapper)
+include(TribitsParseArgumentsHelpers)
 include(TribitsSortListAccordingToMasterList)
 
 
@@ -372,151 +373,23 @@ function( tribits_gather_enabled_items  PACKAGE_NAME  LISTTYPE_PREFIX
 endfunction()
 
 
-# Function that appends the Package/TPL include and library paths for given
-# list of enabled Packages/TPLs
+# @FUNCTION: tribits_trace_file_processing()
 #
-# As a side effect of calling this function, include_directories(...) to set
-# all of the include directories for a given set of enabled Packages/TPLs.
+# Print trace of file processing when
+# ``${PROJECT_NAME}_TRACE_FILE_PROCESSING`` is ``TRUE``.
 #
-# NOTE: The Packages/TPLs should be sorted in descending dependency order
-# before calling this function.
+# Usage::
 #
-# NOTE: Because this function may be called in cases where a package's
-# required subpackages are not actually enabled (e.g. SEACAS subpackages)
+#   tribits_trace_file_processing( <type> <processingType> <filePath>)
 #
-function( tribits_append_include_and_link_dirs  TPL_OR_PACKAGE  PREFIX
-  LIST  EXTRA_DEP_LIBS_INOUT
-  )
-  if (TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS_DEBUG_DUMP)
-    message("\nTRIBITS_APPEND_INCLUDE_AND_LINK_DIRS:  '${TPL_OR_PACKAGE}'"
-      "  '${PREFIX}'  '${LIST}'  '${EXTRA_DEP_LIBS_INOUT}'")
-  endif()
-  set(EXTRA_DEP_LIBS_INOUT_TMP ${${EXTRA_DEP_LIBS_INOUT}})
-  cmake_policy(SET CMP0054 NEW)
-  if (
-    "${TPL_OR_PACKAGE}"  STREQUAL "TPL"
-    AND
-    (
-      ${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS
-      AND NOT
-        (${PARENT_PACKAGE_NAME}_SKIP_TPL_SYSTEM_INCLUDE_DIRS
-         OR ${PACKAGE_NAME}_SKIP_TPL_SYSTEM_INCLUDE_DIRS)
-      )
-    )
-    set(SYSTEM_ARG  "SYSTEM")
-  else()
-    set(SYSTEM_ARG)
-  endif()
-  foreach(ITEM ${LIST})
-    if (${PREFIX}${ITEM}_LIBRARIES)
-      append_set(EXTRA_DEP_LIBS_ARG_TMP ${${PREFIX}${ITEM}_LIBRARIES})
-    endif()
-    if (${PREFIX}${ITEM}_INCLUDE_DIRS)
-      if (TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS_DEBUG_DUMP)
-        message("-- " "include_directories(${SYSTEM_ARG} ${${PREFIX}${ITEM}_INCLUDE_DIRS})")
-      endif()
-      include_directories(${SYSTEM_ARG} ${${PREFIX}${ITEM}_INCLUDE_DIRS})
-    endif()
-    if (${PREFIX}${ITEM}_LIBRARY_DIRS)
-      if (PREFIX)
-        # TODO: Is there a better way to know if we need this?
-        # We want LINK_DIRECTORIES for TPLs but not packages.
-        link_directories(${${PREFIX}${ITEM}_LIBRARY_DIRS})
-      endif()
-      set_property(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
-        ${${PREFIX}${ITEM}_LIBRARY_DIRS})
-    endif()
-    if (TRIBITS_APPEND_INCLUDE_AND_LINK_DIRS_DEBUG_DUMP)
-      print_var(${PREFIX}${ITEM}_LIBRARIES)
-      print_var(${PREFIX}${ITEM}_INCLUDE_DIRS)
-      print_var(${PREFIX}${ITEM}_LIBRARY_DIRS)
-    endif()
-  endforeach()
-  set(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
-endfunction()
-
-
-# Function that sorts and appends all the items in a dependency list for
-# packages or TPLs.
+# Arguments:
 #
-function( tribits_sort_and_append_include_and_link_dirs_and_libs
-  TPL_OR_PACKAGE  MASTER_SORT_LIST  LIST  PREFIX
-  EXTRA_DEP_LIBS_INOUT
-  )
-
-  if (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
-    message("TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS:")
-    print_var(MASTER_SORT_LIST)
-    print_var(LIST)
-    print_var(PREFIX)
-    print_var(EXTRA_DEP_LIBS_INOUT)
-  endif()
-
-  set(LOCAL_LIST ${LIST})
-  if (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
-    print_var(LOCAL_LIST)
-  endif()
-
-  if (LOCAL_LIST)
-
-    tribits_sort_list_according_to_master_list("${MASTER_SORT_LIST}"  LOCAL_LIST)
-    if (TRIBITS_SORT_AND_APPEND_INCLUDE_AND_LINK_DIRS_AND_LIBS_DEBUG_DUMP)
-      print_var(LOCAL_LIST)
-    endif()
-
-    set(EXTRA_DEP_LIBS_ARG_TMP ${${EXTRA_DEP_LIBS_INOUT}})
-    tribits_append_include_and_link_dirs("${TPL_OR_PACKAGE}"  "${PREFIX}"
-      "${LOCAL_LIST}" EXTRA_DEP_LIBS_ARG_TMP)
-    set(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_ARG_TMP} PARENT_SCOPE)
-
-  endif()
-
-endfunction()
-
-
-# Fully process the include and link directories and list of libraries for a
-# package's list of dependent packages for use in creating a library or an
-# executable
+# * ``<type>``: Allowed values "PROJECT", "REPOSITORY", "PACKAGE", or "TPL"
 #
-function( tribits_sort_and_append_package_include_and_link_dirs_and_libs
-  PACKAGE_NAME  LIB_OR_TEST_ARG  EXTRA_DEP_LIBS_INOUT
-  )
-
-  tribits_gather_enabled_items(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
-    PACKAGES  ALL_DEP_PACKAGES)
-
-  set(EXTRA_DEP_LIBS_TMP ${${EXTRA_DEP_LIBS_INOUT}})
-  tribits_sort_and_append_include_and_link_dirs_and_libs(
-    "PACKAGE"
-    "${${PROJECT_NAME}_REVERSE_ENABLED_SE_PACKAGES}"
-    "${ALL_DEP_PACKAGES}"  ""  EXTRA_DEP_LIBS_TMP)
-  set(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_TMP} PARENT_SCOPE)
-
-endfunction()
-
-
-# Fully process the include and link directories and list of libraries for a
-# package's list of dependent TPLs for use in creating a library or an
-# executable
+# * ``<processingType>``: Allowed values "INCLUDE", "ADD_SUBDIR", "READ", or
+#   "CONFIGURE"
 #
-function( tribits_sort_and_append_tpl_include_and_link_dirs_and_libs
-  PACKAGE_NAME  LIB_OR_TEST_ARG  EXTRA_DEP_LIBS_INOUT
-  )
-
-  tribits_gather_enabled_items(${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}
-    TPLS  ALL_TPLS)
-
-  set(EXTRA_DEP_LIBS_TMP ${${EXTRA_DEP_LIBS_INOUT}})
-  tribits_sort_and_append_include_and_link_dirs_and_libs(
-    "TPL"
-    "${${PROJECT_NAME}_REVERSE_ENABLED_TPLS}"
-    "${ALL_TPLS}"  TPL_  EXTRA_DEP_LIBS_TMP)
-  set(${EXTRA_DEP_LIBS_INOUT} ${EXTRA_DEP_LIBS_TMP} PARENT_SCOPE)
-
-endfunction()
-
-
-# Print trace of file processing
+# * ``<filePath>``: Path of the file being processed
 #
 function(tribits_trace_file_processing  TYPE_IN  PROCESSING_TYPE_IN  FILE_PATH)
 
@@ -553,48 +426,3 @@ function(tribits_trace_file_processing  TYPE_IN  PROCESSING_TYPE_IN  FILE_PATH)
   endif()
 
 endfunction()
-
-
-# Check to see if there are unparsed arguments after calling CMAKE_PARSE_ARGUMENTS
-#
-macro(tribits_check_for_unparsed_arguments)
-
-  if( NOT "${PARSE_UNPARSED_ARGUMENTS}" STREQUAL "")
-    message(
-      ${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS}
-      "Arguments are being passed in but not used. UNPARSED_ARGUMENTS ="
-      " ${PARSE_UNPARSED_ARGUMENTS}"
-      )
-  endif()
-
-endmacro()
-
-
-# Check that a parase argument has at least one value
-#
-macro(tribits_assert_parse_arg_one_or_more_values  PREFIX  ARGNAME)
-  set(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
-  list( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
-  if (ARG_NUM_VALS LESS 1)
-    message_wrapper(FATAL_ERROR
-      "ERROR: ${ARGNAME} must have at least one value!" )
-    return()
-    # NOTE: The return is needed in unit testing mode
-  endif()
-endmacro()
-
-
-# Check that a parase argument has zero or one value
-#
-macro(tribits_assert_parse_arg_zero_or_one_value  PREFIX  ARGNAME)
-  set(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
-  if (NOT "${${PREFIX_ARGNAME}}" STREQUAL "")
-    list( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
-    if (ARG_NUM_VALS GREATER 1)
-      message_wrapper(FATAL_ERROR
-        "ERROR: ${ARGNAME}='${${PREFIX_ARGNAME}}' can not have more than one value!" )
-      return()
-      # NOTE: The return is needed in unit testing mode
-    endif()
-  endif()
-endmacro()

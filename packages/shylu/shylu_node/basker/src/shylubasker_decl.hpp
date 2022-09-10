@@ -716,12 +716,6 @@ namespace BaskerNS
     int t_col_barrier(Int kid);
 
     BASKER_INLINE
-    int t_col_copy_atomic(Int kid, Int team_leader, Int lvl, Int l, Int k);
-
-    BASKER_INLINE
-    int t_n_col_copy_atomic(Int kid, Int team_leader, Int lvl, Int l, Int k);
-    
-    BASKER_INLINE
     int t_dense_move_offdiag_L(Int kid, 
                          Int blkcol, Int blkrow,
                          Int X_col, Int X_row,
@@ -1293,10 +1287,8 @@ namespace BaskerNS
     Int gn;
     Int gm;
 
-    //Note: In future, rename AV -> AU
-    MATRIX_VIEW_2DARRAY  AV;
-    MATRIX_VIEW_2DARRAY  AL;
-    MATRIX_2DARRAY       AVM; // view of views of 2D blocks; stores CCS of the BTF_A upper matrix 2D blocks; btf_tabs_offset blocks in BTF_A
+    // view of views of 2D blocks; stores CCS of the BTF_A upper matrix 2D blocks; btf_tabs_offset blocks in BTF_A
+    MATRIX_2DARRAY       AVM;
     MATRIX_2DARRAY       ALM;
 
     BASKER_MATRIX At;

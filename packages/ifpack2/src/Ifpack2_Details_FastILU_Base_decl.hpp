@@ -56,6 +56,10 @@
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
 #include <shylu_fastutil.hpp>
 
+#ifdef HAVE_IFPACK2_METIS
+#include "metis.h"
+#endif
+
 namespace Ifpack2
 {
 namespace Details
@@ -91,6 +95,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef Kokkos::View<  ImplScalar *, execution_space>  ImplScalarArray;
     typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;
     typedef Kokkos::View<const Scalar *, execution_space> ConstScalarArray;
+    #ifdef HAVE_IFPACK2_METIS
+    typedef Kokkos::View<idx_t*, Kokkos::HostSpace> MetisArrayHost;
+    #endif
 
     //! Constructor
     FastILU_Base(Teuchos::RCP<const TRowMatrix> mat_);
@@ -205,6 +212,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     {
       Params() {}
       Params(const Teuchos::ParameterList& pL, std::string precType);
+      bool use_metis;
       FastILU::SpTRSV sptrsv_algo;
       int nFact;
       int nTrisol;
@@ -219,6 +227,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     };
 
     Params params_;
+
+    #ifdef HAVE_IFPACK2_METIS
+    MetisArrayHost metis_perm_;
+    MetisArrayHost metis_iperm_;
+    #endif
 
     //! Construct the underlying preconditioner (localPrec_) using given params and then call localPrec_->initialize()
     // \pre !mat_.is_null()

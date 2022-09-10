@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @MACRO: append_set()
 #
 # Utility function to append elements to a variable (reduces boiler-plate

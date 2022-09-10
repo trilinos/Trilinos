@@ -40,7 +40,7 @@
 include(AssertDefined)
 include(AppendStringVarWithSep)
 
-#
+
 # @FUNCTION: print_nonempty_var_with_spaces()
 #
 # Print a defined variable giving its name then value printed with spaces

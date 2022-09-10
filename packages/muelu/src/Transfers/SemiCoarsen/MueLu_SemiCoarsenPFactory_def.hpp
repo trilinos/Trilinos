@@ -70,6 +70,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("semicoarsen: piecewise constant");
+    SET_VALID_ENTRY("semicoarsen: piecewise linear");
     SET_VALID_ENTRY("semicoarsen: coarsen rate");
     SET_VALID_ENTRY("semicoarsen: calculate nonsym restriction");
 #undef  SET_VALID_ENTRY
@@ -130,6 +131,7 @@ namespace MueLu {
     const ParameterList& pL = GetParameterList();
     LO CoarsenRate = as<LO>(pL.get<int>("semicoarsen: coarsen rate"));
     bool buildRestriction = pL.get<bool>("semicoarsen: calculate nonsym restriction");
+    bool doLinear         = pL.get<bool>("semicoarsen: piecewise linear");
 
     // collect general input data
     LO BlkSize            = A->GetFixedBlockSize();
@@ -149,7 +151,7 @@ namespace MueLu {
     RCP<Matrix>    P, R;
     RCP<MultiVector> coarseNullspace;
     GO Ncoarse = MakeSemiCoarsenP(Nnodes,FineNumZLayers,CoarsenRate,LayerId,VertLineId,
-                               BlkSize, A, P, theCoarseMap, fineNullspace,coarseNullspace,R,buildRestriction);
+                               BlkSize, A, P, theCoarseMap, fineNullspace,coarseNullspace,R,buildRestriction,doLinear);
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true)
@@ -166,6 +168,10 @@ namespace MueLu {
     if  (pL.get<bool>("semicoarsen: piecewise constant")) {
       TEUCHOS_TEST_FOR_EXCEPTION(buildRestriction, Exceptions::RuntimeError, "Cannot use calculate nonsym restriction with piecewise constant.");
       RevertToPieceWiseConstant(P, BlkSize);
+    }
+    if  (pL.get<bool>("semicoarsen: piecewise linear")) {
+      TEUCHOS_TEST_FOR_EXCEPTION(buildRestriction, Exceptions::RuntimeError, "Cannot use calculate nonsym restriction with piecewise linear.");
+      TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("semicoarsen: piecewise constant"), Exceptions::RuntimeError, "Cannot use piecewise constant with piecewise linear.");
     }
 
     // Store number of coarse z-layers on the coarse level container
@@ -330,7 +336,7 @@ namespace MueLu {
   MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
                    LO const VertLineId[], LO const DofsPerNode, RCP<Matrix> & Amat, RCP<Matrix>& P,
                    RCP<const Map>& coarseMap, const RCP<MultiVector> fineNullspace,
-                   RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction) const {
+                   RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction, bool doLinear) const {
 
     /*
      * Given a CSR matrix (OrigARowPtr, OrigAcols, OrigAvals), information
@@ -650,6 +656,7 @@ namespace MueLu {
          *  node in the interpolation stencil that is being computed.
          */
 
+	if (!doLinear) {
         for (node_k=1; node_k <= NStencilNodes ; node_k++) {
 
           /*  Map a Line and Layer number to a BlkRow in the fine level  matrix
@@ -734,17 +741,6 @@ namespace MueLu {
             }
         }
         node_k = MyLayer - StartLayer+1;
-             /* inject the null space */
-            // int FineStride  = Ntotal*DofsPerNode;
-            // int CoarseStride= NVertLines*NCLayers*DofsPerNode;
-            for (int k = 0; k < static_cast<int>(fineNullspace->getNumVectors()); k++) {
-              Teuchos::ArrayRCP<SC> OneCNull = coarseNullspace->getDataNonConst(k);
-              Teuchos::ArrayRCP<SC> OneFNull = fineNullspace->getDataNonConst(k);
-              for (int dof_i = 0; dof_i < DofsPerNode; dof_i++) {
-                 OneCNull[(   col-1)*DofsPerNode+dof_i] = OneFNull[ (BlkRow-1)*DofsPerNode+dof_i];
-              }
-            }
-
             for (int dof_i = 0; dof_i < DofsPerNode; dof_i++) {
               /* Stick Mat(PtRow,PtRow) and Rhs(PtRow,dof_i+1) */
               /* see dgbsv() comments for matrix format.     */
@@ -824,6 +820,34 @@ namespace MueLu {
             }
           }
         }
+	}
+	else {
+	  int denom1 = MyLayer-StartLayer+1;
+	  int denom2 = StartLayer+NStencilNodes-MyLayer;
+          for (int dof_i=0; dof_i < DofsPerNode; dof_i++) {
+            for (i =1; i <= NStencilNodes ; i++) {
+              index = (InvLineLayer[MyLine+(StartLayer+i-2)*NVertLines])*DofsPerNode+dof_i+1;
+              loc = Pptr[index];
+              Pcols[loc] = (col-1)*DofsPerNode+dof_i+1;
+	      if (i > denom1) Pvals[loc] = 1.0 + ((double)( denom1 - i))/((double) denom2);
+	      else  Pvals[loc] = ((double)( i))/((double) denom1);
+              Pptr[index]= Pptr[index] + 1;
+	    }
+	  }
+	}
+             /* inject the null space */
+            // int FineStride  = Ntotal*DofsPerNode;
+            // int CoarseStride= NVertLines*NCLayers*DofsPerNode;
+
+            BlkRow  = InvLineLayer[MyLine+(MyLayer-1)*NVertLines]+1;
+            for (int k = 0; k < static_cast<int>(fineNullspace->getNumVectors()); k++) {
+              Teuchos::ArrayRCP<SC> OneCNull = coarseNullspace->getDataNonConst(k);
+              Teuchos::ArrayRCP<SC> OneFNull = fineNullspace->getDataNonConst(k);
+              for (int dof_i = 0; dof_i < DofsPerNode; dof_i++) {
+                 OneCNull[(   col-1)*DofsPerNode+dof_i] = OneFNull[ (BlkRow-1)*DofsPerNode+dof_i];
+              }
+            }
+
       }
     }
 

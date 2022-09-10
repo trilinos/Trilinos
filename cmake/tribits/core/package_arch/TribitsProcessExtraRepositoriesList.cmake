@@ -47,7 +47,6 @@ include(MessageWrapper)
 include(TribitsSortListAccordingToMasterList)
 
 
-#
 # @MACRO: tribits_project_define_extra_repositories()
 #
 # Declare a set of extra repositories for the `TriBITS Project`_ (i.e. in the

@@ -145,6 +145,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
   TrilinosBuildStats    commonTools/build_stats           PT
+  TrilinosInstallTests  packages/TrilinosInstallTests     PT
   )
 
 # Allow builds even if some packages are missing

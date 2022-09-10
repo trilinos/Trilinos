@@ -2684,6 +2684,34 @@ namespace Tpetra {
       }
     }
 
+    if(debug_) {
+      using exec_space = typename local_graph_device_type::execution_space;
+      using size_type = typename local_graph_device_type::size_type;
+      int columnsOutOfBounds = 0;
+      local_ordinal_type numLocalCols = this->getLocalNumCols();
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, columnIndices.extent(0)),
+        KOKKOS_LAMBDA (const LocalOrdinal i, int& lOutOfBounds)
+        {
+          if(columnIndices(i) < 0 || columnIndices(i) >= numLocalCols)
+            lOutOfBounds++;
+        }, columnsOutOfBounds);
+      int globalColsOutOfBounds= 0;
+      auto comm = this->getComm();
+      Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, columnsOutOfBounds,
+                           Teuchos::outArg (globalColsOutOfBounds));
+      if (globalColsOutOfBounds)
+      {
+        std::string message;
+        if (columnsOutOfBounds)
+        {
+          //Only print message from ranks with the problem
+          message = std::string("ERROR, rank ") + std::to_string(comm->getRank()) + ", CrsGraph::setAllIndices(): provided columnIndices are not all within range [0, getLocalNumCols())!\n";
+        }
+        Details::gathervPrint(std::cout, message, *comm);
+        throw std::invalid_argument("CrsGraph::setAllIndices(): columnIndices are out of the valid range on at least one process.");
+      }
+    }
+
     if (debug_ && this->isSorted()) {
       // Verify that the local indices are actually sorted
       int notSorted = 0;
@@ -2719,14 +2747,6 @@ namespace Tpetra {
         throw std::invalid_argument("CrsGraph::setAllIndices(): provided columnIndices are not sorted within rows on at least one process.");
       }
     }
-
-    // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
-    // since the future model will be allocation at construction, not
-    // lazy allocation on first insert.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      ((this->lclIndsUnpacked_wdv.extent (0) != 0 || this->gblInds_wdv.extent (0) != 0),
-       std::runtime_error, "You may not call this method if 1-D data "
-       "structures are already allocated.");
 
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;

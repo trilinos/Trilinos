@@ -6632,9 +6632,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs_h[i];
 
-      size_t numBytes;
-      size_t numEnt;
-      numEnt = this->getNumEntriesInLocalRow (lclRow);
+      size_t numBytes = 0;
+      size_t numEnt = this->getNumEntriesInLocalRow (lclRow);
 
       // Only pack this row's data if it has a nonzero number of
       // entries.  We can do this because receiving processes get the

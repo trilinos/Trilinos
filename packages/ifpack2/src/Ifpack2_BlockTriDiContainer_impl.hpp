@@ -1671,7 +1671,7 @@ namespace Ifpack2 {
                 const local_ordinal_type lc2r = col2row[lc];
                 bool incr_R = false;
                 do { // breakable
-                  if (lc2r == Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                  if (lc2r == (local_ordinal_type) -1) {
                     incr_R = true;
                     break;
                   }
@@ -1732,7 +1732,7 @@ namespace Ifpack2 {
                   for (size_type j=j0;j<local_graph_rowptr(lr0+1);++j) {
                     const local_ordinal_type lc = local_graph_colidx(j);
                     const local_ordinal_type lc2r = col2row[lc];
-                    if (lc2r == Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) continue;
+                    if (lc2r == (local_ordinal_type) -1) continue;
                     const local_ordinal_type ri = lclrow2idx[lc2r];
                     const local_ordinal_type pi = rowidx2part(ri);
                     if (pi != pi0) continue;
@@ -1783,7 +1783,7 @@ namespace Ifpack2 {
                 for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
                   const local_ordinal_type lc = local_graph_colidx(j);
                   const local_ordinal_type lc2r = col2row[lc];
-                  if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                  if (lc2r != (local_ordinal_type) -1) {
                     const local_ordinal_type ri = lclrow2idx[lc2r];
                     const local_ordinal_type pi = rowidx2part(ri);
                     if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1) {
@@ -1830,7 +1830,7 @@ namespace Ifpack2 {
                     for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
                       const local_ordinal_type lc = local_graph_colidx(j);
                       const local_ordinal_type lc2r = col2row[lc];
-                      if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                      if (lc2r != (local_ordinal_type) -1) {
                         const local_ordinal_type ri = lclrow2idx[lc2r];
                         const local_ordinal_type pi = rowidx2part(ri);
                         if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1)

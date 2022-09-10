@@ -77,10 +77,10 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 
 
 
-void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, meta);
+  stk::io::default_part_processing(elem_blocks, meta, handler);
 }
 
 void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta)
@@ -639,16 +639,16 @@ void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
     }
 }
 
-void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
-  stk::io::default_part_processing(face_blocks, meta);
+  stk::io::default_part_processing(face_blocks, meta, handler);
 }
 
-void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
-  stk::io::default_part_processing(edge_blocks, meta);
+  stk::io::default_part_processing(edge_blocks, meta, handler);
 }
 
 void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta)

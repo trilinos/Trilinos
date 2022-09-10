@@ -44,6 +44,10 @@ struct StkMeshEntities
     value_type operator[](int i) const { return *(mBegin + i); }
 };
 
+double compute_tri_volume(const std::array<krino::Vector3d,3> & elementNodeCoords);
+double compute_tet_volume(const std::array<krino::Vector3d,4> & elementNodeCoords);
+double compute_tri_or_tet_volume(const std::vector<krino::Vector3d> & elementNodeCoords);
+Vector3d get_side_normal(const stk::mesh::BulkData& mesh, const FieldRef coordsField, stk::mesh::Entity side);
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<Vector3d> & elementNodeCoords);
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode);
 double compute_maximum_element_size(stk::mesh::BulkData& mesh);
@@ -79,6 +83,14 @@ stk::mesh::PartVector get_common_io_parts(const stk::mesh::BulkData & mesh, cons
 stk::mesh::PartVector get_removable_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket);
 stk::mesh::PartVector get_removable_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity);
 
+template <typename NODECONTAINER>
+void fill_node_locations(const int dim, const FieldRef coordsField, const NODECONTAINER & nodes, std::vector<stk::math::Vector3d> & nodeLocations)
+{
+  nodeLocations.clear();
+  for (auto node : nodes)
+    nodeLocations.emplace_back(field_data<double>(coordsField, node), dim);
+}
+
 void
 store_edge_node_parent_ids(const stk::mesh::BulkData & mesh,
     const FieldRef & parent_id_field,
@@ -104,6 +116,7 @@ const unsigned * get_edge_node_ordinals(stk::topology topology, unsigned edge_or
 
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields);
+std::string debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 
 struct SideRequest
 {

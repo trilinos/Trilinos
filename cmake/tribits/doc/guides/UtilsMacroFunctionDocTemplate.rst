@@ -29,6 +29,7 @@
 @FUNCTION: print_nonempty_var() +
 @FUNCTION: print_nonempty_var_with_spaces() +
 @FUNCTION: print_var() +
+@FUNCTION: print_var_with_spaces() +
 @FUNCTION: remove_global_duplicates() +
 @MACRO: set_and_inc_dirs() +
 @FUNCTION: set_cache_on_off_empty() +
@@ -43,5 +44,6 @@
 @FUNCTION: unittest_has_substr_const() +
 @FUNCTION: unittest_not_has_substr_const() +
 @FUNCTION: unittest_string_regex() +
+@FUNCTION: unittest_string_var_regex() +
 @FUNCTION: unittest_file_regex() +
 @FUNCTION: unittest_final_result() +

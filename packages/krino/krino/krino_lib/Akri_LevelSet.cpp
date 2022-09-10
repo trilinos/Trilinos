@@ -204,7 +204,7 @@ void LevelSet::register_fields(void)
     const bool cdfem_is_active = krino::CDFEM_Support::is_active(meta());
     if (cdfem_is_active)
     {
-      Phase_Support phase_support = Phase_Support::get(meta());
+      Phase_Support & phase_support = Phase_Support::get(meta());
       for (auto partPtr : meta().get_mesh_parts())
       {
         if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
@@ -1372,7 +1372,7 @@ LevelSet::simple_remove_wall_features() const
 void
 LevelSet::set_surface_parts_vector()
 {
-  Phase_Support my_phase_support = Phase_Support::get(meta());
+  Phase_Support & my_phase_support = Phase_Support::get(meta());
 
   std::vector<stk::mesh::Part *> conformal_parts =  my_phase_support.get_conformal_parts();
 

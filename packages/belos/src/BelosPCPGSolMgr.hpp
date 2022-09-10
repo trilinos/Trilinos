@@ -102,16 +102,6 @@ namespace Belos {
     PCPGSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief PCPGSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
-   * the recycling subspace.
-   *
-   * The PCPGSolMgr::solve() method throws the exception.
-   *
-   */
-  class PCPGSolMgrRecyclingFailure : public BelosError {public:
-    PCPGSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   //@}
 
 
@@ -902,14 +892,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
         } // end try
-        catch (const PCPGIterOrthoFailure &e) {
-
-          // Check to see if the most recent solution yielded convergence.
-          sTest_->checkStatus( &*pcpg_iter );
-          if (convTest_->getStatus() != Passed)
-            isConverged = false;
-          break;
-        }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << std::endl

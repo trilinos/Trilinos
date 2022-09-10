@@ -4,7 +4,7 @@ add_subdirectory(adaptivity_interface)
 add_subdirectory(region)
 add_subdirectory(rebalance_utils)
 add_subdirectory(parser)
-tribits_add_test_directories(unit_tests)
+add_subdirectory(unit_tests)
 
 SET(SOURCES_MAIN Apps_krino.cpp)
 

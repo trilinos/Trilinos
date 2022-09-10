@@ -313,6 +313,15 @@ namespace Xpetra {
         Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile(fileName, A);
         return;
       }
+      const RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& tmp_BlockCrs = 
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(tmp_CrsMtx);
+      if(tmp_BlockCrs != Teuchos::null) {
+        std::ofstream outstream (fileName,std::ofstream::out);
+        Teuchos::FancyOStream ofs(Teuchos::rcpFromRef(outstream));
+        tmp_BlockCrs->getTpetra_BlockCrsMatrix()->describe(ofs,Teuchos::VERB_EXTREME);        
+        return;
+      }
+
 #endif // HAVE_XPETRA_TPETRA
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
@@ -1037,6 +1046,15 @@ namespace Xpetra {
         Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile(fileName, A);
         return;
       }
+      const RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& tmp_BlockCrs = 
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(tmp_CrsMtx);
+      if(tmp_BlockCrs != Teuchos::null) {
+        std::ofstream outstream (fileName,std::ofstream::out);
+        Teuchos::FancyOStream ofs(Teuchos::rcpFromRef(outstream));
+        tmp_BlockCrs->getTpetra_BlockCrsMatrix()->describe(ofs,Teuchos::VERB_EXTREME);
+        return;
+      }
+
 # endif
 #endif // HAVE_XPETRA_TPETRA
 

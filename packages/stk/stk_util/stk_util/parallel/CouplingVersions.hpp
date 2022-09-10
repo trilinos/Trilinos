@@ -8,12 +8,17 @@
 
 #include <string>
 
-#define STK_MAX_COUPLING_VERSION 5
+#define STK_MAX_COUPLING_VERSION 8
 #define STK_MIN_COUPLING_VERSION 0                                                                               
-
+ 
 namespace stk {
 
 namespace util {
+
+namespace impl {
+constexpr int SHORT_TERM_STK_MAX_COUPLING_VERSION=1;
+}
+
 
 int get_common_coupling_version();
 
@@ -31,7 +36,7 @@ void set_coupling_version(MPI_Comm comm);
 
 bool is_local_stk_coupling_deprecated();
 
-void print_unsupported_version_warning(int version, int line, const std::string& file);
+void print_unsupported_version_warning(int version, int line, const char* file);
 
 }
 

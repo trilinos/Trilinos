@@ -70,9 +70,6 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>(A, X, B)
-  , nzvals_()                   // initialize to empty arrays
-  , rowind_()
-  , colptr_()
   , is_contiguous_(true)
 {
 
@@ -83,11 +80,11 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
-  	"Kokkos node type not supported by experimental ShyLUBasker Amesos2");
+  "Kokkos node type not supported by experimental ShyLUBasker Amesos2");
   */
   typedef Kokkos::OpenMP Exe_Space;
 
-  ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
+  ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space>();
   ShyLUbasker->Options.no_pivot      = BASKER_FALSE;
   ShyLUbasker->Options.static_delayed_pivot = 0;
   ShyLUbasker->Options.symmetric      = BASKER_FALSE;
@@ -96,6 +93,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.prune          = BASKER_TRUE;
   ShyLUbasker->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbasker->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbasker->Options.matrix_scaling = 0; // use matrix scaling on a big A block
   ShyLUbasker->Options.min_block_size = 0; // no merging small blocks
   ShyLUbasker->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
   ShyLUbasker->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
@@ -103,7 +101,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
-  ShyLUbasker->Options.replace_tiny_pivot = BASKER_TRUE;
+  ShyLUbasker->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
@@ -114,7 +112,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
 
-  ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
+  ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space>();
   ShyLUbaskerTr->Options.no_pivot      = BASKER_FALSE;
   ShyLUbaskerTr->Options.static_delayed_pivot = 0;
   ShyLUbaskerTr->Options.symmetric      = BASKER_FALSE;
@@ -123,6 +121,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.prune          = BASKER_TRUE;
   ShyLUbaskerTr->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbaskerTr->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbaskerTr->Options.matrix_scaling = 0; // use matrix scaling on a big A block
   ShyLUbaskerTr->Options.min_block_size = 0; // no merging small blocks
   ShyLUbaskerTr->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
   ShyLUbaskerTr->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
@@ -130,15 +129,15 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbaskerTr->Options.run_amd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
-  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_TRUE;
+  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbaskerTr->Options.user_fill     = (double)BASKER_FILL_USER;
   ShyLUbaskerTr->Options.use_sequential_diag_facto = BASKER_FALSE;
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
-		     std::runtime_error,
-	   "Amesos2_ShyLUBasker Exception: Do not have supported Kokkos node type (OpenMP) enabled for ShyLUBasker");
+     std::runtime_error,
+     "Amesos2_ShyLUBasker Exception: Do not have supported Kokkos node type (OpenMP) enabled for ShyLUBasker");
 #endif
 }
 
@@ -186,12 +185,6 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     ShyLUbasker->SetThreads(num_threads); 
     ShyLUbaskerTr->SetThreads(num_threads); 
 
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-    std::cout << "ShyLUBasker:: Before symbolic factorization" << std::endl;
-    std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-    std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-    std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-#endif
 
     // NDE: Special case 
     // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
@@ -200,22 +193,20 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
 
     if ( single_proc_optimization() ) {
 
+      host_ordinal_type_array sp_rowptr;
+      host_ordinal_type_array sp_colind;
       // this needs to be checked during loadA_impl...
-      auto sp_rowptr = this->matrixA_->returnRowPtr();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+      this->matrixA_->returnRowPtr_kokkos_view(sp_rowptr);
+      TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr.data() == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-      auto sp_colind = this->matrixA_->returnColInd();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+      this->matrixA_->returnColInd_kokkos_view(sp_colind);
+      TEUCHOS_TEST_FOR_EXCEPTION(sp_colind.data() == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-#ifndef HAVE_TEUCHOS_COMPLEX
-      auto sp_values = this->matrixA_->returnValues();
-#else
-      // NDE: 09/25/2017
-      // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-      using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-      complex_type * sp_values = nullptr;
-      sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
-#endif
+
+      host_value_type_array hsp_values;
+      this->matrixA_->returnValues_kokkos_view(hsp_values);
+      shylubasker_dtype * sp_values = function_map::convert_scalar(hsp_values.data());
+      //shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
       TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
@@ -223,8 +214,8 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
       info = ShyLUbasker->Symbolic(this->globalNumRows_,
           this->globalNumCols_,
           this->globalNumNonZeros_,
-          sp_rowptr,
-          sp_colind,
+          sp_rowptr.data(),
+          sp_colind.data(),
           sp_values,
           true);
 
@@ -235,8 +226,8 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
         info = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
-            sp_rowptr,
-            sp_colind,
+            sp_rowptr.data(),
+            sp_colind.data(),
             sp_values,
             true);
  
@@ -247,12 +238,13 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     else 
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
+      shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
       info = ShyLUbasker->Symbolic(this->globalNumRows_,
           this->globalNumCols_,
           this->globalNumNonZeros_,
-          colptr_.getRawPtr(),
-          rowind_.getRawPtr(),
-          nzvals_.getRawPtr());
+          colptr_view_.data(),
+          rowind_view_.data(),
+          sp_values);
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
@@ -261,9 +253,9 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
         info = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
-            colptr_.getRawPtr(),
-            rowind_.getRawPtr(),
-            nzvals_.getRawPtr(),
+            colptr_view_.data(),
+            rowind_view_.data(),
+            sp_values,
             false);
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
@@ -292,12 +284,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-      std::cout << "ShyLUBasker:: Before numeric factorization" << std::endl;
-      std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-      std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-#endif
 
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
@@ -306,21 +292,20 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
       if ( single_proc_optimization() ) {
 
-        auto sp_rowptr = this->matrixA_->returnRowPtr();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
+        host_ordinal_type_array sp_rowptr;
+        host_ordinal_type_array sp_colind;
+        this->matrixA_->returnRowPtr_kokkos_view(sp_rowptr);
+        TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr.data() == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-        auto sp_colind = this->matrixA_->returnColInd();
-        TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
+        this->matrixA_->returnColInd_kokkos_view(sp_colind);
+        TEUCHOS_TEST_FOR_EXCEPTION(sp_colind.data() == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-#ifndef HAVE_TEUCHOS_COMPLEX
-        auto sp_values = this->matrixA_->returnValues();
-#else
-        // NDE: 09/25/2017
-        // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-        using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-        complex_type * sp_values = nullptr;
-        sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
-#endif
+
+        host_value_type_array hsp_values;
+        this->matrixA_->returnValues_kokkos_view(hsp_values);
+        shylubasker_dtype * sp_values = function_map::convert_scalar(hsp_values.data());
+        //shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
+
         TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
@@ -328,8 +313,8 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
         info = ShyLUbasker->Factor( this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
-            sp_rowptr,
-            sp_colind,
+            sp_rowptr.data(),
+            sp_colind.data(),
             sp_values);
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
@@ -339,8 +324,8 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
           info = ShyLUbaskerTr->Factor( this->globalNumRows_,
               this->globalNumCols_,
               this->globalNumNonZeros_,
-              sp_rowptr,
-              sp_colind,
+              sp_rowptr.data(),
+              sp_colind.data(),
               sp_values);
 
           TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
@@ -350,12 +335,13 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       else 
       {
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
+        shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
         info = ShyLUbasker->Factor(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
-            colptr_.getRawPtr(),
-            rowind_.getRawPtr(),
-            nzvals_.getRawPtr());
+            colptr_view_.data(),
+            rowind_view_.data(),
+            sp_values);
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
             std::runtime_error, "Error ShyLUBasker Factor");
@@ -364,9 +350,9 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
           info = ShyLUbaskerTr->Factor(this->globalNumRows_,
               this->globalNumCols_,
               this->globalNumNonZeros_,
-              colptr_.getRawPtr(),
-              rowind_.getRawPtr(),
-              nzvals_.getRawPtr());
+              colptr_view_.data(),
+              rowind_view_.data(),
+              sp_values);
 
           TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
             std::runtime_error, "Error ShyLUBaskerTr Factor");
@@ -421,6 +407,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
   int ierr = 0; // returned error code
 
   using Teuchos::as;
@@ -429,115 +419,71 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const size_t nrhs = X->getGlobalNumVectors();
 
   bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
 
   if ( single_proc_optimization() && nrhs == 1 ) {
 
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
+    // no msp creation
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-    auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
-    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
-#else
-    // NDE: 09/25/2017
-    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
-    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-    complex_type * b_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B ) );
-    complex_type * x_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X ) );
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
 
-    TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
-
-    if ( this->root_ ) {
-    {                           // Do solve!
-#ifdef HAVE_AMESOS2_TIMERS
-        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
-        if (!ShyluBaskerTransposeRequest)
-          ierr = ShyLUbasker->Solve(nrhs, b_vector, x_vector);
-        else
-          ierr = ShyLUbaskerTr->Solve(nrhs, b_vector, x_vector);
-    } // end scope for timer
-
-      /* All processes should have the same error code */
-      Teuchos::broadcast(*(this->getComm()), 0, &ierr);
-
-      TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
-          std::runtime_error,
-          "Encountered zero diag element at: " << ierr);
-      TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
-          std::runtime_error,
-          "Could not alloc needed working memory for solve" );
-    } //end if (this->root_)
   } // end if ( single_proc_optimization() && nrhs == 1 )
-  else 
-  {
-    const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
+  else {
 
-    xvals_.resize(val_store_size);
-    bvals_.resize(val_store_size);
-
-    {                             // Get values from RHS B
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-      Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
-#endif
-
-      if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-      }
-      else {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
     }
+    else {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
+    // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
+    if ( is_contiguous_ == true ) {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+    }
+    else {
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+    }
+  }
 
-    if ( this->root_ ) {
-      {                           // Do solve!
-#ifdef HAVE_AMESOS2_TIMERS
-        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
-        if (!ShyluBaskerTransposeRequest)
-          ierr = ShyLUbasker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
-        else
-          ierr = ShyLUbaskerTr->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
-      } // end scope for timer
-    } // end if (this->root_)
+  if ( this->root_ ) { // do solve
+    shylubasker_dtype * pxValues = function_map::convert_scalar(xValues_.data());
+    shylubasker_dtype * pbValues = function_map::convert_scalar(bValues_.data());
+    if (!ShyluBaskerTransposeRequest)
+      ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues);
+    else
+      ierr = ShyLUbaskerTr->Solve(nrhs, pbValues, pxValues);
+  }
 
-    /* All processes should have the same error code */
-    Teuchos::broadcast(*(this->getComm()), 0, &ierr);
+  /* All processes should have the same error code */
+  Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
-        std::runtime_error,
-        "Encountered zero diag element at: " << ierr);
-    TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
-        std::runtime_error,
-        "Could not alloc needed working memory for solve" );
+  TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
+      std::runtime_error,
+      "Encountered zero diag element at: " << ierr);
+  TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
+      std::runtime_error,
+      "Could not alloc needed working memory for solve" );
 
-    {
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
-#endif
-
-      if ( is_contiguous_ == true ) {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
-              as<size_t>(ld_rhs),
-              ROOTED);
-      }
-      else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,slu_type>::do_put(X, xvals_(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED);
-      }
-    } // end scope for timer
-  } // end else
+  if ( is_contiguous_ == true ) {
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+          as<size_t>(ld_rhs),
+          ROOTED);
+  }
+  else {
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+          as<size_t>(ld_rhs),
+          CONTIGUOUS_AND_ROOTED);
+  }
 
   return(ierr);
 }
@@ -662,8 +608,8 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     }
   if(parameterList->isParameter("replace_tiny_pivot"))
     {
-      ShyLUbasker->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
-      ShyLUbaskerTr->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
+      ShyLUbasker->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
+      ShyLUbaskerTr->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
     }
   if(parameterList->isParameter("btf_matching"))
     {
@@ -681,6 +627,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.blk_matching = parameterList->get<int>("blk_matching");
       ShyLUbaskerTr->Options.blk_matching = parameterList->get<int>("blk_matching");
+    }
+  if(parameterList->isParameter("matrix_scaling"))
+    {
+      ShyLUbasker->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
+      ShyLUbaskerTr->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
     }
   if(parameterList->isParameter("min_block_size"))
     {
@@ -701,51 +652,53 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       pl->set("IsContiguous", true, 
-	      "Are GIDs contiguous");
+              "Are GIDs contiguous");
       pl->set("num_threads", 1, 
-	      "Number of threads");
+              "Number of threads");
       pl->set("pivot", false,
-	      "Should not pivot");
+              "Should not pivot");
       pl->set("delayed pivot", 0,
-	      "Apply static delayed pivot on a big block");
+              "Apply static delayed pivot on a big block");
       pl->set("pivot_tol", .0001,
-	      "Tolerance before pivot, currently not used");
+              "Tolerance before pivot, currently not used");
       pl->set("symmetric", false,
-	      "Should Symbolic assume symmetric nonzero pattern");
+              "Should Symbolic assume symmetric nonzero pattern");
       pl->set("realloc" , false, 
-	      "Should realloc space if not enough");
+              "Should realloc space if not enough");
       pl->set("verbose", false,
-	      "Information about factoring");
+              "Information about factoring");
       pl->set("verbose_matrix", false,
-	      "Give Permuted Matrices");
+              "Give Permuted Matrices");
       pl->set("btf", true, 
-	      "Use BTF ordering");
+              "Use BTF ordering");
       pl->set("prune", false,
-	      "Use prune on BTF blocks (Not Supported)");
+              "Use prune on BTF blocks (Not Supported)");
       pl->set("btf_matching",  2, 
-             "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
+              "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
       pl->set("blk_matching", 1, 
-             "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
+              "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
+      pl->set("matrix_scaling", 0, 
+              "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
       pl->set("min_block_size",  0, 
-             "Size of the minimum diagonal blocks");
-      pl->set("replace_tiny_pivot",  true, 
-             "Replace tiny pivots during the numerical factorization");
+              "Size of the minimum diagonal blocks");
+      pl->set("replace_tiny_pivot",  false, 
+              "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,
-	      "Use METIS for ND");
+              "Use METIS for ND");
       pl->set("use_nodeNDP", true,
-	      "Use nodeND to compute ND partition");
+              "Use nodeND to compute ND partition");
       pl->set("run_nd_on_leaves", false,
-	      "Run ND on the final leaf-nodes for ND factorization");
+              "Run ND on the final leaf-nodes for ND factorization");
       pl->set("run_amd_on_leaves", false,
-	      "Run AMD on the final leaf-nodes for ND factorization");
+              "Run AMD on the final leaf-nodes for ND factorization");
       pl->set("amd_on_blocks", true,
-	      "Run AMD on each diagonal blocks");
+              "Run AMD on each diagonal blocks");
       pl->set("transpose", false,
-	      "Solve the transpose A");
+              "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,
-	      "Use sequential algorithm to factor each diagonal block");
+              "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
-	      "User-provided padding for the fill ratio");
+              "User-provided padding for the fill ratio");
       valid_params = pl;
     }
   return valid_params;
@@ -774,9 +727,9 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
     // Only the root image needs storage allocated
     if( this->root_ ){
-      nzvals_.resize(this->globalNumNonZeros_);
-      rowind_.resize(this->globalNumNonZeros_);
-      colptr_.resize(this->globalNumCols_ + 1); //this will be wrong for case of gapped col ids, e.g. 0,2,4,9; num_cols = 10 ([0,10)) but num GIDs = 4...
+      Kokkos::resize(nzvals_view_, this->globalNumNonZeros_);
+      Kokkos::resize(rowind_view_, this->globalNumNonZeros_);
+      Kokkos::resize(colptr_view_, this->globalNumCols_ + 1); //this will be wrong for case of gapped col ids, e.g. 0,2,4,9; num_cols = 10 ([0,10)) but num GIDs = 4...
     }
 
     local_ordinal_type nnz_ret = 0;
@@ -786,15 +739,15 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     #endif
 
       if ( is_contiguous_ == true ) {
-        Util::get_ccs_helper<
-          MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_,
               nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
       }
       else {
-        Util::get_ccs_helper<
-          MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
-          ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_,
               nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
       }
     }

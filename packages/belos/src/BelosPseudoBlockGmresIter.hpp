@@ -122,22 +122,6 @@ namespace Belos {
   //! @name PseudoBlockGmresIter Exceptions
   //@{ 
   
-  /** \brief PseudoBlockGmresIterInitFailure is thrown when the PseudoBlockGmresIter object is unable to
-   * generate an initial iterate in the PseudoBlockGmresIter::initialize() routine. 
-   *
-   * This std::exception is thrown from the PseudoBlockGmresIter::initialize() method, which is
-   * called by the user or from the PseudoBlockGmresIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown, 
-   * PseudoBlockGmresIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   *
-   */
-  class PseudoBlockGmresIterInitFailure : public BelosError {public:
-    PseudoBlockGmresIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
   /** \brief PseudoBlockGmresIterOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the new basis vectors.
    *

@@ -55,6 +55,8 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 
+#include "Xpetra_CrsGraphFactory_fwd.hpp"
+
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AmalgamationFactory_kokkos_fwd.hpp"
 #include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
@@ -151,26 +153,26 @@ namespace MueLu {
 
     //@}
 
-    // CUDA 7.5 and 8.0 place a restriction on the placement of __device__ lambdas:
-    //
-    //     An explicit __device__ lambda cannot be defined in a member function
-    //     that has private or protected access within its class.
-    //
-    // Therefore, we expose BuildPuncoupled and isGoodMap for now. An alternative solution
-    // could be writing an out of class implementation, and then calling it in
-    // a member function.
-    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
-                         RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
-                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
-                         RCP<MultiVector>& coarseNullspace, const int levelID) const;
+
+    // NOTE: All of thess should really be private, but CUDA doesn't like that
+    
+    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo_kokkos> amalgInfo, 
+                                 RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
+
+
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
-  private:
+
 
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
                          RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                          RCP<MultiVector>& coarseNullspace) const;
+
+    void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
+                         RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
+                         RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
     mutable bool bTransferCoordinates_ = false;
 

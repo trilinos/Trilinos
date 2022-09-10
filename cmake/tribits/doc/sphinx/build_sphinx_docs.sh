@@ -19,4 +19,4 @@ cd $SPHINX_DOC_BASE_DIR
 
 git clean -xdf -- .
 
-python3 sphinx_rst_generator.py
+python3 sphinx_rst_generator.py --copy-base-dir=../../..

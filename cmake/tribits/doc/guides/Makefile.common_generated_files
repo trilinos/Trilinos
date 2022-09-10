@@ -1,6 +1,7 @@
 COMMON_DEPENDENT_FILES = \
   Makefile \
   ../generate-guide.sh \
+  ../TribitsCoreDetailedReference.rst \
   ../TribitsGuidesBody.rst \
   ../TribitsGuidesReferences.rst \
   ../TribitsFAQ.rst \

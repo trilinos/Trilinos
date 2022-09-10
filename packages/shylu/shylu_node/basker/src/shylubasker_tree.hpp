@@ -29,7 +29,7 @@ namespace BaskerNS
 
     //Copy into our tree_struct
     part_tree.basic_convert(A.nrow, perm, nblks, parts,
-			    row_tabs, col_tabs, treetab);
+                            row_tabs, col_tabs, treetab);
 
     int result = 0;
     if(options == 0) //default case (based on threads)
@@ -143,7 +143,7 @@ namespace BaskerNS
     
     #ifdef BASKER_DEBUG_TREE
     printf("Start, nparts: %d nblks: %d \n",
-	   parts, nblks);
+           parts, nblks);
     #endif
 
 
@@ -152,21 +152,21 @@ namespace BaskerNS
     #ifdef BASKER_DEBUG_TREE
     printf("nblks: %d parts: %d \n", nblks, parts);
     printf("log: %f %f %f \n", 
-	   log(nblks+1), log(parts), log(num_threads));
+           log(nblks+1), log(parts), log(num_threads));
     #endif
 
     Int maxlvls = round(
-			log((double)num_threads)/
-			log((double)parts));
+                        log((double)num_threads)/
+                        log((double)parts));
 
     Int treelvls = round(
-			 log((double)(nblks+1))/
-			 log((double)parts)) - 1;
+                         log((double)(nblks+1))/
+                         log((double)parts)) - 1;
 
 
     //Int treelvls = ((((double)log(nblks+1))/((double)log(parts))) - 1.0);
     //Int treelvls = (((double)log((double)(nblks+1)))/
-    //		    ((double)log((double)parts))) ;
+    //                    ((double)log((double)parts))) ;
     //Int treelvls = crazy_temp -1;
 
     //Number of blocks now is parts^lvl+1 - 1
@@ -174,7 +174,7 @@ namespace BaskerNS
     
     #ifdef BASKER_DEBUG_TREE
     printf("maxlvl: %d treelvl: %d newnblks: %d \n",
-	   maxlvls, treelvls, newnblks);
+           maxlvls, treelvls, newnblks);
     #endif
 
     if(newnblks < nblks)
@@ -209,7 +209,7 @@ namespace BaskerNS
     init_value(temp_row_tabs, tree.nblks+1, (Int)0);
     
     rec_tabs(0, tree.nlvls, treelvls, tree.nblks, old_pos,
-	     &new_pos, col_tabs, row_tabs, treetab,
+             &new_pos, col_tabs, row_tabs, treetab,
        temp_col_tabs, temp_row_tabs, temp_tree);
 
     for(Int i=0; i < tree.nblks+1; i++)
@@ -661,9 +661,9 @@ namespace BaskerNS
     //Set Values
     #ifdef BASKER_DEBUG_TREE
     printf("Rec Tabs, new_pos: %d old_pos %d\n", 
-    	   *new_pos, old_pos);
+               *new_pos, old_pos);
     printf("Rec Tabs, oldc: %d oldr: %d mynum %d \n",
-    	   old_col[old_pos], old_row[old_pos], mynum);
+               old_col[old_pos], old_row[old_pos], mynum);
     #endif
 
     new_col[*new_pos]  = old_col[old_pos];
@@ -741,6 +741,10 @@ namespace BaskerNS
   }//end update_lpinv_tree
 
 
+  // ALM : strictly-lower triangular blocks (no diagonal blocks)
+  //  LL : -> L-factor
+  // AVM :          upper triangular blocks (with diagonal blocks)
+  //  LU : -> U-factor
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry, Exe_Space>::matrix_to_views_2D
@@ -797,14 +801,9 @@ namespace BaskerNS
 
     //Malloc  AU and AL views, and needed space
     BASKER_ASSERT(nblks > 0, "tree nblks 99");
-    MALLOC_MATRIX_VIEW_2DARRAY(AV, nblks);
-    MALLOC_MATRIX_VIEW_2DARRAY(AL, nblks);
-
     //Malloc AU and AL, matrix
     MALLOC_MATRIX_2DARRAY(AVM, nblks);
     MALLOC_MATRIX_2DARRAY(ALM, nblks);
-    
-
     //Malloc LU and LL matrix ARRAYs
     MALLOC_MATRIX_2DARRAY(LU, nblks);
     MALLOC_MATRIX_2DARRAY(LL, nblks);
@@ -817,8 +816,6 @@ namespace BaskerNS
       Int U_view_size = (U_view_count(i) > 0 ? U_view_count(i) : 1);
       if (U_view_size > 0)
       {
-        //BASKER_ASSERT(U_view_count(i)>0, "tree uvc");
-        MALLOC_MATRIX_VIEW_1DARRAY(AV(i), U_view_size);
         MALLOC_MATRIX_1DARRAY(AVM(i),     U_view_size);
         MALLOC_MATRIX_1DARRAY(LU(i),      U_view_size);
       }
@@ -827,8 +824,6 @@ namespace BaskerNS
       Int L_view_size = (L_view_count(i) > 0 ? L_view_count(i): 1);
       if (L_view_size > 0) 
       {
-        //BASKER_ASSERT(L_view_count(i)>0, "tree lvc");
-        MALLOC_MATRIX_VIEW_1DARRAY(AL(i), L_view_size);
         MALLOC_MATRIX_1DARRAY(ALM(i),     L_view_size);
         MALLOC_MATRIX_1DARRAY(LL(i),      L_view_size);
       }
@@ -849,25 +844,11 @@ namespace BaskerNS
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {
-        MATRIX_VIEW_1DARRAY &Utemp = AV[j];
-        MATRIX_VIEW_1DARRAY &Ltemp = AL[i];
-
         MATRIX_1DARRAY &UMtemp = AVM[j];
         MATRIX_1DARRAY &LMtemp = ALM[i];
 
         MATRIX_1DARRAY &LUtemp = LU[j];
         MATRIX_1DARRAY &LLtemp = LL[i];
-
-        //Init AU
-        #ifdef MY_DEBUG
-        printf( " AV(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
-        #endif
-        Utemp[U_view_count[j]].init(&(flat), 
-            tree.col_tabs[i], 
-            (tree.col_tabs[i+1]-tree.col_tabs[i]),
-            tree.col_tabs[j], 
-            (tree.col_tabs[j+1]-tree.col_tabs[j])
-            );
 
         #ifdef MY_DEBUG
         printf( " AVM(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
@@ -883,22 +864,17 @@ namespace BaskerNS
         }
 
         //Int LU
+        #ifdef MY_DEBUG
+        printf( " LU (%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
+        #endif
         LUtemp[U_view_count[j]].set_shape(
             tree.col_tabs[i], 
             (tree.col_tabs[i+1]-tree.col_tabs[i]),
             tree.col_tabs[j], 
             (tree.col_tabs[j+1]-tree.col_tabs[j])
-            );	
+            );        
 
         U_view_count[j] = U_view_count[j]+1;
-
-        //Init AL
-        Ltemp[L_view_count[i]].init(&(flat),
-            tree.col_tabs[j],
-            (tree.col_tabs[j+1]-tree.col_tabs[j]),
-            tree.col_tabs[i],
-            (tree.col_tabs[i+1] - tree.col_tabs[i])
-            );
 
         #ifdef MY_DEBUG
         printf( " ALM(%d)(%d).set_shape(%dx%d)\n",i,L_view_count[i], tree.col_tabs[j+1]-tree.col_tabs[j],tree.col_tabs[i+1]-tree.col_tabs[i] );
@@ -914,15 +890,15 @@ namespace BaskerNS
         }
 
         //Init LL
+        #ifdef MY_DEBUG
+        printf( " LL (%d)(%d).set_shape(%dx%d)\n",i,L_view_count[i], tree.col_tabs[j+1]-tree.col_tabs[j],tree.col_tabs[i+1]-tree.col_tabs[i] );
+        #endif
         LLtemp[L_view_count[i]].set_shape(
             tree.col_tabs[j],
             (tree.col_tabs[j+1]-tree.col_tabs[j]),
             tree.col_tabs[i],
             (tree.col_tabs[i+1] - tree.col_tabs[i])
             );
-        #ifdef MY_DEBUG
-        printf( " LL(%d)(%d).set_shape(%dx%d)\n",i,L_view_count[i], tree.col_tabs[j+1]-tree.col_tabs[j],tree.col_tabs[i+1]-tree.col_tabs[i] );
-        #endif
 
         L_view_count[i] = L_view_count[i]+1;
 
@@ -1028,12 +1004,7 @@ namespace BaskerNS
     printf( "\n >> find_2D_convert (%d x %d) <<\n\n",M.nrow,M.ncol );
     for (Int k = 0; k <= tree.nblks; k++) printf( "  row_tabs[%d] = %d\n",k,tree.row_tabs(k));
     for (Int k = 0; k <  tree.nblks; k++) printf( "   LU_size[%d] = %d\n",k,LU_size(k));
-    printf( "M = [\n" );
-    for(Int k = 0; k < M.ncol; ++k) {
-      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
-        printf( " %d %d %e\n", M.row_idx(i),k, M.val(i) );
-    }
-    printf("];\n");
+    M.print_matrix("M.dat");
     #endif
     for(Int k = 0; k < M.ncol; ++k)
     {
@@ -1164,7 +1135,7 @@ namespace BaskerNS
           }
         }
         start_col = BASKER_FALSE;
-      }//over each row	
+      }//over each row        
     }//over each colunm
 
   }//end find_2d_convert()
@@ -1289,7 +1260,7 @@ namespace BaskerNS
 
       if(btf_tabs_offset != 0)
       {
-        permute_col(BTF_B, order_c_csym_array);	
+        permute_col(BTF_B, order_c_csym_array);        
         sort_matrix(BTF_B);
       }
     }

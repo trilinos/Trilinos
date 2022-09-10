@@ -240,5 +240,14 @@ void SplitCommsImpl::free_comms_impl()
 }
 
 }
+
+bool are_comms_unequal(MPI_Comm global, MPI_Comm local)
+{
+  int result = 0;
+  MPI_Comm_compare(global, local, &result);
+  return result == MPI_UNEQUAL;
+}
+
+
 }
 }

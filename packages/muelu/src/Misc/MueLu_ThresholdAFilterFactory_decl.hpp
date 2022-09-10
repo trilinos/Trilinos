@@ -80,10 +80,6 @@ namespace MueLu {
     //! Constructor.
     ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal=true, const GlobalOrdinal expectedNNZperRow=-1);
 
-    //! Destructor.
-    virtual ~ThresholdAFilterFactory();
-    //@}
-
     //! Input
     //@{
 

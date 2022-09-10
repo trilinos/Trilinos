@@ -1,4 +1,3 @@
-
 TRIBITS_CONFIGURE_FILE( ${PACKAGE_NAME}_config.h )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -7,7 +6,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
+FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 # Make sure that the subpackage's automatically generated 
 # configuration header file gets installed, along with the
@@ -23,17 +22,3 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-# FIXME (mfh 19 Dec 2014) We should rely on TriBITS to handle
-# installation.
-
-SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
-
-INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/)
-
-#
-# Make a trivial change to this comment if you add / remove a file
-# either to / from this directory.  That ensures that running "make"
-# will also rerun CMake in order to regenerate Makefiles.
-# Here is another such change.
-#

@@ -323,12 +323,17 @@ namespace PHX {
         check_use_count_(true)
     {}
 
+    // Making this a kokkos function eliminates cuda compiler warnings
+    // in objects that contain ViewOfViews3 that are copied to device.
+    KOKKOS_INLINE_FUNCTION
     ~ViewOfViews3()
     {
       // Make sure there is not another object pointing to device view
       // since the host view will delete the inner views on exit.
-      if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
-        Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+      KOKKOS_IF_ON_HOST((
+        if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
+          Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+      ))
     }
 
     /// Enable safety check in dtor for external references.
@@ -350,7 +355,11 @@ namespace PHX {
     }
 
     // Returns true if the outer view has been initialized.
-    bool isInitialized() {return is_initialized_;}
+    bool isInitialized() const {return is_initialized_;}
+
+    bool deviceViewIsSynced() const {return device_view_is_synced_;}
+
+    bool safetyCheck() const {return check_use_count_;}
 
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
@@ -380,8 +389,23 @@ namespace PHX {
       return view_host_;
     }
 
+    /// Returns a host mirror view for the outer view, where the inner
+    /// views are still on device.
+    auto getViewHost() const
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      return view_host_;
+    }
+
     /// Returns device view of views
     auto getViewDevice()
+    {
+      KOKKOS_ASSERT(device_view_is_synced_);
+      return view_device_;
+    }
+
+    /// Returns device view of views
+    auto getViewDevice() const
     {
       KOKKOS_ASSERT(device_view_is_synced_);
       return view_device_;

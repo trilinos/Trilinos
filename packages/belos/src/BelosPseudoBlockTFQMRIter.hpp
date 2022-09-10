@@ -110,38 +110,6 @@ namespace Belos {
     {}
   };
 
-  
-  //! @name PseudoBlockTFQMRIter Exceptions
-  //@{
-  
-  /** \brief PseudoBlockTFQMRIterInitFailure is thrown when the PseudoBlockTFQMRIter object is unable to
-   * generate an initial iterate in the PseudoBlockTFQMRIter::initialize() routine.
-   *
-   * This std::exception is thrown from the PseudoBlockTFQMRIter::initialize() method, which is
-   * called by the user or from the PseudoBlockTFQMRIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown,
-   * PseudoBlockTFQMRIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class PseudoBlockTFQMRIterInitFailure : public BelosError {public:
-    PseudoBlockTFQMRIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  /** \brief PseudoBlockTFQMRIterateFailure is thrown when the PseudoBlockTFQMRIter object is unable to
-   * compute the next iterate in the PseudoBlockTFQMRIter::iterate() routine.
-   *
-   * This std::exception is thrown from the PseudoBlockTFQMRIter::iterate() method.
-   *
-   */
-  class PseudoBlockTFQMRIterateFailure : public BelosError {public:
-    PseudoBlockTFQMRIterateFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-
-
   template <class ScalarType, class MV, class OP>
   class PseudoBlockTFQMRIter : public Iteration<ScalarType,MV,OP> { 
   public:

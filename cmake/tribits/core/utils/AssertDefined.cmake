@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @FUNCTION: assert_defined()
 #
 # Assert that a variable is defined and if not call ``message(SEND_ERROR
@@ -81,6 +81,6 @@ function(assert_defined VARS)
   endforeach()
 endfunction()
 
-# ToDo: The VARS arg This really needs to be repalced with ${ARGV}.  I fear
+# ToDo: The VARS arg This really needs to be replaced with ${ARGV}.  I fear
 # that only the first arg passed in is asserted.  However, to change this now
 # is breaking backward compatibility.

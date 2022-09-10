@@ -98,6 +98,8 @@ We organize the directories as follows:
 * ```Adelus::GetDistribution()```: gives the distribution information that is required
 by the dense solver to the user that defines the matrix block and right hand side information.
 
+* ```Adelus::AdelusHandle<...>```: an application must create a handle to the Adelus communicator and necessary metadata (the handle is passed to every subsequent Adelus function call)
+
 * ```Adelus::FactorSolve()```: factors and solves the dense matrix in which the matrix
 and rhs are packed in Kokkos View
 
@@ -105,10 +107,14 @@ and rhs are packed in Kokkos View
 
 * ```Adelus::FactorSolve_hostPtr()```: matrix and rhs are packed and passed as host pointer
 
+* ```Adelus::Factor()```: factors the dense matrix for later solve
+
+* ```Adelus::Solve()```: solves the previously factored dense matrix for provided RHS
+
 2. Implementations of the phases of the solver (i.e. factor, solve, permutation)  
 and other utility functions also locate in the ```src/``` subdirectory.
 
-3. A correctness test is in the ```test/``` subdirectory.
+3. Correctness tests is in the ```test/``` subdirectory.
 
 4. A simple example that generates a random matrix and a right-hand-side to
     exercise the solver is in the ```example/``` subdirectory.
@@ -249,12 +255,14 @@ the solver can be called. In this example, the portion of matrix on each MPI
 process and the reference solution vector are randomly generated. Then, the
 assigned RHS vectors on MPI processes can be computed.
 
-3. Launch Adelus using ```Adelus::FactorSolve```, or ```Adelus::FactorSolve_devPtr```,
+3. Create a handle to the Adelus communicator and necessary metadata
+
+4. Launch Adelus using ```Adelus::FactorSolve```, or ```Adelus::FactorSolve_devPtr```,
 or ```Adelus::FactorSolve_hostPtr```.
 
-4. Gather results.
+5. Gather results.
 
-5. Compare the returned solution vector with the reference vector.
+6. Compare the returned solution vector with the reference vector.
 
 ### Compile with Makefile
 

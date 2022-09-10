@@ -51,6 +51,15 @@
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
+// This is not as general as possible, but should be good enough for most builds.
+#if (defined(HAVE_MUELU_TPETRA) && \
+     ((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+      (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+      (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))))
+# define MUELU_CAN_USE_MIXED_PRECISION
+#endif
+
+
 namespace Thyra {
 
   using Teuchos::RCP;
@@ -76,6 +85,10 @@ namespace Thyra {
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
 #endif
 
+#ifdef HAVE_MUELU_EPETRA
+    if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
+#endif
+
     return false;
   }
 
@@ -95,7 +108,7 @@ namespace Thyra {
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef Xpetra::TpetraHalfPrecisionOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpHalfPrecOp;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMV;
     typedef typename XpHalfPrecOp::HalfScalar                                     HalfScalar;
@@ -154,7 +167,7 @@ namespace Thyra {
 
       paramList.set<bool>("refmaxwell: use as preconditioner", true);
       if (useHalfPrecision) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
 
         // convert to half precision
         RCP<XphMat> halfA = Xpetra::convertToHalfPrecision(A);
@@ -197,7 +210,7 @@ namespace Thyra {
 
       RCP<ThyXpOp> thyXpOp = rcp_dynamic_cast<ThyXpOp>(thyra_precOp, true);
       RCP<XpOp>    xpOp    = thyXpOp->getXpetraOperator();
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
       RCP<XpHalfPrecOp> xpHalfPrecOp = rcp_dynamic_cast<XpHalfPrecOp>(xpOp);
       if (!xpHalfPrecOp.is_null()) {
         RCP<MueLu::RefMaxwell<HalfScalar,LocalOrdinal,GlobalOrdinal,Node> > preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>>(xpHalfPrecOp->GetHalfPrecisionOperator(), true);

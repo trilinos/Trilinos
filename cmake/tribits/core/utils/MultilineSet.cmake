@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @FUNCTION: multiline_set()
 #
 # Function to set a single string by concatenating a list of separate strings

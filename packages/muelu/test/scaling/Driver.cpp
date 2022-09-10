@@ -493,6 +493,9 @@ MueLu::MueLu_AMGX_initialize_plugins();
         if (writeMatricesOPT > -2) {
           tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
           H->Write(writeMatricesOPT, writeMatricesOPT);
+          if(writeMatricesOPT == 0 || writeMatricesOPT == -1) {
+            Xpetra::IO<SC,LO,GO,NO>::Write("b_0.m",*B);
+          }
           tm = Teuchos::null;
         }
 

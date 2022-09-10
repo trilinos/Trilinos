@@ -22,22 +22,12 @@ add_subdirectory(testlib)
 # Test b_test
 #
 
-set(EXPECTED_B_DEPS)
-assert_defined(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
-if(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
-  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} A no_deps")
-endif()
-if(${PACKAGE_NAME}_ENABLE_InsertedPkg)
-  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} InsertedPkg no_deps")
-endif()
-set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} no_deps")
-
 tribits_add_advanced_test( test_of_b
   OVERALL_NUM_MPI_PROCS 1
   TEST_0 EXEC b_test
     PASS_REGULAR_EXPRESSION_ALL 
       "B label is: B"
-      "B deps are:${EXPECTED_B_DEPS}"
+      "B deps are: ${EXPECTED_B_DEPS}"
   ADDED_TEST_NAME_OUT  test_of_b_TEST_NAME
   )
 

@@ -98,12 +98,13 @@ TEST_F(M2NFileOutput, CheckSharingInformation)
   int global_num_elems = counts[stk::topology::ELEM_RANK];
 
   const std::string outputFilename = "TemporaryOutputFile.g";
+  stk::io::OutputParams params(get_bulk());
   stk::io::write_file_for_subdomain(outputFilename,
                                     get_bulk().parallel_rank(),
                                     get_bulk().parallel_size(),
                                     global_num_nodes,
                                     global_num_elems,
-                                    get_bulk(),
+                                    params,
                                     nodeSharingInfo);
 
   verify_node_sharing_info(nodeSharingInfo, outputFilename);

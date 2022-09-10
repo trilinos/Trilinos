@@ -1411,7 +1411,7 @@ int main( int argc, char *argv[] )
   // the parameter
   //
 
-  for( int type_i = 0; type_i < 3; ++type_i ) {
+  for( int type_i = 0; type_i < 4; ++type_i ) {
 
     ParameterList &Polynomial_sublist
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
@@ -1432,6 +1432,10 @@ int main( int argc, char *argv[] )
       case 2:
         typeName = "std::string";
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
+        break;
+      case 3:
+        typeName = "long long";
+        Teuchos::setLongLongParameter("Max Iters",3,"",&Polynomial_sublist);
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -1509,6 +1513,33 @@ int main( int argc, char *argv[] )
         l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab tab(std::cerr); std::cerr << e.what() << std::endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as an long long ...\n";
+      print_break();
+    }
+    try {
+      const long long
+        lineserchMaxIters
+        = Teuchos::getLongLongParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        l_result = (lineserchMaxIters == (long long)(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
         << ( l_result ? "passed" : "failed") << "\n";
       if(!l_result) ++FailedTests;
     }

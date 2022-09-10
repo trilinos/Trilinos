@@ -65,9 +65,31 @@ public:
     void clear();
 
 private:
+    using IndexRange = std::pair<unsigned, unsigned>;
+
     void set_offsets();
+
+    void insert_edge(const GraphEdge& graphEdge);
+
+    void insert_edge_into_sorted_range_or_next_entry(IndexRange& indices, const GraphEdge& graphEdge);
+
+    unsigned find_sorted_insertion_index(IndexRange indices, const GraphEdge& graphEdge);
+
+    void move_edges_to_end(impl::LocalId elem);
+
+    void compress_graph();
+
+
+    unsigned get_end_of_element_range_for_sorted_edges(const std::vector<GraphEdge>& edges, unsigned startIdx);
+
+    void delete_edge(const GraphEdge& edgeToDelete);
+
+    bool check_for_edge(const GraphEdge& edge);
+
     std::vector<GraphEdge> m_graphEdges;
-    std::vector<unsigned> m_elemOffsets;
+    std::vector<IndexRange> m_elemOffsets;
+    unsigned m_numUnusedEntries = 0;
+    const double m_compressionThreshold = 0.2;
 };
 
 class ParallelInfoForGraphEdges

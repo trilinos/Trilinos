@@ -198,6 +198,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_KokkosIntegrationTest
+  HAVE_TPETRA_KOKKOSINTEGRATION_TEST
+  "Enable the KokkosIntegrationTest"
+  ON
+  )
+
+
+
+
 #
 # Add libraries, tests, and examples
 #

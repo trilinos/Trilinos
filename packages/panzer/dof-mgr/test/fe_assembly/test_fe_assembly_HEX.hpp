@@ -251,8 +251,8 @@ int feAssemblyHex(int argc, char *argv[]) {
       getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
       getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
 
-    *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-    *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+    *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+    *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
     *outStream << "\n";
 
 

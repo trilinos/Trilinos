@@ -51,6 +51,7 @@
 #include "Zoltan2_AlgRCM.hpp"
 #include "Zoltan2_AlgSortedDegree.hpp"
 #include "Zoltan2_AlgAMD.hpp"
+#include "Zoltan2_AlgMetis.hpp"
 #include <Zoltan2_AlgScotch.hpp> // BDD
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL

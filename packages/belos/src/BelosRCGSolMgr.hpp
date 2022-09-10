@@ -128,16 +128,6 @@ namespace Belos {
     RCGSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief RCGSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
-   * the recycling subspace.
-   *
-   * This exception is thrown from the RCGSolMgr::solve() method.
-   *
-   */
-  class RCGSolMgrRecyclingFailure : public BelosError {public:
-    RCGSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   //@}
 
 

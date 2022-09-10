@@ -557,6 +557,7 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         list(APPEND ${PROJECT_NAME}_PACKAGES ${TRIBITS_PACKAGE})
         tribits_insert_standard_package_options(${TRIBITS_PACKAGE}
           ${PACKAGE_TESTGROUP})
+        set(${TRIBITS_PACKAGE}_PACKAGE_BUILD_STATUS INTERNAL)
         set(${TRIBITS_PACKAGE}_SOURCE_DIR
           "${PROJECT_SOURCE_DIR}/${REPOSITORY_AND_PACKAGE_DIR}")
         set(${TRIBITS_PACKAGE}_REL_SOURCE_DIR

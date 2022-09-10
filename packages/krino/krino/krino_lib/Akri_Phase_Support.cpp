@@ -73,9 +73,7 @@ std::string build_part_name(const krino::Phase_Support & ps,
 
   std::string parent_part_name = parent_part->name();
   std::string io_part_name = part.name();
-  std::set<stk::mesh::PartOrdinal> touching_block_ordinals;
-  ps.get_input_blocks_touching_surface(ps.get_input_block_surface_connectivity(), part.mesh_meta_data_ordinal(), touching_block_ordinals);
-  
+  const std::set<stk::mesh::PartOrdinal> touching_block_ordinals = ps.get_input_block_surface_connectivity().get_blocks_touching_surface(part.mesh_meta_data_ordinal());
 
   ThrowRequireMsg(touching_block_ordinals.size() > 0, 
       "krino::Akri_Phase_Support: Side block must be touching at least 1 block");
@@ -262,12 +260,12 @@ Phase_Support::addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_part
 }
 
 void
-Phase_Support::create_nonconformal_parts(const PartSet & decomposed_ioparts)
+Phase_Support::create_nonconformal_parts(const PartSet & decomposedIoParts)
 {
   const std::string nonconformal_part_suffix = "_nonconformal";
-  for(PartSet::const_iterator it = decomposed_ioparts.begin(); it != decomposed_ioparts.end(); ++it)
+  for(auto && decomposedIoPart : decomposedIoParts)
   {
-    const stk::mesh::Part & iopart = aux_meta().get_part((*it)->name());
+    const stk::mesh::Part & iopart = aux_meta().get_part(decomposedIoPart->name());
 
     std::string nonconformal_part_name = build_part_name(*this, iopart, PhaseTag(), nonconformal_part_suffix);
 
@@ -350,8 +348,7 @@ Phase_Support::get_blocks_and_touching_surfaces(const stk::mesh::MetaData & mesh
   for (auto && block_ptr : input_blocks)
   {
     blocks_and_touching_sides.insert(block_ptr);
-    std::set<stk::mesh::PartOrdinal> touching_surface_ordinals;
-    get_input_surfaces_touching_block(input_block_surface_info, block_ptr->mesh_meta_data_ordinal(), touching_surface_ordinals);
+    const std::set<stk::mesh::PartOrdinal> touching_surface_ordinals = input_block_surface_info.get_surfaces_touching_block(block_ptr->mesh_meta_data_ordinal());
     for (auto && surf_ordinal : touching_surface_ordinals)
     {
       stk::mesh::Part & surf_part = mesh_meta.get_part(surf_ordinal);
@@ -387,8 +384,6 @@ void
 Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
     const PartSet& decomposed_ioparts)
 {
-  std::set<stk::mesh::PartOrdinal> touching_block_ordinals;
-
   for (auto && io_part : decomposed_ioparts)
   {
     if (!(io_part->subsets().empty()))
@@ -403,10 +398,8 @@ Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
         stk::mesh::Part * nonconformal_iopart = const_cast<stk::mesh::Part *>(find_nonconformal_part(*io_part));
         ThrowRequire(NULL != nonconformal_iopart);
 
-        for (stk::mesh::PartVector::const_iterator subset = io_part->subsets().begin();
-            subset != io_part->subsets().end(); ++subset)
+        for (auto && io_part_subset : io_part->subsets())
         {
-          stk::mesh::Part * io_part_subset = *subset;
           ThrowRequire(NULL != io_part_subset);
 
           addPhasePart(*io_part_subset, my_phase_parts, ls_phase_entry);
@@ -422,7 +415,7 @@ Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
           if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Adding " << nonconformal_iopart_subset->name() << " as subset of " << nonconformal_iopart->name() << stk::diag::dendl;
           meta().declare_part_subset(*nonconformal_iopart, *nonconformal_iopart_subset);
 
-          get_input_blocks_touching_surface(my_input_block_surface_connectivity, io_part_subset->mesh_meta_data_ordinal(), touching_block_ordinals);
+          const std::set<stk::mesh::PartOrdinal> touching_block_ordinals = my_input_block_surface_connectivity.get_blocks_touching_surface(io_part_subset->mesh_meta_data_ordinal());
           for (auto && touching_block_ordinal : touching_block_ordinals)
           {
             const std::string conformal_part_alias = conformal_iopart->name() + "_" + meta().get_part(touching_block_ordinal).name();
@@ -436,47 +429,78 @@ Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
 }
 
 void
+Phase_Support::update_touching_parts_for_phase_part(const stk::mesh::Part & origPart, const stk::mesh::Part & phasePart, const PhaseTag & phase)
+{
+  const std::set<stk::mesh::PartOrdinal> & origTouchingBlockOrdinals = my_input_block_surface_connectivity.get_blocks_touching_surface(origPart.mesh_meta_data_ordinal());
+
+  std::vector<const stk::mesh::Part*> phaseTouchingBlocks = meta().get_blocks_touching_surface(&phasePart);
+
+  for (auto && origTouchingBlockOrdinal : origTouchingBlockOrdinals)
+  {
+    stk::mesh::Part & origTouchingBlock = meta().get_part(origTouchingBlockOrdinal);
+    const stk::mesh::Part * phaseTouchingBlock = (phase.empty()) ? find_nonconformal_part(origTouchingBlock) : find_conformal_io_part(origTouchingBlock, phase);
+    ThrowRequire(phaseTouchingBlock);
+
+    if (std::find(phaseTouchingBlocks.begin(), phaseTouchingBlocks.end(), phaseTouchingBlock) == phaseTouchingBlocks.end())
+      phaseTouchingBlocks.push_back(phaseTouchingBlock);
+  }
+
+  if(krinolog.shouldPrint(LOG_PARTS))
+  {
+    const std::string conformingType = (phase.empty()) ? "Nonconforming" : "Conforming";
+    krinolog << conformingType << " surface " << phasePart.name() << " touches blocks ";
+    for (auto && phaseTouchingBlock : phaseTouchingBlocks)
+      krinolog << phaseTouchingBlock->name() << " ";
+    krinolog << "\n";
+  }
+
+  meta().set_surface_to_block_mapping(&phasePart, phaseTouchingBlocks);
+}
+
+void
 Phase_Support::build_decomposed_block_surface_connectivity()
 {
+  std::set<std::pair<unsigned, unsigned>> nonconformingAndOriginalPartOrdinalPairs;
+
   for (auto && part : meta().get_mesh_parts())
   {
     if (part->primary_entity_rank() != meta().side_rank()) continue;
     const PhasePartTag * phase_part = find_conformal_phase_part(*part);
     if (nullptr == phase_part) continue;
-    stk::mesh::Part & orig_part = meta().get_part(phase_part->get_original_part_ordinal());
-    if (orig_part == meta().universal_part()) continue;
+    stk::mesh::Part & origPart = meta().get_part(phase_part->get_original_part_ordinal());
+    if (origPart == meta().universal_part()) continue;
 
     if (phase_part->is_interface())
     {
-      const stk::mesh::Part * conformal_touching_block = find_conformal_io_part(orig_part, phase_part->get_touching_phase());
+      const stk::mesh::Part * conformal_touching_block = find_conformal_io_part(origPart, phase_part->get_touching_phase());
       ThrowRequire(conformal_touching_block);
-      if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Surface " << part->name() << " touches block " << conformal_touching_block->name() << "\n";
+      if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Interface surface " << part->name() << " touches block " << conformal_touching_block->name() << "\n";
       std::vector<const stk::mesh::Part*> touching_blocks = meta().get_blocks_touching_surface(part);
       if (std::find(touching_blocks.begin(), touching_blocks.end(), conformal_touching_block) == touching_blocks.end())
-      {
         touching_blocks.push_back(conformal_touching_block);
-      }
+
       meta().set_surface_to_block_mapping(part, touching_blocks);
     }
     else
     {
-      std::set<stk::mesh::PartOrdinal> touching_block_ordinals;
-      get_input_blocks_touching_surface(my_input_block_surface_connectivity, orig_part.mesh_meta_data_ordinal(), touching_block_ordinals);
+      update_touching_parts_for_phase_part(origPart, *part, phase_part->get_phase());
 
-      for (auto && touching_block_ordinal : touching_block_ordinals)
-      {
-        stk::mesh::Part & touching_block = meta().get_part(touching_block_ordinal);
-        const stk::mesh::Part * conformal_touching_block = find_conformal_io_part(touching_block, phase_part->get_phase());
-        ThrowRequire(conformal_touching_block);
-        if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Surface " << part->name() << " touches block " << conformal_touching_block->name() << "\n";
-        std::vector<const stk::mesh::Part*> touching_blocks = meta().get_blocks_touching_surface(part);
-        if (std::find(touching_blocks.begin(), touching_blocks.end(), conformal_touching_block) == touching_blocks.end())
-        {
-          touching_blocks.push_back(conformal_touching_block);
-        }
-        meta().set_surface_to_block_mapping(part, touching_blocks);
-      }
+      // store off nonconforming and original parts for second pass below
+      nonconformingAndOriginalPartOrdinalPairs.emplace(phase_part->get_nonconformal_part_ordinal(), phase_part->get_original_part_ordinal());
     }
+  }
+
+  const PhaseTag emptyPhaseToIndicateNoncoformingPart;
+  for (auto && nonconformingAndOriginalPartOrdinalPair : nonconformingAndOriginalPartOrdinalPairs)
+  {
+    const stk::mesh::Part & nonconformingPart = meta().get_part(nonconformingAndOriginalPartOrdinalPair.first);
+    const stk::mesh::Part & origPart = meta().get_part(nonconformingAndOriginalPartOrdinalPair.second);
+    update_touching_parts_for_phase_part(origPart, nonconformingPart, emptyPhaseToIndicateNoncoformingPart);
+  }
+
+  if(krinolog.shouldPrint(LOG_PARTS))
+  {
+    Block_Surface_Connectivity::dump_surface_connectivity(meta());
   }
 }
 
@@ -599,7 +623,7 @@ Phase_Support::decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector,
     auto & ls_set = ls_sets[i];
     stk::mesh::PartVector & blocks_to_decompose = std::get<0>(ls_set);
     PhaseVec & ls_phases = std::get<2>(ls_set);
-    if(std::get<2>(ls_set).empty()) continue;
+    if(ls_phases.empty()) continue;
     part_set_vec[i] = get_blocks_and_touching_surfaces(meta(), blocks_to_decompose, my_input_block_surface_connectivity);
 
     create_nonconformal_parts(part_set_vec[i]);
@@ -881,21 +905,6 @@ Phase_Support::get_blocks_touching_surface(const std::string & surface_name, std
   }
 }
 //--------------------------------------------------------------------------------
-void
-Phase_Support::get_input_surfaces_touching_block(const Block_Surface_Connectivity & input_block_surface_connectivity,
-    const stk::mesh::PartOrdinal block_ordinal, std::set<stk::mesh::PartOrdinal> & surface_ordinals)
-{
-  input_block_surface_connectivity.get_surfaces_touching_block(block_ordinal, surface_ordinals);
-}
-
-//--------------------------------------------------------------------------------
-void
-Phase_Support::get_input_blocks_touching_surface(const Block_Surface_Connectivity & input_block_surface_connectivity,
-    const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals) const
-{
-  input_block_surface_connectivity.get_blocks_touching_surface(surfaceOrdinal, blockOrdinals);
-}
-//--------------------------------------------------------------------------------
 const stk::mesh::Part *
 Phase_Support::find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const
 {
@@ -1006,8 +1015,7 @@ void Phase_Support::register_blocks_for_level_set(const Surface_Identifier level
     lsUsedByParts_[levelSetIdentifier].insert(block_ptr);
 
     // Now get surfaces touching this block
-    std::set<stk::mesh::PartOrdinal> surfaceOrdinals;
-    get_input_surfaces_touching_block(my_input_block_surface_connectivity, block_ptr->mesh_meta_data_ordinal(), surfaceOrdinals);
+    const std::set<stk::mesh::PartOrdinal> surfaceOrdinals = my_input_block_surface_connectivity.get_surfaces_touching_block(block_ptr->mesh_meta_data_ordinal());
     for (auto && surfaceOrdinal : surfaceOrdinals)
     {
       // For each surface, add IO Part/Level Set pairing to maps

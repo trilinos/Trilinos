@@ -191,7 +191,11 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
       NUM_MPI_PROCS 4
       )
 
-    IF (Tpetra_INST_FLOAT)
+    IF (Tpetra_INST_FLOAT
+      AND (NOT Tpetra_INST_COMPLEX_DOUBLE
+	OR (Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_COMPLEX_FLOAT)
+	)
+      )
       TRIBITS_ADD_TEST(
         GaleriDriver
         NAME "Galeri_double_Jacobi_HalfPrecision"
