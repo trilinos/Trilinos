@@ -61,6 +61,8 @@
 #include "Intrepid2_DerivedBasis_HDIV_HEX.hpp"
 #include "Intrepid2_DerivedBasis_HVOL_HEX.hpp"
 
+#include "Intrepid2_DerivedBasis_HGRAD_WEDGE.hpp"
+
 #include "Intrepid2_SerendipityBasis.hpp"
 
 namespace Intrepid2
@@ -119,6 +121,9 @@ namespace Intrepid2
     using HCURL_TET = typename TetrahedronBasisFamily::HCURL;
     using HDIV_TET = typename TetrahedronBasisFamily::HDIV;
     using HVOL_TET = typename TetrahedronBasisFamily::HVOL;
+    
+    // wedge bases
+    using HGRAD_WEDGE = Basis_Derived_HGRAD_WEDGE<HGRAD_TRI,HGRAD_LINE>;
   };
   
   /** \brief  Factory method for line bases in the given family.

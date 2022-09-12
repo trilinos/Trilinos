@@ -41,27 +41,27 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_DerivedBasis_HGRAD_QUAD.hpp
-    \brief  Implementation of H(grad) basis on the quadrilateral that is templated on H(grad) on the line.
+/** \file   Intrepid2_DerivedBasis_HGRAD_WEDGE.hpp
+    \brief  Implementation of H(grad) basis on the wedge that is templated on H(grad) on the line, and H(grad) on the triangle.
     \author Created by N.V. Roberts.
  
- H(grad) on the quadrilateral is defined (and implemented) as H(grad) x H(grad) on the line.
+ H(grad) on the wedge is defined (and implemented) as H(grad, triangle) x H(grad, line).
  */
 
-#ifndef Intrepid2_DerivedBasis_HGRAD_QUAD_h
-#define Intrepid2_DerivedBasis_HGRAD_QUAD_h
+#ifndef Intrepid2_DerivedBasis_HGRAD_WEDGE_h
+#define Intrepid2_DerivedBasis_HGRAD_WEDGE_h
 
 #include "Intrepid2_TensorBasis.hpp"
 
 namespace Intrepid2
 {
-  template<class HGRAD_LINE>
-  class Basis_Derived_HGRAD_QUAD
+  template<class HGRAD_TRI, class HGRAD_LINE>
+  class Basis_Derived_HGRAD_WEDGE
   : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
   protected:
     std::string name_;
-    ordinal_type order_x_, order_y_;
+    ordinal_type order_xy_, order_z_;
     EPointType pointType_;
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
@@ -73,27 +73,28 @@ namespace Intrepid2
     using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using BasisBase = typename HGRAD_LINE::BasisBase;
+    using TriBasis  = HGRAD_TRI;
     using LineBasis = HGRAD_LINE;
     using TensorBasis = Basis_TensorBasis<BasisBase>;
 
     /** \brief  Constructor.
-        \param [in] polyOrder_x - the polynomial order in the x dimension.
-        \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] polyOrder_xy - the polynomial order in the x and y dimensions.
+        \param [in] polyOrder_z - the polynomial order in the z dimension.
         \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
+    Basis_Derived_HGRAD_WEDGE(int polyOrder_xy, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(Teuchos::rcp( new LineBasis(polyOrder_x, pointType)),
-                Teuchos::rcp( new LineBasis(polyOrder_y, pointType)))
+    TensorBasis(Teuchos::rcp( new TriBasis(polyOrder_xy, pointType)),
+                Teuchos::rcp( new LineBasis(polyOrder_z, pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
 
       std::ostringstream basisName;
-      basisName << "HGRAD_QUAD (" << this->TensorBasis::getName() << ")";
+      basisName << "HGRAD_WEDGE (" << this->TensorBasis::getName() << ")";
       name_ = basisName.str();
 
-      order_x_= polyOrder_x;
-      order_y_ = polyOrder_y;
+      order_xy_= polyOrder_xy;
+      order_z_ = polyOrder_z;
       pointType_ = pointType;
       
       this->setShardsTopologyAndTags();
@@ -103,7 +104,7 @@ namespace Intrepid2
         \param [in] polyOrder - the polynomial order to use in both dimensions.
         \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder,pointType) {}
+    Basis_Derived_HGRAD_WEDGE(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HGRAD_WEDGE(polyOrder,polyOrder,pointType) {}
 
 
     /** \brief True if orientation is required
@@ -134,16 +135,26 @@ namespace Intrepid2
           \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
        */
     Teuchos::RCP<BasisBase>
-      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Method not yet implemented");
+      if(subCellDim == 2) {
         switch(subCellOrd) {
-        case 0:
-        case 2:
-          return Teuchos::rcp( new LineBasis(order_x_, pointType_) );
-        case 1:
-        case 3:
-          return Teuchos::rcp( new LineBasis(order_y_, pointType_) );
+            // TODO: check this subcell numbering -- which are the tris, and which are the quads?
+            // (one way: use the shards CellTopology to look this up…)
+          case 0:
+          case 1:
+            return Teuchos::rcp( new TriBasis(order_xy_, pointType_) );
+          case 2:
+          case 3:
+          case 4:
+            // TODO: check what order the poly order arguments should go in...
+            // (one way: use the shards CellTopology to look this up…)
+            // TODO: define QuadBasis somehow, somewhere.  (Probably use DerivedBasis_HGRAD_QUAD.)
+//            return Teuchos::rcp( new QuadBasis(order_xy_, order_z_, pointType_) );
+            return Teuchos::null;
         }
+        return Teuchos::null;
       }
 
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
@@ -155,13 +166,13 @@ namespace Intrepid2
      */
     virtual HostBasisPtr<OutputValueType, PointValueType>
     getHostBasis() const override {
-      using HostBasis  = Basis_Derived_HGRAD_QUAD<typename HGRAD_LINE::HostBasis>;
+      using HostBasis  = Basis_Derived_HGRAD_WEDGE<typename HGRAD_TRI::HostBasis, typename HGRAD_LINE::HostBasis>;
       
-      auto hostBasis = Teuchos::rcp(new HostBasis(order_x_, order_y_, pointType_));
+      auto hostBasis = Teuchos::rcp(new HostBasis(order_xy_, order_z_, pointType_));
       
       return hostBasis;
     }
   };
 } // end namespace Intrepid2
 
-#endif /* Intrepid2_DerivedBasis_HGRAD_QUAD_h */
+#endif /* Intrepid2_DerivedBasis_HGRAD_WEDGE_h */

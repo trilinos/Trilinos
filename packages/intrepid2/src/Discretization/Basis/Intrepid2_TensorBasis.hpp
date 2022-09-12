@@ -855,6 +855,10 @@ struct OperatorTensorDecomposition
       {
         this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
       }
+      else if ((cellKey1 == shards::Triangle<3>::key) && (cellKey2 == shards::Line<2>::key))
+      {
+        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+      }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
