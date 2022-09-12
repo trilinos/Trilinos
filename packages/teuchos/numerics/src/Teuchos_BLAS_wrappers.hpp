@@ -68,6 +68,17 @@
 #  define Teuchos_fcd const char *
 #endif
 
+// Handle Complex types (we assume C++11 at a minumum
+// Microsoft C++11 apparently does not support float/double _Complex
+
+#if ( defined(_MSC_VER) )
+#define Teuchos_Complex_double_type_name std::complex<double>
+#define Teuchos_Complex_float_type_name std::complex<float>
+#else
+#define Teuchos_Complex_double_type_name double _Complex
+#define Teuchos_Complex_float_type_name float _Complex
+#endif
+
 
 /* B) Take care of of the link name case */
 
@@ -195,7 +206,7 @@ void PREFIX ZDOT_F77(std::complex<double> *ret, const int* n, const std::complex
   // reimplementing the offending routines.
 #    endif // HAVE_COMPLEX_BLAS_PROBLEM
 #  else // no problem
-std::complex<double> PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
+Teuchos_Complex_double_type_name PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
 #  endif // defined(HAVE_COMPLEX_BLAS_PROBLEM)
 
 double PREFIX ZNRM2_F77(const int* n, const std::complex<double> x[], const int* incx);
@@ -255,7 +266,7 @@ float PREFIX SCNRM2_F77(const int* n, const std::complex<float> x[], const int* 
 #elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 void PREFIX CDOT_F77(std::complex<float> *ret, const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-std::complex<float> PREFIX CDOT_F77(const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
+Teuchos_Complex_float_type_name PREFIX CDOT_F77(const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
 #else
 // the code is literally in Teuchos_BLAS.cpp
 #endif
