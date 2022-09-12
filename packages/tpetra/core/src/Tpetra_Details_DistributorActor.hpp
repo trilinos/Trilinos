@@ -143,6 +143,39 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
   doWaits(plan);
 }
 
+template <typename ViewType>
+using HostAccessibility = Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename ViewType::memory_space>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfHostAccessible = std::enable_if_t<HostAccessibility<DstViewType>::accessible &&
+                                                HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfNotHostAccessible = std::enable_if_t<!HostAccessibility<DstViewType>::accessible ||
+                                                   !HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+enableIfHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  memcpy(dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+}
+
+template <typename DstViewType, typename SrcViewType>
+enableIfNotHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  Kokkos::Compat::deep_copy_offset(dst, src, dst_offset, src_offset, size);
+}
+
 template <class ExpView, class ImpView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView& exports,
@@ -375,8 +408,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-          deep_copy_offset(sendArray, exports, sendArrayOffset,
-              plan.getIndicesTo()[j]*numPackets, numPackets);
+          packOffset(sendArray, exports, sendArrayOffset, plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
@@ -394,8 +426,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     if (plan.hasSelfMessage()) {
       for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
-        deep_copy_offset(imports, exports, selfReceiveOffset,
-            plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
+        packOffset(imports, exports, selfReceiveOffset, plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
         ++selfIndex;
         selfReceiveOffset += numPackets;
       }

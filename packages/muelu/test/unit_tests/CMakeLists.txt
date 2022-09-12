@@ -106,8 +106,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES aniso2dx.mat
   SOURCE_FILES aniso2dy.mat
   SOURCE_FILES iso2d.mat
+  SOURCE_FILES beam.mm
+  SOURCE_FILES filter.mm
   SOURCE_FILES fuego0.mm
   SOURCE_FILES fuego1.mm
+  SOURCE_FILES nonsym.mm
   SOURCE_FILES SaP_constrainTest_P.mat
   SOURCE_FILES semiRblkTestver.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
@@ -444,8 +447,9 @@ ENDIF()
 
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
+ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
-  ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
   ADD_SUBDIRECTORY(ParameterList/CreateSublists/)
 ENDIF()

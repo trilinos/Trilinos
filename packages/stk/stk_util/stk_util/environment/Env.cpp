@@ -363,7 +363,6 @@ set_param(
   const char *s = std::strcpy(new char[std::strlen(option) + 1], option);
 
   stk::parse_command_line_args(argc, &s, stk::get_options_specification(), stk::get_parsed_options());
-
   delete [] s;
 }
 

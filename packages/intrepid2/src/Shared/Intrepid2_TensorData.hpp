@@ -563,6 +563,7 @@ namespace Intrepid2
     {
       INTREPID2_TEST_FOR_EXCEPTION(!separateFirstComponent_ && (numTensorComponents_ != 1), std::invalid_argument, "setFirstComponentExtent() is only allowed when separateFirstComponent_ is true, or there is only one component");
       tensorComponents_[0].setExtent(0,newExtent);
+      extents_[0] = newExtent;
     }
   };
 }

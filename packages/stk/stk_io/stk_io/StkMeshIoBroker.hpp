@@ -165,6 +165,9 @@ namespace stk {
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
       void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
+      void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
+      void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
+
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
 
@@ -211,6 +214,9 @@ namespace stk {
       {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
+
+      bool get_filter_empty_input_entity_blocks() const;
+      bool get_filter_empty_input_entity_blocks(size_t input_file_index) const;
 
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
@@ -848,6 +854,16 @@ namespace stk {
     inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
+    }
+
+    inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_entity_blocks(filterEmptyEntityBlocks);
+    }
+
+    inline void StkMeshIoBroker::set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_assembly_entity_blocks(filterEmptyAssemblyEntityBlocks);
     }
 
     inline stk::mesh::Selector StkMeshIoBroker::get_active_selector() const {

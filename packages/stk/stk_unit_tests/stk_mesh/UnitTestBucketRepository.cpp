@@ -35,7 +35,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
-#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
+#include <stk_mesh/baseImpl/EntityKeyMapping.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_unit_test_utils/BulkDataTester.hpp>
@@ -64,7 +64,7 @@ TEST(BucketRepositoryTest, createBuckets)
   stkMeshMetaData.commit();
 
   stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
-  stk::mesh::impl::EntityRepository entityRepository;
+  stk::mesh::impl::EntityKeyMapping entityKeyMapping;
 
   stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
   stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
@@ -74,7 +74,7 @@ TEST(BucketRepositoryTest, createBuckets)
   {
     stk::mesh::EntityId nodeID = i+1;
     stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
-    std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
+    std::pair<stk::mesh::entity_iterator,bool> createResult = entityKeyMapping.internal_create_entity(nodeKey);
     bool aNewEntityWasCreated = createResult.second;
     EXPECT_TRUE(aNewEntityWasCreated);
     stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();
@@ -94,7 +94,7 @@ TEST(BucketRepositoryTest, createBuckets)
 
   stk::mesh::EntityId nodeID = numNodes+1;
   stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeID);
-  std::pair<stk::mesh::entity_iterator,bool> createResult = entityRepository.internal_create_entity(nodeKey);
+  std::pair<stk::mesh::entity_iterator,bool> createResult = entityKeyMapping.internal_create_entity(nodeKey);
   bool aNewEntityWasCreated = createResult.second;
   EXPECT_TRUE(aNewEntityWasCreated);
   stk::mesh::Entity node = stkMeshBulkData.my_generate_new_entity();

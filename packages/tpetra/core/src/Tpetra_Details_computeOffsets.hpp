@@ -127,7 +127,7 @@ public:
     functor_type functor (offsets, counts);
     OffsetType total (0);
     const char funcName[] = "Tpetra::Details::computeOffsetsFromCounts";
-    Kokkos::parallel_scan (range, functor, total, funcName);
+    Kokkos::parallel_scan (funcName, range, functor, total);
     return total;
   }
 

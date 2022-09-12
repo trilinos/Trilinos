@@ -50,7 +50,7 @@ macro(extrarepo_execute_process_wrapper)
     if (NOT EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL STREQUAL "0")
       message(SEND_ERROR
         "Error: execute_process(${ARGN}) returned"
-	" '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
+        " '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
     endif()
   else()
     message("execute_process(${ARGN})")
@@ -136,12 +136,12 @@ function(tribits_clone_or_update_extrarepo  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
       set(CLONE_CMND_ARGS
         COMMAND "${GIT_EXECUTABLE}" clone
         ${CHECKOUT_BRANCH_ARG} -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
-	"${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
+        "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
         WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_CLONE_OUT_FILE}" )
     else()
       message(SEND_ERROR
-	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
+        "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
     endif()
 
     # Do the clone
@@ -508,7 +508,7 @@ macro(enable_only_modified_packages)
   if (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     if (NOT ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE)
       message(FATAL_ERROR
-	"Error, failing 'ALL_PACKAGES' only allowed with all-at-once mode!")
+        "Error, failing 'ALL_PACKAGES' only allowed with all-at-once mode!")
     endif()
     message("\nDirectly modified or failing non-disabled packages that need"
       " to be tested:  ALL_PACKAGES")
@@ -954,7 +954,7 @@ macro(tribits_ctest_package_by_package)
     if (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
       message("${TRIBITS_PACKAGE}: Skipping configure due"
-	" to running in unit testing mode!")
+        " to running in unit testing mode!")
 
     else()
 
@@ -1001,7 +1001,7 @@ macro(tribits_ctest_package_by_package)
 
       if (NOT CTEST_DO_CONFIGURE AND CTEST_DO_SUBMIT)
         message("${TRIBITS_PACKAGE}: Skipping submitting configure"
-	  " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
+          " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
       elseif (CTEST_DO_SUBMIT)
         message("\nSubmitting configure and notes ...")
         tribits_ctest_submit( PARTS configure notes )
@@ -1025,7 +1025,7 @@ macro(tribits_ctest_package_by_package)
     if ( NOT PBP_CONFIGURE_PASSED AND CTEST_DO_BUILD )
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to configure failing!")
+        " to configure failing!")
 
       set(PBP_BUILD_PASSED FALSE)
       set(PBP_BUILD_LIBS_PASSED FALSE)
@@ -1033,14 +1033,14 @@ macro(tribits_ctest_package_by_package)
     elseif (NOT CTEST_DO_BUILD)
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
+        " to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
 
     elseif (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING OR
       CTEST_CONFIGURATION_UNIT_TESTING
       )
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to running in unit testing mode!")
+        " to running in unit testing mode!")
 
     else()
 
@@ -1152,7 +1152,7 @@ macro(tribits_ctest_package_by_package)
           " exists so there were failed tests!")
       else()
         message("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
-	  " does NOT exist so all tests passed!")
+          " does NOT exist so all tests passed!")
         set(PBP_TESTS_PASSED TRUE)
       endif()
       # 2009/12/05: ToDo: We need to add an argument to ctest_test(...)
@@ -1190,7 +1190,7 @@ macro(tribits_ctest_package_by_package)
     if (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_MEMORY_TESTING)
 
       message("\n${TRIBITS_PACKAGE}: Skipping running memory checking"
-	 "tests since library build failed!\n")
+         "tests since library build failed!\n")
 
     elseif (NOT CTEST_DO_MEMORY_TESTING)
 
@@ -1209,7 +1209,7 @@ macro(tribits_ctest_package_by_package)
         BUILD "${CTEST_BINARY_DIRECTORY}"
         PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
         INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-	)
+        )
       # ToDo: Determine if memory testing passed or not and affect overall
       # pass/fail!
 

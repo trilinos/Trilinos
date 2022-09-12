@@ -3,13 +3,11 @@
 
 #include "A.hpp"
 
-using namespace WithSubpackages;
-
 int main() {
-  std::string label_A = getA();
-  std::string deps_A  = depsA();
+  std::string label_A = WithSubpackages::getA();
+  std::string deps_A  = WithSubpackages::depsA();
   std::cout << "A label is: " << label_A << std::endl;
   std::cout << "A deps are: " << deps_A << std::endl;
-
+  std::cout << "A special value: " << WithSubpackages::specialValue() << std::endl;
   return 0;
 }

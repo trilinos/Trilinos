@@ -323,12 +323,17 @@ namespace PHX {
         check_use_count_(true)
     {}
 
+    // Making this a kokkos function eliminates cuda compiler warnings
+    // in objects that contain ViewOfViews3 that are copied to device.
+    KOKKOS_INLINE_FUNCTION
     ~ViewOfViews3()
     {
       // Make sure there is not another object pointing to device view
       // since the host view will delete the inner views on exit.
-      if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
-        Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+      KOKKOS_IF_ON_HOST((
+        if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
+          Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+      ))
     }
 
     /// Enable safety check in dtor for external references.

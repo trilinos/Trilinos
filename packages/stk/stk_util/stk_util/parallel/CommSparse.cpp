@@ -52,10 +52,15 @@ namespace stk {
 
 static const int STK_COMMSPARSE_MPI_TAG_MSG_SIZING  = 10101;
 static const int STK_COMMSPARSE_MPI_TAG_PROC_SIZING = 10111;
+
+#if STK_MIN_COUPLING_VERSION < 6
 static const int STK_COMMSPARSE_MPI_TAG_DATA        = 11011;
+#endif
+
 
 namespace {
 
+#if STK_MIN_COPULING_VERSION < 6
 void launch_ireceives(ParallelMachine p_comm,
                       const std::vector<int>& recv_procs,
                       std::vector<CommBuffer>& recv,
@@ -175,6 +180,8 @@ void communicate_unpack(ParallelMachine p_comm ,
 
 }
 
+#endif  // STK_MIN_COUPLING_VERSION
+
 #else
 
 // Not parallel
@@ -183,6 +190,7 @@ void communicate_unpack(ParallelMachine p_comm ,
 
 //----------------------------------------------------------------------
 
+#if STK_MIN_COUPLING_VERSION < 6
 namespace {
 
 inline
@@ -194,28 +202,40 @@ size_t align_quad( size_t n )
 
 }
 
-//----------------------------------------------------------------------
+#endif
+
+
 
 void CommSparse::reset_buffers()
 {
-  for (size_t i=0 ; i<m_send.size(); ++i) {
-    m_send[i].reset();
-  }
-  for (size_t i=0 ; i<m_recv.size(); ++i) {
-    m_recv[i].reset();
+  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
+
+  if (stk::util::get_common_coupling_version() >= 6) {
+    if (m_exchanger)
+    {
+      for (int p=0; p < m_size; ++p)
+      {
+        m_exchanger->get_send_buf(p).reset();
+        m_exchanger->get_recv_buf(p).reset();
+      }
+    } else
+    {
+      m_null_comm_send_buffer.reset();
+      m_null_comm_recv_buffer.reset();
+    }
+
+    m_num_recvs = DataExchangeUnknownPatternNonBlocking::Unknown;
+  } else {
+    for (size_t i=0 ; i<m_send.size(); ++i) {
+      m_send[i].reset();
+    }
+    for (size_t i=0 ; i<m_recv.size(); ++i) {
+      m_recv[i].reset();
+    }
   }
 }
 
-//----------------------------------------------------------------------
-
-void CommSparse::swap_send_recv()
-{
-  ThrowRequireMsg(!m_recv.empty(), "stk::CommSparse::swap_send_recv(){ NULL recv buffers }");
-  m_send.swap(m_recv);
-}
-
-//----------------------------------------------------------------------
-
+#if STK_MIN_COUPLING_VERSION < 6
 void CommSparse::allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsigned char>& data)
 {
   size_t n_size = 0;
@@ -235,46 +255,71 @@ void CommSparse::allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsign
     p_data += align_quad( sz );
   }
 }
+#endif
 
 bool CommSparse::allocate_buffers()
 {
-  m_send.resize(m_size);
-  m_recv.resize(m_size);
+  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-  if (m_size > 1) {
-    comm_recv_procs_and_msg_sizes(m_comm, m_send, m_recv, m_send_procs, m_recv_procs);
-    allocate_data(m_send, m_send_data);
-    allocate_data(m_recv, m_recv_data);
-  }
-  else {
-    allocate_data(m_send, m_send_data);
-    m_recv = m_send;
-    m_recv_data = m_send_data;
-    if (m_send[0].capacity() > 0) {
-      m_send_procs.resize(1);
-      m_send_procs[0] = 0;
-      m_recv_procs = m_send_procs;
+  if (stk::util::get_common_coupling_version() >= 6) {
+    if (m_exchanger) {
+      m_exchanger->allocate_send_buffers();
+    } else {
+      size_t size = m_null_comm_send_buffer.size();
+      m_null_comm_storage.resize(size);
+      auto* ptr = m_null_comm_storage.data();
+      m_null_comm_send_buffer.set_buffer_ptrs(ptr, ptr, ptr + size);
+      m_null_comm_recv_buffer.set_buffer_ptrs(ptr, ptr, ptr + size);
     }
+
+    return false;
+  } else {
+    m_send.resize(m_size);
+    m_recv.resize(m_size);
+
+    if (m_size > 1) {
+      comm_recv_procs_and_msg_sizes(m_comm, m_send, m_recv, m_send_procs, m_recv_procs);
+      allocate_data(m_send, m_send_data);
+      allocate_data(m_recv, m_recv_data);
+    }
+    else {
+      allocate_data(m_send, m_send_data);
+      m_recv = m_send;
+      m_recv_data = m_send_data;
+      if (m_send[0].capacity() > 0) {
+        m_send_procs.resize(1);
+        m_send_procs[0] = 0;
+        m_recv_procs = m_send_procs;
+      }
+    }
+    return ((m_send_procs.size() > 0) || (m_recv_procs.size() > 0)); 
   }
-  return ((m_send_procs.size() > 0) || (m_recv_procs.size() > 0));
 }
 
 void CommSparse::allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs)
 {
-  m_send.resize(m_size);
-  m_recv.resize(m_size);
-  
-  m_send_procs = send_procs;
-  m_recv_procs = recv_procs;
 
-  if (m_size > 1) {
-    comm_recv_msg_sizes(m_comm , send_procs, recv_procs, m_send, m_recv);
-    allocate_data(m_send, m_send_data);
-    allocate_data(m_recv, m_recv_data);
-  }
-  else {
-    m_recv = m_send;
-    m_recv_data = m_send_data;
+  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
+
+  if (stk::util::get_common_coupling_version() >= 6) {
+    allocate_buffers();
+    m_num_recvs = recv_procs.size();
+  } else {
+    m_send.resize(m_size);
+    m_recv.resize(m_size);
+    
+    m_send_procs = send_procs;
+    m_recv_procs = recv_procs;
+
+    if (m_size > 1) {
+      comm_recv_msg_sizes(m_comm , send_procs, recv_procs, m_send, m_recv);
+      allocate_data(m_send, m_send_data);
+      allocate_data(m_recv, m_recv_data);
+    }
+    else {
+      m_recv = m_send;
+      m_recv_data = m_send_data;
+    }    
   }
 }
 
@@ -283,7 +328,7 @@ void CommSparse::verify_send_buffers_filled()
 #ifndef NDEBUG
   for ( int i = 0 ; i < m_size ; ++i ) {
     // Verify the send buffers have been filled
-    if ( m_send[i].remaining() ) {
+    if ( send_buffer(i).remaining() ) {
       std::ostringstream msg ;
       msg << "stk::CommSparse::communicate LOCAL[" << m_rank << "] ERROR: Send[" << i
           << "] Buffer not filled." ;
@@ -295,23 +340,50 @@ void CommSparse::verify_send_buffers_filled()
 
 void CommSparse::communicate()
 {
-  verify_send_buffers_filled();
+#ifdef STK_HAS_MPI
+  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-  if ( 1 < m_size ) {
-    communicate_any( m_comm , m_send , m_recv, m_send_procs, m_recv_procs );
+  if (stk::util::get_common_coupling_version() >= 6) {
+    if (m_exchanger) 
+    {
+        auto f = [](int rank, stk::CommBuffer& buf) {};
+        communicate_with_unpacker(f);
+    }
+  } else {
+    verify_send_buffers_filled();
+
+    if ( 1 < m_size ) {
+      communicate_any( m_comm , m_send , m_recv, m_send_procs, m_recv_procs );
+    }
   }
+#endif
 }
 
 void CommSparse::communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor)
 {
-  verify_send_buffers_filled();
+#ifdef STK_HAS_MPI
+  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-  if (1 < m_size) {
-    communicate_unpack(m_comm , m_send , m_recv, m_send_procs, m_recv_procs, functor);
+  if (stk::util::get_common_coupling_version() >= 6) {
+    if (m_exchanger)
+    {
+      verify_send_buffers_filled();
+    
+      m_exchanger->start_nonblocking(m_num_recvs);
+      m_exchanger->post_nonblocking_receives();
+      m_exchanger->complete_receives(functor);
+      m_exchanger->complete_sends();
+    }
+  } else {
+    verify_send_buffers_filled();
+
+    if (1 < m_size) {
+      communicate_unpack(m_comm , m_send , m_recv, m_send_procs, m_recv_procs, functor);
+    }    
   }
+#endif
 }
 
-//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
 #if defined(STK_HAS_MPI)

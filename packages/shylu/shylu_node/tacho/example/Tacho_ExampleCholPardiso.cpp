@@ -23,8 +23,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #include "Tacho_Internal.hpp"
 
 #if defined(TACHO_HAVE_MKL)
-#include "Tacho_Pardiso.hpp"
 #include "mkl.h"
+#include "Tacho_Pardiso.hpp"
 #endif
 
 using namespace Tacho;

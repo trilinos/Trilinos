@@ -53,6 +53,8 @@
 #undef DEBUG
 #define OVERLAP
 
+//#define ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST //NOTE: for perf comparison only
+
 //  ------------------ Define Data Types --------------------------
 //  ------------------ Define Constants and Operations ------------
 #ifdef SREAL

@@ -117,7 +117,7 @@ namespace panzer {
     auto myrank = mesh->getBulkData()->parallel_rank();
 
     panzer_stk::CoordMatcher x_matcher(0);
-    SphereIdVector coordsIds;
+    panzer_stk::periodic_helpers::SphereIdVector coordsIds;
     auto error = x_matcher.getAbsoluteTolerance();
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,coordsIds,error,"top","coord");
    
@@ -150,7 +150,7 @@ namespace panzer {
     auto myrank = mesh->getBulkData()->parallel_rank();
 
     panzer_stk::CoordMatcher x_matcher(0);
-    SphereIdVector coordsIds;
+    panzer_stk::periodic_helpers::SphereIdVector coordsIds;
     auto error = x_matcher.getAbsoluteTolerance();
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,coordsIds,error,"top","edge");
    
@@ -185,7 +185,7 @@ namespace panzer {
     auto myrank = mesh->getBulkData()->parallel_rank();
 
     panzer_stk::CoordMatcher x_matcher(0);
-    SphereIdVector coordsIds;
+    panzer_stk::periodic_helpers::SphereIdVector coordsIds;
     auto error = x_matcher.getAbsoluteTolerance();
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,coordsIds,error,"top","face");
 
@@ -250,8 +250,8 @@ namespace panzer {
     TEST_EQUALITY(mesh->getBulkData()->parallel_size(),2);
 
     panzer_stk::CoordMatcher x_matcher(0),y_matcher(1),z_matcher(2);
-    SphereIdVector topCoordsIds,leftCoordsIds,frontCoordsIds;
-    SphereIdVector uniqueLeftCoordsIds,uniqueFrontCoordsIds;
+    panzer_stk::periodic_helpers::SphereIdVector topCoordsIds,leftCoordsIds,frontCoordsIds;
+    panzer_stk::periodic_helpers::SphereIdVector uniqueLeftCoordsIds,uniqueFrontCoordsIds;
     auto error = x_matcher.getAbsoluteTolerance();
 
     // first get all the ids on each face
@@ -261,7 +261,7 @@ namespace panzer {
 
     // now only get ids if they have not already been found
     std::vector<std::vector<std::string> > matchedSides(3);
-    std::vector<SearchId> doubleRequestsL, doubleRequestsF;
+    std::vector<panzer_stk::periodic_helpers::SearchId> doubleRequestsL, doubleRequestsF;
     matchedSides[0].push_back("top");
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,uniqueLeftCoordsIds,error,"left","coord",false,matchedSides[0],doubleRequestsL);
     matchedSides[0].push_back("left");
@@ -430,7 +430,7 @@ namespace panzer {
      panzer_stk::CoordMatcher x_matcher(0);
      panzer_stk::CoordMatcher y_matcher(1);
 
-     SphereIdVector bottom, left;
+     panzer_stk::periodic_helpers::SphereIdVector bottom, left;
 
      // create lines of points to be shifted
 
@@ -438,7 +438,7 @@ namespace panzer {
 
      stk::mesh::EntityId id(0); // doesnt matter
      stk::mesh::EntityKey key(stk::topology::NODE_RANK,id); // doesnt matter
-     SearchId search_id(key,0); // doesnt matter
+     panzer_stk::periodic_helpers::SearchId search_id(key,0); // doesnt matter
      for (size_t n=0; n<nPoints; ++n) {
        stk::search::Point<double> yCenter(0,n,0);
        stk::search::Point<double> xCenter(n,0,0); 
@@ -474,7 +474,7 @@ namespace panzer {
      panzer_stk::PlaneMatcher yz_matcher(1,2);
      panzer_stk::PlaneMatcher xz_matcher(0,2);
 
-     SphereIdVector xy, yz, xz;
+     panzer_stk::periodic_helpers::SphereIdVector xy, yz, xz;
 
      // create planes of points to be shifted
 
@@ -482,7 +482,7 @@ namespace panzer {
 
      stk::mesh::EntityId id(0); // doesnt matter
      stk::mesh::EntityKey key(stk::topology::NODE_RANK,id); // doesnt matter
-     SearchId search_id(key,0); // doesnt matter
+     panzer_stk::periodic_helpers::SearchId search_id(key,0); // doesnt matter
      for (size_t i=0; i<nPoints; ++i) {
        for (size_t j=0; j<nPoints; ++j) {
          stk::search::Point<double> xyCenter(i,j,0);
@@ -546,7 +546,7 @@ namespace panzer {
      panzer_stk::QuarterPlaneMatcher xzY_matcher(0,2,1);
      panzer_stk::QuarterPlaneMatcher yxZ_matcher(1,0,2);
 
-     SphereIdVector yz,zx,zy,xz;
+     panzer_stk::periodic_helpers::SphereIdVector yz,zx,zy,xz;
 
      // create planes of points to be shifted (these are side B's)
 
@@ -554,7 +554,7 @@ namespace panzer {
 
      stk::mesh::EntityId id(0); // doesnt matter
      stk::mesh::EntityKey key(stk::topology::NODE_RANK,id); // doesnt matter
-     SearchId search_id(key,0); // doesnt matter
+     panzer_stk::periodic_helpers::SearchId search_id(key,0); // doesnt matter
      for (size_t i=0; i<nPoints; ++i) {
        for (size_t j=0; j<nPoints; ++j) {
          stk::search::Point<double> yzCenter(0,i,j); 
@@ -633,7 +633,7 @@ namespace panzer {
      panzer_stk::WedgeMatcher YZ_matcher(panzer_stk::WedgeMatcher::MirrorPlane::YZ_PLANE,params);
      panzer_stk::WedgeMatcher XZ_matcher(panzer_stk::WedgeMatcher::MirrorPlane::XZ_PLANE,params);
 
-     SphereIdVector YZ_sideB, XZ_sideB;
+     panzer_stk::periodic_helpers::SphereIdVector YZ_sideB, XZ_sideB;
 
      // create planes of points to be shifted (these are side B's)
 
@@ -641,7 +641,7 @@ namespace panzer {
 
      stk::mesh::EntityId id(0); // doesnt matter
      stk::mesh::EntityKey key(stk::topology::NODE_RANK,id); // doesnt matter
-     SearchId search_id(key,0); // doesnt matter
+     panzer_stk::periodic_helpers::SearchId search_id(key,0); // doesnt matter
      // we will create planes with corners (0,0,0) (1,1,0) (1,1,1) (0,0,1) 
      for (size_t i=0; i<nPoints; ++i) {
        for (size_t j=0; j<nPoints; ++j) {
@@ -727,7 +727,7 @@ namespace panzer {
     Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds_edge
           = panzer_stk::periodic_helpers::matchPeriodicSidesSearch("left","right",*mesh,matcher,"edge");
 
-    SphereIdVector leftCoordsIds_edge,rightCoordsIds_edge;
+    panzer_stk::periodic_helpers::SphereIdVector leftCoordsIds_edge,rightCoordsIds_edge;
     auto error = matcher.getAbsoluteTolerance();
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,leftCoordsIds_edge,error,"left","edge");
     panzer_stk::periodic_helpers::fillLocalSearchVector(*mesh,rightCoordsIds_edge,error,"right","edge");

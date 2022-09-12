@@ -61,12 +61,17 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::TachoSolver,Matrix,Vector>(A, X, B)
 {
+  data_.method  = 1; // Cholesky
+  data_.variant = 2; // solver variant
 }
 
 
 template <class Matrix, class Vector>
 TachoSolver<Matrix,Vector>::~TachoSolver( )
 {
+  if ( this->root_ ) {
+    data_.solver.release();
+  }
 }
 
 template <class Matrix, class Vector>
@@ -89,6 +94,10 @@ template <class Matrix, class Vector>
 int
 TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+#endif
+
   int status = 0;
   if ( this->root_ ) {
     if(do_optimization()) {
@@ -96,11 +105,15 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
     }
 
+    data_.solver.setSolutionMethod(data_.method);
+    data_.solver.setLevelSetOptionAlgorithmVariant(data_.variant);
+
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
 
     // Symbolic factorization currently must be done on host
     data_.solver.analyze(this->globalNumCols_, host_row_ptr_view_, host_cols_view_);
+    data_.solver.initialize();
   }
   return status;
 }
@@ -110,6 +123,10 @@ template <class Matrix, class Vector>
 int
 TachoSolver<Matrix,Vector>::numericFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
+
   int status = 0;
   if ( this->root_ ) {
     if(do_optimization()) {
@@ -216,6 +233,21 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
   // TODO: Confirm param options
+
+  // factorization type
+  auto method_name = parameterList->get<std::string> ("method", "chol");
+  if (method_name == "chol")
+    data_.method = 1;
+  else if (method_name == "ldl")
+    data_.method = 2;
+  else if (method_name == "lu")
+    data_.method = 3;
+  else {
+    std::cout << "Error: not supported solution method\n";
+  }
+  // solver type
+  data_.variant = parameterList->get<int> ("variant", 2);
+  // TODO: Confirm param options
   // data_.num_kokkos_threads = parameterList->get<int>("kokkos-threads", 1);
   // data_.max_num_superblocks = parameterList->get<int>("max-num-superblocks", 4);
 }
@@ -229,6 +261,9 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
 
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+    pl->set("method", "chol", "Type of factorization, chol, ldl, or lu");
+    pl->set("variant", 2, "Type of solver variant, 0, 1, or 2");
 
     // TODO: Confirm param options
     // pl->set("kokkos-threads", 1, "Number of threads");

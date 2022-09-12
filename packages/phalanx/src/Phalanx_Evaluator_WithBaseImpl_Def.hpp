@@ -340,11 +340,10 @@ addDependentField(const PHX::FieldTag& ft)
 }
 
 //**********************************************************************
-// DEPRECATED!!!!
 template<typename Traits>
 template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<DataT,Props...>& f)
+addNonConstDependentField(const PHX::MDField<DataT,Props...>& f)
 {
   this->addDependentField(f.fieldTag());
 

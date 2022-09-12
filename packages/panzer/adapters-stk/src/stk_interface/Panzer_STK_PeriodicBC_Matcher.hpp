@@ -52,13 +52,6 @@
 
 #ifdef PANZER_HAVE_STKSEARCH
 #include "stk_search/CoarseSearch.hpp"
-// Copied from PeriodicBoundarySearch
-typedef double Scalar;
-typedef stk::search::IdentProc<stk::mesh::EntityKey> SearchId;
-typedef stk::search::Sphere<Scalar> Sphere;
-typedef std::vector< std::pair<Sphere,SearchId> > SphereIdVector;
-typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
-typedef std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityKey> > SearchPairSet;
 #endif
 
 namespace panzer_stk {
@@ -68,6 +61,15 @@ namespace panzer_stk {
   * as their interface is likely to change.
   */
 namespace periodic_helpers {
+
+#ifdef PANZER_HAVE_STKSEARCH
+  // Copied from PeriodicBoundarySearch
+  typedef stk::search::IdentProc<stk::mesh::EntityKey> SearchId;
+  typedef stk::search::Sphere<double> Sphere;
+  typedef std::vector< std::pair<Sphere,SearchId> > SphereIdVector;
+  typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
+  typedef std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityKey> > SearchPairSet;
+#endif
 
    /** Construct the vector pair (similar to <code>getLocallyMatchedPair</code>)
      * usign specified side sets, mesh object, and matcher object. This

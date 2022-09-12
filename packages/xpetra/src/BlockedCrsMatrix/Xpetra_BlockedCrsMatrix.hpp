@@ -1520,6 +1520,9 @@ namespace Xpetra {
       return thbOp;
     }
 #endif
+    //! Returns the block size of the storage mechanism
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
+
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector & X,

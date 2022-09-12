@@ -56,6 +56,9 @@ struct LS_Field
 
 class Phase_Support {
 public:
+  Phase_Support (const Phase_Support&) = delete;
+  Phase_Support& operator= (const Phase_Support&) = delete;
+
   typedef std::set<stk::mesh::Part*,stk::mesh::PartLess> PartSet;
 
   static bool exists_and_has_phases_defined(const stk::mesh::MetaData & meta);
@@ -69,10 +72,6 @@ public:
   static void check_isovariable_field_existence_on_decomposed_blocks(const stk::mesh::MetaData & meta, const std::vector<LS_Field> & lsFields, const bool conformal_parts_require_field);
 
   void get_blocks_touching_surface(const std::string & surface_name, std::vector<std::string> & block_names);
-  static void get_input_surfaces_touching_block(const Block_Surface_Connectivity & input_block_surface_info,
-      const stk::mesh::PartOrdinal block_ordinal, std::set<stk::mesh::PartOrdinal> & surface_ordinals);
-  void get_input_blocks_touching_surface(const Block_Surface_Connectivity & input_block_surface_info,
-      const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals) const;
 
   void check_phase_parts() const;
 
@@ -131,6 +130,7 @@ private:
   const AuxMetaData & aux_meta() const { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
   AuxMetaData & aux_meta() { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
 
+  void update_touching_parts_for_phase_part(const stk::mesh::Part & origPart, const stk::mesh::Part & phasePart, const PhaseTag & phase);
   const PhasePartTag * find_conformal_phase_part(const stk::mesh::Part & conformal_part) const;
   void create_nonconformal_parts(const PartSet & decomposed_ioparts);
   void addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_parts, const NamedPhase & ls_phase);

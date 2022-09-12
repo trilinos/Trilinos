@@ -286,7 +286,6 @@ int main(int argc, char *argv[]) {
   MLList.set("aggregation: type","Uncoupled");
   MLList.set("aggregation: do qr",false);
   MLList.set("aggregation: coarsen partial dirichlet dofs",false);
-  MLList.set("print hierarchy", -1);
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol,false,false);
   }

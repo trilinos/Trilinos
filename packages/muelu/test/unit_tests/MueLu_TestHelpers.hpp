@@ -881,10 +881,24 @@ namespace MueLuTests {
          basematrix[4] = two;
          basematrix[7] = three;
          basematrix[8] = two;
+         Teuchos::Array<Scalar> offmatrix(blocksize*blocksize, zero);
+         offmatrix[0]=offmatrix[4]=offmatrix[8]=-1;
+
          Teuchos::Array<LocalOrdinal> lclColInds(1);
          for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
            lclColInds[0] = lclRowInd;
            bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+           
+           // Off diagonals
+           if(lclRowInd > meshRowMap.getMinLocalIndex ()) {
+             lclColInds[0] = lclRowInd - 1;
+             bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
+           }
+           if(lclRowInd < meshRowMap.getMaxLocalIndex ()) {
+             lclColInds[0] = lclRowInd + 1;
+             bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
+           }
+
          }
 
          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));

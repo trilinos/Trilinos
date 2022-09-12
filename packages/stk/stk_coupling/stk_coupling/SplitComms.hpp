@@ -129,6 +129,8 @@ class SplitComms
     std::shared_ptr<impl::SplitCommsImpl> m_impl;
 };
 
+bool are_comms_unequal(MPI_Comm global, MPI_Comm local);
+
 }
 }
 

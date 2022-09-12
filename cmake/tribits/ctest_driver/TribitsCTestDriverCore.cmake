@@ -2128,18 +2128,18 @@ function(tribits_ctest_driver)
     if (EXISTS "${CTEST_TESTING_TAG_FILE}")
       file(READ "${CTEST_TESTING_TAG_FILE}" TAG_FILE_CONTENTS_STR)
       message(
-	"\nPrevious file:"
-	"\n"
-	"\n  '${CTEST_TESTING_TAG_FILE}'"
-	"\n"
-	"\nexists with contents:\n"
-	"\n"
-	"${TAG_FILE_CONTENTS_STR}\n")
+        "\nPrevious file:"
+        "\n"
+        "\n  '${CTEST_TESTING_TAG_FILE}'"
+        "\n"
+        "\nexists with contents:\n"
+        "\n"
+        "${TAG_FILE_CONTENTS_STR}\n")
     else()
       message(FATAL_ERROR
-	"ERROR: Previous file '${CTEST_TESTING_TAG_FILE}' does NOT exist!"
-	"  A previous ctest_start() was not called.  Please call again"
-	" this time setting CTEST_DO_NEW_START=TRUE")
+        "ERROR: Previous file '${CTEST_TESTING_TAG_FILE}' does NOT exist!"
+        "  A previous ctest_start() was not called.  Please call again"
+        " this time setting CTEST_DO_NEW_START=TRUE")
     endif()
 
     list(APPEND CTEST_START_ARGS APPEND)

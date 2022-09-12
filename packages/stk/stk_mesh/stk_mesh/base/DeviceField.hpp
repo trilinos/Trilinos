@@ -474,12 +474,8 @@ private:
 
     newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"),
                                                      allBuckets.size());
-#ifndef NEW_TRILINOS_INTEGRATION
-    newHostSelectedBucketOffset = Kokkos::create_mirror_view(Kokkos::HostSpace(), newDeviceSelectedBucketOffset, Kokkos::WithoutInitializing);
-#else
     newHostSelectedBucketOffset =
         Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), newDeviceSelectedBucketOffset);
-#endif
 
     for(unsigned i = 0; i < allBuckets.size(); i++) {
       if(selector(*allBuckets[i])) {

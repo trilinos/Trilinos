@@ -809,7 +809,12 @@ private:
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   //! Combine mode for off-process elements (only if overlap is used)
+  //! To average values in overlap region, set CombineMode_
+  //! to ADD and AvgOverlap_ to true (can be done via
+  //! param list by setting "schwarz: combine mode" to "AVG")
+  //! Don't average with CG as preconditioner is nonsymmetric.
   Tpetra::CombineMode CombineMode_ = Tpetra::ZERO;
+  bool AvgOverlap_ = false;
   //! If \c true, reorder the local matrix.
   bool UseReordering_ = false;
   //! Record reordering for output purposes.
@@ -851,6 +856,8 @@ private:
   mutable std::unique_ptr<MV> overlapping_B_;
   //! Cached local (possibly) overlapping output (multi)vector.
   mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached local (possibly) vector that indicates how many copies of a dof exist due to overlap
+  mutable std::unique_ptr<MV> num_overlap_copies_;
   //! Cached residual (multi)vector.
   mutable std::unique_ptr<MV> R_;
   //! Cached intermediate result (multi)vector.

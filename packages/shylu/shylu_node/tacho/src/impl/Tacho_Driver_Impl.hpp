@@ -98,7 +98,7 @@ template <typename VT, typename DT>
 void Driver<VT, DT>::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL, 3 - LU
   {
     std::stringstream ss;
-    ss << "Error: the given method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
+    ss << "Error: the given method (" << method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
     TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, std::logic_error,
                              ss.str().c_str());
   }
