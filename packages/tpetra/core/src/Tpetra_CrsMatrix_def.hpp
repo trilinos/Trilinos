@@ -4728,7 +4728,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
     // const bool overlap = true;
 
-    // the space for overlapped SpMV
+    // the spaces for overlapped SpMV
     exec_space onRankSpace = 
       Tpetra::Spaces::get<exec_space, Tpetra::Spaces::Priority::low>();
     exec_space offRankSpace = 
@@ -4885,6 +4885,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     */
     if (overlap) {
       ProfilingRegion regionImport ("Tpetra::CrsMatrix::applyNonTranspose: localApplyOnRank");
+        // make sure other incoming tpetra operations are done before local SpMV is started
         Spaces::exec_space_wait(defaultSpace, onRankSpace);
       if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_rowmap, ...)\n";
@@ -4905,6 +4906,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
         // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
         // X_colMapNonConst->beginImport (X_in, *importer, INSERT);
+        // make sure other incoming tpetra operations are done before local SpMV is started
+        Spaces::exec_space_wait(defaultSpace, offRankSpace);
         X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
       } else {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
