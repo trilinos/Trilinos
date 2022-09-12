@@ -358,7 +358,6 @@ namespace Intrepid2
                 const auto & s0 = lambda[s0_index];
                 const auto & s1 = lambda[s1_index];
                 const auto & s2 = lambda[s2_index];
-                const PointScalar jacobiScaling = s0 + s1 + s2;
                 
                 for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
                 {

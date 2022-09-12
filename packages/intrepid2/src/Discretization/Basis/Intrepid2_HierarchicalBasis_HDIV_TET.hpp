@@ -435,7 +435,6 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
-      const ordinal_type numFunctionsPerFace = polyOrder_ * (polyOrder_-1);
       const ordinal_type numFaces            = 4;
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView scratch0, scratch1, scratch2, scratch3;
@@ -529,14 +528,13 @@ namespace Intrepid2
               ordinal_type fieldOrdinal = numFaceFunctions_ + interiorFamilyOrdinal - 1;
               
               const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
-              const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
             
               computeFaceLegendreForInterior(P, interiorFamilyOrdinal-1, lambda);
               computeFaceVectorWeight(vectorWeight_x, vectorWeight_y, vectorWeight_z, relatedFaceOrdinal, lambda, lambda_dx, lambda_dy, lambda_dz);
               
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
+                for (int ij_sum=min_ij_sum; ij_sum<=ijk_sum-min_k; ij_sum++)
                 {
                   for (int i=min_i; i<=ij_sum-min_j; i++)
                   {
@@ -606,14 +604,11 @@ namespace Intrepid2
             
             const int numInteriorFamilies = 3;
             const int interiorFieldOrdinalOffset = numFaceFunctions_;
-            const int min_ijk_sum = 1;
-            const int max_ijk_sum = polyOrder_-1;
             for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
             {
               // following ESEAS, we interleave the interior families.  This groups all the interior dofs of a given degree together.
               
               const ordinal_type relatedFaceOrdinal = faceOrdinalForInterior_[interiorFamilyOrdinal-1];
-              const ordinal_type relatedFaceFamily  = faceFamilyForInterior_ [interiorFamilyOrdinal-1]; // zero-based
               
               computeFaceLegendreForInterior(P, interiorFamilyOrdinal-1, lambda);
               OutputScalar divWeight;
@@ -632,7 +627,7 @@ namespace Intrepid2
               const ordinal_type min_i       = 0;
               for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
               {
-                for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
+                for (int ij_sum=min_ij_sum; ij_sum<=ijk_sum-min_k; ij_sum++)
                 {
                   for (int i=min_i; i<=ij_sum-min_j; i++)
                   {
@@ -739,7 +734,6 @@ namespace Intrepid2
     {
       
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
-      const int numEdges       = this->basisCellTopology_.getEdgeCount();
       const int numFaces       = this->basisCellTopology_.getFaceCount();
       
       const int numVertexFunctions   = 0;
@@ -793,7 +787,7 @@ namespace Intrepid2
         fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
         for (int ijk_sum=min_ijk_sum; ijk_sum <= max_ijk_sum; ijk_sum++)
         {
-          for (int ij_sum=0; ij_sum<=ijk_sum-min_k; ij_sum++)
+          for (int ij_sum=min_ij_sum; ij_sum<=ijk_sum-min_k; ij_sum++)
           {
             for (int i=min_i; i<=ij_sum-min_j; i++)
             {
@@ -823,7 +817,7 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const ordinal_type edgeDim = 1, faceDim = 2, volumeDim = 3;
+        const ordinal_type faceDim = 2, volumeDim = 3;
 
         if (useCGBasis) {
           {
