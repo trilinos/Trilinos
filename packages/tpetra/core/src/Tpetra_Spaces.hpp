@@ -136,7 +136,7 @@ template <typename Space, Priority priority = Priority::medium
 , detail::NotCuda<Space> = true
 #endif
 >
-Space &get(int i) {
+Space &get(int i = 0) {
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
     }
@@ -155,7 +155,7 @@ Space &get(int i) {
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename Space, Priority priority = Priority::medium, 
 detail::IsCuda<Space> = true >
-Kokkos::Cuda &get(int i) {
+Kokkos::Cuda &get(int i = 0) {
 
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
