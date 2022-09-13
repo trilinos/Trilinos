@@ -24,3 +24,5 @@ jobs:
     - name: Build CMake
       working-directory: build
       run: sudo cmake -D CMAKE_BUILD_TYPE=DEBUG -D Trilinos_ENABLE_TESTS=ON "$@" $TRILINOS_SRC_DIR
+    - name: dump build contents
+      run: ls -R build
