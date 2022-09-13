@@ -17,9 +17,7 @@ jobs:
     - name: enviroment variables
       run: env
     - name: make build dir
-      run: |
-        mkdir build
-        cd build
+      run: cd doc
     - name: PWD
       run: pwd
     - name: Build CMake
