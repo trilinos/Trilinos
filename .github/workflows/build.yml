@@ -15,8 +15,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: PWD
       run: pwd
-    - name: instal MPI
-      run: sudo apt-get install libopenmpi-dev
+    #- name: instal MPI
+    #  run: sudo apt-get install libopenmpi-dev
     - name: enviroment variables
       run: env
     - name: mkdir build
