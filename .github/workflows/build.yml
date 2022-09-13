@@ -16,7 +16,7 @@ jobs:
     - name: PWD
       run: pwd
     - name: instal MPI
-      run: sudo apt install mpich
+      run: sudo apt-get install libopenmpi-dev
     - name: enviroment variables
       run: env
     - name: mkdir build
