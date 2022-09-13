@@ -1,0 +1,6 @@
+#!/bin/bash
+cmake \
+  -D CMAKE_BUILD_TYPE=DEBUG \
+  -D Trilinos_ENABLE_TESTS=OFF \
+  "$@" \
+  .
