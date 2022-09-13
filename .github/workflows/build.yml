@@ -10,4 +10,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build CMake
-      run: sudo ./do-configure 
+      run: sudo cmake .
