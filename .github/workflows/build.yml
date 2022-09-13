@@ -31,4 +31,4 @@ jobs:
       run: ls -R build
     - name: build 
       working-directory: build
-      run: make -j1
+      run: sudo make -j1
