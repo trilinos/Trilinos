@@ -32,3 +32,5 @@ jobs:
     - name: build 
       working-directory: build
       run: sudo make -j1
+    - name: dump build contents
+      run: ls -R build
