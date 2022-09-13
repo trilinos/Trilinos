@@ -7,11 +7,19 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env: 
+      TRILINOS_SRC_DIR: /home/runner/work/Trilinos/Trilinos
+    
     steps:
     - uses: actions/checkout@v3
-    - name: echos
+    - name: PWD
       run: pwd
-    - name: echos
+    - name: enviroment variables
       run: env
+    - name: make build dir
+    - run: |
+      cd ..
+      mkdir build
+      cd build
     - name: Build CMake
       run: sudo cmake .
