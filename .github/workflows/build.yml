@@ -21,5 +21,7 @@ jobs:
         cd ..
         mkdir build
         cd build
+    - name: PWD
+      run: pwd
     - name: Build CMake
       run: sudo cmake .
