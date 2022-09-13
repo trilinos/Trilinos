@@ -1,0 +1,19 @@
+name: C/C++ CI
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build CMake
+  # You may pin to the exact commit or the version.
+  # uses: ashutoshvarma/action-cmake-build@0fbeeac8b1f9c8aef99e9eae9d78529ed3b0364b
+      uses: ashutoshvarma/action-cmake-build@v1
+      with:
+        configure-options: -DTPL_ENABLE_MPI=ON -DMPI_BASE_DIR=. --DTrilinos_ENABLE_ALL_PACKAGES=OFF -DCMAKE_INSTALL_PREFIX=/build  
+        source-dir: ${{ github.workspace }}
+        build-dir: "${{ github.workspace }}/../build"
