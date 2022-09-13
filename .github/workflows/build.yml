@@ -9,5 +9,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: echos
+      run: pwd
+    - name: echos
+      run: env
     - name: Build CMake
       run: sudo cmake .
