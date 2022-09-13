@@ -346,19 +346,6 @@ namespace Intrepid2
               {
                 int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
                 
-                const auto &s0_vertex_number = face_family_start_ [familyOrdinal-1];
-                const auto &s1_vertex_number = face_family_middle_[familyOrdinal-1];
-                const auto &s2_vertex_number = face_family_end_   [familyOrdinal-1];
-                
-                // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
-                const auto &s0_index = face_vertices[faceOrdinal * numVerticesPerFace + s0_vertex_number];
-                const auto &s1_index = face_vertices[faceOrdinal * numVerticesPerFace + s1_vertex_number];
-                const auto &s2_index = face_vertices[faceOrdinal * numVerticesPerFace + s2_vertex_number];
-                
-                const auto & s0 = lambda[s0_index];
-                const auto & s1 = lambda[s1_index];
-                const auto & s2 = lambda[s2_index];
-                
                 for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
                 {
                   for (int i=0; i<ij_sum; i++)
