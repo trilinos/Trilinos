@@ -9,11 +9,14 @@ jobs:
 
     env: 
       TRILINOS_SRC_DIR: /home/runner/work/Trilinos/Trilinos
+      TRILINOS_BUILD_DIR: /home/runner/work/Trilinos/Trilinos/build
     
     steps:
     - uses: actions/checkout@v3
     - name: PWD
       run: pwd
+    - name: instal MPI
+      run: sudo apt install mpich
     - name: enviroment variables
       run: env
     - name: mkdir build
@@ -23,7 +26,7 @@ jobs:
       run: ls
     - name: Build CMake
       working-directory: build
-      run: sudo cmake -D CMAKE_BUILD_TYPE=DEBUG -D Trilinos_ENABLE_TESTS=ON -D Trilinos_ENABLE_Kokkos=ON."$@" $TRILINOS_SRC_DIR
+      run: sudo cmake -DTPL_ENABLE_MPI=ON -DTrilinos_ENABLE_Kokkos=ON -DCMAKE_INSTALL_PREFIX=$TRILINOS_BUILD_DIR $TRILINOS_SRC_DIR
     - name: dump build contents
       run: ls -R build
     - name: build 
