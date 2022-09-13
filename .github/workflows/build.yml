@@ -16,7 +16,7 @@ jobs:
       run: pwd
     - name: enviroment variables
       run: env
-    - name: make build dir
+    - name: mkdir build
       run: |
         mkdir build
     - name: ls
@@ -26,3 +26,6 @@ jobs:
       run: sudo cmake -D CMAKE_BUILD_TYPE=DEBUG -D Trilinos_ENABLE_TESTS=ON "$@" $TRILINOS_SRC_DIR
     - name: dump build contents
       run: ls -R build
+    - name: build 
+      working-directory: build
+      run: make -j1
