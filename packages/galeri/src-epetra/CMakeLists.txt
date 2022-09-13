@@ -21,6 +21,7 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../headers)
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
@@ -33,12 +34,12 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
-  Galeri_Version.h
-  Galeri_ConfigDefs.h
+  ../headers/Galeri_ConfigDefs.h
+  ../headers/Galeri_Exception.h
+  ../headers/Galeri_Version.h
   Galeri_Maps.h
   Galeri_CrsMatrices.h
   Galeri_VbrMatrices.h
-  Galeri_Exception.h
   Galeri_FiniteElements.h
   Galeri_Utils.h
   )
