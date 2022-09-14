@@ -211,6 +211,7 @@ namespace MueLu {
     using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
     using entries_type      = typename local_matrix_type::index_type::non_const_type;
     using values_type       = typename local_matrix_type::values_type::non_const_type;
+    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
 
     // Set debug outputs based on environment variable
     RCP<Teuchos::FancyOStream> out;
@@ -886,7 +887,7 @@ namespace MueLu {
         KOKKOS_LAMBDA(const LO faceIdx) {
             LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
             LO gridIdx[3] = {0,0,0};
-            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            impl_scalar_type coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
             // Last step in the loop
             // update the grid indices
             // for next grid point
@@ -959,7 +960,7 @@ namespace MueLu {
         KOKKOS_LAMBDA(const LO faceIdx) {
             LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
             LO gridIdx[3] = {0,0,0};
-            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            impl_scalar_type coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
             // Last step in the loop
             // update the grid indices
             // for next grid point
@@ -1033,7 +1034,7 @@ namespace MueLu {
         KOKKOS_LAMBDA(const LO faceIdx) {
             LO coordRowIdx, rowIdx, coordColumnOffset, columnOffset, entryOffset;
             LO gridIdx[3] = {0,0,0};
-            SC coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
+            impl_scalar_type coeffs_d[5] = {1.0/3.0, 2.0/3.0, 1.0, 2.0/3.0, 1.0/3.0};
             // Last step in the loop
             // update the grid indices
             // for next grid point
@@ -1107,7 +1108,6 @@ namespace MueLu {
       // and values associated with
       // interior points
       LO countRowEntries = 0;
-      Array<LO> coordColumnOffsets(125);
       Kokkos::View<LO[125]> coordColumnOffsets_d("coordColOffset");
       auto coordColumnOffsets_h = Kokkos::create_mirror_view( coordColumnOffsets_d );
 
@@ -1123,8 +1123,7 @@ namespace MueLu {
       Kokkos::deep_copy(coordColumnOffsets_d, coordColumnOffsets_h);
 
       LO countValues = 0;
-      Array<SC> interiorValues(125);
-      Kokkos::View<SC*> interiorValues_d("interiorValues",125);
+      Kokkos::View<impl_scalar_type*> interiorValues_d("interiorValues",125);
       auto interiorValues_h = Kokkos::create_mirror_view( interiorValues_d );
       for(LO k = 0; k < 5; ++k) {
         for(LO j = 0; j < 5; ++j) {
