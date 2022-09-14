@@ -50,6 +50,9 @@
 
 #include "BasisEquivalenceHelpers.hpp"
 
+#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
+
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
 #include "Intrepid2_NodalBasisFamily.hpp"
 #include "Intrepid2_TestUtils.hpp"
@@ -103,7 +106,25 @@ namespace
     const double relTol=1e-13;
     const double absTol=1e-13;
     
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    for (ordinal_type polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalVersusHierarchical_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_WEDGE;
+    using NodalBasis        = DerivedNodalBasisFamily<DefaultTestDeviceType>::HVOL_WEDGE; // no nodal bases defined for HVOL beyond the "derived" basis families
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    const double relTol=1e-12;
+    const double absTol=1e-12;
+    
+    for (ordinal_type polyOrder=1; polyOrder<5; polyOrder++)
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
