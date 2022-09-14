@@ -1117,7 +1117,8 @@ struct D2_MIS_Aggregation {
           if (neiAgg == agg) connect++;
         }
         connectivities_(i) = connect;
-      }
+      } else
+        connectivities_(i) = 0;
     }
 
     lno_t numVerts_;
@@ -1224,9 +1225,9 @@ struct D2_MIS_Aggregation {
     // neighboring aggregate.
     labels_t labelsOld("old", numVerts);
     Kokkos::deep_copy(labelsOld, labels);
-    labels_t connectivities("connect", numVerts);
-    labels_t aggSizes(
-        Kokkos::ViewAllocateWithoutInitializing("Phase3 Agg Sizes"), numAggs);
+    labels_t connectivities(Kokkos::ViewAllocateWithoutInitializing("connect"),
+                            numVerts);
+    labels_t aggSizes("Phase3 Agg Sizes", numAggs);
     Kokkos::parallel_for(
         range_pol(0, numVerts),
         SizeAndConnectivityFunctor(numVerts, rowmap, entries, labels,
