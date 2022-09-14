@@ -276,6 +276,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Teuchos::FancyOStream& out = *fancy;
   out.setOutputToRootOnly(0);
 
+  // Return value from driver
+  int ret = EXIT_SUCCESS;
+
   ParameterList paramList;
   auto inst = xpetraParameters.GetInstantiation();
 
@@ -506,6 +509,8 @@ MueLu::MueLu_AMGX_initialize_plugins();
       }
       catch(const std::exception& e) {
         out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
+        ret = EXIT_FAILURE;
+        stop = true;
       }
 
 
@@ -580,7 +585,7 @@ MueLu::MueLu_AMGX_finalize_plugins();
 MueLu::MueLu_AMGX_finalize();
 #endif
 
-  return EXIT_SUCCESS;
+  return ret;
 }
 
 //- -- --------------------------------------------------------
