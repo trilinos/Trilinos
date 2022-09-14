@@ -172,7 +172,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
-          Node::execution_space::print_configuration(*out, true/*details*/);
+          Node::execution_space().print_configuration(*out, true/*details*/);
         }
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION

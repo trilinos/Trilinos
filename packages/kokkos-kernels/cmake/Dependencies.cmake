@@ -9,3 +9,4 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 if (TPL_ENABLE_CUDA)
   tribits_tpl_tentatively_enable(CUBLAS)
 endif()
+

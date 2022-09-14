@@ -52,7 +52,6 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Kokkos_View.hpp"
 
 namespace PHX {
 

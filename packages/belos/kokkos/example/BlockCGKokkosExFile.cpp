@@ -55,6 +55,7 @@
 
 #include "BelosKokkosAdapter.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #ifdef HAVE_MPI
   #include <mpi.h>
 #endif
@@ -112,7 +113,7 @@ try {
   
   // Read in a matrix Market file and use it to test the Kokkos Operator.
   KokkosSparse::CrsMatrix<ST, OT, EXSP> crsMat = 
-            KokkosKernels::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(filename.c_str()); 
+            KokkosSparse::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(filename.c_str()); 
   RCP<Belos::KokkosCrsOperator<ST, OT, EXSP>> A = 
             rcp(new Belos::KokkosCrsOperator<ST,OT,EXSP>(crsMat));
   OT numRows = crsMat.numRows();

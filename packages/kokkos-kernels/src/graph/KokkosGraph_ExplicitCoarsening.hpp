@@ -46,7 +46,7 @@
 #define KOKKOSGRAPH_EXPLICIT_COARSEN_HPP
 
 #include "KokkosGraph_ExplicitCoarsening_impl.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 namespace KokkosGraph {
 namespace Experimental {
@@ -86,8 +86,8 @@ void graph_explicit_coarsen(
   if (compress) {
     coarse_rowmap_t mergedRowmap;
     coarse_entries_t mergedEntries;
-    KokkosKernels::sort_and_merge_graph<exec_space, coarse_rowmap_t,
-                                        coarse_entries_t>(
+    KokkosSparse::sort_and_merge_graph<exec_space, coarse_rowmap_t,
+                                       coarse_entries_t>(
         coarseRowmap, coarseEntries, mergedRowmap, mergedEntries);
     coarseRowmap  = mergedRowmap;
     coarseEntries = mergedEntries;
@@ -125,8 +125,8 @@ void graph_explicit_coarsen_with_inverse_map(
   if (compress) {
     coarse_rowmap_t mergedRowmap;
     coarse_entries_t mergedEntries;
-    KokkosKernels::sort_and_merge_graph<exec_space, coarse_rowmap_t,
-                                        coarse_entries_t>(
+    KokkosSparse::sort_and_merge_graph<exec_space, coarse_rowmap_t,
+                                       coarse_entries_t>(
         coarseRowmap, coarseEntries, mergedRowmap, mergedEntries);
     coarseRowmap  = mergedRowmap;
     coarseEntries = mergedEntries;

@@ -796,7 +796,7 @@ namespace phalanx_test {
     TEST_EQUALITY(J.nnz(),21);
 
     Kokkos::deep_copy(J.values,0.0);
-    Kokkos::parallel_for(J.numRows(),FillJacobian(J),"Fill Jacobian");
+    Kokkos::parallel_for("Fill Jacobian",J.numRows(),FillJacobian(J));
     Kokkos::fence();
 
     int check_matrix_entries = 0; // nonzero value means failure

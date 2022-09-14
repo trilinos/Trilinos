@@ -268,11 +268,11 @@ namespace phalanx_test {
     Kokkos::deep_copy(sum_into_functors,host_sum_into_functors);
 
     // Run the functors on device
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,a.extent(0)),
+    Kokkos::parallel_for("do sum into functors",Kokkos::RangePolicy<PHX::Device>(0,a.extent(0)),
                          KOKKOS_LAMBDA (const int i) {
                            for (int functor=0; functor < num_functors; ++functor)
                              sum_into_functors(functor).ptr->sumInto(a(i));
-                         },"do sum into functors");
+                         });
 
     // Check the values
     auto host_a = Kokkos::create_mirror_view(a);

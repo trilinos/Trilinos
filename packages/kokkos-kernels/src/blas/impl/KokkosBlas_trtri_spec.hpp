@@ -69,7 +69,7 @@ struct trtri_eti_spec_avail {
                                         MEM_SPACE)                           \
   template <>                                                                \
   struct trtri_eti_spec_avail<                                               \
-      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                          \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
@@ -136,7 +136,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS_TRTRI_ETI_SPEC_DECL(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
   extern template struct TRTRI<                                                \
-      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                            \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -144,7 +144,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
 #define KOKKOSBLAS_TRTRI_ETI_SPEC_INST(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
   template struct TRTRI<                                                       \
-      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                            \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \

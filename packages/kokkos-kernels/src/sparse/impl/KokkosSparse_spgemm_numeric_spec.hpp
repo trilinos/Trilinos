@@ -211,23 +211,6 @@ struct SPGEMM_NUMERIC<
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
           "Call spgemm symbolic before calling SpGEMM numeric");
-      /*
-      KokkosSparse::Experimental::spgemm_symbolic<KernelHandle,
-                    a_size_view_t_, a_lno_view_t,
-                    b_size_view_t_, b_lno_view_t,
-                    c_size_view_t_>(
-          handle, m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC
-          );
-      typename c_size_view_t_::value_type c_nnz_size =
-      handle->get_spgemm_handle()->get_c_nnz(); if (c_nnz_size){ entriesC =
-      c_lno_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-      c_nnz_size); valuesC = c_scalar_view_t
-      (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-      }
-      */
     }
 
     switch (sh->get_algorithm_type()) {
@@ -245,9 +228,13 @@ struct SPGEMM_NUMERIC<
                                     transposeB, row_mapC, entriesC, valuesC);
         break;
       case SPGEMM_MKL:
-        mkl_apply(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                  row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
-                  valuesC, handle->get_verbose());
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
+                    valuesC, handle->get_verbose());
+#else
+        throw std::runtime_error("MKL was not enabled in this build!");
+#endif
         break;
       case SPGEMM_MKL2PHASE:
         mkl2phase_apply(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,

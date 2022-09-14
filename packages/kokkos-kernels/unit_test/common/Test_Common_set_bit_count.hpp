@@ -48,12 +48,8 @@
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
-#include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
-
-#include <gtest/gtest.h>
-#include <Kokkos_Core.hpp>
 
 // const char *input_filename = "sherman1.mtx";
 // const char *input_filename = "Si2.mtx";

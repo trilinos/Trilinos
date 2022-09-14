@@ -82,7 +82,7 @@ namespace MueLu {
       }
 
       KOKKOS_INLINE_FUNCTION
-      void join (volatile LocalOrdinal& dst, const volatile LocalOrdinal& src) const {
+      void join (LocalOrdinal& dst, const LocalOrdinal& src) const {
         if (dst < src) {
           dst = src;
         }
@@ -1184,7 +1184,7 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Stage 2 (CompressData)", coarseLevel);
       // Fill i_temp with the correct row starts
       rows_type i_temp(Kokkos::ViewAllocateWithoutInitializing("BlockGraph_rowptr"), numFineBlockRows+1);
-      size_t nnz=0;
+      LO nnz=0;
       Kokkos::parallel_scan("MueLu:TentativePF:BlockCrs:compress_rows", range_type(0,numFineBlockRows),
                             KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
                               if(final) 

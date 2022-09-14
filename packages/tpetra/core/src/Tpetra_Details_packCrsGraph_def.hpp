@@ -484,7 +484,7 @@ struct PackCrsGraphFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst, const volatile value_type& src) const
+  join (value_type& dst, const value_type& src) const
   {
     // `dst` should reflect the first (least) bad index and all other
     // associated error codes and data, so prefer keeping it.

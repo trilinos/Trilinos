@@ -233,12 +233,10 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  Kokkos::InitArguments args;
-  args.num_threads = 0;
-  args.num_numa    = 0;
-  args.device_id   = rank%nptile;
+  Kokkos::InitializationSettings args;
+  args.set_num_threads(1);
   std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: " 
-            << args.device_id << "/" << gpu_count << std::endl;
+            << args.get_device_id() << "/" << gpu_count << std::endl;
   Kokkos::initialize( args );
 #else
   Kokkos::initialize( argc, argv );
