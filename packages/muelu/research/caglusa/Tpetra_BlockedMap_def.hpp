@@ -1,7 +1,7 @@
 #ifndef TPETRA_BLOCKEDMAP_DEF_HPP
 #define TPETRA_BLOCKEDMAP_DEF_HPP
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 
 namespace Tpetra {
