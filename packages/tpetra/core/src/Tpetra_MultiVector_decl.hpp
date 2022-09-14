@@ -388,6 +388,8 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
+    using dist_object_type = DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
     /// \brief The type of each entry in the MultiVector.
     using scalar_type = Scalar;
     /// \brief The type used internally in place of \c Scalar.
@@ -2335,29 +2337,23 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
+    // copyAndPermute has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::copyAndPermute;
+
     virtual void
     copyAndPermute
     (const SrcDistObject& sourceObj,
      const size_t numSameIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-     const CombineMode CM);
+     const CombineMode CM,
+     const execution_space &space = execution_space());
 
-    virtual void
-    packAndPrepare
-    (const SrcDistObject& sourceObj,
-     const Kokkos::DualView<
-       const local_ordinal_type*,
-       buffer_device_type>& exportLIDs,
-     Kokkos::DualView<
-       impl_scalar_type*,
-       buffer_device_type>& exports,
-     Kokkos::DualView<
-       size_t*,
-       buffer_device_type> /* numPacketsPerLID */,
-     size_t& constantNumPackets);
+    // copyAndPermute has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::packAndPrepare;
 
-    // base class does not implement this yet
     void
     packAndPrepare
     (const SrcDistObject& sourceObj,
@@ -2369,9 +2365,13 @@ namespace Tpetra {
        buffer_device_type>& exports,
      Kokkos::DualView<
        size_t*,
-       buffer_device_type> /* numPacketsPerLID */,
+       buffer_device_type> numPacketsPerLID,
      size_t& constantNumPackets,
-     const typename Node::execution_space &space);
+     const typename Node::execution_space &space = execution_space());
+
+    // unpackAndCombine has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::unpackAndCombine;
 
     virtual void
     unpackAndCombine
@@ -2385,7 +2385,8 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
-     const CombineMode CM);
+     const CombineMode CM,
+     const execution_space &space);
 
   private:
 

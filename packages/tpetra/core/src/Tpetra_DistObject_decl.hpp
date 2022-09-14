@@ -801,11 +801,13 @@ namespace Tpetra {
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                          size_t& constantNumPackets);
+                          size_t& constantNumPackets,
+                          const execution_space &space = execution_space());
 
     void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                             size_t constantNumPackets,
-                            CombineMode CM);
+                            CombineMode CM,
+                            const execution_space &space = execution_space());
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -861,6 +863,16 @@ namespace Tpetra {
                       buffer_device_type>& permuteToLIDs,
                     const Kokkos::DualView<const local_ordinal_type*,
                       buffer_device_type>& permuteFromLIDs,
+                    const CombineMode CM,
+                    const execution_space &space);
+
+    virtual void
+    copyAndPermute (const SrcDistObject& source,
+                    const size_t numSameIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteToLIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteFromLIDs,
                     const CombineMode CM);
 
     /// \brief Pack data and metadata for communication (sends).
@@ -900,6 +912,17 @@ namespace Tpetra {
     /// \param constantNumPackets [out] On exit, 0 if the number of
     ///   packets per LID could differ, else (if nonzero) the number
     ///   of packets per LID (which must be constant).
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    const execution_space &space);
+
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Kokkos::DualView<const local_ordinal_type*,
@@ -957,8 +980,18 @@ namespace Tpetra {
                       Kokkos::DualView<size_t*,
                         buffer_device_type> numPacketsPerLID,
                       const size_t constantNumPackets,
-                      const CombineMode combineMode);
+                      const CombineMode combineMode,
+                      const execution_space &space);
 
+    virtual void
+    unpackAndCombine (const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& importLIDs,
+                      Kokkos::DualView<packet_type*,
+                        buffer_device_type> imports,
+                      Kokkos::DualView<size_t*,
+                        buffer_device_type> numPacketsPerLID,
+                      const size_t constantNumPackets,
+                      const CombineMode combineMode);
 
     //! The Map over which this object is distributed.
     Teuchos::RCP<const map_type> map_;

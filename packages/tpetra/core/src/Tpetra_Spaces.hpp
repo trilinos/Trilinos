@@ -31,6 +31,22 @@ enum class Priority {
 
 namespace detail {
 
+#ifdef KOKKOS_ENABLE_SERIAL
+inline void print_space(const Kokkos::Serial &space) {
+    std::cerr << "[serial]";
+}
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+inline void print_space(const Kokkos::Cuda &space) {
+    std::cerr << uintptr_t(space.cuda_stream());
+}
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+inline void print_space(const Kokkos::OpenMP &space) {
+    std::cerr << "[OpenMP]";
+}
+#endif
+
 #ifdef KOKKOS_ENABLE_CUDA
 inline void success_or_throw(cudaError_t err, const char *file, const int line) {
     if (err != cudaSuccess) {
@@ -173,8 +189,8 @@ Kokkos::Cuda &get(int i = 0) {
             case Priority::low: prio = detail::cudaPriorityRange.low; break;
             default: throw std::runtime_error("unexpected Tpetra Space priority");
         }
-        std::cerr << __FILE__ << ":" << __LINE__ << ": create stream with prio " << prio << "\n";
         CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
+        std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
         Kokkos::Cuda space (stream, true /*Kokkos will manage this stream*/);
         detail::spaces<Space, priority>().push_back(space);
     }

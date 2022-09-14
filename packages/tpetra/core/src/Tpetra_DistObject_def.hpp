@@ -60,6 +60,8 @@
 #include <memory>
 #include <sstream>
 
+// #include "Tpetra_Spaces.hpp" // DELETEME debug only
+
 namespace Tpetra {
 
   namespace { // (anonymous)
@@ -423,6 +425,7 @@ namespace Tpetra {
               const bool restrictedMode,
               const typename Node::execution_space &space)
   {
+
     using Details::Behavior;
     using std::endl;
     const char modeString[] = "beginImport (forward mode)";
@@ -548,6 +551,11 @@ namespace Tpetra {
             const bool restrictedMode,
             const typename Node::execution_space &space)
   {
+
+    // std::cerr << __FILE__ << ":" << __LINE__ << ": endImport(..., ";
+    // Tpetra::Spaces::detail::print_space(space);
+    // std::cerr << ")\n";
+
     using Details::Behavior;
     using std::endl;
     const char modeString[] = "endImport (forward mode)";
@@ -1020,7 +1028,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         this->copyAndPermute (src, numSameIDs, permuteToLIDs,
-                              permuteFromLIDs, CM);
+                              permuteFromLIDs, CM, space);
         if (verbose) {
           std::ostringstream os;
           os << *prefix << "After copyAndPermute:" << endl
@@ -1076,7 +1084,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      doPackAndPrepare(src, exportLIDs, constantNumPackets);
+      doPackAndPrepare(src, exportLIDs, constantNumPackets, space);
       if (commOnHost) {
         ProfilingRegion region_cp 
           ("Tpetra::DistObject::beginTransfer::sync_host");
@@ -1359,7 +1367,7 @@ namespace Tpetra {
           os << *prefix << "8. unpackAndCombine - remoteLIDs " << remoteLIDs.extent(0) << ", constantNumPackets " << constantNumPackets << endl;
           std::cerr << os.str ();
         }
-        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM);
+        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM, space);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1585,7 +1593,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doPackAndPrepare(const SrcDistObject& src,
                    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                   size_t& constantNumPackets)
+                   size_t& constantNumPackets, const execution_space &space)
   {
     using Details::ProfilingRegion;
     using std::endl;
@@ -1621,7 +1629,7 @@ namespace Tpetra {
       try {
         this->packAndPrepare (src, exportLIDs, this->exports_,
             this->numExportPacketsPerLID_,
-            constantNumPackets);
+            constantNumPackets, space);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1643,7 +1651,7 @@ namespace Tpetra {
     else {
       this->packAndPrepare (src, exportLIDs, this->exports_,
           this->numExportPacketsPerLID_,
-          constantNumPackets);
+          constantNumPackets, space);
     }
   }
 
@@ -1652,7 +1660,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                      size_t constantNumPackets,
-                     CombineMode CM)
+                     CombineMode CM, const execution_space &space)
   {
     using Details::ProfilingRegion;
     using std::endl;
@@ -1694,9 +1702,10 @@ namespace Tpetra {
     else {
       this->unpackAndCombine (remoteLIDs, this->imports_,
           this->numImportPacketsPerLID_,
-          constantNumPackets, CM);
+          constantNumPackets, CM, space);
     }
   }
+
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1710,25 +1719,72 @@ namespace Tpetra {
    const Kokkos::DualView<
      const local_ordinal_type*,
      buffer_device_type>&,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepare
-  (const SrcDistObject&,
+  copyAndPermute
+  (const SrcDistObject &a,
+   const size_t b,
    const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>&,
+     buffer_device_type> &c,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type> &d,
+   const CombineMode CM)
+  {
+    copyAndPermute(a, b, c, d, CM, execution_space());
+  }  
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepare (const SrcDistObject&,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>&,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>&,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type>,
+                    size_t&,
+                    const execution_space &)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets)
+  {packAndPrepare(source,exportLIDs,exports,numPacketsPerLID, constantNumPackets, execution_space());}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>&  importLIDs ,
    Kokkos::DualView<
      packet_type*,
-     buffer_device_type>&,
+     buffer_device_type>  imports ,
    Kokkos::DualView<
      size_t*,
-     buffer_device_type>,
-   size_t&)
-  {}
+     buffer_device_type>  numPacketsPerLID ,
+   const size_t  constantNumPackets ,
+   const CombineMode  combineMode )
+  {
+    unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, combineMode, execution_space());
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1744,9 +1800,9 @@ namespace Tpetra {
      size_t*,
      buffer_device_type> /* numPacketsPerLID */,
    const size_t /* constantNumPackets */,
-   const CombineMode /* combineMode */)
+   const CombineMode /* combineMode */,
+   const execution_space &/*space*/)
   {}
-
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

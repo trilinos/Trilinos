@@ -743,6 +743,10 @@ protected:
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source) override;
 
+  // copyAndPermute has two implementations in DistObject, use
+  // the base class ones whenever we don't overload
+  using dist_object_type::copyAndPermute;
+
   virtual void
   copyAndPermute
   (const SrcDistObject& sourceObj,
@@ -752,6 +756,10 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs,
    const CombineMode CM) override;
+
+  // packAndPrepare has two implementations in DistObject, use
+  // the base class ones whenever we don't overload
+  using dist_object_type::packAndPrepare;
 
   virtual void
   packAndPrepare
@@ -763,6 +771,10 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets) override;
+
+  // unpackAndCombine has two implementations in DistObject, use
+  // the base class ones whenever we don't overload
+  using dist_object_type::unpackAndCombine;
 
   virtual void
   unpackAndCombine

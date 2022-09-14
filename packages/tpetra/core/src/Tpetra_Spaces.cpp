@@ -12,6 +12,8 @@ namespace Spaces {
 
 namespace detail {
 
+
+
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
 /*extern*/ std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];

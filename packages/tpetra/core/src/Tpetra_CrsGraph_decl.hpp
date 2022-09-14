@@ -1155,6 +1155,10 @@ public:
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
+    // copyAndPermute has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::copyAndPermute;
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -1217,6 +1221,10 @@ public:
       const Kokkos::DualView<const local_ordinal_type*,
       buffer_device_type>& permuteFromLIDs) const;
 
+    // packAndPrepare has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::packAndPrepare;
+
     virtual void
     packAndPrepare(
       const SrcDistObject& source,
@@ -1245,6 +1253,10 @@ public:
                        Kokkos::DualView<size_t*,
                          buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets) const;
+
+    // unpackAndCombine has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::unpackAndCombine;
 
     virtual void
     unpackAndCombine

@@ -74,6 +74,8 @@
 #include <memory>
 #include <sstream>
 
+// #include "Tpetra_Spaces.hpp" // DELETEME, debug only
+
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
   // FIXME (mfh 04 Sep 2015) Just a stub for now!
@@ -1124,8 +1126,10 @@ namespace Tpetra {
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {
+
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1217,8 +1221,8 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
-            range_t rp(0,numSameIDs);
+                  Kokkos::RangePolicy<execution_space, size_t>;
+            range_t rp(execution_space(), 0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
             Kokkos::parallel_for(rp, aaf);
@@ -1226,7 +1230,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (execution_space(), tgt_j, src_j);
+            Kokkos::deep_copy (space, tgt_j, src_j);
           }
         }
       }
@@ -1244,7 +1248,7 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+                  Kokkos::RangePolicy<execution_space, size_t>;
             range_t rp(0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
@@ -1253,7 +1257,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (execution_space(), tgt_j, src_j); 
+            Kokkos::deep_copy (space, tgt_j, src_j); 
 
           }
         }
@@ -1482,20 +1486,6 @@ namespace Tpetra {
     }
   }
 
-  /*! \brief packAndPrepare in the default `Node` execution space
-  */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepare
-  (const SrcDistObject& sourceObj,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-   Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-   Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID,
-   size_t& constantNumPackets) {
-    packAndPrepare(sourceObj, exportLIDs, exports, numExportPacketsPerLID, constantNumPackets, typename Node::execution_space());
-   }
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1711,7 +1701,8 @@ namespace Tpetra {
                                    src_dev,
                                    exportLIDs.view_device (),
                                    numCols,
-                                   debugCheckIndices);
+                                   debugCheckIndices,
+                                   space);
         }
       }
       else {
@@ -1748,7 +1739,8 @@ namespace Tpetra {
              exportLIDs.view_device (),
              getKokkosViewDeepCopy<DES> (whichVecs),
              numCols,
-             debugCheckIndices);
+             debugCheckIndices,
+             space);
         }
       }
     }
@@ -1883,8 +1875,14 @@ namespace Tpetra {
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
    const size_t constantNumPackets,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {
+
+    // std::cerr << __FILE__ << ":" << __LINE__ << ": unpackAndCombine(..., ";
+    // Tpetra::Spaces::detail::print_space(space);
+    // std::cerr << ")\n";
+
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::unpack_array_multi_column;
@@ -1999,7 +1997,7 @@ namespace Tpetra {
       else {
         whichVecs.modify_device ();
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (execution_space(), whichVecs.view_device (), whichVecsIn);
+        Kokkos::deep_copy (space, whichVecs.view_device (), whichVecsIn);
       }
     }
     auto whichVecs_d = whichVecs.view_device ();
@@ -2045,7 +2043,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2066,7 +2064,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
@@ -2090,7 +2088,10 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            // std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column(";
+            // Tpetra::Spaces::detail::print_space(space);
+            // std::cerr << ", ...)\n";
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2111,7 +2112,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
@@ -2135,7 +2136,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column (dev_exec_space (),
+            unpack_array_multi_column (space,
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
                                        use_atomic_updates,
@@ -2156,7 +2157,7 @@ namespace Tpetra {
           }
           else { // unpack on device
             auto X_d = this->getLocalViewDevice(Access::ReadWrite);
-            unpack_array_multi_column_variable_stride (dev_exec_space (),
+            unpack_array_multi_column_variable_stride (space,
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,

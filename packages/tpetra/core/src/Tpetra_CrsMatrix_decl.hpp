@@ -429,6 +429,9 @@ namespace Tpetra {
     //! @name Typedefs
     //@{
 
+    //! Type of the DistObject specialization from which this class inherits.
+    using dist_object_type = DistObject<char, LocalOrdinal, GlobalOrdinal, Node>;
+
     //! The type of each entry in the matrix.
     using scalar_type = Scalar;
     //! The type of each local index in the matrix.
@@ -3006,6 +3009,10 @@ public:
       const size_t numPermutes);
 
   protected:
+    // copyAndPermute has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::copyAndPermute;
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -3017,6 +3024,10 @@ public:
        const local_ordinal_type*,
        buffer_device_type>& permuteFromLIDs,
      const CombineMode CM) override;
+
+    // packAndPrepare has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::packAndPrepare;
 
     virtual void
     packAndPrepare
@@ -3053,6 +3064,11 @@ public:
       const CombineMode combineMode);
 
   public:
+
+    // unpackAndCombine has two implementations in DistObject, use
+    // the base class ones whenever we don't overload
+    using dist_object_type::unpackAndCombine;
+
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     ///
@@ -3738,9 +3754,6 @@ public:
                             const Teuchos::ArrayView<const impl_scalar_type>& newRowVals,
                             const ELocalGlobal lg,
                             const ELocalGlobal I);
-
-    //! Type of the DistObject specialization from which this class inherits.
-    typedef DistObject<char, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
 
   protected:
     // useful typedefs
