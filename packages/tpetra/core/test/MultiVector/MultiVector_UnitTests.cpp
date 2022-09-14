@@ -5219,16 +5219,17 @@ namespace {
     host_view y_h = create_mirror_view(x_d);  
 
     size_t correct_count;
-    if(x_d.data() != y_h.data()) {
-      //Host and device views are not the same.
-      correct_count = 1;
-    }
-    else {
+    // Check to see if we'll be deep_copy-ing between memory spaces
+    if(std::is_same<typename device_view::memory_space,typename host_view::memory_space>::value) {
       correct_count = 0;
     }
+    else {
+      correct_count = 1;
+    }
 
 
-    // Stop / Start
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::DeepCopyCounter::reset();   
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
     size_t count = Tpetra::Details::DeepCopyCounter::stop();   
@@ -5236,7 +5237,7 @@ namespace {
 
 
     // Reset / get_count (should be zero now)
-    Tpetra::Details::DeepCopyCounter::reset();
+    Tpetra::Details::DeepCopyCounter::reset();   
     count = Tpetra::Details::DeepCopyCounter::get_count();   
     TEST_EQUALITY(count,0);
 
@@ -5258,7 +5259,7 @@ namespace {
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
     count = Tpetra::Details::DeepCopyCounter::stop();   
-    TEST_EQUALITY(2*count,2*correct_count);
+    TEST_EQUALITY(count,2*correct_count);
           
   }
 
