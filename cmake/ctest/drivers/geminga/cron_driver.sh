@@ -22,6 +22,8 @@ export TDD_CTEST_TEST_TYPE=Nightly
 export TDD_DEBUG_VERBOSE=1
 export TDD_FORCE_CMAKE_INSTALL=0
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
+# testing-dev.sandia.gov is not accessible anymore
+export TRIBITS_2ND_CTEST_DROP_SITE=""
 
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
