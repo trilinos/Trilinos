@@ -50,7 +50,7 @@
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #endif
 #endif
 

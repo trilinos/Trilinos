@@ -3,7 +3,7 @@
 
 
 #include <Teuchos_RCP.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 
