@@ -50,6 +50,7 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialQRDenseSolver.hpp>
 
+#include <Xpetra_CrsGraphFactory_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
@@ -157,6 +158,8 @@ template <class Scalar = DefaultScalar,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+    void BuildPuncoupledBlockCrs(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
     mutable bool bTransferCoordinates_ = false;
 

@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.0)
+
+# Disable Kokkos warning about not supporting C++ extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(find_package_Trilinos NONE)
 

@@ -123,6 +123,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     DCOPY_F77(&size, agg_object->nullspace_vect + v * size, &incr,
               NextNS.GetValues(v), &incr);
 
+  ML_qr_fix_Destroy();
   ML_Aggregate_Destroy(&agg_object);
   ML_memory_free((void**)(&null_vect));
 }

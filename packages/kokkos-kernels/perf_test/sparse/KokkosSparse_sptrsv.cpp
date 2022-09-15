@@ -58,12 +58,13 @@
 
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
+#include "KokkosSparse_IOUtils.hpp"
 
 //#define INTERNAL_CUSPARSE
 
@@ -159,7 +160,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
   if (!lfilename.empty()) {
     std::cout << "Lower Tri Begin: Read matrix filename " << lfilename
               << std::endl;
-    crsmat_t triMtx = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(
+    crsmat_t triMtx = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
         lfilename.c_str());                // in_matrix
     graph_t graph         = triMtx.graph;  // in_graph
     const size_type nrows = graph.numRows();
@@ -567,7 +568,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
   if (!ufilename.empty()) {
     std::cout << "Upper Tri Begin: Read matrix filename " << ufilename
               << std::endl;
-    crsmat_t triMtx = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(
+    crsmat_t triMtx = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
         ufilename.c_str());                // in_matrix
     graph_t graph         = triMtx.graph;  // in_graph
     const size_type nrows = graph.numRows();

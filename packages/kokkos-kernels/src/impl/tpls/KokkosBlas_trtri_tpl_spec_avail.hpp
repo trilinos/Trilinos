@@ -58,7 +58,7 @@ struct trtri_tpl_spec_avail {
 #define KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL(SCALAR, LAYOUTA, MEMSPACE)         \
   template <class ExecSpace>                                               \
   struct trtri_tpl_spec_avail<                                             \
-      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace,                        \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
       Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \

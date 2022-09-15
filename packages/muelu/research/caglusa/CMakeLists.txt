@@ -13,7 +13,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(caglusa_cp
     SOURCE_FILES
-    muelu.xml aux.xml ${FILES}
+    muelu.xml auxiliary.xml ${FILES}
     )
 
   TRIBITS_ADD_TEST(

@@ -324,10 +324,40 @@ namespace MueLuTests {
         ArrayView<const LocalOrdinal> indices;
         ArrayView<const Scalar> values;
         Ainv->getLocalRowView(0, indices, values);
-        TEST_FLOATING_EQUALITY(values[0], 1.0000000000000002e-01, 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[1], -1.6666666666666673e-02, 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[2], 4.6666666666666688e-03, 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[0], Teuchos::as<Scalar>(1.0000000000000002e-01), 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[1], Teuchos::as<Scalar>(-1.6666666666666673e-02), 1e2*TMT::eps());
+        TEST_FLOATING_EQUALITY(values[2], Teuchos::as<Scalar>(4.6666666666666688e-03), 1e2*TMT::eps());
       }
+    }
+
+    // Test pre and post filtering of approximate inverse
+    {
+      using STS = Teuchos::ScalarTraits<SC>;
+
+      // Don't test for complex - matrix reader won't work
+      if (STS::isComplex) {success=true; return;}
+      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/beam.mm", lib, comm);
+
+      Level level;
+      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
+      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-8)));
+      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+
+      // request InverseApproximation operator
+      level.Request("Ainv", invapproxFact.get());
+
+      // generate Schur complement operator
+      invapproxFact->Build(level);
+
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+      TEST_EQUALITY(Ainv.is_null(), false);
+      TEST_EQUALITY(Ainv->getGlobalNumEntries(), 115760);
+      // 8.31688788510637e+06
+      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.31688788510637e+06, 1e5*TMT::eps());
     }
 
   } //InverseSpaiConstructor

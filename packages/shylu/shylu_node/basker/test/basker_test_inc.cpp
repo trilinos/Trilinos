@@ -8,7 +8,6 @@
  
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -32,22 +31,20 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
-  cout << "basker_test: filename, numthreads should be passed as command line args" << endl; 
+  cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 
 
   std::string fname = std::string(argv[1]);
-  Int numthreads = atoi(argv[2]);
+  Int nthreads = atoi(argv[2]);
   //std::string rhsname = std::string(argv[2]);
-  //Int numthreads = atoi(argv[3]);
+  //Int nthreads = atoi(argv[3]);
   //std::string fname = "matrix1.mtx";
  
-  cout << "basker_test: using " << numthreads << "threads" << endl;
+  cout << "basker_test: using " << nthreads << "threads" << endl;
   #ifdef BASKER_KOKKOS
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = numthreads;
-  Kokkos::initialize(init_args);
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
   cout << "---------------USING KOKKOS-------------" << endl;
   #else
-  //omp_set_num_threads(numthreads);
+  //omp_set_num_threads(nthreads);
   cout << "-------------- USING OMP---------------" << endl;
   #endif
 
@@ -205,7 +202,7 @@ int main(int argc, char* argv[])
   mybasker.Options.user_fill  = 0.10;
   mybasker.Options.same_pattern = false;
 
-  mybasker.SetThreads(numthreads);
+  mybasker.SetThreads(nthreads);
   cout << "--------------Done Setting Threads----------" << endl;
   mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done SFactor------------------" << endl;

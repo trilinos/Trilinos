@@ -37,12 +37,6 @@
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
-#if defined(KOKKOS_ENABLE_CUDA)
-#include "Cuda/Kokkos_Cuda_Vectorization.hpp"
-#endif
-#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS)
-#include "Kokkos_MemoryPool.hpp"
-#endif
 #endif
 
 namespace Sacado {

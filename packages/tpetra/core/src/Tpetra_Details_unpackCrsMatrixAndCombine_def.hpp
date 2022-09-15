@@ -472,8 +472,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   join (const MaxNumEntTag,
-        volatile value_type& dst,
-        const volatile value_type& src) const
+        value_type& dst,
+        const value_type& src) const
   {
     if (dst < src) dst = src;
   }

@@ -8,6 +8,7 @@ tribits_package( SimpleCxx  ENABLE_SHADOWING_WARNINGS  CLEANED )
 #
 include(CheckFor__int64)
 check_for___int64(HAVE_SIMPLECXX___INT64)
+tribits_pkg_export_cache_var(HAVE_SIMPLECXX___INT64)
 
 #
 # C) Set up package-specific options

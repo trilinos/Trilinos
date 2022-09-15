@@ -955,7 +955,6 @@ namespace MueLu {
          paramList.isParameter("coarse: type")   ||
          paramList.isParameter("coarse: params");
      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
-       this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
        manager.SetFactory("CoarseSolver", Teuchos::null);
 
      } else if (isCustomCoarseSolver) {
@@ -1583,9 +1582,9 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, enableInPlace);
     if (enableRepart) {
 #ifdef HAVE_MPI
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: use subcommunicators in place", bool, enableInPlace);
       // Short summary of the issue: RebalanceTransferFactory shares ownership
       // of "P" with SaPFactory, and therefore, changes the stored version.
       // That means that if SaPFactory generated P, and stored it on the level,

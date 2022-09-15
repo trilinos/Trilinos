@@ -113,9 +113,8 @@ int main(int argc, char *argv[])
     if (threads > 0) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::InitArguments init_args;
-      init_args.num_threads = threads;
-      init_args.num_numa = numa;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_num_threads(threads);
       Kokkos::initialize( init_args );
 
       std::cout << std::endl
@@ -134,9 +133,8 @@ int main(int argc, char *argv[])
     if (openmp > 0) {
       typedef Kokkos::OpenMP Device;
 
-      Kokkos::InitArguments init_args;
-      init_args.num_threads = openmp;
-      init_args.num_numa = numa;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_num_threads(openmp);
       Kokkos::initialize( init_args );
 
       std::cout << std::endl
@@ -155,8 +153,8 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::InitArguments init_args;
-      init_args.device_id = device_id;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_device_id(device_id);
       Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;

@@ -46,11 +46,18 @@
 
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosSparse_spgemm_numeric_spec.hpp"
+#include "KokkosSparse_bspgemm_numeric_spec.hpp"
 
 namespace KokkosSparse {
 
 namespace Experimental {
 
+//
+// NOTE: block_dim = 1 for CRS-formated views
+//       block_dim >= 1 for BSR-formatted views (bs=1 BSR is CRS)
+//
+// NOTE: Block CRS format is not yet supported !
+//
 template <typename KernelHandle, typename alno_row_view_t_,
           typename alno_nnz_view_t_, typename ascalar_nnz_view_t_,
           typename blno_row_view_t_, typename blno_nnz_view_t_,
@@ -66,7 +73,9 @@ void spgemm_numeric(KernelHandle *handle,
                     bool transposeA, blno_row_view_t_ row_mapB,
                     blno_nnz_view_t_ entriesB, bscalar_nnz_view_t_ valuesB,
                     bool transposeB, clno_row_view_t_ row_mapC,
-                    clno_nnz_view_t_ &entriesC, cscalar_nnz_view_t_ &valuesC) {
+                    clno_nnz_view_t_ &entriesC, cscalar_nnz_view_t_ &valuesC,
+
+                    typename KernelHandle::const_nnz_lno_t block_dim = 1) {
   static_assert(
       std::is_same<typename clno_nnz_view_t_::value_type,
                    typename clno_nnz_view_t_::non_const_value_type>::value,
@@ -139,7 +148,9 @@ void spgemm_numeric(KernelHandle *handle,
         "If you need this case please let kokkos-kernels developers know.\n");
   }
 
-  if (m < 1 || n < 1 || k < 1) return;
+  if (m < 1 || n < 1 || k < 1 || entriesA.extent(0) < 1 ||
+      entriesB.extent(0) < 1)
+    return;
 
   typedef typename KernelHandle::const_size_type c_size_t;
   typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
@@ -239,6 +250,23 @@ void spgemm_numeric(KernelHandle *handle,
   Internal_clno_row_view_t_ nonconst_c_r(row_mapC.data(), row_mapC.extent(0));
   Internal_clno_nnz_view_t_ nonconst_c_l(entriesC.data(), entriesC.extent(0));
   Internal_cscalar_nnz_view_t_ nonconst_c_s(valuesC.data(), valuesC.extent(0));
+
+  if (block_dim > 1) {
+    KokkosSparse::Impl::BSPGEMM_NUMERIC<
+        const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+        Internal_ascalar_nnz_view_t_, Internal_blno_row_view_t_,
+        Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_,
+        Internal_clno_row_view_t_, Internal_clno_nnz_view_t_,
+        Internal_cscalar_nnz_view_t_>::bspgemm_numeric(&tmp_handle, m, n, k,
+                                                       block_dim, const_a_r,
+                                                       const_a_l, const_a_s,
+                                                       transposeA, const_b_r,
+                                                       const_b_l, const_b_s,
+                                                       transposeB, nonconst_c_r,
+                                                       nonconst_c_l,
+                                                       nonconst_c_s);
+    return;
+  }
 
   KokkosSparse::Impl::SPGEMM_NUMERIC<
       const_handle_type,  // KernelHandle,

@@ -3378,7 +3378,7 @@ management system are:
 9)  `TPL disable triggers auto-disables of downstream dependencies`_
 10) `Disables trump enables where there is a conflict`_
 11) `Enable/disable of parent package is enable/disable for subpackages`_
-12) `Enable of parent package tests/examples is enable for subpackages tests/examples`_
+12) `Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples`_
 13) `Subpackage enable does not auto-enable the parent package`_
 14) `Support for optional SE package/TPL is enabled by default`_
 15) `Support for optional SE package/TPL can be explicitly disabled`_
@@ -3588,17 +3588,19 @@ In more detail, these rules/behaviors are:
     see `Explicit enable of a package, its tests, an optional TPL, with ST
     enabled`_.
 
-.. _Enable of parent package tests/examples is enable for subpackages tests/examples:
+.. _Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples:
 
-12) **Enable of parent package tests/examples is enable for subpackages
-    tests/examples**: Setting ``<TRIBITS_PACKAGE>_ENABLE_TESTS=ON`` is
-    equivalent to setting the default for
-    ``<TRIBITS_PACKAGE><SP>_ENABLE_TESTS=ON`` for each subpackage ``<SP>`` of
-    the parent package ``<TRIBITS_PACKAGE>`` (if ``<TRIBITS_PACKAGE>`` has
-    subpackages).  Same is true for ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=ON``
-    setting the default for ``<TRIBITS_PACKAGE><SP>_ENABLE_EXAMPLES=ON``.  In
-    addition, setting ``<TRIBITS_PACKAGE>_ENABLE_TESTS=ON`` will set
-    ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=ON`` by default as well.
+12) **Enable/disable of parent package tests/examples is enable/disable for
+    subpackages tests/examples**: Setting
+    ``<TRIBITS_PACKAGE>_ENABLE_TESTS=[ON|OFF]`` is equivalent to setting the
+    default for ``<TRIBITS_PACKAGE><SP>_ENABLE_TESTS=[ON|OFF]`` for each
+    subpackage ``<SP>`` of the parent package ``<TRIBITS_PACKAGE>`` (if
+    ``<TRIBITS_PACKAGE>`` has subpackages).  Same is true for
+    ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=[ON|OFF]`` setting the default for
+    ``<TRIBITS_PACKAGE><SP>_ENABLE_EXAMPLES=[ON|OFF]``.  In addition, setting
+    ``<TRIBITS_PACKAGE>_ENABLE_TESTS=[ON|OFF]`` will set
+    ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=[ON|OFF]`` by default as well (but not
+    vice versa).
 
 .. _Subpackage enable does not auto-enable the parent package:
 

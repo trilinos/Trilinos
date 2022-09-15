@@ -93,7 +93,7 @@ Intermediate MPI instructions (enables a few packages)
   make -j<n> install
 
 
-Intermediate MPI instructions (enables a few packages, explict compilers)
+Intermediate MPI instructions (enables a few packages, explicit compilers)
 -------------------------------------------------------------------------
 
 ::

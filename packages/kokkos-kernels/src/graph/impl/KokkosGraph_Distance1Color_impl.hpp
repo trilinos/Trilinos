@@ -411,7 +411,6 @@ class GraphColor_VB
 
     nnz_lno_t numUncolored = this->nv;
 
-    double t, total = 0.0;
     double total_time_greedy_phase               = 0.0;
     double total_time_find_conflicts             = 0.0;
     double total_time_serial_conflict_resolution = 0.0;
@@ -435,8 +434,7 @@ class GraphColor_VB
       MyExecSpace().fence();
 
       if (this->_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_greedy_phase += t;
         std::cout << "\tTime speculative greedy phase " << iter << " : " << t
                   << std::endl;
@@ -459,8 +457,7 @@ class GraphColor_VB
       MyExecSpace().fence();
 
       if (_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_find_conflicts += t;
         std::cout << "\tTime conflict detection " << iter << " : " << t
                   << std::endl;
@@ -500,8 +497,7 @@ class GraphColor_VB
       }
       MyExecSpace().fence();
       if (_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_serial_conflict_resolution += t;
         std::cout << "\tTime serial conflict resolution: " << t << std::endl;
       }
@@ -3117,6 +3113,88 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_,
     }
   };
 };
+
+template <class KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_>
+void graph_color_impl(KernelHandle *handle,
+                      typename KernelHandle::nnz_lno_t num_rows,
+                      lno_row_view_t_ row_map, lno_nnz_view_t_ entries) {
+  Kokkos::Timer timer;
+
+  typename KernelHandle::GraphColoringHandleType *gch =
+      handle->get_graph_coloring_handle();
+
+  ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
+
+  typedef typename KernelHandle::GraphColoringHandleType::color_view_t
+      color_view_type;
+
+  gch->set_tictoc(handle->get_verbose());
+
+  color_view_type colors_out;
+  if (gch->get_vertex_colors().use_count() > 0) {
+    colors_out = gch->get_vertex_colors();
+  } else {
+    colors_out = color_view_type("Graph Colors", num_rows);
+  }
+
+  typedef
+      typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType,
+                                lno_row_view_t_, lno_nnz_view_t_>
+          BaseGraphColoring;
+  BaseGraphColoring *gc = NULL;
+
+  switch (algorithm) {
+    case COLORING_SERIAL:
+      gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                                 gch);
+      break;
+
+    case COLORING_VB:
+    case COLORING_VBBIT:
+    case COLORING_VBCS:
+      typedef typename Impl::GraphColor_VB<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          VBGraphColoring;
+      gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                               gch);
+      break;
+
+    case COLORING_VBD:
+    case COLORING_VBDBIT:
+      typedef typename Impl::GraphColor_VBD<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          VBDGraphColoring;
+      gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                                gch);
+      break;
+
+    case COLORING_EB:
+      typedef typename Impl::GraphColor_EB<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          EBGraphColoring;
+      gc = new EBGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                               gch);
+      break;
+
+    case COLORING_DEFAULT: break;
+
+    default: break;
+  }
+
+  int num_phases = 0;
+  gc->color_graph(colors_out, num_phases);
+
+  delete gc;
+  double coloring_time = timer.seconds();
+  gch->add_to_overall_coloring_time(coloring_time);
+  gch->set_coloring_time(coloring_time);
+  gch->set_num_phases(num_phases);
+  gch->set_vertex_colors(colors_out);
+}
 
 }  // namespace Impl
 }  // namespace KokkosGraph

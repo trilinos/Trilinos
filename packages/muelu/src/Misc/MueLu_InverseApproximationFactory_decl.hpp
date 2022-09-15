@@ -61,7 +61,7 @@
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {

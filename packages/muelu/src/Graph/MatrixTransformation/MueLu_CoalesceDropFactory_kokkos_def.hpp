@@ -506,7 +506,27 @@ namespace MueLu {
     const MT zero = Teuchos::ScalarTraits<MT>::zero();
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
-    LO   blkSize   = A->GetFixedBlockSize();
+
+
+    /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+       blkSize is the number of storage blocks that must kept together during the amalgamation process.
+
+       Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+       numPDEs = blkSize * storageblocksize.
+       
+       If numPDEs==1
+         Matrix is point storage (classical CRS storage).  storageblocksize=1 and  blkSize=1
+         No other values makes sense.
+
+       If numPDEs>1
+         If matrix uses point storage, then storageblocksize=1  and blkSize=numPDEs.
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.  
+         Thus far, only storageblocksize=numPDEs and blkSize=1 has been tested.
+      */      
+ 
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
+    LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
     auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
 
@@ -542,7 +562,7 @@ namespace MueLu {
       boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
 
       // Trivial LWGraph construction
-      graph = rcp(new LWGraph_kokkos(A->getLocalMatrixDevice().graph, A->getRowMap(), A->getColMap(), "graph of A"));
+      graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "graph of A"));
       graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
 
       numTotal = A->getLocalNumEntries();

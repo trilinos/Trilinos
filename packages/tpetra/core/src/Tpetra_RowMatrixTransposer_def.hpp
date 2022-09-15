@@ -48,8 +48,8 @@
 #include "Tpetra_Details_shortSort.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 namespace Tpetra {
 
@@ -176,9 +176,9 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
 
   local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
-  local_matrix_device_type lclTransposeMatrix = KokkosKernels::Impl::transpose_matrix(lclMatrix);
+  local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_matrix(lclMatrix);
   if (sort)
-    KokkosKernels::sort_crs_matrix(lclTransposeMatrix);
+    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
 
   // Prebuild the importers and exporters the no-communication way,
   // flipping the importers and exporters around.

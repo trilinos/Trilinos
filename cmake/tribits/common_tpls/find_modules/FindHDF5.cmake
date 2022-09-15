@@ -389,10 +389,10 @@ else()
 
       foreach( _component ${HDF5_VALID_COMPONENTS} )
         set(target ${HDF5_${_component}_TARGET})
-	if ( TARGET ${target} )
-	  set(HDF5_${_component}_LIBRARY ${target})
-	  list(APPEND HDF5_LIBRARIES ${HDF5_${_component}_LIBRARY})
-	endif()  
+        if ( TARGET ${target} )
+          set(HDF5_${_component}_LIBRARY ${target})
+          list(APPEND HDF5_LIBRARIES ${HDF5_${_component}_LIBRARY})
+        endif()  
       endforeach()
 
       # Define HDF5_C_LIBRARIES to contain hdf5 and hdf5_hl C libraries
@@ -470,7 +470,7 @@ else()
                          LOCATION ${_HDF5_C_LIBRARY}
                          LINK_LANGUAGES "C"
                          LINK_INTERFACE_LIBRARIES "${HDF5_LINK_LIBRARIES}")
-    set(HDF5_C_LIBRARY ${HDF5_C_TARGET})		       
+    set(HDF5_C_LIBRARY ${HDF5_C_TARGET})                       
 
     # --- Search for the other possible component libraries
 
@@ -495,7 +495,7 @@ else()
     # Define the HDF5_<component>_LIBRARY to point to the target
     foreach ( _component ${HDF5_VALID_COMPONENTS} )
       if ( TARGET ${HDF5_${_component}_TARGET} )
-	set(HDF5_${_component}_LIBRARY ${HDF5_${_component}_TARGET})
+        set(HDF5_${_component}_LIBRARY ${HDF5_${_component}_TARGET})
       endif()
     endforeach()
 
@@ -513,7 +513,7 @@ else()
     set(HDF5_LIBRARIES)
     foreach (_component ${HDF5_VALID_COMPONENTS})
       if ( TARGET ${HDF5_${_component}_TARGET} )
-	list(APPEND HDF5_LIBRARIES ${_HDF5_${_component}_LIBRARY})
+        list(APPEND HDF5_LIBRARIES ${_HDF5_${_component}_LIBRARY})
       endif()
     endforeach()
     list(APPEND HDF5_LIBRARIES ${HDF5_LINK_LIBRARIES})      
@@ -581,8 +581,8 @@ if ( NOT HDF5_FIND_QUIETLY )
   set(HDF5_COMPONENTS_NOTFOUND)
   foreach (_component ${HDF5_VALID_COMPONENTS} )
     if ( HDF5_${_component}_FOUND )
-	#message(STATUS "\t  HDF5_${_component}_LIBRARY\t\t=${HDF5_${_component}_LIBRARY}")
-	message(STATUS "\t${HDF5_${_component}_LIBRARY}")
+        #message(STATUS "\t  HDF5_${_component}_LIBRARY\t\t=${HDF5_${_component}_LIBRARY}")
+        message(STATUS "\t${HDF5_${_component}_LIBRARY}")
     else()   
       list(APPEND HDF5_COMPONENTS_NOTFOUND ${_component})
     endif()

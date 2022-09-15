@@ -46,6 +46,7 @@
 #define KOKKOSBLAS1_AXPBY_HPP_
 
 #include <KokkosBlas1_axpby_spec.hpp>
+#include <KokkosBlas_serial_axpy.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
 
@@ -122,6 +123,32 @@ void axpy(const AV& a, const XMV& X, const YMV& Y) {
   axpby(a, X,
         Kokkos::Details::ArithTraits<typename YMV::non_const_value_type>::one(),
         Y);
+}
+
+///
+/// Serial axpy on device
+///
+template <class scalar_type, class XMV, class YMV>
+KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  static_assert(Kokkos::is_view<XMV>::value,
+                "KokkosBlas::serial_axpy: XMV is not a Kokkos::View");
+  static_assert(Kokkos::is_view<YMV>::value,
+                "KokkosBlas::serial_axpy: YMV is not a Kokkos::View");
+  static_assert(XMV::Rank == 1 || XMV::Rank == 2,
+                "KokkosBlas::serial_axpy: XMV must have rank 1 or 2.");
+  static_assert(
+      XMV::Rank == YMV::Rank,
+      "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
+
+  if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+    Kokkos::abort("KokkosBlas::serial_axpy: X and Y dimensions do not match");
+  }
+#endif  // KOKKOSKERNELS_DEBUG_LEVEL
+
+  return Impl::serial_axpy_mv(X.extent(0), X.extent(1), alpha, X.data(),
+                              Y.data(), X.stride_0(), X.stride_1(),
+                              Y.stride_0(), Y.stride_1());
 }
 
 }  // namespace KokkosBlas

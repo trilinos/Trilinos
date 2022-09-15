@@ -684,7 +684,7 @@ MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
 
 # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
 IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
-     OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
+     OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_LONG)
      OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
      OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
      AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )

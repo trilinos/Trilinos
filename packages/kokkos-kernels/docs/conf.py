@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Kokkos Kernels'
-copyright = '2021, Evan Harvey'
-author = 'Evan Harvey'
+copyright = '2022, Kokkos Development Team'
+author = 'Kokkos Team'
 
 # The full version, including alpha/beta/rc tags
-release = 'v3.4.1'
+release = 'latest'
 
 
 # -- General configuration ---------------------------------------------------

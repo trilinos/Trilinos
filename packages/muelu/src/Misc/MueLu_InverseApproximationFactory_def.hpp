@@ -47,15 +47,16 @@
 #define MUELU_INVERSEAPPROXIMATIONFACTORY_DEF_HPP_
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrix.hpp>
 
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -71,11 +72,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+    using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
     validParamList->set<RCP<const FactoryBase> >("A", NoFactory::getRCP(), "Matrix to build the approximate inverse on.\n");
 
     validParamList->set<std::string>            ("inverse: approximation type",  "diagonal", "Method used to approximate the inverse.");
-    validParamList->set<bool>                   ("inverse: fixing",              false     , "Fix diagonal by replacing small entries with 1.0");
+    validParamList->set<Magnitude>              ("inverse: drop tolerance",      0.0       , "Values below this threshold  are dropped from the matrix (or fixed if diagonal fixing is active).");
+    validParamList->set<bool>                   ("inverse: fixing",              false     , "Keep diagonal and fix small entries with 1.0");
 
     return validParamList;
   }
@@ -91,6 +94,7 @@ namespace MueLu {
 
     using STS = Teuchos::ScalarTraits<SC>;
     const SC one = STS::one();
+    using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
     const ParameterList& pL = GetParameterList();
     const bool fixing = pL.get<bool>("inverse: fixing");
@@ -108,20 +112,29 @@ namespace MueLu {
     // if blocked operator is used, defaults to A(0,0)
     if(isBlocked) A = bA->getMatrix(0,0);
 
+    const Magnitude tol = pL.get<Magnitude>("inverse: drop tolerance");
     RCP<Matrix> Ainv = Teuchos::null;
-    if(method=="diagonal") {
+
+    if(method=="diagonal")
+    {
       const auto diag = VectorFactory::Build(A->getRangeMap(), true);
       A->getLocalDiagCopy(*diag);
-      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, tol, one));
       Ainv = MatrixFactory::Build(D);
     }
-    else if(method=="lumping") {
+    else if(method=="lumping")
+    {
       const auto diag = Utilities::GetLumpedMatrixDiagonal(*A);
-      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, tol, one));
       Ainv = MatrixFactory::Build(D);
     }
-    else if(method=="sparseapproxinverse") {
-      Ainv = GetSparseInverse(A, A->getCrsGraph());
+    else if(method=="sparseapproxinverse")
+    {
+      RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol, A->getGlobalMaxNumRowEntries());
+      GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
+      RCP<Matrix> pAinv = GetSparseInverse(A, sparsityPattern);
+      Ainv = Utilities::GetThresholdedMatrix(pAinv, tol, fixing, pAinv->getGlobalMaxNumRowEntries());
+      GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
     }
 
     GetOStream(Statistics1) << "Approximate inverse calculated by: " << method << "." << std::endl;

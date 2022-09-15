@@ -46,7 +46,9 @@
 #ifndef XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 #define XPETRA_TPETRABLOCKCRSMATRIX_DEF_HPP
 
+
 #include "Xpetra_TpetraBlockCrsMatrix_decl.hpp"
+#include "Xpetra_TpetraCrsGraph.hpp"
 
 namespace Xpetra {
 
@@ -115,6 +117,17 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize)
       : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), blockSize))) 
+    { }
+
+
+    //! Constructor specifying a previously constructed graph, point maps & blocksize
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointDomainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointRangeMap,
+                         const LocalOrdinal blockSize)
+      : mtx_(Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*toTpetra(graph), *toTpetra(pointDomainMap), *toTpetra(pointRangeMap),blockSize)))
     { }
 
 
@@ -377,7 +390,12 @@ namespace Xpetra {
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     getCrsGraph() const
     {
-      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      XPETRA_MONITOR("TpetraBlockCrsMatrix::getCrsGraph"); 
+      using G_t = Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+      using G_x = TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<G_t> t_graph = Teuchos::rcp_const_cast<G_t>(Teuchos::rcpFromRef(mtx_->getCrsGraph()));
+      RCP<const G_x> x_graph = rcp(new G_x(t_graph));
+      return x_graph;
     }
     
 

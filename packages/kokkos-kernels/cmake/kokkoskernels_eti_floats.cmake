@@ -25,6 +25,13 @@ KOKKOSKERNELS_ADD_OPTION(
         "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF"
 )
 
+KOKKOSKERNELS_ADD_OPTION(
+        INST_BHALF
+        OFF
+        BOOL
+        "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::bhalf_t.  Disabling this may increase build times. Default: OFF"
+)
+
 SET(FLOATS
   FLOAT
   DOUBLE
@@ -33,6 +40,7 @@ SET(FLOATS
 SET(DOUBLE_CPP_TYPE "double")
 SET(FLOAT_CPP_TYPE "float")
 SET(HALF_CPP_TYPE "Kokkos::Experimental::half_t")
+SET(BHALF_CPP_TYPE "Kokkos::Experimental::bhalf_t")
 SET(COMPLEX_FLOAT_CPP_TYPE "Kokkos::complex<float>")
 SET(COMPLEX_DOUBLE_CPP_TYPE "Kokkos::complex<double>")
 

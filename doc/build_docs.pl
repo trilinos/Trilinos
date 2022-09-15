@@ -3,7 +3,7 @@
 ###############################################################################
 # Trilinos/doc/build_docs.pl
 #
-# - You must run this script from this directoy!
+# - You must run this script from this directory!
 # - Run any build_docs in any doc directory
 # - Create html file with links to each set of documentation
 #

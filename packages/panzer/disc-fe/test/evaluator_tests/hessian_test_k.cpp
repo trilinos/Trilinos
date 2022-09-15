@@ -50,8 +50,6 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "Kokkos_View.hpp"
-
 #include "Sacado.hpp"
 
 typedef Sacado::Fad::DFad<double> FadType;

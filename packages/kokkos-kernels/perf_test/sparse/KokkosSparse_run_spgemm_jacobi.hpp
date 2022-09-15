@@ -45,7 +45,8 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosSparse_spgemm.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #define TRANSPOSEFIRST false
 #define TRANSPOSESECOND false
@@ -69,7 +70,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosKernels::sort_crs_matrix(output_mat1);
+  KokkosSparse::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
     std::cerr << "row count is different" << std::endl;
@@ -84,7 +85,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat2);
+  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -337,12 +338,10 @@ void run_spgemm_jacobi(Parameters params) {
 
   if (params.a_mem_space == 1) {
     a_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
   } else {
     a_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
   }
 
   if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) == 0) &&
@@ -353,13 +352,11 @@ void run_spgemm_jacobi(Parameters params) {
   } else if (params.b_mem_space == 1) {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
   } else {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
   }
 
   if (params.a_mem_space == 1) {
@@ -485,18 +482,18 @@ void run_spgemm_jacobi(Parameters params) {
 
   if (c_mat_file != NULL) {
     if (params.c_mem_space == 1) {
-      KokkosKernels::sort_crs_matrix(c_fast_crsmat);
+      KokkosSparse::sort_crs_matrix(c_fast_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)(c_fast_crsmat.numRows()),
           (size_type)(c_fast_crsmat.graph.entries.extent(0)),
           c_fast_crsmat.graph.row_map.data(),
           c_fast_crsmat.graph.entries.data(), c_fast_crsmat.values.data(),
           c_mat_file);
     } else {
-      KokkosKernels::sort_crs_matrix(c_slow_crsmat);
+      KokkosSparse::sort_crs_matrix(c_slow_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)c_slow_crsmat.numRows(),
           (size_type)c_slow_crsmat.graph.entries.extent(0),
           c_slow_crsmat.graph.row_map.data(),
