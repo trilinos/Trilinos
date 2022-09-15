@@ -121,6 +121,7 @@ namespace MueLuTests {
     RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering",              "natural");
+    aggParams.set("aggregation: deterministic",          true);
     aggParams.set("aggregation: min agg size",           3);
     aggParams.set("aggregation: max selected neighbors", 0);
     aggFact->SetParameterList(aggParams);
@@ -203,6 +204,7 @@ namespace MueLuTests {
     auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering",              "natural");
+    aggParams.set("aggregation: deterministic",         true);
     aggParams.set("aggregation: min agg size",           3);
     aggParams.set("aggregation: max selected neighbors", 0);
     aggFact->SetParameterList(aggParams);
@@ -294,6 +296,7 @@ namespace MueLuTests {
     auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering",              "natural");
+    aggParams.set("aggregation: deterministic",         true);
     aggParams.set("aggregation: min agg size",           3);
     aggParams.set("aggregation: max selected neighbors", 0);
     aggFact->SetParameterList(aggParams);
@@ -398,6 +401,7 @@ namespace MueLuTests {
       RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
       ParameterList aggParams;
       aggParams.set("aggregation: ordering",              "natural");
+      aggParams.set("aggregation: deterministic",          true);
       aggParams.set("aggregation: min agg size",           3);
       aggParams.set("aggregation: max selected neighbors", 0);
       aggFact->SetParameterList(aggParams);
@@ -460,6 +464,7 @@ namespace MueLuTests {
       RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
       ParameterList aggParams;
       aggParams.set("aggregation: ordering",              "natural");
+      aggParams.set("aggregation: deterministic",          true);
       aggParams.set("aggregation: min agg size",           3);
       aggParams.set("aggregation: max selected neighbors", 0);
       aggFact->SetParameterList(aggParams);
