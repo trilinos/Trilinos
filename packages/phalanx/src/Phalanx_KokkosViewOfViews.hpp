@@ -364,7 +364,11 @@ namespace PHX {
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
     {
+      static_assert(sizeof...(Indices)==OuterViewRank,
+        "Error: PHX::ViewOfViews3::addView() - the number of indices must match the outer view rank!");
+
       TEUCHOS_ASSERT(is_initialized_);
+
       // Store the managed version so it doesn't get deleted.
       view_host_(i...) = v;
       // Store a runtime unmanaged view to prevent double deletion on device
