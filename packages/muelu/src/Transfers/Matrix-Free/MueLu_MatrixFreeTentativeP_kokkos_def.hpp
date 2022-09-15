@@ -93,7 +93,7 @@ namespace MueLu {
         KOKKOS_LAMBDA(const int colIdx, const int NodeIdx) {
           LO aggIdx = vertex2AggIdView(NodeIdx,0);
           if(aggIdx != -1) { // depending on maps, vertex2agg
-            Kokkos::atomic_add(&kokkos_view_Y(aggIdx,colIdx),alpha*kokkos_view_X(NodeIdx,colIdx)/Kokkos::Experimental::sqrt(aggSizes(aggIdx)));
+            Kokkos::atomic_add(&kokkos_view_Y(aggIdx,colIdx),alpha*kokkos_view_X(NodeIdx,colIdx)/Kokkos::sqrt(aggSizes(aggIdx)));
           }
         });
     } else { // if we're in prolongator mode
@@ -106,7 +106,7 @@ namespace MueLu {
       Kokkos::parallel_for("MueLu:MatrixFreeTentativeP_kokkos:apply", md_range_type({0,0},{numCols,numNodes}), 
         KOKKOS_LAMBDA(const int colIdx, const int fineIdx) {
           LO aggIdx = vertex2AggView(fineIdx,0);
-          kokkos_view_Y(fineIdx,colIdx) += alpha*kokkos_view_X(aggIdx,colIdx)/Kokkos::Experimental::sqrt(aggSizes(aggIdx));
+          kokkos_view_Y(fineIdx,colIdx) += alpha*kokkos_view_X(aggIdx,colIdx)/Kokkos::sqrt(aggSizes(aggIdx));
         });
     }
   } 
