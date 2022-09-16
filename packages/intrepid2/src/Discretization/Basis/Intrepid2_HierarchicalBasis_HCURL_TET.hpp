@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -55,6 +54,7 @@
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HierarchicalBasis_HCURL_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -970,15 +970,21 @@ namespace Intrepid2
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
     BasisPtr<DeviceType,OutputScalar,PointScalar>
-      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        return Teuchos::rcp(new
-            LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>
-                    (this->basisDegree_-1));
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override
+    {
+      using HVOL_Line = LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>;
+      using HCURL_Tri = HierarchicalBasis_HCURL_TRI<DeviceType,OutputScalar,PointScalar>;
+      if (subCellDim == 1)
+      {
+        return Teuchos::rcp(new HVOL_Line(this->basisDegree_-1));
+      }
+      else if (subCellDim == 2)
+      {
+        return Teuchos::rcp(new HCURL_Tri(this->basisDegree_));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
-
+    
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
      
         \return Pointer to the new Basis object.
