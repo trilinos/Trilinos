@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Thyra_BelosTpetraSolverAdaptor_hpp
-#define __Thyra_BelosTpetraSolverAdaptor_hpp
+#ifndef __Thyra_BelosTpetraSolverAdapter_hpp
+#define __Thyra_BelosTpetraSolverAdapter_hpp
 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -242,5 +242,5 @@ namespace Thyra {
 
 } // namespace Thyra
 
-#endif // __Thyra_TpetraSolverAdaptor_hpp
+#endif // __Thyra_TpetraSolverAdapter_hpp
 
