@@ -54,7 +54,7 @@
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_HierarchicalBasis_HDIV_TRI.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -937,10 +937,10 @@ namespace Intrepid2
     BasisPtr<DeviceType,OutputScalar,PointScalar>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override
     {
-      using HDIV_Tri = HierarchicalBasis_HDIV_TRI<DeviceType,OutputScalar,PointScalar>;
+      using HVOL_Tri = LegendreBasis_HVOL_TRI<DeviceType,OutputScalar,PointScalar>;
       if (subCellDim == 2)
       {
-        return Teuchos::rcp(new HDIV_Tri(this->basisDegree_-1));
+        return Teuchos::rcp(new HVOL_Tri(this->basisDegree_-1));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
