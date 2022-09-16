@@ -66,7 +66,7 @@ class GatherTangents
     public CloneableEvaluator  {
    
 public:
-  
+
   GatherTangents(const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
@@ -83,23 +83,19 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  std::string dof_name;
+  std::string dof_name_;
 
-  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldTangents;
+  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldTangents_;
 
-  GatherTangents();
+  Teuchos::RCP<const PureBasis> basis_;
+  Teuchos::RCP<const PointRule> pointRule_;
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType edgeParam_; //edgeParametrization
 
-  Teuchos::RCP<const PureBasis> basis;
-  Teuchos::RCP<const PointRule> pointRule;
-  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
-  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
-  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType edgeParam; //edgeParametrization
-
-  PointValues2<double> pointValues;
+  PointValues2<double> pointValues_;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
-
+  Kokkos::View<Intrepid2::Orientation*> orientations_;
+  Kokkos::View<unsigned int*> keys_;
 };
 
 }
