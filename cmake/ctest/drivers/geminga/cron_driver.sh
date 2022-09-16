@@ -87,7 +87,7 @@ esac
 
 pushd $TRILINOS_SOURCE
 ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_tpetra_geminga.cmake
-ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
+# ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
 # ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_complex_muelu_geminga.cmake
 ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_geminga.cmake
 ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_no_epetra_no_serial_openmp_geminga.cmake
