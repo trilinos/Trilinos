@@ -88,6 +88,7 @@ macro(tribits_subpackage SUBPACKAGE_NAME_IN)
   # Now override the package-like variables
   tribits_set_common_vars(${SUBPACKAGE_FULLNAME})
   tribits_define_linkage_vars(${SUBPACKAGE_FULLNAME})
+  tribits_pkg_init_exported_vars(${SUBPACKAGE_FULLNAME})
 
   tribits_append_package_specific_compiler_flags()
   if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -123,21 +124,20 @@ function(tribits_subpackage_assert_call_context)
     if(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
       tribits_report_invalid_tribits_usage(
         "Already called tribits_subpackge() for the"
-	" ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+        " ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     endif()
 
     # make sure the name in the macro call matches the name in the packages cmake file
     if (NOT ${SUBPACKAGE_NAME_IN} STREQUAL ${SUBPACKAGE_NAME})
       tribits_report_invalid_tribits_usage(
         "Error, the package-defined subpackage name"
-	" '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
-	" '${SUBPACKAGE_NAME}' defined in the parent packages's"
-	" Dependencies.cmake file")
+        " '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
+        " '${SUBPACKAGE_NAME}' defined in the parent packages's"
+        " Dependencies.cmake file")
     endif()
   endif()
 
 endfunction()
-
 
 
 # @MACRO: tribits_subpackage_postprocess()
@@ -158,20 +158,22 @@ endfunction()
 # this macro but limitations of the CMake language make it necessary to do so.
 #
 macro(tribits_subpackage_postprocess)
+  tribits_subpackage_postprocess_assert_call_context()
+  tribits_package_postprocess_common()
+endmacro()
+
+
+macro(tribits_subpackage_postprocess_assert_call_context)
 
   # check that this is not being called from a package
   if (NOT CURRENTLY_PROCESSING_SUBPACKAGE)
-
-  # This is being called from a package
-
+    # This is being called from a package
     tribits_report_invalid_tribits_usage(
       "Cannot call tribits_subpackage_postprocess() from a package."
       " Use tribits_package_postprocess() instead"
       " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
-
   else()
-  # This is being caleld from a subpackage
-
+    # This is being called from a subpackage
     # check to make sure this has not already been called
     if (${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
       tribits_report_invalid_tribits_usage(
@@ -185,12 +187,9 @@ macro(tribits_subpackage_postprocess)
         "tribits_subpackage() must be called before tribits_subpackage_postprocess()"
         " for the ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     endif()
-
   endif()
 
   # Set flags that are used  to check that macros are called in the correct order
   dual_scope_set(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED TRUE)
-
-  tribits_package_postprocess_common()
 
 endmacro()

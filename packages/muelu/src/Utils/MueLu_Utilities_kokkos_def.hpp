@@ -125,10 +125,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped) {
+  GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                           typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol, const bool doLumped) {
     Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
     // Some useful type definitions
+    using Matrix            = Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Map               = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+    using Vector            = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using VectorFactory     = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using local_matrix_type = typename Matrix::local_matrix_type;
     using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using value_type        = typename local_matrix_type::value_type;
@@ -193,6 +197,22 @@ namespace MueLu {
 
     return diag;
   } //GetMatrixDiagonalInverse
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped)
+  {
+    return MueLu::GetMatrixDiagonalInverse<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A,tol,doLumped);
+  }
+
+  template <class Node>
+  Teuchos::RCP<Xpetra::Vector<double,int,int,Node> >
+  Utilities_kokkos<double,int,int,Node>::
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped)
+  {
+    return MueLu::GetMatrixDiagonalInverse<double, int, int, Node>(A,tol,doLumped);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
@@ -348,47 +368,93 @@ namespace MueLu {
     using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
     using ATS        = Kokkos::ArithTraits<impl_scalar_type>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+    using helpers    = Xpetra::Helpers<SC,LO,GO,NO>;
 
-    auto localMatrix = A.getLocalMatrixDevice();
-    LO   numRows     = A.getLocalNumRows();
 
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
-    if (count_twos_as_dirichlet)
-      Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows_Twos_As_Dirichlet", range_type(0,numRows),
+    if(helpers::isTpetraBlockCrs(A)) {
+#ifdef HAVE_MUELU_TPETRA
+      const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & Am = helpers::Op2TpetraBlockCrs(A);
+      auto b_graph      = Am.getCrsGraph().getLocalGraphDevice();
+      auto b_rowptr     = Am.getCrsGraph().getLocalRowPtrsDevice();
+      auto values       = Am.getValuesDevice();
+      LO   numBlockRows = Am.getLocalNumRows();      
+      const LO stride   = Am.getBlockSize() * Am.getBlockSize();
+
+      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numBlockRows);      
+
+      if (count_twos_as_dirichlet)
+        throw Exceptions::RuntimeError("BlockCrs does not support counting twos as Dirichlet");
+
+      Kokkos::parallel_for("MueLu:Utils::DetectDirichletRowsBlockCrs", range_type(0,numBlockRows),
                            KOKKOS_LAMBDA(const LO row) {
-                             auto rowView = localMatrix.row(row);
+                             auto rowView = b_graph.rowConst(row);
                              auto length  = rowView.length;
+                             LO valstart  = b_rowptr[row] * stride;
 
                              boundaryNodes(row) = true;
-                             if (length > 2) {
-                               decltype(length) colID = 0;
-                               for (; colID < length; colID++)
-                                 if ((rowView.colidx(colID) != row) &&
-                                     (ATS::magnitude(rowView.value(colID)) > tol)) {
-                                   if (!boundaryNodes(row))
+                             decltype(length) colID =0;
+                             for (; colID < length; colID++) {
+                               if (rowView.colidx(colID) != row) {
+                                 LO current = valstart + colID*stride;
+                                 for(LO k=0; k<stride; k++) {
+                                   if (ATS::magnitude(values[current+ k]) > tol) {
+                                     boundaryNodes(row) = false;
                                      break;
-                                   boundaryNodes(row) = false;
+                                   }
                                  }
-                               if (colID == length)
-                                 boundaryNodes(row) = true;
+                               }
+                               if(boundaryNodes(row) == false)
+                                 break;
                              }
                            });
-    else
-      Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", range_type(0,numRows),
-                           KOKKOS_LAMBDA(const LO row) {
-                             auto rowView = localMatrix.row(row);
-                             auto length  = rowView.length;
 
-                             boundaryNodes(row) = true;
-                             for (decltype(length) colID = 0; colID < length; colID++)
-                               if ((rowView.colidx(colID) != row) &&
-                                   (ATS::magnitude(rowView.value(colID)) > tol)) {
-                                 boundaryNodes(row) = false;
-                                 break;
+      return boundaryNodes;
+#else 
+      throw Exceptions::RuntimeError("BlockCrs requires Tpetra");
+#endif
+    } 
+    else {
+      auto localMatrix = A.getLocalMatrixDevice();
+      LO   numRows     = A.getLocalNumRows();
+      Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);      
+
+      if (count_twos_as_dirichlet)
+        Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows_Twos_As_Dirichlet", range_type(0,numRows),
+                             KOKKOS_LAMBDA(const LO row) {
+                               auto rowView = localMatrix.row(row);
+                               auto length  = rowView.length;
+                               
+                               boundaryNodes(row) = true;
+                               if (length > 2) {
+                                 decltype(length) colID =0;
+                                 for ( ; colID < length; colID++)
+                                   if ((rowView.colidx(colID) != row) &&
+                                       (ATS::magnitude(rowView.value(colID)) > tol)) {
+                                     if (!boundaryNodes(row))
+                                       break;
+                                     boundaryNodes(row) = false;
+                                   }
+                                 if (colID == length)
+                                   boundaryNodes(row) = true;
                                }
-                           });
-
+                             });
+      else
+        Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", range_type(0,numRows),
+                             KOKKOS_LAMBDA(const LO row) {
+                               auto rowView = localMatrix.row(row);
+                               auto length  = rowView.length;
+                               
+                               boundaryNodes(row) = true;
+                               for (decltype(length) colID = 0; colID < length; colID++)
+                                 if ((rowView.colidx(colID) != row) &&
+                                     (ATS::magnitude(rowView.value(colID)) > tol)) {
+                                   boundaryNodes(row) = false;
+                                   break;
+                                 }
+                             });
     return boundaryNodes;
+    }
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

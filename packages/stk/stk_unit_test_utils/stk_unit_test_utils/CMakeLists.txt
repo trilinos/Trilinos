@@ -106,7 +106,7 @@ IF(Trilinos_ENABLE_STKMesh)
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
     
 TRIBITS_ADD_LIBRARY(
   stk_unit_test_utils

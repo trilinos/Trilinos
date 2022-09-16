@@ -254,6 +254,9 @@ typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #ifdef MUELU_REGIONRFACTORY_SHORT
 typedef MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory;
 #endif
+#ifdef MUELU_REGIONRFACTORY_KOKKOS_SHORT
+typedef MueLu::RegionRFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory_kokkos;
+#endif
 #ifdef MUELU_REITZINGERPFACTORY_SHORT
 typedef MueLu::ReitzingerPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReitzingerPFactory;
 #endif

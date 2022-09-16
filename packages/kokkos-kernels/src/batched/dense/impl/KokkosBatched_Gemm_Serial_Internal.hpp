@@ -5,8 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
+#include "KokkosBlas1_serial_scal_impl.hpp"
 
 #include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
 
@@ -41,9 +41,9 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
-    SerialSetInternal ::invoke(m, n, zero, C, cs0, cs1);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
+    KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;
@@ -81,9 +81,9 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
-    SerialSetInternal ::invoke(m, n, zero, C, cs0, cs1);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
+    KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;

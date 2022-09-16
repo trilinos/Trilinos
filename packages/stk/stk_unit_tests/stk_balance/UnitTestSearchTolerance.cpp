@@ -4,6 +4,7 @@
 
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/setup/DefaultSettings.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp>
 
@@ -116,6 +117,7 @@ TEST_F(SearchToleranceTester, constantTolerance)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::balance::GraphCreationSettings balanceSettings;
+    balanceSettings.setToleranceForFaceSearch(stk::balance::DefaultSettings::faceSearchAbsTol);
     const unsigned numSelfInteractions = 2;
     EXPECT_EQ(numSelfInteractions, get_num_search_results_with_app_settings(balanceSettings));
   }
@@ -126,7 +128,6 @@ TEST_F(SearchToleranceTester, secondShortestEdgeFaceSearchTolerance)
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
     stk::balance::GraphCreationSettings balanceSettings;
-    balanceSettings.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
     const unsigned numSelfPlusSymmetricInteractions = 4;
     EXPECT_EQ(numSelfPlusSymmetricInteractions, get_num_search_results_with_app_settings(balanceSettings));
   }

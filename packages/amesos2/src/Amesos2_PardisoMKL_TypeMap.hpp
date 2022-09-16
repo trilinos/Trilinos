@@ -60,6 +60,9 @@
 #include <complex>
 #endif
 
+#include <mkl_types.h>
+#include <mkl_dss.h>
+
 #include <Teuchos_as.hpp>
 #ifdef HAVE_TEUCHOS_COMPLEX
 #include <Teuchos_SerializationTraits.hpp>
@@ -69,17 +72,15 @@
 
 namespace Amesos2{
   namespace PMKL {
+    #undef _MKL_TYPES_H_
+    #include <mkl_types.h>
+
+    #undef __MKL_DSS_H
+    #include <mkl_dss.h>
+
     //Update JDB 6.25.15
     //MKL has changed _INTEGER_t to deprecated
     //MKL has changed _INTEGER_t to define from typedef 
-  #ifdef _MKL_TYPES_H_
-    #undef _MKL_TYPES_H_
-  #endif
-    #include <mkl_types.h>
-  #ifdef __MKL_DSS_H
-    #undef __MKL_DSS_H
-  #endif
-    #include <mkl_dss.h>
     #undef _INTEGER_t
     typedef MKL_INT _INTEGER_t;
   } // end namespace PMKL

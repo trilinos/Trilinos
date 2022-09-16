@@ -509,7 +509,7 @@ void test_replaceSumIntoLonger() {
   EXPECT_TRUE(success);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                 \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                   \
   TEST_F(                                                                             \
       TestCategory,                                                                   \
       sparse##_##replaceSumIntoLonger##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -518,133 +518,9 @@ void test_replaceSumIntoLonger() {
 
 // FIXME SYCL: test hangs or gives "CL error -46 invalid kernel name"
 #ifndef KOKKOS_ENABLE_SYCL
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
-#endif
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, size_t, TestExecSpace)
-#endif
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
-#endif
-#endif
-
-#undef EXECUTE_TEST
+#endif  // KOKKOS_ENABLE_SYCL

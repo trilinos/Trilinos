@@ -95,17 +95,17 @@ void spgemm_debug_symbolic(KernelHandle *handle,
     lno_t row_size              = 0;
 
     for (lno_t j = 0; j < a_row_size; ++j) {
-      size_type ind = a_row_begin + j;
-      lno_t col     = h_enta(ind);
-      // scalar_t val = h_vala(ind);
+      size_type a_ind = a_row_begin + j;
+      lno_t col       = h_enta(a_ind);
+      // scalar_t val = h_vala(a_ind);
 
       const size_type b_row_begin = h_rmb(col);
       const size_type b_row_end   = h_rmb(col + 1);
       lno_t b_row_size            = b_row_end - b_row_begin;
       for (lno_t z = 0; z < b_row_size; ++z) {
-        size_type ind_ = b_row_begin + z;
-        lno_t b_col    = h_entb(ind_);
-        // scalar_t b_val = h_valb(ind_);
+        size_type b_ind = b_row_begin + z;
+        lno_t b_col     = h_entb(b_ind);
+        // scalar_t b_val = h_valb(b_ind);
         // if (i == 0) std::cout << "\tb col:" <<  b_col << std::endl;
         if (acc_flag[b_col] == false) {
           acc_flag[b_col]                  = true;
@@ -194,16 +194,16 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
     lno_t c_row_size_counter = 0;
 
     for (lno_t j = 0; j < a_row_size; ++j) {
-      size_type ind               = a_row_begin + j;
-      lno_t col                   = h_enta(ind);
-      scalar_t val                = h_vala(ind);
+      size_type a_ind             = a_row_begin + j;
+      lno_t col                   = h_enta(a_ind);
+      scalar_t val                = h_vala(a_ind);
       const size_type b_row_begin = h_rmb(col);
       const size_type b_row_end   = h_rmb(col + 1);
       lno_t b_row_size            = b_row_end - b_row_begin;
       for (lno_t z = 0; z < b_row_size; ++z) {
-        size_type ind_ = b_row_begin + z;
-        lno_t b_col    = h_entb(ind_);
-        scalar_t b_val = h_valb(ind_);
+        size_type b_ind = b_row_begin + z;
+        lno_t b_col     = h_entb(b_ind);
+        scalar_t b_val  = h_valb(b_ind);
 
         if (acc_flag[b_col] == false) {
           acc_flag[b_col]                            = true;
@@ -216,9 +216,9 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
     // if (i == 0) std::cout << "result_cols" << std::endl;
 
     for (lno_t j = 0; j < c_row_size; ++j) {
-      size_type ind           = c_row_begin + j;
-      lno_t result_col        = h_entc(ind);
-      h_valc(ind)             = accumulator[result_col];
+      size_type c_ind         = c_row_begin + j;
+      lno_t result_col        = h_entc(c_ind);
+      h_valc(c_ind)           = accumulator[result_col];
       accumulator[result_col] = 0;
       acc_flag[result_col]    = false;
     }

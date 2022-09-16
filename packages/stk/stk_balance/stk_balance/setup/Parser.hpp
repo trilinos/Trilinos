@@ -64,10 +64,10 @@ struct OptionNames
   const std::string vertexWeightBlockMultiplier = "block-weights";
   const std::string useNestedDecomp = "use-nested-decomp";
 
-  const std::string vertexWeightMethod = "EXP-vertex-weight-method";
-  const std::string contactSearchEdgeWeight = "EXP-contact-search-edge-weight";
-  const std::string contactSearchVertexWeightMultiplier = "EXP-contact-search-vertex-weight-mult";
-  const std::string edgeWeightMultiplier = "EXP-edge-weight-mult";
+  const std::string vertexWeightMethod = "vertex-weight-method";
+  const std::string contactSearchEdgeWeight = "contact-search-edge-weight";
+  const std::string contactSearchVertexWeightMultiplier = "contact-search-vertex-weight-mult";
+  const std::string edgeWeightMultiplier = "edge-weight-mult";
 };
 
 class Examples

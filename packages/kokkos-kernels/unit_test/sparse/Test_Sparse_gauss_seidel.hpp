@@ -47,6 +47,7 @@
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 //#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas1_dot.hpp>
@@ -61,7 +62,7 @@
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
 // #ifndef kokkos_complex_double
@@ -183,7 +184,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   srand(245);
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
@@ -272,7 +273,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
@@ -396,7 +397,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth,
           crsMat_t;
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   auto rowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                     input_mat.graph.row_map);
@@ -472,7 +473,7 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow,
   srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance  = nnzPerRow / 4;
-  crsMat_t A         = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t A         = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numRows, nnzTotal, nnzVariance, bandwidth);
   lno_row_view_t symRowmap;
   lno_nnz_view_t symEntries;
@@ -609,7 +610,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
                                     rowmap.data(), numRows + 1));
   crsMat_t input_mat("A", numRows, numRows, totalEntries, valuesView,
                      rowmapView, entriesView);
-  input_mat = KokkosKernels::sort_and_merge_matrix(input_mat);
+  input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
     // can be tested for symmetric=false)
@@ -660,11 +661,11 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   const scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
   size_type nnz      = nnzPerRow * numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numRows, nnz, 0, numRows / 10, 2.0 * one);
   input_mat =
       Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
-  input_mat = KokkosKernels::sort_and_merge_matrix(input_mat);
+  input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
   create_random_x_vector(solution_x);
@@ -689,7 +690,7 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                          \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                            \
   TEST_F(                                                                                      \
       TestCategory,                                                                            \
       sparse##_##gauss_seidel_asymmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -743,132 +744,6 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
                                                                        10);                    \
   }
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
-#endif
-
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

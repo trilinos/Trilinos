@@ -42,10 +42,20 @@
 #ifndef KOKKOS_VIEW_UQ_PCE_FWD_HPP
 #define KOKKOS_VIEW_UQ_PCE_FWD_HPP
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_View.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 //----------------------------------------------------------------------------
 

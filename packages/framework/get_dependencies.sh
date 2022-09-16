@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash -e
 ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
@@ -10,6 +10,14 @@ genconfig_sha1=924a08af66f0a0573b5dd1128179731489339aec
 pushd $PWD &> /dev/null
 
 cd ${script_dir}
+
+function tril_genconfig_assert_pwd_is_git_repo() {
+  if [[ ! -d "${PWD}/.git" ]] ; then
+    echo "ERROR: The directrory ${PWD} is not a git repository!"
+    echo "  ==> Please delete ${PWD} and run again"
+    exit 1
+  fi
+}
 
 function tril_genconfig_clone_or_update_repo() {
   git_url=$1
@@ -24,6 +32,7 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ -d ${sub_dir} ]] ; then
     echo "STATUS: ${sub_dir}: Fetching remote repo"
     cd ${sub_dir}
+    tril_genconfig_assert_pwd_is_git_repo
     git fetch
   else
     echo "STATUS: ${sub_dir}: Cloning from '${git_url}'"
@@ -32,9 +41,11 @@ function tril_genconfig_clone_or_update_repo() {
   fi
 
   if [[ ! -z ${head_sha} ]]; then
+    tril_genconfig_assert_pwd_is_git_repo
     git checkout -f ${head_sha}
   else
     echo "STATUS: ${sub_dir}: Merging tip of remote tracking branch"
+    tril_genconfig_assert_pwd_is_git_repo
     git merge @{u}
   fi
 

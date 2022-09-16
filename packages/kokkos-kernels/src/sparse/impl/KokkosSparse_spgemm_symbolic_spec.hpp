@@ -179,9 +179,13 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
                               row_mapC);
         break;
       case SPGEMM_MKL:
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         mkl_symbolic(sh, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
                      entriesB, transposeB, row_mapC, handle->get_verbose());
         break;
+#else
+        throw std::runtime_error("MKL was not enabled in this build!");
+#endif
     }
     sh->set_call_symbolic();
   }

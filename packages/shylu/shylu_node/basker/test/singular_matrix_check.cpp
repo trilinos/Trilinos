@@ -17,10 +17,8 @@ int main(int argc, char* argv[])
   Int nnz = 4;
   int error = 0;
 
-  Kokkos::InitArguments init_args;
   const Int nthreads = 1;
-  init_args.num_threads = nthreads;
-  Kokkos::initialize( init_args );
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
   {
 
     std::cout << "Create Matrix Views" << std::endl;

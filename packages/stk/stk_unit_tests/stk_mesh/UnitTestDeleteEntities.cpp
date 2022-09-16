@@ -5,6 +5,8 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_unit_test_utils/BulkDataTester.hpp"
 
 namespace
 {
@@ -240,5 +242,4 @@ TEST_F(SingleHexMesh, DISABLED_CreateFacesThenCreateAnotherElement_ConnectivityI
     expect_one_face_connected_to_two_elements();
   }
 }
-
 }

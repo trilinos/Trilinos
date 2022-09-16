@@ -508,45 +508,4 @@ TEST(Stkbalance, changeOptions)
   delete balanceOptions;
 }
 
-class ToleranceTester : public stk::unit_test_util::simple_fields::MeshFixture
-{
-public:
-  ToleranceTester()
-    : balanceRunner(get_comm()),
-      meshFile("gapped_plates.g")
-  {
-    balanceRunner.set_filename(meshFile);
-    balanceRunner.set_output_dir(".");
-    balanceRunner.set_app_type_defaults("sm");
-  }
-
-protected:
-  stk::integration_test_utils::StkBalanceRunner balanceRunner;
-  const std::string meshFile;
-};
-
-TEST_F(ToleranceTester, smDefaults)
-{
-  if (get_parallel_size() > 4) return;
-
-  if (get_parallel_size() > 1)
-  {
-    balanceRunner.run_end_to_end();
-  }
-
-  setup_mesh(meshFile, stk::mesh::BulkData::NO_AUTO_AURA);
-  for(unsigned i=1; i<101; i++)
-  {
-    stk::mesh::EntityId lowerId = i;
-    stk::mesh::EntityId upperId = i+700;
-    stk::mesh::Entity lower = get_bulk().get_entity(stk::topology::ELEM_RANK, lowerId);
-    stk::mesh::Entity upper = get_bulk().get_entity(stk::topology::ELEM_RANK, upperId);
-    if(get_bulk().is_valid(lower))
-    {
-      EXPECT_TRUE(get_bulk().is_valid(upper)) << "Elements not on same proc: " << lowerId << ", " << upperId;
-    }
-  }
-}
-
-
 }

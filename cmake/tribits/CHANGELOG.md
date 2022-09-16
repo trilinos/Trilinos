@@ -2,9 +2,32 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2022-08-22:
+
+* **Added:** Added support for exporting cache variables for packages in their
+    `<Package>Config.cmake` files using the new function
+    `tribits_pkg_export_cache_var()`.
+
+## 2022-08-18:
+
+* **Changed:** Made setting parent package tests/examples enable/disable
+  correctly propagate down to subpackages in a more intuitive way (see
+  [TriBITSPub/TriBITS#268](https://github.com/TriBITSPub/TriBITS/issues/268)).
+  This also results in not enabling tests for subpackages that are not
+  explicitly enabled or enabled as part of the forward sweep of packages
+  enables due to `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON`.
+
+## 2022-08-11:
+
+* **Changed:** Fix a bug where the test dependencies for an enabled
+  subpackage that resulted in a build error (see
+  [trilinos/Trilinos#10842](https://github.com/trilinos/Trilinos/issues/10842)
+  and
+  [TriBITSPub/TriBITS#510](https://github.com/TriBITSPub/TriBITS/issues/510)).
+
 ## 2022-07-20:
 
-* ** Changed:** Fixed TriBITS generated and installed `<tplName>Config.cmake`
+* **Changed:** Fixed TriBITS generated and installed `<tplName>Config.cmake`
   files to not point into the build dir but instead point into relative dir
   for upstream TPL's when calling find_dependency() (see
   [TribitsPub/TriBITS#500](https://github.com/TriBITSPub/TriBITS/issues/500)).

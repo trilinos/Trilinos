@@ -62,8 +62,8 @@ SubdomainWriter::setup_output_file(const std::string& fileName, unsigned subdoma
 {
   Ioss::DatabaseIO *dbo = stk::io::create_database_for_subdomain(fileName, subdomain, numSubdomains);
   m_outRegion = new Ioss::Region(dbo, fileName);
-
-  stk::io::add_properties_for_subdomain(*m_bulk, *m_outRegion, subdomain, numSubdomains, globalNumNodes, globalNumElems);
+  stk::io::OutputParams params(*m_outRegion, *m_bulk);
+  stk::io::add_properties_for_subdomain(params, subdomain, numSubdomains, globalNumNodes, globalNumElems);
 
   int dbIntSize = m_inputBroker.check_integer_size_requirements_serial();
   if (dbIntSize > 4) {
@@ -114,7 +114,8 @@ SubdomainWriter::write_mesh()
 {
   add_qa_records();
   add_info_records();
-  stk::io::write_file_for_subdomain(*m_outRegion, *m_bulk, m_nodeSharingInfo);
+  stk::io::OutputParams params(*m_outRegion, *m_bulk);
+  stk::io::write_file_for_subdomain(params, m_nodeSharingInfo);
   add_global_variables();
 }
 
@@ -143,7 +144,8 @@ SubdomainWriter::write_global_variables(int step)
 void
 SubdomainWriter::write_transient_data(double time)
 {
-  const int step = stk::io::write_transient_data_for_subdomain(*m_outRegion, *m_bulk, time);
+  stk::io::OutputParams params(*m_outRegion, *m_bulk);
+  const int step = stk::io::write_transient_data_for_subdomain(params, time);
 
   write_global_variables(step);
 }

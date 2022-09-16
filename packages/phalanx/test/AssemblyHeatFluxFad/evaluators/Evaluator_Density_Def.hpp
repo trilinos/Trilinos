@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -47,9 +47,13 @@ template<typename EvalT, typename Traits> Density<EvalT, Traits>::
 Density(const Teuchos::ParameterList& p) :
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
-{ 
+{
   this->addEvaluatedField(density);
-  this->addDependentField(temp);
+
+  // Should normally use a const dependent field. We will use a
+  // non-const to test the method addNonConstDependentField.
+  // this->addDependentField(temp);
+  this->addNonConstDependentField(temp);
   this->setName("Density");
 }
 
@@ -68,7 +72,7 @@ KOKKOS_INLINE_FUNCTION
 void Density<EvalT, Traits>:: operator () (const int i) const
 {
   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.extent(1)); ip++)
-    density(i,ip) =  temp(i,ip) * temp(i,ip);  
+    density(i,ip) =  temp(i,ip) * temp(i,ip);
 }
 
 //**********************************************************************
@@ -77,7 +81,7 @@ void Density<EvalT, Traits>:: operator () (const int i) const
 // void Density<EvalT, Traits>:: operator () (const DensityTag, const int i) const
 // {
 //   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.extent(1)); ip++)
-//     density(i,ip) =  temp(i,ip) * temp(i,ip);  
+//     density(i,ip) =  temp(i,ip) * temp(i,ip);
 // }
 
 //**********************************************************************

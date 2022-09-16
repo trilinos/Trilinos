@@ -12,6 +12,7 @@
 namespace stk {
 namespace util {
 
+
 #ifdef STK_HAS_MPI
 
 void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* len, MPI_Datatype* datatype)
@@ -19,17 +20,17 @@ void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* len, MPI_Datatype*
   int* invec_int    = reinterpret_cast<int*>(invec);
   int* inoutvec_int = reinterpret_cast<int*>(inoutvec);
 
-  inoutvec_int[0] = std::max(invec_int[0], inoutvec_int[0]);
   inoutvec_int[1] = std::min(invec_int[1], inoutvec_int[1]);
+  inoutvec_int[2] = std::max(invec_int[2], inoutvec_int[2]);
 }
 
 std::pair<int, int> allreduce_minmax(MPI_Comm comm, int localVersion)
 {
   // for compatibility with the ParallelReduce code, the buffer has to be
-  // large enough for 3 ints (2 ints + empty struct + padding), even though 
-  // only the first 2 are used
+  // large enough for 3 ints (empty struct + padding + 2 ints), even though 
+  // only the ints are used
   constexpr int bufSize = 3;
-  std::array<int, bufSize> inbuf{localVersion, localVersion, -1}, outbuf;
+  std::array<int, bufSize> inbuf{-1, localVersion, localVersion}, outbuf;
 
   MPI_Op mpiOp = MPI_OP_NULL ;
   MPI_Op_create( MPI_Op_MaxMinReduction , false , &mpiOp );
@@ -49,7 +50,7 @@ std::pair<int, int> allreduce_minmax(MPI_Comm comm, int localVersion)
 
   MPI_Op_free(&mpiOp);
 
-  return {outbuf[1], outbuf[0]};
+  return {outbuf[1], outbuf[2]};
 }
 
 
@@ -68,7 +69,7 @@ class StkCompatibleVersion
 
     void set_version(MPI_Comm comm)
     {
-      set_version_impl(comm, m_version);
+      set_version_impl(comm, std::min(impl::SHORT_TERM_STK_MAX_COUPLING_VERSION, m_version) /*m_version*/);
     }
 
     void set_error_on_reset(bool val)
@@ -78,7 +79,7 @@ class StkCompatibleVersion
 
     void reset_global_max_coupling_version()
     {
-      m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
+      m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
     }
 
   private:
@@ -150,7 +151,7 @@ class StkCompatibleVersion
     }
 
     int m_version = STK_MAX_COUPLING_VERSION;
-    int m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
+    int m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
     bool m_isVersionSet = false;
     bool m_errorOnResetVersion = true;
 };
@@ -170,13 +171,13 @@ int get_common_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_version();
 #else
-  return STK_MAX_COUPLING_VERSION;
+  return STK_impl::SHORT_TERM_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
 #endif
 }
 
 int get_local_max_coupling_version()
 {
-  return STK_MAX_COUPLING_VERSION;
+  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
 }
 
 int get_local_min_coupling_version()
@@ -190,7 +191,7 @@ int get_global_max_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_global_max_version();
 #else
-  return STK_MAX_COUPLING_VERSION
+  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION
 #endif
 }
 
@@ -202,7 +203,10 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(2, "7/26/2022"),
                                                       std::make_pair(3, "7/26/2022"),
                                                       std::make_pair(4, "7/27/2022"),
-                                                      std::make_pair(5, "")
+                                                      std::make_pair(5, "9/13/2022"),
+                                                      std::make_pair(6, "9/18/2022"),
+                                                      std::make_pair(7, "10/16/2022"),
+                                                      std::make_pair(8, "")
                                                     };
 
   return deprecationDates.at(version);
@@ -222,10 +226,10 @@ bool is_local_stk_coupling_deprecated()
 }
 
 
-void print_unsupported_version_warning(int version, int line, const std::string& file)
+void print_unsupported_version_warning(int version, int line, const char* file)
 {                                                                                      
   if ( STK_MIN_COUPLING_VERSION > version ) {
-    std::cerr  << "The function at line " << __LINE__ << " of file " << __FILE__
+    std::cerr  << "The function at line " << line << " of file " << file
                << " can be simplified now that STK_MIN_COUPLING_VERSION is greater than "
                << (version) << std::endl;
   }

@@ -9,6 +9,7 @@
 #ifndef AKRI_UNIT_SINGLE_ELEMENT_FIXTURES_H_
 #define AKRI_UNIT_SINGLE_ELEMENT_FIXTURES_H_
 
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 
@@ -27,22 +28,25 @@ inline std::vector<std::string> entity_rank_names_with_ft()
 class SimpleStkFixture
 {
 public:
-  SimpleStkFixture(unsigned dimension, MPI_Comm comm = MPI_COMM_WORLD)
-    : meta(dimension, entity_rank_names_with_ft()),
-      bulk(meta, comm)
-  {
-    meta.set_mesh_bulk_data(&bulk);
-    AuxMetaData::create(meta);
+  SimpleStkFixture(unsigned dimension, MPI_Comm comm = MPI_COMM_WORLD) {
+    bulk = stk::mesh::MeshBuilder(comm)
+               .set_spatial_dimension(dimension)
+               .set_entity_rank_names(entity_rank_names_with_ft())
+               .create();
+    
+    meta = bulk->mesh_meta_data_ptr();
+    meta->use_simple_fields();
+    AuxMetaData::create(*meta);
   }
-  void commit() { meta.commit(); }
-  void write_results(const std::string & filename) { write_results(filename, bulk); }
+  void commit() { meta->commit(); }
+  void write_results(const std::string & filename) { write_results(filename, *bulk); }
   static void write_results(const std::string & filename, stk::mesh::BulkData & mesh, const bool use64bitIds = true);
-  stk::mesh::MetaData & meta_data() { return meta; }
-  stk::mesh::BulkData & bulk_data() { return bulk; }
+  stk::mesh::MetaData & meta_data() { return *meta; }
+  stk::mesh::BulkData & bulk_data() { return *bulk; }
 
 private:
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk;
+  std::shared_ptr<stk::mesh::MetaData> meta;
+  std::unique_ptr<stk::mesh::BulkData> bulk;
 };
 
 class SimpleStkFixture2d : public SimpleStkFixture

@@ -267,15 +267,6 @@ namespace Ifpack2 {
     static
     KOKKOS_INLINE_FUNCTION
     void
-    operator+=(volatile ArrayValueType<T,N> &a,
-               volatile const ArrayValueType<T,N> &b) {
-      for (int i=0;i<N;++i)
-        a.v[i] += b.v[i];
-    }
-    template<typename T, int N>
-    static
-    KOKKOS_INLINE_FUNCTION
-    void
     operator+=(ArrayValueType<T,N> &a,
                const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i)
@@ -296,12 +287,7 @@ namespace Ifpack2 {
       SumReducer(value_type &val) : value(&val) {}
 
       KOKKOS_INLINE_FUNCTION
-      void join(value_type &dst, value_type &src) const {
-        for (int i=0;i<N;++i)
-          dst.v[i] += src.v[i];
-      }
-      KOKKOS_INLINE_FUNCTION
-      void join(volatile value_type &dst, const volatile value_type &src) const {
+      void join(value_type &dst, value_type const &src) const {
         for (int i=0;i<N;++i)
           dst.v[i] += src.v[i];
       }
@@ -2149,10 +2135,12 @@ namespace Ifpack2 {
                 const local_ordinal_type &v,
                 const AAViewType &AA,
                 const WWViewType &WW) const {
+
         typedef ExtractAndFactorizeTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::algo_type default_algo_type;
 
         // constant
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
@@ -2712,10 +2700,12 @@ namespace Ifpack2 {
                         const local_ordinal_type &nrows,
                         const local_ordinal_type &v,
                         const WWViewType &WW) const {
+
         typedef SolveTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::single_vector_algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::single_vector_algo_type default_algo_type;
 
         // base pointers
         auto A = D_internal_vector_values.data();
@@ -2840,10 +2830,12 @@ namespace Ifpack2 {
                        const local_ordinal_type &nrows,
                        const local_ordinal_type &v,
                        const WWViewType &WW) const {
+
         typedef SolveTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
 
         // constant
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();

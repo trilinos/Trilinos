@@ -918,7 +918,7 @@
 %    ****************************************
 %
 %  The distribution environment switches to two column mode if necessary,
-%  shrinks up the \baselineskip and \parskip, allowing disribution list
+%  shrinks up the \baselineskip and \parskip, allowing distribution list
 %  to be set in a minimal amount of space.
 
 \def\distribution#1{%
@@ -1029,8 +1029,8 @@
 % of counter CTR.  It is defined in terms of the following macros:
 %
 %  \arabic{COUNTER} : The value of COUNTER printed as an arabic numeral.
-%  \roman{COUNTER}  : Its value printed as a lower-case roman numberal.
-%  \Roman{COUNTER}  : Its value printed as an upper-case roman numberal.
+%  \roman{COUNTER}  : Its value printed as a lower-case roman numeral.
+%  \Roman{COUNTER}  : Its value printed as an upper-case roman numeral.
 %  \alph{COUNTER}   : Value of COUNTER printed as a lower-case letter:
 %                         1 = a, 2 = b, etc.
 %  \Alph{COUNTER}   : Value of COUNTER printed as an upper-case letter:

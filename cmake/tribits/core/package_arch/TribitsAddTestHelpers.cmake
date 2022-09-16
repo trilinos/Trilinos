@@ -204,21 +204,14 @@ endfunction()
 
 
 # Determine if to add the test based on if testing is enabled for the current
-# package or subpackage.
+# package.
 #
 function(tribits_add_test_process_enable_tests  ADD_THE_TEST_OUT)
-  if(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
+  if(${PACKAGE_NAME}_ENABLE_TESTS)
    set(ADD_THE_TEST TRUE)
   else()
-    if (PARENT_PACKAGE_NAME STREQUAL PACKAGE_NAME)
-      set(PARENT_EANBLE_TESTS_DISABLE_MSG)
-    else()
-      set(PARENT_EANBLE_TESTS_DISABLE_MSG
-	", ${PARENT_PACKAGE_NAME}_ENABLE_TESTS='${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}'"
-	)
-    endif()
     message_wrapper(
-      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}${PARENT_EANBLE_TESTS_DISABLE_MSG}'."
+      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}'."
      )
    set(ADD_THE_TEST FALSE)
   endif()
@@ -665,10 +658,10 @@ function(tribits_add_test_process_skip_ctest_add_test  ADD_THE_TEST_OUT)
   if(${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST OR ${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST)
     if (PARENT_PACKAGE_NAME STREQUAL PACKAGE_NAME)
       set(DISABLE_VAR_MSG
-	"${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
+        "${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
     else()
       set(DISABLE_VAR_MSG
-	"${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
+        "${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
     endif()
     message_wrapper(
       "-- ${TEST_NAME}: NOT added test because ${DISABLE_VAR_MSG}!")

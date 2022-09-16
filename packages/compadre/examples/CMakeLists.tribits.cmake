@@ -541,6 +541,8 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
           "ConvergenceTest;convergence;manifold"
         TIMEOUT
           60
+        REQUIRED_FILES
+          $<TARGET_FILE:Compadre_GMLS_Manifold_MultiSite_Test>
     )
   endif() # test created
 
@@ -653,6 +655,8 @@ if (${testName}_CREATED)
         "ConvergenceTest;convergence;manifold"
       TIMEOUT
         60
+      REQUIRED_FILES
+        $<TARGET_FILE:Compadre_GMLS_Manifold_Test>
   )
 endif() # test created
 
@@ -674,6 +678,8 @@ if (${testName}_CREATED)
         "ConvergenceTest;convergence;manifold"
       TIMEOUT
         60
+      REQUIRED_FILES
+        $<TARGET_FILE:Compadre_GMLS_Manifold_Test>
   )
 endif() # test created
 
@@ -702,6 +708,8 @@ if (${testName}_CREATED)
         "ConvergenceTest;convergence;manifold;staggered"
       TIMEOUT
         60
+      REQUIRED_FILES
+        $<TARGET_FILE:Compadre_GMLS_Staggered_Manifold_Test>
   )
 endif() # test created
 

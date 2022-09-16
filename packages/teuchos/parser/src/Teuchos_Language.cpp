@@ -133,7 +133,7 @@ std::ostream& operator<<(std::ostream& os, Language const& lang) {
 
 void make_lexer(FiniteAutomaton& result, Language const& language) {
   using std::swap;
-  for (int i = 0; i < size(language.tokens); ++i) {
+  for (int i = 0; i < Teuchos::size(language.tokens); ++i) {
     const std::string& name = at(language.tokens, i).name;
     const std::string& regex = at(language.tokens, i).regex;
     if (i == 0) {
@@ -153,7 +153,7 @@ static void make_indent_info(IndentInfo& out, Language const& language) {
   out.indent_token = -1;
   out.dedent_token = -1;
   out.newline_token = -1;
-  for (int tok_i = 0; tok_i < size(language.tokens); ++tok_i) {
+  for (int tok_i = 0; tok_i < Teuchos::size(language.tokens); ++tok_i) {
     const Language::Token& token = at(language.tokens, tok_i);
     if (token.name == "INDENT") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.indent_token != -1, ParserFail,

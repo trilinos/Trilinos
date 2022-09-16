@@ -41,6 +41,7 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 
 class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fields::MeshFixture
@@ -48,12 +49,17 @@ class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fi
 public:
   NgpMeshChangeElementPartMembership()
     : stk::unit_test_util::simple_fields::MeshFixture(),
-      newPartName("block2")
+      newPartName("block2"),
+      numElements(1000000)
   { }
 
-  void setup_host_mesh()
+  void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
-    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+#ifdef NDEBUG
+    setup_mesh("generated:400x250x10", auraOption);
+#else
+    setup_mesh("generated:10x10x100", auraOption);
+#endif
     get_meta().declare_part(newPartName);
   }
 
@@ -75,8 +81,10 @@ public:
 private:
   stk::mesh::Entity get_element(int cycle)
   {
-    stk::mesh::EntityId elemId = cycle+1;
-    return get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::EntityId firstLocalElemId = get_parallel_rank()*numElements/2 + 1;
+    stk::mesh::EntityId elemId = firstLocalElemId + cycle;
+    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    return elem;
   }
 
   stk::mesh::Part* get_part()
@@ -85,6 +93,7 @@ private:
   }
 
   std::string newPartName;
+  unsigned numElements;
 };
 
 class NgpMeshCreateEntity : public stk::unit_test_util::simple_fields::MeshFixture
@@ -131,12 +140,12 @@ public:
   { }
 
 protected:
-  void setup_host_mesh()
+  void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
 #ifdef NDEBUG
-    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:400x250x10", auraOption);
 #else
-    setup_mesh("generated:10x10x100", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:10x10x100", auraOption);
 #endif
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
@@ -174,7 +183,26 @@ TEST_F( NgpMeshChangeElementPartMembership, Timing )
 
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();
-  setup_host_mesh();
+  setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+  for (int i=0; i<NUM_RUNS; i++) {
+    change_element_part_membership(i);
+  }
+  timer.update_timing();
+  timer.print_timing(NUM_RUNS);
+}
+
+TEST_F( NgpMeshChangeElementPartMembership, TimingWithAura )
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  const int NUM_RUNS = 200;
+
+  stk::parallel_machine_barrier(get_comm());
+
+  stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
+  setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
 
   for (int i=0; i<NUM_RUNS; i++) {
     change_element_part_membership(i);
@@ -191,7 +219,7 @@ TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
 
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();
-  setup_host_mesh();
+  setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
   for (int i=0; i<NUM_RUNS; i++) {
     batch_change_element_part_membership(i);
@@ -221,6 +249,40 @@ TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
+  std::string perfCheck = stk::unit_test_util::simple_fields::get_option("-perf_check", "PERF_CHECK");
+#ifdef NDEBUG
+  const int NUM_OUTER_RUNS = (perfCheck=="NO_PERF_CHECK" ? 1 : 5);
+  const int NUM_INNER_RUNS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
+#else
+  const int NUM_OUTER_RUNS = 1;
+  const int NUM_INNER_RUNS = 1;
+#endif
+
+  stk::parallel_machine_barrier(get_comm());
+
+  stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
+
+  for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    for (int i=0; i<NUM_INNER_RUNS; i++) {
+      ghost_element(i);
+    }
+
+    const bool lastIteration = outer == (NUM_OUTER_RUNS-1);
+    if (!lastIteration) {
+      reset_mesh();
+    }
+  }
+
+  timer.update_timing();
+  timer.print_timing(NUM_OUTER_RUNS * NUM_INNER_RUNS);
+}
+TEST_F( NgpMeshGhosting, TimingWithAura )
+{
+  if (get_parallel_size() != 2) return;
+
 #ifdef NDEBUG
   const int NUM_OUTER_RUNS = 5;
   const int NUM_INNER_RUNS = 100;
@@ -229,11 +291,13 @@ TEST_F( NgpMeshGhosting, Timing )
   const int NUM_INNER_RUNS = 1;
 #endif
 
+  stk::parallel_machine_barrier(get_comm());
+
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();
 
   for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
-    setup_host_mesh();
+    setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
 
     for (int i=0; i<NUM_INNER_RUNS; i++) {
       ghost_element(i);

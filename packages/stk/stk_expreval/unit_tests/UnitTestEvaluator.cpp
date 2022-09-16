@@ -947,6 +947,26 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_GREATER_EQUAL)
   EXPECT_DOUBLE_EQ(device_evaluate("2>=(1+2)"),    0);
 }
 
+TEST(UnitTestEvaluator, noChainedComparisons)
+{
+  EXPECT_ANY_THROW(evaluate("1 < 2 < 3"));
+  EXPECT_ANY_THROW(evaluate("3 > 4 > 5"));
+  EXPECT_ANY_THROW(evaluate("0 < 4 <= 2"));
+  EXPECT_ANY_THROW(evaluate("6 > 3 >= 1"));
+  EXPECT_ANY_THROW(evaluate("1 <= 2 < 3"));
+  EXPECT_ANY_THROW(evaluate("3 >= 4 > 5"));
+  EXPECT_ANY_THROW(evaluate("1 < x < 3", {{"x", 2}}));
+  EXPECT_ANY_THROW(evaluate("1 < (2 < 3)"));
+  EXPECT_ANY_THROW(evaluate("(1 < 2) < 3"));
+  EXPECT_ANY_THROW(evaluate("(3 > 1) > 0"));
+  EXPECT_ANY_THROW(evaluate("(2 <= 5) < 0"));
+  EXPECT_ANY_THROW(evaluate("(7 >= 3) > 1"));
+  EXPECT_ANY_THROW(evaluate("1 == 1 == 1"));
+  EXPECT_ANY_THROW(evaluate("(2 == 2) == 2"));
+  EXPECT_ANY_THROW(evaluate("2 != 1 != 6"));
+  EXPECT_ANY_THROW(evaluate("(3 != 4) != 8"));
+}
+
 TEST(UnitTestEvaluator, testOpcode_UNARY_NOT)
 {
   EXPECT_DOUBLE_EQ(evaluate("!0"),        1);

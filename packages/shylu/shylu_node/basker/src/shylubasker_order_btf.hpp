@@ -214,6 +214,10 @@ namespace BaskerNS
     #endif
     int blk_mwm_info = btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
     if (blk_mwm_info != BASKER_SUCCESS) {
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker: error btf_blk_mwm_amd returned %d \n", (int)blk_mwm_info);
+      }
       return blk_mwm_info;
     }
     #if 0 //debug
@@ -258,26 +262,12 @@ namespace BaskerNS
       {
         printf("Basker find BTF: apply BLK AMD\n");
       }
-      /*printf(" B = [\n" );
-      for(Int j = 0; j < M.ncol; j++) {
-        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
-        }
-      }
-      printf("];\n");*/
+      //M.print_matrix("B.dat");
 
       // > apply AMD to cols & rows
       permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
       permute_row(M, order_blk_amd_array);
-
-      /*printf(" T = [\n" );
-      for(Int j = 0; j < M.ncol; j++) {
-        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-          //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
-          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
-        }
-      }
-      printf("];\n");*/
+      //M.print_matrix("T.dat");
 
       #ifdef BASKER_TIMER
       order_time = timer_order.seconds();
@@ -314,54 +304,12 @@ namespace BaskerNS
     std::cout << " >>> Basker order : partition time    : " << order_time << std::endl;
     timer_order.reset();
     #endif
-    /*printf(" M = [\n" );
-    for(Int j = 0; j < M.ncol; j++) {
-      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);
-
-    printf(" A = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);
-
-    printf(" D = [\n" );
-    for(Int j = 0; j < BTF_D.ncol; j++) {
-      for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);
-
-    printf(" E = [\n" );
-    for(Int j = 0; j < BTF_E.ncol; j++) {
-      for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_E.row_idx[k], j, BTF_E.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);
-
-    printf(" C = [\n" );
-    for(Int j = 0; j < BTF_C.ncol; j++) {
-      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);
-
-    printf(" B = [\n" );
-    for(Int j = 0; j < BTF_B.ncol; j++) {
-      for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
-      }
-    }
-    printf("];\n"); fflush(stdout);*/
-
+    //M.print_matrix("M.dat");
+    //BTF_A.print_matrix("A.dat");
+    //BTF_D.print_matrix("D.dat");
+    //BTF_E.print_matrix("E.dat");
+    //BTF_C.print_matrix("C.dat");
+    //BTF_B.print_matrix("B.dat");
 
 
     //================================================================
@@ -709,11 +657,11 @@ namespace BaskerNS
         Options.run_nd_on_leaves = BASKER_FALSE;
       }
       #endif
-      if (Options.replace_tiny_pivot == BASKER_TRUE) {
+      if (Options.replace_zero_pivot == BASKER_TRUE) {
         if(Options.verbose == BASKER_TRUE) {
-          printf("Basker: turning off replace-tiny-pivot option since one block (to identify singular matrix)\n");
+          printf("Basker: turning off replace-zero-pivot option since one block (to identify singular matrix)\n");
         }
-        Options.replace_tiny_pivot = BASKER_FALSE;
+        Options.replace_zero_pivot = BASKER_FALSE;
       }
       return 0;
     }

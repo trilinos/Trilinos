@@ -324,6 +324,38 @@ namespace Belos {
       return mv.isConstantStride ();
     }
 
+    template <class DstType, class SrcType>
+    static void deep_copy_2d_view_with_intercessory_space(
+      const DstType& dst,
+      const SrcType& src
+    )
+    {
+      if (std::is_same<typename SrcType::memory_space, Kokkos::HostSpace>::value)
+      {
+        auto dst_i = Kokkos::create_mirror(dst);
+        for (size_t i = 0; i < src.extent(0); i++)
+        {
+          for (size_t j = 0; j < src.extent(1); j++)
+          {
+            dst_i(i, j) = src(i, j);
+          }
+        }
+        Kokkos::deep_copy(dst, dst_i);
+      }
+      else
+      {
+        auto src_i = Kokkos::create_mirror(src);
+        Kokkos::deep_copy(src_i, src);
+        for (size_t i = 0; i < src.extent(0); i++)
+        {
+          for (size_t j = 0; j < src.extent(1); j++)
+          {
+            dst(i, j) = src_i(i, j);
+          }
+        }
+      }
+    }
+
     static void
     MvTimesMatAddMv (const dot_type& alpha,
                      const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
@@ -372,7 +404,15 @@ namespace Belos {
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), numRowsB*numColsB);
       b_view_type B_view_dev( B_1d_view_dev.data(), numRowsB, numColsB);
-      Kokkos::deep_copy(B_view_dev, B_view_host);
+
+      if (Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename execution_space::memory_space>::accessible)
+      {
+        Kokkos::deep_copy(B_view_dev, B_view_host);
+      }
+      else
+      {
+        deep_copy_2d_view_with_intercessory_space(B_view_dev, B_view_host);
+      }
 
       // Do local multiply
       {
@@ -499,16 +539,34 @@ namespace Belos {
       // reduce across processors -- could check for RDMA
       RCP<const Comm<int> > pcomm = A.getMap()->getComm ();
       if (pcomm->getSize () == 1)
-        Kokkos::deep_copy(C_view_host, C_view_dev);
-      else {
+      {
+        if (Kokkos::SpaceAccessibility<execution_space, Kokkos::HostSpace>::accessible)
+        {
+          Kokkos::deep_copy(C_view_host, C_view_dev);
+        }
+        else
+        {
+          deep_copy_2d_view_with_intercessory_space(C_view_host, C_view_dev);
+        }
+      }
+      else
+      {
         typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
-        c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
-                                     strideC, numColsC);
-        Kokkos::deep_copy(Kokkos::subview(C_view_tmp, 
-                                          Kokkos::pair<int,int>(0,numRowsC), 
-                                          Kokkos::pair<int,int>(0,numColsC)) , 
-                          C_view_dev);
+        c_host_view_type C_view_tmp_input( C_1d_view_tmp.data(), strideC, numColsC);
+        auto C_view_tmp = Kokkos::subview(C_view_tmp_input,
+                                          Kokkos::pair<int,int>(0,numRowsC),
+                                          Kokkos::pair<int,int>(0,numColsC));
+        
+        if (Kokkos::SpaceAccessibility<execution_space, Kokkos::HostSpace>::accessible)
+        {
+          Kokkos::deep_copy(C_view_tmp, C_view_dev);
+        }
+        else
+        {
+          deep_copy_2d_view_with_intercessory_space(C_view_tmp, C_view_dev);
+        }
+
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
                         C_view_tmp.data(),
                         C_view_host.data());

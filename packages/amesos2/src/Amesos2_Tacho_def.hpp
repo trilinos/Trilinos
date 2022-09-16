@@ -69,6 +69,9 @@ TachoSolver<Matrix,Vector>::TachoSolver(
 template <class Matrix, class Vector>
 TachoSolver<Matrix,Vector>::~TachoSolver( )
 {
+  if ( this->root_ ) {
+    data_.solver.release();
+  }
 }
 
 template <class Matrix, class Vector>
@@ -91,6 +94,10 @@ template <class Matrix, class Vector>
 int
 TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+#endif
+
   int status = 0;
   if ( this->root_ ) {
     if(do_optimization()) {
@@ -116,6 +123,10 @@ template <class Matrix, class Vector>
 int
 TachoSolver<Matrix,Vector>::numericFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
+
   int status = 0;
   if ( this->root_ ) {
     if(do_optimization()) {

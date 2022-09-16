@@ -105,6 +105,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tQuadraticToLinearMeshFactory
+  SOURCES tQuadraticToLinearMeshFactory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tSolutionReader
 #  SOURCES tSolutionReader.cpp ${UNIT_TEST_DRIVER}
@@ -118,6 +125,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM mpi
   )
+
+IF (PANZER_HAVE_STKSEARCH)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tCoarseSearch
+    SOURCES tCoarseSearch.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 4 
+    COMM mpi
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
   SquareMeshGen
@@ -167,6 +183,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
   EXEDEPS tExodusReaderFactory
   )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy_quadconverter
+SOURCE_FILES quad8.gen tet10.gen tri6.gen hex20.gen twoblock_cube_multitopo.gen
+SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
+DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
+EXEDEPS tQuadraticToLinearMeshFactory
+)
 
 IF(${PACKAGE_NAME}_ENABLE_Pamgen)
 

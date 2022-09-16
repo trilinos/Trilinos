@@ -1,3 +1,21 @@
+// clang-format off
+/* =====================================================================================
+Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
+certain rights in this software.
+
+SCR#:2790.0
+
+This file is part of Tacho. Tacho is open source software: you can redistribute it
+and/or modify it under the terms of BSD 2-Clause License
+(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
+provided under the main directory
+
+Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
+
+Sandia National Laboratories, Albuquerque, NM, USA
+===================================================================================== */
+// clang-format on
 #ifndef __TACHO_NUMERIC_TOOLS_LEVELSET_HPP__
 #define __TACHO_NUMERIC_TOOLS_LEVELSET_HPP__
 
@@ -609,12 +627,9 @@ public:
 
   virtual ~NumericToolsLevelSet() {
 #if defined(KOKKOS_ENABLE_CUDA)
-    // destroy previously created streams
-    for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = cudaStreamDestroy(_streams[i]);
-      checkDeviceStatus("cudaStreamDestroy");
-    }
-    _streams.clear();
+    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
+    /// on cuda, deallocting streams first does not cause any errors while hip generates errors.
+    /// here, we just follow the consistent destruction process as hip does.
     _exec_instances.clear();
 
     if (_is_cusolver_dn_created) {
@@ -625,20 +640,27 @@ public:
       _status = cublasDestroy(_handle_blas);
       checkDeviceBlasStatus("cublasDestroy");
     }
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-    // destroy previously created streams
+
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = hipStreamDestroy(_streams[i]);
+      _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
     _streams.clear();
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
     _exec_instances.clear();
 
     if (_is_rocblas_created) {
       _status = rocblas_destroy_handle(_handle_blas);
       checkDeviceLapackStatus("rocblasDestroy");
     }
+
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamDestroy(_streams[i]);
+      checkDeviceStatus("cudaStreamDestroy");
+    }
+    _streams.clear();
 #endif
   }
 

@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
   double rhs_nrm, m_nrm;
 
-  int result;
+  int result=1;
 
   // Enroll into MPI
 
@@ -180,16 +180,10 @@ int main(int argc, char *argv[])
 
   // Get Info to build the matrix on a processor
 
-  Adelus::GetDistribution( &nprocs_per_row,
-                           &matrix_size,
-                           &numrhs,
-                           &myrows,
-                           &mycols,
-                           &myfirstrow,
-                           &myfirstcol,
-                           &myrhs,
-                           &my_row,
-                           &my_col );
+  Adelus::GetDistribution( MPI_COMM_WORLD, 
+                           nprocs_per_row, matrix_size, numrhs,
+                           myrows, mycols, myfirstrow, myfirstcol,
+                           myrhs, my_row, my_col );
 
   //   Define a new communicator
 
@@ -215,12 +209,10 @@ int main(int argc, char *argv[])
 #else
   hipGetDeviceCount ( &gpu_count );
 #endif
-  Kokkos::InitArguments args;
-  args.num_threads = 0;
-  args.num_numa    = 0;
-  args.device_id   = rank%gpu_count;
+  Kokkos::InitializationSettings args;
+  args.set_num_threads(1);
   std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: " 
-            << args.device_id << "/" << gpu_count << std::endl;
+            << args.get_device_id() << "/" << gpu_count << std::endl;
   Kokkos::initialize( args );
 #else
   Kokkos::initialize( argc, argv );
@@ -228,30 +220,30 @@ int main(int argc, char *argv[])
   {
   //  Local size -- myrows  * (mycols + myrhs)
   
-  typedef Kokkos::LayoutLeft Layout;
+  using Layout = Kokkos::LayoutLeft;
 #if defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::CudaSpace TestSpace;
+  using TestSpace = Kokkos::CudaSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::Experimental::HIPSpace TestSpace;
+  using TestSpace = Kokkos::Experimental::HIPSpace;
 #else
-  typedef Kokkos::HostSpace TestSpace;
+  using TestSpace = Kokkos::HostSpace;
 #endif
 #ifdef DREAL
-  typedef Kokkos::View<double**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<double*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<double**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<double*,  Layout, Kokkos::HostSpace>;
 #elif defined(SREAL)
-  typedef Kokkos::View<float**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<float*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<float**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<float*,  Layout, Kokkos::HostSpace>;
 #elif defined(SCPLX)
-  typedef Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<Kokkos::complex<float>**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<Kokkos::complex<float>*,  Layout, Kokkos::HostSpace>;
 #else
-  typedef Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>  ViewMatrixType;
-  typedef Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>  ViewVectorType_Host;
+  using ViewMatrixType         = Kokkos::View<Kokkos::complex<double>**, Layout, TestSpace>;
+  using ViewVectorType_Host    = Kokkos::View<Kokkos::complex<double>*,  Layout, Kokkos::HostSpace>;
 #endif
-  typedef typename ViewMatrixType::device_type::execution_space execution_space;
-  typedef typename ViewMatrixType::device_type::memory_space memory_space;
-  typedef typename ViewMatrixType::value_type ScalarA;
+  using execution_space = typename ViewMatrixType::device_type::execution_space;
+  using memory_space    = typename ViewMatrixType::device_type::memory_space;
+  using ScalarA         = typename ViewMatrixType::value_type;
 
   printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s, value_type %s\n",rank, typeid(execution_space).name(), typeid(memory_space).name(), typeid(ScalarA).name());
 
@@ -325,6 +317,10 @@ int main(int argc, char *argv[])
 
   Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
 
+  // Create handle
+  Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+    ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
+
   // Now Solve the Problem
   RCP<StackedTimer> timer = rcp(new StackedTimer("Adelus: total"));
   TimeMonitor::setStackedTimer(timer);
@@ -332,7 +328,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
 
-    Adelus::FactorSolve (A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::FactorSolve (ahandle, A, &secs);
 
   if( rank == 0) {
     std::cout << " ----  Solution time  ----   " << secs << "  in secs. " << std::endl;

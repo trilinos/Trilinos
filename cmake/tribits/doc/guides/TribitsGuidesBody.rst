@@ -2298,24 +2298,28 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
   ``${TPL_NAME}_FINDMOD``
 
-    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's find
-    module (typically named `FindTPL<tplName>.cmake`_): This is set using the
-    ``FINDMOD`` field in the call to `tribits_repository_define_tpls()`_.  The
-    final value of the variable is defined by the *last*
-    `<repoDir>/TPLsList.cmake`_ file that is processed that declares the TPL
-    ``TPL_NAME``.  For example, if ``Repo1/TPLsList.cmake`` and
-    ``Repo2/TPLsList.cmake`` both list the TPL ``SomeTpl``, then if ``Repo2``
-    is processed after ``Repo1``, then ``SomeTpl_FINDMOD`` is determined by
-    ``Repo2/TPLsList.cmake`` and the find module listed in
-    ``Repo1/TPLsList.cmake`` is ignored.
+    Relative path (w.r.t. ``<projectDir>``) or absolute path for the external
+    package/TPL's find module (typically named `FindTPL<tplName>.cmake`_):
+    This is set using the ``FINDMOD`` field in the call to
+    `tribits_repository_define_tpls()`_.  The final value of the variable is
+    defined by the *last* `<repoDir>/TPLsList.cmake`_ file that is processed
+    that declares the TPL ``TPL_NAME``.  For example, if
+    ``Repo1/TPLsList.cmake`` and ``Repo2/TPLsList.cmake`` both list the TPL
+    ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
+    ``SomeTpl_FINDMOD`` is determined by ``Repo2/TPLsList.cmake`` and the find
+    module listed in ``Repo1/TPLsList.cmake`` is ignored.
 
   .. _<tplName>_DEPENDENCIES_FILE:
   .. _${TPL_NAME}_DEPENDENCIES_FILE:
 
   ``${TPL_NAME}_DEPENDENCIES_FILE``
 
-    Relative path (w.r.t. `<projectDir>`_) for the external package/TPL's
-    dependencies file (typically named `FindTPL<tplName>Dependencies.cmake`_)
+    Relative path (w.r.t. ``<projectDir>``) or absolute path for the external
+    package/TPL's dependencies file (typically named
+    `FindTPL<tplName>Dependencies.cmake`_).  This is always beside the find
+    module `${TPL_NAME}_FINDMOD`_ (and in fact
+    ``${TPL_NAME}_DEPENDENCIES_FILE`` is constructed from
+    ``${TPL_NAME}_FINDMOD``).
 
   .. _${TPL_NAME}_TESTGROUP:
 
@@ -2341,6 +2345,13 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
     Absolute path of the (last) `<repoDir>/TPLsList.cmake`_ file that declared
     this external package/TPL.
+
+Note, the ``<findmod>`` field path in the call to
+`tribits_repository_define_tpls()`_ is relative to the TriBITS repository dir
+``<repoDir>`` but a relative path in for the varaible `<tplName>_FINDMOD`_ is
+relative to the project dir ``<projectDir>``.  There is a translation of the
+``<findmod>`` field to the variable ``<tplName>_FINDMOD`` that takes place
+when the `<repoDir>/TPLsList.cmake`_ file is processed to make this so.
 
 As noted above, it is allowed for the same TPL to be listed in multiple
 `<repoDir>/TPLsList.cmake`_ files.  In this case, the rules for overrides of
@@ -3367,17 +3378,18 @@ management system are:
 9)  `TPL disable triggers auto-disables of downstream dependencies`_
 10) `Disables trump enables where there is a conflict`_
 11) `Enable/disable of parent package is enable/disable for subpackages`_
-12) `Subpackage enable does not auto-enable the parent package`_
-13) `Support for optional SE package/TPL is enabled by default`_
-14) `Support for optional SE package/TPL can be explicitly disabled`_
-15) `Explicit enable of optional SE package/TPL support auto-enables SE package/TPL`_
-16) `ST SE packages only auto-enabled if ST code is enabled`_
-17) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests`_
-18) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_
-19) `<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests`_
-20) `If no SE packages are enabled, nothing will get built`_
-21) `TriBITS prints all enables and disables to stdout`_
-22) `TriBITS auto-enables/disables done using non-cache local variables`_
+12) `Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples`_
+13) `Subpackage enable does not auto-enable the parent package`_
+14) `Support for optional SE package/TPL is enabled by default`_
+15) `Support for optional SE package/TPL can be explicitly disabled`_
+16) `Explicit enable of optional SE package/TPL support auto-enables SE package/TPL`_
+17) `ST SE packages only auto-enabled if ST code is enabled`_
+18) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests`_
+19) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_
+20) `<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests`_
+21) `If no SE packages are enabled, nothing will get built`_
+22) `TriBITS prints all enables and disables to stdout`_
+23) `TriBITS auto-enables/disables done using non-cache local variables`_
 
 In more detail, these rules/behaviors are:
 
@@ -3576,9 +3588,23 @@ In more detail, these rules/behaviors are:
     see `Explicit enable of a package, its tests, an optional TPL, with ST
     enabled`_.
 
+.. _Enable/disable of parent package tests/examples is enable/disable for subpackages tests/examples:
+
+12) **Enable/disable of parent package tests/examples is enable/disable for
+    subpackages tests/examples**: Setting
+    ``<TRIBITS_PACKAGE>_ENABLE_TESTS=[ON|OFF]`` is equivalent to setting the
+    default for ``<TRIBITS_PACKAGE><SP>_ENABLE_TESTS=[ON|OFF]`` for each
+    subpackage ``<SP>`` of the parent package ``<TRIBITS_PACKAGE>`` (if
+    ``<TRIBITS_PACKAGE>`` has subpackages).  Same is true for
+    ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=[ON|OFF]`` setting the default for
+    ``<TRIBITS_PACKAGE><SP>_ENABLE_EXAMPLES=[ON|OFF]``.  In addition, setting
+    ``<TRIBITS_PACKAGE>_ENABLE_TESTS=[ON|OFF]`` will set
+    ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=[ON|OFF]`` by default as well (but not
+    vice versa).
+
 .. _Subpackage enable does not auto-enable the parent package:
 
-12) **Subpackage enable does not auto-enable the parent package**: Enabling an
+13) **Subpackage enable does not auto-enable the parent package**: Enabling an
     SE package that is a subpackage does **not** automatically enable the
     parent package (except for at the very end, mostly just for show).  For
     example, enabling the SE package ``ThyraEpetra`` does not result in enable
@@ -3601,7 +3627,7 @@ In more detail, these rules/behaviors are:
 
 .. _Support for optional SE package/TPL is enabled by default:
 
-13) **Support for optional SE package/TPL is enabled by default**: For an SE
+14) **Support for optional SE package/TPL is enabled by default**: For an SE
     package ``<TRIBITS_PACKAGE>`` with an optional dependency on an
     `upstream`_ SE package or TPL ``<TRIBITS_DEP_PACKAGE_OR_TPL>``, TriBITS
     will automatically set the intra-enable variable
@@ -3618,7 +3644,7 @@ In more detail, these rules/behaviors are:
 
 .. _Support for optional SE package/TPL can be explicitly disabled:
 
-14) **Support for optional SE package/TPL can be explicitly disabled:** Even
+15) **Support for optional SE package/TPL can be explicitly disabled:** Even
     though TriBITS will automatically set
     ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` by default if
     ``<TRIBITS_PACKAGE>`` and ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` are both
@@ -3638,7 +3664,7 @@ In more detail, these rules/behaviors are:
 
 .. _Explicit enable of optional SE package/TPL support auto-enables SE package/TPL:
 
-15) **Explicit enable of optional SE package/TPL support auto-enables SE
+16) **Explicit enable of optional SE package/TPL support auto-enables SE
     package/TPL**: If the user explicitly enables the TriBITS SE package
     ``<TRIBITS_PACKAGE>`` and explicitly sets
     ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` on input,
@@ -3658,7 +3684,7 @@ In more detail, these rules/behaviors are:
 
 .. _ST SE packages only auto-enabled if ST code is enabled:
 
-16) **ST SE packages only auto-enabled if ST code is enabled**: TriBITS will
+17) **ST SE packages only auto-enabled if ST code is enabled**: TriBITS will
     only enable an optional ``ST`` SE package when
     ``${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON`` if
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON`` is also set.  Otherwise, when
@@ -3677,7 +3703,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests:
 
-17) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests**:
+18) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES enables downstream packages/tests**:
     Setting the user cache-variable
     ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_PACKAGES=ON`` will result in the
     `downstream`_ ``PT`` SE packages and tests to be enabled (and all ``PT``
@@ -3695,7 +3721,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages:
 
-18) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
+19) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
     Setting the user cache-variable ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON``
     will result in the enable of all ``PT`` SE packages when
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF`` and all ``PT`` and ``ST`` SE
@@ -3714,7 +3740,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests:
 
-19) **<Project>_ENABLE_TESTS only enables explicitly enabled SE package
+20) **<Project>_ENABLE_TESTS only enables explicitly enabled SE package
     tests**: Setting ``${PROJECT_NAME}_ENABLE_TESTS=ON`` will **only enable
     tests for explicitly enabled SE packages** on input.  For example,
     configuring with ``Trilinos_ENABLE_RTOp=ON`` and
@@ -3729,7 +3755,7 @@ In more detail, these rules/behaviors are:
 
 .. _If no SE packages are enabled, nothing will get built:
 
-20) **If no SE packages are enabled, nothing will get built**: Most TriBITS
+21) **If no SE packages are enabled, nothing will get built**: Most TriBITS
     projects are set up such that if the user does not explicitly enable at
     least one SE package in some way, then nothing will be enabled or built.
     In this case, when ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=TRUE`` a warning
@@ -3743,7 +3769,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS prints all enables and disables to stdout:
 
-21) **TriBITS prints all enables and disables to stdout**: TriBITS prints out
+22) **TriBITS prints all enables and disables to stdout**: TriBITS prints out
     (to ``cmake`` stdout) the initial set of enables/disables on input, prints
     a line whenever it sets (or overrides) an enable or disable, and prints
     out the final set of enables/disables.  Therefore, the user just needs to
@@ -3756,7 +3782,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS auto-enables/disables done using non-cache local variables:
 
-22) **TriBITS auto-enables/disables done using non-cache local variables**:
+23) **TriBITS auto-enables/disables done using non-cache local variables**:
     TriBITS setting (or overrides) of enable/disable cache variables are done
     by setting local non-cache variables at the top project-level scope
     (i.e. the ``<projectDir>/CMakeLists.txt`` file scope).  This is done so

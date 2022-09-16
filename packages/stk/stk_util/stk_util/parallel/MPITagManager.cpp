@@ -1,4 +1,5 @@
 #include "stk_util/parallel/MPITagManager.hpp"
+#include "stk_util/parallel/CouplingVersions.hpp"
 #include <cassert>
 
 namespace stk {
@@ -176,7 +177,16 @@ void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int 
 
 MPITagManager& get_mpi_tag_manager()
 {
-  int deletionGroupSize = 32;
+  stk::util::print_unsupported_version_warning(7, __LINE__, __FILE__);
+  int deletionGroupSize;
+  if (stk::util::get_common_coupling_version() >= 8)
+  {
+    deletionGroupSize = 33;
+  } else
+  {
+    deletionGroupSize = 32;
+  }
+
   static int delayCount = -1;
   if (delayCount < 0)
   {

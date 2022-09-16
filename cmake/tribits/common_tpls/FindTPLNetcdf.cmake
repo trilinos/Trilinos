@@ -130,7 +130,7 @@ if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")
       string(REGEX MATCH "[01]" netcdf_par_val "${netcdf_par_string}")
       if (netcdf_par_val EQUAL 1)
          set(TPL_Netcdf_PARALLEL True CACHE INTERNAL
-	     "True if netcdf compiled with parallel enabled")
+             "True if netcdf compiled with parallel enabled")
       endif()
    endif()
    if ("${TPL_Netcdf_PARALLEL}" STREQUAL "")

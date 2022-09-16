@@ -73,12 +73,12 @@ include(Split)
 #    TPL names typically use mixed case (e.g. ``SomeTpl`` and not
 #    ``SOMETPL``).
 #
-# 1. **FINDMOD** (``<tpli_findmod>``): The relative path for the find module,
-#    usually with the name `FindTPL<tplName>.cmake`_.  This path is relative
-#    to the repository base directory ``<repoDir>``.  If just the base path
-#    for the find module is given, ending with ``"/"``
-#    (e.g. ``"cmake/tpls/"``), then the find module will be assumed to be
-#    under that this directory with the standard name
+# 1. **FINDMOD** (``<tpli_findmod>``): The relative or absolute path for the
+#    find module, usually with the name `FindTPL<tplName>.cmake`_.  If it is a
+#    relative path, it is considered relative to the repository base directory
+#    ``<repoDir>``.  If just the base path for the find module is given,
+#    ending with ``"/"`` (e.g. ``"cmake/tpls/"``), then the find module will
+#    be assumed to be under that this directory with the standard name
 #    ``FindTPL<tplName>.cmake``.  (See `Creating the FindTPL<tplName>.cmake
 #    file`_.)
 #

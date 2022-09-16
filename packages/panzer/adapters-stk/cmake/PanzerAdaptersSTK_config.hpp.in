@@ -15,5 +15,6 @@
 #cmakedefine PANZER_HAVE_MUELU
 #cmakedefine PANZER_HAVE_IFPACK2
 #cmakedefine PANZER_HAVE_TEMPUS
+#cmakedefine PANZER_HAVE_STKSEARCH
 
 #endif

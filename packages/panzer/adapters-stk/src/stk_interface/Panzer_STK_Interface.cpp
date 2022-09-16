@@ -1872,10 +1872,11 @@ STK_Interface::getPeriodicNodePairing() const
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > vec;
    Teuchos::RCP<std::vector<unsigned int > > type_vec = rcp(new std::vector<unsigned int>);
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & matchers = getPeriodicBCVector();
+   const bool & useBBoxSearch = useBoundingBoxSearch();
+   std::vector<std::vector<std::string> > matchedSides(3); // (coord,edge,face)
 
    // build up the vectors by looping over the matched pair
    for(std::size_t m=0;m<matchers.size();m++){
-      vec = matchers[m]->getMatchedPair(*this,vec);
       unsigned int type;
       if(matchers[m]->getType() == "coord")
         type = 0;
@@ -1885,7 +1886,21 @@ STK_Interface::getPeriodicNodePairing() const
         type = 2;
       else
         TEUCHOS_ASSERT(false);
+#ifdef PANZER_HAVE_STKSEARCH
+
+      if (useBBoxSearch) {
+         vec = matchers[m]->getMatchedPair(*this,matchedSides[type],vec);
+      } else {
+         vec = matchers[m]->getMatchedPair(*this,vec);
+      }
+#else 
+      TEUCHOS_TEST_FOR_EXCEPTION(useBBoxSearch,std::logic_error,
+          "panzer::STK_Interface::getPeriodicNodePairing(): Requested bounding box search, but "
+          "did not compile with STK_SEARCH enabled.");
+      vec = matchers[m]->getMatchedPair(*this,vec);
+#endif
       type_vec->insert(type_vec->begin(),vec->size()-type_vec->size(),type);
+      matchedSides[type].push_back(matchers[m]->getLeftSidesetName());
    }
 
    return std::make_pair(vec,type_vec);

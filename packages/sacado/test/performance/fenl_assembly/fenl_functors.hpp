@@ -404,16 +404,16 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void join( const TagFillNodeSet & 
-           , volatile       unsigned & update
-           , volatile const unsigned & input ) const { update += input ; }
+           , unsigned & update
+           , const unsigned & input ) const { update += input ; }
 
   // For the scan phase::
   KOKKOS_INLINE_FUNCTION
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile       unsigned & update
-           , volatile const unsigned & input ) const { update += input ; }
+  void join( unsigned & update
+           , const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };
