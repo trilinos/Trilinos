@@ -193,7 +193,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
 
     TRIBITS_ADD_TEST(
       GaleriDriver
-      NAME "Galeri_double_Jacobi"
+      NAME "Galeri_double_Jacobi_Tpetra"
       ARGS "--scalarType=double --xml=stratimikos_jacobi_tpetra.xml"
       NUM_MPI_PROCS 4
       )
