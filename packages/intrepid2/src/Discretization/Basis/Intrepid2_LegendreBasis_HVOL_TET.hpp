@@ -249,7 +249,7 @@ namespace Intrepid2
 
       this->basisCardinality_  = ((polyOrder+3) * (polyOrder+2) * (polyOrder+1)) / 6;
       this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
       this->functionSpace_     = FUNCTION_SPACE_HVOL;
