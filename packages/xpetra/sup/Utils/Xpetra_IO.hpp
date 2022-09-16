@@ -482,14 +482,14 @@ namespace Xpetra {
             }
           }
 
-          A   = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
+          A = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
 
           // Now that nnz per row are known, reread and store the matrix.
           ifs.seekg(0, ifs.beg); //rewind to beginning of file
           int junk; //skip header info
-          ifs.read(reinterpret_cast<char*>(&m),   sizeof(junk));
-          ifs.read(reinterpret_cast<char*>(&n),   sizeof(junk));
-          ifs.read(reinterpret_cast<char*>(&nnz), sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
+          ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
           for (int i = 0; i < m; i++) {
             int row, rownnz;
             ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
@@ -509,6 +509,10 @@ namespace Xpetra {
             A->insertGlobalValues(row, inds, vals);
           }
         } //if (myRank == 0)
+        else {
+          Teuchos::ArrayRCP<size_t> numEntriesPerRow(0,(size_t)(0));
+          A = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
+        }
 
         A->fillComplete(domainMap, rangeMap);
 
