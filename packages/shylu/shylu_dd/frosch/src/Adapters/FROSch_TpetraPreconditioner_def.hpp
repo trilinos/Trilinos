@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_TPETRARECONDITIONER_DEF_HPP
+#ifndef _FROSCH_TPETRAPRECONDITIONER_DEF_HPP
 #define _FROSCH_TPETRAPRECONDITIONER_DEF_HPP
 
 #if defined(HAVE_XPETRA_TPETRA)
