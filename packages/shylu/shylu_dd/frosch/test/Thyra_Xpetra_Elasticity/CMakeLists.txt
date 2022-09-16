@@ -85,6 +85,14 @@ COMM mpi
 NUM_MPI_PROCS 8
 )
 
+TRIBITS_ADD_TEST(
+thyra_xpetra_elasticity
+NAME test_thyra_xpetra_elasticity_RGDSWP_DIM3_TPETRA
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu_Tpetra.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
 ###############################
 # TwoLevelPreconditioner_GDSW #
 ###############################
