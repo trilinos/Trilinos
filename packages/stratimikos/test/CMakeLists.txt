@@ -172,7 +172,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Galeri_ENABLE_Xpetra)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
-    SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml
+    SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml stratimikos_jacobi_tpetra.xml
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -188,6 +188,13 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
       GaleriDriver
       NAME "Galeri_double_Jacobi"
       ARGS "--scalarType=double --xml=stratimikos_jacobi.xml"
+      NUM_MPI_PROCS 4
+      )
+
+    TRIBITS_ADD_TEST(
+      GaleriDriver
+      NAME "Galeri_double_Jacobi_Tpetra"
+      ARGS "--scalarType=double --xml=stratimikos_jacobi_tpetra.xml"
       NUM_MPI_PROCS 4
       )
 
