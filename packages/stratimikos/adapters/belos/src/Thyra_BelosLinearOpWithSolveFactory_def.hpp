@@ -63,7 +63,7 @@
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 
-#include "Thyra_BelosTpetrasSolverAdaptor.hpp"
+#include "Thyra_BelosTpetrasSolverAdapter.hpp"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
