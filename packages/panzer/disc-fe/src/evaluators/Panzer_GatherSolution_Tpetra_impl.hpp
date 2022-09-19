@@ -361,8 +361,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    if (has_tangent_fields_) {
      auto tangentFieldsDevice = tangentFieldsVoV_.getViewDevice();
      Kokkos::parallel_for("GatherSolutionTpetra<Tangent>",cellLocalIdsKokkos.extent(0),KOKKOS_LAMBDA(const int worksetCellIndex) {
-       for (int fieldIndex = 0; fieldIndex < gidFieldOffsets.extent(0); ++fieldIndex) { 
-         for(std::size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
+       for (size_t fieldIndex = 0; fieldIndex < gidFieldOffsets.extent(0); ++fieldIndex) { 
+         for(size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
            int offset = gidFieldOffsets(fieldIndex)(basis);
            LO lid = lids(cellLocalIdsKokkos(worksetCellIndex),offset);
            auto gf_ref = (gatherFieldsDevice[fieldIndex])(worksetCellIndex,basis);
@@ -376,8 +376,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    }
    else {
      Kokkos::parallel_for("GatherSolutionTpetra<Tangent>",cellLocalIdsKokkos.extent(0),KOKKOS_LAMBDA(const int worksetCellIndex) {
-       for (int fieldIndex = 0; fieldIndex < gidFieldOffsets.extent(0); ++fieldIndex) { 
-         for(std::size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
+       for (size_t fieldIndex = 0; fieldIndex < gidFieldOffsets.extent(0); ++fieldIndex) { 
+         for(size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
            int offset = gidFieldOffsets(fieldIndex)(basis);
            LO lid = lids(cellLocalIdsKokkos(worksetCellIndex),offset);
            reference_type gf_ref = (gatherFieldsDevice[fieldIndex])(worksetCellIndex,basis);
