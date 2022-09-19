@@ -623,7 +623,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (comm->getSize() > 1)
       colMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(colMap_file, lib, comm);
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, colMap, node_map, edge_map);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     // *out << "Skipping D0 maps, because: " << e.what() << std::endl;
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
     node_map = D0_Matrix->getDomainMap();
