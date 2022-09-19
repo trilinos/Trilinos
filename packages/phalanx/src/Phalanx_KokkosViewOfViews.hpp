@@ -1,6 +1,7 @@
 #ifndef PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 #define PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 
+#include "Sacado.hpp" // for IsADType
 #include <utility> // for declval
 
 namespace PHX {
@@ -297,7 +298,7 @@ namespace PHX {
     bool device_view_is_synced_;
     // True if the outer view has been initialized
     bool is_initialized_;
-    // Use count after initialization. This changes based on whether the device space is accessible to the host space.
+    // Use count of device view after initialization. This changes based on whether the view_device_ is accessible to host space. If not accessible, the use_count_ is 1. If it is accessible, the value is 2 due to using create_mirror_view in initialization if view_host_unmanaged_.
     int use_count_;
     // A safety check. If true, this makes sure there are no external references to the device view of views.
     bool check_use_count_;
@@ -323,16 +324,25 @@ namespace PHX {
         check_use_count_(true)
     {}
 
+    ViewOfViews3(const ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
+    ViewOfViews3& operator=(const ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
+    ViewOfViews3(ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>&& src) = default;
+    ViewOfViews3& operator=(ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>&& ) = default;
+
     // Making this a kokkos function eliminates cuda compiler warnings
     // in objects that contain ViewOfViews3 that are copied to device.
     KOKKOS_INLINE_FUNCTION
     ~ViewOfViews3()
     {
-      // Make sure there is not another object pointing to device view
-      // since the host view will delete the inner views on exit.
+      // Make sure there is not another object pointing to the device
+      // view if the host view is about to be deleted. The host view
+      // may delete the inner views if it is the last owner.
       KOKKOS_IF_ON_HOST((
-        if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
-          Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+        if ( check_use_count_ ) {
+          if ( (view_host_.impl_track().use_count() == 1) && (view_device_.impl_track().use_count() > use_count_) ) {
+            Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+          }
+        }
       ))
     }
 
@@ -369,10 +379,22 @@ namespace PHX {
 
       TEUCHOS_ASSERT(is_initialized_);
 
-      // Store the managed version so it doesn't get deleted.
+      // Store the managed version so inner views don't get deleted.
       view_host_(i...) = v;
-      // Store a runtime unmanaged view to prevent double deletion on device
-      view_host_unmanaged_(i...) = InnerViewType(v.data(),v.layout());
+
+      // Store a runtime unmanaged view for deep_copy to
+      // device. Unmanaged is required to prevent double deletion on
+      // device. For FAD types, we need to adjust the layout to
+      // account for the derivative array. The layout() method reutrns
+      // the non-fad adjusted layout.
+      if (Sacado::IsADType<typename InnerViewType::value_type>::value) {
+        auto layout = v.layout();
+        layout.dimension[InnerViewType::rank] = Kokkos::dimension_scalar(v);
+        view_host_unmanaged_(i...) = InnerViewType(v.data(),layout);
+      }
+      else
+        view_host_unmanaged_(i...) = InnerViewType(v.data(),v.layout());
+
       device_view_is_synced_ = false;
     }
 
