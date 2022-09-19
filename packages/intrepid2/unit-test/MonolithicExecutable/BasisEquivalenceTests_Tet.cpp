@@ -128,4 +128,67 @@ namespace
       BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HCURL_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HDIV_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-9;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HVOL_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
 } // namespace

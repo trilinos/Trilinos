@@ -686,7 +686,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -949,7 +949,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -1211,7 +1211,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(basisDegree-1));
       basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(basisDegree-1));
-      //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
+      basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
