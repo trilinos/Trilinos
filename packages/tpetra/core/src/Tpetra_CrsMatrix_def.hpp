@@ -3426,6 +3426,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
+      // CAG: This fence was found to be required on Cuda with UVM=on.
+      Kokkos::fence();
     }
   }
 
