@@ -41,33 +41,35 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_LegendreBasis_HVOL_TRI.hpp
+/** \file   Intrepid2_LegendreBasis_HVOL_TET.hpp
     \brief  H(vol) basis on the triangle based on integrated Legendre polynomials.
     \author Created by N.V. Roberts.
  */
 
-#ifndef Intrepid2_LegendreBasis_HVOL_TRI_h
-#define Intrepid2_LegendreBasis_HVOL_TRI_h
+#ifndef Intrepid2_LegendreBasis_HVOL_TET_h
+#define Intrepid2_LegendreBasis_HVOL_TET_h
 
+#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
 namespace Intrepid2
 {
-  /** \class  Intrepid2::Hierarchical_HVOL_TRI_Functor
-      \brief  Functor for computing values for the LegendreBasis_HVOL_TRI class.
+  /** \class  Intrepid2::Hierarchical_HVOL_TET_Functor
+      \brief  Functor for computing values for the LegendreBasis_HVOL_TET class.
    
-   This functor is not intended for use outside of LegendreBasis_HVOL_TRI.
+   This functor is not intended for use outside of LegendreBasis_HVOL_TET.
   */
   template<class DeviceType, class OutputScalar, class PointScalar,
            class OutputFieldType, class InputPointsType>
-  struct Hierarchical_HVOL_TRI_Functor
+  struct Hierarchical_HVOL_TET_Functor
   {
     using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
@@ -87,7 +89,7 @@ namespace Intrepid2
     
     size_t fad_size_output_;
     
-    Hierarchical_HVOL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
+    Hierarchical_HVOL_TET_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
       polyOrder_(polyOrder),
       fad_size_output_(getScalarDimensionForView(output))
@@ -95,28 +97,41 @@ namespace Intrepid2
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
-      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != (polyOrder_+1)*(polyOrder_+2)/2, std::invalid_argument, "output field size does not match basis cardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != (polyOrder_+1)*(polyOrder_+2)*(polyOrder_+3)/6, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     KOKKOS_INLINE_FUNCTION
     void operator()( const TeamMember & teamMember ) const
     {
+      // values are product of [P_i](lambda_0,lambda_1), [P^{2i+1}_j](lambda_0 + lambda_1, lambda_2), and [P^{2*(i+j+1)}_k](1-lambda_3,lambda_3),
+      // times ((grad lambda_1) x (grad lambda_2)) \cdot (grad lambda_3).
+      // For the canonical orientation (all we support), the last term evaluates to 1, and
+      // lambda_0 = 1 - x - y - z
+      // lambda_1 = x
+      // lambda_2 = y
+      // lambda_3 = z
+      // [P_i](lambda_0, lambda_1) = P_i(lambda_1; lambda_0 + lambda_1) = P_i(x; 1 - y - z) -- a shifted, scaled Legendre function
+      // [P^{2i+1}_j](lambda_0 + lambda_1, lambda_2) = P^{2i+1}_j(lambda_2; lambda_0 + lambda_1 + lambda_2) = P^{2i+1}_j(y; 1 - z) -- a shifted, scaled Jacobi function
+      // [P^{2*(i+j+1)}_k](1-lambda_3,lambda_3) = P^{2*(i+j+1)}_k(lambda_3; 1) = P^{2*(i+j+1)}_k(z; 1) -- another shifted, scaled Jacobi function
       auto pointOrdinal = teamMember.league_rank();
-      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point;
+      OutputScratchView P, P_2p1, P_2ipjp1;
       if (fad_size_output_ > 0) {
-        legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P        = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P_2p1    = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        P_2ipjp1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
       }
       else {
-        legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P        = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P_2p1    = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        P_2ipjp1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
       }
       
       const auto & x = inputPoints_(pointOrdinal,0);
       const auto & y = inputPoints_(pointOrdinal,1);
+      const auto & z = inputPoints_(pointOrdinal,2);
       
       // write as barycentric coordinates:
-      const PointScalar lambda[3]    = {1. - x - y, x, y};
+      const PointScalar lambda[4] = {1. - x - y - z, x, y, z};
       
       switch (opType_)
       {
@@ -125,24 +140,41 @@ namespace Intrepid2
           // face functions
           {
             const PointScalar tLegendre = lambda[0] + lambda[1];
-            Polynomials::shiftedScaledLegendreValues(legendre_field_values_at_point, polyOrder_, lambda[1], tLegendre);
+            Polynomials::shiftedScaledLegendreValues(P, polyOrder_, lambda[1], tLegendre);
 
             int fieldOrdinalOffset = 0;
-            const int max_ij_sum = polyOrder_;
-            for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
+            
+            const int min_i  = 0;
+            const int min_j  = 0;
+            const int min_k  = 0;
+            const int min_ij = min_i + min_j;
+            const int min_ijk = min_ij + min_k;
+            for (int totalPolyOrder_ijk=min_ijk; totalPolyOrder_ijk <= polyOrder_; totalPolyOrder_ijk++)
             {
-              for (int i=0; i<=ij_sum; i++)
+              for (int totalPolyOrder_ij=min_ij; totalPolyOrder_ij <= totalPolyOrder_ijk-min_j; totalPolyOrder_ij++)
               {
-                const int j = ij_sum - i;
-                const auto & legendreValue = legendre_field_values_at_point(i);
-                const double alpha = i*2.0+1;
-                
-                const PointScalar tJacobi = 1.0;// lambda[0] + lambda[1] + lambda[2];
-                Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point, alpha, polyOrder_, lambda[2], tJacobi);
-                
-                const auto & jacobiValue = jacobi_values_at_point(j);
-                output_(fieldOrdinalOffset,pointOrdinal) = legendreValue * jacobiValue;
-                fieldOrdinalOffset++;
+                for (int i=min_i; i <= totalPolyOrder_ij-min_j; i++)
+                {
+                  const int j = totalPolyOrder_ij - i;
+                  const int k = totalPolyOrder_ijk - totalPolyOrder_ij;
+                  
+                  const double alpha1          = i * 2.0 + 1.;
+                  const PointScalar tJacobi1   = lambda[0] + lambda[1] + lambda[2];
+                  const PointScalar & xJacobi1 = lambda[2];
+                  Polynomials::shiftedScaledJacobiValues(P_2p1, alpha1, polyOrder_, xJacobi1, tJacobi1);
+                  
+                  const double alpha2          = 2. * (i + j + 1.);
+                  const PointScalar tJacobi2   = 1.0; // 1 - lambda[3] + lambda[3]
+                  const PointScalar & xJacobi2 = lambda[3];
+                  Polynomials::shiftedScaledJacobiValues(P_2ipjp1, alpha2, polyOrder_, xJacobi2, tJacobi2);
+                  
+                  const auto & P_i        = P(i);
+                  const auto & P_2p1_j    = P_2p1(j);
+                  const auto & P_2ipjp1_k = P_2ipjp1(k);
+                  
+                  output_(fieldOrdinalOffset,pointOrdinal) = P_i * P_2p1_j * P_2ipjp1_k;
+                  fieldOrdinalOffset++;
+                }
               }
             }
           }
@@ -159,20 +191,19 @@ namespace Intrepid2
     // which allows team_size-dependent allocations.
     size_t team_shmem_size (int team_size) const
     {
-      // TODO: edit this to match scratch that we actually need.  (What's here is copied from H^1 basis on triangles…)
       // we will use shared memory to create a fast buffer for basis computations
       size_t shmem_size = 0;
       if (fad_size_output_ > 0)
-        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
+        shmem_size += 3 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
       else
-        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1);
+        shmem_size += 3 * OutputScratchView::shmem_size(polyOrder_ + 1);
       
       return shmem_size;
     }
   };
   
-  /** \class  Intrepid2::LegendreBasis_HVOL_TRI
-      \brief  Basis defining Legendre basis on the line, a polynomial subspace of H(vol) on the line: extension to triangle using Jacobi blending function.
+  /** \class  Intrepid2::LegendreBasis_HVOL_TET
+      \brief  Basis defining Legendre basis on the line, a polynomial subspace of H(vol) on the line: extension to tetrahedron using Jacobi blending functions.
 
               For mathematical details of the construction, see:
    
@@ -184,7 +215,7 @@ namespace Intrepid2
   template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
-  class LegendreBasis_HVOL_TRI
+  class LegendreBasis_HVOL_TET
   : public Basis<DeviceType,OutputScalar,PointScalar>
   {
   public:
@@ -209,16 +240,16 @@ namespace Intrepid2
      The basis will have (polyOrder + 1)*(polyOrder + 2) / 2 members, and is in a discrete exact sequence that begins with the integrated Legendre basis of order polyOrder + 1.
      
      */
-    LegendreBasis_HVOL_TRI(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
+    LegendreBasis_HVOL_TET(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     polyOrder_(polyOrder),
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
 
-      this->basisCardinality_  = ((polyOrder+2) * (polyOrder+1)) / 2;
+      this->basisCardinality_  = ((polyOrder+3) * (polyOrder+2) * (polyOrder+1)) / 6;
       this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
       this->functionSpace_     = FUNCTION_SPACE_HVOL;
@@ -227,15 +258,24 @@ namespace Intrepid2
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
-      // **** face functions **** //
-      const int max_ij_sum = polyOrder;
-      for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
+      // **** volume/interior functions **** //
+      const int min_i  = 0;
+      const int min_j  = 0;
+      const int min_k  = 0;
+      const int min_ij = min_i + min_j;
+      const int min_ijk = min_ij + min_k;
+      for (int totalPolyOrder_ijk=min_ijk; totalPolyOrder_ijk <= polyOrder_; totalPolyOrder_ijk++)
       {
-        for (int i=0; i<=ij_sum; i++)
+        for (int totalPolyOrder_ij=min_ij; totalPolyOrder_ij <= totalPolyOrder_ijk-min_j; totalPolyOrder_ij++)
         {
-          const int j = ij_sum - i;
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
-          fieldOrdinalOffset++;
+          for (int i=min_i; i <= totalPolyOrder_ij-min_j; i++)
+          {
+            const int j = totalPolyOrder_ij - i;
+            const int k = totalPolyOrder_ijk - totalPolyOrder_ij;
+            
+            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j+k;
+            fieldOrdinalOffset++;
+          }
         }
       }
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
@@ -251,11 +291,11 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const int faceDim = 2;
+        const int volumeDim = 3;
 
         for (ordinal_type i=0;i<cardinality;++i) {
-          tagView(i*tagSize+0) = faceDim;     // face dimension
-          tagView(i*tagSize+1) = 0;           // face id
+          tagView(i*tagSize+0) = volumeDim;   // volume dimension
+          tagView(i*tagSize+1) = 0;           // volume id
           tagView(i*tagSize+2) = i;           // local dof id
           tagView(i*tagSize+3) = cardinality; // total number of dofs on this face
         }
@@ -278,7 +318,7 @@ namespace Intrepid2
      \return the name of the basis
      */
     const char* getName() const override {
-      return "Intrepid2_LegendreBasis_HVOL_TRI";
+      return "Intrepid2_LegendreBasis_HVOL_TET";
     }
     
     /** \brief True if orientation is required
@@ -315,7 +355,7 @@ namespace Intrepid2
     {
       auto numPoints = inputPoints.extent_int(0);
       
-      using FunctorType = Hierarchical_HVOL_TRI_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
+      using FunctorType = Hierarchical_HVOL_TET_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_);
       
@@ -325,25 +365,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for("Hierarchical_HVOL_TRI_Functor", policy, functor);
-    }
-
-    /** \brief returns the basis associated to a subCell.
-
-        The bases of the subCell are the restriction to the subCell
-        of the bases of the parent cell.
-        \param [in] subCellDim - dimension of subCell
-        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
-        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
-     */
-    BasisPtr<DeviceType,OutputScalar,PointScalar>
-      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
-                    (this->basisDegree_));
-      }
-      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_TET_Functor");
     }
 
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
@@ -353,10 +375,10 @@ namespace Intrepid2
     virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar>
     getHostBasis() const override {
       using HostDeviceType = typename Kokkos::HostSpace::device_type;
-      using HostBasisType  = LegendreBasis_HVOL_TRI<HostDeviceType, OutputScalar, PointScalar>;
+      using HostBasisType  = LegendreBasis_HVOL_TET<HostDeviceType, OutputScalar, PointScalar>;
       return Teuchos::rcp( new HostBasisType(polyOrder_, pointType_) );
     }
   };
 } // end namespace Intrepid2
 
-#endif /* Intrepid2_LegendreBasis_HVOL_TRI_h */
+#endif /* Intrepid2_LegendreBasis_HVOL_TET_h */
