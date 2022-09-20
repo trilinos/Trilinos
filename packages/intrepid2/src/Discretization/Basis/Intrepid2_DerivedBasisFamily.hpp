@@ -62,6 +62,8 @@
 #include "Intrepid2_DerivedBasis_HVOL_HEX.hpp"
 
 #include "Intrepid2_DerivedBasis_HGRAD_WEDGE.hpp"
+#include "Intrepid2_DerivedBasis_HCURL_WEDGE.hpp"
+#include "Intrepid2_DerivedBasis_HDIV_WEDGE.hpp"
 #include "Intrepid2_DerivedBasis_HVOL_WEDGE.hpp"
 
 #include "Intrepid2_SerendipityBasis.hpp"
@@ -125,6 +127,7 @@ namespace Intrepid2
     
     // wedge bases
     using HGRAD_WEDGE = Basis_Derived_HGRAD_WEDGE<HGRAD_TRI, HGRAD_LINE>;
+    using HCURL_WEDGE = Basis_Derived_HCURL_WEDGE<HGRAD_TRI, HCURL_TRI, HGRAD_LINE, HVOL_LINE>;
     using HVOL_WEDGE  = Basis_Derived_HVOL_WEDGE <HVOL_TRI,  HVOL_LINE>;
   };
   

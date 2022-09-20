@@ -238,6 +238,7 @@ struct OperatorTensorDecomposition
   std::vector< std::vector<EOperator> > ops; // outer index: vector entry ordinal; inner index: basis component ordinal. (scalar-valued operators have a single entry in outer vector)
   std::vector<double> weights; // weights for each vector entry
   ordinal_type numBasisComponents_;
+  bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …)
   
   OperatorTensorDecomposition(const std::vector<EOperator> &opsBasis1, const std::vector<EOperator> &opsBasis2, const std::vector<double> vectorComponentWeights)
   :
@@ -473,6 +474,16 @@ struct OperatorTensorDecomposition
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
     return OperatorTensorDecomposition(expandedOps, expandedWeights);
+  }
+  
+  bool rotateXYNinetyDegrees() const
+  {
+    return rotateXYNinetyDegrees_;
+  }
+  
+  void setRotateXYNinetyDegrees(const bool &value)
+  {
+    rotateXYNinetyDegrees_ = value;
   }
 };
 
@@ -1409,8 +1420,8 @@ struct OperatorTensorDecomposition
          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
          {
            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
-           dofCoeffs(fieldOrdinal) = dofCoeffs1(fieldOrdinal1);
-           dofCoeffs(fieldOrdinal) = dofCoeffs2(fieldOrdinal2);
+           dofCoeffs(fieldOrdinal)  = dofCoeffs1(fieldOrdinal1);
+           dofCoeffs(fieldOrdinal) *= dofCoeffs2(fieldOrdinal2);
          }
        });
     }
@@ -1529,6 +1540,25 @@ struct OperatorTensorDecomposition
               }
               
               tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);
+            }
+            
+            // op.rotateXYNinetyDegrees() is set to true for one of the H(curl) wedge families
+            // (due to the fact that Intrepid2::EOperator does not allow us to extract individual vector components
+            //  via, e.g., OPERATOR_X, OPERATOR_Y, etc., we don't have a way of expressing the decomposition
+            //  just in terms of EOperator and component-wise scalar weights; we could also do this via component-wise
+            //  matrix weights, but this would involve a more intrusive change to the implementation).
+            const bool spansXY = (vectorComponentOrdinal == 0) && (basisValueView.extent_int(1) == 2);
+            if (spansXY && operatorDecomposition.rotateXYNinetyDegrees())
+            {
+              // map from (f_x,f_y) --> (-f_y,f_x)
+              auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
+              Kokkos::parallel_for("rotateXYNinetyDegrees", policy,
+              KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
+                const auto  f_x = basisValueView(fieldOrdinal,pointOrdinal,0); // copy
+                const auto &f_y = basisValueView(fieldOrdinal,pointOrdinal,1); // reference
+                basisValueView(fieldOrdinal,pointOrdinal,0) = -f_y;
+                basisValueView(fieldOrdinal,pointOrdinal,1) =  f_x;
+              });
             }
             
             // if weight is non-trivial (not 1.0), then we need to multiply one of the component views by weight.
