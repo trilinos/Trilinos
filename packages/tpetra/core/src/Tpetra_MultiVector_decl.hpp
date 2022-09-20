@@ -2337,9 +2337,6 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    // copyAndPermute has two implementations in DistObject, use
-    // the base class ones whenever we don't overload
-    using dist_object_type::copyAndPermute;
 
     virtual void
     copyAndPermute
@@ -2348,13 +2345,17 @@ namespace Tpetra {
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
      const CombineMode CM,
-     const execution_space &space = execution_space());
+     const execution_space &space) override;
 
-    // copyAndPermute has two implementations in DistObject, use
-    // the base class ones whenever we don't overload
-    using dist_object_type::packAndPrepare;
+    virtual void
+    copyAndPermute
+    (const SrcDistObject& sourceObj,
+     const size_t numSameIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+     const CombineMode CM) override;
 
-    void
+    virtual void
     packAndPrepare
     (const SrcDistObject& sourceObj,
      const Kokkos::DualView<
@@ -2367,11 +2368,21 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> numPacketsPerLID,
      size_t& constantNumPackets,
-     const typename Node::execution_space &space = execution_space());
+     const execution_space &space) override;
 
-    // unpackAndCombine has two implementations in DistObject, use
-    // the base class ones whenever we don't overload
-    using dist_object_type::unpackAndCombine;
+    virtual void
+    packAndPrepare
+    (const SrcDistObject& sourceObj,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> numPacketsPerLID,
+     size_t& constantNumPackets) override;
 
     virtual void
     unpackAndCombine
@@ -2386,7 +2397,21 @@ namespace Tpetra {
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
      const CombineMode CM,
-     const execution_space &space);
+     const execution_space &space) override;
+
+    virtual void
+    unpackAndCombine
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     const size_t constantNumPackets,
+     const CombineMode CM) override;
 
   private:
 

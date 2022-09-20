@@ -60,7 +60,8 @@
 #include <memory>
 #include <sstream>
 
-// #include "Tpetra_Spaces.hpp" // DELETEME debug only
+#include "Tpetra_Spaces.hpp"
+#include <execinfo.h> // DELETEME debug only
 
 namespace Tpetra {
 
@@ -1711,17 +1712,37 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermute
-  (const SrcDistObject&,
-   const size_t,
+  (const SrcDistObject &a,
+   const size_t b,
    const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>&,
+     buffer_device_type> &c,
    const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>&,
+     buffer_device_type>& d,
    const CombineMode CM,
    const execution_space &space)
-  {}
+  {
+    /*
+    we're here if the derived class doesn't know how to do this in an
+    execution space instance, so just do it in the default instance
+    */
+
+    /* if the provided instance is not the default instance, 
+       wait for any operations in the provided instance we may depend on
+       do this in the default instance, then have the
+       provided instance wait for the default instance to finish this
+       before proceeding */
+    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
+
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(space, execution_space());
+    }
+    copyAndPermute(a, b, c, d, CM); // default instance
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+    }
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1737,22 +1758,41 @@ namespace Tpetra {
      buffer_device_type> &d,
    const CombineMode CM)
   {
-    copyAndPermute(a, b, c, d, CM, execution_space());
   }  
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepare (const SrcDistObject&,
+  packAndPrepare (const SrcDistObject& source,
                     const Kokkos::DualView<const local_ordinal_type*,
-                      buffer_device_type>&,
+                      buffer_device_type>& exportLIDs,
                     Kokkos::DualView<packet_type*,
-                      buffer_device_type>&,
+                      buffer_device_type>& exports,
                     Kokkos::DualView<size_t*,
-                      buffer_device_type>,
-                    size_t&,
-                    const execution_space &)
-  {}
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    const execution_space &space)
+  {
+    /*
+    we're here if the derived class doesn't know how to do this in an
+    execution space instance, so just do it in the default instance
+    */
+
+    /* if the provided instance is not the default instance, 
+       wait for any operations in the provided instance we may depend on
+       do this in the default instance, then have the
+       provided instance wait for the default instance to finish this
+       before proceeding */
+    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
+
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(space, execution_space());
+    }
+    packAndPrepare(source, exportLIDs, exports, numPacketsPerLID, constantNumPackets); // default instance
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+    }
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1765,7 +1805,7 @@ namespace Tpetra {
                     Kokkos::DualView<size_t*,
                       buffer_device_type> numPacketsPerLID,
                     size_t& constantNumPackets)
-  {packAndPrepare(source,exportLIDs,exports,numPacketsPerLID, constantNumPackets, execution_space());}
+  {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1780,11 +1820,9 @@ namespace Tpetra {
    Kokkos::DualView<
      size_t*,
      buffer_device_type>  numPacketsPerLID ,
-   const size_t  constantNumPackets ,
-   const CombineMode  combineMode )
-  {
-    unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, combineMode, execution_space());
-  }
+   const size_t /*constantNumPackets*/ ,
+   const CombineMode /*CM*/ )
+  {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1792,17 +1830,37 @@ namespace Tpetra {
   unpackAndCombine
   (const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>& /* importLIDs */,
+     buffer_device_type> &importLIDs,
    Kokkos::DualView<
      packet_type*,
-     buffer_device_type> /* imports */,
+     buffer_device_type> imports,
    Kokkos::DualView<
      size_t*,
-     buffer_device_type> /* numPacketsPerLID */,
-   const size_t /* constantNumPackets */,
-   const CombineMode /* combineMode */,
-   const execution_space &/*space*/)
-  {}
+     buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   const CombineMode CM,
+   const execution_space &space)
+  {
+    /*
+    we're here if the derived class doesn't know how to do this in an
+    execution space instance, so just do it in the default instance
+    */
+
+    /* if the provided instance is not the default instance, 
+       wait for any operations in the provided instance we may depend on
+       do this in the default instance, then have the
+       provided instance wait for the default instance to finish this
+       before proceeding */
+    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
+
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(space, execution_space());
+    }
+    unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, CM); // default instance
+    if (instanceIsNotDefault) {
+      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+    }
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
