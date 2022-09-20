@@ -37,10 +37,15 @@ struct SerialSVDInternal {
   KOKKOS_INLINE_FUNCTION static void symEigen2x2(value_type a11, value_type a21,
                                                  value_type a22, value_type& e1,
                                                  value_type& e2) {
-    value_type a       = Kokkos::ArithTraits<value_type>::one();
-    value_type b       = -a11 - a22;
-    value_type c       = a11 * a22 - a21 * a21;
-    value_type sqrtDet = Kokkos::Experimental::sqrt(b * b - 4 * a * c);
+    value_type a = Kokkos::ArithTraits<value_type>::one();
+    value_type b = -a11 - a22;
+    value_type c = a11 * a22 - a21 * a21;
+#if KOKKOS_VERSION >= 30699
+    using Kokkos::sqrt;
+#else
+    using Kokkos::Experimental::sqrt;
+#endif
+    value_type sqrtDet = sqrt(b * b - 4 * a * c);
     e1                 = (-b + sqrtDet) / (2 * a);
     e2                 = (-b - sqrtDet) / (2 * a);
   }

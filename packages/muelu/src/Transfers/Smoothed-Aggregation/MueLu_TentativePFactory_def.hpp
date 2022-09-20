@@ -49,7 +49,9 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -58,6 +60,12 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
+#include <Xpetra_IO.hpp>
+
+#ifdef HAVE_MUELU_TPETRA
+#include "Xpetra_TpetraBlockCrsMatrix.hpp"
+//#include "Tpetra_BlockCrsMatrix.hpp"
+#endif
 
 #include "MueLu_TentativePFactory_decl.hpp"
 
@@ -70,6 +78,9 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"
+
+
+
 
 namespace MueLu {
 
@@ -157,7 +168,8 @@ namespace MueLu {
       Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getLocalNumElements() != fineNullspace->getMap()->getLocalNumElements(),
+    // NOTE:  We check DomainMap here rather than RowMap because those are different for BlockCrs matrices
+    TEUCHOS_TEST_FOR_EXCEPTION( A->getDomainMap()->getLocalNumElements() != fineNullspace->getMap()->getLocalNumElements(),
 			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
 
     RCP<Matrix>                Ptentative;
@@ -225,10 +237,16 @@ namespace MueLu {
       }
     }
 
-    if (!aggregates->AggregatesCrossProcessors())
-      BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
+    if (!aggregates->AggregatesCrossProcessors()) {
+      if(Xpetra::Helpers<SC,LO,GO,NO>::isTpetraBlockCrs(A)) {
+        BuildPuncoupledBlockCrs(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
+      }
+      else {
+        BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
+      }
+    }
     else
-      BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
+      BuildPcoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
     // If available, use striding information of fine level matrix A for range
     // map and coarseMap as domain map; otherwise use plain range map of
@@ -258,12 +276,24 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
-    RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Map> colMap = A->getColMap();
+  BuildPuncoupledBlockCrs(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                          RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
+#ifdef HAVE_MUELU_TPETRA
 
-    const size_t numRows   = rowMap->getLocalNumElements();
+    /* This routine generates a BlockCrs P for a BlockCrs A.  There are a few assumptions here, which meet the use cases we care about, but could 
+       be generalized later, if we ever need to do so:
+       1) Null space dimension === block size of matrix:  So no elasticity right now
+       2) QR is not supported:  Under assumption #1, this shouldn't cause problems.
+       3) Maps are "good": Aka the first chunk of the ColMap is the RowMap.
+
+       These assumptions keep our code way simpler and still support the use cases we actually care about.
+     */
+
+    RCP<const Map> rowMap     = A->getRowMap();
+    RCP<const Map> rangeMap   = A->getRangeMap();
+    RCP<const Map> colMap     = A->getColMap();
+    //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
+    const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
@@ -275,7 +305,16 @@ namespace MueLu {
     const size_t NSDim     = fineNullspace->getNumVectors();
     ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
 
-
+    // Need to generate the coarse block map
+    // NOTE: We assume NSDim == block size here
+    // NOTE: We also assume that coarseMap has contiguous GIDs
+    //const size_t numCoarsePointRows = coarsePointMap->getLocalNumElements();
+    const size_t numCoarseBlockRows = coarsePointMap->getLocalNumElements() / NSDim;
+    RCP<const Map> coarseBlockMap = MapFactory::Build(coarsePointMap->lib(),
+                                                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                      numCoarseBlockRows,
+                                                      coarsePointMap->getIndexBase(),
+                                                      coarsePointMap->getComm());    
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
@@ -283,6 +322,8 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
                                "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
+
+    // The aggregates use the amalgamated column map, which in this case is what we want
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -299,293 +340,137 @@ namespace MueLu {
     if (goodMap) {
       amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
       GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
-
     } else {
-      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMapGO);
-      GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
-                            << "using GO->LO conversion with performance penalty" << std::endl;
+      throw std::runtime_error("TentativePFactory::PuncoupledBlockCrs: Inconsistent maps not currently supported");
     }
-
-    coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
+  
+    coarseNullspace = MultiVectorFactory::Build(coarsePointMap, NSDim);
 
     // Pull out the nullspace vectors so that we can have random access.
     ArrayRCP<ArrayRCP<const SC> > fineNS  (NSDim);
     ArrayRCP<ArrayRCP<SC> >       coarseNS(NSDim);
     for (size_t i = 0; i < NSDim; i++) {
       fineNS[i] = fineNullspace->getData(i);
-      if (coarseMap->getLocalNumElements() > 0)
+      if (coarsePointMap->getLocalNumElements() > 0)
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
     }
 
-    size_t nnzEstimate = numRows * NSDim;
-
-    // Time to construct the matrix and fill in the values
-    Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
-    RCP<CrsMatrix> PtentCrs   = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
-
+    // BlockCrs requires that we build the (block) graph first, so let's do that...
+    // NOTE: Because we're assuming that the NSDim == BlockSize, we only have one 
+    // block non-zero per row in the matrix;
+    RCP<CrsGraph> BlockGraph = CrsGraphFactory::Build(rowMap,coarseBlockMap,0);
     ArrayRCP<size_t>  iaPtent;
     ArrayRCP<LO>      jaPtent;
-    ArrayRCP<SC>     valPtent;
-
-    PtentCrs->allocateAllValues(nnzEstimate, iaPtent, jaPtent, valPtent);
-
+    BlockGraph->allocateAllIndices(numFineBlockRows, iaPtent, jaPtent);
     ArrayView<size_t> ia  = iaPtent();
     ArrayView<LO>     ja  = jaPtent();
-    ArrayView<SC>     val = valPtent();
 
-    ia[0] = 0;
-    for (size_t i = 1; i <= numRows; i++)
-      ia[i] = ia[i-1] + NSDim;
-
-    for (size_t j = 0; j < nnzEstimate; j++) {
-      ja [j] = INVALID;
-      val[j] = zero;
+    for (size_t i = 0; i < numFineBlockRows; i++) {
+      ia[i] = i;
+      ja[i] = INVALID;
     }
+    ia[numCoarseBlockRows] = numCoarseBlockRows;
 
 
-    if (doQRStep) {
-      ////////////////////////////////
-      // Standard aggregate-wise QR //
-      ////////////////////////////////
-      for (GO agg = 0; agg < numAggs; agg++) {
-        LO aggSize = aggStart[agg+1] - aggStart[agg];
+    for (GO agg = 0; agg < numAggs; agg++) {
+      LO aggSize = aggStart[agg+1] - aggStart[agg];
+      Xpetra::global_size_t offset = agg;
 
-        Xpetra::global_size_t offset = agg*NSDim;
-
-        // Extract the piece of the nullspace corresponding to the aggregate, and
-        // put it in the flat array, "localQR" (in column major format) for the
-        // QR routine.
-        Teuchos::SerialDenseMatrix<LO,SC> localQR(aggSize, NSDim);
-        if (goodMap) {
-          for (size_t j = 0; j < NSDim; j++)
-            for (LO k = 0; k < aggSize; k++)
-              localQR(k,j) = fineNS[j][aggToRowMapLO[aggStart[agg]+k]];
-        } else {
-          for (size_t j = 0; j < NSDim; j++)
-            for (LO k = 0; k < aggSize; k++)
-              localQR(k,j) = fineNS[j][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+k])];
-        }
-
-        // Test for zero columns
-        for (size_t j = 0; j < NSDim; j++) {
-          bool bIsZeroNSColumn = true;
-
-          for (LO k = 0; k < aggSize; k++)
-            if (localQR(k,j) != zero)
-              bIsZeroNSColumn = false;
-
-          TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError,
-                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column in NS column " << j);
-        }
-
-        // Calculate QR decomposition (standard)
-        // NOTE: Q is stored in localQR and R is stored in coarseNS
-        if (aggSize >= Teuchos::as<LO>(NSDim)) {
-
-          if (NSDim == 1) {
-            // Only one nullspace vector, calculate Q and R by hand
-            Magnitude norm = STS::magnitude(zero);
-            for (size_t k = 0; k < Teuchos::as<size_t>(aggSize); k++)
-              norm += STS::magnitude(localQR(k,0)*localQR(k,0));
-            norm = Teuchos::ScalarTraits<Magnitude>::squareroot(norm);
-
-            // R = norm
-            coarseNS[0][offset] = norm;
-
-            // Q = localQR(:,0)/norm
-            for (LO i = 0; i < aggSize; i++)
-              localQR(i,0) /= norm;
-
-          } else {
-            Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
-            qrSolver.setMatrix(Teuchos::rcp(&localQR, false));
-            qrSolver.factor();
-
-            // R = upper triangular part of localQR
-            for (size_t j = 0; j < NSDim; j++)
-              for (size_t k = 0; k <= j; k++)
-                coarseNS[j][offset+k] = localQR(k,j); //TODO is offset+k the correct local ID?!
-
-            // Calculate Q, the tentative prolongator.
-            // The Lapack GEQRF call only works for myAggsize >= NSDim
-            qrSolver.formQ();
-            Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
-            for (size_t j = 0; j < NSDim; j++)
-              for (size_t i = 0; i < Teuchos::as<size_t>(aggSize); i++)
-                localQR(i,j) = (*qFactor)(i,j);
-          }
-
-        } else {
-          // Special handling for aggSize < NSDim (i.e. single node aggregates in structural mechanics)
-
-          // The local QR decomposition is not possible in the "overconstrained"
-          // case (i.e. number of columns in localQR > number of rows), which
-          // corresponds to #DOFs in Aggregate < NSDim. For usual problems this
-          // is only possible for single node aggregates in structural mechanics.
-          // (Similar problems may arise in discontinuous Galerkin problems...)
-          // We bypass the QR decomposition and use an identity block in the
-          // tentative prolongator for the single node aggregate and transfer the
-          // corresponding fine level null space information 1-to-1 to the coarse
-          // level null space part.
-
-          // NOTE: The resulting tentative prolongation operator has
-          // (aggSize*DofsPerNode-NSDim) zero columns leading to a singular
-          // coarse level operator A.  To deal with that one has the following
-          // options:
-          // - Use the "RepairMainDiagonal" flag in the RAPFactory (default:
-          //   false) to add some identity block to the diagonal of the zero rows
-          //   in the coarse level operator A, such that standard level smoothers
-          //   can be used again.
-          // - Use special (projection-based) level smoothers, which can deal
-          //   with singular matrices (very application specific)
-          // - Adapt the code below to avoid zero columns. However, we do not
-          //   support a variable number of DOFs per node in MueLu/Xpetra which
-          //   makes the implementation really hard.
-
-          // R = extended (by adding identity rows) localQR
-          for (size_t j = 0; j < NSDim; j++)
-            for (size_t k = 0; k < NSDim; k++)
-              if (k < as<size_t>(aggSize))
-                coarseNS[j][offset+k] = localQR(k,j);
-              else
-                coarseNS[j][offset+k] = (k == j ? one : zero);
-
-          // Q = I (rectangular)
-          for (size_t i = 0; i < as<size_t>(aggSize); i++)
-            for (size_t j = 0; j < NSDim; j++)
-              localQR(i,j) = (j == i ? one : zero);
-        }
-
-
-        // Process each row in the local Q factor
-        // FIXME: What happens if maps are blocked?
-        for (LO j = 0; j < aggSize; j++) {
-          LO localRow = (goodMap ? aggToRowMapLO[aggStart[agg]+j] : rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]));
-
-          size_t rowStart = ia[localRow];
-          for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
-            // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-            if (localQR(j,k) != zero) {
-              ja [rowStart+lnnz] = offset + k;
-              val[rowStart+lnnz] = localQR(j,k);
-              lnnz++;
-            }
-          }
-        }
-      }
-
-    } else {
-      GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
-      if (NSDim>1)
-        GetOStream(Warnings0) << "TentativePFactory : for nontrivial nullspace, this may degrade performance" << std::endl;
-      /////////////////////////////
-      //      "no-QR" option     //
-      /////////////////////////////
-      // Local Q factor is just the fine nullspace support over the current aggregate.
-      // Local R factor is the identity.
-      // TODO I have not implemented any special handling for aggregates that are too
-      // TODO small to locally support the nullspace, as is done in the standard QR
-      // TODO case above.
-      if (goodMap) {
-        for (GO agg = 0; agg < numAggs; agg++) {
-          const LO aggSize = aggStart[agg+1] - aggStart[agg];
-          Xpetra::global_size_t offset = agg*NSDim;
-
-          // Process each row in the local Q factor
-          // FIXME: What happens if maps are blocked?
-          for (LO j = 0; j < aggSize; j++) {
-
-            //TODO Here I do not check for a zero nullspace column on the aggregate.
-            //     as is done in the standard QR case.
-
-            const LO localRow = aggToRowMapLO[aggStart[agg]+j];
-
-            const size_t rowStart = ia[localRow];
-
-            for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
-              // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
-              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
-              if (qr_jk != zero) {
-                ja [rowStart+lnnz] = offset + k;
-                val[rowStart+lnnz] = qr_jk;
-                lnnz++;
-              }
-            }
-          }
-          for (size_t j = 0; j < NSDim; j++)
-            coarseNS[j][offset+j] = one;
-        } //for (GO agg = 0; agg < numAggs; agg++)
-
-      } else {
-        for (GO agg = 0; agg < numAggs; agg++) {
-          const LO aggSize = aggStart[agg+1] - aggStart[agg];
-          Xpetra::global_size_t offset = agg*NSDim;
-          for (LO j = 0; j < aggSize; j++) {
-
-            const LO localRow = rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]);
-
-            const size_t rowStart = ia[localRow];
-
-            for (size_t k = 0, lnnz = 0; k < NSDim; ++k) {
-              // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
-              SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
-              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
-              if (qr_jk != zero) {
-                ja [rowStart+lnnz] = offset + k;
-                val[rowStart+lnnz] = qr_jk;
-                lnnz++;
-              }
-            }
-          }
-          for (size_t j = 0; j < NSDim; j++)
-            coarseNS[j][offset+j] = one;
-        } //for (GO agg = 0; agg < numAggs; agg++)
-
-      } //if (goodmap) else ...
-
-    } //if doQRStep ... else
+      for (LO j = 0; j < aggSize; j++) {
+        // FIXME: Allow for bad maps
+        const LO localRow = aggToRowMapLO[aggStart[agg]+j];
+        const size_t rowStart = ia[localRow];
+        ja[rowStart] = offset;
+      }      
+    }
 
     // Compress storage (remove all INVALID, which happen when we skip zeros)
     // We do that in-place
     size_t ia_tmp = 0, nnz = 0;
-    for (size_t i = 0; i < numRows; i++) {
+    for (size_t i = 0; i < numFineBlockRows; i++) {
       for (size_t j = ia_tmp; j < ia[i+1]; j++)
         if (ja[j] != INVALID) {
           ja [nnz] = ja [j];
-          val[nnz] = val[j];
           nnz++;
         }
       ia_tmp  = ia[i+1];
       ia[i+1] = nnz;
     }
+
     if (rowMap->lib() == Xpetra::UseTpetra) {
       // - Cannot resize for Epetra, as it checks for same pointers
       // - Need to resize for Tpetra, as it check ().size() == ia[numRows]
       // NOTE: these invalidate ja and val views
       jaPtent .resize(nnz);
-      valPtent.resize(nnz);
     }
 
-    GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
-
-    PtentCrs->setAllValues(iaPtent, jaPtent, valPtent);
-
+    GetOStream(Runtime1) << "TentativePFactory : generating block graph" << std::endl;
+    BlockGraph->setAllIndices(iaPtent, jaPtent);
 
     // Managing labels & constants for ESFC
-    RCP<ParameterList> FCparams;
-    if(pL.isSublist("matrixmatrix: kernel params"))
-      FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else
-      FCparams= rcp(new ParameterList);
-    // By default, we don't need global constants for TentativeP
-    FCparams->set("compute global constants",FCparams->get("compute global constants",false));
-    std::string levelIDs = toString(levelID);
-    FCparams->set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
-    RCP<const Export> dummy_e;
-    RCP<const Import> dummy_i;
+    {
+      RCP<ParameterList> FCparams;
+      if(pL.isSublist("matrixmatrix: kernel params"))
+        FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        FCparams= rcp(new ParameterList);
+      // By default, we don't need global constants for TentativeP, but we do want it for the graph
+      // if we're printing statistics, so let's leave it on for now.
+      FCparams->set("compute global constants",FCparams->get("compute global constants",true));
+      std::string levelIDs = toString(levelID);
+      FCparams->set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
+      RCP<const Export> dummy_e;
+      RCP<const Import> dummy_i;
+      BlockGraph->expertStaticFillComplete(coarseBlockMap,rowMap,dummy_i,dummy_e,FCparams);
+    }
 
-    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap(),dummy_i,dummy_e,FCparams);
+    // Now let's make a BlockCrs Matrix
+    // NOTE: Assumes block size== NSDim
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > P_xpetra = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::BuildBlock(BlockGraph, coarsePointMap, rangeMap,NSDim);
+    RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > P_tpetra = rcp_dynamic_cast<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> >(P_xpetra);
+    if(P_tpetra.is_null()) throw std::runtime_error("BuildPUncoupled: Matrix factory did not return a Tpetra::BlockCrsMatrix");
+    RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
+
+    /////////////////////////////
+    //      "no-QR" option     //
+    /////////////////////////////
+    // Local Q factor is just the fine nullspace support over the current aggregate.
+    // Local R factor is the identity.
+    // NOTE: We're not going to do a QR here as we're assuming that blocksize == NSDim
+    // NOTE: "goodMap" case only
+    Teuchos::Array<Scalar> block(NSDim*NSDim, zero);
+    Teuchos::Array<LO> bcol(1);
+
+    GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
+    for (LO agg = 0; agg < numAggs; agg++) {
+      bcol[0] = agg;
+      const LO aggSize = aggStart[agg+1] - aggStart[agg];
+      Xpetra::global_size_t offset = agg*NSDim;
+
+      // Process each row in the local Q factor
+      // NOTE: Blocks are in row-major order
+      for (LO j = 0; j < aggSize; j++) {
+        const LO localBlockRow = aggToRowMapLO[aggStart[agg]+j];
+
+        for (size_t r = 0; r < NSDim; r++) {
+          LO localPointRow = localBlockRow*NSDim + r;
+          for (size_t c = 0; c < NSDim; c++) 
+            block[r*NSDim+c] = fineNS[c][localPointRow];
+        }
+        // NOTE: Assumes columns==aggs and are ordered sequentially
+        P_tpetra->replaceLocalValues(localBlockRow,bcol(),block());
+
+      }//end aggSize
+        
+      for (size_t j = 0; j < NSDim; j++)
+        coarseNS[j][offset+j] = one;
+      
+    } //for (GO agg = 0; agg < numAggs; agg++)
+
+    Ptentative = P_wrap;
+#else
+    throw std::runtime_error("TentativePFactory::BuildPuncoupledBlockCrs: Requires Tpetra");
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -957,6 +842,338 @@ namespace MueLu {
     }
 
     Ptentative->fillComplete(coarseMap, A->getDomainMap());
+  }
+
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
+    RCP<const Map> rowMap = A->getRowMap();
+    RCP<const Map> colMap = A->getColMap();
+    const size_t numRows   = rowMap->getLocalNumElements();
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType Magnitude;
+    const SC     zero      = STS::zero();
+    const SC     one       = STS::one();
+    const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
+
+    const GO     numAggs   = aggregates->GetNumAggregates();
+    const size_t NSDim     = fineNullspace->getNumVectors();
+    ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
+
+
+    // Sanity checking
+    const ParameterList& pL = GetParameterList();
+    const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
+    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
+                               "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
+
+    // Aggregates map is based on the amalgamated column map
+    // We can skip global-to-local conversion if LIDs in row map are
+    // same as LIDs in column map
+    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
+
+    // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
+    // aggStart is a pointer into aggToRowMapLO
+    // aggStart[i]..aggStart[i+1] are indices into aggToRowMapLO
+    // aggToRowMapLO[aggStart[i]]..aggToRowMapLO[aggStart[i+1]-1] are the DOFs in aggregate i
+    ArrayRCP<LO> aggStart;
+    ArrayRCP<LO> aggToRowMapLO;
+    ArrayRCP<GO> aggToRowMapGO;
+    if (goodMap) {
+      amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
+      GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
+
+    } else {
+      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMapGO);
+      GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
+                            << "using GO->LO conversion with performance penalty" << std::endl;
+    }
+    coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
+
+    // Pull out the nullspace vectors so that we can have random access.
+    ArrayRCP<ArrayRCP<const SC> > fineNS  (NSDim);
+    ArrayRCP<ArrayRCP<SC> >       coarseNS(NSDim);
+    for (size_t i = 0; i < NSDim; i++) {
+      fineNS[i] = fineNullspace->getData(i);
+      if (coarseMap->getLocalNumElements() > 0)
+        coarseNS[i] = coarseNullspace->getDataNonConst(i);
+    }
+
+    size_t nnzEstimate = numRows * NSDim;
+
+    // Time to construct the matrix and fill in the values
+    Ptentative = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
+    RCP<CrsMatrix> PtentCrs   = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
+
+    ArrayRCP<size_t>  iaPtent;
+    ArrayRCP<LO>      jaPtent;
+    ArrayRCP<SC>     valPtent;
+
+    PtentCrs->allocateAllValues(nnzEstimate, iaPtent, jaPtent, valPtent);
+
+    ArrayView<size_t> ia  = iaPtent();
+    ArrayView<LO>     ja  = jaPtent();
+    ArrayView<SC>     val = valPtent();
+
+    ia[0] = 0;
+    for (size_t i = 1; i <= numRows; i++)
+      ia[i] = ia[i-1] + NSDim;
+
+    for (size_t j = 0; j < nnzEstimate; j++) {
+      ja [j] = INVALID;
+      val[j] = zero;
+    }
+
+
+    if (doQRStep) {
+      ////////////////////////////////
+      // Standard aggregate-wise QR //
+      ////////////////////////////////
+      for (GO agg = 0; agg < numAggs; agg++) {
+        LO aggSize = aggStart[agg+1] - aggStart[agg];
+
+        Xpetra::global_size_t offset = agg*NSDim;
+
+        // Extract the piece of the nullspace corresponding to the aggregate, and
+        // put it in the flat array, "localQR" (in column major format) for the
+        // QR routine.
+        Teuchos::SerialDenseMatrix<LO,SC> localQR(aggSize, NSDim);
+        if (goodMap) {
+          for (size_t j = 0; j < NSDim; j++)
+            for (LO k = 0; k < aggSize; k++)
+              localQR(k,j) = fineNS[j][aggToRowMapLO[aggStart[agg]+k]];
+        } else {
+          for (size_t j = 0; j < NSDim; j++)
+            for (LO k = 0; k < aggSize; k++)
+              localQR(k,j) = fineNS[j][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+k])];
+        }
+
+        // Test for zero columns
+        for (size_t j = 0; j < NSDim; j++) {
+          bool bIsZeroNSColumn = true;
+
+          for (LO k = 0; k < aggSize; k++)
+            if (localQR(k,j) != zero)
+              bIsZeroNSColumn = false;
+
+          TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError,
+                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column in NS column " << j);
+        }
+
+        // Calculate QR decomposition (standard)
+        // NOTE: Q is stored in localQR and R is stored in coarseNS
+        if (aggSize >= Teuchos::as<LO>(NSDim)) {
+
+          if (NSDim == 1) {
+            // Only one nullspace vector, calculate Q and R by hand
+            Magnitude norm = STS::magnitude(zero);
+            for (size_t k = 0; k < Teuchos::as<size_t>(aggSize); k++)
+              norm += STS::magnitude(localQR(k,0)*localQR(k,0));
+            norm = Teuchos::ScalarTraits<Magnitude>::squareroot(norm);
+
+            // R = norm
+            coarseNS[0][offset] = norm;
+
+            // Q = localQR(:,0)/norm
+            for (LO i = 0; i < aggSize; i++)
+              localQR(i,0) /= norm;
+
+          } else {
+            Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
+            qrSolver.setMatrix(Teuchos::rcp(&localQR, false));
+            qrSolver.factor();
+
+            // R = upper triangular part of localQR
+            for (size_t j = 0; j < NSDim; j++)
+              for (size_t k = 0; k <= j; k++)
+                coarseNS[j][offset+k] = localQR(k,j); //TODO is offset+k the correct local ID?!
+
+            // Calculate Q, the tentative prolongator.
+            // The Lapack GEQRF call only works for myAggsize >= NSDim
+            qrSolver.formQ();
+            Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
+            for (size_t j = 0; j < NSDim; j++)
+              for (size_t i = 0; i < Teuchos::as<size_t>(aggSize); i++)
+                localQR(i,j) = (*qFactor)(i,j);
+          }
+
+        } else {
+          // Special handling for aggSize < NSDim (i.e. single node aggregates in structural mechanics)
+
+          // The local QR decomposition is not possible in the "overconstrained"
+          // case (i.e. number of columns in localQR > number of rows), which
+          // corresponds to #DOFs in Aggregate < NSDim. For usual problems this
+          // is only possible for single node aggregates in structural mechanics.
+          // (Similar problems may arise in discontinuous Galerkin problems...)
+          // We bypass the QR decomposition and use an identity block in the
+          // tentative prolongator for the single node aggregate and transfer the
+          // corresponding fine level null space information 1-to-1 to the coarse
+          // level null space part.
+
+          // NOTE: The resulting tentative prolongation operator has
+          // (aggSize*DofsPerNode-NSDim) zero columns leading to a singular
+          // coarse level operator A.  To deal with that one has the following
+          // options:
+          // - Use the "RepairMainDiagonal" flag in the RAPFactory (default:
+          //   false) to add some identity block to the diagonal of the zero rows
+          //   in the coarse level operator A, such that standard level smoothers
+          //   can be used again.
+          // - Use special (projection-based) level smoothers, which can deal
+          //   with singular matrices (very application specific)
+          // - Adapt the code below to avoid zero columns. However, we do not
+          //   support a variable number of DOFs per node in MueLu/Xpetra which
+          //   makes the implementation really hard.
+
+          // R = extended (by adding identity rows) localQR
+          for (size_t j = 0; j < NSDim; j++)
+            for (size_t k = 0; k < NSDim; k++)
+              if (k < as<size_t>(aggSize))
+                coarseNS[j][offset+k] = localQR(k,j);
+              else
+                coarseNS[j][offset+k] = (k == j ? one : zero);
+
+          // Q = I (rectangular)
+          for (size_t i = 0; i < as<size_t>(aggSize); i++)
+            for (size_t j = 0; j < NSDim; j++)
+              localQR(i,j) = (j == i ? one : zero);
+        }
+
+
+        // Process each row in the local Q factor
+        // FIXME: What happens if maps are blocked?
+        for (LO j = 0; j < aggSize; j++) {
+          LO localRow = (goodMap ? aggToRowMapLO[aggStart[agg]+j] : rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]));
+
+          size_t rowStart = ia[localRow];
+          for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
+            // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
+            if (localQR(j,k) != zero) {
+              ja [rowStart+lnnz] = offset + k;
+              val[rowStart+lnnz] = localQR(j,k);
+              lnnz++;
+            }
+          }
+        }
+      }
+
+    } else {
+      GetOStream(Runtime1) << "TentativePFactory : bypassing local QR phase" << std::endl;
+      if (NSDim>1)
+        GetOStream(Warnings0) << "TentativePFactory : for nontrivial nullspace, this may degrade performance" << std::endl;
+      /////////////////////////////
+      //      "no-QR" option     //
+      /////////////////////////////
+      // Local Q factor is just the fine nullspace support over the current aggregate.
+      // Local R factor is the identity.
+      // TODO I have not implemented any special handling for aggregates that are too
+      // TODO small to locally support the nullspace, as is done in the standard QR
+      // TODO case above.
+      if (goodMap) {
+        for (GO agg = 0; agg < numAggs; agg++) {
+          const LO aggSize = aggStart[agg+1] - aggStart[agg];
+          Xpetra::global_size_t offset = agg*NSDim;
+
+          // Process each row in the local Q factor
+          // FIXME: What happens if maps are blocked?
+          for (LO j = 0; j < aggSize; j++) {
+
+            //TODO Here I do not check for a zero nullspace column on the aggregate.
+            //     as is done in the standard QR case.
+
+            const LO localRow = aggToRowMapLO[aggStart[agg]+j];
+
+            const size_t rowStart = ia[localRow];
+
+            for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
+              // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
+              SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
+              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
+              if (qr_jk != zero) {
+                ja [rowStart+lnnz] = offset + k;
+                val[rowStart+lnnz] = qr_jk;
+                lnnz++;
+              }
+            }
+          }
+          for (size_t j = 0; j < NSDim; j++)
+            coarseNS[j][offset+j] = one;
+        } //for (GO agg = 0; agg < numAggs; agg++)
+
+      } else {
+        for (GO agg = 0; agg < numAggs; agg++) {
+          const LO aggSize = aggStart[agg+1] - aggStart[agg];
+          Xpetra::global_size_t offset = agg*NSDim;
+          for (LO j = 0; j < aggSize; j++) {
+
+            const LO localRow = rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]);
+
+            const size_t rowStart = ia[localRow];
+
+            for (size_t k = 0, lnnz = 0; k < NSDim; ++k) {
+              // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
+              SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
+              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
+              if (qr_jk != zero) {
+                ja [rowStart+lnnz] = offset + k;
+                val[rowStart+lnnz] = qr_jk;
+                lnnz++;
+              }
+            }
+          }
+          for (size_t j = 0; j < NSDim; j++)
+            coarseNS[j][offset+j] = one;
+        } //for (GO agg = 0; agg < numAggs; agg++)
+
+      } //if (goodmap) else ...
+
+    } //if doQRStep ... else
+
+    // Compress storage (remove all INVALID, which happen when we skip zeros)
+    // We do that in-place
+    size_t ia_tmp = 0, nnz = 0;
+    for (size_t i = 0; i < numRows; i++) {
+      for (size_t j = ia_tmp; j < ia[i+1]; j++)
+        if (ja[j] != INVALID) {
+          ja [nnz] = ja [j];
+          val[nnz] = val[j];
+          nnz++;
+        }
+      ia_tmp  = ia[i+1];
+      ia[i+1] = nnz;
+    }
+    if (rowMap->lib() == Xpetra::UseTpetra) {
+      // - Cannot resize for Epetra, as it checks for same pointers
+      // - Need to resize for Tpetra, as it check ().size() == ia[numRows]
+      // NOTE: these invalidate ja and val views
+      jaPtent .resize(nnz);
+      valPtent.resize(nnz);
+    }
+
+    GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
+
+    PtentCrs->setAllValues(iaPtent, jaPtent, valPtent);
+
+
+    // Managing labels & constants for ESFC
+    RCP<ParameterList> FCparams;
+    if(pL.isSublist("matrixmatrix: kernel params"))
+      FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+    else
+      FCparams= rcp(new ParameterList);
+    // By default, we don't need global constants for TentativeP
+    FCparams->set("compute global constants",FCparams->get("compute global constants",false));
+    std::string levelIDs = toString(levelID);
+    FCparams->set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
+    RCP<const Export> dummy_e;
+    RCP<const Import> dummy_i;
+
+    PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap(),dummy_i,dummy_e,FCparams);
   }
 
 

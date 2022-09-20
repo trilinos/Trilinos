@@ -80,11 +80,29 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
+   /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+       fullblocksize is the number of storage blocks that must kept together during the amalgamation process.
+
+       Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+       numPDEs = fullblocksize * storageblocksize.
+       
+       If numPDEs==1
+         Matrix is point storage (classical CRS storage).  storageblocksize=1 and fullblocksize=1
+         No other values makes sense.
+
+       If numPDEs>1
+         If matrix uses point storage, then storageblocksize=1  and fullblockssize=numPDEs.
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and fullblocksize=numPDEs/n.  
+         Thus far, only storageblocksize=numPDEs and fullblocksize=1 has been tested.
+    */
+
     LO fullblocksize    = 1;   // block dim for fixed size blocks
     GO offset           = 0;   // global offset of dof gids
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
+    LO storageblocksize = A->GetStorageBlockSize();
     // GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps (unused)
 
     // 1) check for blocking/striding information
@@ -106,6 +124,12 @@ namespace MueLu {
       } else {
         stridedblocksize = fullblocksize;
       }
+      // Correct for the storageblocksize
+      // NOTE:  Before this point fullblocksize is actually numPDEs
+      TEUCHOS_TEST_FOR_EXCEPTION(fullblocksize % storageblocksize != 0,Exceptions::RuntimeError,"AmalgamationFactory::Build(): fullblocksize needs to be a multiple of A->GetStorageBlockSize()");
+      fullblocksize /= storageblocksize;
+      stridedblocksize /= storageblocksize;
+
       oldView = A->SwitchToView(oldView);
       GetOStream(Runtime1) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
 
@@ -172,7 +196,7 @@ namespace MueLu {
     container               filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 
     GO offset = 0;
-    LO blkSize = A.GetFixedBlockSize();
+    LO blkSize = A.GetFixedBlockSize() / A.GetStorageBlockSize();
     if (A.IsView("stridedMaps") == true) {
       Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
       Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);

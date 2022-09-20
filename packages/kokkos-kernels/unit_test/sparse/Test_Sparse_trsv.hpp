@@ -11,6 +11,7 @@
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 #include <KokkosKernels_Utils.hpp>
 
@@ -76,8 +77,12 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   // this function creates a dense lower and upper triangular matrix.
   // TODO: SHOULD CHANGE IT TO SPARSE
   crsMat_t lower_part =
-      KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
+      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'L', numRows, numCols, nnz, row_size_variance, bandwidth);
+
+  Test::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries,
+                             lower_part.values);
+
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N");
 
@@ -86,8 +91,12 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   // typedef typename Kokkos::View<lno_t*, layout, Device> indexview;
 
   crsMat_t upper_part =
-      KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
+      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'U', numRows, numCols, nnz, row_size_variance, bandwidth);
+
+  Test::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries,
+                             upper_part.values);
+
   KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N");
 
@@ -95,309 +104,46 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U", "T");
 }
 
+// Note BMK 7-22: the matrix generator used by this test always
+// generates a dense triangle. It ignores bandwidth, nnz and row size variance.
+
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                    \
   TEST_F(                                                                           \
       TestCategory,                                                                 \
       sparse##_##trsv_mv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        5000, 5000 * 30, 200, 10, 1);                                               \
+        1000, 1000 * 30, 200, 10, 1);                                               \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        5000, 5000 * 30, 100, 10, 5);                                               \
+        800, 800 * 30, 100, 10, 5);                                                 \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        1000, 1000 * 20, 100, 5, 10);                                               \
+        400, 400 * 20, 100, 5, 10);                                                 \
   }
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&  \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int, int, LayoutLeft, TestExecSpace)
-#endif
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&      \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int64_t, int, LayoutLeft, TestExecSpace)
-#endif
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int, size_t, LayoutLeft, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&      \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int64_t, size_t, LayoutLeft, TestExecSpace)
-#endif
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&  \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int, int, LayoutLeft, TestExecSpace)
-#endif
+#endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&      \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int64_t, int, LayoutLeft, TestExecSpace)
-#endif
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int, size_t, LayoutLeft, TestExecSpace)
-#endif
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&      \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int64_t, size_t, LayoutLeft, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&             \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int, int, LayoutLeft, TestExecSpace)
-#endif
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&             \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int64_t, int, LayoutLeft, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&             \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int, size_t, LayoutLeft, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&             \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int64_t, size_t, LayoutLeft,
-                TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int, int, LayoutLeft, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int64_t, int, LayoutLeft, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int, size_t, LayoutLeft, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_LAYOUTLEFT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutLeft,
-                TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int64_t, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(double, int64_t, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int64_t, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&     \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(float, int64_t, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int64_t, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_double, int64_t, size_t, LayoutRight,
-                TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int64_t, int, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int, size_t, LayoutRight, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutRight,
-                TestExecSpace)
-#endif
+#endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
 
 #undef EXECUTE_TEST_MV
 

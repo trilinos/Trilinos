@@ -105,11 +105,6 @@ struct V_Nrm2_Functor {
     update += source;
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type& update,
-                                   const volatile value_type& source) const {
-    update += source;
-  }
-
   KOKKOS_INLINE_FUNCTION void final(value_type& update) const {
     if (m_take_sqrt)
       update =

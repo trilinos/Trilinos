@@ -15,19 +15,25 @@
 #include <vector>
 #include <utility>
 #include <map>
+#include "stk_util/stk_config.h"
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // delete October 2022
 namespace stk
 {
 namespace coupling
 {
 
+STK_DEPRECATED
 std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm local);
 
+STK_DEPRECATED_MSG("prefer stk::couping::are_comms_unequal")
 bool has_split_comm(MPI_Comm global, MPI_Comm local);
 
+STK_DEPRECATED
 MPI_Comm split_comm(MPI_Comm parentCommunicator, int color);
 
 }
 }
 
+#endif
 #endif /* STK_COUPLING_OLD_COMM_SPLITTING_HPP */

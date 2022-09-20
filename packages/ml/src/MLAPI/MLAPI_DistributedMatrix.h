@@ -47,6 +47,13 @@ public:
     Matrix_ = new Epetra_FECrsMatrix(Copy, *RangeMap_, 0);
   }
 
+  virtual ~DistributedMatrix() {
+    //    delete Matrix_;
+    delete RangeMap_;
+    delete DomainMap_;
+  }
+
+
   virtual int NumMyRowEntries(int MyRow, int& NumEntries) const
   {
     ML_RETURN(Matrix_->NumMyRowEntries(MyRow, NumEntries));

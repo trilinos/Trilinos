@@ -4,7 +4,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBatched_SetIdentity_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
 
@@ -37,7 +37,8 @@ struct SerialHessenbergFormQInternal {
     ///   B is m x m
     // set identity
     if (is_Q_zero)
-      SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
+      KokkosBlas::Impl::SerialSetInternal::invoke(m, value_type(1), Q,
+                                                  qs0 + qs1);
     else
       SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
 

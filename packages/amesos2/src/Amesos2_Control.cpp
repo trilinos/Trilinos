@@ -97,7 +97,7 @@ void Control::setControlParameters(
   if( parameterList->isType<bool>("Iterative refinement") ){
     useIterRefine_ = parameterList->get<bool>("Iterative refinement");
   }
-  if( parameterList->isType<bool>("Number of iterative refinements") ){
+  if( parameterList->isType<int>("Number of iterative refinements") ){
     maxNumIterRefines_ = parameterList->get<int>("Number of iterative refinements");
   }
   if( parameterList->isType<bool>("Verboes for iterative refinement") ){

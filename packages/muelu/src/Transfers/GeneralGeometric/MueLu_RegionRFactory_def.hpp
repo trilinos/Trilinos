@@ -242,7 +242,13 @@ namespace MueLu {
                                         A->getRowMap()->getIndexBase(),
                                         A->getRowMap()->getComm());
 
-    coarseCoordinates = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(rowMap,
+    RCP<Map> coordRowMap = MapFactory::Build(A->getRowMap()->lib(),
+                                        Teuchos::OrdinalTraits<GO>::invalid(),
+                                        lCoarseNodesPerDim[0]*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[2],
+                                        A->getRowMap()->getIndexBase(),
+                                        A->getRowMap()->getComm());
+
+    coarseCoordinates = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(coordRowMap,
                                                                                  numDimensions);
     Array<ArrayRCP<const real_type> > fineCoordData(numDimensions);
     Array<ArrayRCP<real_type> > coarseCoordData(numDimensions);

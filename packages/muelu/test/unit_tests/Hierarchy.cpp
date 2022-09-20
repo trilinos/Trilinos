@@ -103,6 +103,9 @@ namespace MueLuTests {
      */
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -718,6 +721,9 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -793,6 +799,9 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -1543,6 +1552,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     Teuchos::RCP<Teuchos::FancyOStream> allOut = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     using TST                   = Teuchos::ScalarTraits<Scalar>;
     using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
@@ -1672,7 +1684,7 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs_Mixed, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -1789,6 +1801,7 @@ namespace MueLuTests {
     TEST_EQUALITY(0,0);
   }
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, CheckNullspaceDimension, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
@@ -1835,7 +1848,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs_Mixed, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node) \
     
 

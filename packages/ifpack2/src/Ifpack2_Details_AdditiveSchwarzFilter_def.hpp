@@ -45,6 +45,7 @@
 
 #include "Ifpack2_Details_AdditiveSchwarzFilter_decl.hpp"
 #include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_Bitset.hpp"
 
 namespace Ifpack2
@@ -419,7 +420,7 @@ void AdditiveSchwarzFilter<MatrixType>::fillLocalMatrix(typename AdditiveSchwarz
         }
       });
   //Sort the matrix, since the reordering can shuffle the entries into any order.
-  KokkosKernels::sort_crs_matrix(localMatrix);
+  KokkosSparse::sort_crs_matrix(localMatrix);
 }
 
 template<class MatrixType>

@@ -478,18 +478,18 @@ generateSurfacePermutations(const int num_cells,
         // FIXME: Currently virtual cells will set their surface normal along the same direction as the cell they "reflect"
         // This causes a host of issues (e.g. identifying 180 degree periodic wedges), but we have to support virtual cells as a priority
         // Therefore, we will just assume that the ordering is fine (not valid for 180 degree periodic wedges)
-        if(Kokkos::Experimental::fabs(n0_dot_n1 - 1.) < 1.e-8)
+        if(Kokkos::fabs(n0_dot_n1 - 1.) < 1.e-8)
           return;
 
         // Rotated faces case (e.g. periodic wedge) we need to check for non-antiparallel face normals
-        if(Kokkos::Experimental::fabs(n0_dot_n1 + 1.) > 1.e-2){
+        if(Kokkos::fabs(n0_dot_n1 + 1.) > 1.e-2){
 
           // Now we need to define an arbitrary transverse and binormal in the plane across which the faces are anti-symmetric
           // We can do this by setting t = n_0 \times n_1
           PANZER_CROSS(n0,n1,t);
 
           // Normalize the transverse vector
-          const Scalar mag_t = Kokkos::Experimental::sqrt(PANZER_DOT(t,t));
+          const Scalar mag_t = Kokkos::sqrt(PANZER_DOT(t,t));
           t[0] /= mag_t;
           t[1] /= mag_t;
           t[2] /= mag_t;
@@ -500,7 +500,7 @@ generateSurfacePermutations(const int num_cells,
           b[2] = n0[2] + n1[2];
 
           // Normalize the binormal vector
-          const Scalar mag_b = Kokkos::Experimental::sqrt(PANZER_DOT(b,b));
+          const Scalar mag_b = Kokkos::sqrt(PANZER_DOT(b,b));
           b[0] /= mag_b;
           b[1] /= mag_b;
           b[2] /= mag_b;
@@ -1348,7 +1348,7 @@ getSurfaceNormals(const bool cache,
         }
         // If n is zero then this is - hopefully - a virtual cell
         if(n > 0.){
-          n = Kokkos::Experimental::sqrt(n);
+          n = Kokkos::sqrt(n);
           for(int dim=0;dim<cell_dim;++dim)
             side_normals(cell,point,dim) /= n;
         }
@@ -1547,7 +1547,7 @@ getNormContravarientMatrix(const bool cache,
         aux(cell,ip) += con(cell,ip,i,j) * con(cell,ip,i,j);
       }
     }
-    aux(cell,ip) = Kokkos::Experimental::sqrt(aux(cell,ip));
+    aux(cell,ip) = Kokkos::sqrt(aux(cell,ip));
   });
   PHX::Device::execution_space().fence();
 

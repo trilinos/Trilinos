@@ -47,7 +47,8 @@ MeshBuilder::MeshBuilder()
    m_fieldDataManager(nullptr),
    m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
    m_spatialDimension(0),
-   m_entityRankNames()
+   m_entityRankNames(),
+   m_upwardConnectivity(true)
 {
 }
 

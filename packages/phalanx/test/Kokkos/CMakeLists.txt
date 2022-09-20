@@ -41,3 +41,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tKokkosClassOnDevice
+  SOURCES tKokkosClassOnDevice.cpp
+  TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
+  NUM_MPI_PROCS 1
+  )

@@ -56,7 +56,7 @@ namespace Teuchos {
 
 namespace Galeri {
 
-Epetra_MultiVector* 
+Epetra_MultiVector*
 CreateCartesianCoordinates(const std::string CoordType,
                            const Epetra_BlockMap* BlockMap,
                            Teuchos::ParameterList& List);
@@ -92,16 +92,16 @@ std::string toString(const unsigned long long& x);
 // Hence commenting it out.
 //std::string toString(const size_t & x);
 
-void 
+void
 GetNeighboursCartesian2d(const int i, const int nx, const int ny,
                          int & left, int & right, int & lower, int & upper);
 
-void 
+void
 GetNeighboursCartesian2d(const int i, const int nx, const int ny,
                          int& left, int& right, int& lower, int& upper,
                          int& left2, int& right2, int& lower2, int& upper2);
 
-void 
+void
 GetNeighboursCartesian3d(const int i, const int nx, const int ny, const int nz,
                          int& left, int& right, int& lower, int& upper,
                          int& below, int& above);

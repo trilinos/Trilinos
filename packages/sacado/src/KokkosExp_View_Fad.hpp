@@ -36,7 +36,17 @@
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_View_Fad_Fwd.hpp"
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_Layout.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -138,6 +148,20 @@ view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
   typedef typename Kokkos::View<DT,DP...>::array_type dst_array_type;
   typedef typename Kokkos::View<ST,SP...>::array_type src_array_type;
   view_copy( dst_array_type(dst) , src_array_type(src) );
+}
+
+template<class ExecutionSpace,
+         class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const ExecutionSpace& space,
+          const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
+{
+  typedef typename Kokkos::View<DT,DP...>::array_type dst_array_type;
+  typedef typename Kokkos::View<ST,SP...>::array_type src_array_type;
+  view_copy( space, dst_array_type(dst) , src_array_type(src) );
 }
 
 } // namespace Impl
@@ -1401,7 +1425,8 @@ public:
   template< class ... P >
   SharedAllocationRecord<> *
   allocate_shared( ViewCtorProp< P... > const & prop
-                 , typename Traits::array_layout const & local_layout )
+                 , typename Traits::array_layout const & local_layout
+                 , bool execution_space_specified)
   {
     typedef ViewCtorProp< P... > ctor_prop ;
 
@@ -1465,11 +1490,17 @@ public:
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
-        record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                        , (fad_value_type *) m_impl_handle
-                                        , m_array_offset.span()
-                                        , record->get_label()
-                                        );
+				if (execution_space_specified)
+					record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+							, (fad_value_type *) m_impl_handle
+							, m_array_offset.span()
+							, record->get_label()
+							);
+				else
+					record->m_destroy = functor_type((fad_value_type *) m_impl_handle
+							, m_array_offset.span()
+							, record->get_label()
+							);
 
         // Construct values
         record->m_destroy.construct_shared_allocation();

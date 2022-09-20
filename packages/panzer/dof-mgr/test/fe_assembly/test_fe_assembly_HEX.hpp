@@ -176,8 +176,60 @@ namespace Example {
 template<typename ValueType, typename DeviceSpaceType>
 int feAssemblyHex(int argc, char *argv[]) {
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+#else
+  // host_memory/execution/mirror_space deprecated for kokkos@3.7.00, removed after release
+  // see https://github.com/kokkos/kokkos/pull/3973
+  using exec_space = typename Kokkos::is_space<DeviceSpaceType>::execution_space;
+  using mem_space = typename Kokkos::is_space<DeviceSpaceType>::memory_space;
+  using do_not_use_host_memory_space = std::conditional_t<
+      std::is_same<mem_space, Kokkos::HostSpace>::value
+#if defined(KOKKOS_ENABLE_CUDA)
+          || std::is_same<mem_space, Kokkos::CudaUVMSpace>::value ||
+          std::is_same<mem_space, Kokkos::CudaHostPinnedSpace>::value
+#elif defined(KOKKOS_ENABLE_HIP)
+          || std::is_same<mem_space,
+                          Kokkos::Experimental::HIPHostPinnedSpace>::value ||
+          std::is_same<mem_space,
+                       Kokkos::Experimental::HIPManagedSpace>::value
+#elif defined(KOKKOS_ENABLE_SYCL)
+          || std::is_same<mem_space,
+                          Kokkos::Experimental::SYCLSharedUSMSpace>::value ||
+          std::is_same<mem_space,
+                       Kokkos::Experimental::SYCLHostUSMSpace>::value
+#endif
+      ,
+      mem_space, Kokkos::HostSpace>;
+
+  using do_not_use_host_execution_space = std::conditional_t<
+#if defined(KOKKOS_ENABLE_CUDA)
+      std::is_same<exec_space, Kokkos::Cuda>::value ||
+#elif defined(KOKKOS_ENABLE_HIP)
+      std::is_same<exec_space, Kokkos::Experimental::HIP>::value ||
+#elif defined(KOKKOS_ENABLE_SYCL)
+      std::is_same<exec_space, Kokkos::Experimental::SYCL>::value ||
+#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
+      std::is_same<exec_space,
+                   Kokkos::Experimental::OpenMPTarget>::value ||
+#endif
+          false,
+      Kokkos::DefaultHostExecutionSpace, exec_space>;
+
+  using host_memory_space = do_not_use_host_memory_space;
+  using host_execution_space =
+      do_not_use_host_execution_space;
+  using host_mirror_space = std::conditional_t<
+      std::is_same<exec_space, do_not_use_host_execution_space>::value &&
+          std::is_same<mem_space, do_not_use_host_memory_space>::value,
+      DeviceSpaceType,
+      Kokkos::Device<do_not_use_host_execution_space,
+                     do_not_use_host_memory_space>>;
+
+  using HostSpaceType = typename host_mirror_space::execution_space;
+#endif
+
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
   typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal> map_t;

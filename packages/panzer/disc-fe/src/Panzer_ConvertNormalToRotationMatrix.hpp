@@ -16,7 +16,7 @@ convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scal
   if(n > 0.){
     // Make sure transverse is not parallel to normal within some margin of error
     transverse[0]=0.;transverse[1]=1.;transverse[2]=0.;
-    if(Kokkos::Experimental::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
+    if(Kokkos::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
       transverse[0]=1.;transverse[1]=0.;
     }
 

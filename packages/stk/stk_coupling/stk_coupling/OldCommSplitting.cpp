@@ -22,6 +22,7 @@
 #include <limits>
 #include <cctype>
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // delete October 2022
 namespace stk
 {
 namespace coupling
@@ -111,3 +112,5 @@ std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm 
 
 }
 }
+
+#endif

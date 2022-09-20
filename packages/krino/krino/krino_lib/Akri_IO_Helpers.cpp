@@ -8,11 +8,8 @@
 
 #include <Akri_IO_Helpers.hpp>
 
-#include <Ioss_Utils.h>
 #include <Ioss_Region.h>
 #include <Ioss_ElementBlock.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_SideBlock.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -39,48 +36,44 @@ Block_Surface_Connectivity::Block_Surface_Connectivity(const stk::mesh::MetaData
   }
 }
 
-Block_Surface_Connectivity::Block_Surface_Connectivity(const stk::mesh::MetaData & meta, const Ioss::Region & io_region)
+void Block_Surface_Connectivity::dump_surface_connectivity(const stk::mesh::MetaData & meta)
 {
-  /* %TRACE[ON]% */
-  Trace trace__("Block_Surface_Connectivity::Block_Surface_Connectivity(const Ioss::Region & reg)"); /* %TRACE% */
-
-  std::vector<std::string> side_block_names;
-  std::vector<stk::mesh::PartOrdinal> side_block_ordinals;
-
-  for(auto sideset : io_region.get_sidesets())
+  const std::vector<const stk::mesh::Part *> surfacesInMap = meta.get_surfaces_in_surface_to_block_map();
+  for(auto && surface : surfacesInMap)
   {
-    side_block_names.clear();
-    sideset->block_membership(side_block_names);
-    side_block_ordinals.clear();
-    for (auto && block_name : side_block_names)
-    {
-      const stk::mesh::Part * side_block_part = meta.get_part(block_name);
-      ThrowRequire(nullptr != side_block_part);
-      side_block_ordinals.push_back(side_block_part->mesh_meta_data_ordinal());
-    }
-    const stk::mesh::Part * side_part = meta.get_part(sideset->name());
-    ThrowRequire(nullptr != side_part);
-    add_surface(side_part->mesh_meta_data_ordinal(), std::set<stk::mesh::PartOrdinal>(side_block_ordinals.begin(), side_block_ordinals.end()));
+    krinolog << "Surface " << surface->name() << " touches blocks ";
+    for (auto && touchingBlock : meta.get_blocks_touching_surface(surface))
+      krinolog << touchingBlock->name() << " ";
+    krinolog << stk::diag::dendl;
+  }
+}
 
-    if (!sideset->get_side_blocks().empty())
-    {
-      for (auto&& side_subset : sideset->get_side_blocks())
-      {
-        // Fmwk only creates subset if more than 1 sideblock, but stk always creates them, so just check.
-        const stk::mesh::Part * side_subset_part = meta.get_part(side_subset->name());
-        if (nullptr == side_subset_part) continue;
-        side_block_names.clear();
-        side_subset->block_membership(side_block_names);
-        side_block_ordinals.clear();
-        for (auto && block_name : side_block_names)
-        {
-          const stk::mesh::Part * side_block_part = meta.get_part(block_name);
-          ThrowRequire(nullptr != side_block_part);
-          side_block_ordinals.push_back(side_block_part->mesh_meta_data_ordinal());
-        }
-        add_surface(side_subset_part->mesh_meta_data_ordinal(), std::set<stk::mesh::PartOrdinal>(side_block_ordinals.begin(), side_block_ordinals.end()));
-      }
-    }
+std::set<stk::mesh::PartOrdinal> Block_Surface_Connectivity::get_surfaces_touching_block(const stk::mesh::PartOrdinal & blockOrdinal) const
+{
+  auto it = block_to_surface_map.find(blockOrdinal);
+  if(it != block_to_surface_map.end())
+    return it->second;
+
+  std::set<stk::mesh::PartOrdinal> emptySurfaces;
+  return emptySurfaces;
+}
+
+std::set<stk::mesh::PartOrdinal> Block_Surface_Connectivity::get_blocks_touching_surface(const stk::mesh::PartOrdinal & surfaceOrdinal) const
+{
+  auto it = surface_to_block_map.find(surfaceOrdinal);
+  if(it != surface_to_block_map.end())
+    return it->second;
+
+  std::set<stk::mesh::PartOrdinal> emptyBlocks;
+  return emptyBlocks;
+}
+
+void Block_Surface_Connectivity::add_surface(const stk::mesh::PartOrdinal & surf_ordinal, const std::set<stk::mesh::PartOrdinal> touching_blocks)
+{
+  surface_to_block_map[surf_ordinal].insert(touching_blocks.begin(), touching_blocks.end());
+  for(auto && block : touching_blocks)
+  {
+    block_to_surface_map[block].insert(surf_ordinal);
   }
 }
 

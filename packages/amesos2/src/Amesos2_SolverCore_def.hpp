@@ -53,6 +53,8 @@
 #ifndef AMESOS2_SOLVERCORE_DEF_HPP
 #define AMESOS2_SOLVERCORE_DEF_HPP
 
+#include "Kokkos_ArithTraits.hpp"
+
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_MultiVecAdapter_def.hpp"
 
@@ -249,21 +251,22 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
                                                    const int maxNumIters,
                                                    const bool verbose) const
 {
-  using STS = Teuchos::ScalarTraits<scalar_type>;
-  using magni_type = typename STS::magnitudeType;
+  using KAT              = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type = typename KAT::val_type;
+  using magni_type       = typename KAT::mag_type;
   using host_execution_space = Kokkos::DefaultHostExecutionSpace;
-  using host_crsmat_t    = KokkosSparse::CrsMatrix<scalar_type, int, host_execution_space, void, int>;
+  using host_crsmat_t    = KokkosSparse::CrsMatrix<impl_scalar_type, int, host_execution_space, void, int>;
   using host_graph_t     = typename host_crsmat_t::StaticCrsGraphType;
   using host_values_t    = typename host_crsmat_t::values_type::non_const_type;
   using host_row_map_t   = typename host_graph_t::row_map_type::non_const_type;
   using host_colinds_t   = typename host_graph_t::entries_type::non_const_type;
-  using host_mvector_t   = Kokkos::View<scalar_type **, Kokkos::LayoutLeft, host_execution_space>;
-  using host_vector_t    = Kokkos::View<scalar_type *,  Kokkos::LayoutLeft, host_execution_space>;
+  using host_mvector_t   = Kokkos::View<impl_scalar_type **, Kokkos::LayoutLeft, host_execution_space>;
+  using host_vector_t    = Kokkos::View<impl_scalar_type *,  Kokkos::LayoutLeft, host_execution_space>;
   using host_magni_view  = Kokkos::View<magni_type  *,  Kokkos::LayoutLeft, host_execution_space>;
 
-  const scalar_type one(1.0);
-  const scalar_type mone = scalar_type(-one);
-  const magni_type eps = STS::eps ();
+  const impl_scalar_type one(1.0);
+  const impl_scalar_type mone = impl_scalar_type(-one);
+  const magni_type eps = KAT::eps ();
 
   // get data needed for IR
   using MVAdapter = MultiVecAdapter<Vector>;
@@ -309,6 +312,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     crsmat = host_crsmat_t("CrsMatrix", nrows, values_view, static_graph);
   }
 
+  //
+  // ** First Solve **
+  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*X), Teuchos::ptrInArg(*B));
+
+
   // auxiliary scalar Kokkos views
   const int ldx = (this->root_ ? X->getGlobalLength() : 0);
   const int ldb = (this->root_ ? B->getGlobalLength() : 0);
@@ -336,10 +344,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     do_get(not_initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
 
 
-  //
-  // first solve
-  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*X), Teuchos::ptrInArg(*B));
-
   host_magni_view x0norms("x0norms", nrhs);
   host_magni_view bnorms("bnorms", nrhs);
   host_magni_view enorms("enorms", nrhs);
@@ -347,7 +351,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     // compute initial solution norms (used for stopping criteria)
     for (size_t j = 0; j < nrhs; j++) { 
       auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
-      host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
+      host_vector_t x_1d (const_cast<impl_scalar_type*>(x_subview.data()), x_subview.extent(0));
       x0norms(j) = KokkosBlas::nrm2(x_1d);
     }
     if (verbose) {
@@ -362,7 +366,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
       std::cout << " bnorm = ";
       for (size_t j = 0; j < nrhs; j++) { 
         auto b_subview = Kokkos::subview(B_view, Kokkos::ALL(), j);
-        host_vector_t b_1d (const_cast<scalar_type*>(b_subview.data()), b_subview.extent(0));
+        host_vector_t b_1d (const_cast<impl_scalar_type*>(b_subview.data()), b_subview.extent(0));
         bnorms(j) = KokkosBlas::nrm2(b_1d);
         std::cout << bnorms(j) << ", ";
       }
@@ -372,7 +376,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
 
 
   //
-  // iterative refinement
+  // ** Iterative Refinement **
   int numIters = 0;
   int converged = 0; // 0 = has not converged, 1 = converged
   for (numIters = 0; numIters < maxNumIters && converged == 0; ++numIters) {
@@ -388,10 +392,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
         for (size_t j = 0; j < nrhs; j++) { 
           auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
           auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
-          host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
-          host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
-          scalar_type rnorm = KokkosBlas::nrm2(r_1d);
-          scalar_type xnorm = KokkosBlas::nrm2(x_1d);
+          host_vector_t r_1d (const_cast<impl_scalar_type*>(r_subview.data()), r_subview.extent(0));
+          host_vector_t x_1d (const_cast<impl_scalar_type*>(x_subview.data()), x_subview.extent(0));
+          impl_scalar_type rnorm = KokkosBlas::nrm2(r_1d);
+          impl_scalar_type xnorm = KokkosBlas::nrm2(x_1d);
           std::cout << rnorm << " -> " << rnorm/bnorms(j) << " " << xnorm << " " << enorms(j) << ", ";
         }
         std::cout << std::endl;
@@ -409,14 +413,19 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     if (this->root_) {
       KokkosBlas::axpy(one, E_view, X_view);
 
-      // compute norm of corrections for "convergence" check
-      converged = 1;
-      for (size_t j = 0; j < nrhs; j++) { 
-        auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
-        host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
-        enorms(j) = KokkosBlas::nrm2(e_1d);
-        if (enorms(j) > eps * x0norms(j)) {
-          converged = 0;
+      if (numIters < maxNumIters-1) {
+        // compute norm of corrections for "convergence" check
+        converged = 1;
+        for (size_t j = 0; j < nrhs; j++) { 
+          auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
+          host_vector_t e_1d (const_cast<impl_scalar_type*>(e_subview.data()), e_subview.extent(0));
+          enorms(j) = KokkosBlas::nrm2(e_1d);
+          if (enorms(j) > eps * x0norms(j)) {
+            converged = 0;
+          }
+        }
+        if (verbose && converged) {
+          std::cout << " converged " << std::endl;
         }
       }
     }
@@ -433,7 +442,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     std::cout << " > final residual norm = ";
     for (size_t j = 0; j < nrhs; j++) { 
       auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
-      host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
+      host_vector_t r_1d (const_cast<impl_scalar_type*>(r_subview.data()), r_subview.extent(0));
       scalar_type rnorm = KokkosBlas::nrm2(r_1d);
       std::cout << rnorm << " -> " << rnorm/bnorms(j) << ", ";
     }

@@ -104,6 +104,7 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk::Parallel
         buildMetaData(parallelMach,*mesh);
 
         mesh->addPeriodicBCs(periodicBCVec_);
+        mesh->setBoundingBoxSearchFlag(useBBoxSearch_);
 
    }
 
@@ -273,7 +274,7 @@ void SculptMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
    stlFileName_ = paramList->get<std::string>("stlFileName"); 
 
    // read in periodic boundary conditions
-   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,useBBoxSearch_);
 }
 
 //! From ParameterListAcceptor

@@ -93,9 +93,7 @@ TEST(Scheduler, LogarithmicOutput)
   const double dt_max = 100.0;
 
   std::mt19937 rng;
-  auto time = static_cast<unsigned>(stk::wall_time());
-  rng.seed(time);
-  std::cout << "Running with seed = " << time << std::endl;
+  rng.seed(666);
 
   std::uniform_real_distribution<double> noise(-1.0, 1.0);
 

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
   Kokkos::ScopeGuard guard(argc, argv);
 
-  stk::unit_test_util::create_parallel_output(sierra::Env::parallel_rank());
+  stk::unit_test_util::simple_fields::create_parallel_output(sierra::Env::parallel_rank());
 
   return RUN_ALL_TESTS();
 }

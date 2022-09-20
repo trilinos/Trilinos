@@ -18,6 +18,7 @@
 #include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_tools/mesh_tools/FixNodeSharingViaSearch.hpp>
@@ -32,7 +33,10 @@ BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, const std::vect
       element_topology == stk::topology::TETRAHEDRON_4 ||
       element_topology == stk::topology::HEXAHEDRON_8);
 
-  m_meta = std::make_unique<stk::mesh::MetaData>(element_topology.dimension(), entity_rank_names);
+  m_meta = stk::mesh::MeshBuilder().set_spatial_dimension(element_topology.dimension())
+                                   .set_entity_rank_names(entity_rank_names)
+                                   .create_meta_data();
+
   AuxMetaData & aux_meta = AuxMetaData::create(*m_meta);
   stk::mesh::Part & block_part = m_meta->declare_part_with_topology( "block_1", element_topology );
   stk::io::put_io_part_attribute(block_part);
@@ -114,7 +118,7 @@ void
 BoundingBoxMesh::populate_mesh(stk::ParallelMachine pm, const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_mesh()"); /* %TRACE% */
   ThrowRequireMsg(m_mesh_bbox.valid(), "Must call set_domain() before populate_mesh()");
-  m_mesh = std::make_unique<stk::mesh::BulkData>(*m_meta, pm, auto_aura_option);
+  m_mesh = stk::mesh::MeshBuilder(pm).set_aura_option(auto_aura_option).create(m_meta);
   if (CUBIC_BOUNDING_BOX_MESH == myMeshStructureType)
     populate_cell_based_mesh();
   else if (TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType)

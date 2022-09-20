@@ -4,7 +4,7 @@
 
 TRIBITS_CONFIGURE_FILE(Intrepid2_config.h)
 
-SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+SET(TRILINOS_INCDIR ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
 
 #
 # B) Define the header and source files (and directories)

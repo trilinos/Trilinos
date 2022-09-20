@@ -116,7 +116,7 @@ private:
   void set_is_cell_edge_function_for_BCC_mesh() const;
   void set_is_cell_edge_function_for_cell_based_mesh() const;
 private:
-  std::unique_ptr<stk::mesh::MetaData> m_meta;
+  std::shared_ptr<stk::mesh::MetaData> m_meta;
   std::unique_ptr<stk::mesh::BulkData> m_mesh;
   std::unique_ptr<CartesianCoordinateMapping> my_coord_mapping;
   stk::mesh::PartVector m_elem_parts;

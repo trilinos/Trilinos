@@ -117,10 +117,12 @@ struct GmresOpts {
   typename Kokkos::Details::ArithTraits<ScalarType>::mag_type tol;
   int m;
   int maxRestart;
+  bool verbose;
   std::string ortho;
   std::string precSide;
 
-  GmresOpts<ScalarType>() : tol(1e-8), m(50), maxRestart(50), ortho("CGS2") {}
+  GmresOpts<ScalarType>()
+      : tol(1e-8), m(50), maxRestart(50), verbose(true), ortho("CGS2") {}
 };
 
 template <class ScalarType, class Layout, class EXSP, class OrdinalType = int>
@@ -182,7 +184,9 @@ GmresStats gmres(
   MT nrmB, trueRes, relRes, shortRelRes;
   GmresStats myStats;
 
-  std::cout << "Convergence tolerance is: " << opts.tol << std::endl;
+  if (opts.verbose) {
+    std::cout << "Convergence tolerance is: " << opts.tol << std::endl;
+  }
 
   ViewVectorType Xiter(
       "Xiter", n);  // Intermediate solution at iterations before restart.
@@ -229,7 +233,9 @@ GmresStats gmres(
     relRes = 0;
   }
   shortRelRes = relRes;
-  std::cout << "Initial relative residual is: " << relRes << std::endl;
+  if (opts.verbose) {
+    std::cout << "Initial relative residual is: " << relRes << std::endl;
+  }
   if (relRes < opts.tol) {
     converged = true;
   }
@@ -311,8 +317,10 @@ GmresStats gmres(
       GVec_h(j)     = GVec_h(j) * CosVal_h(j);
       shortRelRes   = fabs(GVec_h(j + 1)) / nrmB;
 
-      std::cout << "Shortcut relative residual for iteration "
-                << j + (cycle * m) << " is: " << shortRelRes << std::endl;
+      if (opts.verbose) {
+        std::cout << "Shortcut relative residual for iteration "
+                  << j + (cycle * m) << " is: " << shortRelRes << std::endl;
+      }
       if (tmpNrm <= 1e-14 && shortRelRes >= opts.tol) {
         throw std::runtime_error(
             "GMRES has experienced lucky breakdown, but the residual has not converged.\n\
@@ -359,8 +367,10 @@ GmresStats gmres(
         KokkosBlas::axpy(-one, Wj, Res);                   // r = b-Ax.
         trueRes = KokkosBlas::nrm2(Res);
         relRes  = trueRes / nrmB;
-        std::cout << "True relative residual for iteration " << j + (cycle * m)
-                  << " is : " << relRes << std::endl;
+        if (opts.verbose) {
+          std::cout << "True relative residual for iteration "
+                    << j + (cycle * m) << " is : " << relRes << std::endl;
+        }
         numIters = j + 1;
 
         if (relRes < opts.tol) {
@@ -390,15 +400,21 @@ GmresStats gmres(
   std::cout << "Ending relative residual is: " << relRes << std::endl;
   myStats.endRelRes = static_cast<double>(relRes);
   if (converged) {
-    std::cout << "Solver converged! " << std::endl;
+    if (opts.verbose) {
+      std::cout << "Solver converged! " << std::endl;
+    }
     myStats.convFlagVal = GmresStats::FLAG::Conv;
   } else if (shortRelRes < opts.tol) {
-    std::cout << "Shortcut residual converged, but solver experienced a loss "
-                 "of accuracy."
-              << std::endl;
+    if (opts.verbose) {
+      std::cout << "Shortcut residual converged, but solver experienced a loss "
+                   "of accuracy."
+                << std::endl;
+    }
     myStats.convFlagVal = GmresStats::FLAG::LOA;
   } else {
-    std::cout << "Solver did not converge. :( " << std::endl;
+    if (opts.verbose) {
+      std::cout << "Solver did not converge. :( " << std::endl;
+    }
     myStats.convFlagVal = GmresStats::FLAG::NoConv;
   }
   if (cycle > 0) {
@@ -406,8 +422,10 @@ GmresStats gmres(
   } else {
     myStats.numIters = 0;
   }
-  std::cout << "The solver completed " << myStats.numIters << " iterations."
-            << std::endl;
+  if (opts.verbose) {
+    std::cout << "The solver completed " << myStats.numIters << " iterations."
+              << std::endl;
+  }
 
   Kokkos::Profiling::popRegion();
   return myStats;

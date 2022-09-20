@@ -54,6 +54,7 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
@@ -72,10 +73,10 @@ int SerialTrsmInternalLeftLowerConj(const bool use_unit_diag, const int m,
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    KokkosBatched::SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
+    SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      KokkosBatched::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -111,10 +112,10 @@ int SerialTrsmInternalLeftUpperConj(const bool use_unit_diag, const int m,
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    KokkosBatched::SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
+    SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      KokkosBatched::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ValueType* KOKKOS_RESTRICT B0 = B;

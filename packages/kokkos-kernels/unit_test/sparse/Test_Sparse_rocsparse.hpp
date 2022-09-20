@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <rocsparse.h>
-#include "KokkosKernels_SparseUtils_rocsparse.hpp"
+#include "KokkosSparse_Utils_rocsparse.hpp"
 
 void test_rocsparse_version() {
   // Print version

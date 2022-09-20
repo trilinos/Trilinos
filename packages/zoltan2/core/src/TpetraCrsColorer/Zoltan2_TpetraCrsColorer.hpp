@@ -259,10 +259,10 @@ TpetraCrsColorer<CrsMatrixType>::computeSeedMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::computeSeedMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) { 
-        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); },
-        "TpetraCrsColorer::computeSeedMatrixFitted()");
+        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); });
 
 }
 
@@ -324,6 +324,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::reconstructMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
       KOKKOS_LAMBDA(const size_t row) {
         const size_t entry_begin = local_graph.row_map(row);
@@ -333,8 +334,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
           const size_t col           = local_graph.entries(entry);
           local_matrix.values(entry) = W_view_dev(row,my_list_of_colors[col]-1);
         }
-      },
-      "TpetraCrsColorer::reconstructMatrixFitted()");
+      });
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -425,13 +425,13 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::computeSeedMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) {
         for (lno_t j = 0; j < block_size; ++j)
           V_view_dev(i*block_size+j, (my_list_of_colors[i]-1)*block_size+j) = 
                                      scalar_t(1.0);
-      },
-      "TpetraCrsColorer::computeSeedMatrixFitted()");
+      });
 
 }
 
@@ -508,6 +508,7 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::reconstructMatrix()",
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
       KOKKOS_LAMBDA(const size_t block_row) {
         const size_t entry_begin = local_graph.row_map(block_row);
@@ -528,7 +529,6 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
             }
           }
         }
-      },
-      "TpetraCrsColorer::reconstructMatrix()");
+      });
 }
 } // namespace Tpetra

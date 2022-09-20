@@ -151,16 +151,10 @@ int main( int argc, char* argv[] )
   int my_rows_max;
   int my_cols_max;
  
-  Adelus::GetDistribution( &nprocs_row,
-                           &matrix_size,
-                           &nrhs,
-                           &my_rows,
-                           &my_cols,
-                           &my_first_row,
-                           &my_first_col,
-                           &my_rhs,
-                           &my_row,
-                           &my_col );
+  Adelus::GetDistribution( MPI_COMM_WORLD,
+                           nprocs_row, matrix_size, nrhs,
+                           my_rows, my_cols, my_first_row, my_first_col,
+                           my_rhs, my_row, my_col );
 
   MPI_Allreduce( &my_rows, &my_rows_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   MPI_Allreduce( &my_cols, &my_cols_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -174,11 +168,9 @@ int main( int argc, char* argv[] )
 #else
   hipGetDeviceCount ( &gpu_count );
 #endif
-  Kokkos::InitArguments args;
-  args.num_threads = 0;
-  args.num_numa    = 0;
-  args.device_id   = rank%nptile;
-  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.device_id, gpu_count);
+  Kokkos::InitializationSettings args;
+  args.set_num_threads(1);
+  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.get_device_id(), gpu_count);
 
   MPI_Barrier (MPI_COMM_WORLD);
 
@@ -340,6 +332,10 @@ int main( int argc, char* argv[] )
 #endif
     }
 
+    // Create handle
+    Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+      ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_row, nrhs );
+
     double time = 0.0;
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -358,16 +354,16 @@ int main( int argc, char* argv[] )
       gettimeofday( &begin, NULL );
   
 #ifdef KKVIEW_API
-      Adelus::FactorSolve (my_A, my_rows, my_cols, &matrix_size, &nprocs_row, &nrhs, &secs);
+      Adelus::FactorSolve (ahandle, my_A, &secs);
 #endif
 #if defined(DEVPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-      Adelus::FactorSolve_devPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
+      Adelus::FactorSolve_devPtr (ahandle, reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()), my_rows, my_cols, my_rhs, &matrix_size, &nprocs_row, &nrhs, &secs);
 #endif
 #if defined(HOSTPTR_API) && !(defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))//KOKKOS_ENABLE_OPENMP
-      Adelus::FactorSolve_hostPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
+      Adelus::FactorSolve_hostPtr (ahandle, reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()), my_rows, my_cols, my_rhs, &matrix_size, &nprocs_row, &nrhs, &secs);
 #endif
 #if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-      Adelus::FactorSolve_hostPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(h_my_A_hptr.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
+      Adelus::FactorSolve_hostPtr (ahandle, reinterpret_cast<ADELUS_DATA_TYPE *>(h_my_A_hptr.data()), my_rows, my_cols, my_rhs, &matrix_size, &nprocs_row, &nrhs, &secs);
 #endif
 
       Kokkos::fence();

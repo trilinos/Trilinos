@@ -27,8 +27,8 @@ struct min_scanner {   //finds the min value of a one dimensional view
         interimmin = candidates(0);
     }
 
-    KOKKOS_INLINE_FUNCTION void join(volatile T& dst,
-            const volatile T& src) const {
+    KOKKOS_INLINE_FUNCTION void join(T& dst,
+            const T& src) const {
         if (dst > src) {
             dst = src;
         }

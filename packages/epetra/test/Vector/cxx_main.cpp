@@ -344,6 +344,8 @@ int main(int argc, char *argv[]) {
       delete [] Dp;
     }
 
+  delete LocalMap;
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

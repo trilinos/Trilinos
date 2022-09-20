@@ -38,6 +38,7 @@
 # @HEADER
 
 include(TribitsGeneralMacros)
+include(TribitsPkgExportCacheVars)
 
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
@@ -545,8 +546,7 @@ function(tribits_append_dependent_package_config_file_includes_and_enables packa
   # Parse input
 
   cmake_parse_arguments(
-     PARSE  #prefix
-     ""  #options
+     PARSE ""  # prefix, options
      #one_value_keywords
      "EXPORT_FILE_VAR_PREFIX;EXT_PKG_CONFIG_FILE_BASE_DIR;PKG_CONFIG_FILE_BASE_DIR;CONFIG_FILE_STR_INOUT"
      "" #multi_value_keywords
@@ -577,6 +577,11 @@ function(tribits_append_dependent_package_config_file_includes_and_enables packa
       "set(${EXPORT_FILE_VAR_PREFIX}_ENABLE_${depPkg} ${enableVal})\n")
   endforeach()
 
+  # Put in set() statements for exported cache vars
+  string(APPEND configFileStr
+    "\n# Exported cache variables\n")
+  tribits_pkg_append_set_commands_for_exported_vars(${packageName} configFileStr)
+
   # Include configurations of dependent packages
   string(APPEND configFileStr
     "\n# Include configuration of dependent packages\n")
@@ -591,7 +596,10 @@ function(tribits_append_dependent_package_config_file_includes_and_enables packa
     endif()
     if (packageConfigBaseDir)
       string(APPEND configFileStr
-        "include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n")
+        "if (NOT TARGET ${depPkg}::all_libs)\n"
+        "  include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n"
+        "endif()\n"
+        )
     endif()
   endforeach()
 
@@ -873,7 +881,7 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
       set(TRIBITS_PROJECT_INSTALL_INCLUDE_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
     else()
       set(TRIBITS_PROJECT_INSTALL_INCLUDE_DIR
-	"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+        "${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
     endif()
 
     configure_file(

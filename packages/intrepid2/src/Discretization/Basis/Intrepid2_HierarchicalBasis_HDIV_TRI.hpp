@@ -51,7 +51,6 @@
 #ifndef Intrepid2_HierarchicalBasis_HDIV_TRI_h
 #define Intrepid2_HierarchicalBasis_HDIV_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -156,8 +155,7 @@ namespace Intrepid2
         
         const ordinal_type numFields = outputValues.extent_int(0);
         const ordinal_type numPoints = outputValues.extent_int(1);
-        
-        using ExecutionSpace = typename DeviceType::execution_space;
+
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>(Kokkos::Array<int,2>{0,0},Kokkos::Array<int,2>{numFields,numPoints});
         
         // multiply by [[0 1] [-1 0]]

@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_KOKKOS
   if (rank == 0)
     fmt::print(stderr, "Kokkos default execution space configuration:\n");
-  Kokkos::DefaultExecutionSpace::print_configuration(std::cerr, false);
+  Kokkos::DefaultExecutionSpace().print_configuration(std::cerr, false);
   if (rank == 0)
     fmt::print(stderr, "\n");
 #endif

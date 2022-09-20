@@ -116,6 +116,7 @@ namespace MueLu {
     using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
     using device_type         = DeviceType;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+    using LO_view             = Kokkos::View<local_ordinal_type*, device_type>;
 
     using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, device_type>;
 
@@ -258,6 +259,12 @@ namespace MueLu {
     typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = false) const;
 
     local_graph_type GetGraph() const;
+
+    /*! @brief Generates a compressed list of nodes in each aggregate, where
+      the entries in aggNodes[aggPtr[i]] up to aggNodes[aggPtr[i+1]-1] contain the nodes in aggregate i.
+      unaggregated contains the list of nodes which are, for whatever reason, not aggregated (e.g. Dirichlet)
+     */
+    void ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

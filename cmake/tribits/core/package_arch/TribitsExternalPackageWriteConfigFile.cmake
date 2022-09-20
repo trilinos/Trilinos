@@ -328,15 +328,17 @@ function(tribits_extpkg_add_find_upstream_dependencies_str
      )
     foreach (upstreamTplDepEntry IN LISTS ${tplName}_LIB_ENABLED_DEPENDENCIES)
       tribits_extpkg_get_dep_name_and_vis(
-	"${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
+        "${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
       if ("${${upstreamTplDepName}_DIR}" STREQUAL "")
         message(FATAL_ERROR "ERROR: ${upstreamTplDepName}_DIR is empty!")
       endif()
       string(APPEND configFileFragStr
-        "set(${upstreamTplDepName}_DIR \"\${CMAKE_CURRENT_LIST_DIR}/../${upstreamTplDepName}\")\n"
-        "find_dependency(${upstreamTplDepName} REQUIRED CONFIG \${${tplName}_SearchNoOtherPathsArgs})\n"
-	"unset(${upstreamTplDepName}_DIR)\n"
-	"\n"
+        "if (NOT TARGET ${upstreamTplDepName}::all_libs)\n"
+        "  set(${upstreamTplDepName}_DIR \"\${CMAKE_CURRENT_LIST_DIR}/../${upstreamTplDepName}\")\n"
+        "  find_dependency(${upstreamTplDepName} REQUIRED CONFIG \${${tplName}_SearchNoOtherPathsArgs})\n"
+        "  unset(${upstreamTplDepName}_DIR)\n"
+        "endif()\n"
+        "\n"
         )
     endforeach()
     string(APPEND configFileFragStr
@@ -583,8 +585,14 @@ function(tribits_extpkg_append_add_library_str
   )
   set(configFileStr "${${configFileStrInOut}}")
   if (libEntryType STREQUAL "FULL_LIB_PATH")
+    get_filename_component(libExt "${libpath}" LAST_EXT)
+    if (libExt  STREQUAL ".a")
+      set(libType  STATIC)
+    else()
+      set(libType  UNKNOWN)
+    endif()
     string(APPEND configFileStr
-      "add_library(${prefixed_libname} IMPORTED UNKNOWN GLOBAL)\n"
+      "add_library(${prefixed_libname} IMPORTED ${libType})\n"
       "set_target_properties(${prefixed_libname} PROPERTIES\n"
       "  IMPORTED_LOCATION \"${libpath}\")\n"
       )
@@ -593,7 +601,7 @@ function(tribits_extpkg_append_add_library_str
       OR (libEntryType STREQUAL "LIB_NAME")
     )
     string(APPEND configFileStr
-      "add_library(${prefixed_libname} IMPORTED INTERFACE GLOBAL)\n"
+      "add_library(${prefixed_libname} IMPORTED INTERFACE)\n"
       "set_target_properties(${prefixed_libname} PROPERTIES\n"
       "  IMPORTED_LIBNAME \"${libname}\")\n"
       )
@@ -697,7 +705,7 @@ function(tribits_extpkg_append_upstream_target_link_libraries_str
       "target_link_libraries(${prefix_libname}\n")
     foreach (upstreamTplDepEntry IN LISTS ${tplName}_LIB_ENABLED_DEPENDENCIES)
       tribits_extpkg_get_dep_name_and_vis(
-	"${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
+        "${upstreamTplDepEntry}"  upstreamTplDepName  upstreamTplDepVis)
       if (upstreamTplDepVis STREQUAL "PUBLIC")
         string(APPEND configFileStr
           "  INTERFACE ${upstreamTplDepName}::all_libs  # i.e. PUBLIC\n")
@@ -776,7 +784,7 @@ function(tribits_extpkg_create_all_libs_target  tplName)
 
   # add_library()
   string(APPEND configFileStr
-    "add_library(${tplName}::all_libs INTERFACE IMPORTED GLOBAL)\n")
+    "add_library(${tplName}::all_libs INTERFACE IMPORTED)\n")
   # target_link_libraries()
   if (libTargets)
     string(APPEND configFileStr
