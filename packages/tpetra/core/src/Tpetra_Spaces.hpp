@@ -212,6 +212,7 @@ Space &get(int i, const Priority &prio) {
 }
 
 
+
 /* cause future work submitted to waiter to wait for the current work in waitee to finish
   may return immediately (e.g., before waitee's work is done)
 */
@@ -220,24 +221,33 @@ template <typename S1, typename S2
 , detail::NotBothCuda<S1, S2> = true
 #endif
 >
-void exec_space_wait(S1 &waitee, S2 &waiter) {
+void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
     (void) waiter;
-    waitee.fence();
+    waitee.fence(msg);
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
-
 template <typename S1, typename S2,
 detail::BothCuda<S1, S2> = true>
-void exec_space_wait(S1 &waitee, S2 &waiter) {
+void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
     /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
        the state of a shared event
        this means we only need one event even if many exec_space_waits are in flight at the same time
     */
+
+    // TODO: add profiling hooks
     CUDA_RUNTIME(cudaEventRecord(detail::execSpaceWaitEvent, waitee.cuda_stream()));
     CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), detail::execSpaceWaitEvent, 0 /*flags*/));
 }
 #endif
+
+/* cause future work submitted to waiter to wait for the current work in waitee to finish
+  may return immediately (e.g., before waitee's work is done)
+*/
+template <typename S1, typename S2>
+void exec_space_wait(const S1 &waitee, const S2 &waiter) {
+    exec_space_wait("anonymous", waitee, waiter);
+}
 
 } // namespace Spaces
 
