@@ -574,7 +574,7 @@ bool Behavior::overlapCommunicationAndComputation ()
 bool Behavior::overlapSpmvCommunicationAndComputation ()
 {
   constexpr char envVarName[] = "TPETRA_OVERLAP_SPMV";
-  constexpr bool defaultValue(false);
+  constexpr bool defaultValue(true);
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
