@@ -238,7 +238,7 @@ struct OperatorTensorDecomposition
   std::vector< std::vector<EOperator> > ops; // outer index: vector entry ordinal; inner index: basis component ordinal. (scalar-valued operators have a single entry in outer vector)
   std::vector<double> weights; // weights for each vector entry
   ordinal_type numBasisComponents_;
-  bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …)
+  bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …).  This is used for H(curl) wedges (specifically, for OPERATOR_CURL).
   
   OperatorTensorDecomposition(const std::vector<EOperator> &opsBasis1, const std::vector<EOperator> &opsBasis2, const std::vector<double> vectorComponentWeights)
   :
@@ -478,6 +478,7 @@ struct OperatorTensorDecomposition
     return result;
   }
   
+  //! If true, this flag indicates that a vector component that spans the first two dimensions should be rotated by 90 degrees clockwise, mapping (x,y) to (-y,x).  If there is no such vector component, the flag should be ignored.  As of this writing, this is used only by the "derived" H(curl) basis on the wedge.
   bool rotateXYNinetyDegrees() const
   {
     return rotateXYNinetyDegrees_;
@@ -1805,21 +1806,24 @@ struct OperatorTensorDecomposition
         pointCount2 = totalPointCount;
       }
       
-      int spaceDim1 = inputPoints1.extent_int(1);
-      int spaceDim2 = inputPoints2.extent_int(1);
+      const ordinal_type spaceDim1 = inputPoints1.extent_int(1);
+      const ordinal_type spaceDim2 = inputPoints2.extent_int(1);
       
       INTREPID2_TEST_FOR_EXCEPTION(!tensorPoints && (totalPointCount != inputPoints2.extent_int(0)),
                                    std::invalid_argument, "If tensorPoints is false, the point counts must match!");
             
-      int opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
-      int opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      const ordinal_type opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
+      const ordinal_type opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      
+      const ordinal_type outputRank1 = opRank1 + getFieldRank(basis1_->getFunctionSpace());
+      const ordinal_type outputRank2 = opRank2 + getFieldRank(basis2_->getFunctionSpace());
       
       OutputViewType outputValues1, outputValues2;
-      if (opRank1 == 0)
+      if (outputRank1 == 0)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
-      else if (opRank1 == 1)
+      else if (outputRank1 == 1)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
@@ -1828,11 +1832,11 @@ struct OperatorTensorDecomposition
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported opRank1");
       }
       
-      if (opRank2 == 0)
+      if (outputRank2 == 0)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
-      else if (opRank2 == 1)
+      else if (outputRank2 == 1)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
