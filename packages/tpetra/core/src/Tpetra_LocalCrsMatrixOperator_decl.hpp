@@ -133,13 +133,14 @@ namespace Tpetra {
       }
     };
 
+#if 0
     // cwp 21 Sep 2022
     // A functor that does the on-rank part of a local SpMV
     // KokkosKernels does not currently have a 4-array CSR
     template<
     typename OffsetDeviceViewType, 
     typename RowViewer // OnRankRowView or OffRankRowView
-    > class FourArrayCrsSpmvFunctor {
+    > class SpmvFunctor {
 
     public:
 
@@ -175,7 +176,7 @@ namespace Tpetra {
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
 
     public:
-      FourArrayCrsSpmvFunctor(const MultiVectorScalar &alpha, 
+      SpmvFunctor(const MultiVectorScalar &alpha, 
       const local_matrix_device_type &A, 
       x_type &X, 
       const MultiVectorScalar &beta, 
@@ -309,6 +310,338 @@ namespace Tpetra {
         Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans, execution_space>(space, 0, A_.numRows()), *this);
       }
     };
+#endif
+
+    // cwp 21 Sep 2022
+    // A functor that does on-rank or off-rank part of a local Sparse-matrix multivector product
+    // KokkosKernels does not currently have a 4-array CSR
+    template<
+    typename OffsetDeviceViewType, 
+    typename RowViewer, // OnRankRowView or OffRankRowView
+    bool CONJ
+    > class SpmvMvFunctor {
+    public:
+      typedef LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device> local_crs_matrix_operator_type;
+      typedef typename local_crs_matrix_operator_type::local_matrix_device_type local_matrix_device_type;
+      typedef typename local_crs_matrix_operator_type::array_layout array_layout;
+      
+      typedef Kokkos::View<const MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > x_type;
+      typedef Kokkos::View<MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > y_type;
+    
+    private:
+      typedef typename local_matrix_device_type::non_const_value_type value_type;
+      typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
+      typedef typename local_matrix_device_type::non_const_size_type size_type; 
+
+      typedef typename local_matrix_device_type::execution_space execution_space;
+      typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+      typedef typename team_policy::member_type team_member;
+      typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+      MultiVectorScalar alpha_;
+      local_matrix_device_type A_;
+      x_type X_;
+      MultiVectorScalar beta_;
+      y_type Y_;
+      OffsetDeviceViewType offRankOffsets_;
+      ordinal_type rowsPerThread_;
+      int vectorLength_;
+
+    public:
+      SpmvMvFunctor(const MultiVectorScalar &alpha, 
+      const local_matrix_device_type &A, 
+      x_type &X, 
+      const MultiVectorScalar &beta, 
+      y_type &Y,
+      const OffsetDeviceViewType &offRankOffsets,
+      ordinal_type rowsPerThread,
+      int vectorLength) 
+        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y),
+         offRankOffsets_(offRankOffsets),
+         rowsPerThread_(rowsPerThread), vectorLength_(vectorLength) {}
+
+      
+      /* simplified version brought from Kokkos Kernels
+      */
+      template <int UNROLL>
+      KOKKOS_INLINE_FUNCTION void strip_mine(const team_member& dev,
+                                            const ordinal_type& iRow,
+                                            const ordinal_type& kk) const {
+        MultiVectorScalar sum[UNROLL];
+
+        for (int k = 0; k < UNROLL; ++k) {
+          sum[k] = Kokkos::Details::ArithTraits<MultiVectorScalar>::zero();
+        }
+
+        const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
+
+        Kokkos::parallel_for(
+            Kokkos::ThreadVectorRange(dev, row.length), [&](ordinal_type iEntry) {
+              const value_type val =
+                  CONJ ? Kokkos::Details::ArithTraits<value_type>::conj(
+                                  row.value(iEntry))
+                            : row.value(iEntry);
+              const ordinal_type ind = row.colidx(iEntry);
+              for (int k = 0; k < UNROLL; ++k) {
+                sum[k] += val * X_(ind, kk + k);
+              }
+            });
+
+        for (int ii = 0; ii < UNROLL; ++ii) {
+          MultiVectorScalar sumt;
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(dev, vectorLength_),
+              [&](ordinal_type, MultiVectorScalar& lsum) {
+                // in this context, sum[ii] is a partial sum ii on one of the
+                // vector lanes.
+                lsum += sum[ii];
+              },
+              sumt);
+          sum[ii] = sumt * alpha_;
+        }
+        
+        Kokkos::parallel_for(
+            Kokkos::ThreadVectorRange(dev, UNROLL), [&](ordinal_type k) {
+              Y_(iRow, kk + k) = beta_ * Y_(iRow, kk + k) + sum[k];
+            });
+        
+      }
+
+      /* simplified version brought from Kokkos Kernels
+      */
+      KOKKOS_INLINE_FUNCTION void operator()(const team_member& dev) const {
+        for (ordinal_type loop = 0; loop < rowsPerThread_; ++loop) {
+          // iRow indexes over (local) rows of the matrix, so its correct
+          // type is ordinal_type.
+
+          const ordinal_type iRow =
+              (dev.league_rank() * dev.team_size() + dev.team_rank()) *
+                  rowsPerThread_ + loop;
+          if (iRow >= A_.numRows()) {
+            return;
+          }
+
+          // mfh 20 Mar 2015, 07 Jun 2016: This is ordinal_type because it
+          // needs to have the same type as n.
+          ordinal_type kk = 0;
+
+          const ordinal_type n = X_.extent(1);
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          if ((n > 8) && (n % 8 == 1)) {
+            strip_mine<9>(dev, iRow, kk);
+            kk += 9;
+          }
+          for (; kk + 8 <= n; kk += 8) strip_mine<8>(dev, iRow, kk);
+          if (kk < n) {
+            switch (n - kk) {
+#else   // NOT a GPU
+          if ((n > 16) && (n % 16 == 1)) {
+            strip_mine<17>(dev, iRow, kk);
+            kk += 17;
+          }
+
+          for (; kk + 16 <= n; kk += 16) {
+            strip_mine<16>(dev, iRow, kk);
+          }
+          if (kk < n) {
+            switch (n - kk) {
+              case 15: strip_mine<15>(dev, iRow, kk); break;
+
+              case 14: strip_mine<14>(dev, iRow, kk); break;
+
+              case 13: strip_mine<13>(dev, iRow, kk); break;
+
+              case 12: strip_mine<12>(dev, iRow, kk); break;
+
+              case 11: strip_mine<11>(dev, iRow, kk); break;
+
+              case 10: strip_mine<10>(dev, iRow, kk); break;
+
+              case 9: strip_mine<9>(dev, iRow, kk); break;
+
+              case 8: strip_mine<8>(dev, iRow, kk); break;
+#endif  // if/else: __CUDA_ARCH__ or __HIP_DEVICE_COMPILE__
+              case 7: strip_mine<7>(dev, iRow, kk); break;
+
+              case 6: strip_mine<6>(dev, iRow, kk); break;
+
+              case 5: strip_mine<5>(dev, iRow, kk); break;
+
+              case 4: strip_mine<4>(dev, iRow, kk); break;
+
+              case 3: strip_mine<3>(dev, iRow, kk); break;
+
+              case 2: strip_mine<2>(dev, iRow, kk); break;
+
+              case 1: strip_mine<1>(dev, iRow, kk); break; // was strip_mine_1
+            }
+          }
+        }
+      }
+
+      static void launch(const MultiVectorScalar &alpha, 
+        const local_matrix_device_type &A, 
+        x_type &X, 
+        const MultiVectorScalar &beta, 
+        y_type &Y,
+        const OffsetDeviceViewType &offRankOffsets,
+        const execution_space &space) {
+
+        const ordinal_type NNZPerRow = A.nnz() / A.numRows();
+
+        ordinal_type vectorLength = 1;
+        while ((vectorLength * 2 * 3 <= NNZPerRow) && (vectorLength < 8)) {
+          vectorLength *= 2;
+        }
+
+        ordinal_type nrow = A.numRows();
+
+        SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets,
+                  KokkosSparse::RowsPerThread<execution_space>(NNZPerRow),
+                  vectorLength);
+
+        const ordinal_type rowsPerThread =
+            KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
+        const ordinal_type teamSize =
+            Kokkos::TeamPolicy<execution_space>(space, 
+                rowsPerThread, Kokkos::AUTO, vectorLength)
+                .team_size_recommended(op, Kokkos::ParallelForTag());
+        const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
+        const size_type nteams = (nrow + rowsPerTeam - 1) / rowsPerTeam;
+        Kokkos::parallel_for("SpmvMvFunctor non-transpose",
+                            Kokkos::TeamPolicy<execution_space>(
+                                space, nteams, teamSize, vectorLength),
+                            op);
+      }
+
+    };
+
+
+
+    template<
+    typename OffsetDeviceViewType, 
+    typename RowViewer, // OnRankRowView or OffRankRowView
+    bool CONJ
+    > struct SpmvMvTransFunctor {
+    public:
+      typedef LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device> local_crs_matrix_operator_type;
+      typedef typename local_crs_matrix_operator_type::local_matrix_device_type local_matrix_device_type;
+      typedef typename local_crs_matrix_operator_type::array_layout array_layout;
+      
+      typedef Kokkos::View<const MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > x_type;
+      typedef Kokkos::View<MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > y_type;
+    
+    private:
+      typedef typename local_matrix_device_type::non_const_value_type value_type;
+      typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
+      typedef typename local_matrix_device_type::non_const_size_type size_type; 
+
+      typedef typename local_matrix_device_type::execution_space execution_space;
+      typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+      typedef typename team_policy::member_type team_member;
+      typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+      MultiVectorScalar alpha_;
+      local_matrix_device_type A_;
+      x_type X_;
+      MultiVectorScalar beta_;
+      y_type Y_;
+      OffsetDeviceViewType offRankOffsets_;
+
+      ordinal_type rowsPerTeam;
+
+
+
+      SpmvMvTransFunctor(const MultiVectorScalar& alpha, const local_matrix_device_type& A,
+                                const x_type& X, const MultiVectorScalar& beta,
+                                const y_type& Y, const OffsetDeviceViewType &offRankOffsets)
+          : alpha_(alpha),
+            A_(A),
+            X_(X),
+            beta_(beta),
+            Y_(Y),
+            offRankOffsets_(offRankOffsets) {}
+
+public:
+      KOKKOS_INLINE_FUNCTION void operator()(const team_member& dev) const {
+
+        const ordinal_type n = X_.extent(1);
+
+        const ordinal_type teamWork = dev.league_rank() * rowsPerTeam;
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(dev, rowsPerTeam), [&](ordinal_type loop) {
+              // iRow represents a row of the matrix, so its correct type is
+              // ordinal_type.
+              const ordinal_type iRow = teamWork + loop;
+              if (iRow >= A_.numRows()) {
+                return;
+              }
+
+              const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
+              const ordinal_type rowLength = row.length;
+
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(dev, rowLength),
+                  [&](ordinal_type iEntry) {
+                    const value_type val =
+                        CONJ
+                            ? Kokkos::Details::ArithTraits<value_type>::conj(
+                                  row.value(iEntry))
+                            : row.value(iEntry);
+                    const ordinal_type ind = row.colidx(iEntry);
+
+    #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+    #pragma unroll
+    #endif
+                    for (ordinal_type k = 0; k < n; ++k) {
+                      Kokkos::atomic_add(
+                          &Y_(ind, k),
+                          static_cast<MultiVectorScalar>(alpha_ * val * X_(iRow, k)));
+                    }
+                  });
+            });
+      }
+
+
+      static void launch(const MultiVectorScalar &alpha, 
+        const local_matrix_device_type &A, 
+        x_type &X, 
+        const MultiVectorScalar &beta, 
+        y_type &Y,
+        const OffsetDeviceViewType &offRankOffsets,
+        const execution_space &space) {
+
+        const ordinal_type NNZPerRow = A.nnz() / A.numRows();
+
+        ordinal_type vectorLength = 1;
+        while ((vectorLength * 2 * 3 <= NNZPerRow) && (vectorLength < 8)) {
+          vectorLength *= 2;
+        }
+
+        ordinal_type nrow = A.numRows();
+
+        SpmvMvTransFunctor op(alpha, A, X, beta, Y, offRankOffsets);
+
+        const ordinal_type rowsPerThread =
+            KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
+        const ordinal_type teamSize =
+            Kokkos::TeamPolicy<execution_space>(space, 
+                rowsPerThread, Kokkos::AUTO, vectorLength)
+                .team_size_recommended(op, Kokkos::ParallelForTag());
+        const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
+        const size_type nteams = (nrow + rowsPerTeam - 1) / rowsPerTeam;
+        Kokkos::parallel_for("SpmvMvFunctor non-transpose",
+                            Kokkos::TeamPolicy<execution_space>(
+                                space, nteams, teamSize, vectorLength),
+                            op);
+      }
+
+    };
 
     
     using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
@@ -359,27 +692,23 @@ namespace Tpetra {
            const OffsetDeviceViewType &offRankOffsets) const {
 
       typedef OffRankRowViewer<OffsetDeviceViewType> RowViewer;
-      typedef FourArrayCrsSpmvFunctor<OffsetDeviceViewType, RowViewer> ORSF;
-      ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
-          std::stringstream ss;
-          ss << __FILE__ << ":" << __LINE__ << ": applyLocalColumns for trans unimplemented";
-          throw std::runtime_error(ss.str());
-          orsf.launch(typename ORSF::TagTrans{}, execSpace);
+          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          orsf.launch(typename ORSF::TagNonTrans{}, execSpace);
+          typedef SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {
-          std::stringstream ss;
-          ss << __FILE__ << ":" << __LINE__ << ": applyLocalColumns for conj-trans unimplemented";
-          throw std::runtime_error(ss.str());
-          orsf.launch(typename ORSF::TagConjTrans{}, execSpace);
+          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, true> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
+
         default:
           throw std::runtime_error("unexpected Teuchos::ETransp mode in off-rank SpMV");
       }
@@ -405,27 +734,21 @@ namespace Tpetra {
            const mv_scalar_type alpha,
            const mv_scalar_type beta,
            const OffsetDeviceViewType &offRankOffsets) const {
-
       typedef OnRankRowViewer<OffsetDeviceViewType> RowViewer;
-      typedef FourArrayCrsSpmvFunctor<OffsetDeviceViewType, RowViewer> ORSF;
-      ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
-          std::stringstream ss;
-          ss << __FILE__ << ":" << __LINE__ << ": applyLocalColumns for trans unimplemented";
-          throw std::runtime_error(ss.str());
-          orsf.launch(typename ORSF::TagTrans{}, execSpace);
+          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          orsf.launch(typename ORSF::TagNonTrans{}, execSpace);
+          typedef SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {
-          std::stringstream ss;
-          ss << __FILE__ << ":" << __LINE__ << ": applyLocalColumns for conj-trans unimplemented";
-          throw std::runtime_error(ss.str());
-          orsf.launch(typename ORSF::TagConjTrans{}, execSpace);
+          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, true> Op;
+          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
           return;
         }
         default:
