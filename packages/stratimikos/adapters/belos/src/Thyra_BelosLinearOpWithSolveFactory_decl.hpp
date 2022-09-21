@@ -64,7 +64,11 @@ namespace Thyra {
     SOLVER_TYPE_MINRES,
     SOLVER_TYPE_TFQMR,
     SOLVER_TYPE_BICGSTAB,
-    SOLVER_TYPE_FIXEDPOINT
+    SOLVER_TYPE_FIXEDPOINT,
+    SOLVER_TYPE_TPETRA_GMRES,
+    SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
+    SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
+    SOLVER_TYPE_TPETRA_GMRES_SSTEP
   };
 
   inline std::istream& operator>>(
@@ -127,6 +131,14 @@ public:
   static const std::string  BiCGStab_name;
   /** \brief . */
   static const std::string  FixedPoint_name;
+  /** \brief . */
+  static const std::string  TpetraGmres_name;
+  /** \brief . */
+  static const std::string  TpetraGmresPipeline_name;
+  /** \brief . */
+  static const std::string  TpetraGmresSingleReduce_name;
+  /** \brief . */
+  static const std::string  TpetraGmresSstep_name;
   /** \brief . */
   static const std::string  ConvergenceTestFrequency_name;
 
