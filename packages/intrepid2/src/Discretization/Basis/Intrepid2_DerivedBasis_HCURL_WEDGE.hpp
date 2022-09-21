@@ -124,11 +124,11 @@ namespace Intrepid2
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
-      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
-      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
-      const EOperator CURL  = Intrepid2::OPERATOR_CURL;
+      const EOperator & VALUE = OPERATOR_VALUE;
+      const EOperator & GRAD  = OPERATOR_GRAD;
+      const EOperator & CURL  = OPERATOR_CURL;
       if (operatorType == VALUE)
       {
         // family 1 goes in x,y components
@@ -407,11 +407,11 @@ namespace Intrepid2
     {
       // TODO: implement this.  (Below, the implementation from HCURL_QUAD)
       
-//      Intrepid2::EOperator op1, op2;
-//      if (operatorType == Intrepid2::OPERATOR_VALUE)
+//      EOperator op1, op2;
+//      if (operatorType == OPERATOR_VALUE)
 //      {
-//        op1 = Intrepid2::OPERATOR_VALUE;
-//        op2 = Intrepid2::OPERATOR_VALUE;
+//        op1 = OPERATOR_VALUE;
+//        op2 = OPERATOR_VALUE;
 //
 //        // family 2 goes in the y component; 0 in the x component
 //        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
@@ -424,12 +424,12 @@ namespace Intrepid2
 //                                     inputPoints2, op2, tensorPoints);
 //
 //      }
-//      else if (operatorType == Intrepid2::OPERATOR_CURL)
+//      else if (operatorType == OPERATOR_CURL)
 //      {
 //        // family 2 gets a d/dx applied to the second (nonzero) vector component
 //        // since this is H(GRAD)(x) * H(VOL)(y), this amounts to taking the derivative in the first tensorial component
-//        op1 = Intrepid2::OPERATOR_GRAD;
-//        op2 = Intrepid2::OPERATOR_VALUE;
+//        op1 = OPERATOR_GRAD;
+//        op2 = OPERATOR_VALUE;
 //
 //        this->TensorBasis::getValues(outputValues,
 //                                     inputPoints1, op1,
@@ -495,34 +495,31 @@ namespace Intrepid2
       this->setShardsTopologyAndTags();
     }
     
-    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  One-element ops and weights vectors correspond to a single TensorData entry; multiple-element vectors correspond to a VectorData object with axialComponents = false.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
-      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
-      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
-      const EOperator CURL  = Intrepid2::OPERATOR_CURL;
-      if (operatorType == VALUE)
-      {
-        // family 2 goes in z component
-        std::vector< std::vector<EOperator> > ops(3);
-        ops[0] = std::vector<EOperator>{};
-        ops[1] = std::vector<EOperator>{};
-        ops[2] = std::vector<EOperator>{VALUE,VALUE};
-        std::vector<double> weights {0.0, 0.0, 1.0};
-        return OperatorTensorDecomposition(ops, weights);
-      }
-      else if (operatorType == CURL)
+      if (operatorType == OPERATOR_CURL)
       {
         // curl of (0,0,f) is (df/dy, -df/dx, 0)
         
         // this is a rotation of gradient of the triangle H^1 basis, times the H(vol) line value
         std::vector< std::vector<EOperator> > ops(2);
-        ops[0] = std::vector<EOperator>{GRAD,VALUE}; // occupies the x,y components
+        ops[0] = std::vector<EOperator>{OPERATOR_GRAD,OPERATOR_VALUE}; // occupies the x,y components
         ops[1] = std::vector<EOperator>{};
         std::vector<double> weights {-1.0, 0.0}; // -1 because the rotation goes from (df/dx,df/dy) --> (-df/dy,df/dx), and we want (df/dy,-df/dx)
         OperatorTensorDecomposition opDecomposition(ops, weights);
         opDecomposition.setRotateXYNinetyDegrees(true);
+        return opDecomposition;
+      }
+      else if (OPERATOR_VALUE == operatorType)
+      {
+        // family 2 goes in z component
+        std::vector< std::vector<EOperator> > ops(2);
+        ops[0] = std::vector<EOperator>{}; // because family I identifies this as spanning (x,y), empty op here will also span (x,y)
+        ops[1] = std::vector<EOperator>{OPERATOR_VALUE,OPERATOR_VALUE}; // z component
+        std::vector<double> weights {0.0, 1.0};
+        return OperatorTensorDecomposition(ops, weights);
       }
       else
       {
@@ -543,39 +540,39 @@ namespace Intrepid2
                            const PointViewType  inputPoints1, const PointViewType inputPoints2,
                            bool tensorPoints) const override
     {
-      // TODO: Implement this
-      Intrepid2::EOperator op1, op2;
-      if (operatorType == Intrepid2::OPERATOR_VALUE)
-      {
-        op1 = Intrepid2::OPERATOR_VALUE;
-        op2 = Intrepid2::OPERATOR_VALUE;
-        
-        // family 2 goes in the y component; 0 in the x component
-        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
-        auto outputValuesComponent2 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),1);
-        
-        // place 0 in the x component
-        Kokkos::deep_copy(outputValuesComponent1, 0.0);
-        this->TensorBasis::getValues(outputValuesComponent2,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-        
-      }
-      else if (operatorType == Intrepid2::OPERATOR_CURL)
-      {
-        // family 2 gets a d/dx applied to the second (nonzero) vector component
-        // since this is H(GRAD)(x) * H(VOL)(y), this amounts to taking the derivative in the first tensorial component
-        op1 = Intrepid2::OPERATOR_GRAD;
-        op2 = Intrepid2::OPERATOR_VALUE;
-        
-        this->TensorBasis::getValues(outputValues,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-      }
+      // TODO: implement this.  (Below, the implementation from HCURL_QUAD)
+//      EOperator op1, op2;
+//      if (operatorType == OPERATOR_VALUE)
+//      {
+//        op1 = OPERATOR_VALUE;
+//        op2 = OPERATOR_VALUE;
+//
+//        // family 2 goes in the y component; 0 in the x component
+//        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
+//        auto outputValuesComponent2 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),1);
+//
+//        // place 0 in the x component
+//        Kokkos::deep_copy(outputValuesComponent1, 0.0);
+//        this->TensorBasis::getValues(outputValuesComponent2,
+//                                     inputPoints1, op1,
+//                                     inputPoints2, op2, tensorPoints);
+//
+//      }
+//      else if (operatorType == OPERATOR_CURL)
+//      {
+//        // family 2 gets a d/dx applied to the second (nonzero) vector component
+//        // since this is H(GRAD)(x) * H(VOL)(y), this amounts to taking the derivative in the first tensorial component
+//        op1 = OPERATOR_GRAD;
+//        op2 = OPERATOR_VALUE;
+//
+//        this->TensorBasis::getValues(outputValues,
+//                                     inputPoints1, op1,
+//                                     inputPoints2, op2, tensorPoints);
+//      }
+//      else
+//      {
+//        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+//      }
     }
 
     /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell

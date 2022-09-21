@@ -473,7 +473,9 @@ struct OperatorTensorDecomposition
     // check that vector lengths agree:
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
-    return OperatorTensorDecomposition(expandedOps, expandedWeights);
+    OperatorTensorDecomposition result(expandedOps, expandedWeights);
+    result.setRotateXYNinetyDegrees(rotateXYNinetyDegrees_);
+    return result;
   }
   
   bool rotateXYNinetyDegrees() const
@@ -1044,7 +1046,7 @@ struct OperatorTensorDecomposition
      
      Subclasses must override this method.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const
     {
       const int spaceDim  = this->getDomainDimension();
       
@@ -1547,7 +1549,7 @@ struct OperatorTensorDecomposition
             //  via, e.g., OPERATOR_X, OPERATOR_Y, etc., we don't have a way of expressing the decomposition
             //  just in terms of EOperator and component-wise scalar weights; we could also do this via component-wise
             //  matrix weights, but this would involve a more intrusive change to the implementation).
-            const bool spansXY = (vectorComponentOrdinal == 0) && (basisValueView.extent_int(1) == 2);
+            const bool spansXY = (vectorComponentOrdinal == 0) && (basisValueView.extent_int(2) == 2);
             if (spansXY && operatorDecomposition.rotateXYNinetyDegrees())
             {
               // map from (f_x,f_y) --> (-f_y,f_x)

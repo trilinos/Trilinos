@@ -100,7 +100,7 @@ namespace Intrepid2
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
@@ -239,7 +239,7 @@ namespace Intrepid2
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
        */
-       virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+       virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
        {
          const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
          const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;

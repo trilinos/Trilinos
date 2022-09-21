@@ -51,6 +51,9 @@
 #include "BasisEquivalenceHelpers.hpp"
 
 #include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
+#include "Intrepid2_HCURL_WEDGE_I1_FEM.hpp"
+#include  "Intrepid2_HDIV_WEDGE_I1_FEM.hpp"
+
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
@@ -68,6 +71,23 @@ namespace
     using NodalC1Basis      = Basis_HGRAD_WEDGE_C1_FEM<DefaultTestDeviceType,double,double>; // regular nodal basis family does not define wedge bases beyond second order
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    const ordinal_type p = 1;
+    
+    HierarchicalBasis hierarchicalBasis(p);
+    NodalC1Basis      nodalBasis;
+    BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalC1VersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_WEDGE;
+    using NodalC1Basis      = Basis_HCURL_WEDGE_I1_FEM<DefaultTestDeviceType,double,double>; // regular nodal basis family does not define wedge bases beyond second order (and second order only for HGRAD)
+    
+    std::vector<EOperator> opsToTest {OPERATOR_CURL};
     
     const double relTol=1e-13;
     const double absTol=1e-13;
