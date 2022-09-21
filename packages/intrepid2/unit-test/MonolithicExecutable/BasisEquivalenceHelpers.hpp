@@ -336,6 +336,30 @@ namespace Intrepid2
       
       basis1.getValues(basis1Values, points, OPERATOR_VALUE);
       basis2.getValues(basis2Values, points, OPERATOR_VALUE);
+
+      // prepare a flat points View for comparison (TensorBasis in particular follows different code paths)
+      const ordinal_type numPoints = points.extent(0);
+      ViewType<Scalar,DeviceType> pointsView = getView<Scalar, DeviceType>("flat points View", numPoints, spaceDim); // (P,D)
+     
+      // copy points
+      Kokkos::parallel_for(numPoints, KOKKOS_LAMBDA(const ordinal_type pointOrdinal)
+      {
+        for (ordinal_type d=0; d<spaceDim; d++)
+        {
+          pointsView(pointOrdinal,d) = points(pointOrdinal,d);
+        }
+      });
+      
+      // compare to the View-based getValues():
+      {
+        auto outputView1 = basis1.allocateOutputView(numPoints, OPERATOR_VALUE);
+        basis1.getValues(outputView1, pointsView, OPERATOR_VALUE);
+        testViewFloatingEquality(outputView1, basis1Values, relTol, absTol, out, success, "actual", "expected");
+        
+        auto outputView2 = basis1.allocateOutputView(numPoints, OPERATOR_VALUE);
+        basis2.getValues(outputView2, pointsView, OPERATOR_VALUE);
+        testViewFloatingEquality(outputView2, basis2Values, relTol, absTol, out, success, "actual", "expected");
+      }
       
       basis2Values.setOrdinalFilter(ordinalMap);
       
@@ -576,6 +600,17 @@ namespace Intrepid2
         
         basis1.getValues(basis1OpValues, points, op);
         basis2.getValues(basis2OpValues, points, op);
+        
+        // compare with View-based path
+        {
+          auto outputView1 = basis1.allocateOutputView(numPoints, op);
+          basis1.getValues(outputView1, pointsView, op);
+          testViewFloatingEquality(outputView1, basis1OpValues, relTol, absTol, out, success, "actual", "expected");
+          
+          auto outputView2 = basis1.allocateOutputView(numPoints, op);
+          basis2.getValues(outputView2, pointsView, op);
+          testViewFloatingEquality(outputView2, basis2OpValues, relTol, absTol, out, success, "actual", "expected");
+        }
         
         // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
         auto basis2OpValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
