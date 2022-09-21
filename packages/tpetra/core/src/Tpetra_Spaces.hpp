@@ -31,6 +31,12 @@ enum class Priority {
 
 namespace detail {
 
+/* This tracks whether spaces have been initialized.
+   Not all unit-tests call Tpetra::initialize, so we
+   have to do our own lazy-init on each call
+*/
+extern bool initialized;
+
 #ifdef KOKKOS_ENABLE_SERIAL
 inline void print_space(const Kokkos::Serial &space) {
     std::cerr << "[serial]";
@@ -62,6 +68,7 @@ inline void success_or_throw(cudaError_t err, const char *file, const int line) 
 /* query the runtime to map Tpetra::Priorities to the implementation priority
    set up `cudaEvent_t`s 
 */
+void lazy_init();
 void initialize();
 void finalize();
 
@@ -119,6 +126,7 @@ using IsOpenMP = std::enable_if_t<std::is_same<Space, Kokkos::OpenMP>::value, bo
     template <typename Space, Priority priority, 
     IsCuda<Space> = true >
     std::vector<Space> &spaces() {
+        lazy_init();
         return cudaSpaces[static_cast<int>(priority)];
     }
 #endif // KOKKOS_ENABLE_CUDA
@@ -126,6 +134,7 @@ using IsOpenMP = std::enable_if_t<std::is_same<Space, Kokkos::OpenMP>::value, bo
     template <typename Space, Priority priority, 
     IsSerial<Space> = true >
     std::vector<Space> &spaces() {
+        lazy_init();
         return serialSpaces[static_cast<int>(priority)];
     }
 #endif // KOKKOS_ENABLE_SERIAL
@@ -133,6 +142,7 @@ using IsOpenMP = std::enable_if_t<std::is_same<Space, Kokkos::OpenMP>::value, bo
     template <typename Space, Priority priority, 
     IsOpenMP<Space> = true >
     std::vector<Space> &spaces() {
+        lazy_init();
         return openMPSpaces[static_cast<int>(priority)];
     }
 #endif // KOKKOS_ENABLE_OPENMP
@@ -153,6 +163,7 @@ template <typename Space, Priority priority = Priority::medium
 #endif
 >
 Space &get(int i = 0) {
+    detail::lazy_init();
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
     }
@@ -172,6 +183,7 @@ Space &get(int i = 0) {
 template <typename Space, Priority priority = Priority::medium, 
 detail::IsCuda<Space> = true >
 Kokkos::Cuda &get(int i = 0) {
+    detail::lazy_init();
 
     if (i < 0) {
         throw std::runtime_error("requested exec space < 0 from Spaces::get");
@@ -203,6 +215,7 @@ Kokkos::Cuda &get(int i = 0) {
 */
 template <typename Space>
 Space &get(int i, const Priority &prio) {
+    detail::lazy_init();
     switch(prio) {
         case Priority::high: return get<Space, Priority::high>(i);
         case Priority::medium: return get<Space, Priority::medium>(i);
@@ -222,6 +235,7 @@ template <typename S1, typename S2
 #endif
 >
 void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
+    detail::lazy_init();
     (void) waiter;
     waitee.fence(msg);
 }
@@ -230,6 +244,7 @@ void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
 template <typename S1, typename S2,
 detail::BothCuda<S1, S2> = true>
 void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
+    detail::lazy_init();
     /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
        the state of a shared event
        this means we only need one event even if many exec_space_waits are in flight at the same time
@@ -246,6 +261,7 @@ void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
 */
 template <typename S1, typename S2>
 void exec_space_wait(const S1 &waitee, const S2 &waiter) {
+    detail::lazy_init();
     exec_space_wait("anonymous", waitee, waiter);
 }
 

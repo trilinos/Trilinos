@@ -30,18 +30,26 @@ namespace detail {
 /*extern*/ cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
 #endif
 
-void initialize() {
+/*extern*/ bool initialized = false;
+
+void lazy_init() {
+    if (initialized) { return; }
 #ifdef KOKKOS_ENABLE_CUDA
     CUDA_RUNTIME(cudaEventCreateWithFlags(&execSpaceWaitEvent, cudaEventDisableTiming));
     CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaPriorityRange.low, &cudaPriorityRange.high));
-    LOG_INFO("CUDA Priority: low:    " << cudaPriorityRange.low);
-    LOG_INFO("CUDA Priority: medium: " << cudaPriorityRange.medium);
-    LOG_INFO("CUDA Priority: high:   " << cudaPriorityRange.high);
+    // LOG_INFO("CUDA Priority: low:    " << cudaPriorityRange.low);
+    // LOG_INFO("CUDA Priority: medium: " << cudaPriorityRange.medium);
+    // LOG_INFO("CUDA Priority: high:   " << cudaPriorityRange.high);
 #endif
-    LOG_INFO("Tpetra::Spaces::initialize() done");
+    // LOG_INFO("Tpetra::Spaces::detail::lazy_init() done");
+}
+
+void initialize() {
+    lazy_init();
 }
 
 void finalize() {
+    if (!initialized) { return; }
     LOG_INFO("Tpetra::Spaces::finalize()...");
 #ifdef KOKKOS_ENABLE_CUDA
     CUDA_RUNTIME(cudaEventDestroy(detail::execSpaceWaitEvent));
@@ -59,6 +67,7 @@ void finalize() {
         detail::serialSpaces[i].clear();
     }
 #endif
+    initialized = false;
     LOG_INFO("Tpetra::Spaces::finalize() done");
 }
 
