@@ -48,13 +48,9 @@
  - family 1: H(curl,tri)  x  H(grad,line), placed in the x and y components of vector output
  - family 2: H(grad,tri) x  H(vol,line),  placed in the z component of vector output
  
- Unfortunately, the way that Family 1 decomposes into operators on the component bases cannot be expressed in
- OperatorTensorDecomposition because Intrepid2::EOperator does not include a VALUE_X, VALUE_Y operator -- the
- the CURL evaluation requires the H(curl,tri) component to be evaluated with OP_VALUE, then rotated 90 degrees and multiplied
- by the GRAD of the H(grad,line) component.
- 
- Therefore, we instead avoid any use of OperatorTensorDecomposition in our implementation of Family 1, instead overriding
- TensorBasis::getValues(BasisValues,TensorPoints,EOperator) and TensorBasis::allocateBasisValues().
+ The way that each family decomposes into operators on the component bases cannot be expressed simply with scalar
+ weights and EOperators on component bases; instead, a 90-degree rotation is required for the curl evaluations.  This
+ motivated the addition of a boolean flag indicating such a rotation in OperatorTensorDecomposition.
  
  Our Famiy 1 corresponds to the following ESEAS entities:
  - mixed edges
@@ -157,243 +153,6 @@ namespace Intrepid2
       }
     }
     
-//    /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
-//
-//        The basic exact-sequence operators are supported (VALUE, CURL).
-//     */
-//    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
-//    {
-//      if (points.numTensorComponents() == 1)
-//      {
-//        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "trivial tensor points structure not (yet) supported");
-//      }
-//      INTREPID2_TEST_FOR_EXCEPTION(points.numTensorComponents() != 2, std::invalid_argument, "points must have either 1 or 2 tensor components");
-//
-//      auto points_xy = points.getTensorComponent(0);
-//      INTREPID2_TEST_FOR_EXCEPTION(points_xy.extent(1) != 2, std::invalid_argument, "first component of tensor points container must have spatial dimension 2 (corresponding to the triangle)");
-//
-//      auto points_z = points.getTensorComponent(1);
-//      INTREPID2_TEST_FOR_EXCEPTION(points_z.extent(1) != 1, std::invalid_argument, "first component of tensor points container must have spatial dimension 1 (corresponding to the line)");
-//
-//      BasisValues<OutputValueType,DeviceType> triCurlBasisValues, lineGradBasisValues;
-//      triCurlBasisValues  = this->TensorBasis::basis1_->allocateBasisValues(points_xy, OPERATOR_VALUE);
-//      lineGradBasisValues = this->TensorBasis::basis2_->allocateBasisValues(points_z,  OPERATOR_VALUE);
-//
-//      if (operatorType == OPERATOR_VALUE)
-//      {
-//        auto triCurlVectorData = triCurlBasisValues.vectorData();
-//        ordinal_type triCurlFamilyCount = triCurlVectorData.numFamilies();
-//
-//        std::vector< std::vector<TensorData<OutputValueType,DeviceType> > > vectorComponents(triCurlFamilyCount); // outer dimension: numFamilies; inner dimension: number of vector components (here, should be 1).
-//
-//        INTREPID2_TEST_FOR_EXCEPTION(triCurlBasisValues.vectorData().numComponents() != 1, std::invalid_argument, "Unexpected component count for tri basis");
-//
-//        INTREPID2_TEST_FOR_EXCEPTION(lineGradBasisValues.tensorData().numTensorComponents() != 1, std::invalid_argument, "Unexpected tensor component count for line basis");
-//
-//        auto lineData = lineGradBasisValues.tensorData().getTensorComponent(0);
-//
-//        for (ordinal_type familyOrdinal=0; familyOrdinal<triCurlFamilyCount; familyOrdinal++)
-//        {
-//          std::vector<TensorData<OutputValueType,DeviceType> > &componentsForFamily = vectorComponents[familyOrdinal];
-//          ordinal_type triComponentCount = triCurlVectorData.numComponents();
-//          for (ordinal_type componentOrdinal=0; componentOrdinal<triComponentCount; componentOrdinal++)
-//          {
-//            auto &triComponentData = triCurlVectorData.getComponent(familyOrdinal,componentOrdinal);
-//            INTREPID2_TEST_FOR_EXCEPTION(triComponentData.numTensorComponents().numComponents() != 1, std::invalid_argument, "Unexpected component count for tri basis");
-//
-//            std::vector< Data<OutputValueType,DeviceType> > componentData { triComponentData.getTensorComponent(0), lineData };
-//            componentsForFamily.push_back(TensorData<OutputValueType,DeviceType>(componentData));
-//          }
-//          // zero in z component:
-//          componentsForFamily.push_back(TensorData<OutputValueType,DeviceType>());
-//        }
-//
-//        VectorData<OutputValueType,DeviceType> vectorData(vectorComponents);
-//        return BasisValues<OutputValueType,DeviceType>(vectorData);
-//      }
-//      else if (operatorType == OPERATOR_CURL)
-//      {
-//        // curl of (f_x(x,y) g(z), f_y(x,y) g(z), 0), where f is in H(curl,tri), g in H(grad,line)
-//        // x,y components of curl: rot(f) dg/dz, where rot(f) is a 90-degree rotation of f.
-//        //   z component  of curl: curl(f) g, where curl(f) is the 2D curl, a scalar.
-//
-//        BasisValues<OutputValueType,DeviceType> triCurlBasisCurls, lineGradBasisGrads;
-//        triCurlBasisCurls  = this->TensorBasis::basis1_->allocateBasisValues(points_xy, OPERATOR_CURL);
-//        lineGradBasisGrads = this->TensorBasis::basis2_->allocateBasisValues(points_z,  OPERATOR_GRAD);
-//
-//        auto triCurlVectorData = triCurlBasisValues.vectorData();
-//        ordinal_type triCurlFamilyCount = triCurlVectorData.numFamilies();
-//
-//        std::vector< std::vector<TensorData<OutputValueType,DeviceType> > > vectorComponents(triCurlFamilyCount); // outer dimension: numFamilies; inner dimension: number of vector components (here, should be 1).
-//
-//        INTREPID2_TEST_FOR_EXCEPTION(triCurlBasisValues.vectorData().numComponents() != 1, std::invalid_argument, "Unexpected component count for tri basis");
-//        INTREPID2_TEST_FOR_EXCEPTION(lineGradBasisGrads.tensorData().numTensorComponents() != 1, std::invalid_argument, "Unexpected tensor component count for line basis");
-//
-//        auto lineGrads = lineGradBasisGrads.tensorData().getTensorComponent(0);
-//
-//        for (ordinal_type familyOrdinal=0; familyOrdinal<triCurlFamilyCount; familyOrdinal++)
-//        {
-//          INTREPID2_TEST_FOR_EXCEPTION(triCurlBasisCurls.tensorData(familyOrdinal).numComponents() != 1, std::invalid_argument, "Unexpected component count for tri basis");
-//
-//          std::vector<TensorData<OutputValueType,DeviceType> > &componentsForFamily = vectorComponents[familyOrdinal];
-//          ordinal_type triComponentCount = triCurlVectorData.numComponents();
-//          for (ordinal_type componentOrdinal=0; componentOrdinal<triComponentCount; componentOrdinal++)
-//          {
-//            auto &triComponentData = triCurlVectorData.getComponent(familyOrdinal,componentOrdinal);
-//            INTREPID2_TEST_FOR_EXCEPTION(triComponentData.numTensorComponents().numComponents() != 1, std::invalid_argument, "Unexpected component count for tri basis");
-//
-//            // x,y components of curl: rot(f) dg/dz, where rot(f) is a 90-degree rotation of f (here, we use the VALUE of f, which has the same size, for the allocation).
-//            std::vector< Data<OutputValueType,DeviceType> > componentData { triComponentData.getTensorComponent(0), lineGrads };
-//            componentsForFamily.push_back(TensorData<OutputValueType,DeviceType>(componentData));
-//          }
-//          // z component  of curl: curl(f) g, where curl(f) is the 2D curl, a scalar.
-//          const auto &curlTensorData = triCurlBasisCurls.tensorData(familyOrdinal);
-//          std::vector< Data<OutputValueType,DeviceType> > zComponentData { curlTensorData.getTensorComponent(0), lineGrads };
-//          componentsForFamily.push_back(TensorData<OutputValueType,DeviceType>(zComponentData));
-//        }
-//
-//        VectorData<OutputValueType,DeviceType> vectorData(vectorComponents);
-//        return BasisValues<OutputValueType,DeviceType>(vectorData);
-//      }
-//      else
-//      {
-//        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator");
-//      }
-//    }
-    
-    /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>, using point and output value containers that allow preservation of tensor-product structure.
-
-        Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-        points in the <strong>reference cell</strong> for which the basis is defined.
-
-        \param  outputValues      [out] - variable rank array with the basis values.  Should be allocated using Basis::allocateBasisValues().
-        \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points.  This should be allocated using Cubature::allocateCubaturePoints() and filled using Cubature::getCubature().
-        \param  operatorType      [in]  - the operator acting on the basis function
-     
-        This is the preferred getValues() method for TensorBasis and DirectSumBasis and their subclasses.  It allows a reduced memory footprint and optimized integration, etc.
-    */
-//    virtual
-//    void
-//    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
-//               const TensorPoints<PointValueType,DeviceType>  inputPoints,
-//               const EOperator operatorType = OPERATOR_VALUE ) const override
-//    {
-//      // TODO: implement this.  (Below, the implementation from TensorBasis.)
-//
-////      const ordinal_type numTensorComponents = tensorComponents_.size();
-////      if (inputPoints.numTensorComponents() < numTensorComponents)
-////      {
-////        // then we require that both inputPoints and outputValues trivial tensor structure
-////        INTREPID2_TEST_FOR_EXCEPTION( inputPoints.numTensorComponents() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, then inputPoints must have trivial tensor product structure" );
-////        INTREPID2_TEST_FOR_EXCEPTION( outputValues.numFamilies() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, outputValues must have a single family with trivial tensor product structure" );
-////        INTREPID2_TEST_FOR_EXCEPTION( outputValues.tensorData().numTensorComponents() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, outputValues must have a single family with trivial tensor product structure" );
-////
-////        OutputViewType outputView = outputValues.tensorData().getTensorComponent(0).getUnderlyingView();
-////        PointViewType   pointView = inputPoints.getTensorComponent(0);
-////        this->getValues(outputView, pointView, operatorType);
-////        return;
-////      }
-////
-////      OperatorTensorDecomposition operatorDecomposition = getOperatorDecomposition(operatorType);
-////
-////      const ordinal_type numVectorComponents = operatorDecomposition.numVectorComponents();
-////      const bool               useVectorData = numVectorComponents > 1;
-////      const ordinal_type  numBasisComponents = operatorDecomposition.numBasisComponents();
-////
-////      for (ordinal_type vectorComponentOrdinal=0; vectorComponentOrdinal<numVectorComponents; vectorComponentOrdinal++)
-////      {
-////        const double weight = operatorDecomposition.weight(vectorComponentOrdinal);
-////        ordinal_type pointComponentOrdinal = 0;
-////        for (ordinal_type basisOrdinal=0; basisOrdinal<numBasisComponents; basisOrdinal++, pointComponentOrdinal++)
-////        {
-////          const EOperator op = operatorDecomposition.op(vectorComponentOrdinal, basisOrdinal);
-////          // by convention, op == OPERATOR_MAX signals a zero component; skip
-////          if (op != OPERATOR_MAX)
-////          {
-////            const int vectorFamily = 0; // TensorBasis always has just a single family; multiple families arise in DirectSumBasis
-////            auto tensorData = useVectorData ? outputValues.vectorData().getComponent(vectorFamily,vectorComponentOrdinal) : outputValues.tensorData();
-////            INTREPID2_TEST_FOR_EXCEPTION( ! tensorData.getTensorComponent(basisOrdinal).isValid(), std::invalid_argument, "Invalid output component encountered");
-////
-////            const Data<OutputValueType,DeviceType> & outputData = tensorData.getTensorComponent(basisOrdinal);
-////
-////            auto basisValueView = outputData.getUnderlyingView();
-////            PointViewType  pointView = inputPoints.getTensorComponent(pointComponentOrdinal);
-////            const ordinal_type basisDomainDimension = tensorComponents_[basisOrdinal]->getDomainDimension();
-////            if (pointView.extent_int(1) == basisDomainDimension)
-////            {
-////              tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);
-////            }
-////            else
-////            {
-////              // we need to wrap the basisValueView in a BasisValues container, and to wrap the point components in a TensorPoints container.
-////
-////              // combine point components to build up to basisDomainDimension
-////              ordinal_type dimsSoFar = 0;
-////              std::vector< ScalarView<PointValueType,DeviceType> > basisPointComponents;
-////              while (dimsSoFar < basisDomainDimension)
-////              {
-////                INTREPID2_TEST_FOR_EXCEPTION(pointComponentOrdinal >= inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
-////                const auto & pointComponent = inputPoints.getTensorComponent(pointComponentOrdinal);
-////                const ordinal_type numComponentDims   = pointComponent.extent_int(1);
-////                dimsSoFar += numComponentDims;
-////                INTREPID2_TEST_FOR_EXCEPTION(dimsSoFar > inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
-////                basisPointComponents.push_back(pointComponent);
-////                if (dimsSoFar < basisDomainDimension)
-////                {
-////                  // we will pass through this loop again, so we should increment the point component ordinal
-////                  pointComponentOrdinal++;
-////                }
-////              }
-////
-////              TensorPoints<PointValueType, DeviceType> basisPoints(basisPointComponents);
-////
-////              bool useVectorData2 = (basisValueView.rank() == 3);
-////
-////              BasisValues<OutputValueType,DeviceType> basisValues;
-////              if (useVectorData2)
-////              {
-////                VectorData<OutputValueType,DeviceType> vectorData(outputData);
-////                basisValues = BasisValues<OutputValueType,DeviceType>(vectorData);
-////              }
-////              else
-////              {
-////                TensorData<OutputValueType,DeviceType> tensorData2(outputData);
-////                basisValues = BasisValues<OutputValueType,DeviceType>(tensorData2);
-////              }
-////
-////              tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);
-////            }
-////
-////            // if weight is non-trivial (not 1.0), then we need to multiply one of the component views by weight.
-////            // we do that for the first basisOrdinal's values
-////            if ((weight != 1.0) && (basisOrdinal == 0))
-////            {
-////              if (basisValueView.rank() == 2)
-////              {
-////                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
-////                Kokkos::parallel_for("multiply basisValueView by weight", policy,
-////                KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
-////                  basisValueView(fieldOrdinal,pointOrdinal) *= weight;
-////                });
-////              }
-////              else if (basisValueView.rank() == 3)
-////              {
-////                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1),basisValueView.extent_int(2)});
-////                Kokkos::parallel_for("multiply basisValueView by weight", policy,
-////                KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
-////                  basisValueView(fieldOrdinal,pointOrdinal,d) *= weight;
-////                });
-////              }
-////              else
-////              {
-////                INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported rank for basisValueView");
-////              }
-////            }
-////          }
-////        }
-////      }
-//    }
-    
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
         \param [in] operatorType - the operator on the basis
@@ -405,40 +164,58 @@ namespace Intrepid2
                            const PointViewType  inputPoints1, const PointViewType inputPoints2,
                            bool tensorPoints) const override
     {
-      // TODO: implement this.  (Below, the implementation from HCURL_QUAD)
-      
-//      EOperator op1, op2;
-//      if (operatorType == OPERATOR_VALUE)
-//      {
-//        op1 = OPERATOR_VALUE;
-//        op2 = OPERATOR_VALUE;
-//
-//        // family 2 goes in the y component; 0 in the x component
-//        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
-//        auto outputValuesComponent2 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),1);
-//
-//        // place 0 in the x component
-//        Kokkos::deep_copy(outputValuesComponent1, 0.0);
-//        this->TensorBasis::getValues(outputValuesComponent2,
-//                                     inputPoints1, op1,
-//                                     inputPoints2, op2, tensorPoints);
-//
-//      }
-//      else if (operatorType == OPERATOR_CURL)
-//      {
-//        // family 2 gets a d/dx applied to the second (nonzero) vector component
-//        // since this is H(GRAD)(x) * H(VOL)(y), this amounts to taking the derivative in the first tensorial component
-//        op1 = OPERATOR_GRAD;
-//        op2 = OPERATOR_VALUE;
-//
-//        this->TensorBasis::getValues(outputValues,
-//                                     inputPoints1, op1,
-//                                     inputPoints2, op2, tensorPoints);
-//      }
-//      else
-//      {
-//        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-//      }
+      EOperator op1, op2;
+      if (operatorType == OPERATOR_VALUE)
+      {
+        op1 = OPERATOR_VALUE;
+        op2 = OPERATOR_VALUE;
+
+        // family 1 values go in the x,y components; 0 in the z component
+        auto outputValuesComponent12 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::pair<int,int>{0,2});
+        auto outputValuesComponent3  = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
+
+        // place 0 in the z component
+        Kokkos::deep_copy(outputValuesComponent3, 0.0);
+        this->TensorBasis::getValues(outputValuesComponent12,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+
+      }
+      else if (operatorType == OPERATOR_CURL)
+      {
+        // curl of (f_x(x,y) g(z), f_y(x,y) g(z), 0), where f is in H(curl,tri), g in H(grad,line)
+        // x,y components of curl: rot(f) dg/dz, where rot(f) is a 90-degree rotation of f.
+        //   z component  of curl: curl(f) g, where curl(f) is the 2D curl, a scalar.
+        
+        auto outputValuesComponent12 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::pair<int,int>{0,2});
+        auto outputValuesComponent3  = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
+        
+        op1 = OPERATOR_VALUE;
+        op2 = OPERATOR_GRAD;
+
+        this->TensorBasis::getValues(outputValuesComponent12,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+        
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{outputValuesComponent12.extent_int(0),outputValuesComponent12.extent_int(1)});
+        Kokkos::parallel_for("wedge family 1 curl: rotateXYNinetyDegrees CW", policy,
+        KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
+          const auto  f_x = outputValuesComponent12(fieldOrdinal,pointOrdinal,0); // copy
+          const auto &f_y = outputValuesComponent12(fieldOrdinal,pointOrdinal,1); // reference
+          outputValuesComponent12(fieldOrdinal,pointOrdinal,0) = -f_y;
+          outputValuesComponent12(fieldOrdinal,pointOrdinal,1) =  f_x;
+        });
+        
+        op1 = OPERATOR_CURL;
+        op2 = OPERATOR_VALUE;
+        this->TensorBasis::getValues(outputValuesComponent3,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
     }
 
     /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
@@ -516,7 +293,7 @@ namespace Intrepid2
       {
         // family 2 goes in z component
         std::vector< std::vector<EOperator> > ops(2);
-        ops[0] = std::vector<EOperator>{}; // because family I identifies this as spanning (x,y), empty op here will also span (x,y)
+        ops[0] = std::vector<EOperator>{}; // because family 1 identifies this as spanning (x,y), empty op here will also span (x,y)
         ops[1] = std::vector<EOperator>{OPERATOR_VALUE,OPERATOR_VALUE}; // z component
         std::vector<double> weights {0.0, 1.0};
         return OperatorTensorDecomposition(ops, weights);
@@ -540,39 +317,52 @@ namespace Intrepid2
                            const PointViewType  inputPoints1, const PointViewType inputPoints2,
                            bool tensorPoints) const override
     {
-      // TODO: implement this.  (Below, the implementation from HCURL_QUAD)
-//      EOperator op1, op2;
-//      if (operatorType == OPERATOR_VALUE)
-//      {
-//        op1 = OPERATOR_VALUE;
-//        op2 = OPERATOR_VALUE;
-//
-//        // family 2 goes in the y component; 0 in the x component
-//        auto outputValuesComponent1 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),0);
-//        auto outputValuesComponent2 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),1);
-//
-//        // place 0 in the x component
-//        Kokkos::deep_copy(outputValuesComponent1, 0.0);
-//        this->TensorBasis::getValues(outputValuesComponent2,
-//                                     inputPoints1, op1,
-//                                     inputPoints2, op2, tensorPoints);
-//
-//      }
-//      else if (operatorType == OPERATOR_CURL)
-//      {
-//        // family 2 gets a d/dx applied to the second (nonzero) vector component
-//        // since this is H(GRAD)(x) * H(VOL)(y), this amounts to taking the derivative in the first tensorial component
-//        op1 = OPERATOR_GRAD;
-//        op2 = OPERATOR_VALUE;
-//
-//        this->TensorBasis::getValues(outputValues,
-//                                     inputPoints1, op1,
-//                                     inputPoints2, op2, tensorPoints);
-//      }
-//      else
-//      {
-//        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-//      }
+      EOperator op1, op2;
+      if (operatorType == OPERATOR_VALUE)
+      {
+        op1 = OPERATOR_VALUE;
+        op2 = OPERATOR_VALUE;
+
+        // family 2 values go in z component, 0 in (x,y)
+        auto outputValuesComponent12 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::pair<int,int>{0,2});
+        auto outputValuesComponent3  = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
+
+        // place 0 in the x,y components
+        Kokkos::deep_copy(outputValuesComponent12, 0.0);
+        this->TensorBasis::getValues(outputValuesComponent3,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+
+      }
+      else if (operatorType == OPERATOR_CURL)
+      {
+        // curl of (0,0,f) is (df/dy, -df/dx, 0)
+        
+        auto outputValuesComponent12 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::pair<int,int>{0,2});
+        auto outputValuesComponent3  = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
+                
+        op1 = OPERATOR_GRAD;
+        op2 = OPERATOR_VALUE;
+
+        this->TensorBasis::getValues(outputValuesComponent12,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+        
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{outputValuesComponent12.extent_int(0),outputValuesComponent12.extent_int(1)});
+        Kokkos::parallel_for("wedge family 2 curl: rotateXYNinetyDegrees CCW", policy,
+        KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
+          const auto  f_x = outputValuesComponent12(fieldOrdinal,pointOrdinal,0); // copy
+          const auto &f_y = outputValuesComponent12(fieldOrdinal,pointOrdinal,1); // reference
+          outputValuesComponent12(fieldOrdinal,pointOrdinal,0) =  f_y;
+          outputValuesComponent12(fieldOrdinal,pointOrdinal,1) = -f_x;
+        });
+        
+        Kokkos::deep_copy(outputValuesComponent3, 0.0);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
     }
 
     /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
