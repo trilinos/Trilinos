@@ -49,7 +49,6 @@
 #ifndef Intrepid2_IntegratedLegendreBasis_HGRAD_LINE_h
 #define Intrepid2_IntegratedLegendreBasis_HGRAD_LINE_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>

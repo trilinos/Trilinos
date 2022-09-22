@@ -49,7 +49,6 @@
 #ifndef Intrepid2_LegendreBasis_HVOL_TET_h
 #define Intrepid2_LegendreBasis_HVOL_TET_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>

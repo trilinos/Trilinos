@@ -48,7 +48,6 @@
 #ifndef Intrepid2_HierarchicalBasis_HDIV_TET_h
 #define Intrepid2_HierarchicalBasis_HDIV_TET_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>

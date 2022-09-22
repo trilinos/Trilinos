@@ -49,7 +49,6 @@
 #ifndef Intrepid2_TensorBasis_h
 #define Intrepid2_TensorBasis_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Teuchos_RCP.hpp>

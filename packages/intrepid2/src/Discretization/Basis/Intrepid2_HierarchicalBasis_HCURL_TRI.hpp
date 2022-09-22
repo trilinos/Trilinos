@@ -49,7 +49,6 @@
 #ifndef Intrepid2_HierarchicalBasis_HCURL_TRI_h
 #define Intrepid2_HierarchicalBasis_HCURL_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
