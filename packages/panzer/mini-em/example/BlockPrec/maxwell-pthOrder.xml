@@ -135,6 +135,7 @@
       <Parameter name="Source" type="string" value="E_edge"/>
       <Parameter name="Target" type="string" value="B_face"/>
       <Parameter name="Op" type="string" value="curl"/>
+      <Parameter name="matrix-free" type="bool" value="true"/>
     </ParameterList>
   </ParameterList>
 

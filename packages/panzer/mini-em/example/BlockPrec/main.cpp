@@ -166,6 +166,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     int numTimeSteps = 1;
     bool resetSolver = false;
     bool doSolveTimings = false;
+    bool matrixFree = false;
     int numReps = 0;
     linearAlgebraType linAlgebraValues[2] = {linAlgTpetra, linAlgEpetra};
     const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
@@ -186,6 +187,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("solverFile",&xml,"XML file with the solver params");
     clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
+    clp.setOption("matrixFree","no-matrixFree",&matrixFree,"matrix-free operators");
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
@@ -481,6 +483,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           gradPL.set("Source", "AUXILIARY_NODE_"+std::to_string(*it));
           gradPL.set("Target", "AUXILIARY_EDGE_"+std::to_string(*it));
           gradPL.set("Op", "grad");
+          gradPL.set("matrix-free", matrixFree);
           aux_ops_pl.sublist("Discrete Gradient "+std::to_string(*it)) = gradPL;
 
           auto massNodePL = Teuchos::ParameterList();
@@ -509,6 +512,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           gradPL.set("Source", "AUXILIARY_NODE");
           gradPL.set("Target", "AUXILIARY_EDGE");
           gradPL.set("Op", "grad");
+          gradPL.set("matrix-free", matrixFree);
           aux_ops_pl.sublist("Discrete Gradient") = gradPL;
 
           auto massNodePL = Teuchos::ParameterList();
@@ -552,12 +556,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         interpPLgrad.set("Source", "AUXILIARY_NODE_"+std::to_string(q));
         interpPLgrad.set("Target", p != basis_order ? "AUXILIARY_NODE_"+std::to_string(p) : "AUXILIARY_NODE");
         interpPLgrad.set("Op", "value");
+        interpPLgrad.set("matrix-free", matrixFree);
         aux_ops_pl.sublist("Interpolation Hgrad " + std::to_string(q) + "->" + std::to_string(p)) = interpPLgrad;
 
         auto interpPLcurl = Teuchos::ParameterList();
         interpPLcurl.set("Source", "AUXILIARY_EDGE_"+std::to_string(q));
         interpPLcurl.set("Target", p != basis_order ? "AUXILIARY_EDGE_"+std::to_string(p) : "AUXILIARY_EDGE");
         interpPLcurl.set("Op", "value");
+        interpPLcurl.set("matrix-free", matrixFree);
         aux_ops_pl.sublist("Interpolation Hcurl " + std::to_string(q) + "->" + std::to_string(p)) = interpPLcurl;
 
         p = q;
@@ -694,6 +700,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         const std::string op = pl.get<std::string>("Op","value");
         const bool waitForRequest = pl.get<bool>("waitForRequest",true);
         const bool dump = pl.get<bool>("dump",false);
+        const bool matrixFree = pl.get<bool>("matrix-free",false);
         Intrepid2::EOperator eOp;
         if (op == "value")
           eOp = Intrepid2::OPERATOR_VALUE;
@@ -703,7 +710,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
             eOp = Intrepid2::OPERATOR_CURL;
         else
           TEUCHOS_ASSERT(false);
-        addInterpolationToRequestHandler(name, linObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size);
+        addInterpolationToRequestHandler(name, linObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size, matrixFree);
       }
 
       for (auto it = aux_ops_pl.begin(); it != aux_ops_pl.end(); ++it) {
@@ -714,6 +721,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         const std::string op = pl.get<std::string>("Op","value");
         const bool waitForRequest = pl.get<bool>("waitForRequest",true);
         const bool dump = pl.get<bool>("dump",false);
+        const bool matrixFree = pl.get<bool>("matrix-free",false);
         Intrepid2::EOperator eOp;
         if (op == "value")
           eOp = Intrepid2::OPERATOR_VALUE;
@@ -723,7 +731,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
             eOp = Intrepid2::OPERATOR_CURL;
         else
           TEUCHOS_ASSERT(false);
-        addInterpolationToRequestHandler(name, auxLinObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size);
+        addInterpolationToRequestHandler(name, auxLinObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size, matrixFree);
       }
     } else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
       // add discrete gradient

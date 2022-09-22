@@ -341,15 +341,30 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
 
      for (int lvl = 1; lvl < maxLevels; ++lvl) {
        // (2,2) list
-       auto xpInterpHgrad = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHGrad[lvl-1]));
-       list22.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHgrad);
+       try {
+         auto xpInterpHgrad = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHGrad[lvl-1]));
+         list22.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHgrad);
+       } catch (std::exception& e) {
+         auto xpInterpHgrad = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHGrad[lvl-1]));
+         list22.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHgrad);
+       }
 
        // (1,1) list
-       auto xpInterpHcurl = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHCurl[lvl-1]));
-       list11.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHcurl);
+       try {
+         auto xpInterpHcurl = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHCurl[lvl-1]));
+         list11.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHcurl);
+       } catch (std::exception& e) {
+         auto xpInterpHcurl = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(interpolationsHCurl[lvl-1]));
+         list11.sublist("level " + std::to_string(lvl) + " user data").set("P",xpInterpHcurl);
+       }
 
-       auto xpLoT = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(discreteGradients[lvl]));
-       list11.sublist("level " + std::to_string(lvl) + " user data").set("D0",xpLoT);
+       try {
+         auto xpLoT = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(discreteGradients[lvl]));
+         list11.sublist("level " + std::to_string(lvl) + " user data").set("D0",xpLoT);
+       } catch (std::exception& e) {
+         auto xpLoT = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(discreteGradients[lvl]));
+         list11.sublist("level " + std::to_string(lvl) + " user data").set("D0",xpLoT);
+       }
      }
 
 
