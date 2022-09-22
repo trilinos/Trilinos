@@ -87,6 +87,7 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>         TpCrsMat;
+    typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>       tOp;
     typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>         tV;
     typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       thyTpV;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>    tMV;
@@ -169,7 +170,13 @@ namespace Thyra {
         } catch (std::exception& e) {
           RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
-          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpOp->getOperator()));
+          RCP<tOp> tO = tpOp->getOperator();
+          RCP<tV> diag;
+          if (tO->hasDiagonal()) {
+            diag = rcp(new tV(tO->getRangeMap()));
+            tO->getLocalDiagCopy(*diag);
+          }
+          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
           auto op = rcp_dynamic_cast<XpOp>(tpFOp);
           paramList.set<RCP<XpOp> >(parameterName, op);
@@ -225,6 +232,7 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>         TpCrsMat;
+    typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>       tOp;
     typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>         tV;
     typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       thyTpV;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>    tMV;
@@ -331,7 +339,13 @@ namespace Thyra {
         } catch (std::exception& e) {
           RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
-          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpOp->getOperator()));
+          RCP<tOp> tO = tpOp->getOperator();
+          RCP<tV> diag;
+          if (tO->hasDiagonal()) {
+            diag = rcp(new tV(tO->getRangeMap()));
+            tO->getLocalDiagCopy(*diag);
+          }
+          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
           auto op = rcp_dynamic_cast<XpOp>(tpFOp);
           paramList.set<RCP<XpOp> >(parameterName, op);
