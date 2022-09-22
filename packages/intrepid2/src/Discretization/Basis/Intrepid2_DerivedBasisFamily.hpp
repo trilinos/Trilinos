@@ -364,7 +364,7 @@ namespace Intrepid2
     {
       case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_WEDGE (polyOrder, pointType));
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_WEDGE(polyOrder, pointType));
-//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder, pointType));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder, pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_WEDGE(polyOrder, pointType));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
@@ -384,7 +384,7 @@ namespace Intrepid2
     {
       case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_WEDGE (polyOrder_xy, polyOrder_z, pointType));
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_WEDGE(polyOrder_xy, polyOrder_z, pointType));
-//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder_xy, polyOrder_z, pointType));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder_xy, polyOrder_z, pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_WEDGE(polyOrder_xy, polyOrder_z, pointType));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
