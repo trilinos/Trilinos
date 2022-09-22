@@ -18,8 +18,16 @@ namespace mini_em {
         Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("domainmap_"+s).c_str(),*(crsOp->getDomainMap()));
         Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("rangemap_"+s).c_str(),*(crsOp->getRangeMap()));
         Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeSparseFile(s.c_str(),crsOp);
-      } else
+      } else {
+        auto tO = tOp->getConstTpetraOperator();
+        if (tO->hasDiagonal()) {
+          typedef Tpetra::Vector<double,int,panzer::GlobalOrdinal,NT> tV;
+          RCP<tV> diag = rcp(new tV(tO->getRangeMap()));
+          tO->getLocalDiagCopy(*diag);
+          Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeDenseFile(("diag_"+s).c_str(),*diag);
+        }
         *Teko::getOutputStream() << "Cannot dump operator \'" << s << "\'" << std::endl;
+      }
     } else if (eOp != Teuchos::null) {
       *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
       const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
