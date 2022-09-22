@@ -105,17 +105,30 @@
                 <ParameterList name="smoother: params">
                   <Parameter name="hiptmair: implicit transpose" type="bool" value="false"/>
 
-                  <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
-                  <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
+                  <!-- <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/> -->
+                  <!-- <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/> -->
+                  <!-- <ParameterList name="hiptmair: smoother list 1"> -->
+                  <!--   <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/> -->
+                  <!--   <!-\- <Parameter name="relaxation: type" type="string" value="Jacobi"/> -\-> -->
+                  <!--   <!-\- <Parameter name="relaxation: damping factor" type="double" value="0.8"/> -\-> -->
+                  <!--   <!-\- <Parameter name="relaxation: sweeps" type="int" value="4"/> -\-> -->
+                  <!--   <Parameter name="relaxation: use l1" type="bool" value="true"/> -->
+                  <!-- </ParameterList> -->
+                  <!-- <ParameterList name="hiptmair: smoother list 2"> -->
+                  <!--   <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/> -->
+                  <!--   <!-\- <Parameter name="relaxation: type" type="string" value="Jacobi"/> -\-> -->
+                  <!--   <!-\- <Parameter name="relaxation: damping factor" type="double" value="0.8"/> -\-> -->
+                  <!--   <!-\- <Parameter name="relaxation: sweeps" type="int" value="4"/> -\-> -->
+                  <!--   <Parameter name="relaxation: use l1" type="bool" value="true"/> -->
+                  <!-- </ParameterList> -->
+
+                  <Parameter name="hiptmair: smoother type 1" type="string" value="CHEBYSHEV"/>
+                  <Parameter name="hiptmair: smoother type 2" type="string" value="CHEBYSHEV"/>
                   <ParameterList name="hiptmair: smoother list 1">
-                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
-                    <Parameter name="relaxation: sweeps" type="int" value="1"/>
-                    <Parameter name="relaxation: use l1" type="bool" value="true"/>
+                    <Parameter name="chebyshev: degree" type="int" value="2"/>
                   </ParameterList>
                   <ParameterList name="hiptmair: smoother list 2">
-                    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
-                    <Parameter name="relaxation: sweeps" type="int" value="1"/>
-                    <Parameter name="relaxation: use l1" type="bool" value="true"/>
+                    <Parameter name="chebyshev: degree" type="int" value="2"/>
                   </ParameterList>
                 </ParameterList>
 
