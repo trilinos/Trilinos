@@ -99,6 +99,23 @@ namespace
     BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
   }
 
+  TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalC1VersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_WEDGE;
+    using NodalC1Basis      = Basis_HDIV_WEDGE_I1_FEM<DefaultTestDeviceType,double,double>; // regular nodal basis family does not define wedge bases beyond second order (and second order only for HGRAD)
+    
+    std::vector<EOperator> opsToTest {OPERATOR_DIV};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    const ordinal_type p = 1;
+    
+    HierarchicalBasis hierarchicalBasis(p);
+    NodalC1Basis      nodalBasis;
+    BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+  }
+
   TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalC2VersusHierarchical_HGRAD )
   {
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_WEDGE;

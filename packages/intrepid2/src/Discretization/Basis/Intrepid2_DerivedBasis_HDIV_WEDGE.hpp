@@ -252,11 +252,10 @@ namespace Intrepid2
       if (operatorType == VALUE)
       {
         // family 2 goes in z component
-        std::vector< std::vector<EOperator> > ops(3);
-        ops[0] = std::vector<EOperator>{};
-        ops[1] = std::vector<EOperator>{};
-        ops[2] = std::vector<EOperator>{VALUE,VALUE};
-        std::vector<double> weights {0.,0.,1.0};
+        std::vector< std::vector<EOperator> > ops(2);
+        ops[0] = std::vector<EOperator>{}; // will span x,y because family 1's first component does
+        ops[1] = std::vector<EOperator>{VALUE,VALUE};
+        std::vector<double> weights {0.,1.0};
         OperatorTensorDecomposition opDecomposition(ops, weights);
         return opDecomposition;
       }
