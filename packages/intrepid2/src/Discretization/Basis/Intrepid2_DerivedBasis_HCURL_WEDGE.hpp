@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_DerivedBasis_HCURL_WEDGE.hpp
-    \brief  Implementation of H(curl) basis on the wedge that is templated on H(grad,tri), H(curl,tri), and H(vol,line).
+    \brief  Implementation of H(curl) basis on the wedge that is templated on H(grad,tri), H(curl,tri), H(grad,line), and H(vol,line).
     \author Created by N.V. Roberts.
  
  This class constructs the H(curl) space as the direct sum of two families of tensor-product bases on the triangle and line:
@@ -52,7 +52,7 @@
  weights and EOperators on component bases; instead, a 90-degree rotation is required for the curl evaluations.  This
  motivated the addition of a boolean flag indicating such a rotation in OperatorTensorDecomposition.
  
- Our Famiy 1 corresponds to the following ESEAS entities:
+ Our Family 1 corresponds to the following ESEAS entities:
  - mixed edges
  - triangle faces, Family I and II
  - quadrilateral faces, Family II
@@ -447,32 +447,6 @@ namespace Intrepid2
     const char*
     getName() const override {
       return name_.c_str();
-    }
-
-    /** \brief returns the basis associated to a subCell.
-
-        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
-        projected to the subCell line.
-
-        TODO: test this method when different orders are used in different directions
-        \param [in] subCellDim - dimension of subCell
-        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
-        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
-     */
-    Teuchos::RCP<BasisBase>
-      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        switch(subCellOrd) {
-        case 0:
-        case 2:
-          return Teuchos::rcp( new HVOL_LINE(order_xy_-1, pointType_) );
-        case 1:
-        case 3:
-          return Teuchos::rcp( new HVOL_LINE(order_z_-1, pointType_) );
-        }
-      }
-
-      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
