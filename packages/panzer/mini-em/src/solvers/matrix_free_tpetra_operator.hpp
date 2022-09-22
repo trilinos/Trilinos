@@ -16,13 +16,17 @@
 /**
  * This class defines an operator 
  */
-class ProjectionOperator : public Tpetra::Operator<> {
+template <class ST = Tpetra::Operator<>::scalar_type,
+          class LO = typename Tpetra::Operator<ST>::local_ordinal_type,
+          class GO = typename Tpetra::Operator<ST, LO>::global_ordinal_type,
+          class NO = typename Tpetra::Operator<ST, LO, GO>::node_type>
+class ProjectionOperator : public Tpetra::Operator<ST,LO,GO,NO> {
 public:
   // Tpetra::Operator subclasses should always define typedefs according to Tpetra, although I prefer CamelCase for types in general...
-  typedef Tpetra::Operator<>::scalar_type ST;
-  typedef Tpetra::Operator<>::local_ordinal_type LO;
-  typedef Tpetra::Operator<>::global_ordinal_type GO;
-  typedef Tpetra::Operator<>::node_type NO;
+  // typedef Tpetra::Operator<>::scalar_type ST;
+  // typedef Tpetra::Operator<>::local_ordinal_type LO;
+  // typedef Tpetra::Operator<>::global_ordinal_type GO;
+  // typedef Tpetra::Operator<>::node_type NO;
   typedef Tpetra::Vector<ST, LO, GO, NO> V;
   typedef Tpetra::MultiVector<ST, LO, GO, NO> MV;
   typedef Tpetra::Map<LO, GO, NO> map_type;
@@ -71,7 +75,13 @@ public:
     //   setup_dof_manager(comm);
     // }
     // this is the only non-const bit of the dof_manager_, but it's safer to do this than assume somebody else did it for us
-    dof_manager_->useNeighbors(true); 
+    LIDs = dof_manager_->getLIDs();
+    std::cout << "LIDs " << LIDs.extent(0) << std::endl;
+    dof_manager_->useNeighbors(true);
+    std::cout << "LIDs " << LIDs.extent(0) << std::endl;
+    // dof_manager_->buildGlobalUnknowns();
+
+    std::cout << "LIDs " << LIDs.extent(0) << std::endl;
     Teuchos::RCP<const panzer::ConnManager> connection_manager = dof_manager_->getConnManager();
 
     // -------------------------------------------------------------------
@@ -216,8 +226,8 @@ public:
     redist_data_X->doImport(X, *importer_, Tpetra::INSERT);
 
     // Get a view of the multivector
-    auto kokkos_view_X = redist_data_X->getLocalView<NO::device_type>(Tpetra::Access::ReadOnly);
-    auto kokkos_view_Y = Y.getLocalView<NO::device_type>(Tpetra::Access::ReadWrite);
+    auto kokkos_view_X = redist_data_X->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto kokkos_view_Y = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // setup bounds for indexing
     const unsigned int space_dim    = mesh_->getDimension();
@@ -369,7 +379,7 @@ public:
     const int num_procs = comm->getSize();
 
     // Get a view of the multivector
-    auto kokkos_view_diag = diag.getLocalView<NO::device_type>(Tpetra::Access::ReadWrite);
+    auto kokkos_view_diag = diag.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // setup bounds for indexing
     const unsigned int space_dim    = mesh_->getDimension();
