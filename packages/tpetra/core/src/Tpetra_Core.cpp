@@ -313,7 +313,8 @@ namespace Tpetra {
 
     // Tpetra should only finalize Kokkos if it initialized Kokkos.
     // See Github Issue #434.
-    if (tpetraInitializedKokkos_) {
+    if (tpetraInitializedKokkos_ && !Kokkos::is_finalized()) {
+      printf("CMS: Tpetra is finalizing Kokkos\n");
       Kokkos::finalize ();
     }
 
