@@ -4033,23 +4033,6 @@ struct ReduceWeightsFunctor {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type dst, const volatile value_type src) const {
-    for(int n = 0; n < value_count_weights; ++n) {
-      dst[n] += src[n];
-    }
-
-    for(int n = value_count_weights + 2;
-      n < value_count_weights + value_count_rightleft - 2; n += 2) {
-      if(src[n] > dst[n]) {
-        dst[n] = src[n];
-      }
-      if(src[n+1] < dst[n+1]) {
-        dst[n+1] = src[n+1];
-      }
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION void init (value_type dst) const {
     for(int n = 0; n < value_count_weights; ++n) {
       dst[n] = 0;
@@ -4142,8 +4125,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     typedef mj_scalar_t array_t;
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-    array_t * reduce_array =
-      new array_t[static_cast<size_t>(total_array_length)];
+    Kokkos::View<array_t*, Kokkos::HostSpace> reduce_array("reduce_array", total_array_length);
 #endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
     int offset_cuts = 0;
@@ -4217,6 +4199,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 #else
     Kokkos::parallel_reduce(policy_ReduceWeightsFunctor,
       teamFunctor, reduce_array);
+    Kokkos::fence();
 #endif
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
@@ -4236,8 +4219,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     }
     Kokkos::deep_copy(my_current_left_closest, hostLeftArray);
     Kokkos::deep_copy(my_current_right_closest, hostRightArray);
-
-    delete [] reduce_array;
 #endif
 
     total_part_shift += total_part_count;
@@ -4448,13 +4429,6 @@ struct ArrayReducer {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type& dst, const volatile value_type& src) const {
-    for(int n = 0; n < value_count; ++n) {
-      dst.ptr[n] += src.ptr[n];
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const {
     dst.ptr = value->ptr; // must update ptr
     for(int n = 0; n < value_count; ++n) {
@@ -4638,13 +4612,6 @@ struct ReduceArrayFunctor {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type dst, const volatile value_type src) const {
-    for(int n = 0; n < value_count; ++n) {
-      dst[n] += src[n];
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION void init (value_type dst) const {
     for(int n = 0; n < value_count; ++n) {
       dst[n] = 0;
@@ -4786,7 +4753,7 @@ mj_create_new_partitions(
   // just need parts - on the cuts will be handled in a separate serial
   // call after this.
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-  array_t * reduce_array = new array_t[static_cast<size_t>(num_parts)];
+  Kokkos::View<array_t*, Kokkos::HostSpace> reduce_array("reduce_array", num_parts);
 #endif
 
   ReduceArrayFunctor<policy_t, mj_scalar_t, mj_part_t, mj_lno_t,
@@ -4807,13 +4774,13 @@ mj_create_new_partitions(
   Kokkos::parallel_for(policy_ReduceFunctor, teamFunctor);
 #else
   Kokkos::parallel_reduce(policy_ReduceFunctor, teamFunctor, reduce_array);
+  Kokkos::fence();
 #endif
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   for(mj_part_t part = 0; part < num_parts; ++part) {
     local_point_counts(part) = reduce_array[part];
   }
-  delete [] reduce_array;
 #endif
 
   // the last member is utility used for atomically inserting the values.
