@@ -1,3 +1,7 @@
+#ifndef _MiniEM_Interpolation_hpp_
+#define _MiniEM_Interpolation_hpp_
+
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
@@ -497,3 +501,5 @@ void addInterpolationToRequestHandler(
   // add interpolation callback to request handler
   reqHandler->addRequestCallback(Teuchos::rcp(new InterpolationRequestCallback(name, linObjFactory, lo_basis_name, ho_basis_name, op, waitForRequest, dump, worksetSize, matrixFree)));
 }
+
+#endif
