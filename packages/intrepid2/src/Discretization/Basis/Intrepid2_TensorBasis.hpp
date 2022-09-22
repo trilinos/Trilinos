@@ -475,6 +475,7 @@ struct OperatorTensorDecomposition
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
     OperatorTensorDecomposition result(expandedOps, expandedWeights);
+    result.setReduceXYVectorToScalar(reduceXYVectorToScalar_);
     result.setRotateXYNinetyDegrees(rotateXYNinetyDegrees_);
     return result;
   }
