@@ -315,6 +315,7 @@ namespace Tpetra {
     // cwp 21 Sep 2022
     // A functor that does on-rank or off-rank part of a local Sparse-matrix multivector product
     // KokkosKernels does not currently have a 4-array CSR
+    // SPMV_MV_LayoutLeft_Functor
     template<
     typename OffsetDeviceViewType, 
     typename RowViewer, // OnRankRowView or OffRankRowView
@@ -413,9 +414,6 @@ namespace Tpetra {
       */
       KOKKOS_INLINE_FUNCTION void operator()(const team_member& dev) const {
         for (ordinal_type loop = 0; loop < rowsPerThread_; ++loop) {
-          // iRow indexes over (local) rows of the matrix, so its correct
-          // type is ordinal_type.
-
           const ordinal_type iRow =
               (dev.league_rank() * dev.team_size() + dev.team_rank()) *
                   rowsPerThread_ + loop;
@@ -497,20 +495,18 @@ namespace Tpetra {
           vectorLength *= 2;
         }
 
-        ordinal_type nrow = A.numRows();
-
-        SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets,
-                  KokkosSparse::RowsPerThread<execution_space>(NNZPerRow),
-                  vectorLength);
-
         const ordinal_type rowsPerThread =
             KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
+
+        SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets,
+                  rowsPerThread, vectorLength);
+
         const ordinal_type teamSize =
             Kokkos::TeamPolicy<execution_space>(space, 
                 rowsPerThread, Kokkos::AUTO, vectorLength)
                 .team_size_recommended(op, Kokkos::ParallelForTag());
         const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
-        const size_type nteams = (nrow + rowsPerTeam - 1) / rowsPerTeam;
+        const size_type nteams = (A.numRows() + rowsPerTeam - 1) / rowsPerTeam;
         Kokkos::parallel_for("SpmvMvFunctor non-transpose",
                             Kokkos::TeamPolicy<execution_space>(
                                 space, nteams, teamSize, vectorLength),
@@ -520,7 +516,8 @@ namespace Tpetra {
     };
 
 
-
+    /* Simplified SPMV_MV_Transpose_Functor from Kokkos Kernels
+    */
     template<
     typename OffsetDeviceViewType, 
     typename RowViewer, // OnRankRowView or OffRankRowView
@@ -552,10 +549,9 @@ namespace Tpetra {
       MultiVectorScalar beta_;
       y_type Y_;
       OffsetDeviceViewType offRankOffsets_;
-
-      ordinal_type rowsPerTeam;
-
-
+    public:
+      ordinal_type rowsPerTeam_ = 0;
+    private:
 
       SpmvMvTransFunctor(const MultiVectorScalar& alpha, const local_matrix_device_type& A,
                                 const x_type& X, const MultiVectorScalar& beta,
@@ -567,14 +563,14 @@ namespace Tpetra {
             Y_(Y),
             offRankOffsets_(offRankOffsets) {}
 
-public:
+    public:
       KOKKOS_INLINE_FUNCTION void operator()(const team_member& dev) const {
 
         const ordinal_type n = X_.extent(1);
 
-        const ordinal_type teamWork = dev.league_rank() * rowsPerTeam;
+        const ordinal_type teamWork = dev.league_rank() * rowsPerTeam_;
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(dev, rowsPerTeam), [&](ordinal_type loop) {
+            Kokkos::TeamThreadRange(dev, rowsPerTeam_), [&](ordinal_type loop) {
               // iRow represents a row of the matrix, so its correct type is
               // ordinal_type.
               const ordinal_type iRow = teamWork + loop;
@@ -583,10 +579,9 @@ public:
               }
 
               const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
-              const ordinal_type rowLength = row.length;
 
               Kokkos::parallel_for(
-                  Kokkos::ThreadVectorRange(dev, rowLength),
+                  Kokkos::ThreadVectorRange(dev, row.length),
                   [&](ordinal_type iEntry) {
                     const value_type val =
                         CONJ
@@ -607,6 +602,14 @@ public:
             });
       }
 
+      // a kind of crummy scal implementation that we can put in an execution space instance
+      struct ScalTag{};
+      KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
+        if (i >= A_.numRows()) {return;}
+        for (ordinal_type k = 0; k < X_.extent(1); ++k) {
+          Y_(i, k) *= beta_;
+        }
+      }
 
       static void launch(const MultiVectorScalar &alpha, 
         const local_matrix_device_type &A, 
@@ -615,6 +618,13 @@ public:
         y_type &Y,
         const OffsetDeviceViewType &offRankOffsets,
         const execution_space &space) {
+
+
+        SpmvMvTransFunctor op(alpha, A, X, beta, Y, offRankOffsets);
+        Kokkos::parallel_for("SpmvMvTransFunctor scal",
+                            Kokkos::RangePolicy<ScalTag, execution_space>(
+                                space, 0, A.numRows()),
+                            op);
 
         const ordinal_type NNZPerRow = A.nnz() / A.numRows();
 
@@ -625,8 +635,6 @@ public:
 
         ordinal_type nrow = A.numRows();
 
-        SpmvMvTransFunctor op(alpha, A, X, beta, Y, offRankOffsets);
-
         const ordinal_type rowsPerThread =
             KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
         const ordinal_type teamSize =
@@ -634,8 +642,9 @@ public:
                 rowsPerThread, Kokkos::AUTO, vectorLength)
                 .team_size_recommended(op, Kokkos::ParallelForTag());
         const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
+        op.rowsPerTeam_ = rowsPerTeam;
         const size_type nteams = (nrow + rowsPerTeam - 1) / rowsPerTeam;
-        Kokkos::parallel_for("SpmvMvFunctor non-transpose",
+        Kokkos::parallel_for("SpmvMvTransFunctor",
                             Kokkos::TeamPolicy<execution_space>(
                                 space, nteams, teamSize, vectorLength),
                             op);
