@@ -47,10 +47,8 @@
  
  This class constructs the H(curl) space as the direct sum of two families of tensor-product bases on the triangle and line:
  - family 1: H(div,tri) x  H(vol,line),  placed in the x and y components of vector output 
- - family 2: H(div,tri) \cdot (1,1)  x  H(grad,line), placed in the z component of vector output
- 
- Family 2's H(div,tri) \cdot (1,1) means summing the vector components to get a scalar; this motivates the addition of a boolean flag indicating such a reduction in OperatorTensorDecomposition.
- 
+ - family 2: H(vol,tri) x  H(grad,line), placed in the z component of vector output
+  
  Our Family 1 corresponds to the following ESEAS entities:
  - quadrilateral faces
  - Interior Family I
@@ -207,7 +205,7 @@ namespace Intrepid2
     }
   };
 
-  template<class HDIV_TRI, class HGRAD_LINE>
+  template<class HVOL_TRI, class HGRAD_LINE>
   class Basis_Derived_HDIV_Family2_WEDGE
   : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
@@ -223,7 +221,7 @@ namespace Intrepid2
     using OutputValueType = typename BasisBase::OutputValueType;
     using PointValueType  = typename BasisBase::PointValueType;
     
-    using TriDivBasis   = HDIV_TRI;
+    using TriVolBasis   = HVOL_TRI;
     using LineGradBasis = HGRAD_LINE;
     
     using TensorBasis = Basis_TensorBasis<BasisBase>;
@@ -235,7 +233,7 @@ namespace Intrepid2
      */
     Basis_Derived_HDIV_Family2_WEDGE(int polyOrder_xy, int polyOrder_z, const EPointType pointType = POINTTYPE_DEFAULT)
     :
-    TensorBasis(Teuchos::rcp( new TriDivBasis(polyOrder_xy,pointType)),
+    TensorBasis(Teuchos::rcp( new TriVolBasis(polyOrder_xy-1,pointType)),
                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
@@ -257,20 +255,18 @@ namespace Intrepid2
         std::vector< std::vector<EOperator> > ops(3);
         ops[0] = std::vector<EOperator>{};
         ops[1] = std::vector<EOperator>{};
-        ops[2] = std::vector<EOperator>{VALUE,VALUE}; // vector-valued, but then we reduce to a scalar
+        ops[2] = std::vector<EOperator>{VALUE,VALUE};
         std::vector<double> weights {0.,0.,1.0};
         OperatorTensorDecomposition opDecomposition(ops, weights);
-        opDecomposition.setReduceXYVectorToScalar(true);
         return opDecomposition;
       }
       else if (operatorType == DIV)
       {
-        // div of (0, 0, ((f_x + f_y) g), where f=f(x,y), g=g(z), equals (f_x + f_y) * g'(z).
+        // div of (0, 0, f*g, where f=f(x,y), g=g(z), equals f * g'(z).
         std::vector< std::vector<EOperator> > ops(1);
-        ops[0] = std::vector<EOperator>{VALUE,GRAD}; // vector-valued, but then we reduce to a scalar
+        ops[0] = std::vector<EOperator>{VALUE,GRAD};
         std::vector<double> weights {1.0};
         OperatorTensorDecomposition opDecomposition(ops, weights);
-        opDecomposition.setReduceXYVectorToScalar(true);
         return opDecomposition;
       }
       else
@@ -296,68 +292,26 @@ namespace Intrepid2
         op1 = OPERATOR_VALUE;
         op2 = OPERATOR_VALUE;
 
-        // family 2 values go in the z component
+        // family 2 values goes in z component
         auto outputValuesComponent12 = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),std::pair<int,int>{0,2});
         auto outputValuesComponent3  = Kokkos::subview(outputValues,Kokkos::ALL(),Kokkos::ALL(),2);
 
-        // temporarily, compute into the (x,y) components
-        this->TensorBasis::getValues(outputValuesComponent12,
-                                     inputPoints1, op1,
-                                     inputPoints2, op2, tensorPoints);
-        
-        
-        // reduce into z component:
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{outputValuesComponent12.extent_int(0),outputValuesComponent12.extent_int(1)});
-        Kokkos::parallel_for("wedge family 1 value: reduction of (div,tri) vector to scalar", policy,
-        KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
-          const auto &f_x = outputValuesComponent12(fieldOrdinal,pointOrdinal,0); // reference
-          const auto &f_y = outputValuesComponent12(fieldOrdinal,pointOrdinal,1); // reference
-          outputValuesComponent3(fieldOrdinal,pointOrdinal) = f_x + f_y;
-        });
-        
         // place 0 in the x,y components
         Kokkos::deep_copy(outputValuesComponent12, 0.0);
+        this->TensorBasis::getValues(outputValuesComponent3,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
+
       }
       else if (operatorType == OPERATOR_DIV)
       {
-        // div of (0, 0, ((f_x + f_y) g), where f=f(x,y), g=g(z), equals (f_x + f_y) * g'(z).
+        // div of (0, 0, f*g, where f=f(x,y), g=g(z), equals f * g'(z).
+        op1 = OPERATOR_VALUE;
+        op2 = OPERATOR_GRAD;
 
-        // unlike the OPERATOR_VALUE case, we don't have a View already allocated that is sized appropriately to accept the H(div,tri) values.
-        // so we allocate a temporary.
-        auto tempOutputView1 = this->basis1_->allocateOutputView( inputPoints1.extent(0), OPERATOR_VALUE);
-        auto outputView1     = this->basis1_->allocateOutputView( inputPoints1.extent(0), OPERATOR_DIV); // the reduction has the same shape as that given by OP_DIV
-        
-        this->basis1_->getValues(tempOutputView1,inputPoints1,OPERATOR_VALUE);
-        
-        ExecutionSpace().fence();
-        // reduce (f_x, f_y) --> f_x + f_y
-        {
-          auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{tempOutputView1.extent_int(0),tempOutputView1.extent_int(1)});
-          Kokkos::parallel_for("wedge family 1 div: reduction of (div,tri) vector to scalar", policy,
-          KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
-            const auto &f_x = tempOutputView1(fieldOrdinal,pointOrdinal,0); // reference
-            const auto &f_y = tempOutputView1(fieldOrdinal,pointOrdinal,1); // reference
-            outputView1(fieldOrdinal,pointOrdinal) = f_x + f_y;
-          });
-        }
-        
-        auto outputView2 = this->basis2_->allocateOutputView( inputPoints2.extent(0), OPERATOR_GRAD);
-        
-        this->basis2_->getValues(outputView2,inputPoints2,OPERATOR_GRAD);
-        
-        {
-          const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
-          const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
-          const int vectorSize = std::max(outputVectorSize,pointVectorSize);
-          
-          auto policy = Kokkos::TeamPolicy<ExecutionSpace>(this->basis1_->getCardinality(),Kokkos::AUTO(),vectorSize);
-          
-          using FunctorType = TensorViewFunctor<ExecutionSpace, OutputValueType, OutputViewType>;
-          
-          const double weight = 1.0;
-          FunctorType functor(outputValues, outputView1, outputView2, tensorPoints, weight);
-          Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
-        }
+        this->TensorBasis::getValues(outputValues,
+                                     inputPoints1, op1,
+                                     inputPoints2, op2, tensorPoints);
       }
       else
       {

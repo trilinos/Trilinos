@@ -239,7 +239,6 @@ struct OperatorTensorDecomposition
   std::vector<double> weights; // weights for each vector entry
   ordinal_type numBasisComponents_;
   bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …).  This is used for H(curl) wedges (specifically, for OPERATOR_CURL).
-  bool reduceXYVectorToScalar_ = false; // if true, indicates that something that otherwise would have vector values (f_x, f_y) should be reduced to f_x + f_y.  This is used for H(div) wedges (specifically, for family 2).
   
   OperatorTensorDecomposition(const std::vector<EOperator> &opsBasis1, const std::vector<EOperator> &opsBasis2, const std::vector<double> vectorComponentWeights)
   :
@@ -475,20 +474,8 @@ struct OperatorTensorDecomposition
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
     OperatorTensorDecomposition result(expandedOps, expandedWeights);
-    result.setReduceXYVectorToScalar(reduceXYVectorToScalar_);
     result.setRotateXYNinetyDegrees(rotateXYNinetyDegrees_);
     return result;
-  }
-  
-  //! If true, this flag indicates that any basis evaluation that otherwise would have vector values (f_x, f_y) should be reduced to f_x + f_y.  This is used for H(div) wedges (specifically, for family 2).
-  bool reduceXYVectorToScalar() const
-  {
-    return reduceXYVectorToScalar_;
-  }
-  
-  void setReduceXYVectorToScalar(const bool &value)
-  {
-    reduceXYVectorToScalar_ = value;
   }
   
   //! If true, this flag indicates that a vector component that spans the first two dimensions should be rotated by 90 degrees clockwise, mapping (x,y) to (-y,x).  If there is no such vector component, the flag should be ignored.  As of this writing, this is used only by the "derived" H(curl) basis on the wedge.
