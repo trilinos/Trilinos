@@ -1811,12 +1811,17 @@ void mult_A_B_newmatrix(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal
   typedef Node              NO;
   typedef Import<LO,GO,NO>  import_type;
   typedef Map<LO,GO,NO>     map_type;
+  typedef BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
+  typedef typename block_crs_matrix_type::crs_graph_type graph_t;
 
   // Kokkos typedefs
   typedef typename map_type::local_map_type local_map_type;
-  typedef typename Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KBSR;
-  typedef typename KBSR::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename block_crs_matrix_type::local_matrix_device_type KBSR;
+  typedef typename KBSR::device_type device_t;
+  typedef typename KBSR::StaticCrsGraphType static_graph_t;
+  typedef typename static_graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename static_graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KBSR::values_type::non_const_type scalar_view_t;
   typedef typename NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
@@ -1932,17 +1937,38 @@ void mult_A_B_newmatrix(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal
       }
     });
 
-  // Call the actual kernel routine.
-  KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
-    mult_A_B_newmatrix_kernel_wrapper(Aview,
-                                      Bview,
-                                      targetMapToOrigRow,
-                                      targetMapToImportRow,
-                                      Bcol2Ccol,
-                                      Icol2Ccol,
-                                      C,
-                                      Ccolmap.getConst());
+  // Create the KernelHandle
+  using KernelHandle =
+    KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,
+                                                     typename lno_nnz_view_t::const_value_type,
+                                                     typename scalar_view_t::const_value_type,
+                                                     typename device_t::execution_space,
+                                                     typename device_t::memory_space,
+                                                     typename device_t::memory_space>;
+  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  std::string myalg("SPGEMM_KK_MEMORY");
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
+  KernelHandle kh;
+  kh.create_spgemm_handle(alg_enum);
+  kh.set_team_work_size(team_work_size);
+
+  // Get KokkosSparse::BsrMatrix for A and Bmerged (B and BImport)
+  const KBSR Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KBSR Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,
+                                                         targetMapToOrigRow,targetMapToImportRow,
+                                                         Bcol2Ccol,Icol2Ccol,
+                                                         Ccolmap.getConst()->getLocalNumElements());
+
+  // Call KokkosSparse routines to calculate Amat*Bmerged on device.
+  KBSR Cmat;
+  KokkosSparse::block_spgemm_symbolic(kh, Amat, false, Bmerged, false, Cmat);
+  KokkosSparse::block_spgemm_numeric (kh, Amat, false, Bmerged, false, Cmat);
+  kh.destroy_spgemm_handle();
+
+  // Build Tpetra::BlockCrsMatrix from KokkosSparse::BsrMatrix
+  graph_t graphC(Cmat.graph, Aview.origMatrix->getRowMap(), Ccolmap.getConst());
+  C = rcp (new block_crs_matrix_type (graphC, Cmat.values, Aview.blocksize));
 }
 
 /*********************************************************************************************************/
@@ -2166,70 +2192,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 #endif
 
 }
-
-/*********************************************************************************************************/
-// AB NewMatrix Kernel wrappers (BlockCrsMatrix version)
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node,
-         class LocalOrdinalViewType>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::
-    mult_A_B_newmatrix_kernel_wrapper(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                      BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                      const LocalOrdinalViewType & targetMapToOrigRow,
-                                      const LocalOrdinalViewType & targetMapToImportRow,
-                                      const LocalOrdinalViewType & Bcol2Ccol,
-                                      const LocalOrdinalViewType & Icol2Ccol,
-                                      Teuchos::RCP<BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &C,
-                                      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &CcolMap)
-{  
-  using Teuchos::rcp;
-  using block_crs_matrix_type = BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using KBCRS = typename block_crs_matrix_type::local_matrix_device_type;
-  using device_t = typename KBCRS::device_type;
-  using graph_t = typename block_crs_matrix_type::crs_graph_type;
-  using static_graph_t = typename KBCRS::StaticCrsGraphType;
-  using lno_view_t =  typename static_graph_t::row_map_type::non_const_type;
-  using lno_nnz_view_t =  typename static_graph_t::entries_type::non_const_type;
-  using scalar_view_t =  typename KBCRS::values_type::non_const_type;
-
-  using KernelHandle =
-  KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,
-                                                   typename lno_nnz_view_t::const_value_type,
-                                                   typename scalar_view_t::const_value_type,
-                                                   typename device_t::execution_space,
-                                                   typename device_t::memory_space,
-                                                   typename device_t::memory_space>;
-
-  const KBCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const KBCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
-
-  // Get KokkosSparse::BsrMatrix for A and Bmerged (B and BImport)
-  const KBCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,
-                                                          targetMapToOrigRow,targetMapToImportRow,
-                                                          Bcol2Ccol,Icol2Ccol,
-                                                          CcolMap->getLocalNumElements());
-
-  // Call KokkosSparse routines to calculate Amat*Bmerged on device.
-  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
-  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-
-  KernelHandle kh;
-  kh.create_spgemm_handle(alg_enum);
-  kh.set_team_work_size(team_work_size);
-
-  KBCRS Cmat;
-  KokkosSparse::block_spgemm_symbolic(kh, Amat, false, Bmerged, false, Cmat);
-  KokkosSparse::block_spgemm_numeric(kh, Amat, false, Bmerged, false, Cmat);
-  kh.destroy_spgemm_handle();
-
-  // Build Tpetra::BlockCrsMatrix from KokkosSparse::BsrMatrix
-  graph_t graphC(Cmat.graph, Aview.origMatrix->getRowMap(), CcolMap);
-  C = rcp (new block_crs_matrix_type (graphC, Cmat.values, Aview.blocksize));
-}
-
 /*********************************************************************************************************/
 // Kernel method for computing the local portion of C = A*B (reuse)
 template<class Scalar,

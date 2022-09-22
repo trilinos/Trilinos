@@ -483,15 +483,6 @@ void setMaxNumEntriesPerRow(
                                                      Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
                                                      const std::string& label = std::string(),
                                                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-    static inline void mult_A_B_newmatrix_kernel_wrapper(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-							 BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-							 const LocalOrdinalViewType & Acol2Brow,
-							 const LocalOrdinalViewType & Acol2Irow,
-							 const LocalOrdinalViewType & Bcol2Ccol,
-							 const LocalOrdinalViewType & Icol2Ccol,
-                                                         Teuchos::RCP<BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C,
-                                                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& CcolMap);
   };
 
   // Jacobi Kernel wrappers struct
