@@ -410,7 +410,7 @@ namespace Intrepid2
      */
     virtual HostBasisPtr<OutputValueType, PointValueType>
     getHostBasis() const override {
-      using HostBasis  = Basis_Derived_HDIV_WEDGE<typename HDIV_TRI::HostBasis, typename HGRAD_LINE::HostBasis, typename HVOL_LINE::HostBasis>;
+      using HostBasis  = Basis_Derived_HDIV_WEDGE<typename HDIV_TRI::HostBasis, typename HVOL_TRI::HostBasis, typename HGRAD_LINE::HostBasis, typename HVOL_LINE::HostBasis>;
       
       auto hostBasis = Teuchos::rcp(new HostBasis(order_xy_, order_z_, pointType_));
       
