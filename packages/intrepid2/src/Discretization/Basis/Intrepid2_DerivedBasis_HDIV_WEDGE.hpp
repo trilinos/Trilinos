@@ -42,7 +42,7 @@
 // @HEADER
 
 /** \file   Intrepid2_DerivedBasis_HDIV_WEDGE.hpp
-    \brief  Implementation of H(div) basis on the wedge that is templated on H(div,tri), H(grad,line), and H(vol,line).
+    \brief  Implementation of H(div) basis on the wedge that is templated on H(div,tri), H(vol,tri), H(grad,line), and H(vol,line).
     \author Created by N.V. Roberts.
  
  This class constructs the H(curl) space as the direct sum of two families of tensor-product bases on the triangle and line:
@@ -339,12 +339,12 @@ namespace Intrepid2
   };
 
   
-  template<class HDIV_TRI, class HGRAD_LINE, class HVOL_LINE>
+  template<class HDIV_TRI, class HVOL_TRI, class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_WEDGE
   : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family1 = Basis_Derived_HDIV_Family1_WEDGE<HDIV_TRI, HVOL_LINE>;
-    using Family2 = Basis_Derived_HDIV_Family2_WEDGE<HDIV_TRI, HGRAD_LINE>;
+    using Family2 = Basis_Derived_HDIV_Family2_WEDGE<HVOL_TRI, HGRAD_LINE>;
     using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>;
   public:
     using BasisBase = typename HGRAD_LINE::BasisBase;
