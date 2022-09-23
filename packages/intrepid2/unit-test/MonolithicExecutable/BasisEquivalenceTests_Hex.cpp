@@ -229,6 +229,8 @@ namespace
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
+    const bool compareWithGetValuesViewPath = false; // Serendipity basis does not support the View path -- particularly for high order in high dimensions, this would imply some large allocations.
+    
     for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
     {
       out << "** polyDegree " << polyDegree << " **\n";
@@ -238,7 +240,7 @@ namespace
         auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
         auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
         
-        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*hierarchicalBasis, *serendipityBasis, opsToTest, relTol, absTol, out, success);
+        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*hierarchicalBasis, *serendipityBasis, opsToTest, relTol, absTol, out, success, compareWithGetValuesViewPath);
       }
     }
   }
@@ -257,6 +259,8 @@ namespace
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
+    const bool compareWithGetValuesViewPath = false; // Serendipity basis does not support the View path -- particularly for high order in high dimensions, this would imply some large allocations.
+    
     for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
     {
       out << "** polyDegree " << polyDegree << " **\n";
@@ -266,7 +270,8 @@ namespace
         auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
         auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
         
-        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(), opsToTest, relTol, absTol, out, success);
+        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(),
+                                                                             opsToTest, relTol, absTol, out, success, compareWithGetValuesViewPath);
       }
     }
   }
@@ -285,6 +290,8 @@ namespace
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
+    const bool compareWithGetValuesViewPath = false; // Serendipity basis does not support the View path -- particularly for high order in high dimensions, this would imply some large allocations.
+    
     for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
     {
       out << "** polyDegree " << polyDegree << " **\n";
@@ -294,7 +301,8 @@ namespace
         auto hierarchicalBasis = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
         auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
         
-        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(), opsToTest, relTol, absTol, out, success);
+        BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(),
+                                                                             opsToTest, relTol, absTol, out, success, compareWithGetValuesViewPath);
       }
     }
   }

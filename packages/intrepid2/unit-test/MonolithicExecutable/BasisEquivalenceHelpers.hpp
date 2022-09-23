@@ -227,7 +227,7 @@ namespace Intrepid2
     //! If ordinalMap is non-empty, it should contain a mapping from the ordinals in basis1 to those ordinals in basis2 that form a sub-basis spanning the same space as basis1.
     template<class DeviceType, class Basis1, class Basis2>
     static void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, typename Basis1::OrdinalTypeArray1D ordinalMap, const std::vector<EOperator> &opsToTest,
-                                     const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
+                                     const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success, const bool compareWithGetValuesViewPath = true)
     {
       if (ordinalMap.size() == 0)
       {
@@ -350,8 +350,9 @@ namespace Intrepid2
         }
       });
       
-      // compare to the View-based getValues():
+      if (compareWithGetValuesViewPath)
       {
+        // compare to the View-based getValues():
         auto outputView1 = basis1.allocateOutputView(numPoints, OPERATOR_VALUE);
         basis1.getValues(outputView1, pointsView, OPERATOR_VALUE);
         testViewFloatingEquality(outputView1, basis1Values, relTol, absTol, out, success, "actual", "expected");
@@ -601,8 +602,9 @@ namespace Intrepid2
         basis1.getValues(basis1OpValues, points, op);
         basis2.getValues(basis2OpValues, points, op);
         
-        // compare with View-based path
+        if (compareWithGetValuesViewPath)
         {
+          // compare with View-based path
           auto outputView1 = basis1.allocateOutputView(numPoints, op);
           basis1.getValues(outputView1, pointsView, op);
           testViewFloatingEquality(outputView1, basis1OpValues, relTol, absTol, out, success, "actual", "expected");
@@ -635,10 +637,11 @@ namespace Intrepid2
     //! holds for OPERATOR_VALUE (as it should by construction), as well as the operators passed in in opsToTest.
     template<class DeviceType, class Basis1, class Basis2>
     static void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, const std::vector<EOperator> &opsToTest,
-                                     const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
+                                     const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success,
+                                     const bool compareWithGetValuesViewPath = true) // Serendipity basis does not support the View path, so we will turn these off for those tests
     {
       typename Basis1::OrdinalTypeArray1D ordinalMap; // empty map
-      testBasisEquivalence<DeviceType,Basis1,Basis2>(basis1, basis2, ordinalMap, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DeviceType,Basis1,Basis2>(basis1, basis2, ordinalMap, opsToTest, relTol, absTol, out, success, compareWithGetValuesViewPath);
     }
   }; // BasisEquivalenceHelpers
 } // namespace
