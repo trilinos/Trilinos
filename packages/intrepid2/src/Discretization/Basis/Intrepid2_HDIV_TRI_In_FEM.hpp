@@ -212,6 +212,8 @@ class Basis_HDIV_TRI_In_FEM
   Basis_HDIV_TRI_In_FEM(const ordinal_type order,
       const EPointType   pointType = POINTTYPE_EQUISPACED);
 
+  using HostBasis = Basis_HDIV_TRI_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
+      
   using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
   using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
   using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
