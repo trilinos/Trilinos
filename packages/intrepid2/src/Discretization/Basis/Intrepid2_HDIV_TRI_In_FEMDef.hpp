@@ -291,7 +291,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   PointTools::getLattice( linePts,
       edgeTop,
       order+1, offset,
-      pointType );
+      pointType_ );
 
   // holds the image of the line points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> edgePts("Hdiv::Tri::In::edgePts", numPtsPerEdge , spaceDim );
@@ -358,7 +358,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
         this->basisCellTopology_ ,
         order + 1 ,
         1 ,
-        pointType );
+        pointType_ );
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );

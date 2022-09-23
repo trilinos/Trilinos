@@ -295,7 +295,7 @@ namespace Intrepid2 {
     PointTools::getLattice( linePts,
                             edgeTop,
                             order+1, offset,
-                            pointType );
+                            pointType_ );
 
     // holds the image of the line points
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tri::In::edgePts", numPtsPerEdge , spaceDim );
@@ -360,7 +360,7 @@ namespace Intrepid2 {
                               this->basisCellTopology_ ,
                               order + 1 ,
                               1 ,
-                              pointType );
+                              pointType_ );
 
       Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
         phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );
