@@ -45,9 +45,8 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
-#include <Kokkos_Concepts.hpp>
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include <string>
 #include <stdexcept>
 
@@ -58,6 +57,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -154,7 +154,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosKernels::sort_crs_matrix(output_mat1);
+  KokkosSparse::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
     std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
@@ -170,7 +170,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat2);
+  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -225,7 +225,7 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
 
   crsMat_t output_mat2;
@@ -258,7 +258,7 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
   EXPECT_TRUE(is_identical);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(                                                                      \
       TestCategory,                                                            \
       sparse##_##spgemm_jacobi##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -266,132 +266,6 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
                                                         10);                   \
   }
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
-#endif
-
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

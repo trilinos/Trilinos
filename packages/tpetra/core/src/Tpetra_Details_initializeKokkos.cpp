@@ -57,16 +57,20 @@ initializeKokkos ()
     std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
     int narg = static_cast<int> (args.size ()); // must be nonconst
 
-    std::vector<char*> args_c (narg);
-    for (int k = 0; k < narg; ++k) {
-      // mfh 25 Oct 2017: I feel a bit uncomfortable about this
-      // const_cast, but there is no other way to pass
-      // command-line arguments to Kokkos::initialize.
-      args_c[k] = const_cast<char*> (args[k].c_str ());
+    std::vector<char*> args_c;
+    std::vector<std::unique_ptr<char[]>> args_;
+    for (auto const& x : args) {
+      args_.emplace_back(new char[x.size() + 1]);
+      char* ptr = args_.back().get();
+      strcpy(ptr, x.c_str());
+      args_c.push_back(ptr);
     }
+    args_c.push_back(nullptr);
+
     Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
     checkOldCudaLaunchBlocking();
-    std::atexit (Kokkos::finalize_all);
+
+    std::atexit (Kokkos::finalize);
   }
 }
 

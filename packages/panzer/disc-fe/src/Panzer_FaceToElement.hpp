@@ -54,8 +54,6 @@
 
 #include "Panzer_ConnManager.hpp"
 
-#include <Kokkos_View.hpp>
-
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Import.hpp>

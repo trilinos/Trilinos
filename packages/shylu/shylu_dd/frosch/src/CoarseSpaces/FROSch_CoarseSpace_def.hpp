@@ -247,6 +247,7 @@ namespace FROSch {
             Kokkos::parallel_reduce("FROSch_CoarseSpace::fillGlobalBasisMatrix:nnz", 1+numLocalRows,
               KOKKOS_LAMBDA(const int &i, UN &lsum) { lsum += Rowptr[i]; },
               nnz);
+            Kokkos::fence();
 
             // make it into offsets
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>

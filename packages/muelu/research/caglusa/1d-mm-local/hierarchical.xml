@@ -9,7 +9,7 @@
   <Parameter name="cluster map" type="string" value="1d-mm-local/clustermap"/>
   <Parameter name="ghosted cluster map" type="string" value="1d-mm-local/ghosted_clustermap"/>
   <Parameter name="gid_cluster_to_gid_coeff" type="string" value="1d-mm-local/gid_cluster_to_gid_coeff"/>
-  <Parameter name="aux colmap" type="string" value="1d-mm-local/aux_colmap"/>
+  <Parameter name="aux colmap" type="string" value="1d-mm-local/auxiliary_colmap"/>
 
   <Parameter name="near field matrix" type="string" value="1d-mm-local/Anear"/>
 
@@ -26,6 +26,6 @@
   <Parameter name="right-hand side" type="string" value="1d-mm-local/RHS"/>
   <Parameter name="exact solution" type="string" value="1d-mm-local/X_ex"/>
 
-  <Parameter name="auxiliary operator" type="string" value="1d-mm-local/aux"/>
+  <Parameter name="auxiliary operator" type="string" value="1d-mm-local/auxiliary"/>
   <Parameter name="coordinates" type="string" value="1d-mm-local/coords"/>
 </ParameterList>

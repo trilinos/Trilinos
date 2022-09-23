@@ -264,8 +264,8 @@ namespace { // (anonymous)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& result,
-          const volatile value_type& current) const {
+    join (value_type& result,
+          const value_type& current) const {
       result += current;
     }
 
@@ -311,8 +311,8 @@ namespace { // (anonymous)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& /* result */,
-          const volatile value_type& /* current */) const
+    join (value_type& /* result */,
+          const value_type& /* current */) const
     {}
 
   private:

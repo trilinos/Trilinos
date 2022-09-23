@@ -44,8 +44,8 @@
 #ifndef _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 #define _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 
-#include "KokkosGraph_Distance1ColorHandle.hpp"
-#include "KokkosGraph_Distance1Color_impl.hpp"
+#include "KokkosGraph_color_d1_spec.hpp"
+#include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Utils.hpp"
 
 namespace KokkosGraph {
@@ -59,81 +59,35 @@ void graph_color_symbolic(KernelHandle *handle,
                           typename KernelHandle::nnz_lno_t /* num_cols */,
                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
                           bool /* is_symmetric */ = true) {
-  Kokkos::Timer timer;
+  typedef typename KernelHandle::HandleExecSpace ExecSpace;
+  typedef typename KernelHandle::HandleTempMemorySpace MemSpace;
+  typedef typename KernelHandle::HandlePersistentMemorySpace PersistentMemSpace;
+  typedef typename Kokkos::Device<ExecSpace, MemSpace> DeviceType;
 
-  typename KernelHandle::GraphColoringHandleType *gch =
-      handle->get_graph_coloring_handle();
+  typedef typename KernelHandle::const_size_type c_size_t;
+  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
+  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
 
-  ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      c_size_t, c_lno_t, c_scalar_t, ExecSpace, MemSpace, PersistentMemSpace>
+      ConstKernelHandle;
+  ConstKernelHandle tmp_handle(*handle);
 
-  typedef typename KernelHandle::GraphColoringHandleType::color_view_t
-      color_view_type;
-
-  gch->set_tictoc(handle->get_verbose());
-
-  color_view_type colors_out;
-  if (gch->get_vertex_colors().use_count() > 0) {
-    colors_out = gch->get_vertex_colors();
-  } else {
-    colors_out = color_view_type("Graph Colors", num_rows);
-  }
-
-  typedef
-      typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType,
-                                lno_row_view_t_, lno_nnz_view_t_>
-          BaseGraphColoring;
-  BaseGraphColoring *gc = NULL;
-
-  switch (algorithm) {
-    case COLORING_SERIAL:
-      gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries,
-                                 gch);
-      break;
-
-    case COLORING_VB:
-    case COLORING_VBBIT:
-    case COLORING_VBCS:
-      typedef typename Impl::GraphColor_VB<
-          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
-          lno_nnz_view_t_>
-          VBGraphColoring;
-      gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries,
-                               gch);
-      break;
-
-    case COLORING_VBD:
-    case COLORING_VBDBIT:
-      typedef typename Impl::GraphColor_VBD<
-          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
-          lno_nnz_view_t_>
-          VBDGraphColoring;
-      gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries,
-                                gch);
-      break;
-
-    case COLORING_EB:
-      typedef typename Impl::GraphColor_EB<
-          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
-          lno_nnz_view_t_>
-          EBGraphColoring;
-      gc = new EBGraphColoring(num_rows, entries.extent(0), row_map, entries,
-                               gch);
-      break;
-
-    case COLORING_DEFAULT: break;
-
-    default: break;
-  }
-
-  int num_phases = 0;
-  gc->color_graph(colors_out, num_phases);
-
-  delete gc;
-  double coloring_time = timer.seconds();
-  gch->add_to_overall_coloring_time(coloring_time);
-  gch->set_coloring_time(coloring_time);
-  gch->set_num_phases(num_phases);
-  gch->set_vertex_colors(colors_out);
+  typedef Kokkos::View<typename lno_row_view_t_::const_value_type *,
+                       typename KokkosKernels::Impl::GetUnifiedLayout<
+                           lno_row_view_t_>::array_layout,
+                       DeviceType, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      Internal_rowmap;
+  typedef Kokkos::View<typename lno_nnz_view_t_::const_value_type *,
+                       typename KokkosKernels::Impl::GetUnifiedLayout<
+                           lno_nnz_view_t_>::array_layout,
+                       DeviceType, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      Internal_entries;
+  KokkosGraph::Impl::
+      COLOR_D1<ConstKernelHandle, Internal_rowmap, Internal_entries>::color_d1(
+          &tmp_handle, num_rows,
+          Internal_rowmap(row_map.data(), row_map.extent(0)),
+          Internal_entries(entries.data(), entries.extent(0)));
 }
 
 template <class KernelHandle, typename lno_row_view_t_,

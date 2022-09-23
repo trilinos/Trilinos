@@ -41,19 +41,29 @@ SET(MEMSPACE_HBWSPACE_CPP_TYPE          Kokkos::HBWSpace)
 IF(KOKKOS_ENABLE_CUDA)
  KOKKOSKERNELS_ADD_OPTION(
    INST_EXECSPACE_CUDA
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ON
    BOOL
    "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
+
+ # By default, instantiate only for Cuda's default memory space (either CudaSpace, or CudaUVMSpace).
+ IF(KOKKOS_ENABLE_CUDA_UVM)
+   SET(CUDA_CUDAUVMSPACE_DEFAULT ON)
+   SET(CUDA_CUDASPACE_DEFAULT OFF)
+ ELSE()
+   SET(CUDA_CUDAUVMSPACE_DEFAULT OFF)
+   SET(CUDA_CUDASPACE_DEFAULT ON)
+ ENDIF()
+
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDAUVMSPACE
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ${CUDA_CUDAUVMSPACE_DEFAULT}
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDASPACE
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ${CUDA_CUDASPACE_DEFAULT}
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )

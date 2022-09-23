@@ -314,7 +314,7 @@ namespace Intrepid2
 
       auto policy =
           Kokkos::TeamPolicy<ExecutionSpace>(numPoints, teamSize, vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_LINE_Functor");
+      Kokkos::parallel_for("Hierarchical_HVOL_LINE_Functor", policy , functor);
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

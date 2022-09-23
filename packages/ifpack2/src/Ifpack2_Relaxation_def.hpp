@@ -806,7 +806,6 @@ void Relaxation<MatrixType>::initialize ()
 namespace Impl {
 template <typename BlockDiagView>
 struct InvertDiagBlocks {
-  typedef int value_type;
   typedef typename BlockDiagView::size_type Size;
 
 private:
@@ -853,10 +852,6 @@ public:
     Tpetra::GETRI(D_cur, ipiv, work, info);
     if (info) ++jinfo;
   }
-
-  // Report the number of blocks with errors.
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type& dst, volatile value_type const& src) const { dst += src; }
 };
 }
 
@@ -1322,7 +1317,7 @@ void Relaxation<MatrixType>::compute ()
         // The two diagonals should be exactly the same, so their
         // difference should be exactly zero.
         TEUCHOS_TEST_FOR_EXCEPTION
-          (err > 10*STM::eps(), std::logic_error, methodName << ": "
+          (err > 100*STM::eps(), std::logic_error, methodName << ": "
            << "\"fast-path\" diagonal computation failed.  "
            "\\|D1 - D2\\|_inf = " << err << ".");
       }

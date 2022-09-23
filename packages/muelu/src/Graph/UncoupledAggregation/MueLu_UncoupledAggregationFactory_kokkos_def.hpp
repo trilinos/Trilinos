@@ -259,12 +259,12 @@ namespace MueLu {
       if(aggAlgo == "mis2 coarsening")
       {
         if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: MIS-2 coarsening" << std::endl;
-        labels = KokkosGraph::Experimental::graph_mis2_coarsen<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
+        labels = KokkosGraph::graph_mis2_coarsen<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
       }
       else if(aggAlgo == "mis2 aggregation")
       {
         if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: MIS-2 aggregation" << std::endl;
-        labels = KokkosGraph::Experimental::graph_mis2_aggregate<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
+        labels = KokkosGraph::graph_mis2_aggregate<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
       }
       auto vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
       auto procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::OverwriteAll);

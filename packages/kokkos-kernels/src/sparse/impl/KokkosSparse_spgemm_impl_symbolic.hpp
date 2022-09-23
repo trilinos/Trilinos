@@ -1318,7 +1318,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile size_type &dst, const volatile size_type &src) const {
+  void join(size_type &dst, const size_type &src) const {
     if (dst < src) {
       dst = src;
     }
@@ -1410,7 +1410,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile size_type &dst, const volatile size_type &src) const {
+  void join(size_type &dst, const size_type &src) const {
     if (dst < src) {
       dst = src;
     }
@@ -2377,7 +2377,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile size_type &dst, const volatile size_type &src) const {
+  void join(size_type &dst, const size_type &src) const {
     if (dst < src) {
       dst = src;
     }

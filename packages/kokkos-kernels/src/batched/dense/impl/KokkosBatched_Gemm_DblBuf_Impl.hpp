@@ -59,6 +59,21 @@ namespace Impl {
 /// CT/NT, NT/CT, CT/CT
 ///
 
+struct LayoutLeftTag {};
+struct LayoutRightTag {};
+template <class>
+struct TagFromLayoutHelper;
+template <>
+struct TagFromLayoutHelper<Kokkos::LayoutLeft> {
+  using tag = LayoutLeftTag;
+};
+template <>
+struct TagFromLayoutHelper<Kokkos::LayoutRight> {
+  using tag = LayoutRightTag;
+};
+template <class Layout>
+using TagFromLayout = typename TagFromLayoutHelper<Layout>::tag;
+
 // TODO - scaling between (32x32, 64x64)
 //   Option 0: Increase number of tiles and figure out how to map kokkos teams
 //             into cuda grid. Keep team size and vector lanes constant.
@@ -117,7 +132,8 @@ class BatchedDblBufGemm {
 
  private:
   void __run() {
-    using policy_type = Kokkos::TeamPolicy<layout_type, execution_space_type>;
+    using policy_type =
+        Kokkos::TeamPolicy<TagFromLayout<layout_type>, execution_space_type>;
     using member_type = typename policy_type::member_type;
 
     // Compile-time expressions required for functor-level register allocations:
@@ -335,8 +351,7 @@ class BatchedDblBufGemm {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const Kokkos::LayoutRight &,
-                    const MemberType &member) const {
+    void operator()(LayoutRightTag, const MemberType &member) const {
       // TODO: use Kokkos view with compile-time size to allocating register??
       //  Then we can use local deep copy for prefetch_reg population.
       // Allocate registers used for prefetching
@@ -503,8 +518,7 @@ class BatchedDblBufGemm {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const Kokkos::LayoutLeft &,
-                    const MemberType &member) const {
+    void operator()(LayoutLeftTag, const MemberType &member) const {
       // TODO: use Kokkos view with compile-time size to allocating register??
       //  Then we can use local deep copy for prefetch_reg population.
       // Allocate registers used for prefetching

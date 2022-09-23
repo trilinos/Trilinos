@@ -870,7 +870,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HGRAD_TET_Functor");
+      Kokkos::parallel_for("Hierarchical_HGRAD_TET_Functor", policy, functor);
     }
 
     /** \brief returns the basis associated to a subCell.

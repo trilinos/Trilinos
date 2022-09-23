@@ -42,7 +42,6 @@
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_ELEMENT_HPP
 
 #include <iomanip>
-#include "Kokkos_View.hpp"
 
 namespace TpetraExamples
 {

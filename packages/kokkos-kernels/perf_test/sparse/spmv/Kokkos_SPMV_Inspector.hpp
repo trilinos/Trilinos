@@ -143,7 +143,7 @@ void kk_inspector_matvec(AType A, XType x, YType y, int team_size,
     workset_offsets(0)    = 0;
     lno_t ws              = 1;
     for (lno_t row = 0; row < A.numRows(); row++) {
-      if (A.graph.row_map(row) > ws * nnz_per_workset) {
+      if (A.graph.row_map(row) > size_type(ws) * nnz_per_workset) {
         workset_offsets(ws) = row;
         ws++;
       }

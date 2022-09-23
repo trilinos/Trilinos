@@ -57,7 +57,7 @@
 
 // needed for classical GS
 #include "KokkosSparse_sptrsv.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 
@@ -854,11 +854,11 @@ class TwostageGaussSeidel {
                                                // values
         // CuSparse needs matrix sorted by column indexes for each row
         // TODO: may need to move this to symbolic/numeric of sptrsv
-        KokkosKernels::sort_crs_matrix<execution_space, const_row_map_view_t,
-                                       entries_view_t, values_view_t>(
+        KokkosSparse::sort_crs_matrix<execution_space, const_row_map_view_t,
+                                      entries_view_t, values_view_t>(
             rowmap_viewL, column_viewL, values_viewL);
-        KokkosKernels::sort_crs_matrix<execution_space, const_row_map_view_t,
-                                       entries_view_t, values_view_t>(
+        KokkosSparse::sort_crs_matrix<execution_space, const_row_map_view_t,
+                                      entries_view_t, values_view_t>(
             rowmap_viewU, column_viewU, values_viewU);
 
         // now do symbolic
