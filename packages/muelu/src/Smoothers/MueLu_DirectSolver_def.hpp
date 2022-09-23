@@ -58,6 +58,7 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_BelosSmoother.hpp"
 #include "MueLu_StratimikosSmoother.hpp"
+#include "MueLu_RefMaxwellSmoother.hpp"
 
 namespace MueLu {
 
@@ -144,13 +145,25 @@ namespace MueLu {
     }
     triedStratimikos_ = true;
 #endif
+    try {
+      sRefMaxwell_ = rcp(new RefMaxwellSmoother(type_, paramList));
+      if (sRefMaxwell_.is_null())
+        errorRefMaxwell_ = "Unable to construct RefMaxwell smoother";
+      else if (!sRefMaxwell_->constructionSuccessful()) {
+        errorRefMaxwell_ = sRefMaxwell_->constructionErrorMsg();
+        sRefMaxwell_ = Teuchos::null;
+      }
+    } catch (Exceptions::RuntimeError& e){
+      errorRefMaxwell_ = e.what();
+    }
+    triedRefMaxwell_ = true;
 
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_, Exceptions::RuntimeError, "Unable to construct any direct solver."
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_ && !triedRefMaxwell_, Exceptions::RuntimeError, "Unable to construct any direct solver."
                                "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS) or (BELOS) or (STRATIMIKOS)");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null(), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null() && sRefMaxwell_.is_null(), Exceptions::RuntimeError,
         "Could not enable any direct solver:\n"
         << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
         << (triedEpetra_ ? errorEpetra_ : "")
@@ -159,7 +172,9 @@ namespace MueLu {
         << (triedBelos_ ? "Belos was disabled due to an error:\n" : "")
         << (triedBelos_ ? errorBelos_ : "")
         << (triedStratimikos_ ? "Stratimikos was disabled due to an error:\n" : "")
-        << (triedStratimikos_ ? errorStratimikos_ : ""));
+        << (triedStratimikos_ ? errorStratimikos_ : "")
+        << (triedRefMaxwell_ ? "RefMaxwell was disabled due to an error:\n" : "")
+        << (triedRefMaxwell_ ? errorRefMaxwell_ : ""));;
 
     this->SetParameterList(paramList);
   }
@@ -171,6 +186,7 @@ namespace MueLu {
     if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
     if (!sBelos_.is_null())  sBelos_->SetFactory(varName, factory);
     if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
+    if (!sRefMaxwell_.is_null()) sRefMaxwell_->SetFactory(varName, factory);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -179,6 +195,8 @@ namespace MueLu {
       s_ = sBelos_;
     else if (!sStratimikos_.is_null())
       s_ = sStratimikos_;
+    else if (!sRefMaxwell_.is_null())
+      s_ = sRefMaxwell_;
     else {
       // Decide whether we are running in Epetra or Tpetra mode
       //
@@ -257,12 +275,16 @@ namespace MueLu {
       newSmoo->sBelos_ = sBelos_->Copy();
     if (!sStratimikos_.is_null())
       newSmoo->sStratimikos_ = sStratimikos_->Copy();
+    if (!sRefMaxwell_.is_null())
+      newSmoo->sRefMaxwell_ = sRefMaxwell_->Copy();
 
     // Copy the default mode
     if (s_.get() == sBelos_.get())
       newSmoo->s_ = newSmoo->sBelos_;
     else if (s_.get() == sStratimikos_.get())
       newSmoo->s_ = newSmoo->sStratimikos_;
+    else if (s_.get() == sRefMaxwell_.get())
+      newSmoo->s_ = newSmoo->sRefMaxwell_;
     else if (s_.get() == sTpetra_.get())
       newSmoo->s_ = newSmoo->sTpetra_;
     else

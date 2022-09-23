@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_OPERATORSMOOTHER_DECL_HPP
-#define MUELU_OPERATORSMOOTHER_DECL_HPP
+#ifndef MUELU_REFMAXWELLSMOOTHER_DECL_HPP
+#define MUELU_REFMAXWELLSMOOTHER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -52,7 +52,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-// #include "MueLu_OperatorSmoother_fwd.hpp"
+#include "MueLu_RefMaxwellSmoother_fwd.hpp"
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
@@ -64,7 +64,7 @@
 namespace MueLu {
 
   /*!
-    @class OperatorSmoother
+    @class RefMaxwellSmoother
     @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Operator smoothers.
 
@@ -74,8 +74,8 @@ namespace MueLu {
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class OperatorSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-#undef MUELU_OPERATORSMOOTHER_SHORT
+  class RefMaxwellSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+#undef MUELU_REFMAXWELLSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -89,10 +89,10 @@ namespace MueLu {
 
     */
 
-    OperatorSmoother(const std::string type, const Teuchos::ParameterList& paramList);
+    RefMaxwellSmoother(const std::string type, const Teuchos::ParameterList& paramList);
 
     //! Destructor
-    virtual ~OperatorSmoother() = default;
+    virtual ~RefMaxwellSmoother() = default;
 
     //@}
 
@@ -161,9 +161,9 @@ namespace MueLu {
     //! matrix, used in apply if solving residual equation
     RCP<Operator> op_;
 
-  }; // class OperatorSmoother
+  }; // class RefMaxwellSmoother
 
 } // namespace MueLu
 
-#define MUELU_OPERATORSMOOTHER_SHORT
-#endif // MUELU_OPERATORSMOOTHER_DECL_HPP
+#define MUELU_REFMAXWELLSMOOTHER_SHORT
+#endif // MUELU_REFMAXWELLSMOOTHER_DECL_HPP
