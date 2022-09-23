@@ -151,6 +151,42 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalVersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_WEDGE;
+    using NodalBasis        = DerivedNodalBasisFamily<DefaultTestDeviceType>::HCURL_WEDGE; // regular nodal basis family does not define wedge bases beyond second order
+    
+    std::vector<EOperator> opsToTest {OPERATOR_CURL};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (ordinal_type polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalVersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_WEDGE;
+    using NodalBasis        = DerivedNodalBasisFamily<DefaultTestDeviceType>::HDIV_WEDGE; // regular nodal basis family does not define wedge bases beyond second order
+    
+    std::vector<EOperator> opsToTest {OPERATOR_DIV};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (ordinal_type polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisEquivalence, WedgeNodalVersusHierarchical_HVOL )
   {
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_WEDGE;
