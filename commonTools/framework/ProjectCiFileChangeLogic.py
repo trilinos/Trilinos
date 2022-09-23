@@ -7,7 +7,7 @@ class ProjectCiFileChangeLogic:
     modifiedFileFullPathArray = modifiedFileFullPath.split('/')
     lenPathArray = len(modifiedFileFullPathArray)
 
-    if lenPathArray==1:
+    if lenPathArray==1:  # Base project directory
       # Files directly under <projectDir>/
       if modifiedFileFullPathArray[0] == "CMakeLists.txt":
         return True
@@ -79,6 +79,12 @@ class ProjectCiFileChangeLogic:
         # All other *.cmake files under any subdir of cmake/ should trigger
         # a global rebuild to be safe.
        return True
-    # Any other files not already covered abvoe should not trigger a global
+    elif lenPathArray >= 2 and modifiedFileFullPathArray[0] == 'packages' and \
+      modifiedFileFullPathArray[1] == 'framework' \
+      :
+      # Changes under packages/framework/ likely impact the GenConfig PR build
+      # configurations and therefore to be safe, everything needs to be tested.
+      return True
+    # Any other files not already covered above should *not* trigger a global
     # build
     return False
