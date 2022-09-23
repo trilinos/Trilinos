@@ -265,6 +265,35 @@ void exec_space_wait(const S1 &waitee, const S2 &waiter) {
     exec_space_wait("anonymous", waitee, waiter);
 }
 
+template <typename ExecutionSpace>
+constexpr KOKKOS_INLINE_FUNCTION bool is_gpu_exec_space() {
+  return false;
+}
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool is_gpu_exec_space<Kokkos::Cuda>() {
+  return true;
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool
+is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+  return true;
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool
+is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
+  return true;
+}
+#endif
+
+
 } // namespace Spaces
 
 } // namespace Tpetra

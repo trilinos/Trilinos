@@ -220,7 +220,6 @@ namespace Tpetra {
       KOKKOS_INLINE_FUNCTION
       void operator() (TagNonTrans, const team_member& dev) const
       {
-        // printf("IN HERE %s %d\n", __FILE__, __LINE__);
         using y_value_type = typename y_type::non_const_value_type;
 
         const int rowsPerTeam = dev.team_size();
@@ -368,8 +367,8 @@ namespace Tpetra {
       */
       template <int UNROLL>
       KOKKOS_INLINE_FUNCTION void strip_mine(const team_member& dev,
-                                            const ordinal_type& iRow,
-                                            const ordinal_type& kk) const {
+                                             const ordinal_type& iRow,
+                                             const ordinal_type& kk) const {
         MultiVectorScalar sum[UNROLL];
 
         for (int k = 0; k < UNROLL; ++k) {
@@ -378,6 +377,8 @@ namespace Tpetra {
 
         const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
 
+        // split loop indices 0..row.length over the vector lanes of the calling thread
+        // each lane will have a subset of the partial products
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(dev, row.length), [&](ordinal_type iEntry) {
               const value_type val =
@@ -388,25 +389,56 @@ namespace Tpetra {
               for (int k = 0; k < UNROLL; ++k) {
                 sum[k] += val * X_(ind, kk + k);
               }
-            });
+            }
+        );
+
+#if 0
+        for (int ii = 0; ii < UNROLL; ++ii) {
+          int tr = dev.team_rank();
+          int lr = dev.league_rank();
+          printf("pre:         <%d,%d> sum(%d, %d) = %d\n",
+              lr, tr, int(iRow), int(ii), int(sum[ii]));
+        }
+#endif
 
         for (int ii = 0; ii < UNROLL; ++ii) {
-          MultiVectorScalar sumt;
-          Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(dev, vectorLength_),
-              [&](ordinal_type, MultiVectorScalar& lsum) {
-                // in this context, sum[ii] is a partial sum ii on one of the
-                // vector lanes.
-                lsum += sum[ii];
-              },
-              sumt);
-          sum[ii] = sumt * alpha_;
+
+            // in CUDA, each lane is actually a sub-warp (thread) so each thread's sum is not correct
+            // in serial, each lane is a true vector lane so sum[k] is already correct
+            if (Spaces::is_gpu_exec_space<execution_space>()) {
+              // try to sum up the sum[ii] in each vector lane
+              MultiVectorScalar sumt;
+              Kokkos::parallel_reduce(
+                  Kokkos::ThreadVectorRange(dev, vectorLength_),
+                  [&](ordinal_type, MultiVectorScalar& lsum) {
+                    lsum += sum[ii];
+                  },
+                  sumt);
+              // sumt is broadcast to every lane of the thread
+
+              // now every lane should have the complete product
+              // of the row this thread was working on
+              sum[ii] = sumt * alpha_;
+            } else {
+              sum[ii] *= alpha_;
+            }
         }
-        
+
+#if 0
+        for (int ii = 0; ii < UNROLL; ++ii) {
+          int tr = dev.team_rank();
+          int lr = dev.league_rank();
+          printf("all-reduced: <%d,%d> sum(%d, %d) = %d\n",
+              lr, tr, int(iRow), int(ii), int(sum[ii]));
+        }
+#endif
+
+        // split 0..UNROLL over the vector lanes of the calling thread
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(dev, UNROLL), [&](ordinal_type k) {
               Y_(iRow, kk + k) = beta_ * Y_(iRow, kk + k) + sum[k];
-            });
+            }
+        );
         
       }
 
@@ -494,6 +526,7 @@ namespace Tpetra {
         while ((vectorLength * 2 * 3 <= NNZPerRow) && (vectorLength < 8)) {
           vectorLength *= 2;
         }
+        // std::cerr << __FILE__<<":"<<__LINE__<<": vectorLength=" << vectorLength << "\n";
 
         const ordinal_type rowsPerThread =
             KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
@@ -507,7 +540,7 @@ namespace Tpetra {
                 .team_size_recommended(op, Kokkos::ParallelForTag());
         const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
         const size_type nteams = (A.numRows() + rowsPerTeam - 1) / rowsPerTeam;
-        Kokkos::parallel_for("SpmvMvFunctor non-transpose",
+        Kokkos::parallel_for("SpmvMvFunctor",
                             Kokkos::TeamPolicy<execution_space>(
                                 space, nteams, teamSize, vectorLength),
                             op);
@@ -606,7 +639,7 @@ namespace Tpetra {
       struct ScalTag{};
       KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
         if (i >= A_.numRows()) {return;}
-        for (ordinal_type k = 0; k < X_.extent(1); ++k) {
+        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
           Y_(i, k) *= beta_;
         }
       }
