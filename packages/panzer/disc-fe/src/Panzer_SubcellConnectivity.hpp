@@ -45,7 +45,6 @@
 #define PANZER_SUBCELL_CONNECTIVITY_HPP
 
 #include "PanzerCore_config.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Teuchos_Assert.hpp"
 

@@ -603,9 +603,13 @@ int main(int argc, char** argv) {
           &vecY, y1.extent_int(0), (void*)y1.data(), myCudaDataType));
 
       const double alpha = 1.0, beta = 1.0;
-      size_t bufferSize     = 0;
-      void* dBuffer         = NULL;
+      size_t bufferSize = 0;
+      void* dBuffer     = NULL;
+#if CUSPARSE_VERSION >= 11201
+      cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
       cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
           controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
           &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType, alg,

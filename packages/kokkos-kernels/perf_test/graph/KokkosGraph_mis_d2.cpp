@@ -66,6 +66,7 @@
 #include "KokkosGraph_MIS2.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;
 
@@ -253,11 +254,11 @@ void run_mis2(const MIS2Parameters& params) {
 
   Kokkos::Timer t;
   crsMat_t A_in =
-      KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
+      KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
   std::cout << "I/O time: " << t.seconds() << " s\n";
   t.reset();
   // Symmetrize the matrix just in case
-  crsMat_t At_in = KokkosKernels::Impl::transpose_matrix(A_in);
+  crsMat_t At_in = KokkosSparse::Impl::transpose_matrix(A_in);
   crsMat_t A;
   KKH kkh;
   const default_scalar one = Kokkos::ArithTraits<default_scalar>::one();

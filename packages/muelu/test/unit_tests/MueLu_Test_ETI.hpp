@@ -166,13 +166,15 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
+# ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
       auto inst = xpetraParameters.GetInstantiation();
+# endif
       if (node == "") {
         typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
-          Node::execution_space::print_configuration(*out, true/*details*/);
+          Node::execution_space().print_configuration(*out, true/*details*/);
         }
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION

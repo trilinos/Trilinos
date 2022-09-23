@@ -98,6 +98,7 @@ void impl_test_nrm1_mv(int N, int K) {
 
   KokkosBlas::nrm1(r, a);
   KokkosBlas::nrm1(c_r, a);
+  Kokkos::fence();
   for (int k = 0; k < K; k++) {
     EXPECT_NEAR_KK(r(k), expected_result(k), eps * expected_result(k));
     EXPECT_NEAR_KK(c_r(k), expected_result(k), eps * expected_result(k));

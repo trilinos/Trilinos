@@ -730,6 +730,8 @@ int matrixAssignment(bool verbose, bool debug) {
 		EPETRA_TEST_ERR((lhs.A() != origA) || (lhs.LDA() != origLDA), ierr);
 		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs,false), ierr);
 		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+                delete [] rand1;
+                delete [] rand2;
 	}
 	returnierr += ierr;
 	if(ierr == 0)

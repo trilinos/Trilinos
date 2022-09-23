@@ -111,6 +111,8 @@ SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
 TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+MatrixFreeTentativeP_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+MatrixFreeTentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory

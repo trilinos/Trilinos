@@ -59,7 +59,6 @@
 #include "Phalanx_Print.hpp"
 #include "Phalanx_DAG_Node.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_DeviceEvaluator.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT

@@ -104,89 +104,37 @@ class CrsMatrix {
   /// \param beta [in]: input coefficient for Y (default value 0.)
   /// \param Y [in/out]: Output vector Y, a rank 2 view
 
-  template <typename MemberType, typename XViewType, typename YViewType,
-            typename ArgTrans, typename ArgMode>
+  template <typename ArgTrans, typename ArgMode, typename MemberType,
+            typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(
       const MemberType &member, const XViewType &X, const YViewType &Y,
       MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
       MagnitudeType beta =
           Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == 0)
-      KokkosBatched::Spmv<MemberType, ArgTrans, ArgMode>::template invoke<
+    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
+      KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
           ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           member, alpha, values, row_ptr, colIndices, X, beta, Y);
     else
-      KokkosBatched::Spmv<MemberType, ArgTrans, ArgMode>::template invoke<
+      KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
           ValuesViewType, IntViewType, XViewType, YViewType, 1>(
           member, alpha, values, row_ptr, colIndices, X, beta, Y);
   }
 
-  /// \brief apply version that uses variable coefficient alpha and no beta
-  ///   y_l <- alpha_l * A_l * x_l  for all l = 1, ..., N
-  /// where:
-  ///   * N is the number of matrices,
-  ///   * A_1, ..., A_N are N sparse matrices which share the same sparsity
-  ///   pattern,
-  ///   * x_1, ..., x_N are the N input vectors,
-  ///   * y_1, ..., y_N are the N output vectors,
-  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
-  ///
-  /// \tparam MemberType: Input type for the TeamPolicy member
-  /// \tparam XViewType: Input type for X, needs to be a 2D view
-  /// \tparam YViewType: Input type for Y, needs to be a 2D view
-  /// \tparam ArgTrans: Argument for transpose or notranspose
-  /// \tparam ArgMode: Argument for the parallelism used in the apply
-  ///
-  /// \param member [in]: TeamPolicy member
-  /// \param alpha [in]: input coefficient for X, a rank 1 view
-  /// \param X [in]: Input vector X, a rank 2 view
-  /// \param Y [out]: Output vector Y, a rank 2 view
-
-  template <typename MemberType, typename XViewType, typename YViewType,
-            typename NormViewType, typename ArgTrans, typename ArgMode>
-  KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
-                                    const XViewType &X, const YViewType &Y,
-                                    NormViewType alpha) const {
-    KokkosBatched::Spmv<MemberType, ArgTrans, ArgMode>::template invoke<
-        ValuesViewType, IntViewType, XViewType, YViewType, NormViewType,
-        NormViewType, 0>(member, alpha, values, row_ptr, colIndices, X, alpha,
-                         Y);
-  }
-
-  /// \brief apply version that uses variable coefficients alpha and beta
-  ///   y_l <- alpha_l * A_l * x_l + beta_l * y_l for all l = 1, ..., N
-  /// where:
-  ///   * N is the number of matrices,
-  ///   * A_1, ..., A_N are N sparse matrices which share the same sparsity
-  ///   pattern,
-  ///   * x_1, ..., x_N are the N input vectors,
-  ///   * y_1, ..., y_N are the N output vectors,
-  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N,
-  ///   * beta_1, ..., beta_N are N scaling factors for y_1, ..., y_N.
-  ///
-  /// \tparam MemberType: Input type for the TeamPolicy member
-  /// \tparam XViewType: Input type for X, needs to be a 2D view
-  /// \tparam YViewType: Input type for Y, needs to be a 2D view
-  /// \tparam NormViewType: Input type for alpha and beta, needs to be a 1D view
-  /// \tparam ArgTrans: Argument for transpose or notranspose
-  /// \tparam ArgMode: Argument for the parallelism used in the apply
-  ///
-  /// \param member [in]: TeamPolicy member
-  /// \param alpha [in]: input coefficient for X, a rank 1 view
-  /// \param X [in]: Input vector X, a rank 2 view
-  /// \param beta [in]: input coefficient for Y, a rank 1 view
-  /// \param Y [in/out]: Output vector Y, a rank 2 view
-
-  template <typename MemberType, typename XViewType, typename YViewType,
-            typename NormViewType, typename ArgTrans, typename ArgMode>
-  KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
-                                    const XViewType &X, const YViewType &Y,
-                                    const NormViewType &alpha,
-                                    const NormViewType &beta) const {
-    KokkosBatched::Spmv<MemberType, ArgTrans, ArgMode>::template invoke<
-        ValuesViewType, IntViewType, XViewType, YViewType, NormViewType,
-        NormViewType, 1>(member, alpha, values, row_ptr, colIndices, X, beta,
-                         Y);
+  template <typename ArgTrans, typename XViewType, typename YViewType>
+  KOKKOS_INLINE_FUNCTION void apply(
+      const XViewType &X, const YViewType &Y,
+      MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
+      MagnitudeType beta =
+          Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
+    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
+      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
+          ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+          alpha, values, row_ptr, colIndices, X, beta, Y);
+    else
+      KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
+          ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+          alpha, values, row_ptr, colIndices, X, beta, Y);
   }
 };
 

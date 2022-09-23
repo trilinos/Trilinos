@@ -31,7 +31,7 @@ double simpleNorm2(const Vector& v) {
     double m = KAT::abs(vhost(i));
     d += m * m;
   }
-  return Kokkos::Experimental::sqrt(d);
+  return std::sqrt(d);
 }
 
 template <typename V1, typename V2>

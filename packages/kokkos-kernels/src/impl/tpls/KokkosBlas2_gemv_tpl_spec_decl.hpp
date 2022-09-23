@@ -614,8 +614,11 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
           rocblas_dgemv(s.handle, transa, M, N, &alpha, A.data(), LDA,         \
                         X.data(), one, &beta, Y.data(), one));                 \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -658,8 +661,11 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
           rocblas_sgemv(s.handle, transa, M, N, &alpha, A.data(), LDA,         \
                         X.data(), one, &beta, Y.data(), one));                 \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -702,6 +708,8 @@ namespace Impl {
       KOKKOSBLAS2_GEMV_ROCBLAS_DETERMINE_ARGS(LAYOUT);                         \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgemv(                             \
           s.handle, transa, M, N,                                              \
           reinterpret_cast<const rocblas_double_complex*>(&alpha),             \
@@ -709,6 +717,7 @@ namespace Impl {
           reinterpret_cast<const rocblas_double_complex*>(X.data()), one,      \
           reinterpret_cast<const rocblas_double_complex*>(&beta),              \
           reinterpret_cast<rocblas_double_complex*>(Y.data()), one));          \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -751,6 +760,8 @@ namespace Impl {
       KOKKOSBLAS2_GEMV_ROCBLAS_DETERMINE_ARGS(LAYOUT);                         \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgemv(                             \
           s.handle, transa, M, N,                                              \
           reinterpret_cast<const rocblas_float_complex*>(&alpha),              \
@@ -758,6 +769,7 @@ namespace Impl {
           reinterpret_cast<const rocblas_float_complex*>(X.data()), one,       \
           reinterpret_cast<const rocblas_float_complex*>(&beta),               \
           reinterpret_cast<rocblas_float_complex*>(Y.data()), one));           \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

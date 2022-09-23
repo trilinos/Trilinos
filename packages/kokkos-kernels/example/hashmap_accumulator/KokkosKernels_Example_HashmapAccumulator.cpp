@@ -384,7 +384,9 @@ int main(int argc, char* argv[]) {
       params.use_openmp;  // Assumption is that use_openmp variable is provided
                           // as number of threads
 
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   if (params.verbose) {
     Kokkos::print_configuration(std::cout);

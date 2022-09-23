@@ -49,7 +49,6 @@
 #ifndef Intrepid2_LegendreBasis_HVOL_TRI_h
 #define Intrepid2_LegendreBasis_HVOL_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -87,11 +86,6 @@ namespace Intrepid2
     int numFields_, numPoints_;
     
     size_t fad_size_output_;
-    
-    static const int numVertices = 3;
-    static const int numEdges    = 3;
-    const int edge_start_[numEdges] = {0,1,0}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2}; // edge i is from edge_start_[i] to edge_end_[i]
     
     Hierarchical_HVOL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
@@ -331,7 +325,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_TRI_Functor");
+      Kokkos::parallel_for("Hierarchical_HVOL_TRI_Functor", policy, functor);
     }
 
     /** \brief returns the basis associated to a subCell.

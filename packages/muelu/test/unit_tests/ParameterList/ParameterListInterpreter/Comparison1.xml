@@ -18,6 +18,10 @@
     <Parameter        name="smoother: type"                       type="string"  value="RELAXATION"/>
     <Parameter        name="coarse: type"                         type="string"  value="RELAXATION"/>
 
+
+    <!-- This is a comparison test, so we really need deterministic aggregation -->
+    <Parameter        name="aggregation: deterministic"            type="bool"    value="true"/>
+
     <!-- end of default values -->
 
     <!-- ===========  REPARTITIONING  =========== -->

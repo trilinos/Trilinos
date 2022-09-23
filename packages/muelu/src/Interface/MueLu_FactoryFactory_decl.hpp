@@ -170,6 +170,7 @@
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_MatrixFreeTentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_RegionRFactory_kokkos.hpp"
 #endif
@@ -322,6 +323,7 @@ namespace MueLu {
       if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory_kokkos")   return Build2<StructuredAggregationFactory_kokkos>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MatrixFreeTentativePFactory_kokkos")    return Build2<MatrixFreeTentativePFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
 #endif
 

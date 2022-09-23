@@ -640,6 +640,8 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   Kokkos::deep_copy(exec_space(), localsHost, localGIDView);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   Kokkos::deep_copy(exec_space(), remotesHost, remoteGIDView);
+  // CAG: This fence was found to be required on Cuda with UVM=on.
+  Kokkos::fence();
   //Finally, populate the STL structures which hold the index lists
   std::set<GO> RemoteGIDSet;
   std::vector<GO> RemoteGIDUnorderedVector;

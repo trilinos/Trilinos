@@ -234,7 +234,7 @@ namespace Tpetra {
       }
 
       KOKKOS_INLINE_FUNCTION void
-      join (volatile LO& dst, const volatile LO& src) const
+      join (LO& dst, const LO& src) const
       {
         dst = (src > dst) ? src : dst;
       }

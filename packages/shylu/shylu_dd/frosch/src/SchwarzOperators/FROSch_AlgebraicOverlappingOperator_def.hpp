@@ -112,6 +112,12 @@ namespace FROSch {
         if (repeatedMap.is_null()) repeatedMap = this->K_->getRangeMap();
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
+        this->updateLocalOverlappingMatrices_Symbolic();
+        bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
+        if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_ && reuseSymbolicFactorization) {
+            // if reuseSymbolicFactorization=false, we call initializeSubdomainSolver is called during compute
+            this->initializeSubdomainSolver(this->localSubdomainMatrix_);
+        }
 
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
@@ -160,7 +166,7 @@ namespace FROSch {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        GO global,sum;
+        GO global = 0, sum = 0;
         LO local,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
@@ -288,11 +294,51 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices()
     {
         FROSCH_DETAILTIMER_START_LEVELID(updateLocalOverlappingMatricesTime,"AlgebraicOverlappingOperator::updateLocalOverlappingMatrices");
-        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
-            this->OverlappingMatrix_ = this->K_;
+        if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_) {
+            // using original K_ as input
+            ExtractLocalSubdomainMatrix_Compute(this->K_, this->subdomainMatrix_, this->localSubdomainMatrix_);
+            this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
+        } else {
+            if (this->IsComputed_) {
+                // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+                this->OverlappingMatrix_ = this->K_;
+            }
+            this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_, this->OverlappingMap_);
         }
-        this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_,this->OverlappingMap_);
         return 0;
+    }
+
+
+    template <class SC,class LO,class GO,class NO>
+    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices_Symbolic()
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(updateLocalOverlappingMatrices_SymbolicTime, "AlgebraicOverlappingOperator::updateLocalOverlappingMatrices_Symbolic");
+        this->extractLocalSubdomainMatrix_Symbolic();
+        return 0;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    void AlgebraicOverlappingOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic()
+    {
+        if (this->OverlappingMap_->lib() == UseTpetra) {
+            FROSCH_DETAILTIMER_START_LEVELID(AlgebraicOverlappin_extractLocalSubdomainMatrix_SymbolicTime,"AlgebraicOverlappinOperator::extractLocalSubdomainMatrix_Symbolic");
+            // buid sudomain matrix
+            this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
+            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
+
+            // build local subdomain matrix
+            RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+            RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(this->OverlappingMap_->lib(), this->OverlappingMap_->getLocalNumElements(), 0, SerialComm);
+            this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
+
+            // fill in column indexes
+            ExtractLocalSubdomainMatrix_Symbolic(this->subdomainMatrix_, // input
+                                                 this->localSubdomainMatrix_);   // output
+
+            // turn flag on
+            this->ExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+        }
     }
 }
 

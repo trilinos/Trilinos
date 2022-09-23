@@ -341,6 +341,12 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tentati
 #ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
 typedef MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory_kokkos;
 #endif
+#ifdef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
+typedef MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativeP_kokkos;
+#endif
+#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
+typedef MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativePFactory_kokkos;
+#endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
 #endif

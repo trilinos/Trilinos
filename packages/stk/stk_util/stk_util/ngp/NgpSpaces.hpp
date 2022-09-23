@@ -36,10 +36,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_ENABLE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#endif
-
 namespace stk {
 namespace ngp {
 

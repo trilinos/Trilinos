@@ -52,7 +52,7 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RegionRFactory_kokkos_fwd.hpp"
