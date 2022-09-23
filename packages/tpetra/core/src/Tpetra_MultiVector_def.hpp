@@ -1791,8 +1791,8 @@ namespace Tpetra {
     // - The number of vectors needs to be 1, otherwise we need to
     //   reorder the received data.
     if ((dual_view_type::impl_dualview_is_single_device::value ||
-         (Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_device()) ||
-         (!Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_host())) &&
+         (Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_device()) ||
+         (!Details::Behavior::assumeMpiIsGPUAware () && !this->need_sync_host())) &&
         areRemoteLIDsContiguous &&
         (CM == INSERT || CM == REPLACE) &&
         (getNumVectors() == 1) &&

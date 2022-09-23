@@ -42,6 +42,7 @@
 
 #include "Tpetra_Details_DistributorPlan.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
@@ -222,6 +223,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
+  const bool verbose = Details::Behavior::verbose("DistributorActor");
+  const std::string prefix = *Tpetra::Details::createPrefix(plan.getComm().get(),"Details::DistributorActor","doPosts");
+
   const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
@@ -264,9 +268,21 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
+    if (verbose) {
+      std::ostringstream os;
+      os << prefix << "Posting Recvs: actualNumReceives "<<actualNumReceives<< std::endl;
+      std::cerr << os.str();
+    }
+
     size_t curBufferOffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
       const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
+      if (verbose) {
+        std::ostringstream os;
+        os << prefix << "Post IRecv: myRank " << myRank << ", theirRank " << plan.getProcsFrom()[i]
+          << ", tag " << mpiTag_ << ", numEntries " << curBufLen << std::endl;
+        std::cerr << os.str();
+      }
       if (plan.getProcsFrom()[i] != myRank) {
         // If my process is receiving these packet(s) from another
         // process (not a self-receive):
@@ -298,6 +314,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
+  // Make sure any kernels acting on 'exports' view are complete
+  // Necessary for GPUs since some Kokkos calls are non-blocking
+  if(Behavior::assumeMpiIsGPUAware ())
+    Kokkos::fence();
+
   // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
   //
@@ -327,6 +348,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       size_t p = i + procIndex;
       if (p > (numBlocks - 1)) {
         p -= numBlocks;
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << prefix << "Post ISend: myRank " << myRank << ", theirRank " << plan.getProcsTo()[p]
+          << ", tag " << mpiTag_ << ", numEntries " << plan.getLengthsTo()[p] * numPackets << std::endl;
+        std::cerr << os.str();
       }
 
       if (plan.getProcsTo()[p] != myRank) {
@@ -404,6 +432,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
+      if (verbose) {
+        std::ostringstream os;
+        os << prefix << "Post Send (buffered): myRank " << myRank << ", theirRank " << plan.getProcsTo()[p]
+          << ", tag " << mpiTag_ << ", numEntries " << plan.getLengthsTo()[p] * numPackets << std::endl;
+        std::cerr << os.str();
+      }
+
       if (plan.getProcsTo()[p] != myRank) {
         size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
@@ -413,6 +448,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         }
         ImpView tmpSend =
           subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
+
+        // Make sure the deep copies are complete
+        // Necessary for GPUs since some Kokkos calls are non-blocking
+        if(Behavior::assumeMpiIsGPUAware ())
+          Kokkos::fence();
 
         send<int> (tmpSend,
             as<int> (tmpSend.size ()),

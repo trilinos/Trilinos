@@ -179,10 +179,10 @@ public:
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
   /// device buffers (Kokkos::CudaSpace) as send and receive buffers.
   /// You may control this behavior at run time via the
-  /// <tt>TPETRA_ASSUME_CUDA_AWARE_MPI</tt> environment variable.
+  /// <tt>TPETRA_ASSUME_GPU_AWARE_MPI</tt> environment variable.
   ///
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
-  static bool assumeMpiIsCudaAware ();
+  static bool assumeMpiIsGPUAware ();
 
   /// \brief Whether the CUDA_LAUNCH_BLOCKING environment variable has been set.
   static bool cudaLaunchBlocking ();

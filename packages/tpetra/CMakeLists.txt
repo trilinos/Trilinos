@@ -128,23 +128,44 @@ ENDIF ()
 # safe, but possibly less performant assumption that MPI is not CUDA
 # aware.
 
-SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
 
 ASSERT_DEFINED (TPL_ENABLE_MPI)
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
-MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
+ASSERT_DEFINED (Tpetra_INST_HIP)
+MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
+if(Tpetra_ENABLE_CUDA OR Tpetra_INST_HIP)
+  SET(Tpetra_ENABLE_GPU ON)
+else()
+  SET(Tpetra_ENABLE_GPU OFF)
+endif()
 
-IF (NOT Tpetra_ENABLE_CUDA)
-  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is OFF, so Tpetra will assume that MPI is not CUDA aware.")
-  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+IF (NOT Tpetra_ENABLE_GPU)
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA and Tpetra_INST_HIP are OFF, so Tpetra will assume that MPI is not GPU aware.")
+  SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
 ELSEIF (NOT TPL_ENABLE_MPI)
   # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
   # assume host access of input and output buffers (e.g.,
   # Teuchos::reduceAll on a SerialComm may copy input into output on
   # host).  Thus, it's safer to assume that "MPI" (rather,
   # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
-  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
-  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA or Tpetra_INST_HIP is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not GPU aware.")
+  SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+ELSEIF (DEFINED Tpetra_ASSUME_GPU_AWARE_MPI)
+    # The user set Tpetra_ASSUME_GPU_AWARE_MPI explicitly.
+    # Just use that value as the default.
+    #
+    # It may seem a little strange to set a default value for a
+    # variable that the user explicitly set.  However, it ensures
+    # consistency over all cases and can help debugging.
+  
+    IF (Tpetra_ASSUME_GPU_AWARE_MPI)
+      SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
+      MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is GPU aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
+    ELSE ()
+      SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+      MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT GPU aware.  This is always the safe option, but it may reduce performance if it is not true.")
+    ENDIF ()
 ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
   # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
   # Just use that value as the default.
@@ -154,10 +175,10 @@ ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
   # consistency over all cases and can help debugging.
 
   IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
-    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
     MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is CUDA aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
   ELSE ()
-    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
     MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT CUDA aware.  This is always the safe option, but it may reduce performance if it is not true.")
   ENDIF ()
 ELSE ()
@@ -245,7 +266,7 @@ ELSE ()
         # STRING FIND returns -1 if it didn't find the substring.
         IF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE EQUAL -1))
           MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
-          SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+          SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
         ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
           MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda .  You can still override this at runtime with the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI=ON or OFF.")
         ELSE ()
@@ -260,21 +281,28 @@ ELSE ()
   ENDIF () # Whether we are cross compiling
 ENDIF () # Whether we have CUDA and MPI
 
-# Sanity checks for Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT.
+# Sanity checks for Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT.
 
-IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
-  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
+IF (NOT (DEFINED Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT))
+  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT!")
 ENDIF ()
 
-IF (NOT Tpetra_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
-  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
+IF (NOT Tpetra_ENABLE_GPU AND Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT)
+  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT is ON, but a GPU build is not enabled!")
 ENDIF ()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ASSUME_GPU_AWARE_MPI
+  TPETRA_ASSUME_GPU_AWARE_MPI
+  "Assume that the MPI implementation that Tpetra uses is GPU aware (via HIP or CUDA).  \"GPU aware\" means that MPI can use a GPU device allocations (the result of cuda/hipMalloc) as send and receive buffers.  If MPI is GPU aware, then Tpetra can give GPU device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations.  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
+  ${Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT})
+
+# This is for backward compatability
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ASSUME_CUDA_AWARE_MPI
   TPETRA_ASSUME_CUDA_AWARE_MPI
   "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
-  ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
+  ${Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT})
 
 ######################################################################
 # Explicit template instantiation (ETI) and test instantiation logic
