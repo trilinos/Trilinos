@@ -6,13 +6,13 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 SET(HEADERS "")
 SET(SOURCES "")
 
-APPEND_GLOB( HEADERS 
+APPEND_GLOB( HEADERS
   ./src/Epetra/*.hpp
   ./src/Tpetra/*.hpp
   ./src/*.hpp
 )
 
-APPEND_GLOB( SOURCES 
+APPEND_GLOB( SOURCES
   ./src/Epetra/*.cpp
   ./src/Tpetra/*.cpp
   ./src/*.cpp
@@ -47,6 +47,7 @@ TRIBITS_ADD_EXECUTABLE(
       ./Test_Utils.cpp
       ./Test_Utils.hpp
       ./testdriver.cpp
+      ./CrsMatrixGalleryTpetra.cpp
   COMM mpi serial
   )
 
@@ -76,6 +77,7 @@ TRIBITS_ADD_EXECUTABLE(
       ./Test_Utils.cpp
       ./Test_Utils.hpp
       ./testdriver_tpetra.cpp
+      ./CrsMatrixGalleryTpetra.cpp
   TARGET_DEFINES ${testdriver_TARGET_DEFINES}
   COMM mpi serial
   )
@@ -113,7 +115,7 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   SET(TEST_DRIVER_DATA_FILES
     ${TEST_DRIVER_DATA_FILES}
     nsjac.mm
-    nsjac_1.mm  
+    nsjac_1.mm
     )
 ENDIF()
 
@@ -155,7 +157,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RequestInterface_test 
+  RequestInterface_test
   SOURCES
     unit_tests/tRequestInterface.cpp
     ${UNIT_TEST_DRIVER}
@@ -165,7 +167,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagnosticLinearOp_test 
+  DiagnosticLinearOp_test
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
     ${UNIT_TEST_DRIVER}
@@ -175,7 +177,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonallyScaledPreconditioner 
+  DiagonallyScaledPreconditioner
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
     ${UNIT_TEST_DRIVER}
@@ -185,7 +187,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InverseFactoryOperator 
+  InverseFactoryOperator
   SOURCES
     unit_tests/tInverseFactoryOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -205,7 +207,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DiagonalPreconditionerFactory 
+  DiagonalPreconditionerFactory
   SOURCES
     unit_tests/tDiagonalPreconditionerFactory.cpp
     ${UNIT_TEST_DRIVER}
@@ -215,7 +217,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StratimikosFactory 
+  StratimikosFactory
   SOURCES
     unit_tests/tStratimikosFactory.cpp
     ${UNIT_TEST_DRIVER}
@@ -225,7 +227,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExplicitOps 
+  ExplicitOps
   SOURCES
     unit_tests/tExplicitOps.cpp
     ${UNIT_TEST_DRIVER}
@@ -235,7 +237,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ALOperator 
+  ALOperator
   SOURCES
     unit_tests/tALOperator.cpp
     ${UNIT_TEST_DRIVER}
@@ -265,7 +267,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UtilitiesTests 
+  UtilitiesTests
   SOURCES
     unit_tests/tUtilitiesTests.cpp
     ${UNIT_TEST_DRIVER}
