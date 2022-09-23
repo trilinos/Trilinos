@@ -57,7 +57,6 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
-#include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_HashUtils.hpp" // for pair_hash
@@ -82,7 +81,6 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 class BlockedTpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:
-   typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TLOC;
    typedef BlockedTpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> BTLOC;
    typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
    typedef Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> CrsMatrixType;
@@ -349,17 +347,17 @@ public:
    }
 
    //! Get the domain unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
-   {
-      TEUCHOS_ASSERT(!gidProviders_.empty());
-      return gidProviders_.back()->getGlobalIndexer();
-   }
-
-   //! Get the domain unique global indexer this factory was created with.
    Teuchos::RCP<const panzer::BlockedDOFManager> getDomainBlockedIndexer() const
    {
       TEUCHOS_ASSERT(!gidProviders_.empty());
       return gidProviders_.back()->getBlockedIndexer();
+   }
+
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
+   {
+      TEUCHOS_ASSERT(!gidProviders_.empty());
+      return gidProviders_.back()->getGlobalIndexer();
    }
 
    //! Get the range unique global indexer this factory was created with.

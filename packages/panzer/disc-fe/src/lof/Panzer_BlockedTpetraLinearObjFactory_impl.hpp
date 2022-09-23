@@ -91,17 +91,21 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders)
-  : useColGidProviders_(true), comm_(comm)
+  : comm_(comm)
 {
    for(std::size_t i=0;i<gidProviders.size();i++) {
       gidProviders_.push_back(Teuchos::rcp(new DOFManagerContainer(gidProviders[i])));
    }
 
-  makeRoomForBlocks(getBlockRowCount(), getBlockColCount());
+   if(gidProviders.size() > 1) {
+      useColGidProviders_ = true;
+   }
 
-  // build and register the gather/scatter evaluators with
-  // the base class.
-  this->buildGatherScatterEvaluators(*this);
+   makeRoomForBlocks(getBlockRowCount(), getBlockColCount());
+
+   // build and register the gather/scatter evaluators with
+   // the base class.
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -1171,7 +1175,6 @@ buildTpetraGhostedGraph(int i,int j) const
 
       // loop over the elemnts
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-
          rowProvider->getElementGIDs(elements[elmt],row_gids);
          colProvider->getElementGIDs(elements[elmt],col_gids);
          for(std::size_t row=0;row<row_gids.size();row++)
@@ -1181,7 +1184,7 @@ buildTpetraGhostedGraph(int i,int j) const
 
    // finish filling the graph: Make sure the colmap and row maps coincide to
    //                           minimize calls to LID lookups
-   graph->fillComplete(getColMap(j),getMap(i));
+   graph->fillComplete(map_j, map_i);
 
    return graph;
 }
@@ -1211,7 +1214,7 @@ getGhostedTpetraMatrix(int i,int j) const
 
    Teuchos::RCP<const CrsGraphType> tGraph = getGhostedGraph(i,j);
    Teuchos::RCP<CrsMatrixType> mat = Teuchos::rcp(new CrsMatrixType(tGraph));
-   mat->fillComplete(getColMap(j),getMap(i));
+   mat->fillComplete(map_j,map_i);
 
    return mat;
 }

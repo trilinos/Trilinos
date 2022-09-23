@@ -220,10 +220,8 @@ namespace panzer
       TEST_EQUALITY(mat->productDomain()->dim(), 18);
 
       TEST_EQUALITY(gmat->productRange()->numBlocks(), 2);
-      // // 36 instead of 50
       TEST_EQUALITY(gmat->productRange()->dim(), 50);
       TEST_EQUALITY(gmat->productDomain()->numBlocks(), 1);
-      // // 36 instead of 25
       TEST_EQUALITY(gmat->productDomain()->dim(), 10 + 15);
    }
 
