@@ -198,7 +198,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HDIV;
-  pointType_ = pointType;
+  pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
