@@ -4712,6 +4712,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Scalar alpha,
                      Scalar beta) const
   {
+
+    if (X_in.getNumVectors() != Y_in.getNumVectors()) {
+      std::stringstream ss;
+      ss << __FILE__ << ":" << __LINE__ << ": CrsMatrix::applyNonTranpose: x and y have different numbers of vectors!";
+      throw std::runtime_error(ss.str());
+    }
+
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4726,7 +4733,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
 
     const bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
-    // const bool overlap = true;
+        // && std::is_same<exec_space, Kokkos::Cuda>::value;
+    // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: overlap=" << overlap << "\n";
 
     // the spaces for overlapped SpMV
     exec_space onRankSpace = 
@@ -5227,29 +5235,15 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y may not alias one another.");
     }
 
+    LocalOrdinal nrows = getLocalNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
-    // cwp 06 Apr 2022
-    // working towrads splitting SpMV into local + remote parts
-    // no communication overlap, but check that some base functionality is good
-    // Y = alpha Al X + beta Y
-    // Y = alpha Ar X + 1 * Y
-    if (Details::Behavior::overlapCommunicationAndComputation()) {
-      exec_space defaultSpace;
-      localApplyOnRank(defaultSpace, X, Y, mode, alpha, beta);
-      localApplyOffRank(defaultSpace, X, Y, mode, alpha);
-    } else {
-      LocalOrdinal nrows = getLocalNumRows();
-      LocalOrdinal maxRowImbalance = 0;
-      if(nrows != 0)
-        maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
-
-      if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-        matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
-      else
-        matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
-    }
-
-
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+      matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+    else
+      matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
