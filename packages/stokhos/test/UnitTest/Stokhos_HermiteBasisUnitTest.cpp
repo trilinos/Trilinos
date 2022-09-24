@@ -61,7 +61,7 @@ namespace HermiteBasisUnitTest {
     OrdinalType p;
     Stokhos::HermiteBasis<OrdinalType,ValueType> basis;
     
-    UnitTestSetup() : rtol(1e-12), atol(1e-4), p(10), basis(p) {}
+    UnitTestSetup() : rtol(1e-12), atol(1e-3), p(10), basis(p) {}
     
   };
 
