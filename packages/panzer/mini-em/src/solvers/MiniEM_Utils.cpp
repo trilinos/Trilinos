@@ -1,4 +1,9 @@
+#ifndef _MiniEM_Utils_cpp_
+#define _MiniEM_Utils_cpp_
+
 #include "MiniEM_Utils.hpp"
+#include "Thyra_DiagonalLinearOpBase.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
 
 namespace mini_em {
 
@@ -60,6 +65,12 @@ namespace mini_em {
       } else
         TEUCHOS_ASSERT(false);
     }
+  }
+
+  void describeAndWriteMatrix(const std::string & s, const Thyra::LinearOpBase<double> & op, Teuchos::RCP<Teuchos::FancyOStream> out, const bool doWrite) {
+    describeMatrix(s, op, out);
+    if (doWrite)
+      writeOut(s+".mm", op);
   }
 
 
@@ -172,4 +183,35 @@ namespace mini_em {
     } else
       TEUCHOS_ASSERT(false);
   }
+
+  bool isMatrixFreeOperator(const Teko::LinearOp& op) {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Node = panzer::TpetraNodeType;
+
+    const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> >(op);
+    if(tOp != Teuchos::null) {
+      using Scalar = double;
+      using LocalOrdinal = int;
+      using GlobalOrdinal = panzer::GlobalOrdinal;
+      RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
+      RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator());
+      return crsOp.is_null();
+    } else
+      return false;
+  }
+
+  Teko::LinearOp getLumpedInverseDiagonal(const Teko::LinearOp& op) {
+    using Teuchos::RCP;
+    using Scalar = double;
+    RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(op->domain());
+    RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(op->range());
+    Thyra::assign(ones.ptr(),1.0);
+    // compute lumped diagonal
+    Thyra::apply(*op,Thyra::NOTRANS,*ones,diagonal.ptr());
+    Thyra::reciprocal(*diagonal,diagonal.ptr());
+    return Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
+  }
 }
+
+#endif

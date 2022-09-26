@@ -9,6 +9,8 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
+#include "Panzer_STKConnManager.hpp"
+
 
 namespace mini_em {
 
@@ -70,6 +72,9 @@ namespace mini_em {
       return true;
     };
 
+    void
+    setupNodeOnlyConnManager();
+
   private:
 
     std::string name;
@@ -91,6 +96,8 @@ namespace mini_em {
     Teuchos::RCP<panzer::DOFManager> ho_ugi;
 
     Kokkos::View<LocalOrdinal*,DeviceSpace> owner_d_;
+
+    Teuchos::RCP<panzer_stk::STKConnManager> node_conn_;
   };
 
 }

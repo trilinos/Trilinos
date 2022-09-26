@@ -25,6 +25,9 @@
       <Parameter name="Mesh Type" type="string" value="tet"/>
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
+        <Parameter name="X Procs" type="int" value="-1" />
+        <Parameter name="Y Procs" type="int" value="-1" />
+        <Parameter name="Z Procs" type="int" value="-1" />
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />

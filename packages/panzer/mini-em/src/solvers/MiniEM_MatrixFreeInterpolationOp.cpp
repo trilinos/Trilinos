@@ -7,7 +7,6 @@
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "MiniEM_Utils.hpp"
 
 namespace mini_em {
@@ -78,6 +77,8 @@ namespace mini_em {
 
     precomputeOwners();
 
+    setupNodeOnlyConnManager();
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -114,15 +115,15 @@ namespace mini_em {
       // loop over element worksets
       std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
       Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
-      Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds.size());
+      Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
-      for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
+      for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
         using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
         Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
                              range_type(elemIter, std::min(elemIter+numCells,
-                                                           elementIds.size())),
-                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
-                               auto elemId = elementIds[cellNo];
+                                                           elementIds_d.extent(0))),
+                             KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+                               auto elemId = elementIds_d(cellNo2);
 
                                // loop over HO LIDs
                                for(size_t hoIter = 0; hoIter < hoLIDs_d.extent(1); ++hoIter) {
@@ -134,6 +135,25 @@ namespace mini_em {
       }
     }
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MatrixFreeInterpolationOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  setupNodeOnlyConnManager() {
+    Teuchos::RCP<const panzer::ConnManager> conn = blockedDOFMngr->getConnManager();
+
+    // assume only one cell toplogy per rank
+    std::vector<shards::CellTopology> topologies;
+    conn->getElementBlockTopologies(topologies);
+    shards::CellTopology topology = topologies[0];
+    // set up a node only conn manager
+    auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
+    auto node_fieldPattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(node_basis));
+    node_conn_ = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager>(conn->noConnectivityClone(),true);
+    node_conn_->buildConnectivity(*node_fieldPattern);
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -165,20 +185,25 @@ namespace mini_em {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_dynamic_cast;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
     typedef PHX::Device DeviceSpace;
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-    typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
+    typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
 
     using view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev;
     using const_view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev::const_type;
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans ") + name));
 
+    using TST = Teuchos::ScalarTraits<Scalar>;
+    const Scalar ZERO = TST::zero();
+    if (beta == ZERO)
+      Y.putScalar(ZERO);
     colmapMV_->doImport(X, *import_,Tpetra::INSERT);
 
-    const_view_t lclX = colmapMV_->getLocalViewDevice(Tpetra::Access::ReadOnly);;
+    const_view_t lclX = colmapMV_->getLocalViewDevice(Tpetra::Access::ReadOnly);
     view_t lclY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
     size_t numVectors = lclY.extent(1);
     LocalOrdinal lclTargetSize = getRangeMap()->getLocalNumElements();
@@ -205,11 +230,11 @@ namespace mini_em {
     // num vertices in an element
     const int numElemVertices = topology.getVertexCount();
 
-    // set up a node only conn manager
-    auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
-    auto node_fieldPattern = rcp(new panzer::Intrepid2FieldPattern(node_basis));
-    RCP<panzer::ConnManager> node_conn = Teuchos::rcp_dynamic_cast<panzer::ConnManager>(conn->noConnectivityClone(),true);
-    node_conn->buildConnectivity(*node_fieldPattern);
+    // // set up a node only conn manager
+    // auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
+    // auto node_fieldPattern = rcp(new panzer::Intrepid2FieldPattern(node_basis));
+    // RCP<panzer_stk::STKConnManager> node_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager>(conn->noConnectivityClone(),true);
+    // node_conn->buildConnectivity(*node_fieldPattern);
 
     if (op == Intrepid2::OPERATOR_VALUE) {
       TEUCHOS_ASSERT(hoCardinality >= loCardinality);
@@ -222,12 +247,11 @@ namespace mini_em {
       numCells = std::min(maxNumElementsPerBlock, worksetSize);
     else
       numCells = worksetSize;
-    DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
-    DynRankDeviceView             basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
+    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
+    DynRankDeviceView basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
 
-    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  numCells);
-    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", numCells, numElemVertices);
-    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", numCells, numElemVertices);
+    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d ("elemOrts_d",  numCells);
+    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>         elemNodes_d("elemNodes_d", numCells, numElemVertices);
 
     // the ranks of these depend on dimension
     DynRankDeviceView ho_dofCoeffs_d;
@@ -243,13 +267,13 @@ namespace mini_em {
       //  numCells, numFields=loCardinality, numPoints=hoCardinality, (spatialDim)
       //
       if (temp.rank() == 3) {
-        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
-        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
-        reducedValuesAtDofCoordsOriented_d    = DynRankDeviceView("reducedValuesAtDofCoordsNonOriented_d", numCells, temp.extent(1), temp.extent(2), numVectors);
+        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+        valuesAtDofCoordsOriented_d        = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+        reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), temp.extent(2), numVectors);
       } else {
-        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
-        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
-        reducedValuesAtDofCoordsOriented_d    = DynRankDeviceView("reducedValuesAtDofCoordsNonOriented_d", numCells, temp.extent(1), 1, numVectors);
+        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
+        valuesAtDofCoordsOriented_d        = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1));
+        reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), 1, numVectors);
       }
     }
 
@@ -266,6 +290,16 @@ namespace mini_em {
     auto hoLIDs_d = ho_ugi->getLIDs();
     auto loLIDs_d = lo_ugi->getLIDs();
 
+    auto node_connectivity_h = node_conn_->getConnectivityView();
+    Kokkos::View<GlobalOrdinal*,DeviceSpace> node_connectivity_d("node_connectivity_d", node_connectivity_h.extent(0));
+    Kokkos::deep_copy(node_connectivity_d, node_connectivity_h);
+    auto node_connectivitySize_h = node_conn_->getConnectivitySizeView();
+    Kokkos::View<LocalOrdinal*,DeviceSpace> node_connectivitySize_d("node_connectivitySize_d", node_connectivitySize_h.extent(0));
+    Kokkos::deep_copy(node_connectivitySize_d, node_connectivitySize_h);
+    auto node_elementLidToConn_h = node_conn_->getElementLidToConnView();
+    Kokkos::View<LocalOrdinal*,DeviceSpace> node_elementLidToConn_d("node_elementLidToConn_d", node_elementLidToConn_h.extent(0));
+    Kokkos::deep_copy(node_elementLidToConn_d, node_elementLidToConn_h);
+
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -273,25 +307,25 @@ namespace mini_em {
 
       // loop over element worksets
       std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
-      for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
+      Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
+      Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
+      Kokkos::deep_copy(elementIds_d, elementIds_h);
+      for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
 
         // get element orientations
-        // TODO: There does not seem to be a Kokkos interface, so this has to run on host.
-        for (int cellNo = 0; cellNo < numCells; cellNo++) {
-          if (elemIter+cellNo >= elementIds.size())
-            continue;
-          const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[elemIter+cellNo]);
-          for(int i = 0; i < numElemVertices; i++)
-            elemNodes_h(cellNo, i) = node_ids[i];
-        }
-        Kokkos::deep_copy(elemNodes_d, elemNodes_h);
-
+        Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp::connectivity",
+                             range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
+                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
+                               LocalOrdinal cellNo2 = elemIter+cellNo;
+                               LocalOrdinal elementID = elementIds_d(cellNo2);
+                               LocalOrdinal k = node_elementLidToConn_d(elementID);
+                               for(int i = 0; i < node_connectivitySize_d(elementID); i++)
+                                 elemNodes_d(cellNo, i) = node_connectivity_d(k+i);
+                             });
         ots::getOrientation(elemOrts_d, elemNodes_d, topology);
 
         // HO dof coordinates and coefficients
         li::getDofCoordsAndCoeffs(ho_dofCoords_d, ho_dofCoeffs_d, ho_basis.get(), elemOrts_d);
-
-        Teuchos::TimeMonitor tm1(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans 1 ") + name));
 
         // compute values of op * (LO basis) at HO dof coords on reference element
         // TODO: Once this is supported by Intrepid2, make this a parallel_for.
@@ -300,8 +334,6 @@ namespace mini_em {
                               Kokkos::subview(ho_dofCoords_d, cellNo, Kokkos::ALL(), Kokkos::ALL()),
                               op);
 
-        Teuchos::TimeMonitor tm2(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans 2 ") + name));
-
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
         ots::modifyBasisByOrientation(valuesAtDofCoordsOriented_d,
@@ -309,28 +341,24 @@ namespace mini_em {
                                       elemOrts_d,
                                       lo_basis.get());
 
-        Teuchos::TimeMonitor tm3(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans 3 ") + name));
+        Kokkos::deep_copy(reducedValuesAtDofCoordsOriented_d, 0.0);
+        Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp:cellLoop1",
+                             range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
+                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
+                               LocalOrdinal cellNo2 = elemIter+cellNo;
+                               LocalOrdinal elemId = elementIds_d(cellNo2);
+                               for(size_t loIter=0; loIter<loCardinality; loIter++) {
+                                 LocalOrdinal J = loLIDs_d(elemId, loIter);
+                                 for(size_t hoIter=0; hoIter<hoCardinality; hoIter++) {
+                                   for(size_t d=0; d<valuesAtDofCoordsOriented_d.extent(3); d++) {
+                                     Scalar val = valuesAtDofCoordsOriented_d(cellNo, loIter, hoIter, d);
+                                     for (size_t j = 0; j<numVectors; ++j)
+                                       reducedValuesAtDofCoordsOriented_d(cellNo, hoIter, d, j) += val * lclX(J, j);
+                                   }
+                                 }
+                               }
+                             });
 
-        {
-          Kokkos::deep_copy(reducedValuesAtDofCoordsOriented_d, 0.0);
-
-          for (int cellNo = 0; cellNo < numCells; cellNo++) {
-            auto cellNo2 = elemIter+cellNo;
-            auto elemId = elementIds[cellNo2];
-            for(size_t loIter=0; loIter<loCardinality; loIter++) {
-              LocalOrdinal J = loLIDs_d(elemId, loIter);
-              for(size_t hoIter=0; hoIter<hoCardinality; hoIter++) {
-                for(size_t d=0; d<valuesAtDofCoordsOriented_d.extent(3); d++) {
-                  Scalar val = valuesAtDofCoordsOriented_d(cellNo, loIter, hoIter, d);
-                  for (size_t j = 0; j<numVectors; ++j)
-                    reducedValuesAtDofCoordsOriented_d(cellNo, hoIter, d, j) += val * lclX(J, j);
-                }
-              }
-            }
-          }
-        }
-
-        Teuchos::TimeMonitor tm4(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans 4 ") + name));
 
         for (size_t j = 0; j<numVectors; ++j)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), j),
@@ -340,14 +368,12 @@ namespace mini_em {
         auto owner_d = owner_d_;
 
         // ToDo: Make this a functor.
-        //       Convert elementIds to Kokkos::View on device
-        using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
-        Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
+        Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop2",
                              range_type(elemIter, std::min(elemIter+numCells,
-                                                           elementIds.size())),
+                                                           elementIds_d.extent(0))),
                              KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
-                               auto elemId = elementIds[cellNo2];
                                LocalOrdinal cellNo = cellNo2-elemIter;
+                               LocalOrdinal elemId = elementIds_d(cellNo2);
 
                                // loop over HO LIDs
                                for(size_t hoIter = 0; hoIter < hoLIDs_d.extent(1); ++hoIter) {
@@ -360,10 +386,9 @@ namespace mini_em {
                                      Scalar val = basisCoeffsLIOriented_d(cellNo, hoIter, j);
                                      lclY(ho_row,j) = beta*lclY(ho_row,j) + alpha*val;
                                    }
-                                 } //end if owned
-                               } //end HO LID loop
-                             } //end workset loop
-                             );
+                                 } // end if owned
+                               } // end HO LID loop
+                             }); // end element loop
       } //end workset loop
     } //end element block loop
 
@@ -380,11 +405,12 @@ namespace mini_em {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_dynamic_cast;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
     typedef PHX::Device DeviceSpace;
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-    typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
+    typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
 
     using TST = Teuchos::ScalarTraits<Scalar>;
     const Scalar ZERO = TST::zero();
@@ -393,10 +419,9 @@ namespace mini_em {
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans ") + name));
 
-    const_view_t lclX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);;
-    // view_t lclY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    const_view_t lclX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     colmapMV_->putScalar(ZERO);
-    view_t lclYtemp = colmapMV_->getLocalViewDevice(Tpetra::Access::OverwriteAll);;
+    view_t lclYtemp = colmapMV_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // get the LO and HO bases
     auto lo_fieldPattern = lo_ugi->getFieldPattern(lo_basis_name);
@@ -420,11 +445,11 @@ namespace mini_em {
     // num vertices in an element
     const int numElemVertices = topology.getVertexCount();
 
-    // set up a node only conn manager
-    auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
-    auto node_fieldPattern = rcp(new panzer::Intrepid2FieldPattern(node_basis));
-    RCP<panzer::ConnManager> node_conn = Teuchos::rcp_dynamic_cast<panzer::ConnManager>(conn->noConnectivityClone(),true);
-    node_conn->buildConnectivity(*node_fieldPattern);
+    // // set up a node only conn manager
+    // auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
+    // auto node_fieldPattern = rcp(new panzer::Intrepid2FieldPattern(node_basis));
+    // RCP<panzer_stk::STKConnManager> node_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager>(conn->noConnectivityClone(),true);
+    // node_conn->buildConnectivity(*node_fieldPattern);
 
     if (op == Intrepid2::OPERATOR_VALUE) {
       TEUCHOS_ASSERT(hoCardinality >= loCardinality);
@@ -437,12 +462,11 @@ namespace mini_em {
       numCells = std::min(maxNumElementsPerBlock, worksetSize);
     else
       numCells = worksetSize;
-    DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
-    DynRankDeviceView             basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
+    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
+    DynRankDeviceView basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
 
-    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  numCells);
-    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", numCells, numElemVertices);
-    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", numCells, numElemVertices);
+    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d ("elemOrts_d",  numCells);
+    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>         elemNodes_d("elemNodes_d", numCells, numElemVertices);
 
     // the ranks of these depend on dimension
     DynRankDeviceView ho_dofCoeffs_d;
@@ -477,6 +501,7 @@ namespace mini_em {
 
     auto hoLIDs_d = ho_ugi->getLIDs();
     auto loLIDs_d = lo_ugi->getLIDs();
+    Kokkos::fence();
 
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
@@ -485,23 +510,40 @@ namespace mini_em {
 
       // loop over element worksets
       std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
-      for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
+      Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
+      Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
+      Kokkos::deep_copy(elementIds_d, elementIds_h);
+      Kokkos::fence();
+      for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
 
         // get element orientations
-        // TODO: There does not seem to be a Kokkos interface, so this has to run on host.
-        for (int cellNo = 0; cellNo < numCells; cellNo++) {
-          if (elemIter+cellNo >= elementIds.size())
-            continue;
-          const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[elemIter+cellNo]);
-          for(int i = 0; i < numElemVertices; i++)
-            elemNodes_h(cellNo, i) = node_ids[i];
-        }
-        Kokkos::deep_copy(elemNodes_d, elemNodes_h);
+        auto node_connectivity_h = node_conn_->getConnectivityView();
+        Kokkos::View<GlobalOrdinal*,DeviceSpace> node_connectivity_d("node_connectivity_d", node_connectivity_h.extent(0));
+        Kokkos::deep_copy(node_connectivity_d, node_connectivity_h);
+        auto node_connectivitySize_h = node_conn_->getConnectivitySizeView();
+        Kokkos::View<LocalOrdinal*,DeviceSpace> node_connectivitySize_d("node_connectivitySize_d", node_connectivitySize_h.extent(0));
+        Kokkos::deep_copy(node_connectivitySize_d, node_connectivitySize_h);
+        auto node_elementLidToConn_h = node_conn_->getElementLidToConnView();
+        Kokkos::View<LocalOrdinal*,DeviceSpace> node_elementLidToConn_d("node_elementLidToConn_d", node_elementLidToConn_h.extent(0));
+        Kokkos::deep_copy(node_elementLidToConn_d, node_elementLidToConn_h);
+        Kokkos::fence();
 
+        Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp::connectivity",
+                             range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
+                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
+                               LocalOrdinal cellNo2 = elemIter+cellNo;
+                               LocalOrdinal elementID = elementIds_d(cellNo2);
+                               LocalOrdinal k = node_elementLidToConn_d(elementID);
+                               for(int i = 0; i < node_connectivitySize_d(elementID); i++)
+                                 elemNodes_d(cellNo, i) = node_connectivity_d(k+i);
+                             });
+        Kokkos::fence();
         ots::getOrientation(elemOrts_d, elemNodes_d, topology);
+        Kokkos::fence();
 
         // HO dof coordinates and coefficients
         li::getDofCoordsAndCoeffs(ho_dofCoords_d, ho_dofCoeffs_d, ho_basis.get(), elemOrts_d);
+        Kokkos::fence();
 
         // compute values of op * (LO basis) at HO dof coords on reference element
         // TODO: Once this is supported by Intrepid2, make this a parallel_for.
@@ -509,6 +551,7 @@ namespace mini_em {
           lo_basis->getValues(Kokkos::subview(valuesAtDofCoordsNonOriented_d, cellNo, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()),
                               Kokkos::subview(ho_dofCoords_d, cellNo, Kokkos::ALL(), Kokkos::ALL()),
                               op);
+        Kokkos::fence();
 
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
@@ -516,31 +559,31 @@ namespace mini_em {
                                       valuesAtDofCoordsNonOriented_d,
                                       elemOrts_d,
                                       lo_basis.get());
+        Kokkos::fence();
 
-        //get basis coefficients of LO basis functions wrt HO basis
+        // get basis coefficients of LO basis functions wrt HO basis
         for(size_t loIter=0; loIter<loCardinality; loIter++)
           // Get basis coeffs wrt HO basis on reference element.
           // basisCoeffsLI has dimensions (numCells, numFields=hoCardinality, loCardinality)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
                              Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
                              ho_dofCoeffs_d);
+        Kokkos::fence();
 
         auto owner_d = owner_d_;
 
 
         // ToDo: Make this a functor
-        using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
         Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
                              range_type(elemIter, std::min(elemIter+numCells,
-                                                           elementIds.size())),
+                                                           elementIds_d.extent(0))),
                              KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
-                               auto elemId = elementIds[cellNo2];
                                LocalOrdinal cellNo = cellNo2-elemIter;
+                               LocalOrdinal elemId = elementIds_d(cellNo2);
 
                                // loop over HO LIDs
                                for(size_t hoIter = 0; hoIter < hoLIDs_d.extent(1); ++hoIter) {
                                  LocalOrdinal ho_row = hoLIDs_d(elemId, hoIter);
-
 
                                  // if owned
                                  if ((ho_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(ho_row) == elemId)) {
@@ -549,25 +592,21 @@ namespace mini_em {
                                      LocalOrdinal J = loLIDs_d(elemId, loIter);
                                      Scalar val = basisCoeffsLIOriented_d(cellNo, hoIter, loIter);
                                      for (size_t j = 0; j<lclYtemp.extent(1); ++j)
-                                       lclYtemp(J,j) += alpha*val*lclX(ho_row,j);
+                                       Kokkos::atomic_add(&lclYtemp(J,j), alpha*val*lclX(ho_row,j));
                                    }
-
                                  } //end if owned
-
-
                                } //end HO LID loop
-                             } //end workset loop
-                             );
+                             }); // end element loop
       } //end workset loop
     } //end element block loop
+    Kokkos::fence();
 
-    if (beta == ZERO) {
+    if (beta == ZERO)
       Y.putScalar(ZERO);
-      Y.doExport(*colmapMV_, *import_, Tpetra::ADD_ASSIGN);
-    } else {
+    else
       Y.scale(beta);
-      Y.doExport(*colmapMV_, *import_, Tpetra::ADD_ASSIGN);
-    }
+    Y.doExport(*colmapMV_, *import_, Tpetra::ADD_ASSIGN);
+    Kokkos::fence();
   }
 
 }

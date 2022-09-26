@@ -508,11 +508,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
       for (auto it = pCoarsenSchedule.begin(); it != pCoarsenSchedule.end(); ++it) {
         std::string auxNodalField, auxEdgeField, opPostfix;
+        int polynomialOrder = *it;
         // Are we setting up lower order operators?
-        if (*it != basis_order) {
-          auxNodalField = "AUXILIARY_NODE_" + std::to_string(*it);
-          auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(*it);
-          opPostfix = " "+std::to_string(*it);
+        if (polynomialOrder != basis_order) {
+          auxNodalField = "AUXILIARY_NODE_" + std::to_string(polynomialOrder);
+          auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(polynomialOrder);
+          opPostfix = " "+std::to_string(polynomialOrder);
         } else {
           auxNodalField = "AUXILIARY_NODE";
           auxEdgeField = "AUXILIARY_EDGE";
@@ -530,7 +531,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           gradPL.set("Source", auxNodalField);
           gradPL.set("Target", auxEdgeField);
           gradPL.set("Op", "grad");
-          gradPL.set("matrix-free", matrixFree);
+          gradPL.set("matrix-free", polynomialOrder != 1 ? matrixFree : false);
           aux_ops_pl.sublist("Discrete Gradient"+opPostfix) = gradPL;
         }
 
@@ -543,8 +544,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         schurComplementPL.set("Permittivity", "epsilon");
         schurComplementPL.set("Conductivity", "sigma");
         schurComplementPL.set("Inverse Permeability", "1/mu");
-        schurComplementPL.set("Basis Order", *it);
-        schurComplementPL.set("Integration Order", 2*(*it));
+        schurComplementPL.set("Basis Order", polynomialOrder);
+        schurComplementPL.set("Integration Order", 2*polynomialOrder);
         auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics"+opPostfix) = schurComplementPL;
 
         if (solver == MUELU_MAXWELL_HO) {
@@ -556,8 +557,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           projectedSchurComplementPL.set("Model ID", auxModelID);
           projectedSchurComplementPL.set("Permittivity", "epsilon");
           projectedSchurComplementPL.set("Conductivity", "sigma");
-          projectedSchurComplementPL.set("Basis Order", *it);
-          projectedSchurComplementPL.set("Integration Order", 2*(*it));
+          projectedSchurComplementPL.set("Basis Order", polynomialOrder);
+          projectedSchurComplementPL.set("Integration Order", 2*polynomialOrder);
           auxPhysicsBlocksPL.sublist("Auxiliary Node ProjectedSchurComplement"+opPostfix) = projectedSchurComplementPL;
         }
       }
@@ -615,13 +616,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       ++it;
       while (it != pCoarsenSchedule.end()) {
         int q = *it;
-
-        auto interpPLgrad = Teuchos::ParameterList();
-        interpPLgrad.set("Source", "AUXILIARY_NODE_"+std::to_string(q));
-        interpPLgrad.set("Target", p != basis_order ? "AUXILIARY_NODE_"+std::to_string(p) : "AUXILIARY_NODE");
-        interpPLgrad.set("Op", "value");
-        interpPLgrad.set("matrix-free", matrixFree);
-        aux_ops_pl.sublist("Interpolation Hgrad " + std::to_string(q) + "->" + std::to_string(p)) = interpPLgrad;
 
         auto interpPLcurl = Teuchos::ParameterList();
         interpPLcurl.set("Source", "AUXILIARY_EDGE_"+std::to_string(q));
