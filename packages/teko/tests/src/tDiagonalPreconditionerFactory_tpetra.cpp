@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -73,9 +73,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
+#include "CrsMatrixGalleryTpetra.hpp"
 
 #include "Teko_Utilities.hpp"
 #include "Teko_TpetraHelpers.hpp"
@@ -98,28 +96,24 @@ tDiagonalPreconditionerFactory_tpetra::~tDiagonalPreconditionerFactory_tpetra() 
 
 void tDiagonalPreconditionerFactory_tpetra::initializeTest()
 {
-   const Epetra_Comm & comm_epetra = *GetComm();
-   const RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
-
    tolerance_ = 1.0e-14;
 
    int nx = 39; // essentially random values
    int ny = 53;
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d",comm_epetra, false);
+   CrsMatrixGallery FGallery("laplace_2d");
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
-   RCP<Epetra_CrsMatrix> epetraF = rcp(new Epetra_CrsMatrix(*FGallery.GetMatrix()));
-   epetraF->FillComplete(true);
-   tpetraF = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(epetraF,comm_tpetra);
-   F_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getRangeMap()),tpetraF);
+   F = FGallery.GetMatrix();
+   F_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(F->getDomainMap()),
+       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(F->getRangeMap()), F);
 }
 
 
 void tDiagonalPreconditionerFactory_tpetra::buildParameterList(int blocksize){
-  const Tpetra::CrsMatrix<ST,LO,GO,NT> *F=&*tpetraF;
-  TEUCHOS_ASSERT(F);
+  TEUCHOS_ASSERT(F != Teuchos::null);
 
   if(blocksize > 0) {
 
@@ -202,7 +196,7 @@ bool tDiagonalPreconditionerFactory_tpetra::test_initializePrec(int verbosity,st
   // Check that a diagonal linear op was produced
   RCP<const Thyra::DiagonalLinearOpBase<ST> > dop = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(pop);
   if(dop.is_null())
-    return false;  
+    return false;
 
   return true;
 }
@@ -210,7 +204,7 @@ bool tDiagonalPreconditionerFactory_tpetra::test_initializePrec(int verbosity,st
 bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity,std::ostream & os,int blocksize)
 {
   buildParameterList(blocksize);
- 
+
   // Cleanup
   delete fact;
 
@@ -224,8 +218,8 @@ bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity,std::o
 
 bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity,std::ostream & os)
 {
-  RCP<const Tpetra::Map<LO,GO,NT> > domain_= tpetraF->getDomainMap();
-  RCP<const Tpetra::Map<LO,GO,NT> > range_ = tpetraF->getRangeMap();
+  RCP<const Tpetra::Map<LO,GO,NT> > domain_= F->getDomainMap();
+  RCP<const Tpetra::Map<LO,GO,NT> > range_ = F->getRangeMap();
 
   RCP<Tpetra::Vector<ST,LO,GO,NT> > X = Tpetra::createVector<ST,LO,GO,NT>(domain_);
   RCP<Tpetra::Vector<ST,LO,GO,NT> > Y = Tpetra::createVector<ST,LO,GO,NT>(range_);
@@ -233,22 +227,22 @@ bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity,std::ost
   Y->putScalar(0.0);Z->putScalar(1.0);
 
   // Let X = diag(F). Then applying the preconditioner to X should yield a vector of ones
-  tpetraF->getLocalDiagCopy(*X);
+  F->getLocalDiagCopy(*X);
 
   // Build Thyra wrappers
   MultiVector tX=Thyra::createVector<ST,LO,GO,NT>(X,Thyra::createVectorSpace<ST,LO,GO,NT>(domain_));
   MultiVector tY=Thyra::createVector<ST,LO,GO,NT>(Y,Thyra::createVectorSpace<ST,LO,GO,NT>(range_));
-  
+
   // Do the apply via thyra
   Teko::applyOp(pop,tX,tY,1.0,0.0);
-  
+
   // Compare solutions
   double znrm,dnrm;
   znrm = Z->norm2();
   Z->update(-1.0,*Y,1.0);
   dnrm = Z->norm2();
 
-  if(!tpetraF->getComm()->getRank())
+  if(!F->getComm()->getRank())
     std::cout << "||Z-Y||/||Z|| = " << dnrm/znrm << std::endl;
   if(dnrm/znrm > 1e-12) return false;
   else return true;

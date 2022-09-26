@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -69,8 +69,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "CrsMatrixGalleryTpetra.hpp"
 
 #include "Teko_TpetraOperatorWrapper.hpp"
 #include "Teko_TpetraHelpers.hpp"
@@ -132,42 +131,38 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
 
    int nx = 39; // essentially random values
    int ny = 53;
-   
+
    TEST_MSG( "   tTpetraOperatorWrapper::test_functionality: "
          << "Using Trilinos_Util to create test matrices" );
 
    // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm_epetra,false);
+   CrsMatrixGallery FGallery("recirc_2d");
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
-   Epetra_CrsMatrix & epetraF = FGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraF = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraF),comm_tpetra);
+   const auto F = FGallery.GetMatrix();
 
-   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm_epetra,false);
+   CrsMatrixGallery CGallery("laplace_2d");
    CGallery.Set("nx",nx);
    CGallery.Set("ny",ny);
-   Epetra_CrsMatrix & epetraC = CGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraC = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraC),comm_tpetra);
+   const auto C = CGallery.GetMatrix();
 
-   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm_epetra,false);
+   CrsMatrixGallery BGallery("diag");
    BGallery.Set("nx",nx*ny);
    BGallery.Set("a",5.0);
-   Epetra_CrsMatrix & epetraB = BGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraB = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraB),comm_tpetra);
+   const auto B = BGallery.GetMatrix();
 
-   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm_epetra,false);
+   CrsMatrixGallery BtGallery("diag");
    BtGallery.Set("nx",nx*ny);
    BtGallery.Set("a",3.0);
-   Epetra_CrsMatrix & epetraBt = BtGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraBt = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraBt),comm_tpetra);
+   const auto Bt = BtGallery.GetMatrix();
 
    // load'em up in a thyra operator
    TEST_MSG("   tTpetraOperatorWrapper::test_functionality: "
          << " Building block2x2 Thyra matrix ... wrapping in TpetraOperatorWrapper");
-   const RCP<const LinearOpBase<double> > A = Thyra::block2x2<double>(Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getRangeMap()),tpetraF),
-                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraBt->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraBt->getRangeMap()),tpetraBt),
-                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraB->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraB->getRangeMap()),tpetraB),
-                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraC->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraC->getRangeMap()),tpetraC),"A");
+   const RCP<const LinearOpBase<double> > A = Thyra::block2x2<double>(Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(F->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(F->getRangeMap()),F),
+                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(Bt->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(Bt->getRangeMap()),Bt),
+                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(B->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(B->getRangeMap()),B),
+                                                                      Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(C->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(C->getRangeMap()),C),"A");
 
    // const RCP<Thyra::TpetraOperatorWrapper> epetra_A = rcp(new Thyra::TpetraOperatorWrapper(A));
    const RCP<Teko::TpetraHelpers::TpetraOperatorWrapper> tpetra_A = rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(A));
@@ -177,29 +172,29 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
    const RCP<const Tpetra::Map<LO,GO,NT> >& domainMap = tpetra_A->getDomainMap();
 
    // check to see that the number of global elements is correct
-   TEST_EQUALITY(rangeMap->getGlobalNumElements(),(Tpetra::global_size_t) 2*nx*ny, 
+   TEST_EQUALITY(rangeMap->getGlobalNumElements(),(Tpetra::global_size_t) 2*nx*ny,
             "   tTpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
          << "checking rangeMap size "
-         << "( map = " << rangeMap->getGlobalNumElements() 
+         << "( map = " << rangeMap->getGlobalNumElements()
          << ", true = " << 2*nx*ny << " )");
 
    // check to see that the number of global elements is correct
    TEST_EQUALITY(domainMap->getGlobalNumElements(),(Tpetra::global_size_t) 2*nx*ny,
             "   tTpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
          << "checking domainMap size "
-         << "( map = " << domainMap->getGlobalNumElements() 
+         << "( map = " << domainMap->getGlobalNumElements()
          << ", true = " << 2*nx*ny << " )" );
 
    // largest global ID should be one less then the # of elements
    TEST_EQUALITY(rangeMap->getGlobalNumElements()-1,(Tpetra::global_size_t) rangeMap->getMaxAllGlobalIndex(),
             "   tTpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
-         << " checking largest range element " 
-         << "( largest = " << rangeMap->getMaxAllGlobalIndex() 
+         << " checking largest range element "
+         << "( largest = " << rangeMap->getMaxAllGlobalIndex()
          << ", true = " <<  rangeMap->getGlobalNumElements()-1 << " )" );
    TEST_EQUALITY(domainMap->getGlobalNumElements()-1,(Tpetra::global_size_t) domainMap->getMaxAllGlobalIndex(),
             "   tTpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
-         << " checking largest domain element " 
-         << "( largest = " << domainMap->getMaxAllGlobalIndex() 
+         << " checking largest domain element "
+         << "( largest = " << domainMap->getMaxAllGlobalIndex()
          << ", true = " <<  domainMap->getGlobalNumElements()-1 << " )" );
 
    RCP<const Teko::TpetraHelpers::MappingStrategy> ms = tpetra_A->getMapStrategy();
@@ -210,16 +205,16 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
       const RCP<MultiVectorBase<ST> > tv = Thyra::createMembers(A->domain(),1);
       Thyra::randomize(-100.0,100.0,tv.ptr());
       // const Thyra::ConstVector<double> handle_tv(tv);
-      const RCP<const MultiVectorBase<ST> > tv_0 
+      const RCP<const MultiVectorBase<ST> > tv_0
             = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)->getMultiVectorBlock(0);
-      const RCP<const MultiVectorBase<ST> > tv_1 
+      const RCP<const MultiVectorBase<ST> > tv_1
             = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)->getMultiVectorBlock(1);
       const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
       const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
 
       LO off_0 = vv_0.globalOffset();
       LO off_1 = vv_1.globalOffset();
-      
+
       // create its Tpetra counter part
       const RCP<Tpetra::Vector<ST,LO,GO,NT> > ev = rcp(new Tpetra::Vector<ST,LO,GO,NT>(tpetra_A->getDomainMap()));
       ms->copyThyraIntoTpetra(tv,*ev);
@@ -257,9 +252,9 @@ TEST_MSG("domainMap->getLocalNumElements() = " << domainMap->getLocalNumElements
 
       // create its thyra counterpart
       const RCP<MultiVectorBase<ST> > tv = Thyra::createMembers(A->domain(),1);
-      const RCP<const MultiVectorBase<ST> > tv_0 
+      const RCP<const MultiVectorBase<ST> > tv_0
             = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)->getMultiVectorBlock(0);
-      const RCP<const MultiVectorBase<ST> > tv_1 
+      const RCP<const MultiVectorBase<ST> > tv_1
             = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)->getMultiVectorBlock(1);
       const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
       const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
@@ -268,7 +263,7 @@ TEST_MSG("domainMap->getLocalNumElements() = " << domainMap->getLocalNumElements
       LO off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST> >(tv_1->range())->localOffset();
 
       ms->copyTpetraIntoThyra(*ev,tv.ptr());
-   
+
       // compare handle_tv to ev!
       TEST_EQUALITY((Tpetra::global_size_t) tv->range()->dim(),ev->getGlobalLength(),
             "   tTpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
