@@ -62,6 +62,8 @@ namespace Adelus {
   inline 
   void exchange_pivots(HandleType& ahandle, PViewType& lpiv_view, PViewType& permute) {
 
+    using pival_type  = typename PViewType::value_type;
+
     MPI_Comm comm     = ahandle.get_comm();
     MPI_Comm row_comm = ahandle.get_row_comm();
     int me            = ahandle.get_myrank();
@@ -91,18 +93,18 @@ namespace Adelus {
         else {//on different ranks
           if (me == pivot_col) {
             int j=k/nprocs_row;
-            MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,comm);
+            MPI_Send(reinterpret_cast<char*>(lpiv_view.data()+j),sizeof(pival_type),MPI_CHAR,rank_row,0,comm);
           }
           if (me == rank_row) {
-            int i=k/nprocs_col;
-            MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,comm,&msgstatus);
+            int i=k/nprocs_col; 
+            MPI_Recv(reinterpret_cast<char*>(permute.data()+i),sizeof(pival_type),MPI_CHAR,pivot_col,0,comm,&msgstatus);
           }
         }
       }
     }
     MPI_Barrier(comm);
     // Broadcast to the rest of the processors in row_comm
-    MPI_Bcast(permute.data(),my_rows,MPI_INT,0,row_comm);
+    MPI_Bcast(reinterpret_cast<char*>(permute.data()),my_rows*sizeof(pival_type),MPI_CHAR,0,row_comm);
 
   }// End of function exchange_pivots
   
@@ -167,7 +169,7 @@ namespace Adelus {
       for (int k=J+1;k<=nrows_matrix-1;k++) {
         k_row=k%nprocs_col;
         if (myrow==k_row)
-          pivot_row=permute(k/nprocs_col);
+          pivot_row = static_cast<int>(permute(k/nprocs_col));
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         if (k != pivot_row) {
           if (myrow == k_row) {
@@ -195,7 +197,7 @@ namespace Adelus {
       int max_lcol_k=0;   // max. local column index in the k row
       k_row=k%nprocs_col; // mesh row id (in the MPI process mesh) of the process that holds k
 
-      if (myrow==k_row) pivot_row = permute(k/nprocs_col);
+      if (myrow==k_row) pivot_row = static_cast<int>(permute(k/nprocs_col));
       MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
 
       int max_gcol_pivot=pivot_row-1;          // max. global column index in the pivot row

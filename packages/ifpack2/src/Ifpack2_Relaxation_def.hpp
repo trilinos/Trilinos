@@ -1317,7 +1317,7 @@ void Relaxation<MatrixType>::compute ()
         // The two diagonals should be exactly the same, so their
         // difference should be exactly zero.
         TEUCHOS_TEST_FOR_EXCEPTION
-          (err > 10*STM::eps(), std::logic_error, methodName << ": "
+          (err > 100*STM::eps(), std::logic_error, methodName << ": "
            << "\"fast-path\" diagonal computation failed.  "
            "\\|D1 - D2\\|_inf = " << err << ".");
       }
