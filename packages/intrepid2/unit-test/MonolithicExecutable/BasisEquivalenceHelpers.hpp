@@ -427,15 +427,18 @@ namespace Intrepid2
       const int interiorSubcellOrdinal = 0;
       const int firstDofOrdinalForSubcell = 0;
       
+      auto basis1AllDofOrdinal = basis1.getAllDofOrdinal();
+      auto basis2AllDofOrdinal = basis2.getAllDofOrdinal();
+      
       int basis1InteriorCardinality = 0, basis2InteriorCardinality = 0;
       int basis1FirstInterior = -1, basis2FirstInterior = -1;
-      if (basis1.getAllDofOrdinal().extent_int(0) > interiorDim)
+      if ((basis1AllDofOrdinal.extent_int(0) > interiorDim) && (basis1AllDofOrdinal.extent_int(1) > interiorSubcellOrdinal) && (basis1AllDofOrdinal.extent_int(2) > firstDofOrdinalForSubcell) )
       {
-        basis1FirstInterior = basis1.getAllDofOrdinal()(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
+        basis1FirstInterior = basis1AllDofOrdinal(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
       }
-      if (basis2.getAllDofOrdinal().extent_int(0) > interiorDim)
+      if ((basis2AllDofOrdinal.extent_int(0) > interiorDim) && (basis2AllDofOrdinal.extent_int(1) > interiorSubcellOrdinal) && (basis2AllDofOrdinal.extent_int(2) > firstDofOrdinalForSubcell) )
       {
-        basis2FirstInterior = basis2.getAllDofOrdinal()(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
+        basis2FirstInterior = basis2AllDofOrdinal(interiorDim, interiorSubcellOrdinal, firstDofOrdinalForSubcell);
       }
       
       // if there are no interior dofs, we'll get a -1 value
@@ -496,12 +499,25 @@ namespace Intrepid2
             break; // we've already checked all subcell dimensions that have any dofs associated with them
           }
           
+          auto basis1AllDofOrdinal = basis1.getAllDofOrdinal();
+          auto basis2AllDofOrdinal = basis2.getAllDofOrdinal();
+          
           const int subcellCount = cellTopo->getSubcellCount(subcellDim);
           for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
           {
             // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
-            const int basis1FirstDofOrdinal = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
-            const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+            ordinal_type basis1FirstDofOrdinal = -1, basis2FirstDofOrdinal = -1;
+            
+            if ((subcellDim < basis1AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis1AllDofOrdinal.extent_int(1)) && (firstDofOrdinalForSubcell < basis1AllDofOrdinal.extent_int(2)))
+            {
+              basis1FirstDofOrdinal = basis1AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+            }
+            
+            if ((subcellDim < basis2AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis2AllDofOrdinal.extent_int(1)) && (firstDofOrdinalForSubcell < basis2AllDofOrdinal.extent_int(2)))
+              {
+                basis2FirstDofOrdinal = basis2AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+              }
+            
             // if there are no dofs on the subcell, we'll get a -1 value
             if ((basis1FirstDofOrdinal == -1) || (basis2FirstDofOrdinal == -1))
             {
