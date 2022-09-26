@@ -1,11 +1,12 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//                 TriUtils: Trilinos Utilities Package
-//                 Copyright (2011) Sandia Corporation
+//      Teko: A package for block and physics based preconditioning
+//                  Copyright 2010 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,13 +35,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
 //
 // ***********************************************************************
+//
 // @HEADER
 
-#ifndef __TRILINOS_UTILS_GALLERY_TPRTRA_H
-#define __TRILINOS_UTILS_GALLERY_TPRTRA_H
+#ifndef __TEKO_CRS_MATRIX_GALLERY_TPETRA_HPP
+#define __TEKO_CRS_MATRIX_GALLERY_TPETRA_HPP
 
 #include "Teuchos_RCPDecl.hpp"
 #include "Trilinos_Util_CommandLineParser.h"
@@ -65,7 +67,7 @@ public:
   ~CrsMatrixGallery();
 
   //! Sets a gallery options using an interger value.
-  int Set(const std::string& parameter, const int value);
+  int Set(const std::string &parameter, const int value);
 
   //! Returns a pointer to the CrsMatrix.
   Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> GetMatrix();
@@ -110,25 +112,16 @@ public:
   GO NumGlobalElements_;
   LO NumMyElements_;
 
-  std::string MapType_;
-  bool ContiguousMap_;
-
   // parameters
-  int nx_, ny_, nz_;
-  int mx_, my_, mz_;
+  int nx_, ny_;
 
-  double lx_, ly_, lz_;
+  double lx_, ly_;
 
-  int NumPDEEqns_;
-  int NumVectors_;
+  Teuchos::RCP<Tpetra::Vector<ST, LO, GO, NT>> VectorA_, VectorB_, VectorC_,
+      VectorD_, VectorE_;
 
-  Teuchos::RCP<Tpetra::Vector<ST, LO, GO, NT>> VectorA_, VectorB_, VectorC_, VectorD_,
-      VectorE_, VectorF_, VectorG_;
-
-  double a_, b_, c_, d_, e_, f_, g_;
-  double alpha_, beta_, gamma_, delta_;
-  double conv_, diff_, source_;
-  double epsilon_;
+  double a_, b_, c_, d_, e_;
+  double conv_, diff_;
 
   // others
   std::string ErrorMsg;
@@ -136,4 +129,4 @@ public:
   bool verbose_;
 };
 
-#endif
+#endif // __TEKO_CRS_MATRIX_GALLERY_TPETRA_HPP

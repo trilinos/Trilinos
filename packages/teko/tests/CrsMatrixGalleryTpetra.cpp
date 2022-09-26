@@ -1,11 +1,12 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//                 TriUtils: Trilinos Utilities Package
-//                 Copyright (2011) Sandia Corporation
+//      Teko: A package for block and physics based preconditioning
+//                  Copyright 2010 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,9 +35,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
 //
 // ***********************************************************************
+//
 // @HEADER
 
 #include "Teuchos_Assert.hpp"
@@ -45,8 +47,8 @@
 #include "Trilinos_Util.h"
 #include <string>
 
-#include "Trilinos_Util_CommandLineParser.h"
 #include "CrsMatrixGalleryTpetra.hpp"
+#include "Trilinos_Util_CommandLineParser.h"
 
 #include "Tpetra_CrsMatrix_def.hpp"
 #include "Tpetra_Map_def.hpp"
@@ -68,8 +70,8 @@ CrsMatrixGallery::CrsMatrixGallery(const string &name) : name_(name) {
   // if( comm_->MyPID()==0 ) verbose_ = true;
   verbose_ = false;
   // fix error message
-  ErrorMsg = "ERROR [CrsMatrixGallery]: ";
-  OutputMsg = "CrsMatrixGallery: ";
+  ErrorMsg = "ERROR [CrsMatrixGalleryTpetra]: ";
+  OutputMsg = "CrsMatrixGalleryTpetra: ";
 }
 
 // ================================================ ====== ==== ==== == =
@@ -79,7 +81,7 @@ CrsMatrixGallery::~CrsMatrixGallery() {
 }
 
 // ================================================ ====== ==== ==== == =
-int CrsMatrixGallery::Set(const std::string& parameter, const int value) {
+int CrsMatrixGallery::Set(const std::string &parameter, const int value) {
   if (parameter == "nx") {
 
     if (value <= 0) {
@@ -113,10 +115,6 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> CrsMatrixGallery::GetMatrix() {
 }
 
 void CrsMatrixGallery::CreateMap(void) {
-  if (verbose_) {
-    cout << OutputMsg << "Creating Map `" << MapType_ << "'...\n";
-  }
-
   // first get the problem size. For some problems. the user can
   // specify the problem size using different parameters (e.g.,
   // nx and ny for a 2D Laplace problem). I need the internal
@@ -155,21 +153,7 @@ void CrsMatrixGallery::CreateMap(void) {
         ErrorMsg << "matrix name is incorrect or not set (" << name_ << ")");
   }
 
-  // check out whether one is using only one proc or not.
-  // If yes, creation of map is straightforward. Then return.
-
-  if (comm_->getSize() == 1) {
-    map_ = rcp(new Tpetra::Map<LO, GO>(NumGlobalElements_, GO{0}, comm_));
-  } else {
-    // Here below more than one processor.
-    if (MapType_ == "linear") {
-      map_ = rcp(new Tpetra::Map<LO, GO>(NumGlobalElements_, GO{0}, comm_));
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                  ErrorMsg << "MapType has an incorrect value ("
-                                           << MapType_ << ")");
-    }
-  }
+  map_ = rcp(new Tpetra::Map<LO, GO>(NumGlobalElements_, GO{0}, comm_));
 
   // local number of rows
   NumMyElements_ = map_->getLocalNumElements();
@@ -210,7 +194,8 @@ void CrsMatrixGallery::CreateMatrixDiag(void) {
   for (int i = 0; i < NumMyElements_; ++i) {
     auto index = map_->getGlobalElement(i);
 
-    matrix_->insertGlobalValues(index, Teuchos::tuple<GO>(1), Teuchos::tuple<ST>(a_));
+    matrix_->insertGlobalValues(index, Teuchos::tuple<GO>(1),
+                                Teuchos::tuple<ST>(a_));
   }
 
   matrix_->fillComplete();
@@ -278,13 +263,11 @@ void CrsMatrixGallery::CreateMatrixCrossStencil2d(void) {
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->insertGlobalValues(myGlobalElems[i], NumEntries, Values,
-                                Indices);
+    matrix_->insertGlobalValues(myGlobalElems[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 
-    matrix_->insertGlobalValues(myGlobalElems[i], 1, &diag,
-                                &myGlobalElems[i]);
+    matrix_->insertGlobalValues(myGlobalElems[i], 1, &diag, &myGlobalElems[i]);
   }
   matrix_->fillComplete();
 }
@@ -479,13 +462,11 @@ void CrsMatrixGallery::CreateMatrixCrossStencil2dVector() {
       ++NumEntries;
     }
     // put the off-diagonal entries
-    matrix_->insertGlobalValues(myGlobalElems[i], NumEntries, Values,
-                                Indices);
+    matrix_->insertGlobalValues(myGlobalElems[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     diag = vecA_1d(i);
 
-    matrix_->insertGlobalValues(myGlobalElems[i], 1, &diag,
-                                &myGlobalElems[i]);
+    matrix_->insertGlobalValues(myGlobalElems[i], 1, &diag, &myGlobalElems[i]);
   }
 
   matrix_->fillComplete();
@@ -528,43 +509,23 @@ void CrsMatrixGallery::ZeroOutData() {
   NumGlobalElements_ = -1;
   nx_ = -1;
   ny_ = -1;
-  nz_ = -1;
-  mx_ = -1;
-  mx_ = -1;
-  mz_ = -1;
 
   lx_ = 1.0;
   ly_ = 1.0;
-  lz_ = 1.0;
 
-  a_ = UNDEF, b_ = UNDEF, c_ = UNDEF, d_ = UNDEF, e_ = UNDEF, f_ = UNDEF,
-  g_ = UNDEF;
-  alpha_ = UNDEF;
-  beta_ = UNDEF;
-  gamma_ = UNDEF;
-  delta_ = UNDEF;
-  epsilon_ = UNDEF;
+  a_ = UNDEF, b_ = UNDEF, c_ = UNDEF, d_ = UNDEF, e_ = UNDEF;
 
   conv_ = UNDEF;
   diff_ = UNDEF;
-  source_ = UNDEF;
 
   VectorA_ = Teuchos::null;
   VectorB_ = Teuchos::null;
   VectorC_ = Teuchos::null;
   VectorD_ = Teuchos::null;
   VectorE_ = Teuchos::null;
-  VectorF_ = Teuchos::null;
-  VectorG_ = Teuchos::null;
 
   map_ = Teuchos::null;
   matrix_ = Teuchos::null;
-
-  MapType_ = "linear";
-  ContiguousMap_ = true;
-
-  NumPDEEqns_ = 1;
-  NumVectors_ = 1;
 }
 
 ostream &operator<<(ostream &os, const CrsMatrixGallery &G) {
@@ -575,8 +536,6 @@ ostream &operator<<(ostream &os, const CrsMatrixGallery &G) {
 
     os << " * Solving problem " << G.name_ << endl;
     os << " * Number of global elements : " << G.NumGlobalElements_ << endl;
-    os << " * Type of Map : " << G.MapType_ << endl;
-    os << " * Number of PDEs : " << G.NumPDEEqns_ << endl;
 
     // CRS stuff
     if (G.matrix_ != Teuchos::null) {
