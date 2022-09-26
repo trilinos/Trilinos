@@ -1214,7 +1214,7 @@ namespace Tpetra {
     using lclinds_1d_type = typename Graph::local_graph_device_type::entries_type::non_const_type;
     using values_type = typename local_matrix_device_type::values_type;
     Details::ProfilingRegion regionFLGAM
-      ("Tpetra::CrsGraph::fillLocalGraphAndMatrix");
+      ("Tpetra::CrsMatrix::fillLocalGraphAndMatrix");
 
     const char tfecfFuncName[] = "fillLocalGraphAndMatrix (called from "
       "fillComplete or expertStaticFillComplete): ";
@@ -1454,7 +1454,9 @@ namespace Tpetra {
     }
     else { // We don't have to pack, so just set the pointers.
       // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
-      myGraph_->setRowPtrsPacked(myGraph_->rowPtrsUnpacked_dev_);
+      // FIXME? This is already done in the graph fill call - need to avoid the memcpy to host
+      myGraph_->rowPtrsPacked_dev_ = myGraph_->rowPtrsUnpacked_dev_;
+      myGraph_->rowPtrsPacked_host_ = myGraph_->rowPtrsUnpacked_host_;
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
@@ -1547,7 +1549,9 @@ namespace Tpetra {
 
       // Keep the new 1-D packed allocations.
       // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
-      myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
+      // We directly set the memory spaces to avoid a memcpy from device to host
+      myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
+      myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
 
@@ -3438,6 +3442,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                 const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
                 const typename local_matrix_device_type::values_type& values)
   {
+    using ProfilingRegion=Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::CrsMatrix::setAllValues");
     const char tfecfFuncName[] = "setAllValues: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (columnIndices.size () != values.size (), std::invalid_argument,
@@ -3454,6 +3460,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         (true, std::runtime_error, "myGraph_->setAllIndices() threw an "
          "exception: " << e.what ());
     }
+
     // Make sure that myGraph_ now has a local graph.  It may not be
     // fillComplete yet, so it's important to check.  We don't care
     // whether setAllIndices() did a shallow copy or a deep copy, so a

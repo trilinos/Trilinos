@@ -217,14 +217,7 @@ namespace { // (anonymous)
          << ".  Please report this bug to the Tpetra developers.");
     }
 
-    dual_view_type dv (d_view, Kokkos::create_mirror_view (d_view));
-    // Whether or not the user cares about the initial contents of the
-    // MultiVector, the device and host views are out of sync.  We
-    // prefer to work in device memory.  The way to ensure this
-    // happens is to mark the device view as modified.
-    dv.modify_device ();
-
-    return wrapped_dual_view_type(dv);
+    return wrapped_dual_view_type(d_view);
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
