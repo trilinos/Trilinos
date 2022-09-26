@@ -475,11 +475,28 @@ namespace
         }
         
         const int subcellCount = cellTopo->getSubcellCount(subcellDim);
+        auto basis1AllDofOrdinal = basis1.getAllDofOrdinal();
+        auto basis2AllDofOrdinal = basis2.getAllDofOrdinal();
         for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
         {
           // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
-          const int basis1FirstDofOrdinal = basis1.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
-          const int basis2FirstDofOrdinal = basis2.getAllDofOrdinal()(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          int basis1FirstDofOrdinal, basis2FirstDofOrdinal;
+          if ((subcellDim < basis1AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis1AllDofOrdinal.extent_int(1)))
+          {
+            basis1FirstDofOrdinal = basis1AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          }
+          else
+          {
+            basis1FirstDofOrdinal = -1;
+          }
+          if ((subcellDim < basis2AllDofOrdinal.extent_int(0)) && (subcellOrdinal < basis2AllDofOrdinal.extent_int(1)))
+          {
+            basis2FirstDofOrdinal = basis2AllDofOrdinal(subcellDim, subcellOrdinal, firstDofOrdinalForSubcell);
+          }
+          else
+          {
+            basis2FirstDofOrdinal = -1;
+          }
           // if there are no dofs on the subcell, we'll get a -1 value
           if ((basis1FirstDofOrdinal == -1) || (basis2FirstDofOrdinal == -1))
           {
@@ -1036,15 +1053,68 @@ namespace
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
       
-//      auto cellTopo = nodalBasis.getBaseCellTopology();
-//      const int faceDim = 2;
-//      for (int intrepid2FaceOrdinal=0; intrepid2FaceOrdinal<4; intrepid2FaceOrdinal++)
-//      {
-//        int vertex0 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
-//        int vertex1 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
-//        int vertex2 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
-//        std::cout << "face " << intrepid2FaceOrdinal << ": " << vertex0 << vertex1 << vertex2 << std::endl;
-//      }
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HCURL_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HDIV_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-9;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchical_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HVOL_TET;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-6;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
       
       testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }

@@ -462,7 +462,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra)
 
       double myresid = Teko::norm_2(residual,0);
      
-      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-14);
+      // residual is O(1e-10), so check using rel tolerance of 1e-6
+      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-6);
    }
 
    // arbitrary alpha and beta
@@ -486,7 +487,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra)
       // alpha (x - A z) - beta A y
 
       double myresid = Teko::norm_2(residual,0);
-     
-      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-14);
+
+      // residual is O(1e-10), so check using rel tolerance of 1e-6
+      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-6);
    }
 }

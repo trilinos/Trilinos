@@ -668,7 +668,7 @@ private:
         if (!delayed_ortho || iter > 0) {
           int check = (delayed_ortho ? iter-1 : iter);
           if (outPtr != nullptr) {
-            *outPtr << "> Current iteration: iter=" << iter
+            *outPtr << "> Current single-reduce iteration: iter=" << iter
                     << ", restart=" << restart
                     << ", metric=" << metric << endl;
             Indent indent3 (outPtr);

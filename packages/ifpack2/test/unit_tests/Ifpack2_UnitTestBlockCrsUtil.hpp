@@ -354,7 +354,7 @@ struct BlockCrsMatrixMaker {
         if (e < ncell) { ++n; ++e; }
         return n;
       };
-      auto sbppad(sbp);
+      StructuredBlockPart sbppad(sbp);
       pad_extent(sbppad.is, sbppad.ie, sb.ni);
       pad_extent(sbppad.js, sbppad.je, sb.nj);
       pad_extent(sbppad.ks, sbppad.ke, sb.nk);

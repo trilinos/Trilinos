@@ -51,6 +51,7 @@
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 
+#include <FROSch_TpetraPreconditioner_def.hpp>
 
 namespace Thyra {
 
@@ -125,13 +126,12 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(is_null(defaultPrec));
 
         // extract preconditioner operator
-        LinearOpBasePtr thyra_precOp = null;
-        thyra_precOp = rcp_dynamic_cast<LinearOpBase<SC> >(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
+        auto precOp = defaultPrec->getNonconstUnspecifiedPrecOp();
 
         // Abstract SchwarzPreconditioner
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > SchwarzPreconditioner = null;
 
-        const bool startingOver = (thyra_precOp.is_null() || !paramList_->isParameter("Recycling") || !paramList_->get("Recycling",true));
+        const bool startingOver = (precOp.is_null() || !paramList_->isParameter("Recycling") || !paramList_->get("Recycling",true));
 
         if (startingOver) {
             FROSCH_ASSERT(paramList_->isParameter("FROSch Preconditioner Type"),"FROSch Preconditioner Type is not defined!");
@@ -307,18 +307,36 @@ namespace Thyra {
             ConstVectorSpaceBasePtr thyraRangeSpace  = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getRangeMap());
             ConstVectorSpaceBasePtr thyraDomainSpace = ThyraUtils<SC,LO,GO,NO>::toThyra(SchwarzPreconditioner->getDomainMap());
 
-            RCP<Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
-
-            thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
-
+#if defined(HAVE_XPETRA_TPETRA)
+            if (bIsTpetra) {
+                RCP<TpetraPreconditioner<SC,LO,GO,NO> > TPreconditioner (new TpetraPreconditioner<SC,LO,GO,NO>(SchwarzPreconditioner));
+                RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(TPreconditioner);
+                thyraPrecOp = Thyra::createLinearOp(tpOp);
+            } else
+#endif
+            {
+                RCP<Operator<SC,LO,GO,NO> > xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(SchwarzPreconditioner);
+                thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
+            }
             TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
 
             //Set SchwarzPreconditioner
             defaultPrec->initializeUnspecified(thyraPrecOp);
         } else {
             // cast to SchwarzPreconditioner
-            RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSch_LinearOp = rcp_dynamic_cast<FROSchLinearOp<SC,LO,GO,NO> >(thyra_precOp,true);
-            RCP<Operator<SC,LO,GO,NO> > xpetraOp = fROSch_LinearOp->getXpetraOperator();
+            RCP<Operator<SC,LO,GO,NO> > xpetraOp;
+#if defined(HAVE_XPETRA_TPETRA)
+            if (bIsTpetra) {
+                RCP<Thyra::TpetraLinearOp<SC,LO,GO,NO> > thyra_precOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<SC,LO,GO,NO>>(precOp, true);
+                RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = thyra_precOp->getTpetraOperator();
+                RCP<TpetraPreconditioner<SC,LO,GO,NO> > tpetra_precOp = rcp_dynamic_cast<TpetraPreconditioner<SC,LO,GO,NO>>(tpOp, true);
+                xpetraOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(tpetra_precOp->getSchwarzPreconditioner());
+            } else
+#endif
+            {
+                RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSch_LinearOp = rcp_dynamic_cast<FROSchLinearOp<SC,LO,GO,NO> >(precOp,true);
+                xpetraOp = fROSch_LinearOp->getXpetraOperator();
+            }
 
             if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
                 RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);

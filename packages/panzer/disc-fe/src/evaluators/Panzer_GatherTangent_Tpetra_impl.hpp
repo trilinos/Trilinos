@@ -51,6 +51,7 @@
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_DOFManager.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -108,10 +109,15 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
   fieldIds_.resize(gatherFields_.size());
 
+  gatherFieldsVoV_.initialize("GatherSolution_Teptra<Tangent>",gatherFields_.size());
+
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
+    gatherFieldsVoV_.addView(gatherFields_[fd].get_static_view(),fd);
   }
+
+  gatherFieldsVoV_.syncHostToDevice();
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
@@ -156,7 +162,6 @@ evaluateFields(typename TRAITS::EvalData workset)
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
-  const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
   Teuchos::RCP<typename LOC::VectorType> x;
   if (useTimeDerivativeSolutionVector_)
@@ -164,32 +169,21 @@ evaluateFields(typename TRAITS::EvalData workset)
   else
     x = tpetraContainer_->get_x();
 
-  Teuchos::ArrayRCP<const double> x_array = x->get1dView();
-
-  // NOTE: A reordering of these loops will likely improve performance
-  //       The "getGIDFieldOffsets may be expensive.  However the
-  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-  //       may be more expensive!
-
-  // gather operation for each cell in workset
-  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-    std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-    auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-    // loop over the fields to be gathered
-    for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-      int fieldNum = fieldIds_[fieldIndex];
-      const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-      // loop over basis functions and fill the fields
-      for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-        int offset = elmtOffset[basis];
-        LO lid = LIDs[offset];
-        (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x_array[lid];
-      }
+  auto cellLocalIdsKokkos = this->wda(workset).getLocalCellIDs();
+  auto lids = globalIndexer_->getLIDs();
+  auto vov = Teuchos::rcp_dynamic_cast<const panzer::DOFManager>(globalIndexer_,true)->getGIDFieldOffsetsKokkos(blockId,fieldIds_);
+  auto gidFieldOffsets = vov.getViewDevice();
+  auto gatherFieldsDevice = gatherFieldsVoV_.getViewDevice();
+  auto x_view = x->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{cellLocalIdsKokkos.extent(0),gidFieldOffsets.extent(0)});
+  Kokkos::parallel_for("GatherSolutionTpetra<Tangent>",policy,KOKKOS_LAMBDA(const int worksetCellIndex, const int fieldIndex) {
+    for(std::size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
+      int offset = gidFieldOffsets(fieldIndex)(basis);
+      LO lid = lids(cellLocalIdsKokkos(worksetCellIndex),offset);
+      auto& gf_ref = (gatherFieldsDevice[fieldIndex])(worksetCellIndex,basis);
+      gf_ref = x_view(lid,0);
     }
-  }
+  });
 }
 
 // **********************************************************************

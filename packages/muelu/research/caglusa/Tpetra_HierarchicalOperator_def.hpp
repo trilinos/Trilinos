@@ -325,7 +325,7 @@ namespace Tpetra {
 
     const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
     for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
-      transferMatrices_[i]->blockA_->localApply(*numUnknownsPerCluster, *numUnknownsPerCluster, Teuchos::NO_TRANS, one, one);
+      transferMatrices_[i]->blockA_->apply(*numUnknownsPerCluster, *numUnknownsPerCluster, Teuchos::NO_TRANS, one, one);
 
     // get ghosted numUnknownsPerCluster
     RCP<vec_type> ghosted_numUnknownsPerCluster = rcp(new vec_type(ghosted_clusterMap, false));
