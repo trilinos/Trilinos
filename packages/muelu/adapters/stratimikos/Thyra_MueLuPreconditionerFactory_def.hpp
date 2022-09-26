@@ -161,6 +161,30 @@ namespace Thyra {
       }
 # endif
 #endif
+      else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName) ||
+               (paramList.isType<RCP<const ThyLinOpBase> >(parameterName) && !
+                rcp_dynamic_cast<const ThyDiagLinOpBase>(paramList.get<RCP<const ThyLinOpBase> >(parameterName)).is_null())) {
+        RCP<const ThyDiagLinOpBase> thyM;
+        if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName))
+         thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
+        else
+          thyM = rcp_dynamic_cast<const ThyDiagLinOpBase>(paramList.get<RCP<const ThyLinOpBase> >(parameterName), true);
+        paramList.remove(parameterName);
+        RCP<const Thyra::VectorBase<Scalar> > diag = thyM->getDiag();
+
+        RCP<const XpVec> xpDiag;
+#ifdef HAVE_MUELU_TPETRA
+        if (!rcp_dynamic_cast<const thyTpV>(diag).is_null()) {
+          RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
+          if (!tDiag.is_null())
+            xpDiag = Xpetra::toXpetra(tDiag);
+        }
+#endif
+        TEUCHOS_ASSERT(!xpDiag.is_null());
+        RCP<XpMat> M = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xpDiag);
+        paramList.set<RCP<XpMat> >(parameterName, M);
+        return true;
+      }
       else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
         RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
         paramList.remove(parameterName);
@@ -181,23 +205,6 @@ namespace Thyra {
           auto op = rcp_dynamic_cast<XpOp>(tpFOp);
           paramList.set<RCP<XpOp> >(parameterName, op);
         }
-        return true;
-      } else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName)) {
-        RCP<const ThyDiagLinOpBase> thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
-        paramList.remove(parameterName);
-        RCP<const Thyra::VectorBase<Scalar> > diag = thyM->getDiag();
-
-        RCP<const XpVec> xpDiag;
-#ifdef HAVE_MUELU_TPETRA
-        if (!rcp_dynamic_cast<const thyTpV>(diag).is_null()) {
-          RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
-          if (!tDiag.is_null())
-            xpDiag = Xpetra::toXpetra(tDiag);
-        }
-#endif
-        TEUCHOS_ASSERT(!xpDiag.is_null());
-        RCP<XpMat> M = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xpDiag);
-        paramList.set<RCP<XpMat> >(parameterName, M);
         return true;
       }
       else {
@@ -330,29 +337,14 @@ namespace Thyra {
         return true;
       }
 #endif
-      else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
-        RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
-        paramList.remove(parameterName);
-        try {
-          RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
-          paramList.set<RCP<XpMat> >(parameterName, M);
-        } catch (std::exception& e) {
-          RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
-          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
-          RCP<tOp> tO = tpOp->getOperator();
-          RCP<tV> diag;
-          if (tO->hasDiagonal()) {
-            diag = rcp(new tV(tO->getRangeMap()));
-            tO->getLocalDiagCopy(*diag);
-          }
-          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
-          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
-          auto op = rcp_dynamic_cast<XpOp>(tpFOp);
-          paramList.set<RCP<XpOp> >(parameterName, op);
-        }
-        return true;
-      } else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName)) {
-        RCP<const ThyDiagLinOpBase> thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
+      else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName) ||
+               (paramList.isType<RCP<const ThyLinOpBase> >(parameterName) && !
+                rcp_dynamic_cast<const ThyDiagLinOpBase>(paramList.get<RCP<const ThyLinOpBase> >(parameterName)).is_null())) {
+        RCP<const ThyDiagLinOpBase> thyM;
+        if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName))
+         thyM = paramList.get<RCP<const ThyDiagLinOpBase> >(parameterName);
+        else
+          thyM = rcp_dynamic_cast<const ThyDiagLinOpBase>(paramList.get<RCP<const ThyLinOpBase> >(parameterName), true);
         paramList.remove(parameterName);
         RCP<const Thyra::VectorBase<Scalar> > diag = thyM->getDiag();
 
@@ -379,6 +371,28 @@ namespace Thyra {
         TEUCHOS_ASSERT(!xpDiag.is_null());
         RCP<XpMat> M = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xpDiag);
         paramList.set<RCP<XpMat> >(parameterName, M);
+        return true;
+      }
+      else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
+        RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
+        paramList.remove(parameterName);
+        try {
+          RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          paramList.set<RCP<XpMat> >(parameterName, M);
+        } catch (std::exception& e) {
+          RCP<XpOp> M = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(M, true);
+          RCP<tOp> tO = tpOp->getOperator();
+          RCP<tV> diag;
+          if (tO->hasDiagonal()) {
+            diag = rcp(new tV(tO->getRangeMap()));
+            tO->getLocalDiagCopy(*diag);
+          }
+          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
+          RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
+          auto op = rcp_dynamic_cast<XpOp>(tpFOp);
+          paramList.set<RCP<XpOp> >(parameterName, op);
+        }
         return true;
       }
       else {
