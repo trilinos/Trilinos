@@ -289,7 +289,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
 
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
-    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    string(REPLACE "CLASS_FILE_NAME" "ETI_${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
 
     # the following generates one cpp file for all instantiations and
     # enabled configurations
@@ -429,19 +429,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
-  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
 
