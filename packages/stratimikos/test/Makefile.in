@@ -530,10 +530,6 @@ uninstall-am:
 
 all-local: FourByFour.xml make-links
 
-#test_stratimikos_driver_SOURCES = $(srcdir)/test_stratimikos_driver.cpp $(common_sources)
-#test_stratimikos_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
-#test_stratimikos_driver_LDADD = $(common_ldadd)
-
 FourByFour.xml:
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx                          
 	cp  $(srcdir)/_FourByFour.xml FourByFour.xml
