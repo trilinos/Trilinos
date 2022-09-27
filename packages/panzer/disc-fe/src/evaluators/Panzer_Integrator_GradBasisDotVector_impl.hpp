@@ -192,8 +192,10 @@ namespace panzer
     using std::size_t;
 
     // Get the PHX::Views of the field multipliers.
+    auto field_mults_host_mirror = Kokkos::create_mirror_view(kokkosFieldMults_);
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      field_mults_host_mirror(i) = fieldMults_[i].get_static_view();
+    Kokkos::deep_copy(kokkosFieldMults_,field_mults_host_mirror);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
