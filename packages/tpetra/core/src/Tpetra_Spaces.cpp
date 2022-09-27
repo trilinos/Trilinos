@@ -7,12 +7,8 @@
 #define LOG_INFO(x) std::cerr << __FILE__ << ":" << __LINE__ << ": [INFO] " << x << std::endl;
 
 namespace Tpetra {
-
 namespace Spaces {
-
 namespace detail {
-
-
 
 // Tpetra's managed spaces
 #ifdef KOKKOS_ENABLE_CUDA
@@ -59,7 +55,7 @@ void finalize() {
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
     for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
-        detail::openMpSpaces[i].clear();
+        detail::openMPSpaces[i].clear();
     }
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
