@@ -8,7 +8,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
      Belos_GCRODR_strattest
      SOURCES
-       test_belos_gcrodr.cpp
+       test_belos_epetra_gcrodr.cpp
        ${TEUCHOS_STD_UNIT_TEST_MAIN}
      ARGS " --show-timer-summary"
      COMM serial mpi
@@ -17,11 +17,11 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
-  test_single_stratimikos_solver_driver
+  test_single_epetra_stratimikos_solver_driver
   SOURCES
-    test_single_stratimikos_solver_driver.cpp
-    test_single_stratimikos_solver.hpp
-    test_single_stratimikos_solver.cpp
+    test_single_epetra_stratimikos_solver_driver.cpp
+    test_single_epetra_stratimikos_solver.hpp
+    test_single_epetra_stratimikos_solver.cpp
   COMM serial mpi
   )
 
@@ -30,7 +30,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
   DEST_FILES FourByFour.mtx
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
   SOURCE_PREFIX "In_"
-  EXEDEPS test_single_stratimikos_solver_driver
+  EXEDEPS test_single_epetra_stratimikos_solver_driver
   )
 
 
@@ -47,15 +47,15 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
     FourByFour.belos.ml.xml
     BelosGCRODRTest.xml
   SOURCE_PREFIX "_"
-  EXEDEPS test_single_stratimikos_solver_driver
+  EXEDEPS test_single_epetra_stratimikos_solver_driver
   )
 
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
   TRIBITS_ADD_TEST(
-    test_single_stratimikos_solver_driver
-    NAME test_single_stratimikos_solver_driver_amesos
+    test_single_epetra_stratimikos_solver_driver
+    NAME test_single_epetra_stratimikos_solver_driver_amesos
     ARGS
       "--input-file=FourByFour.xml --show-timer-summary"
       "--input-file=FourByFour.amesos.xml --show-timer-summary"
@@ -70,8 +70,8 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
 
   TRIBITS_ADD_TEST(
-    test_single_stratimikos_solver_driver
-    NAME test_single_stratimikos_solver_driver_aztecoo_np
+    test_single_epetra_stratimikos_solver_driver
+    NAME test_single_epetra_stratimikos_solver_driver_aztecoo_np
     ARGS "--input-file=FourByFour.aztecoo.np.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
@@ -82,8 +82,8 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
     TRIBITS_ADD_TEST(
-      test_single_stratimikos_solver_driver
-      NAME test_single_stratimikos_solver_driver_aztecoo_ifpack
+      test_single_epetra_stratimikos_solver_driver
+      NAME test_single_epetra_stratimikos_solver_driver_aztecoo_ifpack
       ARGS
         "--input-file=FourByFour.aztecoo.ifpack.xml --show-timer-summary"
         "--input-file=FourByFour.aztecoo.ifpack.adjoint.xml --show-timer-summary"
@@ -98,8 +98,8 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   IF (${PACKAGE_NAME}_ENABLE_ML)
 
     TRIBITS_ADD_TEST(
-      test_single_stratimikos_solver_driver
-      NAME test_single_stratimikos_solver_driver_aztecoo_ml
+      test_single_epetra_stratimikos_solver_driver
+      NAME test_single_epetra_stratimikos_solver_driver_aztecoo_ml
       ARGS
         "--input-file=FourByFour.aztecoo.ml.xml --show-timer-summary"
       COMM serial mpi
@@ -117,8 +117,8 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 
 
   TRIBITS_ADD_TEST(
-    test_single_stratimikos_solver_driver
-    NAME test_single_stratimikos_solver_driver_belos_np
+    test_single_epetra_stratimikos_solver_driver
+    NAME test_single_epetra_stratimikos_solver_driver_belos_np
     ARGS "--input-file=FourByFour.belos.np.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
@@ -129,8 +129,8 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
     TRIBITS_ADD_TEST(
-      test_single_stratimikos_solver_driver
-      NAME test_single_stratimikos_solver_driver_belos_ifpack
+      test_single_epetra_stratimikos_solver_driver
+      NAME test_single_epetra_stratimikos_solver_driver_belos_ifpack
       ARGS
         "--input-file=FourByFour.belos.ifpack.xml --show-timer-summary"
       COMM serial mpi
@@ -144,8 +144,8 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   IF (${PACKAGE_NAME}_ENABLE_ML)
 
     TRIBITS_ADD_TEST(
-      test_single_stratimikos_solver_driver
-      NAME test_single_stratimikos_solver_driver_belos_ml
+      test_single_epetra_stratimikos_solver_driver
+      NAME test_single_epetra_stratimikos_solver_driver_belos_ml
       ARGS
         "--input-file=FourByFour.belos.ml.xml --show-timer-summary"
       COMM serial mpi
@@ -176,23 +176,23 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
     )
 
   TRIBITS_ADD_EXECUTABLE(
-    GaleriDriver
+    GaleriXpetraDriver
     SOURCES
-    galeri_driver.cpp
+    galeri__xpetra_driver.cpp
     COMM serial mpi
     )
 
   IF (Tpetra_INST_DOUBLE)
 
     TRIBITS_ADD_TEST(
-      GaleriDriver
+      GaleriXpetraDriver
       NAME "Galeri_double_Jacobi"
       ARGS "--scalarType=double --xml=stratimikos_jacobi.xml"
       NUM_MPI_PROCS 4
       )
 
     TRIBITS_ADD_TEST(
-      GaleriDriver
+      GaleriXpetraDriver
       NAME "Galeri_double_Jacobi_Tpetra"
       ARGS "--scalarType=double --xml=stratimikos_jacobi_tpetra.xml"
       NUM_MPI_PROCS 4
@@ -204,7 +204,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
 	)
       )
       TRIBITS_ADD_TEST(
-        GaleriDriver
+        GaleriXpetraDriver
         NAME "Galeri_double_Jacobi_HalfPrecision"
         ARGS "--scalarType=double --xml=stratimikos_jacobi_half.xml"
         NUM_MPI_PROCS 4
@@ -216,7 +216,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
   IF (Tpetra_INST_FLOAT)
 
     TRIBITS_ADD_TEST(
-      GaleriDriver
+      GaleriXpetraDriver
       NAME "Galeri_float_Jacobi"
       ARGS "--scalarType=float --xml=stratimikos_jacobi.xml"
       NUM_MPI_PROCS 4
@@ -228,7 +228,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
   IF (Tpetra_INST_COMPLEX_DOUBLE AND Teuchos_ENABLE_COMPLEX)
 
     TRIBITS_ADD_TEST(
-      GaleriDriver
+      GaleriXpetraDriver
       NAME "Galeri_complex_double_Jacobi"
       ARGS "--scalarType=\"complex<double>\" --xml=stratimikos_jacobi.xml"
       NUM_MPI_PROCS 4
@@ -239,7 +239,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
   IF (Tpetra_INST_COMPLEX_FLOAT AND Teuchos_ENABLE_COMPLEX)
 
     TRIBITS_ADD_TEST(
-      GaleriDriver
+      GaleriXpetraDriver
       NAME "Galeri_complex_float_Jacobi"
       ARGS "--scalarType=\"complex<float>\" --xml=stratimikos_jacobi.xml"
       NUM_MPI_PROCS 4

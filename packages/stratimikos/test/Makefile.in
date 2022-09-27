@@ -85,14 +85,14 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Stratimikos_Config.h \
 	$(top_builddir)/src/Stratimikos_InternalConfig.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = test_single_stratimikos_solver_driver$(EXEEXT)
+am__EXEEXT_1 = test_single_epetra_stratimikos_solver_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = test_single_stratimikos_solver.$(OBJEXT)
-am_test_single_stratimikos_solver_driver_OBJECTS =  \
-	test_single_stratimikos_solver_driver.$(OBJEXT) \
+am__objects_1 = test_single_epetra_stratimikos_solver.$(OBJEXT)
+am_test_single_epetra_stratimikos_solver_driver_OBJECTS =  \
+	test_single_epetra_stratimikos_solver_driver.$(OBJEXT) \
 	$(am__objects_1)
-test_single_stratimikos_solver_driver_OBJECTS =  \
-	$(am_test_single_stratimikos_solver_driver_OBJECTS)
+test_single_epetra_stratimikos_solver_driver_OBJECTS =  \
+	$(am_test_single_epetra_stratimikos_solver_driver_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -102,8 +102,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(test_single_stratimikos_solver_driver_SOURCES)
-DIST_SOURCES = $(test_single_stratimikos_solver_driver_SOURCES)
+SOURCES = $(test_single_epetra_stratimikos_solver_driver_SOURCES)
+DIST_SOURCES = $(test_single_epetra_stratimikos_solver_driver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -223,34 +223,34 @@ top_srcdir = @top_srcdir@
 #
 # Actual programs
 #
-TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_stratimikos_solver_driver
-test_single_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_stratimikos_solver_driver.cpp $(common_sources)
-test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)
-test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
+TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_epetra_stratimikos_solver_driver
+test_single_epetra_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp $(common_sources)
+test_single_epetra_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)
+test_single_epetra_stratimikos_solver_driver_LDADD = $(common_ldadd)
 
 #
 # Links
 #
 
 # Links for amesos executables
-@ENABLE_STRATIMIKOS_AMESOS_TRUE@LINK_TESTDRIVER_AMESOS = test_single_stratimikos_solver_driver_amesos.exe
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@LINK_TESTDRIVER_AMESOS = test_single_epetra_stratimikos_solver_driver_amesos.exe
 
 # Links for aztecoo executables
-@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_AZTECOO_IFPACK = test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
-@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_AZTECOO_ML = test_single_stratimikos_solver_driver_aztecoo_ml.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_AZTECOO_IFPACK = test_single_epetra_stratimikos_solver_driver_aztecoo_ifpack.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_AZTECOO_ML = test_single_epetra_stratimikos_solver_driver_aztecoo_ml.exe
 
 # Links for belos executables
-@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_BELOS_IFPACK = test_single_stratimikos_solver_driver_belos_ifpack.exe
-@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_BELOS_ML = test_single_stratimikos_solver_driver_belos_ml.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_BELOS_IFPACK = test_single_epetra_stratimikos_solver_driver_belos_ifpack.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_BELOS_ML = test_single_epetra_stratimikos_solver_driver_belos_ml.exe
 
 #
 # Common stuff
 #
 common_dependencies = $(top_builddir)/src/libstratimikos.a
-common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
+common_sources = $(srcdir)/test_single_epetra_stratimikos_solver.cpp
 AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
-EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
+EXTRA_DIST = $(srcdir)/test_single_epetra_stratimikos_solver.hpp \
 	$(srcdir)/_FourByFour.xml \
 	$(srcdir)/_FourByFour.amesos.xml \
 	$(srcdir)/_FourByFour.aztecoo.ifpack.xml \
@@ -298,9 +298,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-test_single_stratimikos_solver_driver$(EXEEXT): $(test_single_stratimikos_solver_driver_OBJECTS) $(test_single_stratimikos_solver_driver_DEPENDENCIES) 
-	@rm -f test_single_stratimikos_solver_driver$(EXEEXT)
-	$(CXXLINK) $(test_single_stratimikos_solver_driver_OBJECTS) $(test_single_stratimikos_solver_driver_LDADD) $(LIBS)
+test_single_epetra_stratimikos_solver_driver$(EXEEXT): $(test_single_epetra_stratimikos_solver_driver_OBJECTS) $(test_single_epetra_stratimikos_solver_driver_DEPENDENCIES) 
+	@rm -f test_single_epetra_stratimikos_solver_driver$(EXEEXT)
+	$(CXXLINK) $(test_single_epetra_stratimikos_solver_driver_OBJECTS) $(test_single_epetra_stratimikos_solver_driver_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -308,8 +308,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_stratimikos_solver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_stratimikos_solver_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_epetra_stratimikos_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -325,33 +325,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test_single_stratimikos_solver_driver.o: $(srcdir)/test_single_stratimikos_solver_driver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver_driver.o -MD -MP -MF $(DEPDIR)/test_single_stratimikos_solver_driver.Tpo -c -o test_single_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver_driver.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_stratimikos_solver_driver.Tpo $(DEPDIR)/test_single_stratimikos_solver_driver.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver_driver.cpp' object='test_single_stratimikos_solver_driver.o' libtool=no @AMDEPBACKSLASH@
+test_single_epetra_stratimikos_solver_driver.o: $(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_epetra_stratimikos_solver_driver.o -MD -MP -MF $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Tpo -c -o test_single_epetra_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Tpo $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp' object='test_single_epetra_stratimikos_solver_driver.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver_driver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_epetra_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp
 
-test_single_stratimikos_solver_driver.obj: $(srcdir)/test_single_stratimikos_solver_driver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver_driver.obj -MD -MP -MF $(DEPDIR)/test_single_stratimikos_solver_driver.Tpo -c -o test_single_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver_driver.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_stratimikos_solver_driver.Tpo $(DEPDIR)/test_single_stratimikos_solver_driver.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver_driver.cpp' object='test_single_stratimikos_solver_driver.obj' libtool=no @AMDEPBACKSLASH@
+test_single_epetra_stratimikos_solver_driver.obj: $(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_epetra_stratimikos_solver_driver.obj -MD -MP -MF $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Tpo -c -o test_single_epetra_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Tpo $(DEPDIR)/test_single_epetra_stratimikos_solver_driver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp' object='test_single_epetra_stratimikos_solver_driver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver_driver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_epetra_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_epetra_stratimikos_solver_driver.cpp'; fi`
 
-test_single_stratimikos_solver.o: $(srcdir)/test_single_stratimikos_solver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver.o -MD -MP -MF $(DEPDIR)/test_single_stratimikos_solver.Tpo -c -o test_single_stratimikos_solver.o `test -f '$(srcdir)/test_single_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_stratimikos_solver.Tpo $(DEPDIR)/test_single_stratimikos_solver.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver.cpp' object='test_single_stratimikos_solver.o' libtool=no @AMDEPBACKSLASH@
+test_single_epetra_stratimikos_solver.o: $(srcdir)/test_single_epetra_stratimikos_solver.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_epetra_stratimikos_solver.o -MD -MP -MF $(DEPDIR)/test_single_epetra_stratimikos_solver.Tpo -c -o test_single_epetra_stratimikos_solver.o `test -f '$(srcdir)/test_single_epetra_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_epetra_stratimikos_solver.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_epetra_stratimikos_solver.Tpo $(DEPDIR)/test_single_epetra_stratimikos_solver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_epetra_stratimikos_solver.cpp' object='test_single_epetra_stratimikos_solver.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver.o `test -f '$(srcdir)/test_single_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_epetra_stratimikos_solver.o `test -f '$(srcdir)/test_single_epetra_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_epetra_stratimikos_solver.cpp
 
-test_single_stratimikos_solver.obj: $(srcdir)/test_single_stratimikos_solver.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver.obj -MD -MP -MF $(DEPDIR)/test_single_stratimikos_solver.Tpo -c -o test_single_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_stratimikos_solver.Tpo $(DEPDIR)/test_single_stratimikos_solver.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver.cpp' object='test_single_stratimikos_solver.obj' libtool=no @AMDEPBACKSLASH@
+test_single_epetra_stratimikos_solver.obj: $(srcdir)/test_single_epetra_stratimikos_solver.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_epetra_stratimikos_solver.obj -MD -MP -MF $(DEPDIR)/test_single_epetra_stratimikos_solver.Tpo -c -o test_single_epetra_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_single_epetra_stratimikos_solver.Tpo $(DEPDIR)/test_single_epetra_stratimikos_solver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_epetra_stratimikos_solver.cpp' object='test_single_epetra_stratimikos_solver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_epetra_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_epetra_stratimikos_solver.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -546,19 +546,19 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
 	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
 
-test_single_stratimikos_solver_driver_amesos.exe: test_single_stratimikos_solver_driver.exe
+test_single_epetra_stratimikos_solver_driver_amesos.exe: test_single_epetra_stratimikos_solver_driver.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-test_single_stratimikos_solver_driver_aztecoo_ifpack.exe: test_single_stratimikos_solver_driver.exe
+test_single_epetra_stratimikos_solver_driver_aztecoo_ifpack.exe: test_single_epetra_stratimikos_solver_driver.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-test_single_stratimikos_solver_driver_aztecoo_ml.exe: test_single_stratimikos_solver_driver.exe
+test_single_epetra_stratimikos_solver_driver_aztecoo_ml.exe: test_single_epetra_stratimikos_solver_driver.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-test_single_stratimikos_solver_driver_belos_ifpack.exe: test_single_stratimikos_solver_driver.exe
+test_single_epetra_stratimikos_solver_driver_belos_ifpack.exe: test_single_epetra_stratimikos_solver_driver.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-test_single_stratimikos_solver_driver_belos_ml.exe: test_single_stratimikos_solver_driver.exe
+test_single_epetra_stratimikos_solver_driver_belos_ml.exe: test_single_epetra_stratimikos_solver_driver.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Main links
