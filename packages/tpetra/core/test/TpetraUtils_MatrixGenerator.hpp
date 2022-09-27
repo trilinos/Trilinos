@@ -352,8 +352,8 @@ namespace Tpetra {
           "makeMatrix: row map is null.  "
           "Please report this bug to the Tpetra developers.");
 
-        size_t maxNumEntriesPerRow = 0;
-        for (size_t i = 0; i < myNumEntriesPerRow.size(); ++i) {
+        size_type maxNumEntriesPerRow = 0;
+        for (size_type i = 0; i < myNumEntriesPerRow.size(); ++i) {
           maxNumEntriesPerRow = std::max(maxNumEntriesPerRow, myNumEntriesPerRow[i]);
         }
 
