@@ -198,54 +198,17 @@ void ReadSplittingFromDisk(const std::string & partitionFile,
 
   //  Each rank is going to read the file, one at a time (to avoid hammering on the disk)
   auto comm = crsMat->getRowMap()->getComm();
-#if 0
-  int rank = comm->getRank();
-  int size = comm->getSize();
-#endif
   RCP<const Tpetra::Map<LO,GO,NO> > rowmap = crsMat->getRowMap();
   std::vector<std::vector<int> > my_blocks_and_gids = read_block_gids<LO,GO,NO>(partitionFile,rowmap);
-
-#if 0
-  {
-    std::ostringstream ofs;
-    for(int i=0; i<(int)my_blocks_and_gids.size(); i++) {
-      ofs <<"Vector ["<<i<<"] = ";
-      for(int j=0; j<(int)my_blocks_and_gids[i].size(); j++)
-        ofs<<my_blocks_and_gids[i][j]<<" ";
-      ofs<<std::endl;
-    }    
-    std::cout<<"["<<rank<<"] Stuff"<<ofs.str()<<std::endl;
-    fflush(stdout);
-    comm->barrier();
-    comm->barrier();
-    comm->barrier();
-    exit(1);
-  }
-#endif
-  
 
   RCP<Teko::TpetraHelpers::BlockedTpetraOperator> rA = rcp( new Teko::TpetraHelpers::BlockedTpetraOperator(my_blocks_and_gids,crsMat));
 
   A = rA;
-
-  //  rA->WriteBlocks("blocks_to_disk");
-
-  /*
-   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-   rA->describe(*fancy,Teuchos::VERB_EXTREME);
-
-   comm->barrier();
-   comm->barrier();
-   comm->barrier();
-   exit(1);
-  */
 }
 
 
 template<class SC,class LO, class GO, class NO>
   int solve_thyra(RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > & crsMat, const std::string &xmlFile) {
-  //typedef Tpetra::Map<>               TP_Map;
-  //typedef Tpetra::Vector<SC>          TP_Vec;
   typedef Tpetra::CrsMatrix<SC>       TP_Crs;
   typedef Thyra::PreconditionerFactoryBase<SC>        Base;
   typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl; 
@@ -352,8 +315,6 @@ template<class SC,class LO, class GO, class NO>
   RCP<Tpetra::Vector<SC,LO,GO,NO> > x = rcp(new Tpetra::Vector<SC,LO,GO,NO>(b->getMap()));
   ReadSplittingFromDisk<SC,LO,GO,NO>(partitionFile,crsMat,A);
   x->putScalar(Teuchos::ScalarTraits<SC>::zero());
-
-
  
   RCP<Thyra::MultiVectorBase<SC> > xt = Thyra::createVector(x);
   RCP<Thyra::MultiVectorBase<SC> > bt = Thyra::createVector(b);
@@ -374,55 +335,25 @@ template<class SC,class LO, class GO, class NO>
      Teuchos::ParameterList xmlList;
      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&xmlList),*comm);
 
-     if(!crsMat->getRowMap()->getComm()->getRank()) {
-       std::cout<<"****** Original ******"<<std::endl;
-       std::cout<<xmlList<<std::endl;
-     }
-
-
      // Add coordinates if we need to
      if(!coords.is_null()){
        // FIXME:  Please do this more generally
        auto & sublist = xmlList.sublist("MueluScalar").sublist("user data");
        sublist.set("Coordinates",Xpetra::toXpetra(coords));
-
-       if(!crsMat->getRowMap()->getComm()->getRank()) {
-       std::cout<<"****** Post Coord ******"<<std::endl;
-         std::cout<<xmlList<<std::endl;
-       }
-
      }
-
-
-
 
      invLib = Teko::InverseLibrary::buildFromParameterList(xmlList,linearSolverBuilder);
      inverse = invLib->getInverseFactory("MyTekoPreconditioner");
    }
-
-
       
- 
    // build the inverse factory needed by the example preconditioner
    Teko::TpetraHelpers::InverseFactoryOperator ifo(inverse);
    ifo.buildInverseOperator(A);
 
 
-
-comm->barrier();
- comm->barrier();
- comm->barrier();
- exit(1);
-
-
-
    // build the preconditioner from the jacobian
    Teko::LinearOp At = Thyra::tpetraLinearOp<SC,LO,GO,NO>(Thyra::tpetraVectorSpace<SC,LO,GO,NO>(A->getRangeMap()),Thyra::tpetraVectorSpace<SC,LO,GO,NO>(A->getDomainMap()),A);
 
-   
-
-   //   if(At.is_null()) throw std::runtime_error("At is null!!!!!");
-   //   else printf("[%d] At is NOT null\n",comm->getRank());
 
    Teko::LinearOp prec = Teko::buildInverse(*inverse,At);
 
