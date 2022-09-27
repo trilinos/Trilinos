@@ -3679,7 +3679,7 @@ namespace Tpetra {
 
               // rowPtr has one more entry than numRows
               rowPtr[0] = 0;
-              for (size_t i = 1; i < numRows+1; ++i) {
+              for (size_type i = 1; i < numRows+1; ++i) {
                 rowPtr[i] = rowPtr[i-1] + numEntriesPerRow[i-1];
               }
             } // Finished conversion to CSR format
