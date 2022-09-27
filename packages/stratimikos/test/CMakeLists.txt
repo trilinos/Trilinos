@@ -178,7 +178,7 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
   TRIBITS_ADD_EXECUTABLE(
     GaleriXpetraDriver
     SOURCES
-    galeri__xpetra_driver.cpp
+    galeri_xpetra_driver.cpp
     COMM serial mpi
     )
 
