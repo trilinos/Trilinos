@@ -343,6 +343,9 @@ private:
   // for scattering
   Teuchos::RCP<const BlockedDOFManager> globalIndexer_;
 
+  //! Vector of global indexers, one for each scattered field respectively
+  std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> fieldGlobalIndexers_;
+
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   //! Returns the index into the Thyra ProductVector sub-block. Size
