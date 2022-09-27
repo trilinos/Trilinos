@@ -252,9 +252,9 @@ ENDIF ()
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
  TRIBITS_ADD_EXECUTABLE(
-   issue_535
+   tptetra_ifpack2_issue_535
    SOURCES
-     test_issue_535.cpp
+     test_thyra_tpetra_ifpack2_issue_535.cpp
    COMM serial mpi
    )
 ENDIF ()
