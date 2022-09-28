@@ -556,7 +556,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const override {
-      return (this->getDofCount(2,0) > 0); //if it has side DOFs, than it needs orientations
+      return true;
     }
 
     /** \brief  Returns basis name
