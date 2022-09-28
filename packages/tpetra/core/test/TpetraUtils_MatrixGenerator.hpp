@@ -354,7 +354,7 @@ namespace Tpetra {
 
         size_type maxNumEntriesPerRow = 0;
         for (size_type i = 0; i < myNumEntriesPerRow.size(); ++i) {
-          maxNumEntriesPerRow = std::max(maxNumEntriesPerRow, myNumEntriesPerRow[i]);
+          maxNumEntriesPerRow = std::max(maxNumEntriesPerRow, size_type(myNumEntriesPerRow[i]));
         }
 
         // Construct the CrsMatrix, using the row map, with the
