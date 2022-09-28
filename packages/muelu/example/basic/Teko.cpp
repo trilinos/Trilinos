@@ -189,7 +189,7 @@ void ReadSplittingFromDisk(const std::string & partitionFile,
   //  Each rank is going to read the file, one at a time (to avoid hammering on the disk)
   auto comm = crsMat->getRowMap()->getComm();
   RCP<const Tpetra::Map<LO,GO,NO> > rowmap = crsMat->getRowMap();
-  std::vector<std::vector<int> > my_blocks_and_gids = read_block_gids<LO,GO,NO>(partitionFile,rowmap);
+  std::vector<std::vector<GO> > my_blocks_and_gids = read_block_gids<LO,GO,NO>(partitionFile,rowmap);
 
   RCP<Teko::TpetraHelpers::BlockedTpetraOperator> rA = rcp( new Teko::TpetraHelpers::BlockedTpetraOperator(my_blocks_and_gids,crsMat));
 
