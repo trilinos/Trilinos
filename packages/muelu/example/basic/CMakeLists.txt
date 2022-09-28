@@ -59,7 +59,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
     )
 
   # Teko build
-  IF(${PACKAGE_NAME}_ENABLE_Teko)
+  IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_HAVE_IFPACK2)
     TRIBITS_ADD_EXECUTABLE(
       Teko
       SOURCES Teko.cpp
@@ -98,7 +98,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-
+    
   ENDIF()
 
 ENDIF()

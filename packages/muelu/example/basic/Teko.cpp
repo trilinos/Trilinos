@@ -56,25 +56,15 @@
 // Epetra includes
 #include "mpi.h"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
-
-// EpetraExt includes
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_BlockedTpetraOperator.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
 #include "Teko_LSCPreconditionerFactory.hpp"
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
@@ -87,6 +77,7 @@
 #include "Stratimikos_MueLuHelpers.hpp"
 
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
+
 
 // Belos includes
 #include "BelosConfigDefs.hpp"
