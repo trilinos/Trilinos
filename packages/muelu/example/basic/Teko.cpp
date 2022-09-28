@@ -53,9 +53,8 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-// Epetra includes
+// Tpetra includes
 #include "mpi.h"
-
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
