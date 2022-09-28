@@ -71,8 +71,8 @@ deleteContents ()
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockCrsMatrixStruct(const LocalOrdinal blocksize)
-  : blocksize(blocksize)
+BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockCrsMatrixStruct(const LocalOrdinal blocksize_)
+  : blocksize(blocksize_)
 {
 }
 

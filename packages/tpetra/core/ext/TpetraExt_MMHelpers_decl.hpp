@@ -108,7 +108,7 @@ public:
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
-  BlockCrsMatrixStruct (const LocalOrdinal blocksize);
+  BlockCrsMatrixStruct (const LocalOrdinal blocksize_);
 
   virtual ~BlockCrsMatrixStruct ();
 
