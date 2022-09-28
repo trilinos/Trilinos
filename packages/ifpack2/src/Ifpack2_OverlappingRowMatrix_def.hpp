@@ -50,6 +50,7 @@
 #include <Tpetra_Import.hpp>
 #include "Tpetra_Map.hpp"
 #include <Teuchos_CommHelpers.hpp>
+#include <unordered_set>
 
 namespace Ifpack2 {
 
@@ -90,6 +91,10 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
 
   // Temp arrays
   Array<global_ordinal_type> ExtElements;
+  // Use an unordered_set to efficiently keep track of which GIDs have already
+  // been added to ExtElements. Still need ExtElements because we also want a
+  // list of the GIDs ordered LID in the ColMap.
+  std::unordered_set<global_ordinal_type> ExtElementSet;
   RCP<map_type>        TmpMap;
   RCP<crs_graph_type>  TmpGraph;
   RCP<import_type>     TmpImporter;
@@ -119,10 +124,10 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     for (local_ordinal_type i = 0 ; (size_t) i < ColMap->getLocalNumElements() ; ++i) {
       const global_ordinal_type GID = ColMap->getGlobalElement (i);
       if (A_->getRowMap ()->getLocalElement (GID) == global_invalid) {
-        typedef typename Array<global_ordinal_type>::iterator iter_type;
-        const iter_type end = ExtElements.end ();
-        const iter_type pos = std::find (ExtElements.begin (), end, GID);
-        if (pos == end) {
+        // unordered_set insert can return a pair, where the second element is
+        // true if a new element was inserted, false otherwise.
+        if(ExtElementSet.insert(GID).second)
+        {
           ExtElements.push_back (GID);
           mylist[count] = GID;
           ++count;
