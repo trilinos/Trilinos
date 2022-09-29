@@ -69,7 +69,8 @@
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
-                      const bool & exodus_out);
+                      const bool & exodus_out,
+                      Teuchos::RCP<const Teuchos::MpiComm<int> > comm);
 
 Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
@@ -273,7 +274,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh_factory = Teuchos::RCP<panzer_stk::STK_MeshFactory>(new panzer_stk::STK_ExodusReaderFactory());
         mesh_factory->setParameterList(pl);
         // build mesh
-        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        mesh = mesh_factory->buildUncommitedMesh((*comm->getRawMpiComm())());
         // get dt
         if (dt <= 0.)
           dt = input_pl->get<double>("dt");
@@ -284,7 +285,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
         mesh_factory->setParameterList(pl);
         // build mesh
-        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        mesh = mesh_factory->buildUncommitedMesh((*comm->getRawMpiComm())());
         // get dt
         if (dt <= 0.)
           dt = pamgen_pl.get<double>("dt");
@@ -319,7 +320,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
             return EXIT_FAILURE;
         }
         mesh_factory->setParameterList(pl);
-        mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+        mesh = mesh_factory->buildUncommitedMesh((*comm->getRawMpiComm())());
 
         // set dt
         if (dt <= 0.) {
@@ -645,7 +646,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
       bool build_transient_support = true;
       // Can be overridden by the equation set
-      int default_integration_order = 2;
+      int default_integration_order = 2*basis_order;
       std::vector<std::string> tangentParamNames;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -666,7 +667,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
       bool build_transient_support = false;
       // Can be overridden by the equation set
-      int default_integration_order = 2;
+      int default_integration_order = 2*basis_order;
       std::vector<std::string> tangentParamNames;
       panzer::buildPhysicsBlocks(block_ids_to_aux_physics_ids,
                                  aux_block_ids_to_cell_topo,
@@ -682,7 +683,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
     // fields to be setup)
-    createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output);
+    createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output, comm);
 
     // build worksets
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
@@ -709,10 +710,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // blocked degree of freedom manager
     panzer::BlockedDOFManagerFactory globalIndexerFactory;
     std::string fieldOrder = assembly_pl.get<std::string>("Field Order");
-    RCP<panzer::GlobalIndexer > dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
+    RCP<panzer::GlobalIndexer > dofManager = globalIndexerFactory.buildGlobalIndexer(comm->getRawMpiComm(),physicsBlocks,conn_manager,fieldOrder);
 
     // auxiliary dof manager
-    RCP<panzer::GlobalIndexer > auxDofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
+    RCP<panzer::GlobalIndexer > auxDofManager = globalIndexerFactory.buildGlobalIndexer(comm->getRawMpiComm(),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
     // construct some linear algebra objects, build object to pass to evaluators
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager,true)));
@@ -819,8 +820,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
       // parameterize the builder
       panzer::FunctionalResponse_Builder<int,int> builder;
-      builder.comm = MPI_COMM_WORLD; // good enough
-      builder.cubatureDegree = 2;
+      builder.comm = (*comm->getRawMpiComm())();
+      builder.cubatureDegree = 2*basis_order;
       builder.requiresCellIntegral = lst.isType<bool>("Requires Cell Integral") ? lst.get<bool>("Requires Cell Integral"): false;
       builder.quadPointField = lst.get<std::string>("Field Name");
 
@@ -1067,7 +1068,8 @@ int main(int argc,char * argv[]){
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
-                      const bool & exodus_out) {
+                      const bool & exodus_out,
+                      Teuchos::RCP<const Teuchos::MpiComm<int> > comm) {
   for(std::size_t i=0;i<physicsBlocks.size();i++) {
     Teuchos::RCP<panzer::PhysicsBlock> pb = physicsBlocks[i]; // we are assuming only one physics block
 
@@ -1108,7 +1110,7 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
     output_pl.sublist("Allocate Nodal Quantities");
     mini_em::addFieldsToMesh(*mesh,output_pl);
   }
-  mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+  mesh_factory->completeMeshConstruction(*mesh,(*comm->getRawMpiComm())());
 
   if (exodus_out)
     mesh->setupExodusFile("mesh_output.exo");

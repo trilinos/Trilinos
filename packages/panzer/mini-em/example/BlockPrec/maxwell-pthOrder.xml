@@ -109,20 +109,20 @@
   </ParameterList>
 
   <ParameterList name="Responses">
-    <!-- <ParameterList name="Electromagnetic Energy"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList name="Electromagnetic Energy/dt^2"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
+    <ParameterList name="Electromagnetic Energy">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="EM_ENERGY"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
+    <ParameterList name="Electromagnetic Energy/dt^2">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">

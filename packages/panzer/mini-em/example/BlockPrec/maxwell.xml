@@ -55,13 +55,13 @@
   </ParameterList>
 
    <ParameterList name="Assembly">
-     <Parameter name="Field Order"           type="string" value="blocked: B_face E_edge"/>
+     <Parameter name="Field Order"  type="string" value="blocked: B_face E_edge"/>
      <Parameter name="Workset Size" type="int" value="2000"/>
    </ParameterList>
 
   <ParameterList name="Physics Blocks">
     <!-- The 2x2 Maxwell system -->
-    <!-- Gets epsilon, sigma and 1/mu from closure model 'electromagnetics' -->
+    <!-- Gets epsilon, sigma and mu from closure model 'electromagnetics' -->
     <ParameterList name="Maxwell Physics">
       <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Maxwell"/>
@@ -117,6 +117,15 @@
       <ParameterList name="EM_ENERGY">
         <Parameter name="Type" type="string" value="ELECTROMAGNETIC ENERGY"/>
       </ParameterList>
+      <!-- <ParameterList name="EXACT E FIELD"> -->
+      <!--   <Parameter name="Type" type="string" value="GAUSSIAN PULSE"/> -->
+      <!--   <Parameter name="dt" type="double" value="0.1/"/> -->
+      <!-- </ParameterList> -->
+      <!-- <ParameterList name="ERROR E"> -->
+      <!--   <Parameter name="Type" type="string" value="ERROR"/> -->
+      <!--   <Parameter name="Field" type="string" value="E_edge"/> -->
+      <!--   <Parameter name="Exact Field" type="string" value="EXACT E FIELD"/> -->
+      <!-- </ParameterList> -->
     </ParameterList>
   </ParameterList>
 
@@ -135,6 +144,13 @@
       <Parameter name="Evaluation Types" type="string" value="Residual"/>
       <Parameter name="Requires Cell Integral" type="bool" value="true"/>
     </ParameterList>
+    <!-- <ParameterList name="L2 Error E"> -->
+    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
+    <!--   <Parameter name="Field Name" type="string" value="ERROR E"/> -->
+    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
+    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
+    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
+    <!-- </ParameterList> -->
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">

@@ -259,6 +259,43 @@ buildClosureModels(const std::string& model_id,
  
         found = true;
       }
+      if(type=="ERROR") {
+        // compute ||E-E_ex||^2
+
+        const std::string diffName = "DIFFERENCE_" + plist.get<std::string>("Field") + "_" + plist.get<std::string>("Exact Field");
+        {
+          RCP<std::vector<double> > coeffs = rcp(new std::vector<double>);
+          coeffs->push_back(1);
+          coeffs->push_back(-1);
+
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+          valuesNames->push_back(plist.get<std::string>("Field"));
+          valuesNames->push_back(plist.get<std::string>("Exact Field"));
+
+          Teuchos::ParameterList input;
+          input.set("Sum Name",diffName);
+          input.set("Values Names",valuesNames);
+          input.set("Data Layout",ir->dl_vector);
+          input.set<RCP<const std::vector<double> > >("Scalars", coeffs);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+        {
+          Teuchos::ParameterList input;
+          input.set("Result Name", key);
+          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+          input.set("Vector A Name", diffName);
+          input.set("Vector B Name", diffName);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
+        found = true;
+      }
     }
 
     if (!found) {
