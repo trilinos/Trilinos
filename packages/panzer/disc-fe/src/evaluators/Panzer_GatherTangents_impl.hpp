@@ -129,7 +129,7 @@ evaluateFields(typename Traits::EvalData workset)
     const int cellDim = parentCell.getDimension();
     const int numEdges = gatherFieldTangents_.extent(1);
 
-    auto workspace = Kokkos::createDynRankView(gatherFieldTangents_.get_static_view(),"workspace", 4, cellDim);
+    auto workspace_tmp = Kokkos::createDynRankView(gatherFieldTangents_.get_static_view(),"workspace", workset.num_cells,4, cellDim);
     const auto worksetJacobians = pointValues_.jac.get_view();
     const auto cell_local_ids = workset.getLocalCellIDs();
     auto gatherFieldTangents = gatherFieldTangents_.get_static_view();
@@ -142,9 +142,10 @@ evaluateFields(typename Traits::EvalData workset)
       int edgeOrts[12] = {};
       orientations(cell_local_ids(c)).getEdgeOrientation(edgeOrts, numEdges);
 
+      auto workspace = Kokkos::subview(workspace_tmp,c,Kokkos::ALL(),Kokkos::ALL());
       for(int pt = 0; pt < numEdges; pt++) {
         auto phyEdgeTan = Kokkos::subview(gatherFieldTangents, c, pt, Kokkos::ALL());
-        auto ortEdgeTan = Kokkos::subview(workspace, 0, Kokkos::ALL());
+        auto ortEdgeTan = Kokkos::subview(workspace_tmp,c,0,Kokkos::ALL());
 
         Intrepid2::Impl::OrientationTools::getRefSubcellTangents(
             workspace,
