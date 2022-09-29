@@ -153,7 +153,7 @@ int extract_int(std::istringstream & iss) {
 
 // Generates proc-by-proc block gid lists
 template<class LO, class GO, class NO>
-std::vector<std::vector<int> > read_block_gids(std::string partitionFile, RCP<const Tpetra::Map<LO,GO,NO> > & rowMap) {
+std::vector<std::vector<GO> > read_block_gids(std::string partitionFile, RCP<const Tpetra::Map<LO,GO,NO> > & rowMap) {
   using V   = Tpetra::Vector<LO,LO,GO,NO>;
   using CRS = Tpetra::CrsMatrix<LO,LO,GO,NO>;
 
