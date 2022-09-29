@@ -49,6 +49,8 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -68,6 +70,7 @@ namespace {
 
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
+  using Tpetra::BlockCrsMatrix;
   using Tpetra::CrsMatrixMultiplyOp;
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -1397,6 +1400,463 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
 
+// Build upper diag matrix for test 
+template<class BlockCrsMatrixType>
+void build_A_matrix (const RCP<BlockCrsMatrixType>& A) {
+
+  using LO = typename BlockCrsMatrixType::local_ordinal_type;
+  using GO = typename BlockCrsMatrixType::global_ordinal_type;
+  using Scalar = typename BlockCrsMatrixType::scalar_type;
+
+  const typename BlockCrsMatrixType::map_type row_map = *(A->getRowMap());
+  const typename BlockCrsMatrixType::map_type col_map = *(A->getColMap());
+
+  int my_rank = row_map.getComm()->getRank();
+
+  if(A->getBlockSize() != 2) {
+    if (my_rank==0) std::cerr << "Error: A->getBlockSize != 2!" << std::endl;
+    return;
+  }
+
+  const int blocksize = 2;
+
+  for (LO localrow = row_map.getMinLocalIndex();
+       localrow <= row_map.getMaxLocalIndex();
+       ++localrow) {
+
+    const GO globalrow = row_map.getGlobalElement(localrow);
+
+    if (globalrow == 0) {
+
+      LO local_col_indices[1];
+      local_col_indices[0] = col_map.getLocalElement(globalrow);
+
+      Scalar values[blocksize*blocksize];
+      for (size_t b=0; b<blocksize*blocksize; ++b) {
+        values[b] = 2*globalrow+1;
+      }
+      A->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            1);
+
+    } else if (globalrow == 1 || globalrow == 2) {
+
+      LO local_col_indices[2];
+      local_col_indices[0] = col_map.getLocalElement(globalrow-1);
+      local_col_indices[1] = col_map.getLocalElement(globalrow);
+
+      Scalar values[2*blocksize*blocksize];
+      int local_indx = 0;
+      for (GO globalcol=globalrow-1; globalcol<=globalrow; ++globalcol) {
+        int start = local_indx*blocksize*blocksize;
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[start+b] = (globalrow+1)+globalcol;
+        }
+        ++local_indx;
+      }
+      A->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            2);
+
+    } else { // globalrow == 3
+
+      LO local_col_indices[1];
+      local_col_indices[0] = col_map.getLocalElement(globalrow-1);
+
+      Scalar values[blocksize*blocksize];
+      for (size_t b=0; b<blocksize*blocksize; ++b) {
+        values[b] = 2*globalrow;
+      }
+      A->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            1);
+
+    }
+  }
+}
+
+// Build lower diag matrix for test   
+template<class BlockCrsMatrixType>
+void build_B_matrix (const RCP<BlockCrsMatrixType>& B) {
+
+  using LO = typename BlockCrsMatrixType::local_ordinal_type;
+  using GO = typename BlockCrsMatrixType::global_ordinal_type;
+  using Scalar = typename BlockCrsMatrixType::scalar_type;
+
+  const typename BlockCrsMatrixType::map_type row_map = *(B->getRowMap());
+  const typename BlockCrsMatrixType::map_type col_map = *(B->getColMap());
+
+  int my_rank = row_map.getComm()->getRank();
+
+  if(B->getBlockSize() != 2) {
+    if (my_rank==0) std::cerr << "Error: B->getBlockSize != 2!" << std::endl;
+    return;
+  }
+
+  const int blocksize = 2;
+
+  for (LO localrow = row_map.getMinLocalIndex();
+       localrow <= row_map.getMaxLocalIndex();
+       ++localrow) {
+
+    const GO globalrow = row_map.getGlobalElement(localrow);
+
+    LO local_col_indices[2];
+    local_col_indices[0] = col_map.getLocalElement(globalrow);
+    local_col_indices[1] = col_map.getLocalElement(globalrow+1);
+
+    Scalar values[2*blocksize*blocksize];
+    int local_indx = 0;
+    for (GO globalcol=globalrow; globalcol<=globalrow+1; ++globalcol) {
+      int start = local_indx*blocksize*blocksize;
+      for (size_t b=0; b<blocksize*blocksize; ++b) {
+        values[start+b] = (globalrow+1)+globalcol;
+      }
+      ++local_indx;
+    }
+    B->replaceLocalValues(localrow,
+                          local_col_indices,
+                          values,
+                          2);
+  }
+}
+// Build tri diag matrix for test 
+template<class BlockCrsMatrixType>
+void build_C_matrix (const RCP<BlockCrsMatrixType>& C) {
+
+  using LO = typename BlockCrsMatrixType::local_ordinal_type;
+  using GO = typename BlockCrsMatrixType::global_ordinal_type;
+  using Scalar = typename BlockCrsMatrixType::scalar_type;
+
+  const typename BlockCrsMatrixType::map_type row_map = *(C->getRowMap());
+  const typename BlockCrsMatrixType::map_type col_map = *(C->getColMap());
+
+  int my_rank = row_map.getComm()->getRank();
+
+  if(C->getBlockSize() != 2) {
+    if (my_rank==0) std::cerr << "Error: C->getBlockSize != 2!" << std::endl;
+    return;
+  }
+
+  const int blocksize = 2;
+
+  for (LO localrow = row_map.getMinLocalIndex();
+       localrow <= row_map.getMaxLocalIndex();
+       ++localrow) {
+
+    const GO globalrow = row_map.getGlobalElement(localrow);
+
+    if (globalrow == 0) {
+
+      LO local_col_indices[2];
+      local_col_indices[0] = col_map.getLocalElement(globalrow);
+      local_col_indices[1] = col_map.getLocalElement(globalrow+1);
+
+      Scalar values[2*blocksize*blocksize];
+      int local_indx = 0;
+      for (GO globalcol=globalrow; globalcol<=globalrow+1; ++globalcol) {
+        int start = local_indx*blocksize*blocksize;
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[start+b] = 2*(globalrow+1)*(globalcol+1);
+        }
+        ++local_indx;
+      }
+      C->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            2);
+
+    } else if (globalrow == 1 || globalrow == 2) {
+
+      LO local_col_indices[3];
+      local_col_indices[0] = col_map.getLocalElement(globalrow-1);
+      local_col_indices[1] = col_map.getLocalElement(globalrow);
+      local_col_indices[2] = col_map.getLocalElement(globalrow+1);
+
+      Scalar values[3*blocksize*blocksize];
+      int local_indx = 0;
+      for (GO globalcol=globalrow-1; globalcol<=globalrow+1; ++globalcol) {
+        Scalar vals_for_col[3];
+        if (globalrow==1) {
+          vals_for_col[0] = 4; vals_for_col[1] = 26; vals_for_col[2] = 24;
+	} else if (globalrow==2) {
+          vals_for_col[0] = 24; vals_for_col[1] = 82; vals_for_col[2] = 60;
+	}
+        int start = local_indx*blocksize*blocksize;
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[start+b] = vals_for_col[local_indx];
+        }
+        ++local_indx;
+      }
+      C->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            3);
+
+    } else { // globalrow == 3
+
+      LO local_col_indices[2];
+      local_col_indices[0] = col_map.getLocalElement(globalrow-1);
+      local_col_indices[1] = col_map.getLocalElement(globalrow);
+
+      Scalar values[2*blocksize*blocksize];
+      int local_indx = 0;
+      for (GO globalcol=globalrow-1; globalcol<=globalrow; ++globalcol) {
+        int start = local_indx*blocksize*blocksize;
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[start+b] = 2*(globalrow+3)*(globalcol+3);
+        }
+        ++local_indx;
+      }
+      C->replaceLocalValues(localrow,
+                            local_col_indices,
+                            values,
+                            2);
+
+    }
+  }
+}
+
+// Test that two matrices' rows have the same entries.
+template<class BlockCrsMatrixType>
+bool matrices_are_same(const RCP<BlockCrsMatrixType>& A1,
+                       const RCP<BlockCrsMatrixType>& A2)
+{
+  // Loop through A1 and make sure each row has the same
+  // entries as A2.  In the fully general case, the
+  // redistribution may have added together values, resulting in
+  // small rounding errors.  This is why we use an error tolerance
+  // (with a little bit of wiggle room).
+
+  int my_rank = A1->getRowMap()->getComm()->getRank();
+
+  using LO = typename BlockCrsMatrixType::local_ordinal_type;
+  using Scalar = typename BlockCrsMatrixType::scalar_type;
+  using lids_type = typename BlockCrsMatrixType::local_inds_host_view_type;
+  using vals_type = typename BlockCrsMatrixType::values_host_view_type;
+
+  using ST = Teuchos::ScalarTraits<Scalar>;
+  using magnitude_type = typename ST::magnitudeType;
+  const magnitude_type tol =
+    Teuchos::as<magnitude_type> (10) * Teuchos::ScalarTraits<magnitude_type>::eps ();
+
+  const LO blocksize = A1->getBlockSize();
+  // Verify the blocksizes are identical
+  if (blocksize != A2->getBlockSize()) {
+    if (my_rank==0) std::cout << "Error: Blocksizes are not the same!" << std::endl;
+    return false;
+  }
+
+  lids_type A1LocalColInds;
+  vals_type A1LocalRowVals;
+  lids_type A2LocalColInds;
+  vals_type A2LocalRowVals;
+  for (LO localrow = A1->getRowMap()->getMinLocalIndex();
+      localrow <= A1->getRowMap()->getMaxLocalIndex();
+      ++localrow)
+  {
+    size_t A1NumEntries = A1->getNumEntriesInLocalRow (localrow);
+    size_t A2NumEntries = A1->getNumEntriesInLocalRow (localrow);
+
+    // Verify the same number of entries in each row
+    if (A1NumEntries != A2NumEntries) {
+      if (my_rank==0) std::cout << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+      return false;
+    }
+
+    A1->getLocalRowView (localrow, A1LocalColInds, A1LocalRowVals);
+    A2->getLocalRowView (localrow, A2LocalColInds, A2LocalRowVals);
+
+    // Verify the same number of values in each row
+    if (A1LocalRowVals.extent(0) != A2LocalRowVals.extent(0)) {
+      if (my_rank==0) std::cout << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+      return false;
+    }
+
+    // Col indices may be in different order. Store in a set and compare sets.
+    std::set<LO> a1_inds;
+    std::set<LO> a2_inds;
+   typedef typename Array<Scalar>::size_type size_type;
+    for (size_type k = 0; k < static_cast<size_type> (A1NumEntries); ++k) {
+      a1_inds.insert(A1LocalColInds[k]);
+      a2_inds.insert(A2LocalColInds[k]);
+    }
+    if(a1_inds!=a2_inds) {
+      if (my_rank==0) std::cout << "Error: Matrices have different column indices!" << std::endl;
+      return false;
+    }
+
+    // Loop over each local col entry of A1, find the corresponding col index of A2, and compare these value.
+    for (size_type a1_k = 0; a1_k < static_cast<size_type> (A1NumEntries); ++a1_k) {
+      LO a2_k;
+      for (size_type i = 0; i < static_cast<size_type> (A2NumEntries); ++i) {
+	if (A1LocalColInds[a1_k] == A2LocalColInds[i]) {
+          a2_k = i;
+	  break;
+	}
+      }
+      const int a1_start = a1_k*blocksize*blocksize;
+      const int a2_start = a2_k*blocksize*blocksize;
+      for (int b=0; b<blocksize*blocksize; ++b) {
+        const magnitude_type rel_err = ST::magnitude(A1LocalRowVals[a1_start+b] - A2LocalRowVals[a2_start+b]);
+        if(rel_err > tol) {
+          if (my_rank==0) std::cout << "Error: Matrices have different values!" << std::endl;
+	  return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+/*
+ * Test the matrix-matrix multiplication for a simple BlockCrsMatrix example.
+ * The test is only run on 2 processors. The test is A*B=C, where A is 4x3 lower
+ * diagonal matrix and  B is 3x4 upper diagonal matrix, each with up to 1 
+ * off-diagonal entry. The result C is a tridiagonal matrix. Blocksize=2.
+ */
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatMult, BlockCrsMult, SC,LO, GO, NT)  {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+  // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+  typedef BlockCrsMatrix<MT,LO,GO,NT> BlockMatrix_t;
+  typedef Tpetra::CrsGraph<LO, GO, NT> crs_graph_type;
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize();
+
+  // Create an output stream that prints immediately, rather than
+  // waiting until the test finishes.  This lets us get debug output
+  // even if an unexpected exception or crash happens.  Unfortunately,
+  // Teuchos::FancyOStream does not implement operator=, so we can't
+  // replace 'out' temporarily.
+  RCP<FancyOStream> newOutP = (myRank == 0) ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::getFancyOStream (rcp (new Teuchos::oblackholestream ()));
+  FancyOStream& newOut = *newOutP;
+
+  newOut << "Tpetra block sparse matrix-matrix multiply: operations_test" << endl;
+  Teuchos::OSTab tab1 (newOut);
+
+  // This test is 2 rank specific                                                             
+  if (numProcs != 2) {
+    return;
+  }
+
+  // Build A, B, C
+  const GO indexBase = 0;
+  LO num_local_elements_A = 2;
+  LO num_local_elements_B = (myRank==0 ? 1 : 2);
+
+  const int blocksize = 2;
+  using GST = Tpetra::global_size_t;
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+  // Create row maps
+  RCP<const map_type> row_map_A =
+    rcp (new map_type (INVALID,
+		       num_local_elements_A,
+		       indexBase, comm));
+  RCP<const map_type> row_map_B =
+    rcp (new map_type (INVALID,
+		       num_local_elements_B,
+		       indexBase, comm));
+
+  // Build graphs                                                        
+  Teuchos::RCP<crs_graph_type> graph_A =
+    Teuchos::rcp (new crs_graph_type (row_map_A, 2));
+  Teuchos::RCP<crs_graph_type> graph_B =
+    Teuchos::rcp (new crs_graph_type (row_map_B, 2));
+  Teuchos::RCP<crs_graph_type> graph_C =
+    Teuchos::rcp (new crs_graph_type (row_map_A, 3));
+  {
+    Array<GO> cols_A(2);
+    for (LO localrow = row_map_A->getMinLocalIndex ();
+	 localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
+      const GO globalrow = row_map_A->getGlobalElement(localrow);
+      if (globalrow==0) {
+        cols_A.resize(1);
+        cols_A[0] = globalrow;
+      } else if (globalrow==3) {
+        cols_A.resize(1);
+        cols_A[0] = globalrow-1;
+      } else {
+        cols_A.resize(2);
+        cols_A[0] = globalrow-1; cols_A[1] = globalrow;
+      }
+      graph_A->insertGlobalIndices (globalrow, cols_A());
+    }
+    graph_A->fillComplete(row_map_B, row_map_A);
+  }
+  {
+    Array<GO> cols_B(2);
+    for (LO localrow = row_map_B->getMinLocalIndex ();
+	 localrow <= row_map_B->getMaxLocalIndex (); ++localrow) {
+      const GO globalrow = row_map_B->getGlobalElement(localrow);
+      cols_B.resize(2);
+      cols_B[0] = globalrow; cols_B[1] = globalrow+1;
+      graph_B->insertGlobalIndices (globalrow, cols_B());
+    }
+    graph_B->fillComplete(row_map_A, row_map_B);
+  }
+  {
+    Array<GO> cols_C(2);
+    for (LO localrow = row_map_A->getMinLocalIndex ();
+	 localrow <= row_map_A->getMaxLocalIndex (); ++localrow) {
+      const GO globalrow = row_map_A->getGlobalElement(localrow);
+      if (globalrow==0) {
+        cols_C.resize(2);
+        cols_C[0] = globalrow; cols_C[1] = globalrow+1;
+      } else if (globalrow==3) {
+        cols_C.resize(2);
+        cols_C[0] = globalrow-1; cols_C[1] = globalrow;
+      } else {
+        cols_C.resize(3);
+        cols_C[0] = globalrow-1; cols_C[1] = globalrow; cols_C[2] = globalrow+1; 
+      }
+      graph_C->insertGlobalIndices (globalrow, cols_C());
+    }
+    graph_C->fillComplete();
+  }
+
+  // Build matrices. C is used to test against the computed matrix
+  RCP<BlockMatrix_t> A =
+    rcp (new BlockMatrix_t (*graph_A, blocksize)); 
+  RCP<BlockMatrix_t> B =
+    rcp (new BlockMatrix_t (*graph_B, blocksize));
+  RCP<BlockMatrix_t> C =
+    rcp (new BlockMatrix_t (*graph_C, blocksize));
+
+  build_A_matrix(A);  
+  build_B_matrix(B);
+  build_C_matrix(C);
+
+  RCP<BlockMatrix_t> computedC;
+  Tpetra::MatrixMatrix::Multiply(A.getConst(), false,
+                                 B.getConst(), false, 
+                                 computedC);
+
+  // Test that C and the computed matrix are identical
+  bool matrices_match = matrices_are_same<BlockMatrix_t>(computedC, C);
+  TEST_ASSERT(matrices_match);
+
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  newOut << "We made it through operations_test on all processes!" << endl;
+  if (gblSuccess != 1) {
+    newOut << "FAILED on at least one process!" << endl;
+  }
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+}
 
 /**
  * This test was written at the request of Chris Siefert
@@ -2220,7 +2680,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatMult, BlockCrsMult, SC, LO, GO, NT)
 
 // FIXME_SYCL requires querying free device memory in KokkosKernels, see
 // https://github.com/kokkos/kokkos-kernels/issues/1062.
