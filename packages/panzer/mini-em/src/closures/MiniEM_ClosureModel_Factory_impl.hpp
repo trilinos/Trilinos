@@ -16,9 +16,6 @@
 
 #include "MiniEM_GaussianPulse.hpp"
 #include "MiniEM_RandomForcing.hpp"
-#include "MiniEM_InversePermeability.hpp"
-#include "MiniEM_Permittivity.hpp"
-#include "MiniEM_Conductivity.hpp"
 #include "MiniEM_TensorConductivity.hpp"
 #include "MiniEM_VariableTensorConductivity.hpp"
 
@@ -109,33 +106,6 @@ buildClosureModels(const std::string& model_id,
         double max = plist.get<double>("range max");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed,min,max));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="INVERSE PERMEABILITY") {
-        double mu = plist.get<double>("mu");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu,DoF));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="PERMITTIVITY") {
-        double epsilon = plist.get<double>("epsilon");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::Permittivity<EvalT,panzer::Traits>(key,*ir,fl,epsilon,DoF));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="CONDUCTIVITY") {
-        double sigma = plist.get<double>("sigma");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::Conductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
 	evaluators->push_back(e);
 
         found = true;
