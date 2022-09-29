@@ -183,6 +183,8 @@ namespace Intrepid2 {
   class Basis_HGRAD_TRI_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
+    using HostBasis = Basis_HGRAD_TRI_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
+      
     using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
     using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
