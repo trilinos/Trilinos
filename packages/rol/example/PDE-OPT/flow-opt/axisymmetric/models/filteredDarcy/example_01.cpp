@@ -282,6 +282,23 @@ int main(int argc, char *argv[]) {
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
     //pdecon->outputTpetraData();
 
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>> conFilter;
+    ROL::Ptr<PDE_Constraint<RealT>>         pdeconFilter;
+    ROL::Ptr<Assembler<RealT>>              assemblerFilter;
+    conFilter = ROL::makePtr<PDE_Constraint<RealT>>(pdeFilter,meshMgr,comm,*parlist,*outStream);
+    pdeconFilter = ROL::dynamicPtrCast<PDE_Constraint<RealT>>(conFilter);
+    assemblerFilter = pdeconFilter->getAssembler();
+    ROL::Ptr<Tpetra::MultiVector<>> filteru_ptr, filterz_ptr;
+    ROL::Ptr<ROL::TpetraMultiVector<RealT>> filteru, filterz;
+    filteru_ptr = assemblerFilter->createStateVector();
+    filterz_ptr = assemblerFilter->createControlVector();
+    filteru = ROL::makePtr<PDE_PrimalSimVector<RealT>>(filteru_ptr,pdeFilter,assemblerFilter,*parlist);
+    filterz = ROL::makePtr<PDE_PrimalOptVector<RealT>>(filterz_ptr,pdeFilter,assemblerFilter,*parlist);
+    filteru->setScalar(0.0);
+    filterz->setScalar(0.0);
+    pdeconFilter->solve(*filteru, *filteru, *filterz, tol);
+    pdeconFilter->outputTpetraData();
+
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
