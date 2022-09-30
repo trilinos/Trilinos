@@ -1960,15 +1960,22 @@ void mult_A_B_newmatrix(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal
                                                          Bcol2Ccol,Icol2Ccol,
                                                          Ccolmap.getConst()->getLocalNumElements());
 
-  // Call KokkosSparse routines to calculate Amat*Bmerged on device.
-  KBSR Cmat;
-  KokkosSparse::block_spgemm_symbolic(kh, Amat, false, Bmerged, false, Cmat);
-  KokkosSparse::block_spgemm_numeric (kh, Amat, false, Bmerged, false, Cmat);
-  kh.destroy_spgemm_handle();
+  RCP<graph_t> graphC;
+  typename KBSR::values_type values;
+  {
+    // Call KokkosSparse routines to calculate Amat*Bmerged on device.
+    // NOTE: Need to scope guard this since the BlockCrs constructor will need to copy the host graph
+    KBSR Cmat;
+    KokkosSparse::block_spgemm_symbolic(kh, Amat, false, Bmerged, false, Cmat);
+    KokkosSparse::block_spgemm_numeric (kh, Amat, false, Bmerged, false, Cmat);
+    kh.destroy_spgemm_handle();
+    
+    // Build Tpetra::BlockCrsMatrix from KokkosSparse::BsrMatrix
+    graphC = rcp(new graph_t(Cmat.graph, Aview.origMatrix->getRowMap(), Ccolmap.getConst()));
+    values = Cmat.values;
+  }
+  C = rcp (new block_crs_matrix_type (*graphC, values, Aview.blocksize));
 
-  // Build Tpetra::BlockCrsMatrix from KokkosSparse::BsrMatrix
-  graph_t graphC(Cmat.graph, Aview.origMatrix->getRowMap(), Ccolmap.getConst());
-  C = rcp (new block_crs_matrix_type (graphC, Cmat.values, Aview.blocksize));
 }
 
 /*********************************************************************************************************/
