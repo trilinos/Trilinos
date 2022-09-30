@@ -291,13 +291,6 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   TimeMonitor MM (*TimeMonitor::getNewTimer (prefix + "Transpose Local"));
 #endif
 
-  const bool sort = [&] () {
-    constexpr bool sortDefault = true; // see #4607 discussion
-    const char sortParamName[] = "sort";
-    return params.get () == nullptr ? sortDefault :
-      params->get (sortParamName, sortDefault);
-  } ();
-
   RCP<const bcrs_matrix_type> crsMatrix =
     rcp_dynamic_cast<const bcrs_matrix_type> (origMatrix_);
 
@@ -308,8 +301,9 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
   local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_bsr_matrix(lclMatrix);
-  if (sort)
-    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
+
+  // BlockCrs requires that we sort stuff
+  KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
 
   // Prebuild the importers and exporters the no-communication way,
   // flipping the importers and exporters around.
@@ -321,10 +315,6 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
     Teuchos::null : rcp (new export_type (*origImport));
 
   RCP<Teuchos::ParameterList> graphParams = Teuchos::null;
-  if(!sort) {
-    graphParams = rcp(new Teuchos::ParameterList);
-    graphParams->set("sorted", false);
-  }
 
   // Make the Transpose Graph
   RCP<const crs_graph_type> graph = rcp(new crs_graph_type(
