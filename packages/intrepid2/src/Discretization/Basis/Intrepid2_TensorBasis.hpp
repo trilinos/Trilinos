@@ -237,6 +237,7 @@ struct OperatorTensorDecomposition
   std::vector< std::vector<EOperator> > ops; // outer index: vector entry ordinal; inner index: basis component ordinal. (scalar-valued operators have a single entry in outer vector)
   std::vector<double> weights; // weights for each vector entry
   ordinal_type numBasisComponents_;
+  bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …).  This is used for H(curl) wedges (specifically, for OPERATOR_CURL).
   
   OperatorTensorDecomposition(const std::vector<EOperator> &opsBasis1, const std::vector<EOperator> &opsBasis2, const std::vector<double> vectorComponentWeights)
   :
@@ -471,7 +472,20 @@ struct OperatorTensorDecomposition
     // check that vector lengths agree:
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
-    return OperatorTensorDecomposition(expandedOps, expandedWeights);
+    OperatorTensorDecomposition result(expandedOps, expandedWeights);
+    result.setRotateXYNinetyDegrees(rotateXYNinetyDegrees_);
+    return result;
+  }
+  
+  //! If true, this flag indicates that a vector component that spans the first two dimensions should be rotated by 90 degrees clockwise, mapping (x,y) to (-y,x).  If there is no such vector component, the flag should be ignored.  As of this writing, this is used only by the "derived" H(curl) basis on the wedge.
+  bool rotateXYNinetyDegrees() const
+  {
+    return rotateXYNinetyDegrees_;
+  }
+  
+  void setRotateXYNinetyDegrees(const bool &value)
+  {
+    rotateXYNinetyDegrees_ = value;
   }
 };
 
@@ -854,6 +868,10 @@ struct OperatorTensorDecomposition
       {
         this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
       }
+      else if ((cellKey1 == shards::Triangle<3>::key) && (cellKey2 == shards::Line<2>::key))
+      {
+        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+      }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
@@ -1028,7 +1046,7 @@ struct OperatorTensorDecomposition
      
      Subclasses must override this method.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const
     {
       const int spaceDim  = this->getDomainDimension();
       
@@ -1404,8 +1422,8 @@ struct OperatorTensorDecomposition
          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
          {
            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
-           dofCoeffs(fieldOrdinal) = dofCoeffs1(fieldOrdinal1);
-           dofCoeffs(fieldOrdinal) = dofCoeffs2(fieldOrdinal2);
+           dofCoeffs(fieldOrdinal)  = dofCoeffs1(fieldOrdinal1);
+           dofCoeffs(fieldOrdinal) *= dofCoeffs2(fieldOrdinal2);
          }
        });
     }
@@ -1524,6 +1542,25 @@ struct OperatorTensorDecomposition
               }
               
               tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);
+            }
+            
+            // op.rotateXYNinetyDegrees() is set to true for one of the H(curl) wedge families
+            // (due to the fact that Intrepid2::EOperator does not allow us to extract individual vector components
+            //  via, e.g., OPERATOR_X, OPERATOR_Y, etc., we don't have a way of expressing the decomposition
+            //  just in terms of EOperator and component-wise scalar weights; we could also do this via component-wise
+            //  matrix weights, but this would involve a more intrusive change to the implementation).
+            const bool spansXY = (vectorComponentOrdinal == 0) && (basisValueView.extent_int(2) == 2);
+            if (spansXY && operatorDecomposition.rotateXYNinetyDegrees())
+            {
+              // map from (f_x,f_y) --> (-f_y,f_x)
+              auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
+              Kokkos::parallel_for("rotateXYNinetyDegrees", policy,
+              KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
+                const auto  f_x = basisValueView(fieldOrdinal,pointOrdinal,0); // copy
+                const auto &f_y = basisValueView(fieldOrdinal,pointOrdinal,1); // reference
+                basisValueView(fieldOrdinal,pointOrdinal,0) = -f_y;
+                basisValueView(fieldOrdinal,pointOrdinal,1) =  f_x;
+              });
             }
             
             // if weight is non-trivial (not 1.0), then we need to multiply one of the component views by weight.
@@ -1768,21 +1805,24 @@ struct OperatorTensorDecomposition
         pointCount2 = totalPointCount;
       }
       
-      int spaceDim1 = inputPoints1.extent_int(1);
-      int spaceDim2 = inputPoints2.extent_int(1);
+      const ordinal_type spaceDim1 = inputPoints1.extent_int(1);
+      const ordinal_type spaceDim2 = inputPoints2.extent_int(1);
       
       INTREPID2_TEST_FOR_EXCEPTION(!tensorPoints && (totalPointCount != inputPoints2.extent_int(0)),
                                    std::invalid_argument, "If tensorPoints is false, the point counts must match!");
             
-      int opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
-      int opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      const ordinal_type opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
+      const ordinal_type opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      
+      const ordinal_type outputRank1 = opRank1 + getFieldRank(basis1_->getFunctionSpace());
+      const ordinal_type outputRank2 = opRank2 + getFieldRank(basis2_->getFunctionSpace());
       
       OutputViewType outputValues1, outputValues2;
-      if (opRank1 == 0)
+      if (outputRank1 == 0)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
-      else if (opRank1 == 1)
+      else if (outputRank1 == 1)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
@@ -1791,11 +1831,11 @@ struct OperatorTensorDecomposition
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported opRank1");
       }
       
-      if (opRank2 == 0)
+      if (outputRank2 == 0)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
-      else if (opRank2 == 1)
+      else if (outputRank2 == 1)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }

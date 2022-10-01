@@ -391,11 +391,11 @@ class BsrMatrix {
       HostMirror;
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft,
-                                 execution_space, memory_traits, size_type>
+                                 device_type, memory_traits, size_type>
       StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft,
-                                 execution_space, memory_traits, size_type>
+                                 device_type, memory_traits, size_type>
       staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;

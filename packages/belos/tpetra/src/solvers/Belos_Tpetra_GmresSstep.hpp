@@ -401,7 +401,7 @@ private:
       // Restart cycle
       for (; iter < restart && metric > input.tol; iter+=step) {
         if (outPtr != nullptr) {
-          *outPtr << "Current iteration: iter=" << iter
+          *outPtr << "Current s-step iteration: iter=" << iter
                   << ", restart=" << restart
                   << ", step=" << step
                   << ", metric=" << metric << endl;

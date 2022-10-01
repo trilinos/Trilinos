@@ -127,6 +127,7 @@ namespace FROSch {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
+        this->extractLocalSubdomainMatrix_Symbolic();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;

@@ -78,16 +78,14 @@ private:
 
   typedef typename EvalT::ScalarT ScalarT;
 
-  std::string dof_name;
-  Teuchos::RCP<const PureBasis> basis;
-  int num_faces;
-  int num_dim;
+  std::string dof_name_;
+  Teuchos::RCP<const PureBasis> basis_;
+  int num_faces_;
+  int num_dim_;
 
-  PHX::MDField<const ScalarT,Cell,BASIS,Dim> normals;
-  std::vector<PHX::MDField<const ScalarT,Cell,BASIS,Dim> > vector_values;
-  PHX::MDField<ScalarT,Cell,BASIS> result;
-
-  ProjectToFaces();
+  PHX::MDField<const ScalarT,Cell,BASIS,Dim> normals_;
+  PHX::MDField<const ScalarT,Cell,BASIS,Dim> vector_values_;
+  PHX::MDField<ScalarT,Cell,BASIS> result_;
 };
 
 }

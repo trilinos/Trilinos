@@ -1135,7 +1135,8 @@ getWeightedMeasure(const bool cache,
       // Calculate measures (quadrature weights in physical space) for this side
       auto side_weighted_measure = Kokkos::DynRankView<Scalar,PHX::Device>("side_weighted_measure",num_evaluate_cells_,num_points_on_side);
       if(cell_dim == 1){
-        Kokkos::deep_copy(side_weighted_measure, side_cub_weights(0));
+        auto side_cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),side_cub_weights);
+        Kokkos::deep_copy(side_weighted_measure, side_cub_weights_host(0));
       } else {
 
         // Copy from complete jacobian to side jacobian

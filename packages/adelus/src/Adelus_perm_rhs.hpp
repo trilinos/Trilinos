@@ -107,7 +107,7 @@ namespace Adelus {
       k_row=k%nprocs_col;
 
       if (ahandle.get_my_rhs() > 0) {
-        if (myrow==k_row) pivot_row = permute(k/nprocs_col);
+        if (myrow==k_row) pivot_row = static_cast<int>(permute(k/nprocs_col));
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         int pivot_row_pid = pivot_row%nprocs_col;
 

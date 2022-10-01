@@ -199,6 +199,11 @@ namespace Intrepid2
     {
       basis = getTetrahedronBasis<BasisFamily>(fs, polyOrder_x);
     }
+    else if (cellTopo.getBaseKey() == shards::Wedge<>::key)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(polyOrder_y < 0, std::invalid_argument, "polyOrder_y must be specified");
+      basis = getWedgeBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y);
+    }
     else
     {
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported cell topology");
@@ -263,14 +268,54 @@ The total number of points defined will be a triangular number; if n=numPointsBa
   template <typename PointValueType, typename DeviceType>
   inline ViewType<PointValueType,DeviceType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
   {
-    const ordinal_type order = numPoints_1D - 1;
-    ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
-    ordinal_type spaceDim  = cellTopo.getDimension();
-    
-    ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
-    PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
-    
-    return inputPoints;
+    if (cellTopo.getBaseKey() == shards::Wedge<>::key)
+    {
+      shards::CellTopology lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
+      shards::CellTopology triTopo  = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+      
+      const ordinal_type order = numPoints_1D - 1;
+      ordinal_type numPoints_tri  = PointTools::getLatticeSize(triTopo,  order);
+      ordinal_type numPoints_line = PointTools::getLatticeSize(lineTopo, order);
+      ordinal_type numPoints      = numPoints_tri * numPoints_line;
+      ordinal_type spaceDim  = cellTopo.getDimension();
+      
+      ViewType<PointValueType,DeviceType> inputPointsTri  = getView<PointValueType,DeviceType>("input points",numPoints_tri, 2);
+      ViewType<PointValueType,DeviceType> inputPointsLine = getView<PointValueType,DeviceType>("input points",numPoints_line,1);
+      PointTools::getLattice(inputPointsTri,   triTopo, order, 0, POINTTYPE_EQUISPACED );
+      PointTools::getLattice(inputPointsLine, lineTopo, order, 0, POINTTYPE_EQUISPACED );
+
+      ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
+      
+      using ExecutionSpace = typename ViewType<PointValueType,DeviceType>::execution_space;
+      
+      Kokkos::RangePolicy < ExecutionSpace > policy(0,numPoints_tri);
+      Kokkos::parallel_for( policy,
+      KOKKOS_LAMBDA (const ordinal_type &triPointOrdinal )
+      {
+        ordinal_type pointOrdinal = triPointOrdinal * numPoints_line;
+        for (ordinal_type linePointOrdinal=0; linePointOrdinal<numPoints_line; linePointOrdinal++)
+        {
+          inputPoints(pointOrdinal,0) = inputPointsTri(  triPointOrdinal,0);
+          inputPoints(pointOrdinal,1) = inputPointsTri(  triPointOrdinal,1);
+          inputPoints(pointOrdinal,2) = inputPointsLine(linePointOrdinal,0);
+          pointOrdinal++;
+        }
+      }
+      );
+            
+      return inputPoints;
+    }
+    else
+    {
+      const ordinal_type order = numPoints_1D - 1;
+      ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
+      ordinal_type spaceDim  = cellTopo.getDimension();
+      
+      ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
+      PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
+      
+      return inputPoints;
+    }
   }
 
   template<typename OutputValueType, typename DeviceType>

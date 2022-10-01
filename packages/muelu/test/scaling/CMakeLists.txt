@@ -459,7 +459,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "CalcRotations"
-      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType='gmres' --tol=1.0e-8  --muelu-computed-nullspace"
+      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType=gmres --tol=1.0e-8  --muelu-computed-nullspace"
       NUM_MPI_PROCS 4
       COMM serial mpi
       )

@@ -232,6 +232,11 @@ namespace FROSch {
 
         ParameterListPtr ParameterList_;
 
+        // result of ExtractLocalSubdomainMatrix_Symbolic
+        bool ExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
+        XMatrixPtr subdomainMatrix_;
+        XMatrixPtr localSubdomainMatrix_;
+
         bool Verbose_ = false;
 
         bool IsInitialized_ = false;
