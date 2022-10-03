@@ -191,7 +191,7 @@ macro(tribits_project_impl)
   #
 
   message("")
-  message("Getting information for all enabled TPLs ...")
+  message("Getting information for all enabled external packages/TPLs ...")
   message("")
 
   tribits_process_enabled_tpls()

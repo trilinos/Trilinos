@@ -77,7 +77,7 @@ include(TribitsAddTestHelpers)
 #     [ADDED_TESTS_NAMES_OUT <testsNames>]
 #     )
 #
-# The tests are only added if tests are enabled for the SE package
+# The tests are only added if tests are enabled for the package
 # (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_) or the parent package (if this is a
 # subpackage) (i.e. ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS``).  (NOTE: A more
 # efficient way to optionally enable tests is to put them in a ``test/``
