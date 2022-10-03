@@ -119,7 +119,6 @@ int main(int argc, char* argv[])
     // Create list of valid parameter sublists
     Teuchos::ParameterList validParamList("test_tpetra_stratimikos_solver");
     validParamList.set("Matrix File","fileName");
-    validParamList.set("Solve Adjoint",false);
     validParamList.sublist("Linear Solver Builder").disableRecursiveValidation();
 
     if(verbose) *out << "\nValidating top-level input parameters ...\n";
@@ -127,8 +126,6 @@ int main(int argc, char* argv[])
 
     const std::string
       &matrixFile = getParameter<std::string>(*paramList,"Matrix File");
-    const bool
-      solveAdjoint = getParameter<bool>(*paramList,"Solve Adjoint");
     RCP<ParameterList>
       solverBuilderSL  = sublist(paramList,"Linear Solver Builder",true);
 

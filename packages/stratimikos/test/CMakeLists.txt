@@ -181,7 +181,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     test_tpetra_stratimikos_solver_driver
     NAME test_tpetra_stratimikos_solver_driver
     ARGS
-      "--input-file=FourByFour.xml --show-timer-summary"
+      "--input-file=FourByFour.belos.np.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
