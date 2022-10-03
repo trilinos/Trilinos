@@ -724,6 +724,67 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   BlockCrsMatrix (const crs_graph_type& graph,
+                  const typename local_matrix_device_type::values_type& values,
+                  const LO blockSize) :
+    dist_object_type (graph.getMap ()),
+    graph_ (graph),
+    rowMeshMap_ (* (graph.getRowMap ())),
+    blockSize_ (blockSize),
+    X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    pointImporter_ (new Teuchos::RCP<typename crs_graph_type::import_type> ()),
+    offsetPerBlock_ (blockSize * blockSize),
+    localError_ (new bool (false)),
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+  {
+    /// KK : additional check is needed that graph is fill complete.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
+      "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
+      "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
+
+    // Trick to test whether LO is nonpositive, without a compiler
+    // warning in case LO is unsigned (which is generally a bad idea
+    // anyway).  I don't promise that the trick works, but it
+    // generally does with gcc at least, in my experience.
+    const bool blockSizeIsNonpositive = (blockSize + 1 <= 1);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::"
+      "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
+      " <= 0.  The block size must be positive.");
+
+    domainPointMap_ = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
+    rangePointMap_ = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
+
+    {
+      // These are rcp
+      const auto domainPointMap = getDomainMap();
+      const auto colPointMap = Teuchos::rcp
+        (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
+      *pointImporter_ = Teuchos::rcp
+        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+    }
+    {
+      auto local_graph_h = graph.getLocalGraphHost ();
+      auto ptr_h = local_graph_h.row_map;
+      ptrHost_ = decltype(ptrHost_)(Kokkos::ViewAllocateWithoutInitializing("graph row offset"), ptr_h.extent(0));
+      Kokkos::deep_copy(ptrHost_, ptr_h);
+
+      auto ind_h = local_graph_h.entries;
+      indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      Kokkos::deep_copy (indHost_, ind_h);
+
+      const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
+      TEUCHOS_ASSERT_EQUALITY(numValEnt, values.size());
+      val_ = decltype (val_) (values);
+    }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  BlockCrsMatrix (const crs_graph_type& graph,
                   const map_type& domainPointMap,
                   const map_type& rangePointMap,
                   const LO blockSize) :
@@ -937,10 +998,7 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
-                         const Import<LO, GO, Node>& importer,
-                         const Teuchos::RCP<const map_type>& domainMap,
-                         const Teuchos::RCP<const map_type>& rangeMap,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params) const
+                         const Import<LO, GO, Node>& importer) const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -948,19 +1006,15 @@ public:
 
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
-                               "Right now, assuming destMatrix is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!domainMap.is_null(), std::invalid_argument,
-                               "Right now, assuming domainMap is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!rangeMap.is_null(), std::invalid_argument,
-                               "Right now, assuming rangeMap is null.");
-    TEUCHOS_TEST_FOR_EXCEPTION(!params.is_null(), std::invalid_argument,
-                               "Right now, assuming params is null.");
-
+                               "destMatrix is required to be null.");
+ 
     // BlockCrsMatrix requires a complete graph at construction.
     // So first step is to import and fill complete the destGraph.
-    RCP<crs_graph_type> destGraph = rcp (new crs_graph_type (importer.getTargetMap(), 0));
-    destGraph->doImport(this->getCrsGraph(), importer, Tpetra::INSERT);
-    destGraph->fillComplete();
+    RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
+    RCP<crs_graph_type> destGraph = importAndFillCompleteCrsGraph<crs_graph_type>(srcGraph, importer,
+                                                                                  srcGraph->getDomainMap(),
+                                                                                  srcGraph->getRangeMap());
+
 
     // Final step, create and import the destMatrix.
     destMatrix = rcp (new this_type (*destGraph, getBlockSize()));
@@ -1337,6 +1391,23 @@ public:
   }
 
   template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::local_matrix_device_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalMatrixDevice () const
+  {
+    auto numCols = this->graph_.getColMap()->getLocalNumElements();
+    auto val = val_.getDeviceView(Access::ReadWrite);
+    const LO blockSize = this->getBlockSize ();
+    const auto graph = this->graph_.getLocalGraphDevice ();
+
+    return local_matrix_device_type("Tpetra::BlockCrsMatrix::lclMatrixDevice",
+                                    numCols,
+                                    val,
+                                    graph,
+                                    blockSize);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   applyBlockTrans (const BlockMultiVector<Scalar, LO, GO, Node>& X,
@@ -1483,7 +1554,7 @@ public:
     auto X_lcl = X_mv.getLocalViewDevice (Access::ReadOnly);
     auto Y_lcl = Y_mv.getLocalViewDevice (Access::ReadWrite);
     auto val = val_.getDeviceView(Access::ReadWrite);
-
+    
     bcrsLocalApplyNoTrans (alpha_impl, graph, val, blockSize, X_lcl,
                            beta_impl, Y_lcl);
   }

@@ -1,0 +1,51 @@
+<ParameterList>
+  <ParameterList name="MyTekoPreconditioner">
+    <Parameter name="Type" type="string" value="Block Gauss-Seidel"/>
+    <Parameter name="Use Upper Triangle" type="bool" value="true"/>
+    <Parameter name="Inverse Type 1" type="string" value="MueluScalar"/> <!-- LIQUID_PHASE_PRESSURE -->
+    <Parameter name="Inverse Type 2" type="string" value="MueluScalar"/> <!-- LIQUID_PHASE_VOLTAGE -->
+    <Parameter name="Inverse Type 3" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_VOLTAGE -->
+    <Parameter name="Inverse Type 4" type="string" value="MueluScalar"/> <!-- LIQUID_PHASE_SPECIES_FRACTION_Li+ -->
+    <Parameter name="Inverse Type 5" type="string" value="MueluScalar"/> <!-- LIQUID_PHASE_SPECIES_FRACTION_Cl- -->
+    <Parameter name="Inverse Type 6" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Fe -->
+    <Parameter name="Inverse Type 7" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_FeS -->
+    <Parameter name="Inverse Type 8" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_FeS2 -->
+    <Parameter name="Inverse Type 9" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Li12Si7 -->
+    <Parameter name="Inverse Type 10" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Li13Si4 -->
+    <Parameter name="Inverse Type 11" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Li2S -->
+    <Parameter name="Inverse Type 12" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Li3Fe2S4 -->
+    <Parameter name="Inverse Type 13" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Li7Si3 -->
+    <Parameter name="Inverse Type 14" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_LiXFeYS2 -->
+    <Parameter name="Inverse Type 15" type="string" value="MueluScalar"/> <!-- SOLID_PHASE_SPECIES_Si -->
+  </ParameterList>
+
+<!--
+  <ParameterList name="ddiluScalar">
+    <Parameter name="Type" type="string" value="Ifpack2"/>
+    <Parameter name="Prec Type" type="string" value="ILUT"/>
+    <ParameterList name="Ifpack2 Settings">
+      <Parameter name="fact: drop tolerance" type="double" value="1e-10"/>
+      <Parameter name="schwarz: use reordering" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+-->
+  <ParameterList name="MueluScalar">
+    <Parameter name="Type" type="string" value="MueLu"/>
+    <Parameter name="max levels" type="int" value="10"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="sa: damping factor" type="double" value="0.0"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="coarse: max size" type="int" value="250"/>
+    <Parameter name="coarse: type" type="string" value="Klu"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: min agg size" type="int" value="2"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
+    <Parameter name="repartition: enable" type="bool" value="true"/>
+    <Parameter name="repartition: partitioner"             type="string"   value="zoltan"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="256"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.2"/>
+    <Parameter name="repartition: remap parts"             type="bool"     value="false"/>
+
+  </ParameterList>
+</ParameterList>

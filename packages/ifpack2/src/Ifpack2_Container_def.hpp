@@ -225,7 +225,7 @@ void Container<MatrixType>::DoJacobi(ConstHostView X, HostView Y, SC dampingFact
       for(size_t nv = 0; nv < numVecs; nv++)
       {
         ISC x = X(LRID, nv);
-        Y(LRID, nv) = x * d;
+        Y(LRID, nv) += x * d;
       }
     }
   }
@@ -338,13 +338,29 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     // singleton, can't access Containers_[i] as it was never filled and may be null.
     // a singleton calculation (just using matrix diagonal) is exact, all residuals should be zero.
     LO LRID = this->blockOffsets_[i];  // by definition, a singleton 1 row in block.
-    ConstHostView diagView = this->Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
-    ISC d = one / diagView(LRID, 0);
+    //Use the KokkosSparse internal matrix for low-overhead values/indices access
+    //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
+    using container_exec_space = typename ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space;
+    container_exec_space().fence();
+    auto localA = this->inputCrsMatrix_->getLocalMatrixHost();
+    using size_type = typename crs_matrix_type::local_matrix_host_type::size_type;
+    const auto& rowmap = localA.graph.row_map;
+    const auto& entries = localA.graph.entries;
+    const auto& values = localA.values;
+    this->getMatDiag();
+    auto diagView = this->Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
+    ISC d = (static_cast<ISC> (dampingFactor)) / diagView(LRID, 0);
     for(size_t m = 0; m < numVecs; m++)
     {
-      ISC x = X(LRID, m);
-      ISC newy = x * d;
-      Y2(LRID, m) = newy;
+      // ISC x = X(LRID, m);
+      ISC r = X(LRID, m);
+      for(size_type k = rowmap(LRID); k < rowmap(LRID + 1); k++) {
+        const LO col = entries(k);
+        r -= values(k) * Y2(col, m);
+      }
+
+      ISC newy = r * d;
+      Y2(LRID, m) += newy;
     }
   }
   else if(!this->inputCrsMatrix_.is_null() &&

@@ -176,8 +176,27 @@ getValidParameters () const
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
-setParameters (const Teuchos::ParameterList& List)
+setParameters (const Teuchos::ParameterList& pl)
 {
+  // CAG: Copied form Relaxation
+  // FIXME (aprokop 18 Oct 2013) Casting away const is bad here.
+  // but otherwise, we will get [unused] in pl
+  this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));
+}
+
+template<class MatrixType,class ContainerType>
+void
+BlockRelaxation<MatrixType,ContainerType>::
+setParametersImpl (Teuchos::ParameterList& List)
+{
+  if (List.isType<double>("relaxation: damping factor")) {
+    // Make sure that ST=complex can run with a damping factor that is
+    // a double.
+    scalar_type df = List.get<double>("relaxation: damping factor");
+    List.remove("relaxation: damping factor");
+    List.set("relaxation: damping factor",df);
+  }
+
   // Note that the validation process does not change List.
   Teuchos::RCP<const Teuchos::ParameterList> validparams;
   validparams = this->getValidParameters();
