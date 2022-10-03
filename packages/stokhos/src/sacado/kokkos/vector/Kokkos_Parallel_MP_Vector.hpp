@@ -64,13 +64,20 @@ struct MPVectorWorkConfig {
   size_t range;
   size_t team;
   size_t shared;
+  execution_space space_;
 
-  MPVectorWorkConfig( const size_t range_,
-                      const size_t team_,
-                      const size_t shared_ = 0 ) :
-    range(range_), team(team_), shared(shared_) {}
+  MPVectorWorkConfig( const ExecSpace &space,
+                      const size_t _range,
+                      const size_t _team,
+                      const size_t _shared = 0 ) :
+    range(_range), team(_team), shared(_shared), space_(space) {}
 
-  ExecSpace space() const { return ExecSpace(); }
+  MPVectorWorkConfig( const size_t _range,
+                      const size_t _team,
+                      const size_t _shared = 0 ) :
+    MPVectorWorkConfig(execution_space(), _range, _team, _shared) {}
+
+  ExecSpace space() const { return space_; }
 };
 
 namespace Impl {
