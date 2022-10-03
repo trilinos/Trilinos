@@ -14,7 +14,7 @@ std::string time_stamp(const std::string &format)
   }
 
   time_t      calendar_time = std::time(nullptr);
-  struct tm * local_time    = std::localtime(&calendar_time);
+  struct tm  *local_time    = std::localtime(&calendar_time);
   std::string time_string   = fmt::format(format, *local_time);
   return time_string;
 }

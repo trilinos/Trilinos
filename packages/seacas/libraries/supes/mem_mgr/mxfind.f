@@ -31,7 +31,7 @@ C***********************************************************************
          IF (DPOINT(ROW,CHRCOL,3) .EQ. -1) THEN
 
 C           The names was found and is of numeric type.
-            LASTER = SUCESS
+            LASTER = SUCCESS
 
          ELSE
 
@@ -48,7 +48,7 @@ C        ENTRY NOT FOUND.
       ELSE
          CALL SRCHC (DICT, 1, NNAMES(1), NAME1, ERR, ROW)
          IF (ERR .EQ. 1) THEN
-            LASTER = SUCESS
+            LASTER = SUCCESS
          ELSE
             LASTER = NONAME
          END IF

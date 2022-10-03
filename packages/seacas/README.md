@@ -1,173 +1,206 @@
+# SEACAS  [[Documentation](http://sandialabs.github.io/seacas-docs/)] [[Wiki](https://github.com/sandialabs/seacas/wiki)]
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/838c6d845e9e4ce4a7cd02bd06b4d2ad)](https://www.codacy.com/gh/gsjaardema/seacas/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gsjaardema/seacas&amp;utm_campaign=Badge_Grade)
+[![Analysis Status](https://scan.coverity.com/projects/2205/badge.svg?flat=1)](https://scan.coverity.com/projects/gsjaardema-seacas)
+[![Spack Version](https://img.shields.io/spack/v/adios2.svg)](https://spack.readthedocs.io/en/latest/package_list.html#seacas)
+[![Appveyor Build](https://ci.appveyor.com/api/projects/status/pis4gok72yh0wwfs/branch/master?svg=true)](https://ci.appveyor.com/project/gsjaardema/seacas/branch/master)
+[![Github Actions -- CI Serial](https://github.com/sandialabs/seacas/actions/workflows/build_test.yml/badge.svg)](https://github.com/sandialabs/seacas)
+[![Github Actions -- CI Variants](https://github.com/sandialabs/seacas/actions/workflows/build_variant.yml/badge.svg)](https://github.com/sandialabs/seacas)
+[![Github Actions -- CI Intel](https://github.com/sandialabs/seacas/actions/workflows/intel-build.yml/badge.svg)](https://github.com/sandialabs/seacas)
+[![Github Actions -- CI MSYS2](https://github.com/sandialabs/seacas/actions/workflows/msys2.yml/badge.svg)](https://github.com/sandialabs/seacas)
+
+*  [Get the sources](#get-the-sources)
 *  [Build instructions](#build-instructions)
 *  [Configure, Build, and Install SEACAS](#configure-build-and-install-seacas)
+*  [Parallel Build](#parallel-build)
 *  [Testing](#testing)
+*  [Exodus](#exodus)
+*  [Trilinos](#trilinos)
+*  [SPACK](#spack)
+*  [License](#license)
 *  [Contact information](#contact-information)
+*  NOTE: The old imake-based build has been removed.
+
+## Get the sources
+```sh
+git clone https://github.com/sandialabs/seacas.git
+```
+This will create a directory that will be referred to as _seacas_ in
+the instructions that follow. You can rename this directory to any
+other name you desire. Set an environment variable pointing to this
+location by doing:
+
+```sh
+cd seacas && export ACCESS=`pwd`
+```
 
 ## Build instructions
 
-### Download and build dependencies
+### Automatically download and build dependencies (Third-Party Libraries)
 
-There are a few externally developed third-party libraries (TPL) that are required to
-build SEACAS
+There are a few externally developed third-party libraries (TPL) that
+are required (or optional) to build SEACAS: HDF5, NetCDF, CGNS, MatIO,
+Kokkos, and (if MPI set) PnetCDF libraries. You can build the
+libraries using the `install-tpl.sh` script, or you can install them
+manually as detailed in
+[TPL-Manual-Install.md](TPL-Manual-Install.md).
 
-*  [Zoltan](#zoltan) -- required, part of Trilinos
-*  [HDF5](#hdf5) -- optional, but highly recommended
-*  [Parallel-NetCDF](#parallel-netcdf) -- optional for parallel
-*  [NetCDF](#netcdf) -- required with modifications
-*  [MatIO](#matio) -- optional
-*  [Faodel](#faodel) -- optional
+*  To use the script, simply type `./install-tpl.sh`
+*  The default behavior can be modified via a few environment variables:
 
-#### Zoltan
-Zoltan is a package in Trilinos and it must be enabled for a SEACAS build.
+| Variable        | Values          | Default | Description |
+|-----------------|:---------------:|:-------:|-------------|
+| INSTALL_PATH    | path to install | pwd | Root of install path; default is current location |
+| COMPILER        | clang, gnu, intel, ibm | gnu | What compiler should be used for non-parallel build. Must have C++-14 capability. |
+| MPI             | YES, NO | NO  | If YES, then build parallel capability |
+| FORCE           | YES, NO | NO  | Force downloading and building even if lib is already installed. |
+| BUILD           | YES, NO | YES | Should TPLs be built and installed. |
+| DOWNLOAD        | YES, NO | YES | Should TPLs be downloaded. |
+| USE_PROXY       | YES, NO | NO  | Sandia specific -- use proxy when downloading tar files |
+| DEBUG           | YES, NO | NO  | Build debug executable; default is optimized
+| SHARED          | YES, NO | YES | Build shared libraries if YES, archive (.a) if NO |
+| CRAY            | YES, NO | YES | Is this a Cray system (special parallel options) |
+| NEEDS_ZLIB      | YES, NO | NO  | If system does not have zlib installed, download and install it (HDF5 compression). |
+| USE\_ZLIB\_NG   | YES, NO | NO  | Should the improved [zlib-ng](https://github.com/zlib-ng/zlib-ng) library be used to provide ZLIB capability |
+| NEEDS_SZIP      | YES, NO | NO  | If system does not have szip installed, download and install it (HDF5 compression). |
+| USE\_64BIT\_INT | YES, NO | NO  | In CGNS, enable 64-bit integers |
+| CGNS            | YES, NO | YES | Should CGNS TPL be built.  |
+| MATIO           | YES, NO | YES | Should matio TPL be built. |
+| METIS           | YES, NO | NO  | Should metis TPL be built (parallel decomposition). |
+| PARMETIS        | YES, NO | NO  | Should parmetis TPL be built (parallel decomposition). |
+| ADIOS2          | YES, NO | NO  | Should adios2 TPL be built. |
+| CATALYST2       | YES, NO | NO  | Should catalyst 2 TPL be built. |
+| KOKKOS          | YES, NO | NO  | Should Kokkos TPL be built. |
+| GNU_PARALLEL    | YES, NO | YES | Should GNU parallel script be built. |
+| FMT             | YES, NO | YES | Should Lib::FMT TPL be built. |
+| H5VERSION       | V112, V110, V18 | V110 | Use HDF5-1.12.X, HDF5-1.10.X or HDF5-1.8.X |
+| BB              | YES, NO | NO  | Enable Burst Buffer support in PnetCDF |
+| JOBS            | {count} |  2   | Number of "jobs" used for simultaneous compiles |
+| SUDO            | "" or sudo | "" | If need to be superuser to install |
+*  NOTE: The `DOWNLOAD` and `BUILD` options can be used to download all TPL source; move to a system with no outside internet access and then build/install the TPLs.
+*  The arguments can either be set in the environment as: `export COMPILER=gnu`, or passed on the script invocation line: `COMPILER=gnu ./install-tpl.sh`
 
-#### HDF5
-
-If you are using the netcdf-4 capability in the netcdf library or are
-using the MatIO library for conversion of exodus to/from matlab
-format, then you will need the hdf5 library.
-
-The hdf5 library is used for the netcdf4 capability in netcdf which in
-turn is used by exodus.  The netcdf4 capability is typically used for
-large models (>150 million elements); if you are not planning to
-create or read models of this size and do not want compression
-support, you do not have to build hdf5.
-
-*  Download HDF5 from <http://www.hdfgroup.org/HDF5/release/obtain5.html>
-
-*  untar it, creating a directory will will refer to as `hdf5-X.X.X`
-
-*  `cd` to that directory and enter the command:
-
-  *  Serial:
-     ```bash
-     ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec
-     ```
-
-  *  Parallel:
-     ```bash
-     CC=mpicc ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec --enable-parallel
-     ```
-
-  *  `make && make install`
-
-#### Parallel-NetCDF
-  For a parallel build of Trilinos, especially to use the
-  auto-decomposition support of the Ioss library, you will need the
-  parallel-netcdf library, also known as pnetcdf.
-
-*  Download <http://cucis.ece.northwestern.edu/projects/PnetCDF/Release/parallel-netcdf-1.6.1.tar.gz>
-
-*  `tar zxvf parallel-netcdf-1.6.1.tar.gz`
-
-*  `cd` to the `parallel-netcdf-1.6.1` directory and enter the command:
-   ```bash
-   CC=mpicc ./configure --disable-fortran --prefix ${WHERE_TO_INSTALL}
-   ```
-
-*  `make && make install`
-
-#### NetCDF
-The most recent released version is recommended. For use with Exodus, some local modifications to the netcdf.h include file are required.  See [NetCDF-Mapping.md](NetCDF-Mapping.md) for an explanation of why these modifications are required (or highly recommended)
-
-*  Download the latest netcdf-c release from <http://www.unidata.ucar.edu/downloads/netcdf/index.jsp>
-
-*  `tar zxvf netcdf-4.6.3.tar.gz`  (or whatever the latest version is)
-
-*  If the version is *prior* to 4.5.1, then you need to modify the
-   following defines in
-   seacas/TPL/netcdf/netcdf-4.6.3/include/netcdf.h.  Versions *4.5.1 or
-   later* do not check these limits and can be run unmodified.
-
-   ```c
-   #define NC_MAX_DIMS     65536    /* max dimensions per file */
-   #define NC_MAX_VARS     524288   /* max variables per file */
-   ```
-
-*  `cd netcdf-4.6.3` and enter the command:
-
-  *  serial
-     ```bash
-     CFLAGS="-I${WHERE_TO_INSTALL}/include" \
-     CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
-     ./configure --enable-netcdf-4  \
-       --disable-fsync --prefix ${WHERE_TO_INSTALL} \
-       --disable-dap --disable-v2
-     ```
-
-  *  parallel
-     ```bash
-     CC='mpicc' CFLAGS="-I${WHERE_TO_INSTALL}/include" \
-     CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
-     ./configure --enable-netcdf-4  --enable-pnetcdf \
-       --disable-fsync --prefix ${WHERE_TO_INSTALL} \
-       --disable-dap --disable-v2
-     ```
-
-*  Check the results of the configure and make sure that the listings
-   under features are similar to:
-
-   ```bash
-   # Features
-   --------
-   NetCDF-2 API:        no
-   NetCDF-4 API:        yes
-   CDF-5 Support:       yes
-   HDF5 Support:        yes
-   PNetCDF Support:     yes
-   NC-4 Parallel Support:       yes
-   ```
-   There will be other features, but their settings are not important
-   for seacas. For a serial build, `PNetCDF` and `NC-4 Parallel Support`
-   should be `no`
-
-*  `make && make install`
-
-#### MatIO
-The MatIO library is used in the `exo2mat` and `mat2exo` programs which convert an exodus file to and from a MATLAB binary file.  To use this do:
-
-*  Download matio via git:
-
-*  `git clone https://github.com/tbeu/matio.git`
-
-*  `cd matio` and enter the command:
-   ```bash
-   ./autogen.sh
-   # The -L is to find the hdf5 library...
-   export LDFLAGS="-L${WHERE_TO_INSTALL}/lib"
-   ./configure --with-hdf5=${WHERE_TO_INSTALL} --enable-mat73 --enable-shared --prefix=${WHERE_TO_INSTALL}
-   ```
-
-*  `make && make install`
-
-#### Faodel
-Faodel is a collection of data management tools that Sandia is developing to improve how datasets migrate between memory and storage resources in a distributed system. For SEACAS Faodel support means adding a new backend to IOSS. This enables additional data storage capabilities and the chance to communicate data between execution spaces.
-
-Faodel is available at [Faodel](https://github.com/faodel/faodel). And is build here as a SEACAS TPL.
-
-## Configure, Build, and Install Trilinos
+## Configure, Build, and Install SEACAS
 At this time, you should have all external TPL libraries built and
-installed into `${WHERE_TO_INSTALL}/lib` and `${WHERE_TO_INSTALL}/include`. You are now ready
-to configure the SEACAS portion of the Trilinos cmake build.
+installed into `${ACCESS}/lib` and `${ACCESS}/include`. You are now ready
+to configure the SEACAS CMake build.
 
-The relevant defines for SEACAS are:
-```bash
-  -D Trilinos_ENABLE_SEACAS:BOOL=ON
-  -D TPL_ENABLE_Netcdf:BOOL=ON
-  -D Netcdf_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib
-  -D TPL_Netcdf_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
-  -D TPL_Netcdf_Enables_Netcdf4:BOOL=ON  (if built with hdf5 libraries which give netcdf-4 capability)
-  -D TPL_Netcdf_Enables_PNetcdf:BOOL=ON  (if built with parallel-netcdf which gives parallel I/O capability)
-  -D TPL_ENABLE_Matio:BOOL=ON  (set to OFF if not available)
-  -D Matio_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib
-  -D TPL_Matio_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
-  -D TPL_X11_INCLUDE_DIRS:PATH=/usr/X11R6/include  (SVDI, blot, fastq require X11 includes and libs)
-  -D SEACAS_ENABLE_TESTS=ON
-  -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${WHERE_TO_INSTALL}/lib -lpnetcdf -lhdf5_hl -lhdf5 -lz"
+*  `cd $ACCESS`
+*  `mkdir build`
+*  `cd build`
+*  edit the `${ACCESS}cmake-config` file and adjust compilers and other settings as needed.
+*  enter the command `../cmake-config` and cmake should configure everything for the build.
+*  `make && make install`
+*  If everything works, your applications should be in `${ACCESS}/bin`
+*  To install in a different location, do `INSTALL_PATH={path_to_install} ../cmake-config`
+*  The default behavior can be modified via a few environment variables:
+
+| Variable        | Values          | Default | Description |
+|-----------------|:---------------:|:-------:|-------------|
+| INSTALL_PATH    | path to install | pwd | Root of install path; default is current location |
+| BUILDDIR        | {dir}   | `pwd`/build | Directory to do config and build |
+| COMPILER        | clang, gnu, intel, ibm | gnu | What compiler should be used for non-parallel build |
+| SHARED          | YES, NO | YES  | Build and use shared libraries is YES |
+| APPLICATIONS    | YES, NO | YES  | Should all SEACAS applications be built (see `cmake-config`) |
+| LEGACY          | YES, NO | YES  | Should the legacy SEACAS applications be built (see `cmake-config`) |
+| FORTRAN         | YES, NO | YES  | Should fortran libraries and applications be built (see `cmake-config`) |
+| ZOLTAN          | YES, NO | YES  | Should zoltan library and nem_slice be built |
+| BUILD_TYPE      | debug, release | release | what type of build |
+| DEBUG           | -none-  |      | If specified, then do a debug build. Can't be used with `BUILD_TYPE` |
+| HAVE_X11        | YES, NO | YES  | Does the system have X11 libraries and include files; used for blot, fastq |
+| THREADSAFE      | YES, NO | NO   | Compile a thread-safe IOSS and Exodus library |
+| USE_SRUN        | YES, NO | NO   | If MPI enabled, then use srun instead of mpiexec to run parallel tests |
+| DOXYGEN         | YES, NO | NO   | Run doxygen on several packages during build to generate documentation |
+| OMIT_DEPRECATED | YES, NO | NO   | Should the deprecated code be omitted; NO will enable deprecated code |
+| EXTRA_WARNINGS  | YES, NO | NO   | Build with extra warnings enabled; see list in `cmake-config` |
+| SANITIZER       | many    | NO   | If not NO, build using specified sanitizer; see list in `cmake-config` |
+| GENERATOR       | many    | "Unix Makefiles" | what generator should CMake use; see cmake doc |
+*  The arguments can either be set in the environment as: `export COMPILER=gnu`, or passed on the script invocation line: `COMPILER=gnu ./install-tpl.sh`
+
+## Parallel Build
+
+For some areas of use, a parallel version of SEACAS is required.  This
+will build a "parallel-aware" version of the exodus library and a
+parallel version of the Ioss library.
+
+The only modification to the serial build described above is to make
+sure that the mpicc parallel C compiler is in your path and to add the
+`MPI=YES` argument to the `install-tpl.sh` script invocation when
+building the TPLs.  For example:
+```sh
+   MPI=YES ./install-tpl.sh
 ```
+This will download all requested libraries and build them with
+parallel capability enabled (if applicable).  You can then continue
+with the steps outlined in the previous section.
 
 ## Testing
-There are a few unit tests for exodus, and aprepro that can be run via `make test` if you configured with `-D SEACAS_ENABLE_TESTS=ON`.
+There are a few unit tests for zoltan, exodus, ioss, and aprepro that can be run via `make test` or `ctest` if you configured with `-D Seacas_ENABLE_TESTS=YES`.
 
+There is also a system-level test that just verifies that the applications can read and write exodus files correctly.  This test runs off of the installed applications.  To run do:
+
+*  `make install`
+*  `cd ../SEACAS-Test`
+*  `make clean; make`
+
+This will run through several of the SEACAS applications creating a mesh (exodus file) and then performing various manipulations on the mesh.  If the test runs successfully, there is some hope that everything has built and is running correctly.
+
+## Exodus
+If you only want the exodus library, then follow most of the above instructions with the following exceptions:
+
+*  Clone entire source tree as above. (There used to be a zip file, but difficult to keep up-to-date)
+*  You only need the netcdf and optionally hdf5 libraries
+*  Use the `cmake-exodus` file instead of `cmake-config`.
+*  This will build, by default, a shared exodus library and also install the exodus.py and exomerge.py Python interfaces.
+
+## Trilinos
+
+Although SEACAS is included in Trilinos
+(https://github.com/trilinos/Trilinos), it is also possible to use the
+SEACAS code from this repository to override the possibly older SEACAS
+code in Trilinos.  The steps are to directly pull SEACAS from github
+under Trilinos and then build SEACAS under Trilinos with that version
+using `SEACAS_SOURCE_DIR_OVERRIDE`.  Here is how you do it:
+
+```sh
+cd Trilinos/
+git clone https://github.com/sandialabs/seacas.git
+cd BUILD/
+cmake -DSEACAS_SOURCE_DIR_OVERRIDE:STRING=seacas/packages/seacas -DTrilinos_ENABLE_SEACAS [other options] ..
+```
+
+## SPACK
+
+The SPACK package manager (https://spack.io/) can be used to install
+SEACAS and all dependent third-party libraries.  SEACAS is a supported
+package in SPACK as of December 2018.
+
+```sh
+git clone https://github.com/spack/spack.git
+. spack/share/spack/setup-env.sh
+spack install seacas~mpi   # Serial build (most common)
+```
+
+Enter `spack info seacas` to see information on supported variants and other information about the SEACAS package.
+
+## License
+
+SEACAS is licensed under the Modified BSD License.  See the [LICENSE](LICENSE) file for details.
+
+The following externally-developed software routines are used in some of the SEACAS applications and are under
+a separate license:
+
+| Routine | Where Used  | License |
+|---------|-------------|:-------:|
+| getline | `packages/seacas/libraries/aprepro_lib/apr_getline_int.c`  | [MIT](https://opensource.org/licenses/MIT) |
+| getline | `packages/seacas/libraries/suplib_c/getline.c`             | [BSD](https://opensource.org/licenses/BSD-3-Clause) |
+| [GetLongOpt](https://searchcode.com/codesearch/view/64130032/) | `packages/seacas/libraries/suplib_cpp/GetLongOpt.C` | public domain |
+| [adler hash](https://en.wikipedia.org/wiki/Adler-32)	| `packages/seacas/libraries/suplib_c/adler.c` | [zlib](https://opensource.org/licenses/zlib) |
+| [MurmurHash](https://github.com/aappleby/smhasher) | `packages/seacas/libraries/ioss/src/Ioss_FaceGenerator.C` | public domain |
+| [json include file](http://jsoncpp.sourceforge.net) | `packages/seacas/libraries/ioss/src/visualization/` | [MIT](https://opensource.org/licenses/MIT) |
+| [terminal_color](https://github.com/matovitch/trmclr) | `packages/seacas/libraries/aprepro_lib` | [zlib](https://opensource.org/licenses/zlib) |
+| [Tessil Hash](https://github.com/Tessil/) | `packages/seacas/libraries/ioss/src/hash` |  [MIT](https://opensource.org/licenses/MIT) |
+| [doctest](https://github.com/doctest/doctest) | `packages/seacas/libraries/ioss/src/doctest.h` | [MIT](https://opensource.org/licenses/MIT) |
+| [pdqsort](https://github.com/orlp/pdqsort) | `packages/seacas/libraries/ioss/src` | [Zlib License](https://github.com/orlp/pdqsort/blob/master/license.txt) |
 ## Contact information
 
- Greg Sjaardema  (<mailto:gsjaardema@gmail.com>, <mailto:gdsjaar@sandia.gov>)
+ Greg Sjaardema  (<gsjaardema@gmail.com>, <gdsjaar@sandia.gov>)

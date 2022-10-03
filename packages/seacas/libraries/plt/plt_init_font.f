@@ -147,4 +147,3 @@ C    See packages/seacas/LICENSE for details
         NVECT(32,ic) = 0
  2060 CONTINUE
       END
-
