@@ -130,4 +130,3 @@ C     for this face/node combination. Save the minimum for all face/node comb
      *       /,'Number of toleranced matches = ',I9 )
       return
       end
-

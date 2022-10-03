@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -92,8 +92,11 @@ C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .eq. 0) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
-        CALL PRTERR ('FATAL',
+        CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "explore [-[no]map node|element|all] filename"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#explore')
         GOTO 120
       end if
 

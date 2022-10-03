@@ -25,7 +25,7 @@ public:
   int Check_State() const;
 
 private:
-  Face_Block(const Face_Block &) = delete;                  // Not written.
+  Face_Block(const Face_Block &)                  = delete; // Not written.
   const Face_Block &operator=(const Face_Block &) = delete; // Not written.
 
   void entity_load_params() override;
