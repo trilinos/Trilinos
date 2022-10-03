@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -85,7 +85,27 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("contiguous_decomposition", GetLongOption::NoValue,
                   "If the input mesh is contiguous, create contiguous decompositions", nullptr,
-                  nullptr, true);
+                  nullptr);
+
+  options_.enroll("line_decomp", GetLongOption::OptionalValue,
+                  "Generate the `lines` or `columns` of elements from the specified surface(s).\n"
+                  "\t\tSpecify a comma-separated list of surface/sideset names from which the "
+                  "lines will grow.\n"
+                  "\t\tOmit or enter 'ALL' for all surfaces in model\n"
+                  "\t\tDo not split a line/column across processors.",
+                  nullptr, "ALL", true);
+
+  options_.enroll("output_decomp_map", GetLongOption::NoValue,
+                  "Do not output the split files; instead write the decomposition information to "
+                  "an element map.\n"
+                  "\t\tThe name of the map is specified by `-decomposition_name`",
+                  nullptr);
+
+  options_.enroll("output_decomp_field", GetLongOption::NoValue,
+                  "Do not output the split files; instead write the decomposition information to "
+                  "an element map.\n"
+                  "\t\tThe name of the field is specified by `-decomposition_name`",
+                  nullptr);
 
   options_.enroll("output_path", GetLongOption::MandatoryValue,
                   "Path to where decomposed files will be written.\n"
@@ -134,7 +154,14 @@ void SystemInterface::enroll_options()
                   "Specify the hdf5 compression level [0..9] to be used on the output file.",
                   nullptr, nullptr, true);
 
-  options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2, 4 or'd", "0");
+  options_.enroll("debug", GetLongOption::MandatoryValue,
+                  "debug level (values are or'd)\n"
+                  "\t\t  1 = timing information.\n"
+                  "\t\t  2 = Communication, NodeSet, Sideset information.\n"
+                  "\t\t  4 = Progress information in File/Rank.\n"
+                  "\t\t  8 = File/Rank Decomposition information.\n"
+                  "\t\t 16 = Chain/Line generation/decomp information.",
+                  "0");
 
   options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
 
@@ -191,6 +218,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
     fmt::print(stderr, "\n\t   Can also set options via SLICE_OPTIONS environment variable.\n");
+    fmt::print(stderr, "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#slice\n");
     fmt::print(stderr, "\n\t->->-> Send email to gsjaardema@gmail.com for slice support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
@@ -252,9 +280,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
         return false;
       }
     }
-    else if (decompMethod_ == "variable" || decompMethod_ == "map") {
-      // If isn't specified, then default `processor_id` is used.
-      decompVariable_ = options_.get_option_value("decomposition_name", decompVariable_);
+  }
+
+  // Only used in a few methods, but see if set anyway...
+  decompVariable_ = options_.get_option_value("decomposition_name", decompVariable_);
+
+  {
+    const char *temp = options_.retrieve("line_decomp");
+    if (temp != nullptr) {
+      lineSurfaceList_ = temp;
+      lineDecomp_      = true;
     }
   }
 
@@ -283,8 +318,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
     fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
   }
 
-  compressionLevel_ = options_.get_option_value("compress", compressionLevel_);
-  contig_           = options_.retrieve("contiguous_decomposition") != nullptr;
+  compressionLevel_  = options_.get_option_value("compress", compressionLevel_);
+  contig_            = options_.retrieve("contiguous_decomposition") != nullptr;
+  outputDecompMap_   = options_.retrieve("output_decomp_map") != nullptr;
+  outputDecompField_ = options_.retrieve("output_decomp_field") != nullptr;
+
+  if (outputDecompMap_ && outputDecompField_) {
+    fmt::print(
+        stderr,
+        "\nERROR: Cannot specify BOTH `output_decomp_map` and `output_decomp_field` options.\n"
+        "       Can only specify one of the two options.\n\n");
+    exit(EXIT_FAILURE);
+  }
 
 #if 0
  {

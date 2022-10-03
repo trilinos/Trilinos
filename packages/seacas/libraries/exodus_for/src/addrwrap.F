@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -3950,7 +3950,142 @@ C> ex_put_elem_cmap()
      $  proc_ids, processor4, ierr4)
       ierr = ierr4
 
-         end
+      end
+
+C-----------------------------------------------------------------------
+
+C> \sa ex_get_partial_coord_component()
+       SUBROUTINE EXGPCC(exoid, start_node_num, num_nodes, component,
+     & coor, ierr)
+C> writes the coordinates of some of the nodes in the model for the specified component
+
+       IMPLICIT NONE
+       INCLUDE 'exodusII.inc'
+       INTEGER exoid           ! (R)
+       INTEGER start_node_num  ! (R)
+       INTEGER num_nodes       ! (R)
+       INTEGER component       ! (R)
+       REAL coor(*)            ! (R)
+       INTEGER ierr            ! (W)
+
+       INTEGER*4 exoid4        ! (R)
+       INTEGER*4 component4    ! (R)
+       INTEGER*4 ierr4         ! (W)
+
+       exoid4        = exoid
+       component4    = component
+       ierr4         = ierr
+
+       CALL EXGPCC4(exoid4, start_node_num, num_nodes, component4,
+     & coor, ierr4)
+       IERR = IERR4
+       END
+
+C-----------------------------------------------------------------------
+
+C> \sa ex_put_partial_coord_component()
+       SUBROUTINE EXPPCC(exoid, start_node_num, num_nodes, component,
+     & coor, ierr)
+C> writes the coordinates of some of the nodes in the model for the specified component
+
+       IMPLICIT NONE
+       INCLUDE 'exodusII.inc'
+       INTEGER exoid           ! (R)
+       INTEGER start_node_num  ! (R)
+       INTEGER num_nodes       ! (R)
+       INTEGER component       ! (R)
+       REAL coor(*)            ! (R)
+       INTEGER ierr            ! (W)
+
+       INTEGER*4 exoid4        ! (R)
+       INTEGER*4 component4    ! (R)
+       INTEGER*4 ierr4         ! (W)
+
+       exoid4        = exoid
+       component4    = component
+       ierr4         = ierr
+
+       CALL EXPPCC4(exoid4, start_node_num, num_nodes, component4,
+     & coor, ierr4)
+       IERR = IERR4
+       END
+
+C-----------------------------------------------------------------------
+
+C> \sa ex_get_partial_var()
+       SUBROUTINE EXGPV(idexo, time_step, var_type, var_index,
+     &                  obj_id, start_index, num_entities,
+     &                  var_vals, ierr)
+C> writes the values of a single variable for a partial block at one time
+
+        IMPLICIT NONE
+        INCLUDE 'exodusII.inc'
+        INTEGER idexo           ! (R)
+        INTEGER time_step       ! (R)
+        INTEGER var_type        ! (R)
+        INTEGER var_index       ! (R)
+        INTEGER obj_id          ! (R)
+        INTEGER start_index     ! (R)
+        INTEGER num_entities    ! (R)
+        REAL    var_vals(*)     ! (W)
+        INTEGER ierr            ! (W)
+
+        INTEGER*4 idexo4        ! (R)
+        INTEGER*4 time_step4    ! (R)
+        INTEGER*4 var_type4     ! (R)
+        INTEGER*4 var_index4    ! (R)
+        INTEGER*4 ierr4         ! (W)
+
+                idexo4        = idexo
+                time_step4    = time_step
+                var_type4     = var_type
+                var_index4    = var_index
+                ierr4         = ierr
+
+        CALL EXGPV4(idexo4, time_step4, var_type4, var_index4,
+     &                  obj_id, start_index, num_entities,
+     &                  var_vals, ierr4)
+        IERR = IERR4
+        END
+
+C-----------------------------------------------------------------------
+
+C> \sa ex_put_partial_var()
+       SUBROUTINE EXPPV(idexo, time_step, var_type, var_index,
+     &                  obj_id, start_index, num_entities,
+     &                  var_vals, ierr)
+C> writes the values of a single variable for a partial block at one time
+
+        IMPLICIT NONE
+        INCLUDE 'exodusII.inc'
+        INTEGER idexo           ! (R)
+        INTEGER time_step       ! (R)
+        INTEGER var_type        ! (R)
+        INTEGER var_index       ! (R)
+        INTEGER obj_id          ! (R)
+        INTEGER start_index     ! (R)
+        INTEGER num_entities    ! (R)
+        REAL    var_vals(*)     ! (W)
+        INTEGER ierr            ! (W)
+
+        INTEGER*4 idexo4        ! (R)
+        INTEGER*4 time_step4    ! (R)
+        INTEGER*4 var_type4     ! (R)
+        INTEGER*4 var_index4    ! (R)
+        INTEGER*4 ierr4         ! (W)
+
+                idexo4        = idexo
+                time_step4    = time_step
+                var_type4     = var_type
+                var_index4    = var_index
+                ierr4         = ierr
+
+        CALL EXPPV4(idexo4, time_step4, var_type4, var_index4,
+     &                  obj_id, start_index, num_entities,
+     &                  var_vals, ierr4)
+        IERR = IERR4
+        END
+
 C-----------------------------------------------------------------------
 
         SUBROUTINE I8I4 (N, I8, PI4)

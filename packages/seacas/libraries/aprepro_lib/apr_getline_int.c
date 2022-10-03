@@ -353,6 +353,7 @@ char *ap_getline_int(char *prompt)
       case '\002':
         ap_gl_fixup(ap_gl_prompt, -1, ap_gl_pos - 1); /* ^B */
         break;
+      case '\003': /* ^C */
       case '\004': /* ^D */
         if (ap_gl_cnt == 0) {
           ap_gl_buf[0] = '\0';
