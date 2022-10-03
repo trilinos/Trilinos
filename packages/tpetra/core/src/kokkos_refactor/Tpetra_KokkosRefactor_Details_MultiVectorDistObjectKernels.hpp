@@ -310,7 +310,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       impl_type::pack (dst, src, idx, col, space);
     }
     else {
-      typedef PackArraySingleColumn<DstView,SrcView,IdxView> impl_type;
+      using impl_type = PackArraySingleColumn<DstView, SrcView, IdxView>;
       impl_type::pack (dst, src, idx, col, space);
     }
   }

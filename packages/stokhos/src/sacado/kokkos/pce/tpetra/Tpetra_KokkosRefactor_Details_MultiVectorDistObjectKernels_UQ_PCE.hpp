@@ -65,8 +65,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef typename DstView::execution_space execution_space;
-    typedef typename execution_space::size_type size_type;
+    using execution_space = typename DstView::execution_space;
+    using size_type = typename execution_space::size_type;
 
     static const unsigned BlockSize = 32;
 
@@ -95,7 +95,8 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t col) {
+                     size_t col,
+                     const execution_space &space) {
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
         PackArraySingleColumn(dst,src,idx,col) );
@@ -108,8 +109,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef typename DstView::execution_space execution_space;
-    typedef typename execution_space::size_type size_type;
+    using execution_space = typename DstView::execution_space;
+    using size_type = typename execution_space::size_type;
 
     static const unsigned BlockSize = 32;
 
@@ -145,9 +146,10 @@ namespace Details {
     static void pack(const DstView& dst,
                      const SrcView& src,
                      const IdxView& idx,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArrayMultiColumn(dst,src,idx,numCols) );
     }
   };
@@ -159,8 +161,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef typename DstView::execution_space execution_space;
-    typedef typename execution_space::size_type size_type;
+    using execution_space = typename DstView::execution_space;
+    using size_type = typename execution_space::size_type;
 
     static const unsigned BlockSize = 32;
 
@@ -199,7 +201,8 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      const ColView& col,
-                     size_t numCols) {
+                     size_t numCols,
+                     const execution_space &space) {
       Kokkos::parallel_for(
         Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
         PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
