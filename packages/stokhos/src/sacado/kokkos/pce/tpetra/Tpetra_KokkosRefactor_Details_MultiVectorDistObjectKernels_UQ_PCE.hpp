@@ -98,7 +98,7 @@ namespace Details {
                      size_t col,
                      const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArraySingleColumn(dst,src,idx,col) );
     }
   };
@@ -204,7 +204,7 @@ namespace Details {
                      size_t numCols,
                      const execution_space &space) {
       Kokkos::parallel_for(
-        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        Kokkos::MPVectorWorkConfig<execution_space>( space, idx.size(), BlockSize ),
         PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
     }
   };
