@@ -299,36 +299,41 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   using local_matrix_device_type = typename bcrs_matrix_type::local_matrix_device_type;
 
-  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
-  local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_bsr_matrix(lclMatrix);
+  typename local_matrix_device_type::values_type values ;
+  RCP<const crs_graph_type> graph;
+  {
+    local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
 
-  // BlockCrs requires that we sort stuff
-  KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
+    local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_bsr_matrix(lclMatrix);    
 
-  // Prebuild the importers and exporters the no-communication way,
-  // flipping the importers and exporters around.
-  const auto origExport = origMatrix_->getGraph ()->getExporter ();
-  RCP<const import_type> myImport = origExport.is_null () ?
-    Teuchos::null : rcp (new import_type (*origExport));
-  const auto origImport = origMatrix_->getGraph ()->getImporter ();
-  RCP<const export_type> myExport = origImport.is_null () ?
-    Teuchos::null : rcp (new export_type (*origImport));
+    // BlockCrs requires that we sort stuff
+    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
+    values = lclTransposeMatrix.values;
+    
+    // Prebuild the importers and exporters the no-communication way,
+    // flipping the importers and exporters around.
+    const auto origExport = origMatrix_->getGraph ()->getExporter ();
+    RCP<const import_type> myImport = origExport.is_null () ?
+      Teuchos::null : rcp (new import_type (*origExport));
+    const auto origImport = origMatrix_->getGraph ()->getImporter ();
+    RCP<const export_type> myExport = origImport.is_null () ?
+      Teuchos::null : rcp (new export_type (*origImport));
 
-  RCP<Teuchos::ParameterList> graphParams = Teuchos::null;
-
-  // Make the Transpose Graph
-  RCP<const crs_graph_type> graph = rcp(new crs_graph_type(
-                                                           lclTransposeMatrix.graph,                                                           
-                                                           origMatrix_->getColMap (),
-                                                           origMatrix_->getRowMap (),
-                                                           origMatrix_->getGraph()->getRangeMap (),
-                                                           origMatrix_->getGraph()->getDomainMap (),
-                                                           myImport,
-                                                           myExport,
-                                                           graphParams));
-  // Now the matrix
+    RCP<Teuchos::ParameterList> graphParams = Teuchos::null;
+    
+    // Make the Transpose Graph
+    graph = rcp(new crs_graph_type(lclTransposeMatrix.graph,                                   
+                                   origMatrix_->getColMap (),
+                                   origMatrix_->getRowMap (),
+                                   origMatrix_->getGraph()->getRangeMap (),
+                                   origMatrix_->getGraph()->getDomainMap (),
+                                   myImport,
+                                   myExport,
+                                   graphParams));
+  }
+  // Now make the matrix
   return rcp (new bcrs_matrix_type (*graph,
-                                    lclTransposeMatrix.values,
+                                    values,
                                     origMatrix_->getBlockSize()));
 }
 //
