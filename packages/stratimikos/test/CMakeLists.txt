@@ -25,15 +25,6 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
-  DEST_FILES FourByFour.mtx
-  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
-  SOURCE_PREFIX "In_"
-  EXEDEPS test_single_epetra_stratimikos_solver_driver
-  )
-
-
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
   DEST_FILES
     FourByFour.xml
@@ -50,6 +41,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
   EXEDEPS test_single_epetra_stratimikos_solver_driver
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
+  DEST_FILES FourByFour.mtx
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
+  SOURCE_PREFIX "In_"
+  EXEDEPS test_single_epetra_stratimikos_solver_driver 
+  )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
@@ -169,6 +166,65 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
 ENDIF()
 
+IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+
+  TRIBITS_ADD_EXECUTABLE(
+    test_tpetra_stratimikos_solver_driver
+    SOURCES
+      test_tpetra_stratimikos_solver_driver.cpp
+      test_tpetra_stratimikos_solver.hpp
+      test_tpetra_stratimikos_solver.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    test_tpetra_stratimikos_solver_driver
+    NAME test_tpetra_stratimikos_solver_driver
+    ARGS
+      "--input-file=FourByFour.xml --show-timer-summary"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    test_tpetra_belos_ex
+    SOURCES test_tpetra_belos_ex.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_TEST(
+    test_tpetra_belos_ex
+    NAME test_tpetra_belos_ex
+    ARGS
+      "--input-file=TpetraBelosTest.xml --show-timer-summary"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    test_tpetra_belos_ex
+    NAME test_tpetra_belos_sing_reduce
+    ARGS
+      "--input-file=TpetraSingReduceTest.xml --show-timer-summary"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../belos/kokkos/example
+  SOURCE_FILES bcsstk12.mtx 
+  EXEDEPS test_tpetra_belos_ex
+  )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestXMLFiles
+    DEST_FILES
+      TpetraBelosTest.xml 
+      TpetraSingReduceTest.xml
+    EXEDEPS test_tpetra_belos_ex 
+  )
+
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Galeri_ENABLE_Xpetra)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
@@ -258,3 +314,4 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
    COMM serial mpi
    )
 ENDIF ()
+
