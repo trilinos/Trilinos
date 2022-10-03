@@ -252,6 +252,12 @@ void IOShell::Interface::enroll_options()
                   "\t\tKeep all fields on database as scalars",
                   nullptr);
 
+  options_.enroll("custom_field", Ioss::GetLongOption::MandatoryValue,
+                  "A comma-separated list of field suffices defining a custom field that should be "
+                  "recognized.\n"
+                  "\t\tPrimarily used for testing",
+                  nullptr);
+
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
@@ -339,6 +345,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     if (my_processor == 0) {
       options_.usage(std::cerr);
       fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
+      fmt::print(stderr, "\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-shell\n\n");
       fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
                  options_.program_name());
     }
@@ -511,6 +518,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   // that define here
   compose_output = options_.get_option_value("compose", compose_output);
 #endif
+
+  {
+    const char *temp = options_.retrieve("custom_field");
+    if (temp != nullptr) {
+      customField = temp;
+    }
+  }
 
   groupName = options_.get_option_value("extract_group", groupName);
 

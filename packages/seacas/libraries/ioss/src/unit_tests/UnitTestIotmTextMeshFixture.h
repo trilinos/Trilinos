@@ -9,6 +9,7 @@
 #include <Ioss_CodeTypes.h>
 
 #include <Ionit_Initializer.h>
+#include <Ioss_Assembly.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
@@ -21,7 +22,6 @@
 #include <Ioss_MeshType.h>       // for MeshType, etc
 #include <Ioss_NodeBlock.h>
 #include <Ioss_NodeSet.h>
-#include <Ioss_Assembly.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Region.h>
@@ -30,17 +30,23 @@
 #include <Ioss_StandardElementTypes.h>
 
 #include <gtest/gtest.h>
+#ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
+#endif
 #include <string>
 #include <unordered_map>
 
 #include <fmt/ostream.h>
 
+#include <memory>
 #include <string>
 #include <strings.h>
 #include <vector>
 
+#include "text_mesh/Iotm_TextMeshNodeset.h"
+#include "text_mesh/Iotm_TextMeshSideset.h"
 #include "text_mesh/Iotm_TextMeshTopologyMapping.h"
+#include "text_mesh/Iotm_TextMeshUtils.h"
 
 #define ThrowRequireWithMsg(expr, message)                                                         \
   do {                                                                                             \
@@ -51,12 +57,52 @@
     }                                                                                              \
   } while (false)
 
-using EntityId       = int64_t;
-using EntityIdVector = std::vector<EntityId>;
-using EntityIdSet    = std::set<EntityId>;
-using Topology       = Iotm::TopologyMapEntry;
-using SideEntry      = std::pair<EntityId, int>;
-using SideVector     = std::vector<SideEntry>;
+using Topology           = Iotm::TopologyMapEntry;
+using TopologyMapping    = Iotm::IossTopologyMapping;
+using EntityId           = int64_t;
+using EntityIdVector     = std::vector<EntityId>;
+using EntityIdSet        = std::set<EntityId>;
+using TextMeshData       = Iotm::text_mesh::TextMeshData<EntityId, Topology>;
+using ElementData        = Iotm::text_mesh::ElementData<EntityId, Topology>;
+using SidesetData        = Iotm::text_mesh::SidesetData<EntityId, Topology>;
+using NodesetData        = Iotm::text_mesh::NodesetData<EntityId>;
+using Coordinates        = Iotm::text_mesh::Coordinates<EntityId>;
+using TextMeshParser     = Iotm::text_mesh::TextMeshParser<EntityId, TopologyMapping>;
+using SideAdjacencyGraph = Iotm::text_mesh::SideAdjacencyGraph<EntityId, Topology>;
+using SideBlockInfo      = Iotm::text_mesh::SideBlockInfo;
+using SideEntry          = std::pair<EntityId, int>;
+using SideVector         = std::vector<SideEntry>;
+using SplitType          = Iotm::text_mesh::SplitType;
+
+struct Adjacency
+{
+  using NeighborVector       = std::vector<std::pair<int, SideAdjacencyGraph::IndexType>>;
+  using SimpleNeighborVector = std::vector<SideAdjacencyGraph::IndexType>;
+
+  size_t         elemIndex;
+  NeighborVector neighborIndices;
+
+  Adjacency(size_t elemIndex_, const NeighborVector &neighborIndices_)
+      : elemIndex(elemIndex_), neighborIndices(neighborIndices_)
+  {
+  }
+
+  Adjacency(size_t elemIndex_, const SimpleNeighborVector &neighborIndices_)
+      : elemIndex(elemIndex_), neighborIndices(get_full_neighbor_vector(neighborIndices_))
+  {
+  }
+
+  NeighborVector get_full_neighbor_vector(const SimpleNeighborVector &simpleNeighborVector)
+  {
+    NeighborVector fullNeighborVector;
+    fullNeighborVector.reserve(simpleNeighborVector.size());
+
+    for (unsigned i = 0; i < simpleNeighborVector.size(); i++) {
+      fullNeighborVector.push_back(std::make_pair(static_cast<int>(i), simpleNeighborVector[i]));
+    }
+    return fullNeighborVector;
+  }
+};
 
 struct SideEntryLess
 {
@@ -74,65 +120,65 @@ struct SideEntryLess
 namespace Iotm {
   namespace unit_test {
 
-  class AssemblyTreeGraph
-  {
-  public:
-    AssemblyTreeGraph()                          = delete;
-    AssemblyTreeGraph(const AssemblyTreeGraph &) = delete;
-
-    AssemblyTreeGraph(Ioss::Region *region)
-        : m_region(region)
+    class AssemblyTreeGraph
     {
-    }
+    public:
+      AssemblyTreeGraph()                          = delete;
+      AssemblyTreeGraph(const AssemblyTreeGraph &) = delete;
 
-  public:
-    std::vector<std::string> get_unique_leaf_members(const std::string& name)
-    {
-      m_leafMembers.clear();
-      m_visitedAssemblies.clear();
+      AssemblyTreeGraph(Ioss::Region *region) : m_region(region) {}
 
-      for(Ioss::Assembly* assembly : m_region->get_assemblies()) {
-        m_visitedAssemblies[assembly] = false;
+    public:
+      std::vector<std::string> get_unique_leaf_members(const std::string &name)
+      {
+        m_leafMembers.clear();
+        m_visitedAssemblies.clear();
+
+        for (Ioss::Assembly *assembly : m_region->get_assemblies()) {
+          m_visitedAssemblies[assembly] = false;
+        }
+
+        traverse_tree(m_region->get_assembly(name));
+
+        std::sort(m_leafMembers.begin(), m_leafMembers.end(), std::less<std::string>());
+        auto endIter = std::unique(m_leafMembers.begin(), m_leafMembers.end());
+        m_leafMembers.resize(endIter - m_leafMembers.begin());
+
+        return m_leafMembers;
       }
 
-      traverse_tree(m_region->get_assembly(name));
+    private:
+      void traverse_tree(const Ioss::Assembly *assembly)
+      {
+        // Walk the tree without cyclic dependency
+        if (assembly != nullptr) {
+          if (m_visitedAssemblies[assembly] == false) {
+            m_visitedAssemblies[assembly] = true;
 
-      std::sort(m_leafMembers.begin(), m_leafMembers.end(), std::less<std::string>());
-      auto endIter = std::unique(m_leafMembers.begin(), m_leafMembers.end());
-      m_leafMembers.resize(endIter - m_leafMembers.begin());
-
-      return m_leafMembers;
-    }
-
-  private:
-    void traverse_tree(const Ioss::Assembly* assembly)
-    {
-      // Walk the tree without cyclic dependency
-      if (assembly != nullptr) {
-        if (m_visitedAssemblies[assembly] == false) {
-          m_visitedAssemblies[assembly] = true;
-
-          const Ioss::EntityType assemblyType = assembly->get_member_type();
-          if (Ioss::ASSEMBLY != assemblyType) {
-            for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
-              m_leafMembers.push_back(ge->name());
+            const Ioss::EntityType assemblyType = assembly->get_member_type();
+            if (Ioss::ASSEMBLY != assemblyType) {
+              for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
+                m_leafMembers.push_back(ge->name());
+              }
             }
-          } else {
-            for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
-              const Ioss::Assembly* assemblyMember = dynamic_cast<const Ioss::Assembly*>(ge);
-              ThrowRequireWithMsg(nullptr != assemblyMember,
-                  "Non-assembly member: " << ge->name() << " in ASSEMBLY rank assembly: " << assembly->name());
-              traverse_tree(assemblyMember);
+            else {
+              for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
+                const Ioss::Assembly *assemblyMember = dynamic_cast<const Ioss::Assembly *>(ge);
+                ThrowRequireWithMsg(nullptr != assemblyMember,
+                                    "Non-assembly member: " << ge->name()
+                                                            << " in ASSEMBLY rank assembly: "
+                                                            << assembly->name());
+                traverse_tree(assemblyMember);
+              }
             }
           }
         }
       }
-    }
 
-    Ioss::Region                                           *m_region = nullptr;
-    mutable std::unordered_map<const Ioss::Assembly*,bool>  m_visitedAssemblies;
-    mutable std::vector<std::string>                        m_leafMembers;
-  };
+      Ioss::Region                                            *m_region = nullptr;
+      mutable std::unordered_map<const Ioss::Assembly *, bool> m_visitedAssemblies;
+      mutable std::vector<std::string>                         m_leafMembers;
+    };
 
     class TextMeshFixture : public ::testing::Test
     {
@@ -218,8 +264,8 @@ namespace Iotm {
       void verify_single_element(EntityId elemId, const std::string &textMeshTopologyName,
                                  const EntityIdVector &nodeIds)
       {
-        Ioss::ElementTopology *topology = m_topologyMapping.topology(textMeshTopologyName).topology;
-        ElementInfo            info     = get_element_info(elemId);
+        Topology    topology = m_topologyMapping.topology(textMeshTopologyName);
+        ElementInfo info     = get_element_info(elemId);
         EXPECT_TRUE(is_valid_element(info));
         EXPECT_EQ(topology, info.topology);
         verify_nodes_on_element(info, nodeIds);
@@ -315,22 +361,22 @@ namespace Iotm {
         EXPECT_EQ(goldCount, count);
       }
 
-      void verify_single_assembly(const std::string& name, const unsigned id,
-                                  const std::vector<std::string>& goldMembers)
+      void verify_single_assembly(const std::string &name, const unsigned id,
+                                  const std::vector<std::string> &goldMembers)
       {
         Ioss::Assembly *assembly = get_assembly(name);
         EXPECT_TRUE(nullptr != assembly);
         EXPECT_EQ(id, assembly->get_property("id").get_int());
 
-        AssemblyTreeGraph graph(m_region);
+        AssemblyTreeGraph        graph(m_region);
         std::vector<std::string> leafMembers = graph.get_unique_leaf_members(name);
         EXPECT_EQ(goldMembers.size(), leafMembers.size());
 
-        for(size_t i=0; i<goldMembers.size(); i++) {
-          const std::string& goldMember = goldMembers[i];
-          const std::string& leafMember = leafMembers[i];
+        for (size_t i = 0; i < goldMembers.size(); i++) {
+          const std::string &goldMember = goldMembers[i];
+          const std::string &leafMember = leafMembers[i];
           EXPECT_EQ(0, strcasecmp(goldMember.c_str(), leafMember.c_str()))
-            << "Comparison failure for " << name << ": " << goldMember << " <-> " << leafMember;
+              << "Comparison failure for " << name << ": " << goldMember << " <-> " << leafMember;
         }
       }
 
@@ -689,7 +735,7 @@ namespace Iotm {
         ThrowRequireWithMsg(m_region != nullptr, "Ioss region has not been created");
 
         const Ioss::AssemblyContainer &assemblies = m_region->get_assemblies();
-        Ioss::Assembly                *assembly  = nullptr;
+        Ioss::Assembly                *assembly   = nullptr;
 
         for (Ioss::Assembly *ass : assemblies) {
           if (strcasecmp(ass->name().c_str(), name.c_str()) == 0) {
@@ -960,4 +1006,114 @@ namespace {
   protected:
     TestTextMesh1d() : TextMeshFixture(1) {}
   };
+
+  class TestTextMeshGraph : public Iotm::unit_test::TextMeshFixture
+  {
+  protected:
+    TestTextMeshGraph() : TextMeshFixture(3) {}
+
+    class TextMeshGraph : public SideAdjacencyGraph
+    {
+    public:
+      TextMeshGraph(const TextMeshData &data) : m_data(data) {}
+
+      size_t get_num_elements() const override { return m_data.elementDataVec.size(); }
+
+      int get_element_proc(const size_t elemIndex) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+        return elemData.proc;
+      }
+
+      bool element_has_any_node_on_proc(const size_t elemIndex, int proc) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+
+        for (const EntityId &nodeId : elemData.nodeIds) {
+          const std::set<int> &procsForNode = m_data.procs_for_node(nodeId);
+          if (procsForNode.count(proc) > 0) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      const std::string &get_element_block_name(const size_t elemIndex) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+        return elemData.partName;
+      }
+
+      const std::vector<EntityId> &get_element_node_ids(const size_t elemIndex) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+        return elemData.nodeIds;
+      }
+
+      const Topology &get_element_topology(const size_t elemIndex) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+        return elemData.topology;
+      }
+
+      EntityId get_element_id(const size_t elemIndex) const override
+      {
+        const ElementData &elemData = m_data.elementDataVec[elemIndex];
+        return elemData.identifier;
+      }
+
+    private:
+      const TextMeshData &m_data;
+    };
+
+    void dump_graph(std::ostream &out = std::cout) { m_graph->dump(m_data.elementDataVec, out); }
+
+    void setup_text_mesh_graph(const std::string              &meshDesc,
+                               const std::vector<std::string> &selectedBlocks = {},
+                               int                             proc = SideAdjacencyGraph::ANY_PROC)
+    {
+      TextMeshParser parser;
+      m_data  = parser.parse(meshDesc);
+      m_graph = std::make_shared<TextMeshGraph>(m_data);
+      m_graph->create_graph(selectedBlocks, proc);
+    }
+
+    void verify_side_adjacency(const std::vector<Adjacency> &goldNeighbors)
+    {
+      EXPECT_EQ(m_graph->size(), goldNeighbors.size());
+      for (size_t i = 0; i < goldNeighbors.size(); ++i) {
+        const auto &graphNeighborIndices = (*m_graph)[goldNeighbors[i].elemIndex];
+        const auto &goldNeighborIndices  = goldNeighbors[i].neighborIndices;
+
+        unsigned numActualGoldConnections = 0;
+        for (const auto &entry : goldNeighborIndices) {
+          if (entry.second >= 0) {
+            numActualGoldConnections++;
+          }
+        }
+
+        EXPECT_EQ(numActualGoldConnections, graphNeighborIndices.connections.size());
+
+        for (const auto &entry : goldNeighborIndices) {
+          int                           side              = entry.first + 1;
+          SideAdjacencyGraph::IndexType neighborElemIndex = entry.second;
+
+          if (neighborElemIndex >= 0) {
+            EXPECT_LT(0, graphNeighborIndices.sideReference[side - 1]);
+            EXPECT_TRUE(graphNeighborIndices.has_any_connection(side, neighborElemIndex));
+          }
+          else {
+            EXPECT_EQ(0, graphNeighborIndices.sideReference[side - 1]);
+            EXPECT_FALSE(graphNeighborIndices.has_any_connection(side));
+          }
+        }
+      }
+    }
+
+    TextMeshData                   m_data;
+    std::shared_ptr<TextMeshGraph> m_graph;
+  };
+
+  using TestTextMeshSkin = TestTextMesh;
 } // namespace
