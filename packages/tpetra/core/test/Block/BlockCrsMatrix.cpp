@@ -48,6 +48,7 @@
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
 #include "Tpetra_BlockView.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
@@ -2724,6 +2725,114 @@ namespace {
 
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, Transpose, ST, LO, GO, Node )
+  {
+    typedef Tpetra::BlockCrsMatrix<ST, LO, GO, Node> block_matrix_type;
+    typedef Tpetra::CrsMatrix<ST, LO, GO, Node>                    crs_matrix_type;
+    typedef Tpetra::Import<LO, GO, Node>                           import_type;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node>                  mv_type;
+    typedef Tpetra::Map<LO, GO, Node>                              map_type;
+    typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>          reader_type;
+    typedef Teuchos::ScalarTraits<ST>                              STS;
+    typedef typename STS::magnitudeType                            magnitude_type;
+    ST zero = STS::zero(), one = STS::one();
+
+    Teuchos::OSTab tab0 (out);
+    out << "Testing Transpose"<<std::endl;
+    Teuchos::OSTab tab1 (out);
+
+    std::ostringstream errStrm;
+
+    RCP<const Comm<int> > comm = getDefaultComm();
+    std::string matrixFile;
+    if (STS::isComplex) {
+      matrixFile = "blockA-complex.mm";
+    }
+    else {
+      matrixFile = "blockA.mm";
+    }
+
+    out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    
+    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm);
+
+    out << "Migrate input CrsMatrix to final parallel distribution" << endl;
+
+    // Migrate pointMatrix to final parallel distribution.
+    // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
+    // must stay together.  This means the serial matrix can only be migrated to 1,2 or 4 processes.  3 processes
+    // would split up dofs associate with a mesh node.
+    Tpetra::global_size_t numGlobElts = pointMatrix->getRowMap()->getGlobalNumElements();
+    const GO indexBase = 0;
+    RCP<const map_type> parPointMap =
+      rcp (new map_type (numGlobElts, indexBase, comm));
+    RCP<crs_matrix_type> parPointMatrix =
+      rcp (new crs_matrix_type (parPointMap, pointMatrix->getGlobalMaxNumRowEntries ()));
+    RCP<const import_type> importer =
+      rcp (new import_type (pointMatrix->getRowMap(), parPointMap));
+
+    parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+    parPointMatrix->fillComplete();
+    pointMatrix.swap(parPointMatrix);
+
+    
+    out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    int blockSize = 3;
+    RCP<block_matrix_type> blockMatrix = Tpetra::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+
+    // Now Transpose them both
+    Tpetra::RowMatrixTransposer<ST, LO, GO, Node> Pt(pointMatrix);
+    RCP<crs_matrix_type> newPointMatrix = Pt.createTranspose();
+
+
+    Tpetra::BlockCrsMatrixTransposer<ST, LO, GO, Node> Bt(blockMatrix);
+    RCP<block_matrix_type> newBlockMatrix = Bt.createTranspose();
+
+
+    // Check the maps
+    TEUCHOS_TEST_FOR_EXCEPTION(!blockMatrix->getDomainMap()->isSameAs(*newBlockMatrix->getRangeMap()),std::runtime_error,"Incorrect range map on transpose");
+    TEUCHOS_TEST_FOR_EXCEPTION(!blockMatrix->getRangeMap()->isSameAs(*newBlockMatrix->getDomainMap()),std::runtime_error,"Incorrect domain map on transpose");
+
+    //normalized pseudo-random vector
+    RCP<mv_type> randVec = rcp(new mv_type(newPointMatrix->getDomainMap(),1));
+    randVec->randomize();
+    Teuchos::Array<magnitude_type> normVec1(1);
+    randVec->norm2(normVec1);
+    randVec->scale(1.0/normVec1[0]);
+
+    RCP<mv_type> resultVec1 = rcp(new mv_type(newPointMatrix->getRangeMap(),1));
+    out << "CrsMatrix::apply" << endl;
+    newPointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    
+    out << "Compute norm of result" << endl;
+    resultVec1->norm2(normVec1);
+
+    RCP<mv_type> resultVec2 = rcp(new mv_type(newBlockMatrix->getRangeMap(),1));
+    out << "NewBlockMatrix::apply" << endl;
+    newBlockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+
+    Teuchos::Array<magnitude_type> normVec2(1);
+    resultVec2->norm2(normVec2);
+
+    resultVec2->update(-1.0,*resultVec1,1.0);
+    Teuchos::Array<magnitude_type> normDelta(1);
+    resultVec2->norm2(normDelta);
+    Teuchos::Array<magnitude_type> relativeError(1);
+    relativeError[0] = STS::magnitude(normDelta[0] / normVec1[0]);
+
+    std::ostringstream normStr;
+    normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
+    out << normStr.str() << std::endl;
+
+    // Correctness check
+    auto tol  = Teuchos::ScalarTraits<magnitude_type>::squareroot(Teuchos::ScalarTraits<magnitude_type>::eps());
+    TEUCHOS_TEST_FLOATING_EQUALITY(normVec1[0], normVec2[0], tol, out, success);
+
+}
+
+
+
+
 //
 // INSTANTIATIONS
 //
@@ -2738,7 +2847,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, importAndFillComplete, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, point2block, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, block2point, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, block2point, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, Transpose, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
