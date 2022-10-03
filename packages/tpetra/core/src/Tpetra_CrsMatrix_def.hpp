@@ -5351,6 +5351,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
          "X.getNumVectors() = " << X.getNumVectors () << " != "
          "Y.getNumVectors() = " << Y.getNumVectors () << ".");
+#if 0
+/*  for the on-rank portion, the SpMV may be called on the original X, not the
+    imported one.
+*/
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! transpose && X.getLocalLength () !=
          getColMap ()->getLocalNumElements (), std::runtime_error,
@@ -5358,6 +5362,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          "X.getLocalLength() = " << X.getLocalLength () << " != "
          "getColMap()->getLocalNumElements() = " <<
          getColMap ()->getLocalNumElements () << ".");
+#endif
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! transpose && Y.getLocalLength () !=
          getRowMap ()->getLocalNumElements (), std::runtime_error,
