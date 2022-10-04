@@ -82,6 +82,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_SYCL=ON"
   "-DTpetra_INST_SERIAL=ON"
   "-DTPL_ENABLE_SuperLU=ON"
+  "-DCMAKE_CXX_COMPILER:STRING=/opt/intel/oneapi/mpi/2021.7.0/bin/mpiicpc"
+  "-DCMAKE_C_COMPILER:STRING=/opt/intel/oneapi/mpi/2021.7.0/bin/mpiicc"
 )
 
 #
