@@ -537,7 +537,7 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
+  virtual bool checkSizes (const Tpetra::SrcDistObject& source) override;
 
   // copyAndPermute has two implementations in DistObject, use
   // the base class ones whenever we don't overload
@@ -581,7 +581,7 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
-   const CombineMode combineMode);
+   const CombineMode combineMode) override;
 
   //@}
 

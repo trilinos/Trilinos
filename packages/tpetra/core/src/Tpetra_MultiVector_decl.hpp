@@ -2101,7 +2101,7 @@ namespace Tpetra {
     //@{
 
     //! A simple one-line description of this object.
-    virtual std::string description() const;
+    virtual std::string description() const override;
 
     /// \brief Print the object with the given verbosity level to a FancyOStream.
     ///
@@ -2134,7 +2134,7 @@ namespace Tpetra {
     virtual void
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
-              Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const override;
     //@}
 
     /// \brief Remove processes owning zero rows from the Map and their communicator.
@@ -2151,7 +2151,7 @@ namespace Tpetra {
     ///   is not, this method's behavior is undefined.  This pointer
     ///   will be null on excluded processes.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
 
     /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
     ///   or view (copyOrView = Teuchos::View) semantics.
@@ -2332,10 +2332,10 @@ namespace Tpetra {
     /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
     virtual bool
-    checkSizes (const SrcDistObject& sourceObj);
+    checkSizes (const SrcDistObject& sourceObj) override;
 
     //! Number of packets to send per LID
-    virtual size_t constantNumberOfPackets () const;
+    virtual size_t constantNumberOfPackets () const override;
 
 
     virtual void
@@ -2443,7 +2443,7 @@ namespace Tpetra {
                                  const bool verbose,
                                  const std::string* prefix,
                                  const bool areRemoteLIDsContiguous=false,
-                                 const CombineMode CM=INSERT);
+                                 const CombineMode CM=INSERT) override;
 
 
   public:
