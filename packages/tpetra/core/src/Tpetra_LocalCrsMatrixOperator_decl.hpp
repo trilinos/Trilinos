@@ -520,6 +520,11 @@ namespace Tpetra {
         const OffsetDeviceViewType &offRankOffsets,
         const execution_space &space) {
 
+        /* nothing to do */
+        if (0 == A.numRows()) {
+          return;
+        }
+
         const ordinal_type NNZPerRow = A.nnz() / A.numRows();
 
         ordinal_type vectorLength = 1;
