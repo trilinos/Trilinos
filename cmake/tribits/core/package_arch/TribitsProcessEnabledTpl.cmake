@@ -56,7 +56,7 @@ include(TribitsStandardizePaths)
 function(tribits_process_enabled_tpl  TPL_NAME)
 
   # Setup the processing string
-  set(PROCESSING_MSG_STRING "Processing enabled TPL: ${TPL_NAME} (")
+  set(PROCESSING_MSG_STRING "Processing enabled external package/TPL: ${TPL_NAME} (")
   if (TPL_${TPL_NAME}_ENABLING_PKG)
     string(APPEND PROCESSING_MSG_STRING
       "enabled by ${TPL_${TPL_NAME}_ENABLING_PKG}," )

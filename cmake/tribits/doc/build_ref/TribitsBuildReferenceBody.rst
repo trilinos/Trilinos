@@ -49,7 +49,7 @@ If you have access to the <Project> git repositories (which which includes a
 snapshot of TriBITS), then install CMake with::
 
   $ cd <some-scratch-space>/
-  $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
+  $ TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
      --install-dir-base=<INSTALL_BASE_DIR> --cmake-version=X.Y.Z \
      --do-all
@@ -165,6 +165,12 @@ Basic configuration
 
 A few different approaches for configuring are given below.
 
+* `Create a do-configure script [Recommended]`_
+* `Create a *.cmake file and point to it [Most Recommended]`_
+* `Using the QT CMake configuration GUI`_
+
+.. _Create a do-configure script [Recommended]:
+
 a) Create a 'do-configure' script such as [Recommended]::
 
     #!/bin/bash
@@ -178,7 +184,7 @@ a) Create a 'do-configure' script such as [Recommended]::
 
     ./do-configure [OTHER OPTIONS] -D<Project>_ENABLE_<TRIBITS_PACKAGE>=ON
 
-  where ``<TRIBITS_PACKAGE>`` is a valid SE Package name (see above), etc. and
+  where ``<TRIBITS_PACKAGE>`` is a valid Package name (see above), etc. and
   ``SOURCE_BASE`` is set to the <Project> source base directory (or your can
   just give it explicitly in the script).
 
@@ -192,6 +198,8 @@ a) Create a 'do-configure' script such as [Recommended]::
   `Reconfiguring completely from scratch`_).
 
 .. _<Project>_CONFIGURE_OPTIONS_FILE:
+
+.. _Create a *.cmake file and point to it [Most Recommended]:
 
 b) Create a ``*.cmake`` file and point to it [Most Recommended].
 
@@ -222,10 +230,12 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   time stamp, unlike when using ``-C <file-name>.cmake``, see below).
 
   One can use the ``FORCE`` option in the ``set()`` commands shown above and
-  that will override any value of the options that might already be set.
-  However, that will not allow the user to override the options on the CMake
-  command-line using ``-D<VAR>=<value>`` so it is generally **not** desired to
-  use ``FORCE``.
+  that will override any value of the options that might already be set (but
+  when using ``-C`` to include this forced ``set(<var> ... FORCE)`` will only
+  override the value if the file with the ``set()`` is listed after the
+  ``-D<var>=<val>`` command-line option).  However, that will not allow the
+  user to override the options on the CMake command-line using
+  ``-D<VAR>=<value>`` so it is generally **not** desired to use ``FORCE``.
 
   One can also pass in a list of configuration fragment files separated by
   commas ``','`` which will be read in the order they are given as::
@@ -265,30 +275,55 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   project source directory location may not be known or easy to get).
 
   2) When configuration files are read in using
-  ``<Project>_CONFIGURE_OPTIONS_FILE``, the will get reprocessed on every
+  ``<Project>_CONFIGURE_OPTIONS_FILE``, they will get reprocessed on every
   reconfigure (such as when reconfigure happens automatically when running
   ``make``).  That means that if options change in those included ``*.cmake``
   files from the initial configure, then those updated options will get
   automatically picked up in a reconfigure.  But when processing ``*.cmake``
-  files using the built-in ``-C <file-name>.cmake`` argument, updated options
-  will not get set.  Therefore, if one wants to have the ``*.cmake`` files
+  files using the built-in ``-C <frag>.cmake`` argument, updated options will
+  not get set.  Therefore, if one wants to have the ``*.cmake`` files
   automatically be reprocessed, then one should use
   ``<Project>_CONFIGURE_OPTIONS_FILE``.  But if one does not want to have the
-  contents of the ``*.cmake`` file reread on reconfigures, then one would want
-  to use ``-C``.
+  contents of the ``<frag>.cmake`` file reread on reconfigures, then one would
+  want to use ``-C <frag>.cmake``.
 
-  3) One can create and use parameterized ``*.cmake`` files that can be used
-  with multiple TriBITS projects.  For example, one can have set statements
-  like ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
-  is known before the file is included.  One can't do that with ``cmake -C``
-  and instead would have to the full variables names specific for a given
-  project.
+  3) When using ``<Project>_CONFIGURE_OPTIONS_FILE``, one can create and use
+  parameterized ``*.cmake`` files that can be used with multiple TriBITS
+  projects.  For example, one can have set statements like
+  ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME`` is
+  known before the file is included.  One cannot do that with ``-C`` and
+  instead would have to provide the full variables names specific for a given
+  TriBITS project.
 
-  4) Non-cache project-level variables can be set in a ``*.cmake`` file that
-  will impact the configuration.  When using the ``-C`` option, only variables
-  set with ``set(<varName> CACHE <TYPE> ...)`` will impact the configuration.
+  4) When using ``<Project>_CONFIGURE_OPTIONS_FILE``, non-cache project-level
+  variables can be set in a ``*.cmake`` file that will impact the
+  configuration.  When using the ``-C`` option, only variables set with
+  ``set(<varName> <val> CACHE <TYPE> ...)`` will impact the configuration.
 
-  5) However, the ``*.cmake`` files specified by
+  5) Cache variables forced set with ``set(<varName> <val> CACHE <TYPE>
+  "<doc>" FORCE)`` in a ``<frag>.cmake`` file pulled in with ``-C
+  <frag>.cmake`` will only override a cache variable ``-D<varName>=<val2>``
+  passed on the command-line if the ``-C <frag>.cmake`` argument comes
+  **after** the ``-D<varName>=<val2>`` argument (i.e. ``cmake
+  -D<varName>=<val2> -C <frag>.cmake``).  Otherwise, if the order of the
+  ``-D`` and ``-C`` arguments is reversed (i.e. ``cmake -C <frag>.cmake
+  -D<varName>=<val2>``) then the forced ``set()`` statement **WILL NOT**
+  override the cache var set on the command-line with ``-D<varName>=<val2>``.
+  However, note that a forced ``set()`` statement **WILL** override other
+  cache vars set with non-forced ``set()`` statements ``set(<varName> <val1>
+  CACHE <TYPE> "<doc>")`` in the same ``*.cmake`` file or in previously read
+  ``-C <frag2>.cmake`` files included on the command-line before the file ``-C
+  <frag>.cmake``.  Alternatively, if the file is pulled in with
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake``, then a ``set(<varName>
+  <val> CACHE <TYPE> "<doc>" FORCE)`` statement in a ``<frag>.cmake`` **WILL**
+  override a cache variable passed in on the command-line
+  ``-D<varName>=<val2>`` no matter the order of the arguments
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake`` and
+  ``-D<varName>=<val2>``.  (This is because the file ``<frag>.cmake`` is
+  included as part of the processing of the project's top-level
+  ``CMakeLists.txt`` file.)
+
+  6) However, the ``*.cmake`` files specified by
   ``<Project>_CONFIGURE_OPTIONS_FILE`` will only get read in **after** the
   project's ``ProjectName.cmake`` and other ``set()`` statements are called at
   the top of the project's top-level ``CMakeLists.txt`` file.  So any CMake
@@ -304,9 +339,18 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   ``CMakeCache.txt`` file.
 
   In other words, the context and impact of what get be set from a ``*.cmake``
-  file read in through the ``-C`` argument is more limited while the code
-  listed in the ``*.cmake`` file behaves just like regular CMake statements
-  executed in the project's top-level ``CMakeLists.txt`` file.
+  file read in through the built-in CMake ``-C`` argument is more limited
+  while the code listed in the ``*.cmake`` file pulled in with
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake`` behaves just like
+  regular CMake statements executed in the project's top-level
+  ``CMakeLists.txt`` file.  In addition, any forced set statements in a
+  ``*.cmake`` file pulled in with ``-C`` **may or may not** override cache
+  vars sets on the command-line with ``-D<varName>=<val>`` depending on the
+  order of the ``-C`` and ``-D`` options.  (There is no order dependency for
+  ``*.cmake`` files passed in through
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake``.)
+
+.. _Using the QT CMake configuration GUI:
 
 c) Using the QT CMake configuration GUI:
 
@@ -344,26 +388,26 @@ See the following use cases:
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In order to see the list of available <Project> SE Packages to enable, just
+In order to see the list of available <Project> Packages to enable, just
 run a basic CMake configure, enabling nothing, and then grep the output to see
 what packages are available to enable.  The full set of defined packages is
-contained the lines starting with ``'Final set of enabled SE packages'`` and
-``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
+contained the lines starting with ``'Final set of enabled packages'`` and
+``'Final set of non-enabled packages'``.  If no packages are enabled by
 default (which is base behavior), the full list of packages will be listed on
-the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
+the line ``'Final set of non-enabled packages'``.  Therefore, to see the
 full list of defined packages, run::
 
-  ./do-configure 2>&1 | grep "Final set of .*enabled SE packages"
+  ./do-configure 2>&1 | grep "Final set of .*enabled packages"
 
 Any of the packages shown on those lines can potentially be enabled using ``-D
 <Project>_ENABLE_<TRIBITS_PACKAGE>=ON`` (unless they are set to disabled
 for some reason, see the CMake output for package disable warnings).
 
-Another way to see the full list of SE packages that can be enabled is to
+Another way to see the full list of packages that can be enabled is to
 configure with `<Project>_DUMP_PACKAGE_DEPENDENCIES`_ = ``ON`` and then grep
-for ``<Project>_SE_PACKAGES`` using, for example::
+for ``<Project>_INTERNAL_PACKAGES`` using, for example::
 
-  ./do-configure 2>&1 | grep "<Project>_SE_PACKAGES: "
+  ./do-configure 2>&1 | grep "<Project>_INTERNAL_PACKAGES: "
 
 
 Print package dependencies
@@ -376,12 +420,12 @@ setting the configure option::
 
   -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
 
-This will print the basic forward/upstream dependencies for each SE package.
+This will print the basic forward/upstream dependencies for each package.
 To find this output, look for the line::
 
   Printing package dependencies ...
 
-and the dependencies are listed below this for each SE package in the form::
+and the dependencies are listed below this for each package in the form::
 
   -- <PKG>_LIB_REQUIRED_DEP_TPLS: <TPL0> <TPL1> ...
   -- <PKG>_LIB_OPTIONAL_DEP_TPLS: <TPL2> <TPL3> ...
@@ -396,7 +440,7 @@ and the dependencies are listed below this for each SE package in the form::
 there are no ``<PKG>_LIB_OPTIONAL_DEP_PACKAGES`` dependencies, then that line
 is not printed.)
 
-To also see the direct forward/downstream dependencies for each SE package,
+To also see the direct forward/downstream dependencies for each package,
 also include::
 
   -D <Project>_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
@@ -415,7 +459,7 @@ Enable a set of packages
 
 .. _<Project>_ENABLE_TESTS:
 
-To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
+To enable an package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
 and examples), configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
@@ -445,7 +489,7 @@ take on the string enum values of ``"ON"``, ``"OFF"``, end empty ``""``.  An
 empty enable means that the TriBITS dependency system is allowed to decide if
 an enable should be turned on or off based on various logic.  The CMake GUI
 will enforce the values of ``"ON"``, ``"OFF"``, and empty ``""`` but it will
-not enforce this if you set the value on the command line or in a set()
+not enforce this if you set the value on the command line or in a ``set()``
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
@@ -514,7 +558,7 @@ Enable to test all effects of changing a given package(s)
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES:
 
-To enable an SE package ``<TRIBITS_PACKAGE>`` to test it and all of its
+To enable an package ``<TRIBITS_PACKAGE>`` to test it and all of its
 down-stream packages, configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
@@ -560,7 +604,7 @@ tested (PT) packages and code.  To have this also enable all secondary tested
   -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
 
 NOTE: If this project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the packages but
 only the project's primary meta-project packages.  See `Package Dependencies
 and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
 details.
@@ -569,7 +613,7 @@ details.
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
 
-To disable an SE package and all of the packages that depend on it, add the
+To disable an package and all of the packages that depend on it, add the
 configure options::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=OFF
@@ -1562,8 +1606,8 @@ where ``<TPLNAME>`` = ``BLAS``, ``LAPACK`` ``Boost``, ``Netcdf``, etc.
 
 The full list of TPLs that is defined and can be enabled is shown by doing a
 configure with CMake and then grepping the configure output for ``Final set of
-.* TPLs``.  The set of TPL names listed in ``'Final set of enabled TPLs'`` and
-``'Final set of non-enabled TPLs'`` gives the full list of TPLs that can be
+.* TPLs``.  The set of TPL names listed in ``'Final set of enabled external packages/TPLs'`` and
+``'Final set of non-enabled external packages/TPLs'`` gives the full list of TPLs that can be
 enabled (or disabled).
 
 Some TPLs require only libraries (e.g. Fortran libraries like BLAS or LAPACK),
@@ -1808,7 +1852,7 @@ dependencies may need to be tweaked to match how these TPLs were actually
 installed on some systems.  To redefine what dependencies a TPL can have (if
 the upstream TPLs are enabled), set::
 
-  -D <TPLNAME>_LIB_ALL_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+  -D <TPLNAME>_LIB_DEFINED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
 
 A dependency on an upstream TPL ``<tpl_i>`` will be set if the an upstream TPL
 ``<tpl_i>`` is actually enabled.
@@ -2707,9 +2751,9 @@ NOTES:
 Generating export files
 -----------------------
 
-The project <Project> can generate export files for external CMake projects or
-external Makefile projects.  These export files provide the lists of
-libraries, include directories, compilers and compiler options, etc.
+The project <Project> can generate export files for external CMake projects.
+These export files provide the lists of libraries, include directories, compilers
+and compiler options, etc.
 
 To configure to generate CMake export files for the project, configure with::
 
@@ -2722,7 +2766,7 @@ In addition, this will install versions of these files into the install tree.
 The list of export files generated can be reduced by specifying the exact list
 of packages the files are requested for with::
 
-  -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES="<pkg0>;<pkg1>"
+  -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_PACKAGES="<pkg0>;<pkg1>"
 
 NOTES:
 
@@ -4052,6 +4096,12 @@ pipe this to a file with::
 and then watch that file in another terminal with::
 
   $ tail -f make.dashboard.out
+
+**NOTE:** To pass multiple arguments for ``CTEST_BUILD_FLAGS`` (like adding
+ ``-k 99999999`` to tell ninja to continue even if there are build errors),
+ one must quote the entire argument string as::
+
+  "-DCTEST_BUILD_FLAGS=-j4 -k 99999999"
 
 
 Setting options to change behavior of 'dashboard' target
