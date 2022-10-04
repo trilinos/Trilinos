@@ -1539,8 +1539,9 @@ namespace {
 
     int my_rank = A1->getRowMap()->getComm()->getRank();
 
-    using LO = typename BlockCrsMatrixType::local_ordinal_type;
     using Scalar = typename BlockCrsMatrixType::scalar_type;
+    using LO = typename BlockCrsMatrixType::local_ordinal_type;
+    using GO = typename BlockCrsMatrixType::global_ordinal_type;
     using lids_type = typename BlockCrsMatrixType::local_inds_host_view_type;
     using vals_type = typename BlockCrsMatrixType::values_host_view_type;
 
@@ -1569,7 +1570,7 @@ namespace {
 
       // Verify the same number of entries in each row
       if (A1NumEntries != A2NumEntries) {
-        if (my_rank==0) std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+	std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
         return false;
       }
 
@@ -1578,39 +1579,58 @@ namespace {
 
       // Verify the same number of values in each row
       if (A1LocalRowVals.extent(0) != A2LocalRowVals.extent(0)) {
-        if (my_rank==0) std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+	std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
         return false;
       }
 
-      // Col indices may be in different order. Store in a set and compare sets.
-      std::set<LO> a1_inds;
-      std::set<LO> a2_inds;
+      // There's no guarantee the matrices have the same col map, so we compare global indices in
+      // sets (because indices may be in a different order
+      std::set<GO> a1_inds;
+      std::set<GO> a2_inds;
       typedef typename Array<Scalar>::size_type size_type;
       for (size_type k = 0; k < static_cast<size_type> (A1NumEntries); ++k) {
-        a1_inds.insert(A1LocalColInds[k]);
-        a2_inds.insert(A2LocalColInds[k]);
+        a1_inds.insert(A1->getColMap()->getGlobalElement(A1LocalColInds[k]));
+        a2_inds.insert(A2->getColMap()->getGlobalElement(A2LocalColInds[k]));
       }
       if(a1_inds!=a2_inds) {
-        if (my_rank==0) std::cerr << "Error: Matrices have different column indices!" << std::endl;
-        return false;
+	std::cerr << "["<<localrow<<" ] Error: Matrices have different column indices!" << std::endl;
+	std::cerr<< "A1_inds :";
+	std::for_each(a1_inds.cbegin(), a1_inds.cend(), [&](int x) {
+	    std::cerr << x << "("<<A1->getColMap()->getGlobalElement(x)<<") ";
+	  });
+	std::cerr<<std::endl;
+	std::cerr<< "A2_inds :";
+	std::for_each(a2_inds.cbegin(), a2_inds.cend(), [&](int x) {
+	    std::cerr << x << "("<<A2->getColMap()->getGlobalElement(x)<<") ";
+	  });
+	std::cerr<<std::endl;
+
+
+	return false;
       }
 
       // Loop over each local col entry of A1, find the corresponding col index of A2, and compare these value.
+      LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
       for (size_type a1_k = 0; a1_k < static_cast<size_type> (A1NumEntries); ++a1_k) {
-        LO a2_k;
+        LO a2_k = INVALID;
         for (size_type i = 0; i < static_cast<size_type> (A2NumEntries); ++i) {
-	  if (A1LocalColInds[a1_k] == A2LocalColInds[i]) {
+	  if (A1->getColMap()->getGlobalElement(A1LocalColInds[a1_k]) == A2->getColMap()->getGlobalElement(A2LocalColInds[i])) {
             a2_k = i;
 	    break;
 	  }
         }
       
+	if(a2_k == INVALID) {
+	  std::cerr << "Cannot find corresponding column" << std::endl;
+	  return false;
+	}
+
         const int a1_start = a1_k*blocksize*blocksize;
         const int a2_start = a2_k*blocksize*blocksize;
         for (int b=0; b<blocksize*blocksize; ++b) {
           const magnitude_type rel_err = ST::magnitude(A1LocalRowVals[a1_start+b] - A2LocalRowVals[a2_start+b]);
           if(rel_err > tol) {
-            if (my_rank==0) std::cerr << "Error: Matrices have different values!" << std::endl;
+	    std::cerr << "Error: Matrices have different values!" << std::endl;
             return false;
           }
         }
@@ -1933,7 +1953,14 @@ namespace {
        RCP<block_crs_type> tgt_mat_for_testing =
          rcp (new block_crs_type (*tgt_graph_for_testing, blocksize));
        build_lower_diag_matrix<block_crs_type>(tgt_mat_for_testing);
-       //tgt_mat_for_testing->describe(out, Teuchos::VERB_EXTREME);
+
+
+
+       tgt_mat_for_testing->describe(out, Teuchos::VERB_EXTREME);
+       tgt_mat->describe(out, Teuchos::VERB_EXTREME);
+
+       
+
 
        // Test that matrices are identical
        bool matrices_match = matrices_are_same<block_crs_type>(tgt_mat, tgt_mat_for_testing);
