@@ -869,18 +869,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
     }
 
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> auxInArgs = auxPhysics->getNominalValues();
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> auxOutArgs = auxPhysics->createOutArgs();
-    Teuchos::RCP<Thyra::LinearOpBase<Scalar> > aux_W_op = auxPhysics->create_W_op();
-    auxOutArgs.set_W_op(aux_W_op);
-    auxPhysics->evalModel(auxInArgs, auxOutArgs);
+    {
+      Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: eval auxiliary physics model evaluator")));
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> auxInArgs = auxPhysics->getNominalValues();
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> auxOutArgs = auxPhysics->createOutArgs();
+      Teuchos::RCP<Thyra::LinearOpBase<Scalar> > aux_W_op = auxPhysics->create_W_op();
+
+      auxOutArgs.set_W_op(aux_W_op);
+      auxPhysics->evalModel(auxInArgs, auxOutArgs);
+    }
 
     // setup a response library to write to the mesh
     RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
                                   closure_models);
-
-
 
     // set up the solution vector, jacobian, and residual
     RCP<Thyra::VectorBase<Scalar> > solution_vec = Thyra::createMember(physics->get_x_space());
