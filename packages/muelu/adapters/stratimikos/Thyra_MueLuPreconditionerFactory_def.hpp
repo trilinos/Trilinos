@@ -47,7 +47,7 @@
 #define THYRA_MUELU_PRECONDITIONER_FACTORY_DEF_HPP
 
 #include "Thyra_MueLuPreconditionerFactory_decl.hpp"
-#include "MueLu_FakeTpetraRowMatrix.hpp"
+#include "MueLu_TpetraOperatorAsRowMatrix.hpp"
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
@@ -200,7 +200,7 @@ namespace Thyra {
             diag = rcp(new tV(tO->getRangeMap()));
             tO->getLocalDiagCopy(*diag);
           }
-          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
+          auto fTpRow = rcp(new MueLu::TpetraOperatorAsRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
           auto op = rcp_dynamic_cast<XpOp>(tpFOp);
           paramList.set<RCP<XpOp> >(parameterName, op);
@@ -387,7 +387,7 @@ namespace Thyra {
             diag = rcp(new tV(tO->getRangeMap()));
             tO->getLocalDiagCopy(*diag);
           }
-          auto fTpRow = rcp(new MueLu::FakeTpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
+          auto fTpRow = rcp(new MueLu::TpetraOperatorAsRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tO, diag));
           RCP<Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fTpRow));
           auto op = rcp_dynamic_cast<XpOp>(tpFOp);
           paramList.set<RCP<XpOp> >(parameterName, op);

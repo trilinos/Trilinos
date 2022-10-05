@@ -50,7 +50,7 @@ namespace MueLu {
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class FakeTpetraRowMatrix : public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
     using op_type = Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -87,13 +87,13 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    FakeTpetraRowMatrix(const RCP<op_type>& op)
+    TpetraOperatorAsRowMatrix(const RCP<op_type>& op)
       :
       op_(op),
       diag_(Teuchos::null)
     { }
 
-    FakeTpetraRowMatrix(const RCP<op_type>& op,
+    TpetraOperatorAsRowMatrix(const RCP<op_type>& op,
                         const RCP<vec_type>& diag)
       :
       op_(op),
