@@ -241,7 +241,7 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
 {
   using TST = Teuchos::ScalarTraits<ST>;
   using MT = typename TST::magnitudeType;
-  auto eps = Teuchos::ScalarTraits<MT>::squareroot(Teuchos::ScalarTraits<MT>::eps());
+  auto eps = 1000*Teuchos::ScalarTraits<MT>::eps();
 
   // They should have the same row/range/domain maps
   if (!A.getRowMap()->isSameAs(*B.getRowMap())) {
