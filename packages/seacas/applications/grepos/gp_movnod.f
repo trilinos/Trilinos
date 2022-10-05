@@ -165,3 +165,4 @@ C ... Update the nodes position (Currently, assumes in vector direction)
 10020 format(/,'Node movement = ',1pe11.4)
       return
       end
+

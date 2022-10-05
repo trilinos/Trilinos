@@ -72,7 +72,7 @@ class PhactoriPointSourceNearbyCorrelator(PhactoriOperationSpecifics):
         errStr = "PhactoriPointSourceFromJsonList::ValidateJsonPointList\n" \
           "point with index " + str(ptNdx) + "does not have three elements\n"
         myDebugPrint3AndException(errStr)
-
+      
 
   def ParseParametersFromJson(self, inJson):
     if 'filename' in inJson:
@@ -163,13 +163,13 @@ class PhactoriPointSourceNearbyCorrelator(PhactoriOperationSpecifics):
     for idx in range(0, numSrcPnts):
       xyzIdx = idx*3
       resultPoints.append([globalXyz[xyzIdx], globalXyz[xyzIdx+1], globalXyz[xyzIdx+2], globalNodeId[idx]])
-
+  
     if PhactoriDbg(100):
       myDebugPrint3("resultPoints:\n" + str(resultPoints) + "\n")
 
     if PhactoriDbg(100):
       myDebugPrint3("UseMpiToFindGlobalNearestPointList returning\n")
-    return resultPoints
+    return resultPoints  
 
   def CalculateOneDisplacedPoint(self, srcPt, tgtPt, dispDist):
       deltaVec = vecFromAToB(srcPt, tgtPt)
@@ -200,7 +200,7 @@ class PhactoriPointSourceNearbyCorrelator(PhactoriOperationSpecifics):
     """in parallel, using mpi to help, find the nodes from the input filter
        which are closest to the points in self.mJsonPointList, and record the
        3d location of those points"""
-
+    
     #grab local process points
     thisProcessPointList = self.mPhactoriOperationBlockOwner.MakeListOfAllPointsAndNodeIdsOnThisProcessFromParaViewFilter(inInputFilter)
 
@@ -228,7 +228,7 @@ class PhactoriPointSourceNearbyCorrelator(PhactoriOperationSpecifics):
         distx = math.sqrt(distSqrd)
         myDebugPrint3(str(ndx) + ": " + str(sourcePt) + "  " + str(distSqrd) + "  " + str(distx) + "  " + str(self.DisplacedPointList[ndx]) + "\n")
 
-
+ 
   def CreateParaViewFilter(self, inInputFilter):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriPointSourceFromJsonList.CreateParaViewFilter entered\n", 100)
@@ -279,3 +279,4 @@ class PhactoriPointSourceNearbyCorrelator(PhactoriOperationSpecifics):
     return self.ParaviewPointSource
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+

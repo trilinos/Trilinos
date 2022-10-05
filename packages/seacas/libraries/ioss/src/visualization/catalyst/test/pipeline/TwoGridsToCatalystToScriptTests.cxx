@@ -37,3 +37,4 @@ TEST_CASE_METHOD(CatalystTestFixture,
     checkTestOutputFileExists("CatalystOutput/test6.0000.png");
 }
 */
+

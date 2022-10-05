@@ -13,3 +13,4 @@ TEST_CASE_METHOD(CatalystTestFixture,
     runPhactoriJSONTest("test2.json", "aero_blunt_wedge_test3.cgns");
     checkTestOutputFileExists("CatalystOutput/test2.0000.png");
 }
+

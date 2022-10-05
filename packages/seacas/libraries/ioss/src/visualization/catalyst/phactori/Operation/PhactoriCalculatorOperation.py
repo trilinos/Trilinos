@@ -107,7 +107,7 @@ class PhactoriCalculatorOperation(PhactoriOperationSpecifics):
       numArrays = inInputFilter.PointData.GetNumberOfArrays()
       for ii in range (0, numArrays):
         myDebugPrint3("  " + str(ii) + ":  " + inInputFilter.PointData.GetArray(ii).GetName() + "\n")
-
+  
     if PhactoriDbg():
       myDebugPrint3("  calculator inInputFilter cell data arrays:\n")
       numArrays = inInputFilter.CellData.GetNumberOfArrays()
