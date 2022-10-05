@@ -25,6 +25,7 @@ namespace Ioss {
   };
 } // namespace Ioss
 // ========================================================================
+Ioss::Quad9 Ioss::Quad9::instance_;
 
 namespace {
   struct Constants

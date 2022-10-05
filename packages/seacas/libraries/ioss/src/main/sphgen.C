@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/ostream.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -30,6 +29,8 @@
 #include "Ioss_Region.h"
 #include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
+
+#define DO_OUTPUT std::cerr
 
 // ========================================================================
 
@@ -56,7 +57,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "0.91";
+  std::string version = "0.9";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -139,40 +140,43 @@ int main(int argc, char *argv[])
     return (EXIT_FAILURE);
   }
 
-  fmt::print(stderr, "Input:    '{}', Type: {}\n", in_file, in_type);
-  fmt::print(stderr, "Output:   '{}', Type: {}\n\n", out_file, out_type);
+  DO_OUTPUT << "Input:    '" << in_file << "', Type: " << in_type << '\n';
+  DO_OUTPUT << "Output:   '" << out_file << "', Type: " << out_type << '\n';
+  DO_OUTPUT << '\n';
 
   create_sph(in_file, in_type, out_file, out_type, globals);
 
-  fmt::print(stderr, "\n{} execution successful.\n", codename);
+  DO_OUTPUT << "\n" << codename << " execution successful.\n";
   return EXIT_SUCCESS;
 }
 
 namespace {
   void show_usage(const std::string &prog)
   {
-    fmt::print(
-        stderr,
-        "\nUSAGE: {} in_file out_file\n"
-        "...or: {} command_file\n"
-        "       version: {}\n\n"
-        "\tConverts all HEX element blocks to SPHERE element blocks\n"
-        "\tand creates a nodeset for each element block containing the node at the center of "
-        "the sphere.\n"
-        "\tignores all other element block types and deletes all existing nodesets.\n"
-        "Options:\n"
-        "\t--directory or -d {{dir}}  : specifies current working directory\n"
-        "\t--input     or -i {{file}} : read input and output filename data from file\n"
-        "\t--in_type {{pamgen|generated|exodus}} : set input type to the argument. Default "
-        "exodus\n"
-        "\t--out_type {{exodus}} : set output type to the argument. Default exodus\n"
-        "\t--scale_factor : radius = (volume/scale_factor)^1/3; default = 8.0\n"
-        "\t\t which gives the half-side-length of a cube with that volume\n"
-        "\t\t use 4*pi/3 = 4.18879 for the radius of a sphere with that volume.\n",
-        prog, prog, version);
+    DO_OUTPUT
+        << "\nUSAGE: " << prog << " in_file out_file\n"
+        << "...or: " << prog << " command_file\n"
+        << "       version: " << version << "\n\n"
+        << "\tConverts all HEX element blocks to SPHERE element blocks\n"
+        << "\tand creates a nodeset for each element block containing the node at the center of "
+           "the sphere.\n"
+        << "\tignores all other element block types and deletes all existing nodesets.\n"
+        << "Options:\n"
+        << "\t--directory or -d {dir}  : specifies current working directory\n"
+        << "\t--input     or -i {file} : read input and output filename data from file\n"
+        << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default "
+           "exodus\n"
+        << "\t--out_type {exodus} : set output type to the argument. Default exodus\n"
+        << "\t--scale_factor : radius = (volume/scale_factor)^1/3; default = 8.0\n"
+        << "\t\t which gives the half-side-length of a cube with that volume\n"
+        << "\t\t use 4*pi/3 = 4.18879 for the radius of a sphere with that volume.\n";
 
     Ioss::NameList db_types = Ioss::IOFactory::describe();
-    fmt::print(stderr, "\nSupports database types:\n\t{}\n\n", fmt::join(db_types, " "));
+    DO_OUTPUT << "\nSupports database types:\n\t";
+    for (const auto &db : db_types) {
+      DO_OUTPUT << db << "  ";
+    }
+    DO_OUTPUT << "\n\n";
   }
 
   void create_sph(const std::string &inpfile, const std::string &input_type,
@@ -192,7 +196,7 @@ namespace {
     Ioss::Region region(dbi, "region_1");
 
     if (!region.get_nodesets().empty()) {
-      fmt::print(stderr, " *** All nodesets will be replaced by element block nodesets\n");
+      DO_OUTPUT << " *** All nodesets will be replaced by element block nodesets\n";
     }
 
     //========================================================================
@@ -297,13 +301,14 @@ namespace {
         // Find corresponding output element block...
         Ioss::ElementBlock *output_eb = output_region.get_element_block((*I)->name());
         if (output_eb == nullptr) {
-          fmt::print(stderr, "ERROR: Could not find output element block '{}'\n", (*I)->name());
+          std::cerr << "ERROR: Could not put find element block " << (*I)->name() << "\n";
           std::exit(EXIT_FAILURE);
         }
 
         Ioss::NodeSet *output_ns = output_region.get_nodeset((*I)->name() + "_nodes");
         if (output_ns == nullptr) {
-          fmt::print(stderr, "ERROR: Could not find output node set '{}_nodes'\n", (*I)->name());
+          std::cerr << "ERROR: Could not put find node set " << (*I)->name() + "_nodes"
+                    << "\n";
           std::exit(EXIT_FAILURE);
         }
 

@@ -25,7 +25,6 @@ namespace Ioss {
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
-    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -48,6 +47,8 @@ namespace Ioss {
     Quad12();
 
   private:
+    static Quad12 instance_;
+
     Quad12(const Quad12 &) = delete;
   };
 } // namespace Ioss

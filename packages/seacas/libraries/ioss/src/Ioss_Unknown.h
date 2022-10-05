@@ -25,7 +25,6 @@ namespace Ioss {
     ElementShape shape() const override { return ElementShape::UNKNOWN; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
-    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -48,6 +47,8 @@ namespace Ioss {
     Unknown();
 
   private:
+    static Unknown instance_;
+
     Unknown(const Unknown &) = delete;
   };
 } // namespace Ioss

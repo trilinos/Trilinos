@@ -1,11 +1,11 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "Utst_structured_decomp.h"
-#include <doctest.h>
+#include <catch.hpp>
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
 #ifndef __NVCC__
@@ -16,7 +16,7 @@
 #endif
 
 ATTRIBUTE_NO_SANITIZE_ADDRESS
-DOCTEST_TEST_CASE("Rocket-1496")
+TEST_CASE("Rocket-1496", "[rocket-1496_zgc]")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -41322,7 +41322,7 @@ DOCTEST_TEST_CASE("Rocket-1496")
 
   for (size_t proc_count = 2048; proc_count > 1; proc_count /= 2) {
     std::string name = "Rocket_1496_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }

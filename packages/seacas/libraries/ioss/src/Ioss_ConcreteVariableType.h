@@ -80,5 +80,4 @@ namespace Ioss {
   MAKE_CLASS(Asym_Tensor_01);
   MAKE_CLASS(Matrix_22);
   MAKE_CLASS(Matrix_33);
-  MAKE_CLASS(TestOnly);
 } // namespace Ioss
