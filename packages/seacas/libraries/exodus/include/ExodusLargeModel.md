@@ -63,10 +63,10 @@ client application is reading the database, no changes are needed.
 If your client application bypasses some or all of the Exodus API
 and makes direct netCDF calls, you will need to modify the calls.  The
 changes that were made are shown below along with the name of the
-Exodus API function in which the changes were made. 
+Exodus API function in which the changes were made.
 
-Alternatively, you can look at the changes that were made to the API at 
-http://github.com/gsjaardema/seacas/packages/seacas/libraries/exodus/src.
+Alternatively, you can look at the changes that were made to the API at
+http://github.com/sandialabs/seacas/packages/seacas/libraries/exodus/src.
 The files that were changed are:
 
 \note The filenames have been changed since this was written.
@@ -87,7 +87,7 @@ The files that were changed are:
 mode passed to nccreate must have the `NC_64BIT_OFFSET` bit set.  For
 example, `mode |= NC_64BIT_OFFSET;`
 
-  NOTE: `NC_64BIT_OFFSET` is defined in the Sandia's netCDF version 
+  NOTE: `NC_64BIT_OFFSET` is defined in the Sandia's netCDF version
         "3.4-snl10X".  It should also be in netCDF-3.6.0 once it is released.
 
 -- Write the exodus file size `ATT_FILESIZE` attribute (1=large, 0=normal):
@@ -110,12 +110,12 @@ define the `VAR_COORD` variable as is currently done.
        dim[0] = numnoddim;
        if (ncvardef (exoid, VAR_COORD_X, nc_flt_code(exoid), 1, dim) == -1)
          { ... handle error }
-       
+
        if (num_dim > 1) {
          if (ncvardef (exoid, VAR_COORD_Y, nc_flt_code(exoid), 1, dim) == -1)
            { ... handle error }
        }
-       
+
        if (num_dim > 2) {
          if (ncvardef (exoid, VAR_COORD_Z, nc_flt_code(exoid), 1, dim) == -1)
            { ... handle error }
@@ -123,20 +123,20 @@ define the `VAR_COORD` variable as is currently done.
      } else {
        /* node coordinate arrays: -- all stored together (old method) */
        .... define the old way...
-     }       
+     }
 ```
 
 \section ex_put_coord ex_put_coord():
 -- If writing a "large model" capable database, then the coordinates
 are written a component at a time, otherwise write the old way as a single blob.
-  
+
 ```
   if (ex_large_model(exoid) == 0) {
     ... write coordinates old way...
   } else {
     if ((coordidx = ncvarid (exoid, VAR_COORD_X)) == -1)
       { ... handle error }
-    
+
     if (num_dim > 1) {
       if ((coordidy = ncvarid (exoid, VAR_COORD_Y)) == -1)
         { ... handle error }
@@ -173,7 +173,7 @@ are written a component at a time, otherwise write the old way as a single blob.
      start[0] = --time_step;
      start[1] = --nodal_var_index;
      start[2] = 0;
-     
+
      count[0] = 1;
      count[1] = 1;
      count[2] = num_nodes;
@@ -183,14 +183,14 @@ are written a component at a time, otherwise write the old way as a single blob.
      if ((varid = ncvarid (exoid, VAR_NOD_VAR_NEW(nodal_var_index))) == -1) {
        ... handle error ...
      }
-       
+
      start[0] = --time_step;
      start[1] = 0;
 
      count[0] = 1;
      count[1] = num_nodes;
    }
- 
+
    if (ncvarput (exoid, varid, start, count,
                  ex_conv_array(exoid,WRITE_CONVERT,nodal_var_vals,num_nodes)) == -1) {
      ...handle error ...
