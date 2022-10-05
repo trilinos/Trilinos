@@ -197,7 +197,6 @@ namespace Intrepid2 {
       template<typename ValueType, typename DeviceType>
       int CellTools_Test01(const bool verbose) {
         using value_type = ValueType;
-        using ExecSpaceType = typename DeviceType::execution_space;
 
         Teuchos::RCP<std::ostream> outStream;
         Teuchos::oblackholestream bhs; // outputs nothing
