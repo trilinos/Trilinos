@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,9 +7,12 @@
 #define ZE_SystemInterface_h
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
-#include <string>            // for string
+#include <array>
+#include <string> // for string
 
 //! \file
+
+using vector3d = std::array<double, 3>;
 
 enum class Minimize { NONE = 0, UNIT = 1, OUTPUT = 2, ALL = 3 };
 
@@ -45,7 +48,8 @@ public:
   bool     equivalence_nodes() const { return equivalenceNodes_; }
   Minimize minimize_open_files() const { return minimizeOpenFiles_; }
 
-  double scale_factor() const { return scaleFactor_; }
+  double   scale_factor() const { return scaleFactor_; }
+  vector3d offset() const { return offset_; }
 
   int skip() const { return skip_; }
   int repeat() const { return repeat_; }
@@ -64,6 +68,7 @@ private:
   std::string   decompMethod_{"HSFC"};
   std::string   sidesetSurfaces_{};
   std::string   sidesetNames_{};
+  vector3d      offset_{0.0, 0.0, 0.0};
   double        scaleFactor_{1.0};
   int           myRank_{0};
   int           debugLevel_{0};
