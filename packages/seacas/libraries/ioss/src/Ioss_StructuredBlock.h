@@ -357,9 +357,3 @@ namespace Ioss {
     }
   };
 } // namespace Ioss
-
-namespace fmt {
-  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
-  {
-  };
-} // namespace fmt
