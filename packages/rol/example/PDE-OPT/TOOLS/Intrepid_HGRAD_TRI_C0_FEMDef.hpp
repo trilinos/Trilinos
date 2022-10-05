@@ -1,21 +1,22 @@
-#ifndef __INTREPID_HGRAD_C0_FEM_DEF_HPP__
-#define __INTREPID_HGRAD_C0_FEM_DEF_HPP__
+#ifndef __INTREPID_HGRAD_TRI_C0_FEM_DEF_HPP__
+#define __INTREPID_HGRAD_TRI_C0_FEM_DEF_HPP__
 
-// Define a piecewise constant basis function for quads.
+// Define a piecewise constant basis function for supported
+// cell topologies ---for now, only quads.
 
 namespace Intrepid{
   template<class Scalar, class ArrayScalar>
-  Basis_HGRAD_C0_FEM<Scalar,ArrayScalar>::Basis_HGRAD_C0_FEM()
+  Basis_HGRAD_TRI_C0_FEM<Scalar,ArrayScalar>::Basis_HGRAD_TRI_C0_FEM()
   {
     this -> basisCardinality_ = 1;
     this -> basisDegree_ = 0;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
     this -> basisType_ = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_ = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_ = false;
   }
   template<class Scalar, class ArrayScalar>
-  void Basis_HGRAD_C0_FEM<Scalar,ArrayScalar>::initializeTags(){
+  void Basis_HGRAD_TRI_C0_FEM<Scalar,ArrayScalar>::initializeTags(){
     int tagSize = 4;   // size of DoF tag, i.e., number of fields in the tag
     int posScDim = 0;  // position in the tag, counting from 0, of the subcell dim
     int posScOrd = 1;  // position in the tag, counting from 0, of the subcell ordinal
@@ -35,9 +36,9 @@ namespace Intrepid{
   }
 
 template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                       const ArrayScalar &  inputPoints,
-                                                       const EOperator      operatorType) const {
+void Basis_HGRAD_TRI_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
+                                                            const ArrayScalar &  inputPoints,
+                                                            const EOperator      operatorType) const {
 
   #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
@@ -91,24 +92,24 @@ void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        out
 
   default:
     TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
-                      ">>> ERROR (Basis_HGRAD_C0_FEM): Invalid operator type");
+                      ">>> ERROR (Basis_HGRAD_TRI_C0_FEM): Invalid operator type");
   }
 }
 
 template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                             const ArrayScalar &    inputPoints,
-                                                             const ArrayScalar &    cellVertices,
-                                                             const EOperator        operatorType) const {
+void Basis_HGRAD_TRI_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
+                                                            const ArrayScalar &    inputPoints,
+                                                            const ArrayScalar &    cellVertices,
+                                                            const EOperator        operatorType) const {
   TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HGRAD_C0_FEM): FEM Basis calling an FVD member function");
+                      ">>> ERROR (Basis_HGRAD_TRI_C0_FEM): FEM Basis calling an FVD member function");
 }
 
 
 template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const{
+void Basis_HGRAD_TRI_C0_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const{
   //One degree of freedom in the center of the cell.
-  DofCoords(0,0) = 0.0; DofCoords(0,1) = 0.0; // specific to quads
+  DofCoords(0,0) = 1.0/3.0; DofCoords(0,1) = 1.0/3.0; // specific to triangles
 }
 
 

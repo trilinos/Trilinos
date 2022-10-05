@@ -54,6 +54,7 @@
 #include "permeability.hpp"
 
 #include "../../../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_HGRAD_TRI_C0_FEM.hpp"
 #include "../../../../TOOLS/Intrepid_CubatureNodal.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
@@ -138,12 +139,12 @@ public:
       else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
-        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     else {
       if (basisDegPres == 2)
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      else 
+      else
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       if (basisDegCtrl == 2)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();

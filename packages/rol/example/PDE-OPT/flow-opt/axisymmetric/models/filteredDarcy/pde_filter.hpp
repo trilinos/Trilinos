@@ -52,6 +52,7 @@
 #include "../../../../TOOLS/fe.hpp"
 #include "../../../../TOOLS/fieldhelper.hpp"
 #include "../../../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_HGRAD_TRI_C0_FEM.hpp"
 #include "../../../../TOOLS/Intrepid_CubatureNodal.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
@@ -131,7 +132,7 @@ public:
       else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
-        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     else {
       if (basisDegPres == 2)
