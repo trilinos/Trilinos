@@ -260,8 +260,7 @@ using namespace Intrepid;
       std::ostringstream ostr;
       std::set<stk::mesh::Entity> list;
 
-      stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
-        meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+      stk::mesh::FieldBase *coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
 
       if (!coord_field)
         {
@@ -274,7 +273,7 @@ using namespace Intrepid;
                   || (field->name().find("_coordinates") != std::string::npos)
                   || (field->name().find("coordinates") != std::string::npos))
                 {
-                  coord_field = meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> > (stk::topology::NODE_RANK, field->name());
+                  coord_field = meta.get_field(stk::topology::NODE_RANK, field->name());
                   static bool printed=false;
                   if (bulk.parallel_rank() == 0 && !printed)
                     {
@@ -320,7 +319,7 @@ using namespace Intrepid;
 
               double * elem_node_data = NULL;
               if(is_matching_rank(*coord_field , bucket)) {
-                elem_node_data = stk::mesh::field_data( *coord_field , bucket, 0 );
+                elem_node_data = static_cast<double*>(stk::mesh::field_data( *coord_field , bucket, 0 ));
               }
               //double * elem_centroid_data = field_data( elem_centroid_field , bucket.begin() );
               //double * const coord = field_data( m_coordinates_field , *node );

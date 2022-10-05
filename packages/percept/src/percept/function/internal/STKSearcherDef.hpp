@@ -30,7 +30,7 @@
     {
       const stk::mesh::MetaData& metaData = m_bulk->mesh_meta_data();
       stk::mesh::BulkData& bulkData = *m_bulk;
-      CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      CoordinatesFieldType *coords_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
 
       BBB buildBoundingBoxes(m_boxes, coords_field);

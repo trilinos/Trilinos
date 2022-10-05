@@ -229,7 +229,7 @@
             std::array<double *, 4> node_coords;
             for (int inode=0; inode < 4; inode++)
               {
-                node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , tet_elem_nodes[inode] );
+                node_coords[inode] = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , tet_elem_nodes[inode] ));
                 if (0) std::cout << "tmp RP node_coords= "
                                  << node_coords[inode][0] << " "
                                  << node_coords[inode][1] << " "
@@ -250,7 +250,7 @@
               {
                 for (int inode=0; inode < 4; inode++)
                   {
-                    node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , tet_elem_nodes[inode] );
+                    node_coords[inode] = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , tet_elem_nodes[inode] ));
                     std::cout << "tmp RefPatt::createNewElements node_coords after= "
                               << node_coords[inode][0] << " "
                               << node_coords[inode][1] << " "
@@ -334,7 +334,7 @@
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = static_cast<double*>(stk::mesh::field_data( *proc_rank_field, newElement ));
                 //fdata[0] = double(eMesh.get_rank());
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
