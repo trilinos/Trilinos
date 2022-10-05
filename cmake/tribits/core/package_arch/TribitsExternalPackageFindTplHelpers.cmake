@@ -114,8 +114,12 @@ function(tribits_extpkg_create_package_config_file_with_imported_targets
   # Create <tplName>Config.cmake file
   set(configFileStr "")
   string(APPEND configFileStr
-    "include(CMakeFindDependencyMacro)\n"
-    "set(${externalPkg}_DIR \"${${externalPkg}_DIR}\")\n"
+    "include(CMakeFindDependencyMacro)\n" )
+  if (${externalPkg}_DIR)
+    string(APPEND configFileStr
+      "set(${externalPkg}_DIR \"${${externalPkg}_DIR}\")\n" )
+  endif()
+  string(APPEND configFileStr
     "find_dependency(${externalPkg})\n"
     "add_library(${tplName}::all_libs  INTERFACE  IMPORTED  GLOBAL)\n"
     )
@@ -130,3 +134,9 @@ function(tribits_extpkg_create_package_config_file_with_imported_targets
   file(WRITE "${tplConfigFile}" "${configFileStr}")
 
 endfunction()
+#
+# NOTE: Above, ${externalPkg}_DIR is only set when
+# find_package(${externalPkg}) finds a package configure file
+# ${externalPkg}Config.cmake and **not** when it uses a
+# Find${externalPkg}.cmake module.  Therefore, there is no reason to set
+# ${externalPkg}_DIR in this file if it will not be used.

@@ -2,30 +2,144 @@ TriBITS System Data Structures
 ------------------------------
 
 This section describes the global CMake variables that make up the
-data-structures and the functions that create them that define the TriBITS
-package dependency system.  These variables all exist at the base
-project-level CMakeLists.txt file and are typically not cache variables (and
-therefore are recomputed on every reconfigure).  These variables define a
-graph of external packages (i.e. TPLs) and internal packages (i.e. buildable
-CMake packages).  This information is meant for maintainers of the TriBITS
-system itself and should not need to be known by TriBITS Project maintainers.
+data-structures and the macros/functions that create them that define the
+TriBITS package dependency system.  All of these variables all exist at the
+base project-level ``CMakeLists.txt`` file and are typically not cache
+variables (and therefore are recomputed on every reconfigure and can therefore
+accommodate changing enables/disables without a full reconfigure from
+scratch).  These variables define a graph of external packages/TPLs
+(i.e. pre-built and found out on the system) and internal packages
+(i.e. buildable CMake packages).  This information is meant for maintainers of
+the TriBITS system itself and should **not** need to be known by `TriBITS
+Project Developers`_ or even `TriBITS Project Architects`_.
 
-Basic TriBITS Project, Repository, Package, and Subpackage Core Variables
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-The basic variables that define a TriBITS Project, Repository, Package and
-Subpackage are listed at the below links:
+TriBITS naming conventions
+++++++++++++++++++++++++++
+
+Before describing the TriBITS package architecture data-structures and the
+macros/functions that create and manipulate those data-structures in detail,
+first we define some naming conventions for TriBITS macros/function and
+variables.
+
+First, the term "Package" is overloaded in the context of TriBITS (and in
+CMake for that matter).  In the context of TriBITS, here are the **different
+types of entities called a "Package"**:
+
+* **TriBITS External packages/TPLs** listed in the `<repoDir>/TPLsList.cmake`_
+  file and require a `<tplDefsDir>/FindTPL<tplName>.cmake`_ file.
+
+* **TriBITS Top-level internal packages** directly listed in the
+  `<repoDir>/PackagesList.cmake`_ file
+
+* **TriBITS Subpackages** for a top-level package (defined by the
+  ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` argument in
+  `tribits_package_define_dependencies()`_ command called in the
+  `<packageDir>/cmake/Dependencies.cmake`_ file)
+
+* **Native CMake packages** which are found using ``find_package()`` and
+  require a ``<Package>Config.cmake`` package config file or a
+  ``Find<Package>.cmake`` find module file
+
+* **CMake Packaging** of a CMake project which means breaking it into
+  components and provide various source and binary distributions.  (A TriBITS
+  top-level package maps to a CMake packaging "component".)
+
+Also, there are the collection of all three of the TriBITS-related "packages".
+
+To try to avoid ambiguity, we define the following identifiers that appear in
+TriBITS variable, macro, and function names:
+
+* **TPL** or **EXTERNAL_PACKAGE**: Variable or function specifically for
+  processing TriITS external packages/TPLs.
+
+* **TOPLEVEL_PACKAGE**: Variable or a function specifically for a top-level
+  package (or sometimes if there is no ambiguity just **PACKAGE**).
+
+* **SUBPACKAGE**: Variable or a function specifically for a subpackage (and
+  **SUBPACKAGE_FULLNAME** if it is the full name of a subpackage which
+  includes the top-level parent package name
+  ``${PARENT_PACKAGE_NAME}${SUBPACKAGE}``).
+
+* **PACKAGE**: Variable or function that could pertain to an external
+  package/TPL, or a top-level package, or a subpackage.
+
+TriBITS uses the follow general case naming conventions for variables, macros,
+functions and module files:
+
+* ``ProperNoun_UPPER_CASE`` is generally used for global and cache variables.
+  The proper nouns using CamelCase include the names of TriBITS entities like
+  Projects, Repositories, and Packages.  UPPER_CASE is used for non-proper
+  nouns. (E.g. ``Trilinos_SOURCE_DIR``)
+
+* ``camelCaseVariableName`` or ``lower_case_variable_name`` is generally used
+  for local variable names.
+
+* ``tribits_lower_case_name()`` is generally used for TriBITS functions and
+  macros. (E.g. ``trilinos_package_define_dependencies()``)
+
+* ``TribitsModuleName.cmake`` is generally used for TriBITS CMake module file
+  names. (E.g. ``TribitsAddTest.cmake``)
+
+
+User-level TriBITS Project, Repository, Package and Subpackage Variables
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The user-level variables that define a TriBITS Project, Repository, Package
+and Subpackage are listed in:
 
 * `TriBITS Project Core Variables`_
 * `TriBITS Repository Core Variables`_
 * `TriBITS Package Core Variables`_
 * `TriBITS Subpackage Core Variables`_
+* `TriBITS External Package/TPL Core Variables`_
 
 These are variables that can be accessed by `TriBITS Project Developers`_ but
 are also used in the internal implementation of TriBITS functionality.
 
+
 Lists of external and internal packages
 +++++++++++++++++++++++++++++++++++++++
+
+List of non-cache top-level project variables:
+
+* `${PROJECT_NAME}_DEFINED_TPLS`_: List of all defined external packages/TPLs
+
+  * Size `${PROJECT_NAME}_NUM_DEFINED_TPLS`_
+
+* `${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_: List of all defined
+  internal top-level packages
+
+  * Size `${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
+
+* `${PROJECT_NAME}_DEFINED_TOPLEVEL_PACKAGES`_: List of all defined external
+  packages/TPLs and top-level internal packages
+
+  * Size `${PROJECT_NAME}_NUM_DEFINED_TOPLEVEL_PACKAGES`_
+
+* `${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES`_: List of all defined internal
+  top-level packages and subpackages
+
+  * Size `${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES`_
+
+* `${PROJECT_NAME}_DEFINED_PACKAGES`_: List of all defined external
+  packages/TPLs, internal top-level packages, and subpackages (size
+  `${PROJECT_NAME}_NUM_DEFINED_PACKAGES`_)
+
+  * Size ${PROJECT_NAME}_NUM_DEFINED_PACKAGES
+
+* `${PROJECT_NAME}_ENABLED_PACKAGES`_: Subset of all enabled packages from
+  ``${PROJECT_NAME}_DEFINED_PACKAGES``
+
+  * Size `${PROJECT_NAME}_NUM_ENABLED_PACKAGES`_
+
+All of the above list variables are sorted in a valid dependency ordering in
+that any upstream dependent packages are listed before a given package in
+these lists.  After these variables have been set in the macro
+`tribits_read_all_project_deps_files_create_deps_graph()`_, they should
+considered to be constant and **not** modified.
+
+These variables are described in more detail below.
 
 .. _${PROJECT_NAME}_DEFINED_TPLS:
 
@@ -34,412 +148,263 @@ processed `<repoDir>/TPLsList.cmake`_ files is given in the list variable::
 
   ${PROJECT_NAME}_DEFINED_TPLS
 
-.. _${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES:
+.. _${PROJECT_NAME}_NUM_DEFINED_TPLS:
+
+with size::
+
+  ${PROJECT_NAME}_NUM_DEFINED_TPLS
+
+.. _${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES:
 
 The original list of all defined internal top-level packages read in from the
 processed `<repoDir>/PackagesList.cmake`_ files is given in the list
 variable::
 
-  ${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
+  ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
 
-An internal TriBITS Package (i.e. a package that can be built from source)
-will have a non-empty `${PACKAGE_NAME}_SOURCE_DIR`_ ``!= ""`` while an
-external package (i.e. TPL that is pre-built and installed in some way) in
-this list will have a non-empty `${PACKAGE_NAME}_FINDMOD`_ ``!= ""``.
+.. _${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES:
 
-The sizes of these lists is given by the variables::
+with size::
 
-  ${PACKAGE_NAME}_NUM_DEFINED_TPLS
-  ${PACKAGE_NAME}_NUM_DEFINED_INTERNAL_PACKAGES
+  ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
 
-The full list of defined external packages (TPLs) and top-level internal
-packages (TriBITS packages) is stored in the project-level non-cache list
-variable::
+In this list, a defined internal TriBITS Package (i.e. a package that can be
+built from source) will have `${PACKAGE_NAME}_SOURCE_DIR`_ ``!= ""`` while a
+defined external package/TPL will have a non-empty `${PACKAGE_NAME}_FINDMOD`_
+``!= ""``.
 
-  ${PROJECT_NAME}_ALL_DEFINED_TOPLEVEL_PACKAGES
+.. _${PROJECT_NAME}_DEFINED_TOPLEVEL_PACKAGES:
 
-The first set of elements in this list are the defined external packages
-(TPLs) that are read in from the `<repoDir>/TPLsList.cmake`_ files from each
+The full list of defined external packages/TPLs and top-level internal
+packages (i.e. TriBITS top-level packages) (**not** including subpackages) is
+stored in the project-level non-cache list variable::
+
+  ${PROJECT_NAME}_DEFINED_TOPLEVEL_PACKAGES
+
+.. _${PROJECT_NAME}_NUM_DEFINED_TOPLEVEL_PACKAGES:
+
+with size::
+
+  ${PROJECT_NAME}_NUM_DEFINED_TOPLEVEL_PACKAGES
+
+The first set of elements in this list are the defined external packages/TPLs
+that are read in from the `<repoDir>/TPLsList.cmake`_ files from each
 processed TriBITS repository, in order.  This is followed by the set of
 internal packages (TriBITS packages) that are defined in the
 `<repoDir>/PackagesList.cmake`_ files from each processed TriBITS repository,
 read in order.  This list does **not** include any subpackages.
 
 Note that some of the packages listed in
-`${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_ may actually be treated
+`${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_ may actually be treated
 as external packages and not build from source code and instead will be found
-out on the system as pre-built/pre-installed packages using
-``find_package(<externalPackageName>)``.  The final decision for if a package
-is treated as an internal or external package is determined by the variable::
+on the system as pre-built/pre-installed packages using
+``find_package(<PackageName>)``.  The final decision for if a package is
+treated as an internal or external package is determined by the variable::
 
   ${PACKAGE_NAME}_PACKAGE_BUILD_STATUS=[INTERNAL|EXTERNAL]
 
-which gets set various criteria as described in section `Determining if a
-package is internal or external`_.  This variable determines what
+which gets set using various criteria as described in section `Determining if
+a package is internal or external`_.  This variable determines what
 pre-built/pre-installed packages must be found out on the system if enabled
 and what internal packages need to be built if enabled.
 
 The set of external packages, internal top-level packages, and internal
 sub-packages are just called the list of "Packages".  When the term "Packages"
-is used with an adjective, it is usually meant in this more general context.
+is used without an adjective, it is usually meant in this more general
+context.
 
-ToDo: Describe the data-structures of all "Packages" which includes
-subpackages as well and the lists of enabled packages.
+.. _${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES:
+
+The set of all of the defined internal top-level packages **and subpackages**
+is given by the non-cache project-level list variable::
+
+  ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
+
+.. _${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES:
+
+with the size::
+
+  ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES
+
+.. _${PROJECT_NAME}_DEFINED_PACKAGES:
+
+The set of all of the defined external packages/TPLs, internal top-level
+packages **and subpackages** is given by the non-cache project-level list
+variable::
+
+  ${PROJECT_NAME}_DEFINED_PACKAGES
+
+.. _${PROJECT_NAME}_NUM_DEFINED_PACKAGES:
+
+with the size::
+
+  ${PROJECT_NAME}_NUM_DEFINED_PACKAGES
 
 These data-structures as well as the package dependencies graph is built up in
 the macro `tribits_read_all_project_deps_files_create_deps_graph()`_ with the
 call graph described in the section `Function call tree for constructing
-package dependency graph`_.
+package dependency graph`_.  These data-structures don't consider what
+packages are actually enabled or disabled.
 
-A set of enable/disable logic is applied in the macro
-`tribits_adjust_package_enables()`_.  Once all of this logic has been applied,
-the final list of enabled external packages, internal packages, and all
-enabled packages are given in the list variables::
+The enable/disable logic (given an initial set of enables and disables) is
+applied in the macro `tribits_adjust_package_enables()`_.  Once all of this
+logic has been applied, several lists of enabled and non-enabled packages are
+computed.
 
-  ${PROJECT_NAME}_ALL_ENABLED_EXTERNAL_PACKAGES
-  ${PROJECT_NAME}_ALL_ENABLED_INTERNAL_PACKAGES
-  ${PROJECT_NAME}_ALL_ENABLED_PACKAGES
+The list of enabled internal **top-level** packages is given in the non-cache
+project-level list variable::
 
-where::
+  ${PROJECT_NAME}_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
 
-  length( ${PROJECT_NAME}_ALL_ENABLED_EXTERNAL_PACKAGES )
-  +
-  length( ${PROJECT_NAME}_ALL_ENABLED_INTERNAL_PACKAGES )
-  =
-  length( ${PROJECT_NAME}_ALL_ENABLED_PACKAGES )
+with size::
 
-Note that the list ``${PROJECT_NAME}_ALL_ENABLED_EXTERNAL_PACKAGES`` can
-include both regular TPLs which have ``${PACKAGE_NAME}_FINDMOD != ""`` and
-also packages that could be built as internal packages which have
-``${PACKAGE_NAME}_SOURCE_DIR != ""``.  Again, how such non-TPL external
-packages are determined and found is the subject of section `Determining if a
-package is internal or external`_.
+  ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
 
-When sorting lists of packages, one only needs to consider enabled packages,
-and therefore only the list ``${PROJECT_NAME}_ALL_ENABLED_PACKAGES`` needs to
-be considered in those cases.
+The list of enabled external packages/TPLs and internal **top-level** packages
+is given in the non-cache project-level list variable::
 
+  ${PROJECT_NAME}_ENABLED_TOPLEVEL_PACKAGES
 
------------------------------------------------------------------------------------
+with size::
 
+  ${PROJECT_NAME}_NUM_ENABLED_TOPLEVEL_PACKAGES
 
-ToDo: Deal with old data-structures below after the refactoring for #63 is
-complete!
+.. _${PROJECT_NAME}_ENABLED_PACKAGES:
 
-The full list of defined top-level parent packages is stored in the
-project-level non-cache list variable::
+The list of enabled external packages/TPLs, internal **top-level and
+subpackages** is given in the non-cache project-level list variable::
 
-  ${PROJECT_NAME}_PACKAGES
+  ${PROJECT_NAME}_ENABLED_PACKAGES
 
-This list does **not** include any subpackages.  This gets created from the
-`<repoDir>/PackagesList.cmake`_ file from each processed TriBITS repository.
+.. _${PROJECT_NAME}_NUM_ENABLED_PACKAGES:
 
-The full list of all of the defined packages and subpackages is stored in the
-project-level non-cache list variable::
+with size::
 
-  ${PROJECT_NAME}_SE_PACKAGES
+  ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
-That list is created from the information in the
-`<repoDir>/PackagesList.cmake`_ and `<packageDir>/cmake/Dependencies.cmake`_
-files for the top-level packages read and processed in the macro
-`tribits_read_deps_files_create_deps_graph()`_ using macros in the file::
 
-  TribitsAdjustPackageEnables.cmake
+Variables defining the package dependencies graph
++++++++++++++++++++++++++++++++++++++++++++++++++
 
-One can determine if a package in this list is a top-level parent package or a
-sub-subpackage based on the value of the variable
-`${PACKAGE_NAME}_PARENT_PACKAGE`_.  If the value is non empty, then
-``${PACKAGE_NAME}`` is a subpackage.  If the value is empty "", then
-``${PACKAGE_NAME}`` is a parent package.
+TriBITS sets up the following project-level non-cache variables that define
+the dependencies for each external package/TPL and internal package:
 
-This full number of defined top-level parent packages (i.e. the number of
-items in the array ``${PROJECT_NAME}_PACKAGES``) is given in the variable::
+  .. _${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES:
 
-  ${PROJECT_NAME}_NUM_PACKAGES
+  ``${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES``
 
-and the 0-based index of the last package in the array
-``${PROJECT_NAME}_PACKAGES`` (i.e. ``${PROJECT_NAME}_NUM_PACKAGES - 1``) is
-given in::
-
-  ${PROJECT_NAME}_LAST_PACKAGE_IDX
-
-This data gets set in functions in the file::
-
-  TribitsProcessPackagesAndDirsLists.cmake
-
-The full list of defined TPLs is stored in the variable::
-
-  ${PROJECT_NAME}_TPLS
-
-This list is created from the `<repoDir>/TPLsList.cmake`_ files from each
-defined TriBITS Repository.  Along with this, the following variables for each
-of these TriBITS TPLs are defined::
-* `${TPL_NAME}_FINDMOD`_
-* `${TPL_NAME}_TESTGROUP`_
-
-This data gets set in functions in the file::
-
-  TribitsProcessTplsLists.cmake  
-
-NOTE: The same external package (TPL) can be duplicated in multiple
-``TPLsList.cmake`` files.  This has the affect of allowing overrides of the
-``FindTPL<TPLName>.cmake`` module.  See the discussion in `TriBITS TPL`_ for
-more details.
-
-
------------------------------------------------------------------------------------
-
-
-
-List variables defining the package dependencies graph
-++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The following top-level non-cache variables are defined after reading in each
-top-level package and subpackage ``Dependencies.cmake`` files and they are
-used to define the basic dependencies that exist between packages in a project
-to support the enable and disable logic described in section ???.  These
-variables taken together constitute a bidirectional acyclic graph (DAG)
-data-structure for package dependencies.
-
-The following lists variables define the **direct** dependencies from a
-package ``${PACKAGE_NAME}`` to its upstream packages which are directly set in
-a package's `<packageDir>/cmake/Dependencies.cmake`_ file.  (These lists
-should **not** contain any *indirect* dependencies as the dependency system
-already handles these automatically.)
-
-  .. _${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``
-  
-    List of *direct* package dependencies that are required for the libraries
-    and non-test executables built by ``${PACKAGE_NAME}``.
-  
-  .. _${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``
-  
-    List of *direct* package dependencies that are only optional for the
-    libraries and non-test executables built by ``${PACKAGE_NAME}``.
-  
-  .. _${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``
-  
-    List of *direct* package dependencies that are required for the
-    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
-    contain any of the packages already listed in
-    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``.
-  
-  .. _${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES:
-
-  ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES```
-  
-    List of *direct* package dependencies that are optional for the
-    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
-    contain any of the SE packages listed in
-    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``,
-    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``, or
-    ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``.
-
-Given the above upstream dependency list variables, the following derived list
-variables are then constructed which provide navigation from a package to its
-downstream/forward dependent packages:
-
-  ``${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES``
-  
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES`` variables.
-  
-  ``${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES``
-  
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES`` variables.
-  
-  ``${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES``
-  
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`` variables.
-  
-  ``${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES``
-  
-    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
-    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
-    their ``${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES`` variables.
-
-
-Determining if a package is internal or external
-++++++++++++++++++++++++++++++++++++++++++++++++
-
-As mentioned above, some subset of packages listed in
-`${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_ (which all have
-``${PACKAGE_NAME}_SOURCE_DIR != ""``) may be chosen to be external packages.
-Packages that could be built internally may be chosen to be treated as
-external packages by setting::
-
-  -D TPL_ENABLE_<ExternalPackage>=ON
-
-or::
-
-  -D <ExternalPackage>_ROOT=<path>
-
-The final status of whether a listed package is an internal package or an
-external package is provided by the variable::
-
-  ${PACKAGE_NAME}_PACKAGE_BUILD_STATUS=[INTERNAL|EXTERNAL]
-
-As a result, every other package upstream from any of these
-``<ExternalPackage>`` packages must therefore also be treated as external
-packages automatically.
-
-The primary TriBITS file that processes and defines these variables is::
-
-  TribitsAdjustPackageEnables.cmake
-
-There are pretty good unit and regression tests to demonstrate and protect
-this functionality in the directory::
-
-  TriBITS/test/core/
-
-
-External package dependencies
-+++++++++++++++++++++++++++++
-
-ToDo: Document how dependencies between external packages/TPLs are determined
-in ``FindTPL<ExternalPackage>Dependencies.cmake`` files and
-``<ExternalPackage>_LIB_REQUIRED_DEP_PACKAGES_OVERRIDE`` and
-``<ExternalPackage>_LIB_OPTIONAL_DEP_PACKAGES_OVERRIDE`` variables that can be
-overridden in the cache.
-
-
-Flat lists of direct package dependencies
-+++++++++++++++++++++++++++++++++++++++++
-
-TriBITS sets up the following lists of dependencies for each internal and
-external package/TPL:
-
-  .. _${PACKAGE_NAME}_LIB_ALL_DEPENDENCIES:
-
-  ``${PACKAGE_NAME}_LIB_ALL_DEPENDENCIES``
-
-    The list of all **direct** required and optional upstream internal and
-    external packages/TPL dependencies, regardless if they are enabled or not.
-    This is concatenation of lists
+    The list of all **defined direct** required and optional upstream external
+    package/TPL and internal package dependencies, regardless if they are
+    enabled or not.  (Note, this is currently the concatenation of the lists
     `${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES`_,
     `${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES`_,
     ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS``, and
-    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS`` (with the latter two lists soon
-    to disappear as part of #63).  To determine if a given direct upstream
-    package ``<depPkg>`` in this list is enabled/supported or not for this
+    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS``.  With the completion of #63,
+    the ``XXX_TPLS`` lists will be removed.)  To determine if a given direct
+    upstream package ``<depPkg>`` in this list is enabled or not for this
     package ``${PACKAGE_NAME}``, check the value of
     ``${PACKAGE_NAME}_ENABLE_<depPkg>``.  NOTE: The variables
     ``${PACKAGE_NAME}_ENABLE_<depPkg>`` will be set even for required upstream
-    internal and external packages/tpls to allow for uniform loops involving
-    required and optional upstream dependencies.  (And for a parent package
-    with subpackages, it is possible for a required subpackage to **not** be
-    enabled and for ``${PACKAGE_NAME}_ENABLE_<depPkg>`` to be ``OFF`` as
-    explained in `Subpackage enable does not auto-enable the parent
-    package`_.)  This list will be set regardless of if the package
-    ``${PACKAGE_NAME}`` is enabled or not.
+    packages to allow for uniform loops involving required and optional
+    upstream dependencies.  (And for a parent package with subpackages, it is
+    possible for a required subpackage to **not** be enabled and for
+    ``${PACKAGE_NAME}_ENABLE_<depPkg>`` to be ``OFF`` as explained in
+    `Subpackage enable does not auto-enable the parent package`_.)  This list
+    will be set regardless of if the package ``${PACKAGE_NAME}`` is enabled or
+    not.
 
   .. _${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES:
 
   ``${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES``
 
-    List of all **enabled** **direct** required and optional upstream internal
-    and external packages/TPL dependencies.  This is strict subset
-    `${PACKAGE_NAME}_LIB_ALL_DEPENDENCIES`_ (i.e. all of the ``<depPkg>``
+    List of all **enabled direct** required and optional upstream external
+    package/TPL and internal package dependencies.  This is strict subset of
+    `${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES`_ (i.e. all of the ``<depPkg>``
     items in this list will have ``${PACKAGE_NAME}_ENABLE_<depPkg>`` set to
     ``ON``).
 
-  .. _${PACKAGE_NAME}_TEST_ALL_DEPENDENCIES:
+  .. _${PACKAGE_NAME}_LIB_DEP_REQUIRED_<depPkg>:
 
-  ``${PACKAGE_NAME}_TEST_ALL_DEPENDENCIES``
+  ``${PACKAGE_NAME}_LIB_DEP_REQUIRED_<depPkg>``
 
-    This list of all **direct** extra package test required and optional
-    upstream internal and external packages/TPLs.  This list includes just the
-    extra dependencies not already listed in
-    `${PACKAGE_NAME}_LIB_ALL_DEPENDENCIES`_.  This is a concatenation of the
-    lists `${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`_,
+    Is ``TRUE`` if the entry ``<depPkg>`` in
+    `${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES`_ or
+    `${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES`_ is a required LIB dependency
+    and is ``FALSE`` if it is only an optional LIB dependency.
+
+  .. _${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES:
+
+  ``${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES``
+
+    This list of all **define direct** extra package test required and
+    optional upstream external package/TPL and internal package dependencies.
+    (Currently, this is a concatenation of the lists
+    `${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`_,
     `${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES`_,
     ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_TPLS``, and
-    ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS`` (with the latter two lists soon
-    to disappear as part of #63).  This list is set regardless if the package
-    ``${PACKAGE_NAME}`` is enabled or not.
+    ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS``.  With the completion of #63,
+    the ``XXX_TPLS`` lists will be removed.)  This list is set regardless if
+    the package ``${PACKAGE_NAME}`` is enabled or not.
 
   .. _${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES:
 
   ``${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES``
 
-    The list of all **enabled** **direct** extra required and optional
-    upstream internal and external packages/TPL dependencies.  This is a
-    strict subset of `${PACKAGE_NAME}_TEST_ALL_DEPENDENCIES`_.  This list
-    includes just the extra dependencies not already listed in
-    `${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES`_.
+    The list of all **enabled direct** extra required and optional upstream
+    external package/TPL and internal package dependencies.  This is a strict
+    subset of `${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES`_.
 
+  .. _${PACKAGE_NAME}_TEST_DEP_REQUIRED_<depPkg>:
 
-List variables defining include directories and libraries
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  ``${PACKAGE_NAME}_TEST_DEP_REQUIRED_<depPkg>``
 
-ToDo: Eliminate this section and these variables once we move to modern CMake
-targets as part of #299.
+    Is ``TRUE`` if the entry ``<depPkg>`` in
+    `${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES`_ or
+    `${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES`_ is a required TEST dependency
+    and is ``FALSE`` if it is only an optional TEST dependency.  For the sake
+    of simplicity and generality,
+    ``${PACKAGE_NAME}_TEST_DEP_REQUIRED_<depPkg>`` will also be set to
+    ``TRUE`` or ``FALSE`` for ``<depPkg>`` in the lists
+    `${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES`_ or
+    `${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES`_ because a LIB dependency is
+    also implicitly a TEST dependency.
 
-The following global internal cache variables are used to communicate the
-required header directory paths and libraries needed to build and link against
-a given package's capabilities:
-  
-  ``${PACKAGE_NAME}_LIBRARIES``
-  
-    Defines list of *only* the libraries associated with the given
-    (sub)package and does *not* list libraries in upstream packages.  Linkages
-    to upstream packages is taken care of with calls to
-    target_link_libraries(...) and the dependency management system in CMake
-    takes care of adding these to various link lines as needed (this is what
-    CMake does well).  However, when a package has no libraries of its own
-    (which is often the case for packages that have subpackages, for example),
-    then this list of libraries will contain the libraries to the direct
-    dependent upstream packages in order to allow the chain of dependencies to
-    be handled correctly in downstream packages and executables in the same
-    package.  In this case, ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES will be
-    false.  The primary purpose of this variable is to passe to
-    target_link_libraries(...) by downstream libraries and executables.
+NOTE: The same upstream package ``<depPkg>`` can be included in both the lists
+`${PACKAGE_NAME}_LIB_DEFINED_DEPENDENCIES`_ and
+`${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES`_ if ``<depPkg>`` is optional in
+the former but required in the latter (which is a valid situation if you think
+about it as a package that may be optional for the lib(s) of a package is
+required by the tests for a package).  (Otherwise, duplicate entries will be
+removed from the list ``${PACKAGE_NAME}_TEST_DEFINED_DEPENDENCIES``.)
 
-  ``${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES``
+NOTE: Having flat lists containing both optional and required dependencies
+with the bool variables ``${PACKAGE_NAME}_[LIB|TEST]_DEP_REQUIRED_<depPkg>``
+defining which entries are required or optional is modeled after the CMake
+standard for handing the ``COMPONENTS`` and ``OPTIONAL_COMPONENTS`` arguments
+to ``find_package()`` in that it passes that info to the
+``<Package>Config.cmake`` file as the single list variable
+``${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS`` and the bool vars
+``${CMAKE_FIND_PACKAGE_NAME}_FIND_REQUIRED_<comp>``.
 
-    Will be true if a package has native libraries.  Otherwise, it will be
-    false.  This information is used to build export makefiles to avoid
-    duplicate libraries on the link line.
+Given the above upstream dependency list variables, the following derived list
+variables are then constructed which provide navigation from a package to its
+downstream/forward dependent packages:
 
-  ``${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES``
+  .. _${PACKAGE_NAME}_FORWARD_LIB_DEP_PACKAGES:
 
-    Lists out, in order, all of the enabled upstream packages that the given
-    package depends on and support that package is enabled in the given
-    package.  This is only computed if
-    ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES=ON.  NOTE: This list
-    does *not* include the package itself.  This list is created after all of
-    the enable/disable logic is applied.
- 
-  ``${PARENT_PACKAGE_NAME}_LIB_TARGETS``
- 
-    Lists all of the library targets for this package only that are as part of
-    this package added by the `tribits_add_library()`_ function.  This is used
-    to define a target called ${PACKAGE_NAME}_libs that is then used by
-    `tribits_ctest_driver()`_ in the package-by-package mode.  If a package
-    has no libraries, then the library targets for all of the immediate
-    upstream direct dependent packages will be added.  This is needed for the
-    chain of dependencies to work correctly.  Note that subpackages don't have
-    this variable defined for them.
- 
-  ``${PARENT_PACKAGE_NAME}_ALL_TARGETS``
- 
-    Lists all of the targets associated with this package.  This includes all
-    libraries and tests added with `tribits_add_library()`_ and
-    `tribits_add_executable()`_.  If this package has no targets (no libraries
-    or executables) this this will have the dependency only on
-    ${PARENT_PACKAGE_NAME}_libs.  Note that subpackages don't have this
-    variable defined for them.
+  ``${PACKAGE_NAME}_FORWARD_LIB_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``<fwdDepPkg>`` that list this package in their
+    ``<fwdDepPkg>_LIB_DEFINED_PACKAGES`` variables.
+
+  .. _${PACKAGE_NAME}_FORWARD_TEST_DEP_PACKAGES:
+
+  ``${PACKAGE_NAME}_FORWARD_TEST_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``<fwdDepPkg>`` that list this package in their
+    ``<fwdDepPkg>_TEST_DEFINED_PACKAGES`` variables.
 
 
 User enable/disable cache variables
@@ -469,10 +434,172 @@ enabled or disabled::
 according to the rules described in `Package Dependencies and Enable/Disable
 Logic`_.
 
-There are pretty good unit and regression tests to demonstrate and protect
-this functionality in the directory::
 
-  TriBITS/test/core/
+Determining if a package is internal or external
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+As mentioned above, some subset of packages listed in
+`${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_ (which all have
+``${PACKAGE_NAME}_SOURCE_DIR != ""``) may be chosen to be external packages.
+Packages that could be built internally may be chosen to be treated as
+external packages (and therefore located on the system using
+``find_package()``) by setting::
+
+  -D TPL_ENABLE_<PackageTreatedAsExternal>=ON
+
+or::
+
+  -D <PackageTreatedAsExternal>_ROOT=<path>
+
+.. _${PACKAGE_NAME}_PACKAGE_BUILD_STATUS:
+
+The final status of whether a package is treated as an internal package or an
+external package is provided by the variable::
+
+  ${PACKAGE_NAME}_PACKAGE_BUILD_STATUS=[INTERNAL|EXTERNAL]
+
+As a result, every other package upstream from any of these
+``<PackageTreatedAsExternal>`` packages must therefore also be treated as
+external packages automatically and will have
+``${PACKAGE_NAME}_PACKAGE_BUILD_STATUS=EXTERNAL`` set accordingly.
+
+
+Other package-related variables
++++++++++++++++++++++++++++++++
+
+The following global internal cache variables are used to provide more
+information about a given internal package:
+
+  ``${PACKAGE_NAME}_LIBRARIES``
+
+    Defines list of *only* the libraries associated with the given
+    (sub)package and does *not* list libraries in upstream packages.  Linkages
+    to upstream packages is taken care of with calls to
+    target_link_libraries(...) and the dependency management system in CMake
+    takes care of adding these to various link lines as needed (this is what
+    CMake does well).  However, when a package has no libraries of its own
+    (which is often the case for packages that have subpackages, for example),
+    then this list of libraries will contain the libraries to the direct
+    dependent upstream packages in order to allow the chain of dependencies to
+    be handled correctly in downstream packages and executables in the same
+    package.  In this case, ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES will be
+    false.  The primary purpose of this variable is to passe to
+    target_link_libraries(...) by downstream libraries and executables.
+
+  ``${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES``
+
+    Will be true if a package has native libraries.  Otherwise, it will be
+    false.  This information is used to build export makefiles to avoid
+    duplicate libraries on the link line.
+
+  ``${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES``
+
+    Lists out, in order, all of the enabled upstream packages that the given
+    package depends on and support that package is enabled in the given
+    package.  This is only computed if
+    ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES=ON.  NOTE: This list
+    does *not* include the package itself.  This list is created after all of
+    the enable/disable logic is applied.
+
+  ``${PARENT_PACKAGE_NAME}_LIB_TARGETS``
+
+    Lists all of the library targets for this package only that are as part of
+    this package added by the `tribits_add_library()`_ function.  This is used
+    to define a target called ${PACKAGE_NAME}_libs that is then used by
+    `tribits_ctest_driver()`_ in the package-by-package mode.  If a package
+    has no libraries, then the library targets for all of the immediate
+    upstream direct dependent packages will be added.  This is needed for the
+    chain of dependencies to work correctly.  Note that subpackages don't have
+    this variable defined for them.
+
+  ``${PARENT_PACKAGE_NAME}_ALL_TARGETS``
+
+    Lists all of the targets associated with this package.  This includes all
+    libraries and tests added with `tribits_add_library()`_ and
+    `tribits_add_executable()`_.  If this package has no targets (no libraries
+    or executables) this this will have the dependency only on
+    ${PARENT_PACKAGE_NAME}_libs.  Note that subpackages don't have this
+    variable defined for them.
+
+
+Legacy list variables defining the package dependencies graph
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following top-level non-cache variables are defined after reading in each
+top-level package and subpackage ``Dependencies.cmake`` files and they are
+used to define the basic dependencies that exist between packages in a project
+to support the enable and disable logic described in section `Package
+Dependencies and Enable/Disable Logic`_.  These variables taken together
+constitute a bidirectional acyclic graph (DAG) data-structure for package
+dependencies.
+
+The following lists variables define the **direct** dependencies from a
+package ``${PACKAGE_NAME}`` to its upstream packages which are directly set in
+a package's `<packageDir>/cmake/Dependencies.cmake`_ file.  (These lists
+should **not** contain any *indirect* dependencies as the dependency system
+already handles these automatically.)
+
+  .. _${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES:
+
+  ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``
+
+    List of *direct* package dependencies that are required for the libraries
+    and non-test executables built by ``${PACKAGE_NAME}``.
+
+  .. _${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES:
+
+  ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``
+
+    List of *direct* package dependencies that are only optional for the
+    libraries and non-test executables built by ``${PACKAGE_NAME}``.
+
+  .. _${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES:
+
+  ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``
+
+    List of *direct* package dependencies that are required for the
+    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
+    contain any of the packages already listed in
+    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``.
+
+  .. _${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES:
+
+  ``${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES```
+
+    List of *direct* package dependencies that are optional for the
+    tests/examples built by ``${PACKAGE_NAME}``.  This list should **not**
+    contain any of the packages listed in
+    ``${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES``,
+    ``${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES``, or
+    ``${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES``.
+
+Given the above upstream dependency list variables, the following derived list
+variables are then constructed which provide navigation from a package to its
+downstream/forward dependent packages:
+
+  ``${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
+    their ``${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES`` variables.
+
+  ``${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
+    their ``${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES`` variables.
+
+  ``${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
+    their ``${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES`` variables.
+
+  ``${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES``
+
+    For a given package ``${PACKAGE_NAME}``, lists the names of all of the
+    forward packages ``${FORWARD_PACKAGE_NAME}`` that list this package in
+    their ``${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES`` variables.
 
 
 Function call tree for constructing package dependency graph
@@ -503,7 +630,7 @@ lists and dependency data-structures described above.
 |           ``include(`` `<packageDir>/cmake/Dependencies.cmake`_ ``)``
 |           `tribits_assert_read_dependency_vars()`_
 |           `tribits_save_off_dependency_vars()`_
-|           `tribits_parse_subpackages_append_se_packages_add_options()`_
+|           `tribits_parse_subpackages_append_packages_add_options()`_
 |           `tribits_read_package_subpackage_deps_files_add_to_graph()`_
 |             Foreach ``SUBPACKAGE``:
 |               `tribits_read_subpackage_deps_file_add_to_graph()`_
@@ -519,53 +646,6 @@ lists and dependency data-structures described above.
 |               `tribits_abort_on_missing_package()`_
 |             `tribits_append_forward_dep_packages()`_
 |               `tribits_abort_on_missing_package()`_
-
-
-Notes on dependency logic
--------------------------
-
-The logic used to define the intra-package linkage variables is complex due to
-a number of factors:
-
-1) Packages can have libraries or no libraries.  
-
-2) In installation-testing mode, the libraries for a package are read from a
-   file instead of generated in source.
-
-3) A library can be a regular package library, or a test-only library, in
-   which case it will not be listed in ``${PACKAGE_NAME}_LIBRARIES``.  The
-   above description does not even talk about how test-only libraries are
-   handed within the system except to say that they are excluded from the
-   package's exported library dependencies.
-
-The management and usage of the intra-package linkage variables is spread
-across a number of TriBITS ``*.cmake`` files but the primary ones are::
-
-  TribitsPackageMacros.cmake
-  TribitsSubPackageMacros.cmake
-  TribitsLibraryMacros.cmake
-  TribitsAddExecutable.cmake
-
-There are other TriBITS cmake files that also access these variables but these
-are the key files.  The CMake code in these files all work together in
-coordination to set up and use these variables in a way that allows for smooth
-compiling and linking of source code for users of the TriBITS system.
-
-Another file with complex dependency logic related to these variables is::
-
-   TribitsWriteClientExportFiles.cmake
-
-The TriBITS cmake code in this file servers a very similar role for external
-clients and therefore needs to be considered in this setting.
-
-All of these variations and features makes this a bit of a complex system to
-say the least.  Also, currently, there is essentially no unit or regression
-testing in place for the CMake code in these files that manipulate these
-intra-package dependency variables.  Because this logic is tied in with
-actually building and linking code, there has not been a way set up yet to
-allow it to be efficiently tested outside of the actual build.  But there are
-a number of example projects that are part of the automated TriBITS test suite
-that do test much of the logic used in these variables.
 
 ..  LocalWords:  acyclic TriBITS SUBPACKAGES CTEST subpackages buildable TPLs TPLS
 ..  LocalWords:  Subpackage CMake CMakeLists

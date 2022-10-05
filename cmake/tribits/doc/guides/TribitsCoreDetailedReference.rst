@@ -280,7 +280,7 @@ These options are described below.
 
 **${PROJECT_NAME}_ELEVATE_ST_TO_PT**
 
-  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST`` SE
+  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST``
   packages will be elevated to ``PT`` packages.  The TriBITS default is
   obviously ``OFF``.  The default can be changed by setting::
 
@@ -723,14 +723,14 @@ These options are described below.
   thereby avoid the defect with gfortran described above.  If CMake version
   3.3 or greater is used, this variable is not required.
 
-  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  NOTE: Currently, a TriBITS package must have a direct dependency on a TPL
   to have ``-isystem`` added to a TPL's include directories on the compile
   lines for that package.  That is, the TPL must be listed in the
   ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
-  `tribits_package_define_dependencies()`_ function in the SE package's
+  `tribits_package_define_dependencies()`_ function in the package's
   `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
   ``-isystem`` added to the include directories for a TPL when compiling the
-  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  tests for an package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
   ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
   implementation that will be removed in a future version of TriBITS.
 
