@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
     debug_level = interFace.debug();
 
-    if ((debug_level & 8) != 0U) {
+    if (debug_level & 1) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
     else {
@@ -106,7 +106,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
   double              begin = Ioss::Utils::timer();
   Ioss::ParallelUtils pu{};
 
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Begin Execution\n", time_stamp(tsFormat));
   }
 
@@ -116,7 +116,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
   grid.set_coordinate_offsets();
   grid.decompose(interFace.decomp_method());
 
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Lattice Decomposed\n", time_stamp(tsFormat));
   }
 
@@ -128,7 +128,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
 
   /*************************************************************************/
   // EXIT program
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Execution Complete\n", time_stamp(tsFormat));
   }
 
@@ -311,7 +311,7 @@ namespace {
         }
       }
     }
-    if (debug_level & 1) {
+    if (debug_level & 2) {
       fmt::print(stderr, "{} Lattice Defined\n", time_stamp(tsFormat));
     }
     return grid;
