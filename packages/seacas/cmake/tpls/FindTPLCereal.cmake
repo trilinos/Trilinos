@@ -56,3 +56,4 @@
 #find_package(Cereal REQUIRED)
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Cereal
   REQUIRED_HEADERS cereal/cereal.hpp )
+

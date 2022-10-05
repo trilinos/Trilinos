@@ -499,7 +499,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
     }
 
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraVector_.getConstObj(), *X_tpetra, beta);
-    Kokkos::fence();
   } else {
     VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
   }

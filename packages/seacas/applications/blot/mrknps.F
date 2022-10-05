@@ -120,3 +120,4 @@ C   --Reset the symbol size, do not exit before resetting
       RETURN
 
       END
+

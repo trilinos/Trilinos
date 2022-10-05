@@ -503,17 +503,29 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           // All matrices are BlockCrs (except maybe Ac)
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
           // we'll need to think about refactoring BlockCrs so we can do something smarter here.
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
 
-          // We assume that Ac is point, so we're going to ignore it as input as we don't have a reuse kernel
-          using BCRS=Tpetra::BlockCrsMatrix<SC,LO,GO,NO>;
-          RCP<const BCRS> tpA = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A));
-          RCP<const BCRS> tpB = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B));
-          RCP<BCRS> tempC;
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
+          using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpA);
+          RCP<const CRS> Bcrs = Tpetra::convertToCrsMatrix(tpB);
 
-          Tpetra::MatrixMatrix::Multiply(tpA, transposeA, tpB, transposeB, tempC,label);
-          
-          // Wrap the output
-          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(tempC));
+          // We need the global constants to do the copy back to BlockCrs
+          RCP<ParameterList> new_params;
+          if(!params.is_null()) {
+            new_params = rcp(new Teuchos::ParameterList(*params));
+            new_params->set("compute global constants",true);
+          }
+
+          // FIXME: The lines below only works because we're assuming Ac is Point
+          RCP<CRS> tempAc = Teuchos::rcp(new CRS(Acrs->getRowMap(),0));
+          Tpetra::MatrixMatrix::Multiply(*Acrs, transposeA, *Bcrs, transposeB, *tempAc, haveMultiplyDoFillComplete, label, new_params);
+
+          // Temporary output matrix
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*tempAc,A.GetStorageBlockSize());          
+          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
@@ -1052,21 +1064,34 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
           // we'll need to think about refactoring BlockCrs so we can do something smarter here.
 
-          // We assume that Ac is point, so we're going to ignore it as input as we don't have a reuse kernel
-          using BCRS=Tpetra::BlockCrsMatrix<SC,LO,GO,NO>;
-          RCP<const BCRS> tpA = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A));
-          RCP<const BCRS> tpB = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B));
-          RCP<BCRS> tempC;
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
 
-          Tpetra::MatrixMatrix::Multiply(tpA, transposeA, tpB, transposeB, tempC,label);
-          
-          // Wrap the output
-          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(tempC));
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
+          using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpA);
+          RCP<const CRS> Bcrs = Tpetra::convertToCrsMatrix(tpB);
+
+          // We need the global constants to do the copy back to BlockCrs
+          RCP<ParameterList> new_params;
+          if(!params.is_null()) {
+            new_params = rcp(new Teuchos::ParameterList(*params));
+            new_params->set("compute global constants",true);
+          }
+
+          // FIXME: The lines below only works because we're assuming Ac is Point
+          RCP<CRS> tempAc = Teuchos::rcp(new CRS(Acrs->getRowMap(),0));
+          Tpetra::MatrixMatrix::Multiply(*Acrs, transposeA, *Bcrs, transposeB, *tempAc, haveMultiplyDoFillComplete, label, new_params);
+
+          // Temporary output matrix
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*tempAc,A.GetStorageBlockSize());          
+          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
           RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Teuchos::rcpFromRef(C));
-          Ac_w->replaceCrsMatrix(Ac_p);     
+          Ac_w->replaceCrsMatrix(Ac_p);  
         }
         else {
           // Mix and match
@@ -1834,21 +1859,34 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           // FIXME: For the moment we're just going to clobber the innards of Ac, so no reuse. Once we have a reuse kernel,
           // we'll need to think about refactoring BlockCrs so we can do something smarter here.
 
-          // We assume that Ac is point, so we're going to ignore it as input as we don't have a reuse kernel
-          using BCRS=Tpetra::BlockCrsMatrix<SC,LO,GO,NO>;
-          RCP<const BCRS> tpA = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A));
-          RCP<const BCRS> tpB = rcpFromRef(Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B));
-          RCP<BCRS> tempC;
+          if(!A.getRowMap()->getComm()->getRank())
+            std::cout<<"WARNING: Using inefficient BlockCrs Multiply Placeholder"<<std::endl;          
 
-          Tpetra::MatrixMatrix::Multiply(tpA, transposeA, tpB, transposeB, tempC,label);
-          
-          // Wrap the output
-          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(tempC));
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpA  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(A);
+          const Tpetra::BlockCrsMatrix<SC,LO,GO,NO> & tpB  = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraBlockCrs(B);
+          using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
+          RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpA);
+          RCP<const CRS> Bcrs = Tpetra::convertToCrsMatrix(tpB);
+
+          // We need the global constants to do the copy back to BlockCrs
+          RCP<ParameterList> new_params;
+          if(!params.is_null()) {
+            new_params = rcp(new Teuchos::ParameterList(*params));
+            new_params->set("compute global constants",true);
+          }
+
+          // FIXME: The lines below only works because we're assuming Ac is Point
+          RCP<CRS> tempAc = Teuchos::rcp(new CRS(Acrs->getRowMap(),0));
+          Tpetra::MatrixMatrix::Multiply(*Acrs, transposeA, *Bcrs, transposeB, *tempAc, haveMultiplyDoFillComplete, label, new_params);
+
+          // Temporary output matrix
+          RCP<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> > Ac_t = Tpetra::convertToBlockCrsMatrix(*tempAc,A.GetStorageBlockSize());          
+          RCP<Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO> > Ac_x = Teuchos::rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(Ac_t));
           RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > Ac_p = Ac_x;
 
           // We can now cheat and replace the innards of Ac
           RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Ac_w = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Teuchos::rcpFromRef(C));
-          Ac_w->replaceCrsMatrix(Ac_p);     
+          Ac_w->replaceCrsMatrix(Ac_p);         
         }
         else {
           // Mix and match

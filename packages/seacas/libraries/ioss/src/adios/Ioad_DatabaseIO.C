@@ -725,10 +725,7 @@ namespace Ioad {
     // Simply to start the "else if" section with "if".
     if (type == "not supported") {}
 #define declare_template_instantiation(T)                                                          \
-  else if (type == GetType<T>())                                                                   \
-  {                                                                                                \
-    return get_variable_infos<T>(variable);                                                        \
-  }
+  else if (type == GetType<T>()) { return get_variable_infos<T>(variable); }
     ADIOS2_FOREACH_TYPE_1ARG(declare_template_instantiation)
 #undef declare_template_instantiation
     else
@@ -1303,7 +1300,7 @@ namespace Ioad {
     // // Also defines member variables of this class...
 
     if (nodeCount == 0) {
-      Ioss::WarnOut() << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
+      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -1314,7 +1311,7 @@ namespace Ioad {
     }
 
     if (elementCount == 0) {
-      Ioss::WarnOut() << "No elements were found in the model, file: '" << decoded_filename()
+      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
                       << "'\n";
     }
 
@@ -1403,7 +1400,7 @@ namespace Ioad {
       IOSS_ERROR(errmsg);
     }
     else if (number_proc > number_proc_read) {
-      Ioss::WarnOut() << "This file was originally written on " << number_proc_read
+      Ioss::WARNING() << "This file was originally written on " << number_proc_read
                       << " processors, but is now being read using " << number_proc
                       << " processors.\n";
     }
@@ -1412,7 +1409,7 @@ namespace Ioad {
       unsigned long processor_id;
       get_data<unsigned long>(static_cast<void *>(&processor_id), Processor_id_meta);
       if (rank != processor_id) {
-        Ioss::WarnOut() << "This file was originally written on processor " << processor_id
+        Ioss::WARNING() << "This file was originally written on processor " << processor_id
                         << ", but is now being read on processor " << rank
                         << ". This may cause problems if there is any processor-dependent data on "
                            "the file.\n";
@@ -1597,7 +1594,7 @@ namespace Ioad {
         IOSS_ERROR(errmsg);
       }
       else {
-        Ioss::WarnOut() << "The variable `" << encoded_name << "` was not found.\n";
+        Ioss::WARNING() << "The variable `" << encoded_name << "` was not found.\n";
       }
     }
   }

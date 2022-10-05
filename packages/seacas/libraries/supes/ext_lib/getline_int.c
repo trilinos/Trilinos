@@ -561,6 +561,7 @@ static void gl_fixup(const char *prompt, int change, int cursor)
   int         pad;                  /* how much to erase at end of line */
   int         backup;               /* how far to backup before fixing */
   int         new_shift;            /* value of shift based on cursor */
+  int         extra;                /* adjusts when shift (scroll) happens */
   int         i;
   int         new_right = -1; /* alternate right bound, using gl_extent */
   int         l1, l2;
@@ -603,10 +604,10 @@ static void gl_fixup(const char *prompt, int change, int cursor)
     gl_beep();
     cursor = 0;
   }
-  int extra = 0; /* adjusts when shift (scroll) happens */
-  if (off_right || (off_left && cursor < gl_shift + gl_width - gl_scroll / 2)) {
+  if (off_right || (off_left && cursor < gl_shift + gl_width - gl_scroll / 2))
     extra = 2; /* shift the scrolling boundary */
-  }
+  else
+    extra = 0;
   new_shift = cursor + extra + gl_scroll - gl_width;
   if (new_shift > 0) {
     new_shift /= gl_scroll;
@@ -681,7 +682,7 @@ static void hist_init(void)
 {
   hist_buf[0] = hist_empty_elem;
   for (int i = 1; i < HIST_SIZE; i++)
-    hist_buf[i] = '\0';
+    hist_buf[i] = (char *)0;
 }
 
 void gl_histadd(char *buf)

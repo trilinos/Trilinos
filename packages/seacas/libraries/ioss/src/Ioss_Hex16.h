@@ -26,7 +26,6 @@ namespace Ioss {
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
-    bool         is_shell() const override { return false; }
     int          order() const override;
 
     bool edges_similar() const override { return false; } // true if all edges have same topology
@@ -52,5 +51,8 @@ namespace Ioss {
 
   protected:
     Hex16();
+
+  private:
+    static Hex16 instance_;
   };
 } // namespace Ioss

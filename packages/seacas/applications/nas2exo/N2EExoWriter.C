@@ -154,18 +154,18 @@ namespace ExoModules {
     for (const sectionType &sect : this->sections) {
 
       std::vector<elementType> thisBlock;
-      auto                     block = std::get<0>(sect);
+      int64_t                  block = (int)std::get<0>(sect);
 
       int retvalue{0};
 
       for (const elementType &elem : this->elementList) {
 
-        if (std::get<1>(elem) == block) {
+        if ((int)std::get<1>(elem) == block) {
           thisBlock.emplace_back(elem);
         }
       }
 
-      auto nodes_per_elem = std::get<2>(thisBlock[0]);
+      int64_t nodes_per_elem = (int)std::get<2>(thisBlock[0]);
 
       int n = nodes_per_elem == 4 ? 0 : 1;
 

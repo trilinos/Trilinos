@@ -25,7 +25,7 @@ understand the internals of TriBITS.
 @FUNCTION: tribits_dump_package_dependencies_info() +
 @FUNCTION: tribits_print_initial_dependency_info() +
 @FUNCTION: tribits_print_tentatively_enabled_tpls() +
-@MACRO:    tribits_parse_subpackages_append_se_packages_add_options() +
+@MACRO:    tribits_parse_subpackages_append_packages_add_options() +
 @MACRO:    tribits_prep_to_read_dependencies() +
 @MACRO:    tribits_process_all_repository_deps_setup_files() +
 @MACRO:    tribits_process_package_dependencies_lists() +

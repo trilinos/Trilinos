@@ -46,7 +46,7 @@ C     LASTER   Error return
 
 C***********************************************************************
 
-      LASTER = SUCCESS
+      LASTER = SUCESS
       MYLEN = NEWLEN
 
       IF (NEWLEN .EQ. 0) THEN
@@ -60,7 +60,7 @@ C        Zero length entry.
          CALL MXLOOK (MYLEN, VOID, CHRCOL*LVOID, NVOIDS(1),
      *      VROW, LASTER)
 
-         IF (LASTER .EQ. SUCCESS) THEN
+         IF (LASTER .EQ. SUCESS) THEN
             NEWLOC = VOID(VROW,1,1)
          ELSE IF (LASTER .EQ. NOGET) THEN
 
@@ -68,7 +68,7 @@ C           A good void was not found - defer the space request.
 
             NEWLOC = IXLNUM(NEWLOC)
             MYLEN = - NEWLEN
-            LASTER = SUCCESS
+            LASTER = SUCESS
 
          END IF
 
@@ -78,7 +78,7 @@ C        Get space.
 
          CALL MXGET (MYLOC, MYLEN, VOID, LVOID, NVOIDS,
      *      CHRCOL, LASTER, VROW)
-         IF (LASTER .NE. SUCCESS) RETURN
+         IF (LASTER .NE. SUCESS) RETURN
 
          NEWLOC = VOID(VROW,1,1)
 
@@ -89,7 +89,7 @@ C     Update dictionary.
       CALL MXNSRT (NAME1, NEWLOC, MYLEN, DICT, DPOINT, LDICT,
      *   NNAMES, CHRCOL, LASTER)
       IF (LASTER .EQ. WRTYPE) LASTER = BDNAME
-      IF (LASTER .NE. SUCCESS) RETURN
+      IF (LASTER .NE. SUCESS) RETURN
 
       IF (MYLEN .GT. 0) THEN
 

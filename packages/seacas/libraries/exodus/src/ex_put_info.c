@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -135,21 +135,11 @@ int ex_put_info(int exoid, int num_info, char *const info[])
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      /* In parallel, only rank=0 will write the info records.
-       * Should be able to take advantage of HDF5 handling identical data on all ranks
-       * or use the compact storage, but we had issues on some NFS filesystems and some
-       * compilers/mpi so are doing it this way...
-       */
-#if defined(PARALLEL_AWARE_EXODUS)
-      if (ex__is_parallel(rootid)) {
-        nc_var_par_access(rootid, varid, NC_INDEPENDENT);
-      }
-#endif
+      ex__set_compact_storage(rootid, varid);
+      ex__compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
       if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
-        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -180,12 +170,16 @@ int ex_put_info(int exoid, int num_info, char *const info[])
         }
       }
     }
-    /* PnetCDF applies setting to entire file, so put back to collective... */
-#if defined(PARALLEL_AWARE_EXODUS)
-    if (ex__is_parallel(rootid)) {
-      nc_var_par_access(rootid, varid, NC_COLLECTIVE);
+    else if (ex__is_parallel(rootid)) {
+      /* All processors need to call nc_put_vara_text in case in a global
+       * collective mode */
+      char dummy[] = " ";
+      for (i = 0; i < num_info; i++) {
+        start[0] = start[1] = 0;
+        count[0] = count[1] = 0;
+        nc_put_vara_text(rootid, varid, start, count, dummy);
+      }
     }
-#endif
   }
   EX_FUNC_LEAVE(EX_NOERR);
 

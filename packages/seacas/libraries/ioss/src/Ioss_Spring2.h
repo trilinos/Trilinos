@@ -22,11 +22,10 @@ namespace Ioss {
     ~Spring2() override      = default;
     Spring2(const Spring2 &) = delete;
 
-    ElementShape shape() const override { return ElementShape::SPRING; }
+    ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
-    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -47,5 +46,8 @@ namespace Ioss {
 
   protected:
     Spring2();
+
+  private:
+    static Spring2 instance_;
   };
 } // namespace Ioss

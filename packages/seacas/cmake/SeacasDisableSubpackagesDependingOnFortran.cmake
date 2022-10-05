@@ -42,3 +42,4 @@ macro(seacas_disable_subpackage_since_no_fortran subpackage)
   endif()
   set(${PROJECT_NAME}_ENABLE_SEACAS${subpackage} OFF)
 endmacro()
+

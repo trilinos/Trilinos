@@ -342,7 +342,7 @@ namespace Ioex {
         Ioss::FileInfo file = Ioss::FileInfo(get_filename());
         fileExists          = file.exists();
         if (fileExists && myProcessor == 0) {
-          fmt::print(Ioss::WarnOut(),
+          fmt::print(Ioss::WARNING(),
                      "Appending to existing database in parallel single-file "
                      "output mode is a new capability; please check results carefully. File '{}'",
                      get_filename());
@@ -495,7 +495,7 @@ namespace Ioex {
       double t_end    = Ioss::Utils::timer();
       double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       if (myProcessor == 0) {
-        fmt::print(Ioss::DebugOut(), "File Open Time = {}\n", duration);
+        fmt::print(Ioss::DEBUG(), "File Open Time = {}\n", duration);
       }
     }
 
@@ -572,8 +572,8 @@ namespace Ioex {
 
     std::string filename = get_dwname();
 
-    Ioss::FileInfo file(filename);
 #if !defined(__IOSS_WINDOWS__)
+    Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
     char *current_cwd   = getcwd(nullptr, 0);
@@ -603,19 +603,6 @@ namespace Ioex {
           mode |= EX_ALL_INT64_DB;
         }
       }
-
-      // Check whether we are on a NFS filesyste -- composed output is sometimes slow/hangs
-      // on NFS
-      if (myProcessor == 0) {
-	if (file.is_nfs()) {
-	  fmt::print(Ioss::WarnOut(), "The database file: '{}'.\n"
-		     "\tis being written to an NFS filesystem. Some NFS filesystems have difficulty\n"
-		     "\twith parallel I/O (specifically writes). If you experience slow I/O,\n"
-		     "\ttry `export OMPI_MCA_fs_ufs_lock_algorithm=1` prior to running or\n"
-		     "\tnon-composed output or a different filesystem.\n",
-		     filename);
-	}
-      }
       m_exodusFilePtr = ex_create_par(filename.c_str(), mode, &cpu_word_size, &dbRealWordSize,
                                       util().communicator(), info);
     }
@@ -625,7 +612,7 @@ namespace Ioex {
       double      duration    = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       std::string open_create = fileExists ? "Open" : "Create";
       if (myProcessor == 0) {
-        fmt::print(Ioss::DebugOut(), "File {} Time = {}\n", open_create, duration);
+        fmt::print(Ioss::DEBUG(), "File {} Time = {}\n", open_create, duration);
       }
     }
 
@@ -655,14 +642,14 @@ namespace Ioex {
           exo_method = EX_COMPRESS_SZIP;
 #else
           if (myProcessor == 0) {
-            fmt::print(Ioss::WarnOut(), "The NetCDF library does not have SZip compression enabled."
+            fmt::print(Ioss::WARNING(), "The NetCDF library does not have SZip compression enabled."
                                         " 'zlib' will be used instead.\n\n");
           }
 #endif
         }
         else {
           if (myProcessor == 0) {
-            fmt::print(Ioss::WarnOut(),
+            fmt::print(Ioss::WARNING(),
                        "Unrecognized compression method specified: '{}'."
                        " 'zlib' will be used instead.\n\n",
                        method);
@@ -916,7 +903,7 @@ namespace Ioex {
           // a warning if there is a corrupt step on processor
           // 0... Need better warnings which won't overload in the
           // worst case...
-          fmt::print(Ioss::WarnOut(),
+          fmt::print(Ioss::WARNING(),
                      "Skipping step {} at time {} in database file\n\t{}.\nThe data for that step "
                      "is possibly corrupt.\n",
                      fmt::group_digits(i + 1), tsteps[i], get_filename());
@@ -1098,23 +1085,12 @@ namespace Ioex {
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
 
-    // If the model contains assemblies, we want to retain the empty blocks since the blocks
-    // might be in an assembly.  This is typically the case when an application is running
-    // in parallel, but is telling IOSS that it is "serial" (MPI_COMM_SELF) and taking care
-    // of synchronization at the app level instead of down here...
-    bool retain_empty_blocks = m_groupCount[EX_ASSEMBLY] > 0;
-
-    // The application can override this setting using the `RETAIN_EMPTY_BLOCKS` property.
-    // This can either set to TRUE or FALSE...  Note that `retain_empty_blocks` will not be
-    // changed unless the property exists.
-    Ioss::Utils::check_set_bool_property(properties, "RETAIN_EMPTY_BLOCKS", retain_empty_blocks);
-
     int nvar = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to
                                                 // skip querying if none.
     int nmap = std::numeric_limits<int>::max(); // Number of 'block' maps on database. Used to
                                                 // skip querying if none.
     for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
-      if (decomp->el_blocks[iblk].global_count() == 0 && !retain_empty_blocks) {
+      if (decomp->el_blocks[iblk].global_count() == 0) {
         continue;
       }
 
@@ -1138,24 +1114,6 @@ namespace Ioex {
       std::string type      = Ioss::Utils::fixup_type(decomp->el_blocks[iblk].topologyType,
                                                       decomp->el_blocks[iblk].nodesPerEntity,
                                                       spatialDimension - rank_offset);
-
-      if (decomp->el_blocks[iblk].global_count() == 0 && type.empty()) {
-        std::vector<std::string> tokens = Ioss::tokenize(block_name, "_");
-        if (tokens.size() >= 2) {
-          // Check whether last token names an X topology type...
-          const Ioss::ElementTopology *topology =
-              Ioss::ElementTopology::factory(tokens.back(), true);
-          if (topology != nullptr) {
-            type = topology->name();
-          }
-        }
-      }
-
-      if (type == "null" || type.empty()) {
-        // If we have no idea what the topology type for an empty
-        // X block is, call it "unknown"
-        type = "unknown";
-      }
 
       Ioss::EntityBlock *io_block = nullptr;
       if (entity_type == EX_ELEM_BLOCK) {
@@ -1241,9 +1199,9 @@ namespace Ioex {
       }
 
       // Check for additional variables.
-      add_attribute_fields(io_block, decomp->el_blocks[iblk].attributeCount, type);
+      add_attribute_fields(entity_type, io_block, decomp->el_blocks[iblk].attributeCount, type);
       if (nvar > 0) {
-        nvar = add_results_fields(io_block, iblk);
+        nvar = add_results_fields(entity_type, io_block, iblk);
       }
 
       if (entity_type == EX_ELEM_BLOCK) {
@@ -1758,8 +1716,8 @@ namespace Ioex {
               }
             }
             // Add additional fields
-            add_attribute_fields(side_block, num_attr, "");
-            add_results_fields(side_block, iss);
+            add_attribute_fields(EX_SIDE_SET, side_block, num_attr, "");
+            add_results_fields(EX_SIDE_SET, side_block, iss);
           }
         }
       }
@@ -1822,8 +1780,8 @@ void ParallelDatabaseIO::get_sets(ex_entity_type type, int64_t count, const std:
     get_region()->add_alias(Xset_name, alias, Xset->type());
     get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base + "set", id),
                             Xset->type());
-    add_attribute_fields(Xset, num_attr, "");
-    add_results_fields(Xset, ins);
+    add_attribute_fields(type, Xset, num_attr, "");
+    add_results_fields(type, Xset, ins);
   }
 }
 
@@ -1988,10 +1946,10 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const 
     // Read in each component of the variable and transfer into
     // 'data'.  Need temporary storage area of size 'number of
     // nodes in this block.
-    num_to_get = read_transient_field(m_variables[EX_NODE_BLOCK], field, nb, data);
+    num_to_get = read_transient_field(EX_NODE_BLOCK, m_variables[EX_NODE_BLOCK], field, nb, data);
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = read_attribute_field(field, nb, data);
+    num_to_get = read_attribute_field(EX_NODE_BLOCK, field, nb, data);
   }
   return num_to_get;
 }
@@ -2032,13 +1990,13 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::Blob *blob, const Ios
         // Read in each component of the variable and transfer into
         // 'data'.  Need temporary storage area of size 'number of
         // items in this blob.
-        num_to_get = read_transient_field(m_variables[EX_BLOB], field, blob, data);
+        num_to_get = read_transient_field(EX_BLOB, m_variables[EX_BLOB], field, blob, data);
       }
       else if (role == Ioss::Field::ATTRIBUTE) {
-        num_to_get = read_attribute_field(field, blob, data);
+        num_to_get = read_attribute_field(EX_BLOB, field, blob, data);
       }
       else if (role == Ioss::Field::REDUCTION) {
-        get_reduction_field(field, blob, data);
+        get_reduction_field(EX_BLOB, field, blob, data);
       }
     }
     return num_to_get;
@@ -2082,10 +2040,11 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::Assembly *assembly,
         // Read in each component of the variable and transfer into
         // 'data'.  Need temporary storage area of size 'number of
         // items in this assembly.
-        num_to_get = read_transient_field(m_variables[EX_ASSEMBLY], field, assembly, data);
+        num_to_get =
+            read_transient_field(EX_ASSEMBLY, m_variables[EX_ASSEMBLY], field, assembly, data);
       }
       else if (role == Ioss::Field::ATTRIBUTE) {
-        num_to_get = read_attribute_field(field, assembly, data);
+        num_to_get = read_attribute_field(EX_ASSEMBLY, field, assembly, data);
       }
     }
     return num_to_get;
@@ -2099,7 +2058,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementBlock *eb,
 
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id               = Ioex::get_id(eb, &ids_);
+  int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
   size_t                my_element_count = eb->entity_count();
   Ioss::Field::RoleType role             = field.get_role();
 
@@ -2147,44 +2106,6 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementBlock *eb,
       // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
       get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
     }
-  }
-  else if (role == Ioss::Field::MAP) {
-    int component_count = field.get_component_count(Ioss::Field::InOut::INPUT);
-    size_t eb_offset        = eb->get_offset();
-
-    if (component_count == 1) {
-      // Single component -- can put data directly into return `data`;
-      decomp->get_user_map(get_file_pointer(), EX_ELEM_MAP, id, field.get_index(), eb_offset, my_element_count, data);
-    }
-    else {
-      // Multi-component -- need read a component at a time and interleave into return `data`
-      if (field.is_type(Ioss::Field::INTEGER)) {
-	Ioss::IntVector component(my_element_count);
-	auto *data32 = reinterpret_cast<int *>(data);
-	for (int comp = 0; comp < component_count; comp++) {
-	  decomp->get_user_map(get_file_pointer(), EX_ELEM_MAP, id, field.get_index() + comp, eb_offset, my_element_count, component.data());
-	  int index = comp;
-	  for (size_t i = 0; i < my_element_count; i++) {
-	    data32[index] = component[i];
-	    index += component_count;
-	  }
-	}
-      }
-      else {
-	Ioss::Int64Vector component(my_element_count);
-	auto *data64 = reinterpret_cast<int64_t *>(data);
-	for (int comp = 0; comp < component_count; comp++) {
-	  decomp->get_user_map(get_file_pointer(), EX_ELEM_MAP, id, field.get_index() + comp, eb_offset, my_element_count, component.data());
-
-	  int index = comp;
-	  for (size_t i = 0; i < my_element_count; i++) {
-	    data64[index] = component[i];
-	    index += component_count;
-	  }
-	}
-      }
-    }
-#if 0
     else if (field.get_name() == "skin") {
       // This is (currently) for the skinned body. It maps the
       // side element on the skin to the original element/local
@@ -2234,10 +2155,9 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementBlock *eb,
     else {
       num_to_get = Ioss::Utils::field_warning(eb, field, "input");
     }
-#endif
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = read_attribute_field(field, eb, data);
+    num_to_get = read_attribute_field(EX_ELEM_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this element block.
@@ -2248,7 +2168,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementBlock *eb,
     // Read in each component of the variable and transfer into
     // 'data'.  Need temporary storage area of size 'number of
     // elements in this block.
-    num_to_get = read_transient_field(m_variables[EX_ELEM_BLOCK], field, eb, data);
+    num_to_get = read_transient_field(EX_ELEM_BLOCK, m_variables[EX_ELEM_BLOCK], field, eb, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
     num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -2261,7 +2181,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const 
 {
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
   size_t                my_face_count = eb->entity_count();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -2311,7 +2231,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const 
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = read_attribute_field(field, eb, data);
+    num_to_get = read_attribute_field(EX_FACE_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this element block.
@@ -2322,7 +2242,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const 
     // Read in each component of the variable and transfer into
     // 'data'.  Need temporary storage area of size 'number of
     // elements in this block.
-    num_to_get = read_transient_field(m_variables[EX_FACE_BLOCK], field, eb, data);
+    num_to_get = read_transient_field(EX_FACE_BLOCK, m_variables[EX_FACE_BLOCK], field, eb, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
     num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -2335,7 +2255,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const 
 {
   size_t num_to_get = field.verify(data_size);
 
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
   int64_t               my_edge_count = eb->entity_count();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -2375,7 +2295,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const 
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = read_attribute_field(field, eb, data);
+    num_to_get = read_attribute_field(EX_EDGE_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this element block.
@@ -2386,7 +2306,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const 
     // Read in each component of the variable and transfer into
     // 'data'.  Need temporary storage area of size 'number of
     // elements in this block.
-    num_to_get = read_transient_field(m_variables[EX_EDGE_BLOCK], field, eb, data);
+    num_to_get = read_transient_field(EX_EDGE_BLOCK, m_variables[EX_EDGE_BLOCK], field, eb, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
     num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -2394,7 +2314,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const 
   return num_to_get;
 }
 
-int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
+int64_t ParallelDatabaseIO::get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                                     const Ioss::Field &field, void *data,
                                                     size_t data_size) const
 {
@@ -2404,8 +2324,7 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
 
   // Find corresponding set in file decomp class...
   if (role == Ioss::Field::MESH) {
-    ex_entity_type type = Ioex::map_exodus_type(ns->type());
-    int64_t        id   = Ioex::get_id(ns, &ids_);
+    int64_t id = Ioex::get_id(ns, type, &ids_);
 
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       if (field.get_type() == Ioss::Field::INTEGER) {
@@ -2447,7 +2366,7 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = read_attribute_field(field, ns, data);
+    num_to_get = read_attribute_field(type, field, ns, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this node block.
@@ -2458,8 +2377,7 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
     // Read in each component of the variable and transfer into
     // 'data'.  Need temporary storage area of size 'number of
     // nodes in this block.
-    ex_entity_type type = Ioex::map_exodus_type(ns->type());
-    num_to_get          = read_transient_field(m_variables[type], field, ns, data);
+    num_to_get = read_transient_field(type, m_variables[type], field, ns, data);
   }
   return num_to_get;
 }
@@ -2467,25 +2385,25 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return get_Xset_field_internal(ns, field, data, data_size);
+  return get_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return get_Xset_field_internal(ns, field, data, data_size);
+  return get_Xset_field_internal(EX_EDGE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return get_Xset_field_internal(ns, field, data, data_size);
+  return get_Xset_field_internal(EX_FACE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return get_Xset_field_internal(ns, field, data, data_size);
+  return get_Xset_field_internal(EX_ELEM_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field,
@@ -2548,7 +2466,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideBlock *sb, const 
   int64_t num_to_get = field.verify(data_size);
   int     ierr       = 0;
 
-  int64_t id           = Ioex::get_id(sb, &ids_);
+  int64_t id           = Ioex::get_id(sb, EX_SIDE_SET, &ids_);
   int64_t entity_count = sb->entity_count();
   if (num_to_get != entity_count) {
     std::ostringstream errmsg;
@@ -2801,7 +2719,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideBlock *sb, const 
     // extensions.
 
     if (sb->owner()->block_count() == 1 && number_sides == entity_count) {
-      num_to_get = read_transient_field(m_variables[EX_SIDE_SET], field, sb, data);
+      num_to_get = read_transient_field(EX_SIDE_SET, m_variables[EX_SIDE_SET], field, sb, data);
     }
     else {
       // Need to read all values for the specified field and then
@@ -2841,14 +2759,14 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideBlock *sb, const 
   return num_to_get;
 }
 
-int64_t ParallelDatabaseIO::write_attribute_field(const Ioss::Field          &field,
+int64_t ParallelDatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field &field,
                                                   const Ioss::GroupingEntity *ge, void *data) const
 {
   std::string att_name   = ge->name() + SEP() + field.get_name();
   int64_t     num_entity = ge->entity_count();
   int64_t     offset     = field.get_index();
 
-  int64_t id = Ioex::get_id(ge, &ids_);
+  int64_t id = Ioex::get_id(ge, type, &ids_);
   assert(offset > 0);
   assert(offset - 1 + field.get_component_count(Ioss::Field::InOut::OUTPUT) <=
          ge->get_property("attribute_count").get_int());
@@ -2860,13 +2778,8 @@ int64_t ParallelDatabaseIO::write_attribute_field(const Ioss::Field          &fi
   assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
          ioss_type == Ioss::Field::INT64);
 
-  if (ioss_type == Ioss::Field::INT64) {
-    Ioss::Utils::check_int_to_real_overflow(field, (int64_t *)data, num_entity);
-  }
-
   int comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
 
-  ex_entity_type type = Ioex::map_exodus_type(ge->type());
   if (type == EX_NODAL) {
     for (int i = 0; i < comp_count; i++) {
       std::vector<double> file_data;
@@ -2938,13 +2851,13 @@ int64_t ParallelDatabaseIO::write_attribute_field(const Ioss::Field          &fi
   return num_entity;
 }
 
-int64_t ParallelDatabaseIO::read_attribute_field(const Ioss::Field          &field,
+int64_t ParallelDatabaseIO::read_attribute_field(ex_entity_type type, const Ioss::Field &field,
                                                  const Ioss::GroupingEntity *ge, void *data) const
 {
   int64_t num_entity = ge->entity_count();
 
   int     attribute_count = ge->get_property("attribute_count").get_int();
-  int64_t id              = Ioex::get_id(ge, &ids_);
+  int64_t id              = Ioex::get_id(ge, type, &ids_);
 
   Ioss::Field::BasicType ioss_type = field.get_type();
   if (ioss_type == Ioss::Field::INTEGER || ioss_type == Ioss::Field::INT64) {
@@ -2954,9 +2867,8 @@ int64_t ParallelDatabaseIO::read_attribute_field(const Ioss::Field          &fie
     IOSS_ERROR(errmsg);
   }
 
-  std::string    att_name = ge->name() + SEP() + field.get_name();
-  ex_entity_type type     = Ioex::map_exodus_type(ge->type());
-  int64_t        offset   = field.get_index();
+  std::string att_name = ge->name() + SEP() + field.get_name();
+  int64_t     offset   = field.get_index();
   assert(offset - 1 + field.get_component_count(Ioss::Field::InOut::INPUT) <= attribute_count);
   if (offset == 1 && field.get_component_count(Ioss::Field::InOut::INPUT) == attribute_count) {
     // Read all attributes in one big chunk...
@@ -3002,7 +2914,8 @@ int64_t ParallelDatabaseIO::read_attribute_field(const Ioss::Field          &fie
   return num_entity;
 }
 
-int64_t ParallelDatabaseIO::read_transient_field(const Ioex::VariableNameMap &variables,
+int64_t ParallelDatabaseIO::read_transient_field(ex_entity_type               type,
+                                                 const Ioex::VariableNameMap &variables,
                                                  const Ioss::Field           &field,
                                                  const Ioss::GroupingEntity *ge, void *data) const
 {
@@ -3019,15 +2932,11 @@ int64_t ParallelDatabaseIO::read_transient_field(const Ioex::VariableNameMap &va
 
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
-    if (lowerCaseVariableNames) {
-      Ioss::Utils::fixup_name(var_name);
-    }
 
     // Read the variable...
-    ex_entity_type type     = Ioex::map_exodus_type(ge->type());
-    int64_t        id       = Ioex::get_id(ge, &ids_);
-    int            ierr     = 0;
-    auto           var_iter = variables.find(var_name);
+    int64_t id       = Ioex::get_id(ge, type, &ids_);
+    int     ierr     = 0;
+    auto    var_iter = variables.find(var_name);
     if (var_iter == variables.end()) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
@@ -3648,10 +3557,10 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const 
     // Transfer each component of the variable into 'data' and then
     // output.  Need temporary storage area of size 'number of
     // nodes in this block.
-    write_nodal_transient_field(field, nb, num_to_get, data);
+    write_nodal_transient_field(EX_NODE_BLOCK, field, nb, num_to_get, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, nb, data);
+    store_reduction_field(EX_NODE_BLOCK, field, nb, data);
   }
   return num_to_get;
 }
@@ -3699,13 +3608,13 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::Blob *blob, const Ios
         // Transfer each component of the variable into 'data' and then
         // output.  Need temporary storage area of size 'number of
         // nodes in this block.
-        write_entity_transient_field(field, blob, num_to_get, data);
+        write_entity_transient_field(EX_BLOB, field, blob, num_to_get, data);
       }
       else if (role == Ioss::Field::REDUCTION) {
-        store_reduction_field(field, blob, data);
+        store_reduction_field(EX_BLOB, field, blob, data);
       }
       else if (role == Ioss::Field::ATTRIBUTE) {
-        num_to_get = write_attribute_field(field, blob, data);
+        num_to_get = write_attribute_field(EX_BLOB, field, blob, data);
       }
     }
     return num_to_get;
@@ -3756,13 +3665,13 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::Assembly *assembly,
         // Transfer each component of the variable into 'data' and then
         // output.  Need temporary storage area of size 'number of
         // nodes in this block.
-        write_entity_transient_field(field, assembly, num_to_get, data);
+        write_entity_transient_field(EX_ASSEMBLY, field, assembly, num_to_get, data);
       }
       else if (role == Ioss::Field::REDUCTION) {
-        store_reduction_field(field, assembly, data);
+        store_reduction_field(EX_ASSEMBLY, field, assembly, data);
       }
       else if (role == Ioss::Field::ATTRIBUTE) {
-        num_to_get = write_attribute_field(field, assembly, data);
+        num_to_get = write_attribute_field(EX_ASSEMBLY, field, assembly, data);
       }
     }
     return num_to_get;
@@ -3778,7 +3687,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
   int ierr = 0;
 
   // Get the element block id and element count
-  int64_t               id               = Ioex::get_id(eb, &ids_);
+  int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
   int64_t               my_element_count = eb->entity_count();
   Ioss::Field::RoleType role             = field.get_role();
 
@@ -3854,42 +3763,81 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
     else if (field.get_name() == "implicit_ids") {
       // Do nothing, input only field.
     }
-  }
-  else if (role == Ioss::Field::MAP) {
-    int comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
-    for (int comp = 0; comp < comp_count; comp++) {
-      std::vector<char> component(my_element_count * int_byte_size_api());
+    else if (field.get_name() == "skin") {
+      // This is (currently) for the skinned body. It maps the
+      // side element on the skin to the original element/local
+      // side number.  It is a two component field, the first
+      // component is the global id of the underlying element in
+      // the initial mesh and its local side number (1-based).
+
+      // FIX: Hardwired map ids....
+      int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_ELEM_MAP);
+      if (map_count == 0) {
+        // This needs to be fixed... Currently hardwired....
+        ierr = ex_put_map_param(get_file_pointer(), 0, 2);
+        if (ierr < 0) {
+          Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+        }
+      }
+
+      std::vector<char> element(my_element_count * int_byte_size_api());
+      std::vector<char> side(my_element_count * int_byte_size_api());
 
       if (int_byte_size_api() == 4) {
-	int *data32 = reinterpret_cast<int *>(data);
-	int *comp32 = reinterpret_cast<int *>(component.data());
+        int *el_side   = reinterpret_cast<int *>(data);
+        int *element32 = reinterpret_cast<int *>(element.data());
+        int *side32    = reinterpret_cast<int *>(side.data());
 
-	int index = comp;
-	for (size_t i = 0; i < my_element_count; i++) {
-	  comp32[i] = data32[index];
-	  index += comp_count;
-	}
+        int index = 0;
+        for (int i = 0; i < my_element_count; i++) {
+          element32[i] = el_side[index++];
+          side32[i]    = el_side[index++];
+        }
       }
       else {
-	int64_t *data64 = reinterpret_cast<int64_t *>(data);
-	int64_t *comp64 = reinterpret_cast<int64_t *>(component.data());
+        int64_t *el_side   = reinterpret_cast<int64_t *>(data);
+        int64_t *element64 = reinterpret_cast<int64_t *>(element.data());
+        int64_t *side64    = reinterpret_cast<int64_t *>(side.data());
 
-	int index = comp;
-	for (size_t i = 0; i < my_element_count; i++) {
-	  comp64[i] = data64[index];
-	  index += comp_count;
-	}
+        int64_t index = 0;
+        for (int64_t i = 0; i < my_element_count; i++) {
+          element64[i] = el_side[index++];
+          side64[i]    = el_side[index++];
+        }
       }
-      size_t eb_offset   = eb->get_offset(); // Offset of beginning of the element block elements for this block
-      size_t proc_offset = eb->get_optional_property("_processor_offset", 0); // Offset of this processors elements within that block.
-      size_t file_count  = eb->get_optional_property("locally_owned_count", my_element_count);
-      int    index     = -1 * (field.get_index() + comp); // Negative since specifying index, not id to exodus API.
-      
-      ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, index, proc_offset + eb_offset + 1, file_count, component.data());
+
+      size_t eb_offset = eb->get_offset() + proc_offset;
+      ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1, eb_offset + 1, file_count,
+                                    element.data());
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 2, eb_offset + 1, file_count,
+                                    side.data());
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      if (map_count == 0) {
+        // NOTE: ex_put_*num_map must be called prior to defining the name...
+        ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 1, "skin:parent_element_id");
+        if (ierr < 0) {
+          Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+        }
+
+        ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 2, "skin:parent_element_side_number");
+        if (ierr < 0) {
+          Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+        }
+      }
+    }
+    else {
+      num_to_get = Ioss::Utils::field_warning(eb, field, "mesh output");
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = write_attribute_field(field, eb, data);
+    num_to_get = write_attribute_field(EX_ELEM_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this element block.
@@ -3902,11 +3850,11 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
     // elements in this block.
     auto global_entity_count = eb->get_property("global_entity_count").get_int();
     if (global_entity_count > 0) {
-      write_entity_transient_field(field, eb, my_element_count, data);
+      write_entity_transient_field(EX_ELEM_BLOCK, field, eb, my_element_count, data);
     }
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, eb, data);
+    store_reduction_field(EX_ELEM_BLOCK, field, eb, data);
   }
   return num_to_get;
 }
@@ -3919,7 +3867,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::FaceBlock *eb, const 
   int ierr = 0;
 
   // Get the face block id and face count
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
   int64_t               my_face_count = eb->entity_count();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -3960,7 +3908,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::FaceBlock *eb, const 
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = write_attribute_field(field, eb, data);
+    num_to_get = write_attribute_field(EX_FACE_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this face block.
@@ -3971,10 +3919,10 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::FaceBlock *eb, const 
     // Transfer each component of the variable into 'data' and then
     // output.  Need temporary storage area of size 'number of
     // faces in this block.
-    write_entity_transient_field(field, eb, my_face_count, data);
+    write_entity_transient_field(EX_FACE_BLOCK, field, eb, my_face_count, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, eb, data);
+    store_reduction_field(EX_FACE_BLOCK, field, eb, data);
   }
   return num_to_get;
 }
@@ -3987,7 +3935,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const 
   int ierr = 0;
 
   // Get the edge block id and edge count
-  int64_t               id            = Ioex::get_id(eb, &ids_);
+  int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
   int64_t               my_edge_count = eb->entity_count();
   Ioss::Field::RoleType role          = field.get_role();
 
@@ -4015,7 +3963,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const 
     }
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = write_attribute_field(field, eb, data);
+    num_to_get = write_attribute_field(EX_EDGE_BLOCK, field, eb, data);
   }
   else if (role == Ioss::Field::TRANSIENT) {
     // Check if the specified field exists on this edge block.
@@ -4026,10 +3974,10 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const 
     // Transfer each component of the variable into 'data' and then
     // output.  Need temporary storage area of size 'number of
     // edges in this block.
-    write_entity_transient_field(field, eb, my_edge_count, data);
+    write_entity_transient_field(EX_EDGE_BLOCK, field, eb, my_edge_count, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, eb, data);
+    store_reduction_field(EX_EDGE_BLOCK, field, eb, data);
   }
   return num_to_get;
 }
@@ -4125,17 +4073,14 @@ int64_t ParallelDatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, void *ids
   return handle_block_ids(eb, EX_EDGE_MAP, edgeMap, ids, num_to_get, 0);
 }
 
-void ParallelDatabaseIO::write_nodal_transient_field(const Ioss::Field     &field,
+void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
+                                                     const Ioss::Field     &field,
                                                      const Ioss::NodeBlock *nb, int64_t count,
                                                      void *variables) const
 {
   Ioss::Field::BasicType ioss_type = field.get_type();
   assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
          ioss_type == Ioss::Field::INT64 || ioss_type == Ioss::Field::COMPLEX);
-
-  if (ioss_type == Ioss::Field::INT64) {
-    Ioss::Utils::check_int_to_real_overflow(field, (int64_t *)variables, count);
-  }
 
   // Note that if the field's basic type is COMPLEX, then each component of
   // the VariableType is a complex variable consisting of a real and
@@ -4226,7 +4171,7 @@ void ParallelDatabaseIO::write_nodal_transient_field(const Ioss::Field     &fiel
   }
 }
 
-void ParallelDatabaseIO::write_entity_transient_field(const Ioss::Field          &field,
+void ParallelDatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                                       const Ioss::GroupingEntity *ge, int64_t count,
                                                       void *variables) const
 {
@@ -4252,10 +4197,6 @@ void ParallelDatabaseIO::write_entity_transient_field(const Ioss::Field         
   assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
          ioss_type == Ioss::Field::INT64 || ioss_type == Ioss::Field::COMPLEX);
 
-  if (ioss_type == Ioss::Field::INT64) {
-    Ioss::Utils::check_int_to_real_overflow(field, (int64_t *)variables, count);
-  }
-
   // Note that if the field's basic type is COMPLEX, then each component of
   // the VariableType is a complex variable consisting of a real and
   // imaginary part.  Since exodus cannot handle complex variables,
@@ -4269,8 +4210,7 @@ void ParallelDatabaseIO::write_entity_transient_field(const Ioss::Field         
   // get number of components, cycle through each component
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'm_variables[type]' map
-  int            comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
-  ex_entity_type type       = Ioex::map_exodus_type(ge->type());
+  int comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
 
   int re_im = 1;
   if (ioss_type == Ioss::Field::COMPLEX) {
@@ -4318,7 +4258,7 @@ void ParallelDatabaseIO::write_entity_transient_field(const Ioss::Field         
       size_t proc_offset = ge->get_optional_property("_processor_offset", 0);
       size_t file_count  = ge->get_optional_property("locally_owned_count", count);
 
-      int64_t id = Ioex::get_id(ge, &ids_);
+      int64_t id = Ioex::get_id(ge, type, &ids_);
       int     ierr;
       if (type == EX_SIDE_SET) {
         size_t offset = ge->get_property("set_offset").get_int();
@@ -4347,14 +4287,14 @@ void ParallelDatabaseIO::write_entity_transient_field(const Ioss::Field         
   }
 }
 
-int64_t ParallelDatabaseIO::put_Xset_field_internal(const Ioss::EntitySet *ns,
+int64_t ParallelDatabaseIO::put_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                                     const Ioss::Field &field, void *data,
                                                     size_t data_size) const
 {
   size_t entity_count = ns->entity_count();
   size_t num_to_get   = field.verify(data_size);
 
-  int64_t               id   = Ioex::get_id(ns, &ids_);
+  int64_t               id   = Ioex::get_id(ns, type, &ids_);
   Ioss::Field::RoleType role = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -4367,7 +4307,6 @@ int64_t ParallelDatabaseIO::put_Xset_field_internal(const Ioss::EntitySet *ns,
     size_t proc_offset = ns->get_optional_property("_processor_offset", 0);
     size_t file_count  = ns->get_optional_property("locally_owned_count", num_to_get);
 
-    ex_entity_type type = Ioex::map_exodus_type(ns->type());
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
       // Map node id from global node id to local node id.
       // Do it in 'data' ...
@@ -4439,13 +4378,13 @@ int64_t ParallelDatabaseIO::put_Xset_field_internal(const Ioss::EntitySet *ns,
     // Transfer each component of the variable into 'data' and then
     // output.  Need temporary storage area of size 'number of
     // elements in this block.
-    write_entity_transient_field(field, ns, entity_count, data);
+    write_entity_transient_field(type, field, ns, entity_count, data);
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = write_attribute_field(field, ns, data);
+    num_to_get = write_attribute_field(type, field, ns, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, ns, data);
+    store_reduction_field(type, field, ns, data);
   }
   return num_to_get;
 }
@@ -4453,25 +4392,25 @@ int64_t ParallelDatabaseIO::put_Xset_field_internal(const Ioss::EntitySet *ns,
 int64_t ParallelDatabaseIO::put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return put_Xset_field_internal(ns, field, data, data_size);
+  return put_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return put_Xset_field_internal(ns, field, data, data_size);
+  return put_Xset_field_internal(EX_EDGE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return put_Xset_field_internal(ns, field, data, data_size);
+  return put_Xset_field_internal(EX_FACE_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  return put_Xset_field_internal(ns, field, data, data_size);
+  return put_Xset_field_internal(EX_ELEM_SET, ns, field, data, data_size);
 }
 
 int64_t ParallelDatabaseIO::put_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field,
@@ -4499,7 +4438,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::SideBlock *sb, const 
                                                void *data, size_t data_size) const
 {
   size_t  num_to_get = field.verify(data_size);
-  int64_t id         = Ioex::get_id(sb, &ids_);
+  int64_t id         = Ioex::get_id(sb, EX_SIDE_SET, &ids_);
 
   size_t entity_count = sb->entity_count();
   size_t offset       = sb->get_property("set_offset").get_int();
@@ -4692,13 +4631,13 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::SideBlock *sb, const 
     // Transfer each component of the variable into 'data' and then
     // output.  Need temporary storage area of size 'number of
     // entities in this block.
-    write_entity_transient_field(field, sb, entity_count, data);
+    write_entity_transient_field(EX_SIDE_SET, field, sb, entity_count, data);
   }
   else if (role == Ioss::Field::ATTRIBUTE) {
-    num_to_get = write_attribute_field(field, sb, data);
+    num_to_get = write_attribute_field(EX_SIDE_SET, field, sb, data);
   }
   else if (role == Ioss::Field::REDUCTION) {
-    store_reduction_field(field, sb, data);
+    store_reduction_field(EX_SIDE_SET, field, sb, data);
   }
   return num_to_get;
 }
@@ -4724,15 +4663,10 @@ void ParallelDatabaseIO::write_meta_data(Ioss::IfDatabaseExistsBehavior behavior
   mesh.populate(region);
 
   if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
-    bool omit_qa = false;
-    Ioss::Utils::check_set_bool_property(properties, "OMIT_QA_RECORDS", omit_qa);
-    if (!omit_qa) {
+    if (!properties.exists("OMIT_QA_RECORDS")) {
       put_qa();
     }
-
-    bool omit_info = false;
-    Ioss::Utils::check_set_bool_property(properties, "OMIT_INFO_RECORDS", omit_info);
-    if (!omit_info) {
+    if (!properties.exists("OMIT_INFO_RECORDS")) {
       put_info();
     }
 
@@ -4878,7 +4812,7 @@ void ParallelDatabaseIO::check_valid_values() const
         }
 
         if (!bad_proc.empty()) {
-          fmt::print(Ioss::WarnOut(), "No {} on processor{}:\n\t{}\n\n", label[j],
+          fmt::print(Ioss::WARNING(), "No {} on processor{}:\n\t{}\n\n", label[j],
                      bad_proc.size() > 1 ? "s" : "", Ioss::Utils::format_id_list(bad_proc, ":"));
           if (j == 0) {
             break;

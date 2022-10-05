@@ -5,9 +5,10 @@ setup(name='exodus',
 	version='1.10',
 	author='Tim Shelton, Mike Veilleux, Dave Littlewood, Greg Sjaardema',
 	author_email='gsjaardema@gmail.com',
-	url='https://github.com/sandialabs/seacas',
+	url='https://www.github.com/gsjaardema/seacas',
 	py_modules=['exodus'],
 	license="BSD",
 #	extras = {'numpy'},
 #	python_requires='<3',
       )
+

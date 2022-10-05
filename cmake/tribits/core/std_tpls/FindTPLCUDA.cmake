@@ -53,18 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-find_package(CUDA REQUIRED)  # Will abort if not found!
-
-macro(package_add_cuda_library cuda_target)
-  tribits_add_library(${cuda_target} ${ARGN} CUDALIBRARY)
-endmacro()
-
-set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
-set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
-   ${CUDA_cufft_LIBRARY})
-
-tribits_tpl_find_include_dirs_and_libraries(CUDA
-  REQUIRED_LIBS_NAMES  willNotBeUsed)
-
-unset(TPL_CUDA_INCLUDE_DIRS)
-unset(TPL_CUDA_LIBRARIES)
+find_package(CUDAToolkit REQUIRED)  # Will abort if not found!
+tribits_extpkg_create_imported_all_libs_target_and_config_file( CUDA
+  INNER_FIND_PACKAGE_NAME  CUDAToolkit
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cufft  CUDA::cublas  CUDA::cudart )
+# Above, we could add more dependencies if we need

@@ -68,7 +68,7 @@ include(TribitsReportInvalidTribitsUsage)
 
 
 # Macro that defines the package architecture system variables used to link
-# different SE packages together
+# different packages together
 #
 # See README.DEPENDENCIES for information on what these variables mean and how
 # they are used.
@@ -87,7 +87,7 @@ macro(tribits_define_target_vars PARENT_PACKAGE_NAME_IN)
 endmacro()
 
 
-# Set up some common variables used in the creation of an SE package
+# Set up some common variables used in the creation of an package
 #
 macro(tribits_set_common_vars PACKAGE_NAME_IN)
 
@@ -409,7 +409,7 @@ endmacro()
 
 # @MACRO: tribits_add_test_directories()
 #
-# Macro called to add a set of test directories for an SE package.
+# Macro called to add a set of test directories for an package.
 #
 # Usage::
 #
@@ -441,7 +441,7 @@ endmacro()
 
 
 #
-# Macros to add common options to add to an SE package
+# Macros to add common options to add to an package
 #
 
 
@@ -530,7 +530,7 @@ endmacro()
 
 # @MACRO: tribits_add_example_directories()
 #
-# Macro called to conditionally add a set of example directories for an SE
+# Macro called to conditionally add a set of example directories for an
 # package.
 #
 # Usage::
