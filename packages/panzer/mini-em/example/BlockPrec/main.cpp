@@ -555,13 +555,18 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
           // Projected Schur complement
           if (matrixFree && (polynomialOrder > 1)) {
-            addMatrixFreeOpToRequestHandler("Auxiliary Node ProjectedSchurComplement"+opPostfix,
-                                            mesh,
-                                            auxLinObjFactory,
-                                            req_handler,
-                                            auxNodalField,
-                                            true,
-                                            workset_size);
+            // TODO: do not need this
+            // Nodal mass matrix
+            auto massNodePL = Teuchos::ParameterList();
+            massNodePL.set("Type", "Auxiliary Mass Matrix");
+            massNodePL.set("DOF Name", auxNodalField);
+            massNodePL.set("Basis Type", "HGrad");
+            massNodePL.set("Model ID", auxModelID);
+            // massNodePL.set("Field Multipliers", "mu,1/dt");
+            massNodePL.set("Basis Order", polynomialOrder);
+            massNodePL.set("Integration Order", 2*polynomialOrder);
+            auxPhysicsBlocksPL.sublist("Auxiliary Node Mass Physics"+opPostfix) = massNodePL;
+
           } else {
             auto projectedSchurComplementPL = Teuchos::ParameterList();
             projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
@@ -803,18 +808,19 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       if (matrixFree) {
         for (auto it = pCoarsenSchedule.begin(); it != pCoarsenSchedule.end(); ++it) {
           std::string auxNodalField, auxEdgeField, opPostfix;
+          int polynomialOrder = *it;
           // Are we setting up lower order operators?
-          if (*it != basis_order) {
-            auxNodalField = "AUXILIARY_NODE_" + std::to_string(*it);
-            auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(*it);
-            opPostfix = " "+std::to_string(*it);
+          if (polynomialOrder != basis_order) {
+            auxNodalField = "AUXILIARY_NODE_" + std::to_string(polynomialOrder);
+            auxEdgeField = "AUXILIARY_EDGE_" + std::to_string(polynomialOrder);
+            opPostfix = " "+std::to_string(polynomialOrder);
           } else {
             auxNodalField = "AUXILIARY_NODE";
             auxEdgeField = "AUXILIARY_EDGE";
             opPostfix = "";
           }
 
-          if (*it > 1)
+          if (polynomialOrder > 1)
             addMatrixFreeOpToRequestHandler("ProjectedSchurComplement "+auxNodalField,
                                             mesh,
                                             auxLinObjFactory,

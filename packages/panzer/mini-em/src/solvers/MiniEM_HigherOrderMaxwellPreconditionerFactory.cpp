@@ -197,6 +197,10 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      }
    }
 
+   std::string operatorName = "Mass Matrix AUXILIARY_NODE";
+   Teko::LinearOp ttt = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg(operatorName));
+   describeAndWriteMatrix(operatorName, *ttt, debug, dump);
+
    // Schur complement
    Teko::LinearOp S_E = schurComplements.front();
    // Hgrad mass matrix, mu / dt weight
