@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 """
 This file performs unit tests of functions within Exomerge.
 
-Copyright 2018, 2021, 2022 National Technology and Engineering Solutions of Sandia.  Under
+Copyright 2018, 2021 National Technology and Engineering Solutions of Sandia.  Under
 the terms of Contract DE-NA-0003525, there is a non-exclusive license for use
 of this work by or on behalf of the U.S. Government.  Export of this program
 may require a license from the United States Government.
@@ -45,8 +44,6 @@ import re
 import math
 
 # import the exomerge module
-ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
-sys.path.append(os.path.join(ACCESS, "lib"))
 import exomerge
 
 
@@ -1520,11 +1517,8 @@ class ExomergeUnitTester:
         new_id = random.randint(1, 5)
         if self.model.element_block_exists(new_id):
             self.model.delete_element_block(new_id)
-        input_dir = os.path.dirname(__file__)
-        temp_exo_path = os.path.join(input_dir, "exomerge_unit_test.e")
-
         self.model.import_model(
-            temp_exo_path,
+            'exomerge_unit_test.e',
             element_block_ids=new_id,
             side_set_ids='none',
             node_set_ids='none',
@@ -1811,9 +1805,7 @@ class ExomergeUnitTester:
                   % (len(bad_unit_tests), '\n  '.join(bad_unit_tests))))
             print('')
         # start off the model
-        input_dir = os.path.dirname(__file__)
-        temp_exo_path = os.path.join(input_dir, "exomerge_unit_test.e")
-        self.model = exomerge.import_model(temp_exo_path)
+        self.model = exomerge.import_model('exomerge_unit_test.e')
         # run for the given amount of walltime or the number of tests
         # is sufficient
         start_time = time.time()
@@ -1859,3 +1851,4 @@ if __name__ == '__main__':
         tester.min_tests = int(sys.argv[1])
         tester.max_tests = tester.min_tests
     tester.test()
+

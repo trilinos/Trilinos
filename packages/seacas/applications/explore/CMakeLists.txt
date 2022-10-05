@@ -1,6 +1,6 @@
 INCLUDE(FortranSettings)
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
 INCLUDE(InstallSymLink)
 endif()
 
@@ -25,7 +25,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 if (explore_added)
-  if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
+  if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
     InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/bin/grope)
   endif()
 endif()

@@ -49,7 +49,7 @@ C     LASTER   Error return.
 
 C***********************************************************************
 
-      LASTER = SUCCESS
+      LASTER = SUCESS
       MEM = 0
       DO 100 IDICT = 1, NNAMES(1)
          MEM = MEM + MIN(0, DPOINT(IDICT,1,2))
@@ -59,7 +59,7 @@ C***********************************************************************
 
       CALL MXGET (MYLOC, MEM, VOID, LVOID, NVOIDS,
      *   CHRCOL, LASTER, VROW)
-      IF (LASTER .NE. SUCCESS) RETURN
+      IF (LASTER .NE. SUCESS) RETURN
 
 C     Now satisfy all the deferred requests.
 
