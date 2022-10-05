@@ -512,6 +512,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         tolerance_help();
       }
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
+      fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
       fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
@@ -520,6 +521,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("Help") != nullptr) {
     options_.usage();
     fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
+    fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
     fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }

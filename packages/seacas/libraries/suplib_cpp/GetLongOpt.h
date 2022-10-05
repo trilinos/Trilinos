@@ -51,7 +51,7 @@ private:
 
 public:
   explicit GetLongOption(char optmark = '-');
-  GetLongOption(const GetLongOption &) = delete;
+  GetLongOption(const GetLongOption &)            = delete;
   GetLongOption &operator=(const GetLongOption &) = delete;
 
   ~GetLongOption();

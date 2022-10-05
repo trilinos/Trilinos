@@ -32,4 +32,3 @@ C See packages/seacas/LICENSE for details
 12    CONTINUE
       RETURN
       END
-

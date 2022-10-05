@@ -7,6 +7,6 @@ C See packages/seacas/LICENSE for details
       QAINFO(1) = 'Gen3D                           '
       QAINFO(2) = '                                '
       QAINFO(3) = '                                '
-      QAINFO(2)(:8) = '20210331'
-      QAINFO(3)(:8) = ' 1.43   '
+      QAINFO(2)(:8) = '20220803'
+      QAINFO(3)(:8) = ' 1.44   '
 

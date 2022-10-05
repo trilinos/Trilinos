@@ -20,8 +20,8 @@ public:
   Exo_Block();
   Exo_Block(int file_id, size_t exo_block_id);
   Exo_Block(int file_id, size_t id, const char *type, size_t num_e, size_t num_npe);
-  ~Exo_Block() override        = default;
-  Exo_Block(const Exo_Block &) = delete;
+  ~Exo_Block() override                         = default;
+  Exo_Block(const Exo_Block &)                  = delete;
   const Exo_Block &operator=(const Exo_Block &) = delete;
 
   std::string Load_Connectivity();

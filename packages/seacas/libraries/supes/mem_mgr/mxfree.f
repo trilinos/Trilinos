@@ -41,7 +41,7 @@ C     memory to system via 'free'.  The value given to memret
 C     is a flag which tells the system that this is a 'safe' free
 C     which should actually execute. (Major Kludge...)
            if (len .gt. 0) then
-             LASTER = SUCESS
+             LASTER = SUCCESS
              memret = -999
              oldadr = loc+myloc-1
              call exmemy(-len, oldadr, memret)

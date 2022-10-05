@@ -46,4 +46,3 @@ C ... TYPE = Node or Element
 10000  FORMAT (' No local ',A,' has global id equal to ',I12)
 10030  format (1x, 3x, 'Global ',A,I12,' is local ',A,I12)
       END
-

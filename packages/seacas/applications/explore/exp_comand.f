@@ -389,7 +389,7 @@ C *** GENESIS Print Commands ***
      &        NUMESS, IDESS, LISESS(0), LISESS(1), *270)
             if (lisess(0) .gt. 0) then
                CALL MDRSRV ('SCR',    KSCR,  NUMNP)
-              call selssetn(lisnp(0), lisnp(1), 
+              call selssetn(lisnp(0), lisnp(1),
      *              lisess, idess, "nodes", ia(kscr), ia)
               call MDDEL('SCR')
             end if
