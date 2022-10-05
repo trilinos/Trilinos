@@ -105,17 +105,7 @@
 
 // Stratimikos
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-// Thyra includes
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_SolveSupportTypes.hpp>
-// Stratimikos includes
-#include <Stratimikos_LinearSolverBuilder.hpp>
-#include <Thyra_MueLuPreconditionerFactory.hpp>
-#include "Teuchos_AbstractFactoryStd.hpp"
-// Ifpack2 includes
-#ifdef HAVE_MUELU_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#endif
+#include <Xpetra_ThyraLinearOp.hpp>
 #endif
 
 
@@ -324,7 +314,7 @@ namespace MueLu {
           Scalar lenSC = Teuchos::ScalarTraits<Scalar>::zero();
           for (size_t i=0; i < Nullspace_->getNumVectors(); i++)
            lenSC += localNullspace[i][j]*localNullspace[i][j];
-          coordinateType len = sqrt(Teuchos::ScalarTraits<Scalar>::real(lenSC));
+          coordinateType len = Teuchos::as<coordinateType>(Teuchos::ScalarTraits<Scalar>::real(Teuchos::ScalarTraits<Scalar>::squareroot(lenSC)));
           localMinLen = std::min(localMinLen, len);
           localMaxLen = std::max(localMaxLen, len);
           localMeanLen += len;
@@ -662,7 +652,7 @@ namespace MueLu {
             ParameterList& userParamList = precList11_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
           }
-          thyraPrecH_ = Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
+          thyraPrecOpH_ = rcp(new XpetraThyraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(AH_, rcp(&precList11_, false)));
         } else
 #endif
           {
@@ -907,7 +897,7 @@ namespace MueLu {
             ParameterList& userParamList = precList22_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
           }
-          thyraPrec22_ = Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
+          thyraPrecOp22_ = rcp(new XpetraThyraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A22_, rcp(&precList22_, false)));
         } else
 #endif
           {
@@ -2252,13 +2242,9 @@ namespace MueLu {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-        if (!thyraPrecH_.is_null()) {
+        if (!thyraPrecOpH_.is_null()) {
           Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-          RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11xSubComm_));
-          RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11resSubComm_);
-          thyraPrecH_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraP11res, thyraP11x.ptr(), one, zero);
-          RCP<MultiVector> thyXpP11x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraP11x, P11x_->getMap()->getComm());
-          *P11xSubComm_ = *thyXpP11x;
+          thyraPrecOpH_->apply(*P11resSubComm_, *P11xSubComm_, Teuchos::NO_TRANS, one, zero);
         }
         else
 #endif
@@ -2273,13 +2259,9 @@ namespace MueLu {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-        if (!thyraPrec22_.is_null()) {
+        if (!thyraPrecOp22_.is_null()) {
           Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-          RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0xSubComm_));
-          RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0resSubComm_);
-          thyraPrec22_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraD0res, thyraD0x.ptr(), one, zero);
-          RCP<MultiVector> thyXpD0x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraD0x, D0x_->getMap()->getComm());
-          *D0xSubComm_ = *thyXpD0x;
+          thyraPrecOp22_->apply(*D0resSubComm_, *D0xSubComm_, Teuchos::NO_TRANS, one, zero);
         }
         else
 #endif

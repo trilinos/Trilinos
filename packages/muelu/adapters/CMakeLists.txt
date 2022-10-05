@@ -126,6 +126,7 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
+    ${DIR}/Xpetra_ThyraLinearOp.hpp
     )
 
   # Tpetra specific extensions
