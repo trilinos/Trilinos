@@ -1888,7 +1888,6 @@ namespace MueLu {
 
  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
  void  CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalizeGraph(const RCP<GraphBase> & inputGraph, const RCP<LocalOrdinalVector> & ghostedBlockNumber, RCP<GraphBase> & outputGraph, RCP<const Import> & importer) const {
-   typedef Teuchos::ScalarTraits<SC> STS;
 
    TEUCHOS_TEST_FOR_EXCEPTION(ghostedBlockNumber.is_null(), Exceptions::RuntimeError, "BlockDiagonalizeGraph(): ghostedBlockNumber is null.");
    const ParameterList  & pL = GetParameterList();

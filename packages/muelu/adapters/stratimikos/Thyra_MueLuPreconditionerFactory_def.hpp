@@ -73,8 +73,8 @@ namespace Thyra {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
-    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+    // typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+    // typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
     typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node>   XpMagMultVec;
@@ -82,8 +82,8 @@ namespace Thyra {
 
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
-    typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
-    typedef Thyra::SpmdVectorSpaceBase<Scalar>                               ThyVSBase;
+    // typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
+    // typedef Thyra::SpmdVectorSpaceBase<Scalar>                               ThyVSBase;
 
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>         TpCrsMat;
@@ -234,7 +234,6 @@ namespace Thyra {
 
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
-    typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
     typedef Thyra::SpmdVectorSpaceBase<Scalar>                               ThyVSBase;
 
 #ifdef HAVE_MUELU_TPETRA
@@ -449,11 +448,11 @@ namespace Thyra {
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
     typedef MueLu::XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuXpOp;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+    // typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
     typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
+    // typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
+    // typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMV;

@@ -917,7 +917,7 @@ namespace MueLu {
               /***************************************************************/
             else if(Helpers::isTpetraBlockCrs(Op)) {
               using BCRS = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-              using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+              // using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
               const BCRS & tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(Op);
               RCP<BCRS> At;
               {
