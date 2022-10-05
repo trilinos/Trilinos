@@ -769,15 +769,13 @@ field_type & put_field_on_entire_mesh_with_initial_value(field_type & field,
 template< class field_type >
 field_type & put_field_on_entire_mesh(field_type & field)
 {
-    typename FieldTraits<field_type>::data_type* init_value = nullptr;
-    return put_field_on_entire_mesh_with_initial_value(field, init_value);
+    return put_field_on_entire_mesh_with_initial_value(field, nullptr);
 }
 
 template< class field_type >
 field_type & put_field_on_entire_mesh(field_type & field, unsigned n1)
 {
-    typename FieldTraits<field_type>::data_type* init_value = nullptr;
-    return put_field_on_entire_mesh_with_initial_value(field, n1, init_value);
+    return put_field_on_entire_mesh_with_initial_value(field, n1, nullptr);
 }
 
 /** \} */

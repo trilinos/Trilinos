@@ -71,8 +71,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ARPREC          "packages/teuchos/cmake/tpls/"    ST
   QD              "packages/teuchos/cmake/tpls/"    ST
   MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PT
-  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
-  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
+  BLAS            "cmake/TPLs/"   PT
+  LAPACK          "cmake/TPLs/"   PT
   Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
   Scotch          "cmake/TPLs/"    ST
   OVIS            "cmake/TPLs/"    ST

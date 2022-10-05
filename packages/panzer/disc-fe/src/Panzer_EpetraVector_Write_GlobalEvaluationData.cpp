@@ -83,11 +83,11 @@ namespace panzer
     exporter_   = exporter;
     ghostedMap_ = ghostedMap;
     ownedMap_   = ownedMap;
-  
+
     // Build up the Thyra conversion data structures.
     ghostedSpace_ = create_VectorSpace(ghostedMap_);
     ownedSpace_   = create_VectorSpace(ownedMap_);
-  
+
     // Allocate the vectors.
     ghostedVector_ = rcp(new Epetra_Vector(*ghostedMap_));
     auto ownedVector = rcp(new Epetra_Vector(*ownedMap_));
@@ -98,13 +98,13 @@ namespace panzer
     ownedView_   = getView<Epetra_Vector>(*ownedVector_);
     ghostedView_ = getView<Epetra_Vector>(*getGhostedVector());
   } // end of initialize()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  ghostToGlobal()
   //
   /////////////////////////////////////////////////////////////////////////////
-  void 
+  void
   EpetraVector_Write_GlobalEvaluationData::
   ghostToGlobal(
     int /* mem */)
@@ -116,7 +116,7 @@ namespace panzer
     TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_.is_null(), logic_error,
       "EpetraVector_Write_GlobalEvaluationData::ghostToGlobal():  Owned "     \
       "vector has not been set; can't perform the halo exchange!")
-  
+
     // Set different combine modes.
     Epetra_CombineMode cm = Add;
     switch (getCombineMode())
@@ -139,19 +139,19 @@ namespace panzer
           "Invalid CombineMode.  Valid modes are CM_Sum, CM_Max, CM_Min, "    \
           "and CM_Insert.")
     }; // end switch (getCombineMode())
-    
+
     // Do the global distribution.
     RCP<Epetra_Vector> ownedVector_ep = get_Epetra_Vector(*ownedMap_,
       ownedVector_);
     ownedVector_ep->Export(*ghostedVector_, *exporter_, cm);
   } // end of ghostToGlobal()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  initializeData()
   //
   /////////////////////////////////////////////////////////////////////////////
-  void 
+  void
   EpetraVector_Write_GlobalEvaluationData::
   initializeData()
   {
@@ -162,13 +162,13 @@ namespace panzer
       "cannot call \"initializeData()\"!")
     put_scalar(0.0, ownedVector_.ptr());
   } // end of initializeData()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  setOwnedVector_Epetra()
   //
   /////////////////////////////////////////////////////////////////////////////
-  void 
+  void
   EpetraVector_Write_GlobalEvaluationData::
   setOwnedVector_Epetra(
     const Teuchos::RCP<Epetra_Vector>& ownedVector)
@@ -182,13 +182,13 @@ namespace panzer
     ownedVector_ = create_Vector(ownedVector, ownedSpace_);
     ownedView_   = getView<Epetra_Vector>(*ownedVector_);
   } // end of setOwnedVector_Epetra()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  getGhostedVector_Epetra()
   //
   /////////////////////////////////////////////////////////////////////////////
-  Teuchos::RCP<Epetra_Vector> 
+  Teuchos::RCP<Epetra_Vector>
   EpetraVector_Write_GlobalEvaluationData::
   getGhostedVector_Epetra() const
   {
@@ -201,13 +201,13 @@ namespace panzer
       "The ghosted vector is just a null RCP.")
     return ghostedVector_;
   } // end of getGhostedVector_Epetra()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  setOwnedVector()
   //
   /////////////////////////////////////////////////////////////////////////////
-  void 
+  void
   EpetraVector_Write_GlobalEvaluationData::
   setOwnedVector(
     const Teuchos::RCP<Thyra::VectorBase<double>>& ownedVector)
@@ -220,13 +220,13 @@ namespace panzer
     ownedVector_ = ownedVector;
     ownedView_   = getView<Epetra_Vector>(*ownedVector_);
   } // end of setOwnedVector()
-  
+
   /////////////////////////////////////////////////////////////////////////////
   //
   //  getOwnedVector()
   //
   /////////////////////////////////////////////////////////////////////////////
-  Teuchos::RCP<Thyra::VectorBase<double>> 
+  Teuchos::RCP<Thyra::VectorBase<double>>
   EpetraVector_Write_GlobalEvaluationData::
   getOwnedVector() const
   {
@@ -242,7 +242,7 @@ namespace panzer
   //  getGhostedVector()
   //
   /////////////////////////////////////////////////////////////////////////////
-  Teuchos::RCP<Thyra::VectorBase<double>> 
+  Teuchos::RCP<Thyra::VectorBase<double>>
   EpetraVector_Write_GlobalEvaluationData::
   getGhostedVector() const
   {

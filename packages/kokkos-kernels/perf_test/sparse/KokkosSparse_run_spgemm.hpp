@@ -44,7 +44,7 @@
 
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_TestParameters.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
@@ -67,7 +67,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosKernels::sort_crs_matrix(output_mat1);
+  KokkosSparse::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
     std::cerr << "row count is different" << std::endl;
@@ -82,7 +82,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat2);
+  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<

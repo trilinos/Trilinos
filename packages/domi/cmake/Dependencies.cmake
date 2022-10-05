@@ -52,5 +52,5 @@
 
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES Teuchos Kokkos TeuchosKokkosCompat
-  LIB_OPTIONAL_PACKAGES Epetra TpetraClassic TpetraCore
+  LIB_OPTIONAL_PACKAGES Epetra TpetraCore
 )

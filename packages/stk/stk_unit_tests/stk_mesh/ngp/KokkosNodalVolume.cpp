@@ -398,14 +398,11 @@ protected:
   void create_mesh_and_fields(const stk::mesh::Part &part)
   {
     elemVolumePerNodeField = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "elemVolumePerNodeField");
-    stk::mesh::put_field_on_mesh(*elemVolumePerNodeField, part,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*elemVolumePerNodeField, part, nullptr);
     nodalVolumeField = &get_meta().declare_field<double>(stk::topology::NODE_RANK, "nodal_volume");
-    stk::mesh::put_field_on_mesh(*nodalVolumeField, part,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*nodalVolumeField, part, nullptr);
     numElemsPerNodeField = &get_meta().declare_field<int>(stk::topology::NODE_RANK, "numElemsPerNode");
-    stk::mesh::put_field_on_mesh(*numElemsPerNodeField, part,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<int> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*numElemsPerNodeField, part, nullptr);
     std::string meshName = stk::unit_test_util::simple_fields::get_mesh_spec("-dim");
     stk::io::fill_mesh(meshName, get_bulk());
     std::cout << "Using mesh: "<<meshName<<", numRepeat: "<<get_num_repeat()<<std::endl;

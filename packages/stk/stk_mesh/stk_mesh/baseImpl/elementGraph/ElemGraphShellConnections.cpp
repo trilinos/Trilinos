@@ -120,8 +120,14 @@ void remove_graph_edges_blocked_by_shell(GraphInfo &graphInfo)
         SideConnections sideConnectionsForElement(graphInfo.elementTopologies[localId].num_sides());
         for(int side : sideConnectionsForElement.get_sides_connected_to_shell_and_nonshell(graphInfo, localId))
             fill_non_shell_graph_edges_to_delete(graphInfo, stk::mesh::impl::ElementSidePair(localId, side), edgesToDelete);
+
+        if (edgesToDelete.size() > 0)
+        {
+            std::sort(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1());
+            graphInfo.graph.delete_sorted_edges(edgesToDelete);
+            edgesToDelete.clear();
+        }
     }
-    graphInfo.graph.delete_sorted_edges(edgesToDelete);
 }
 
 }

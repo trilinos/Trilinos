@@ -37,6 +37,8 @@ template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model,
   const Teuchos::RCP<Teuchos::ParameterList>& pList,
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
   : stepMode_(SensitivityStepMode::Forward)
@@ -45,7 +47,7 @@ StepperStaggeredForwardSensitivity(
   this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(pList, sens_pList);
-  this->setModel(appModel);
+  this->setModel(appModel, sens_residual_model, sens_solve_model);
   this->initialize();
 }
 
@@ -53,7 +55,9 @@ StepperStaggeredForwardSensitivity(
 template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
 setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -64,13 +68,15 @@ setModel(
   *spl = *sensPL_;
   spl->remove("Reuse State Linear Solver");
   spl->remove("Force W Update");
-  fsa_model_ = wrapStaggeredFSAModelEvaluator(appModel, spl);
+  fsa_model_ = wrapStaggeredFSAModelEvaluator(
+    appModel, sens_residual_model, sens_solve_model, false, spl);
 
   // Create combined FSA ME which serves as "the" ME for this stepper,
   // so that getModel() has a ME consistent the FSA problem (including both
   // state and sensitivity components), e.g., the integrator may call
   // getModel()->getNominalValues(), which needs to be consistent.
-  combined_fsa_model_ = wrapCombinedFSAModelEvaluator(appModel, spl);
+  combined_fsa_model_ = wrapCombinedFSAModelEvaluator(
+    appModel, sens_residual_model, sens_solve_model, spl);
 
   // Create state and sensitivity steppers
   RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());

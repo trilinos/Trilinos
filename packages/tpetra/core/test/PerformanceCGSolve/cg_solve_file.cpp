@@ -403,11 +403,11 @@ int main(int argc, char *argv[]) {
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  Kokkos::InitArguments kokkosArgs;
-  kokkosArgs.num_threads = numthreads;
-  kokkosArgs.device_id = myRank % numgpus;
-  kokkosArgs.skip_device = skipgpu;
-  kokkosArgs.disable_warnings = !verbose;
+  Kokkos::InitializationSettings kokkosArgs;
+  kokkosArgs.set_num_threads(numthreads);
+  kokkosArgs.set_device_id(myRank % numgpus);
+  kokkosArgs.set_skip_device(skipgpu);
+  kokkosArgs.set_disable_warnings(!verbose);
 
   Kokkos::initialize (kokkosArgs);
   {

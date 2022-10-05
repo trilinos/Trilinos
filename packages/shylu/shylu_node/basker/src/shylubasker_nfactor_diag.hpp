@@ -427,7 +427,7 @@ namespace BaskerNS
 
     // compute one-norm of diagonal block, if needed
     Mag normA_blk = Mag (0.0);
-    if (Options.replace_tiny_pivot) {
+    if (Options.replace_zero_pivot) {
       for (j = btf_tabs(c); j < btf_tabs(c+1); ++j) {
         Mag anorm_j = Mag(0.0);
         for (i = M.col_ptr(j-bcol); i < M.col_ptr(j-bcol+1); ++i) {
@@ -686,12 +686,12 @@ namespace BaskerNS
           cout << "MaxIndex: " << maxindex 
             << " pivot " 
             << pivot << endl;
-          if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  replace tiny pivot with " << normA_blk * eps
+          if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+            cout << "  replace zero pivot with " << normA_blk * eps
                  << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << endl;
           } else {
-            if (!Options.replace_tiny_pivot) {
-              cout << " replace_tiny_pivot disabled, ";
+            if (!Options.replace_zero_pivot) {
+              cout << " replace_zero_pivot disabled, ";
             }
             if (normA_blk <= abs(zero)) {
               cout << " empty block, ";
@@ -702,7 +702,7 @@ namespace BaskerNS
             cout << endl;
           }
         }
-        if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+        if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
           pivot = normA_blk * eps;
           X(maxindex) = pivot;
         } else {

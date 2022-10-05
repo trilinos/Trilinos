@@ -224,8 +224,15 @@ int main(int argc, char *argv[]) {
       if (actRes > tol) badRes = true;
     }
 
-    if (proc_verbose)
+    if (proc_verbose) {
       std::cout<<std::endl<<"Condition Estimate: " << SCT::real(solver.getConditionEstimate()) << std::endl;
+      auto ee = solver.getEigenEstimates();
+      std::cout << std::endl << "Eigen estimates:\n" << ee.size() << " " << ee << std::endl;
+      for (int i=0; i < ee.size(); i++) {
+        std::cout << " " << ee[i];
+        if (i > 0 && (i % 10 == 0)) std::cout << std::endl;
+      }
+    }
 
     success = (ret==Belos::Converged && !badRes);
 

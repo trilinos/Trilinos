@@ -30,6 +30,8 @@ private:
   VecType max;
 
 public:
+  static const BoundingBox_T<REAL,DIM> ENTIRE_DOMAIN;
+
   static void gather_bboxes( const BoundingBox_T<REAL,DIM> & local_bbox,
       std::vector< BoundingBox_T<REAL,DIM> > & all_bboxes );
 
@@ -204,6 +206,10 @@ BoundingBox_T<REAL,DIM>::scale( const Real & scale_factor )
   min -= extension;
   max += extension;
 }
+
+template<class REAL, int DIM>
+const BoundingBox_T<REAL,DIM> BoundingBox_T<REAL,DIM>::ENTIRE_DOMAIN(VecType(-std::numeric_limits<REAL>::max(), -std::numeric_limits<REAL>::max(), -std::numeric_limits<REAL>::max()),
+      VecType(std::numeric_limits<REAL>::max(), std::numeric_limits<REAL>::max(), std::numeric_limits<REAL>::max()));
 
 typedef BoundingBox_T<float,3> BoundingBox;
 

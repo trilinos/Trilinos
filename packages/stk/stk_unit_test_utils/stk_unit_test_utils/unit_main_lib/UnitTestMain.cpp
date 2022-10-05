@@ -33,6 +33,7 @@
 //
 
 #include <stk_util/stk_config.h>
+#include "stk_unit_test_utils/getOption.h"
 #ifdef STK_HAVE_KOKKOSCORE
 #include <Kokkos_Core.hpp>
 #endif
@@ -45,6 +46,8 @@
 #endif
 #include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/CouplingVersions.hpp>
+#include <stk_util/parallel/CouplingVersions_impl.hpp>
 
 int main(int argc, char **argv)
 {
@@ -67,6 +70,10 @@ int main(int argc, char **argv)
 #ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
     stk::unit_test_util::create_parallel_output(procId);
+    if (stk::unit_test_util::has_option("-stk_coupling_version")) {
+      int version = stk::unit_test_util::get_command_line_option("-stk_coupling_version", -1);
+      stk::util::impl::set_coupling_version(version);
+    }
 #endif
 
 #ifdef STK_HAVE_STKNGP_TEST

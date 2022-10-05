@@ -1532,8 +1532,7 @@ public:
     metaData->use_simple_fields();
     stk::io::put_io_part_attribute(metaData->universal_part());
     deathStatusField = &metaData->declare_field<double>(stk::topology::ELEM_RANK,deathStatusFieldName);
-    double zeroInitialValue = 0.0;
-    stk::mesh::put_field_on_mesh(*deathStatusField,metaData->universal_part(),&zeroInitialValue);
+    stk::mesh::put_field_on_mesh(*deathStatusField,metaData->universal_part(), nullptr);
 
     activePart = &metaData->declare_part("active");
     deathPart = &metaData->declare_part("death_1", metaData->side_rank());

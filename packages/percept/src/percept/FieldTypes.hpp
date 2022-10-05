@@ -16,7 +16,7 @@
 
 namespace percept {
 
-  typedef stk::mesh::Field<double, stk::mesh::SimpleArrayTag>  GenericFieldType;
+  typedef stk::mesh::Field<double>  GenericFieldType;
 
   typedef stk::mesh::Field<double>                          ScalarFieldType ;
   typedef stk::mesh::Field<int>                             ScalarIntFieldType ;

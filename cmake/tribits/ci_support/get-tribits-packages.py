@@ -53,7 +53,7 @@ r"""get-tribits-packages.py --deps-xml-file=<DEPS_XML_FILE> \
   --only-top-level-packages=[on|off]
 
 This script returns a comma-separated list of all of the project's top-level
-or packages or the full set of SE packages (i.e. parent and subpackages).
+or packages or the full set of packages (i.e. parent and subpackages).
 """
 
 from optparse import OptionParser

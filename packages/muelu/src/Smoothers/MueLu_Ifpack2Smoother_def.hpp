@@ -67,6 +67,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 
@@ -227,7 +228,6 @@ namespace MueLu {
       if (blocksize) {
         // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
 
-        using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
         RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
         if(AcrsWrap.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot convert matrix A to CrsMatrixWrap object.");
@@ -235,16 +235,21 @@ namespace MueLu {
         if(Acrs.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix from matrix A.");
         RCP<TpetraCrsMatrix> At = rcp_dynamic_cast<TpetraCrsMatrix>(Acrs);
-        if(At.is_null())
-          throw std::runtime_error("Ifpack2Smoother: Cannot extract TpetraCrsMatrix from matrix A.");
-
-        RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
-        RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
-        RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
-        A_ = blockWrap;
-        this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
-
-        paramList.remove("smoother: use blockcrsmatrix storage");
+        if(At.is_null()) {
+          if(!Xpetra::Helpers<Scalar,LO,GO,Node>::isTpetraBlockCrs(matA))
+            throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix or BlockCrsMatrix from matrix A.");          
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using (native) BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
+        else {
+          RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
+          RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
+          RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
+          A_ = blockWrap;
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
       }
     }
 
@@ -354,7 +359,12 @@ namespace MueLu {
         ParameterList& subList = paramList.sublist(sublistName);
 
         std::string partName = "partitioner: type";
-        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+        // Pretty sure no one has been using this. Unfortunately, old if
+        // statement (which checked for equality with "user") prevented
+        // anyone from employing other types of Ifpack2 user partition 
+        // options. Leaving this and switching if to "vanka user" just 
+        // in case some day someone might want to use this.
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "vanka user") {
           isBlockedMatrix = true;
 
           RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
@@ -391,6 +401,7 @@ namespace MueLu {
           if (haveBoundary)
             numBlocks++;
 
+          subList.set("partitioner: type","user");
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
 

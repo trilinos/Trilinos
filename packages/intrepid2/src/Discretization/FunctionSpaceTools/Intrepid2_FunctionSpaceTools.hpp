@@ -510,10 +510,49 @@ namespace Intrepid2 {
 
     */
     template<typename outputValueType, class ...outputProperties,
-             typename inputValueType,     class ...inputProperties>
+             typename inputValueType,  class ...inputProperties>
     static void 
     HGRADtransformVALUE(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                          const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
+
+
+    /** \brief Transformation of a (scalar) data in the H-grad space, defined in physical space,
+        stored in the user-provided container <var><b>input</b></var>
+        and indexed by (C,P), into the output container <var><b>output</b></var>,
+        defined on reference cells and indexed by (C,P). It computes \f$ \widehat{u}(\widehat{x}_p) = u(x_p) \f$
+        where \f$u(x_p)\f$ is the input H-grad data, \f$\widehat{u}(\widehat{x}_p)\f$ is the output H-grad data in the reference frame, and
+        \f$ x_p \f$ is the point in physical space corresponding to the the point \f$ \widehat{x}_p \f$ in the reference frame.
+        Essentially this function copies the input into the output.
+
+        \param  output       [out] - Output array of HGRAD data in the reference cell, indexed by (C,P)
+        \param  input        [in]  - Input array of HGRAD data in physical space (C,P)
+
+    */
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties>
+    static void
+    mapHGradDataFromPhysToRef(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                               const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
+
+
+    /** \brief Transformation of a (scalar) data in the H-grad space, defined in physical space,
+        stored in the user-provided container <var><b>input</b></var>
+        and indexed by (C,P), into the output container <var><b>output</b></var>,
+        defined on reference sides and indexed by (C,P). It computes \f$ \widehat{u}(\widehat{x}_p) = u(x_p) \f$
+        where \f$u(x_p)\f$ is the input H-grad data on physical sides, \f$\widehat{u}(\widehat{x}_p)\f$ is the output H-grad data on the reference side, and
+        \f$ x_p \f$ is the point on physical side corresponding to the the point \f$ \widehat{x}_p \f$ on the reference side.
+        Essentially this function copies the input into the output.
+
+        \param  output       [out] - Output array of HGRAD data on reference side, indexed by (C,P)
+        \param  input        [in]  - Input array of HGRAD data on physical side (C,P)
+
+    */
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties>
+    static void
+    mapHGradDataFromPhysSideToRefSide(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
+
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -611,7 +650,94 @@ namespace Intrepid2 {
     HCURLtransformVALUE(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                          const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                          const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
+
+
+    /** \brief Transformation of a (vector) data in the H-curl space, defined in the physical space,
+        stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (C,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on the reference cell and indexed by (C,P,D).
+
+        Computes the map
+        \f$\widehat{\bf u} = (DF)^{\sf T}\, {\bf u}\f$
+
+        where \f${\bf u}\f$ is the input HCURL data in the physical space, evaluated at points \f$ x_p \f$, \f$\widehat{\bf u}\f$ is the output HCURL data on the reference cell
+        evaluated at the reference points \f$ \widehat{x}_p\f$ and
+        \f$ x_p\f$ is the point on physical side corresponding to the the point \f$ \widehat{x}_p \f$ on the reference cell, through the map \f$F\f$.
+        \f$DF\f$ is the Jacobian of the map \f$F\f$.
+
+        \param  outputVals       [out] - Output array with reference HCURL data, indexed by (C,P,D)
+        \param  jacobianInverse  [in]  - Input array containing the Jacobian, indexed by (C,P,D,D)
+        \param  inputVals        [in]  - Input array of HCURL data in physical space, indexed by (C,P,D).
+
+    */
+    template<typename outputValValueType,       class ...outputValProperties,
+             typename jacobianValueType,        class ...jacobianProperties,
+             typename inputValValueType,        class ...inputValProperties>
+    static void
+    mapHCurlDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType, outputValProperties...>       outputVals,
+                               const Kokkos::DynRankView<jacobianValueType,  jacobianProperties...>        jacobian,
+                               const Kokkos::DynRankView<inputValValueType,  inputValProperties...>        inputVals );
     
+
+    /** \brief Transformation of 3D HCURL data from physical side to reference side.
+        It takes the input vector \f$ ({\bf u}_p \times {\bf n}_p) \f$ defined on physical sides and maps it into \f$ \widehat{\bf u}_p \f$ on the reference side.
+        \f$ {\bf u}_p \f$ is a 3D HCURL function evaluated at points \f$ {\bf x}_p \f$, \f$ {\bf n}_p \f$ the outer unit normal to the sides at point \f${\bf x}_p \f$ and  \f$ \widehat{\bf u}_p \f$ is a
+        2D HCURL function evaluated at reference points \f$ \widehat{\bf x}_p \f$.
+
+        \f[
+        \widehat{\bf u}_p = \left[ \begin{array}{cc} 0 & -1\\ 1 & 0 \end{array} \right] \sqrt{\text{det}(T^T T)}\; (T^T T)^{-1}\;  T^T\;  ({\bf u}_p \times {\bf n}_p )
+        \f]
+        here \f$ T \f$ is a 3x2 matrix, whose columns are the two physical side tangents, computed differentiating the parameterization of the physical side
+        (see  <var>CellTools::getPhysicalFaceTangents</var>).
+
+        \param  outputVals      [out] - 2D HCURL function in reference space, indexed by (C,P,2).
+        \param  tangents        [in]  - physical tangents (T) computed differentiating the parameterization of the physical sides, indexed by (C,P,3,2)
+        \param  metricTensorInv [in]  - Inverse of the metric tensor \f$T^T T\f$, indexed by (C,P,2,2).
+        \param  metricTensorDet [in]  - determinant of the metric tensor \f$T^T T\f$, indexed by (C,P).
+        \param  inputVals       [in]  - cross product of a HCURL function with the unit outer normals to the sides, indexed by (C,P,3)
+
+    */
+    template<typename outputValValueType,   class ...outputValProperties,
+             typename tangentsValueType,    class ...tangentsProperties,
+             typename metricTensorInvValueType,    class ...metricTensorInvProperties,
+             typename metricTensorDetValueType, class ...metricTensorDetProperties,
+             typename inputValValueType,    class ...inputValProperties>
+    static void
+    mapHCurlDataCrossNormalFromPhysSideToRefSide(
+              Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+        const Kokkos::DynRankView<tangentsValueType,   tangentsProperties...>    tangents,
+        const Kokkos::DynRankView<metricTensorInvValueType,metricTensorInvProperties...> metricTensorInv,
+        const Kokkos::DynRankView<metricTensorDetValueType,metricTensorDetProperties...> metricTensorDet,
+        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
+
+
+    /** \brief Transformation of 2D HCURL data from physical side to reference side.
+        It takes the input scalar \f$ ({\bf u}_p \times {\bf n}_p) \f$ defined on physical sides and maps it into \f$ \widehat{\bf u}_p \f$ on the reference side.
+        \f$ {\bf u}_p \f$ is a 2D HCURL function evaluated at points \f$ {\bf x}_p \f$, \f$ {\bf n}_p \f$ the unit outer normal to the sides at point \f${\bf x}_p \f$ and  \f$ \widehat{\bf u}_p \f$ is a
+        2D HVOL function evaluated at reference points \f$ \widehat{\bf x}_p \f$.
+        Note, \f$ ({\bf u}_p \times {\bf n}_p) \f$ is computed by extending the 2D vectors (in xy plane) to the 3D space, and taking only the component of the cross product in the z-axis direction
+
+        \f[
+        \widehat{\bf u}_p = - \sqrt{\text{det}(T^T T)} \;  ({\bf u}_p \times {\bf n}_p )
+        \f]
+        here \f$ T \f$ is the side physical tangent, computed differentiating the parameterization of the physical side
+        (see  <var>CellTools::getPhysicalEdgeTangents</var>).
+
+        \param  outputVals      [out] - HVOL function in reference space, indexed by (C,P).
+        \param  metricTensorDet [in]  - determinant of the metric tensor \f$T^T T\f$, indexed by (C,P). Note, this is also the norm squared of the edge tangents
+        \param  inputVals       [in]  - scalar cross product of a (2D) HCURL function with the unit outer normals to the edges, indexed by (C,P)
+
+    */
+    template<typename outputValValueType,   class ...outputValProperties,
+               typename jacobianDetValueType, class ...jacobianDetProperties,
+               typename inputValValueType,    class ...inputValProperties>
+    static void
+    mapHCurlDataCrossNormalFromPhysSideToRefSide(
+              Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+        const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> metricTensorDet,
+        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
+
+
     /** \brief Transformation of a 3D curl field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
@@ -709,7 +835,7 @@ namespace Intrepid2 {
     */
 
     template<typename outputValValueType,      class ...outputValProperties,
-             typename jacobianDetValueType, class ...jacobianDetProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
              typename inputValValueType,       class ...inputValProperties>
     static void
     HCURLtransformCURL(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
@@ -826,6 +952,65 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                         const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
+
+    /** \brief Transformation of a (vector) data in the H-div space, defined in the physical space,
+        stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (C,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on the reference cell and indexed by (C,P,D).
+
+        Computes the map
+        \f$\widehat{\bf u} = J\, (DF)^{-1}\,{\bf u}\f$
+
+        where \f${\bf u}\f$ is the input HDIV data in the physical space, evaluated at points \f$ x_p \f$, \f$\widehat{\bf u}\f$ is the output HDIV data on the reference cell
+        evaluated at the reference points \f$ \widehat{x}_p \f$ and
+        \f$ x_p\f$ is the point on physical side corresponding to the the point \f$ \widehat{x}_p \f$ on the reference cell, through the map \f$F\f$.
+        \f$DF\f$ is the Jacobian of the map \f$F\f$, and \f$J\f$ its determinant
+
+        \param  outputVals       [out] - Output array with reference HDIV data, indexed by (C,P,D)
+        \param  jacobianInverse  [in]  - Input array containing the Jacobian inverse, indexed by (C,P,D,D)
+        \param  jacobianDet      [in]  - Input array containing the Jacobian determinant, indexed by (C,P)
+        \param  inputVals        [in]  - Input array of HDIV data in physical space, indexed by (C,P,D).
+
+    */
+    template<typename outputValValueType,      class ...outputValProperties,
+             typename jacobianInverseValueType,       class ...jacobianInverseProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
+             typename inputValValueType,       class ...inputValProperties>
+    static void
+    mapHDivDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType,       outputValProperties...>       outputVals,
+                              const Kokkos::DynRankView<jacobianInverseValueType, jacobianInverseProperties...> jacobianInv,
+                              const Kokkos::DynRankView<jacobianDetValueType,     jacobianDetProperties...>     jacobianDet,
+                              const Kokkos::DynRankView<inputValValueType,        inputValProperties...>        inputVals );
+
+
+    /** \brief Transformation of HDIV data from physical side to reference side.
+        It takes the input \f$ ({\bf u}_p \cdot {\bf n}_p) \f$ defined on physical sides and maps it into \f$ \widehat{\bf u}_p \f$ on the reference side.
+        \f$ {\bf u}_p \f$ is a HDIV function evaluated at points \f$ {\bf x}_p \f$, \f$ {\bf n}_p \f$ the outer unit normal to the sides at point \f${\bf x}_p \f$ and  \f$ \widehat{\bf u}_p \f$ is a
+        HVOL data evaluated at reference points \f$ \widehat{\bf x}_p \f$.
+
+        It computes
+        \f[
+        \widehat{\bf u}_p = \sqrt{\text{det}(T^T T)}\; ({\bf u}_p \cdot {\bf n}_p )
+        \f]
+        here \f$ T \f$ is a 3x2 matrix, whose columns are the two physical side tangents, computed differentiating the parameterization of the physical side
+        (see  <var>CellTools::getPhysicalFaceTangents</var> and var>CellTools::getPhysicalEdgeTangents</var>). Note \text{det}(T^T T)} is equivalent to the square
+        of the norm of the physical normal computed with <var>CellTools::getPhysicalSideNormal</var>.
+
+        \param  outputVals      [out] - HVOL data in reference space, indexed by (C,P).
+        \param  metricTensorDet [in]  - determinant of the metric tensor \f$T^T T\f$, indexed by (C,P).
+        \param  inputVals       [in]  - HDIV function dotted with the unit outer normals to the sides, indexed by (C,P)
+
+    */
+    template<typename outputValValueType,   class ...outputValProperties,
+               typename jacobianDetValueType, class ...jacobianDetProperties,
+               typename inputValValueType,    class ...inputValProperties>
+    static void
+    mapHDivDataDotNormalFromPhysSideToRefSide(
+              Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+        const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> metricTensorDet,
+        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
+
+
     /** \brief Transformation of a divergence field in the H-div space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P), into the output container <var><b>outputVals</b></var>,
@@ -923,7 +1108,31 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                         const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
-    
+    /** \brief Transformation of a (scalar) data in the H-vol space, defined in the physical space,
+        stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (C,P), into the output container <var><b>outputVals</b></var>,
+        defined on the reference cell and indexed by (C,P).
+
+        Computes the map
+        \f$\widehat{u} = J\, u\f$
+
+        where \f$u\f$ is the input HVOL data in the physical space, evaluated at points \f$ x_p \f$, \f$\widehat{u}\f$ is the output HVOL data on the reference cell
+        evaluated at the reference points \f$ \widehat{x}_p\f$ and \f$ x_p\f$ is the point on physical side corresponding to the the point \f$ \widehat{x}_p \f$ on the reference cell, through the map \f$F\f$.
+        \f$J\f$ is the determinant of the Jacobian of the map \f$F\f$.
+
+        \param  outputVals   [out] - Output array with reference HVOL data, indexed by (C,P)
+        \param  jacobianDet  [in]  - Input array containing the Jacobian determinant, indexed by (C,P)
+        \param  inputVals    [in]  - Input array of HVOL data in physical space, indexed by (C,P).
+
+    */
+    template<typename outputValValueType,      class ...outputValProperties,
+             typename jacobianDetValueType,    class ...jacobianDetProperties,
+             typename inputValValueType,       class ...inputValProperties>
+    static void
+    mapHVolDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                              const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
+                              const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
+
     /** \brief   Contracts \a <b>leftValues</b> and \a <b>rightValues</b> arrays on the
         point and possibly space dimensions and stores the result in \a <b>outputValues</b>;
         this is a generic, high-level integration routine that calls either

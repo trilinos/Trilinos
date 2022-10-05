@@ -204,6 +204,70 @@ getDXDotDotDp() const
 }
 
 template<class Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+IntegratorForwardSensitivity<Scalar>::
+getG() const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // Compute g which is computed by response 1 of the
+  // sensitivity model evaluator
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > smodel;
+  if (use_combined_method_)
+    smodel = sens_model_;
+  else
+    smodel = sens_stepper_->getModel();
+  MEB::InArgs<Scalar> inargs = smodel->getNominalValues();
+  MEB::OutArgs<Scalar> outargs = smodel->createOutArgs();
+  inargs.set_t(integrator_->getTime());
+  inargs.set_x(integrator_->getX());
+  if (inargs.supports(MEB::IN_ARG_x_dot))
+    inargs.set_x_dot(integrator_->getXDot());
+  if (inargs.supports(MEB::IN_ARG_x_dot_dot))
+    inargs.set_x_dot_dot(integrator_->getXDotDot());
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > g =
+    Thyra::createMember(smodel->get_g_space(1));
+  outargs.set_g(1, g);
+
+  smodel->evalModel(inargs, outargs);
+  return g;
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorForwardSensitivity<Scalar>::
+getDgDp() const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+
+  // Compute final dg/dp  which is computed by response 0  of the
+  // sensitivity model evaluator
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > smodel;
+  if (use_combined_method_)
+    smodel = sens_model_;
+  else
+    smodel = sens_stepper_->getModel();
+  MEB::InArgs<Scalar> inargs = smodel->getNominalValues();
+  MEB::OutArgs<Scalar> outargs = smodel->createOutArgs();
+  inargs.set_t(integrator_->getTime());
+  inargs.set_x(integrator_->getX());
+  if (inargs.supports(MEB::IN_ARG_x_dot))
+    inargs.set_x_dot(integrator_->getXDot());
+  if (inargs.supports(MEB::IN_ARG_x_dot_dot))
+    inargs.set_x_dot_dot(integrator_->getXDotDot());
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > G =
+    Thyra::createMember(smodel->get_g_space(0));
+  Teuchos::RCP<DMVPV> dgdp = Teuchos::rcp_dynamic_cast<DMVPV>(G);
+  outargs.set_g(0, G);
+
+  smodel->evalModel(inargs, outargs);
+  return dgdp->getMultiVector();
+}
+
+template<class Scalar>
 std::string
 IntegratorForwardSensitivity<Scalar>::
 description() const
@@ -242,7 +306,9 @@ template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 createIntegratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      sens_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      sens_solve_model)
 {
 
 
@@ -281,12 +347,13 @@ createIntegratorForwardSensitivity(
     if (use_combined_method)
     {
       sens_pl->remove("Reuse State Linear Solver");
-      sens_model     = wrapCombinedFSAModelEvaluator(model, sens_pl);
+      sens_model     = wrapCombinedFSAModelEvaluator(
+        model, sens_residual_model, sens_solve_model, sens_pl);
       fwd_integrator = createIntegratorBasic<Scalar>(pList, sens_model);
     }
     else
     {
-      sens_stepper          = Teuchos::rcp(new StepperStaggeredForwardSensitivity<Scalar>(model, stepper_pl, sens_pl));
+      sens_stepper          = Teuchos::rcp(new StepperStaggeredForwardSensitivity<Scalar>(model, sens_residual_model, sens_solve_model, stepper_pl, sens_pl));
       auto fsa_staggered_me = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(sens_stepper->getModel());
       fwd_integrator        = createIntegratorBasic<Scalar>(pList, fsa_staggered_me);
       fwd_integrator->setStepper(sens_stepper);

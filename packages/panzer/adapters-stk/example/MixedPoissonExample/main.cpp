@@ -98,7 +98,6 @@
 #include "Example_EquationSetFactory.hpp"
 
 
-
 #include <sstream>
 
 using Teuchos::RCP;
@@ -132,7 +131,6 @@ int main(int argc,char * argv[])
 
      Teuchos::GlobalMPISession mpiSession(&argc,&argv);
      Kokkos::initialize(argc,argv);
-     // RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
      Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
      out.setOutputToRootOnly(0);

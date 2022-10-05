@@ -1803,7 +1803,6 @@ createStepperERK_Trapezoidal(
  *      & b^T \\
  *      & \hat{b}^T
  *  \end{array}
- *
  *  \f]
  *  Reference:  Gottlieb, S., Ketcheson, D.I., Shu, C.-W.
  *              Strong Stability Preserving Runge–Kutta and Multistep Time Discretizations.

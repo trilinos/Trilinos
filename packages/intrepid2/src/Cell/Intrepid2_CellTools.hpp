@@ -722,6 +722,27 @@ public:
                              const ordinal_type         worksetEdgeOrd,
                              const shards::CellTopology parentCell );
 
+
+    /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset
+        \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets).
+
+        It is similar to the <var>CellTools::getPhysicalEdgeTangents</var> function above, with the difference that the edge ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetEdgeOrds</b></var>, indexed by (C,P).
+
+        \param  edgeTangents      [out] - rank-3 array (C,P,D1) with tangents on workset edges
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D1,D1) with Jacobians evaluated at ref. edge points
+        \param  worksetEdgeOrds   [in]  - rank-2 array (C,P) with edge ordinals, relative to ref. cell, of the edge workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename edgeTangentValueType,     class ...edgeTangentProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename edgeOrdValueType,         class ...edgeOrdProperties>
+    static void
+    getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
+                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                             const Kokkos::DynRankView<edgeOrdValueType,edgeOrdProperties...>                 worksetEdgeOrds,
+                             const shards::CellTopology parentCell );
+
     /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset
         \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
 
@@ -769,6 +790,31 @@ public:
                              const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                              const ordinal_type         worksetFaceOrd,
                              const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset
+        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
+
+        It is similar to the <var>CellTools::getPhysicalFaceTangents</var> function above, with the difference that the face ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetFaceOrds</b></var>, indexed by (C,P).
+
+        \param  faceTanU          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  faceTanV          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+        \param  worksetFaceOrds   [in]  - rank-2 array (C,P) with face ordinals, relative to ref. cell, of the face workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename faceTanValueType,        class ...faceTanProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename faceOrdValueType, class ...faceOrdProperties>
+    static void
+    getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanU,
+                                   Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanV,
+                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                             const Kokkos::DynRankView<faceOrdValueType,faceOrdProperties...>  worksetFaceOrds,
+                             const shards::CellTopology parentCell );
+
+
 
     /** \brief  Computes non-normalized normal vectors to physical sides in a side workset
         \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$.
@@ -838,6 +884,26 @@ public:
                             const ordinal_type         worksetSideOrd,
                             const shards::CellTopology parentCell );
 
+
+/** \brief  Computes non-normalized normal vectors to physical sides in a side workset
+    \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$.
+    It is similar to the <var>CellTools::getPhysicalSideNormals</var> function above, with the difference that the side ordinal can change from point to point,
+    and it is provided by the rank-2 input array <var><b>worksetSideOrds</b></var>, indexed by (C,P).
+
+    \param  sideNormals       [out] - rank-3 array (C,P,D), normals at workset sides
+    \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. side points
+    \param  worksetSideOrds   [in]  - rank-2 array (C,P) with side ordinals, relative to ref. cell, of the side workset
+    \param  parentCell        [in]  - cell topology of the parent reference cell
+*/
+    template<typename sideNormalValueType,      class ...sideNormalProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename edgeOrdValueType,         class ...edgeOrdProperties>
+    static void
+    getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
+                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                            const Kokkos::DynRankView<edgeOrdValueType,edgeOrdProperties...>                 worksetSideOrds,
+                            const shards::CellTopology parentCell );
+
     /** \brief  Computes non-normalized normal vectors to physical faces in a face workset
         \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
 
@@ -882,6 +948,27 @@ public:
     getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                             const ordinal_type         worksetFaceOrd,
+                            const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes non-normalized normal vectors to physical faces in a face workset
+        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
+        It is similar to the <var>CellTools::getPhysicalSideNormals</var> function above, with the difference that the side ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetSideOrds</b></var>, indexed by (C,P).
+
+        \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+        \param  worksetFaceOrds   [in]  - rank-2 array (C,P) with face ordinals, relative to ref. cell, of the face workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+
+    template<typename faceNormalValueType,      class ...faceNormalProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename faceOrdValueType, class ...faceOrdProperties>
+    static void
+    getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
+                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                            const Kokkos::DynRankView<faceOrdValueType,faceOrdProperties...>  worksetFaceOrds,
                             const shards::CellTopology parentCell );
 
     //============================================================================================//

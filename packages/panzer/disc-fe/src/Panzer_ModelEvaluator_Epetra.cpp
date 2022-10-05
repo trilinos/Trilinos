@@ -78,7 +78,7 @@ class EpetraLOF_EOpFactory : public Teuchos::AbstractFactory<Epetra_Operator> {
 public:
     EpetraLOF_EOpFactory(const panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof)
        : W_graph_(lof.getGraph(0,0)) {}
-    
+
     virtual Teuchos::RCP<Epetra_Operator> create() const
     { return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_)); }
 };
@@ -162,7 +162,7 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::BlockedEpetraLi
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
- 
+
   TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_==Teuchos::null,std::logic_error,
                      "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The response library "
                      "was not correctly initialized before calling initializeEpetraObjs.");
@@ -185,7 +185,7 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::BlockedEpetraLi
 
     p_init_.push_back(ep_vec);
   }
-  
+
   // Initialize the epetra operator factory
   epetraOperatorFactory_ = Teuchos::rcp(new EpetraLOF_EOpFactory(lof));
 }
@@ -197,10 +197,10 @@ initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::str
 {
   parameter_vector_.resize(p_names.size());
   is_distributed_parameter_.resize(p_names.size(),false);
-  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0; 
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0;
        p < p_names.size(); ++p) {
-    
-    // register all the scalar parameters, setting initial 
+
+    // register all the scalar parameters, setting initial
     for(int i=0;i<p_names[p]->size();i++)
       registerScalarParameter((*p_names[p])[i],*parameter_library,(*p_values[p])[i]);
 
@@ -229,7 +229,7 @@ addDistributedParameter(const std::string name,
   ep_vec->PutScalar(0.0);
   p_init_.push_back(ep_vec);
 
-  Teuchos::RCP<Teuchos::Array<std::string> > tmp_names = 
+  Teuchos::RCP<Teuchos::Array<std::string> > tmp_names =
     Teuchos::rcp(new Teuchos::Array<std::string>);
   tmp_names->push_back(name);
   p_names_.push_back(tmp_names);
@@ -284,25 +284,25 @@ panzer::ModelEvaluator_Epetra::create_W() const
   return epetraOperatorFactory_->create();
 }
 
-Teuchos::RCP<const Epetra_Map> 
+Teuchos::RCP<const Epetra_Map>
 panzer::ModelEvaluator_Epetra::get_p_map(int l) const
 {
   return p_map_[l];
 }
 
-Teuchos::RCP<const Teuchos::Array<std::string> > 
+Teuchos::RCP<const Teuchos::Array<std::string> >
 panzer::ModelEvaluator_Epetra::get_p_names(int l) const
 {
   return p_names_[l];
 }
 
-Teuchos::RCP<const Epetra_Vector> 
+Teuchos::RCP<const Epetra_Vector>
 panzer::ModelEvaluator_Epetra::get_p_init(int l) const
 {
   return p_init_[l];
 }
 
-Teuchos::RCP<const Epetra_Map> 
+Teuchos::RCP<const Epetra_Map>
 panzer::ModelEvaluator_Epetra::get_g_map(int l) const
 {
   return g_map_[l];
@@ -356,8 +356,8 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
     if(respJacBase!=Teuchos::null) {
       // cast is guranteed to succeed because of check in addResponse
       Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
- 
-      // class must supoprt a derivative 
+
+      // class must supoprt a derivative
       if(resp->supportsDerivative())
         outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
         //outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
@@ -381,7 +381,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
   if(Teuchos::is_null(ghostedContainer_)) {
      ghostedContainer_ = lof_->buildGhostedLinearObjContainer();
      lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
-                                      panzer::LinearObjContainer::F,*ghostedContainer_); 
+                                      panzer::LinearObjContainer::F,*ghostedContainer_);
   }
 
   panzer::AssemblyEngineInArgs ae_inargs;
@@ -392,10 +392,10 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
   ae_inargs.evaluate_transient_terms = false;
 
   // this is the tempory target
-  lof_->initializeContainer(panzer::LinearObjContainer::F,*ae_inargs.container_); 
+  lof_->initializeContainer(panzer::LinearObjContainer::F,*ae_inargs.container_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
-  const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
+  const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_,true);
 
   TEUCHOS_ASSERT(!Teuchos::is_null(thGlobalContainer));
@@ -403,7 +403,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient than
   // zeroing out all objects in the container here.
-  const RCP<panzer::ThyraObjContainer<double> > thGhostedContainer = 
+  const RCP<panzer::ThyraObjContainer<double> > thGhostedContainer =
     Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.ghostedContainer_,true);
   TEUCHOS_ASSERT(!Teuchos::is_null(thGhostedContainer));
   Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
@@ -425,29 +425,29 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
 
   // stuff the evaluate boundary conditions into the f spot of the counter ... the x is already filled
   Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(counter)->set_f_th(thGlobalContainer->get_f_th());
-  
+
   // stuff the vector that needs applied dirichlet conditions in the the f spot of the result LOC
   Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(result)->set_f_th(f);
-  
+
   // use the linear object factory to apply the result
   lof_->applyDirichletBCs(*counter,*result);
 }
 
-void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs, 
+void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs,
                                                const OutArgs& outArgs ) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  evalModel_basic(inArgs,outArgs); 
+  evalModel_basic(inArgs,outArgs);
 }
 
-void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs, 
+void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
                                                       const OutArgs& outArgs ) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  
+
   // Transient or steady-state evaluation is determined by the x_dot
   // vector.  If this RCP is null, then we are doing a steady-state
   // fill.
@@ -468,7 +468,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   bool requiredSensitivities = required_basic_dfdp(outArgs);
 
   // see if the user wants us to do anything
-  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && 
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) &&
      !requiredResponses && !requiredSensitivities) {
      return;
   }
@@ -482,7 +482,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
      lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
                                       panzer::LinearObjContainer::DxDt |
                                       panzer::LinearObjContainer::F |
-                                      panzer::LinearObjContainer::Mat, *ghostedContainer_); 
+                                      panzer::LinearObjContainer::Mat, *ghostedContainer_);
   }
 
   //
@@ -516,7 +516,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
     oneTimeDirichletBeta_on_ = false;
   }
-  
+
   // Set locally replicated scalar input parameters
   for (int i=0; i<inArgs.Np(); i++) {
     Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
@@ -534,7 +534,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   }
 
   // Perform global to ghost and set distributed parameters
-  for (std::vector<std::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i = 
+  for (std::vector<std::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i =
          distributed_parameter_container_.begin(); i != distributed_parameter_container_.end(); ++i) {
     // do export if parameter exists in inArgs
     Teuchos::RCP<const Epetra_Vector> global_vec = inArgs.get_p(std::get<1>(*i));
@@ -546,14 +546,14 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     }
 
     // set in ae_inargs_ string lookup container
-    Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
+    Teuchos::RCP<panzer::EpetraLinearObjContainer> container =
       Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[std::get<1>(*i)],p_map_[std::get<1>(*i)]));
     container->set_x(std::get<3>(*i));
     ae_inargs.addGlobalEvaluationData(std::get<0>(*i),container);
   }
 
   // here we are building a container, this operation is fast, simply allocating a struct
-  const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
+  const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer =
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_);
 
   TEUCHOS_ASSERT(!Teuchos::is_null(epGlobalContainer));
@@ -561,9 +561,9 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient thatn
   // zeroing out all objects in the container here.
-  const RCP<panzer::EpetraLinearObjContainer> epGhostedContainer = 
+  const RCP<panzer::EpetraLinearObjContainer> epGhostedContainer =
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.ghostedContainer_);
-  
+
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.
   // A very subtle (and fragile) point: A non-null pointer in global
@@ -609,7 +609,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     // this dummy nonsense is needed only for scattering dirichlet conditions
     if (Teuchos::is_null(dummy_f_))
       dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-    epGlobalContainer->set_f(dummy_f_); 
+    epGlobalContainer->set_f(dummy_f_);
     epGlobalContainer->set_A(Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out));
 
     // Zero values in ghosted container objects
@@ -626,14 +626,14 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   if(requiredResponses) {
      evalModel_basic_g(ae_inargs,inArgs,outArgs);
 
-     // evaluate response derivatives 
+     // evaluate response derivatives
      if(required_basic_dgdx(outArgs))
        evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
   }
 
   if(required_basic_dfdp(outArgs))
      evalModel_basic_dfdp(ae_inargs,inArgs,outArgs);
-  
+
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
@@ -648,7 +648,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   ae_inargs.ghostedContainer_ = Teuchos::null;
 }
 
-void 
+void
 panzer::ModelEvaluator_Epetra::
 evalModel_basic_g(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
@@ -659,7 +659,7 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, co
       Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
       if(vec!=Teuchos::null) {
         std::string responseName = g_names_[i];
-        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp
             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(responseLibrary_->getResponse<panzer::Traits::Residual>(responseName));
         resp->setVector(vec);
       }
@@ -670,7 +670,7 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, co
    responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
 }
 
-void 
+void
 panzer::ModelEvaluator_Epetra::
 evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
@@ -687,7 +687,7 @@ evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */,
 
       if(vec!=Teuchos::null) {
         std::string responseName = g_names_[i];
-        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp 
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp
             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
         resp->setDerivative(vec);
       }
@@ -698,7 +698,7 @@ evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */,
    responseLibrary_->evaluate<panzer::Traits::Jacobian>(ae_inargs);
 }
 
-void 
+void
 panzer::ModelEvaluator_Epetra::
 evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
@@ -732,7 +732,7 @@ evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */,
 
        // stuff target vector into global container
        RCP<Epetra_Vector> vec = Teuchos::rcpFromRef(*(*mVec)(j));
-       RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
+       RCP<panzer::ThyraObjContainer<double> > thGlobalContainer =
          Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(globalContainer);
        thGlobalContainer->set_f_th(Thyra::create_Vector(vec,glblVS));
 
@@ -785,8 +785,8 @@ bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) co
 {
    // determine if any of the outArgs are not null!
    bool activeGArgs = false;
-   for(int i=0;i<outArgs.Ng();i++) 
-      activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
+   for(int i=0;i<outArgs.Ng();i++)
+      activeGArgs |= (outArgs.get_g(i)!=Teuchos::null);
 
    return activeGArgs | required_basic_dgdx(outArgs);
 }
@@ -908,7 +908,7 @@ copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::Vecto
 }
 
 
-Teuchos::RCP<panzer::ModelEvaluator_Epetra> 
+Teuchos::RCP<panzer::ModelEvaluator_Epetra>
 panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
                       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
@@ -924,11 +924,11 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
    std::stringstream ss;
    ss << "panzer::buildEpetraME: Linear object factory is incorrect type. Should be one of: ";
 
-   RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof 
+   RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof
        = rcp_dynamic_cast<BlockedEpetraLinearObjFactory<panzer::Traits,int> >(lof);
 
    // if you can, build from an epetra linear object factory
-   if(ep_lof!=Teuchos::null) 
+   if(ep_lof!=Teuchos::null)
      return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,p_values,global_data,build_transient_support));
 
    ss << "\"BlockedEpetraLinearObjFactory\", ";

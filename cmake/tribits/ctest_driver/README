@@ -46,23 +46,23 @@ s903186):
 
   # Initially:
   #
-  TRIBITS_DRIVER_SETUP()
+  tribits_driver_setup()
 
   # Make one of these calls for each script
   #
-  TRIBITS_DRIVER_ADD_DASHBOARD(
+  tribits_driver_add_dashboard(
     MPI_OPT
     ctest_mac_nightly_mpi_opt_s903186.cmake
   )
 
-  TRIBITS_DRIVER_ADD_DASHBOARD(
+  tribits_driver_add_dashboard(
     SERIAL_DEBUG
     ctest_mac_nightly_serial_debug_s903186.cmake
   )
 
   # Finally:
   #
-  TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS()
+  tribits_add_required_cmake_installs()
 
 The first argument to TRIBITS_DRIVER_ADD_DASHBOARD calls is the test
 name as it will appear on the <Project>Driver dashboard. The second

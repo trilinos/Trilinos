@@ -1,8 +1,12 @@
-
+#include <iostream>
+#include <cassert>
+#include <limits>
 #include "stk_util/parallel/MPICommKey.hpp"
 #include "ParallelComm.hpp"
 
 namespace stk {
+
+namespace impl {
 
 bool CommCompare::operator()(MPI_Comm comm1, MPI_Comm comm2)
 {
@@ -18,21 +22,21 @@ bool CommCompare::operator()(MPI_Comm comm1, MPI_Comm comm2) const
     return std::less<MPIKeyManager::CommKey>{}(key1, key2);
 }
 
-namespace Impl {
+namespace impl {
 
-int delete_mpi_comm_key(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state)
+int delete_mpi_comm_key(MPI_Comm comm, int comm_keyval, void* attribute_val, void* extra_state)
 {
-  //auto comm_key_ptr          = reinterpret_cast<MPIKeyManager::CommKey*>(attribute_val);
   MPIKeyManager* key_manager = reinterpret_cast<MPIKeyManager*>(extra_state);
-  // the predefined comms sometimes (but not allways) get freed after the
-  // MPICommManager static variable, so we don't need to (and can't)
-  // unregister them
-  bool isSpecial = comm == MPI_COMM_WORLD ||
-                   comm == MPI_COMM_SELF  ||
-                   comm == MPI_COMM_NULL;
-  if (!isSpecial) {
-    key_manager->free_comm(comm);
-  }
+  key_manager->free_comm(comm);
+
+  return MPI_SUCCESS;
+}
+
+
+int destruct_mpi_key_manager(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state)
+{
+  MPIKeyManager* key_manager = reinterpret_cast<MPIKeyManager*>(extra_state);
+  key_manager->destructor();
 
   return MPI_SUCCESS;
 }
@@ -46,7 +50,33 @@ MPIKeyManager::MPIKeyManager()
   MPI_Initialized(&isInitialized);
   ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIKeyManager");
 
-  MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &Impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
+  MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
+
+  // The deleter function will be called when MPI_Finalize is invoked.  This
+  // is the recommended way to execute callbacks, see Section 8.7.1 of the
+  // MPI 3.1 Standard.
+  MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::destruct_mpi_key_manager, &m_destructorAttrKey, this);
+  MPI_Comm_set_attr(MPI_COMM_SELF, m_destructorAttrKey, nullptr);
+
+  int myRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  m_currentCommKey = myRank;
+}
+
+MPIKeyManager::~MPIKeyManager()
+{
+  int isMpiFinalized = false;
+  MPI_Finalized(&isMpiFinalized);
+  if (isMpiFinalized) {
+    assert(m_isFinalized);
+  }
+
+  if (!isMpiFinalized)
+  {
+    // call destructor() via the MPI callback, and also ensure destructor()
+    // doesn't get called again when MPI_Finalize is called
+    MPI_Comm_delete_attr(MPI_COMM_SELF, m_destructorAttrKey);
+  }
 }
 
 
@@ -59,7 +89,9 @@ MPIKeyManager::CommKey MPIKeyManager::get_key(MPI_Comm comm)
   if (!foundFlag) {
     commKey = generate_comm_key();
     MPI_Comm_set_attr(comm, m_mpiAttrKey, const_cast<CommKey*>(commKey));
+    m_comms[*commKey] = comm;
   }
+
 
   return *commKey;
 }
@@ -85,36 +117,62 @@ bool MPIKeyManager::has_key(MPI_Comm comm)
 }
 
 
-void MPIKeyManager::register_callback(MPI_Comm comm, Callback func)
+MPIKeyManager::CallerUID MPIKeyManager::get_UID()
 {
-  get_key(comm);
-  m_callbacks[comm].push_back(func);
+  return m_currUID++;
+}
+
+void MPIKeyManager::register_callback(MPI_Comm comm, CallerUID uid, Callback func)
+{
+  assert(uid < m_currUID);
+  auto key = get_key(comm);
+  m_callbacks[key][uid].push_back(func);
+}
+
+
+void MPIKeyManager::execute_callbacks_immediately(CallerUID uid)
+{
+  for (auto& commKeyMapPair : m_callbacks)
+  {
+    MPI_Comm comm            = m_comms[commKeyMapPair.first];
+    auto& uidCallbackVecMap  = commKeyMapPair.second;
+    if (uidCallbackVecMap.count(uid) == 0)
+      continue;
+
+    for (auto& callback : uidCallbackVecMap[uid])
+      callback(comm);
+
+    uidCallbackVecMap.erase(uid);
+  }
+}
+
+
+void MPIKeyManager::unregister_callbacks(CallerUID uid)
+{
+  for (auto& comm_map_pair : m_callbacks)
+  {
+    auto& uidCallbackVecMap = comm_map_pair.second;
+    if (uidCallbackVecMap.count(uid) > 0) {
+      uidCallbackVecMap.erase(uid);
+    }
+  }
+}
+
+
+MPIKeyManager::CommKey MPIKeyManager::get_next_comm_key()
+{
+  auto max_val = std::numeric_limits<CommKey>::max();
+  if (m_currentCommKey == max_val)
+    throw std::runtime_error(std::string("cannot have more than ") +
+            std::to_string(max_val) + " communicators in a program");
+
+  return m_currentCommKey++;
 }
 
 
 const MPIKeyManager::CommKey* MPIKeyManager::generate_comm_key()
 {
-  // find first unused key in range [0, int_max]
-  CommKey valPrev = -1, valFound = -1;
-  if (m_usedCommKeys.size() == 0) {
-    valFound = 0;
-  } else {
-    for (auto v : m_usedCommKeys)
-    {
-      if (v - valPrev > 1) {
-        valFound = valPrev + 1;
-        break;
-      }
-
-      valPrev = v;
-    }
-  }
-
-  if (valFound == -1) {
-    valFound = *(std::prev(m_usedCommKeys.end())) + 1;
-  }
-
-  ThrowRequireMsg(valFound >= 0, "generate_comm_key() failed or overflowed");
+  auto valFound = get_next_comm_key();
 
   auto p = m_usedCommKeys.insert(valFound);
   ThrowRequireMsg(p.second, "Error in generateCommKey()");
@@ -125,13 +183,34 @@ const MPIKeyManager::CommKey* MPIKeyManager::generate_comm_key()
 
 void MPIKeyManager::free_comm(MPI_Comm comm)
 {
-  ThrowRequireMsg(m_usedCommKeys.count(get_key(comm)) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
-  for ( auto& callback : m_callbacks[comm])
-    callback(comm);
+  const auto& this_ref = *this;
+  auto key = this_ref.get_key(comm);
+  ThrowRequireMsg(m_usedCommKeys.count(key) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
+  for (auto& uidCallbackVecPair : m_callbacks[key]) {
+    for (auto& callback : uidCallbackVecPair.second) {
+      callback(comm);
+    }
+  }
 
-  m_callbacks.erase(comm);
-  m_usedCommKeys.erase(get_key(comm));
-  
+  m_callbacks.erase(key);
+  m_usedCommKeys.erase(key);
+  m_comms.erase(key);
+}
+
+
+void MPIKeyManager::destructor()
+{
+  while (!m_comms.empty()) {
+    auto& p = *(m_comms.begin());
+    // delete the attribute to trigger callback to free_comm(), and
+    // also ensure the callback does *not* get called again when
+    // the comm is freed
+    MPI_Comm_delete_attr(p.second, m_mpiAttrKey);
+  }
+
+  m_isFinalized = true;
+}
+
 }
 
 }

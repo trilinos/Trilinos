@@ -195,93 +195,49 @@ struct spmv_mv_bsrmatrix_tpl_spec_avail {
 
 // These versions of cuSPARSE require the ordinal and offset types to be the
 // same. For KokkosKernels, this means int/int only.
-
-#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(                \
-    SCALAR, ORDINAL, OFFSET, XL, YL, MEMSPACE)                                 \
-  template <>                                                                  \
-  struct spmv_mv_bsrmatrix_tpl_spec_avail<                                     \
-      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,     \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR*,    \
-      XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
-      YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true> {                         \
-    enum : bool { value = true };                                              \
+// cuSparse level 3 does not currently support LayoutRight
+#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(              \
+    SCALAR, ORDINAL, OFFSET, LAYOUT, MEMSPACE)                               \
+  template <>                                                                \
+  struct spmv_mv_bsrmatrix_tpl_spec_avail<                                   \
+      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR**, \
+      LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,        \
+      SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,              \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, false> {                      \
+    enum : bool { value = true };                                            \
   };
 
 #if (9000 <= CUDA_VERSION)
 
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(float, int, int,
                                                        Kokkos::LayoutLeft,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(double, int, int,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::LayoutLeft,
                                                        Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(float, int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(double, int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(float, int, int,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::LayoutLeft,
                                                        Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(double, int, int,
                                                        Kokkos::LayoutLeft,
-                                                       Kokkos::LayoutLeft,
-                                                       Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(float, int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(double, int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
                                                        Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>,
                                                        int, int,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::LayoutLeft,
                                                        Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
                                                        int, int,
                                                        Kokkos::LayoutLeft,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::CudaSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>,
                                                        int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
-                                                       int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>,
-                                                       int, int,
-                                                       Kokkos::LayoutLeft,
                                                        Kokkos::LayoutLeft,
                                                        Kokkos::CudaUVMSpace)
 KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
                                                        int, int,
                                                        Kokkos::LayoutLeft,
-                                                       Kokkos::LayoutLeft,
-                                                       Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>,
-                                                       int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::CudaUVMSpace)
-KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
-                                                       int, int,
-                                                       Kokkos::LayoutRight,
-                                                       Kokkos::LayoutRight,
                                                        Kokkos::CudaUVMSpace)
 
 #endif  // CUDA/CUSPARSE >= 9.0?

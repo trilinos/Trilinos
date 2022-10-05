@@ -79,8 +79,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "user_app_EquationSetFactory.hpp"
 
 #include <cstdio> // for get char

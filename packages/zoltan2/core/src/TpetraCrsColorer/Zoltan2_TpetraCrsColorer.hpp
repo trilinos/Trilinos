@@ -217,10 +217,7 @@ TpetraCrsColorer<CrsMatrixType>::computeColoring(
                        num_colors, list_of_colors_host, list_of_colors);
   }
   else {
-    // Use Zoltan2's coloring when it is ready
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-            "Zoltan2CrsColorer not yet ready; use parameter library = zoltan");
-
+    // Use Zoltan2's coloring
     Zoltan2CrsColorer<matrix_t> zz2(matrix);
     zz2.computeColoring(coloring_params,
                         num_colors, list_of_colors_host, list_of_colors);
@@ -262,10 +259,10 @@ TpetraCrsColorer<CrsMatrixType>::computeSeedMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::computeSeedMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) { 
-        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); },
-        "TpetraCrsColorer::computeSeedMatrixFitted()");
+        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); });
 
 }
 
@@ -327,6 +324,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::reconstructMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
       KOKKOS_LAMBDA(const size_t row) {
         const size_t entry_begin = local_graph.row_map(row);
@@ -336,8 +334,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
           const size_t col           = local_graph.entries(entry);
           local_matrix.values(entry) = W_view_dev(row,my_list_of_colors[col]-1);
         }
-      },
-      "TpetraCrsColorer::reconstructMatrixFitted()");
+      });
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -351,6 +348,29 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::TpetraCrsColorer(
     , list_of_colors_host()
     , num_colors(0)
 {
+}
+
+//////////////////////////////////////////////////////////////////////////////
+template <typename SC, typename LO, typename GO, typename NO>
+void
+TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeColoring(
+  Teuchos::ParameterList &coloring_params
+)
+{
+  const std::string library = coloring_params.get("library", "zoltan");
+
+  if (library == "zoltan") {
+    // Use Zoltan's coloring
+    ZoltanCrsColorer<matrix_t> zz(matrix);
+    zz.computeColoring(coloring_params, 
+                       num_colors, list_of_colors_host, list_of_colors);
+  }
+  else {
+    // Use Zoltan2's coloring
+    Zoltan2CrsColorer<matrix_t> zz2(matrix);
+    zz2.computeColoring(coloring_params,
+                        num_colors, list_of_colors_host, list_of_colors);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -400,20 +420,18 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
 
   const lno_t block_size = blockV.getBlockSize();
   auto V = blockV.getMultiVectorView();
-
-  V.sync_device();
-  auto V_view_dev = V.getLocalViewDevice();
+  auto V_view_dev = V.getLocalViewDevice(Tpetra::Access::ReadWrite);
   const size_t num_local_cols = V_view_dev.extent(0) / block_size;
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::computeSeedMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) {
         for (lno_t j = 0; j < block_size; ++j)
           V_view_dev(i*block_size+j, (my_list_of_colors[i]-1)*block_size+j) = 
                                      scalar_t(1.0);
-      },
-      "TpetraCrsColorer::computeSeedMatrixFitted()");
+      });
 
 }
 
@@ -483,13 +501,14 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
   const lno_t block_row_stride = block_size;
 
   auto W = block_W.getMultiVectorView();
-  auto W_view_dev                       = W.getLocalViewDevice();
-  auto matrix_vals                      = matrix->getValuesDevice();
-  auto local_graph                      = graph->getLocalGraph();
+  auto W_view_dev                       = W.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto matrix_vals                      = mat.getValuesDeviceNonConst();
+  auto local_graph                      = graph->getLocalGraphDevice();
   const size_t num_local_rows           = graph->getLocalNumRows();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
+      "TpetraCrsColorer::reconstructMatrix()",
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
       KOKKOS_LAMBDA(const size_t block_row) {
         const size_t entry_begin = local_graph.row_map(block_row);
@@ -510,7 +529,6 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
             }
           }
         }
-      },
-      "TpetraCrsColorer::reconstructMatrix()");
+      });
 }
 } // namespace Tpetra

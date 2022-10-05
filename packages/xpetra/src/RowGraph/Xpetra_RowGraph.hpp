@@ -157,27 +157,6 @@ namespace Xpetra {
     //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
     virtual void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, size_t &NumIndices) const = 0;
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumCols() const {
-      return getLocalNumCols();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
-
 
     //@}
 

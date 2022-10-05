@@ -63,8 +63,6 @@ using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::EntityRank;
 using stk::mesh::MeshBuilder;
-using std::cout;
-using std::endl;
 
 namespace {
 
@@ -83,6 +81,12 @@ TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
 
   EXPECT_NO_THROW(uncommitted_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
   uncommitted_metadata.commit();
+}
+
+TEST(UnitTestMetaData, declare_ranked_part_without_spatial_dim)
+{
+  MetaData meta;
+  EXPECT_ANY_THROW(meta.declare_part("myPart",stk::topology::NODE_RANK));
 }
 
 TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)
@@ -158,11 +162,10 @@ TEST( UnitTestMetaData, rankHigherThanDefined )
                         );
 }
 
-TEST( UnitTestMetaData, testEntityRepository )
+TEST( UnitTestMetaData, testEntityKeyMapping )
 {
   static const size_t spatial_dimension = 3;
 
-  //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( spatial_dimension );
   meta.use_simple_fields();
   stk::mesh::Part & part = meta.declare_part("another part");

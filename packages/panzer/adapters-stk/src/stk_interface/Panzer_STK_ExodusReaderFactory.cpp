@@ -75,7 +75,7 @@ int getMeshDimension(const std::string & meshStr,
   meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
   meshData.add_mesh_database(meshStr, fileTypeToIOSSType(typeStr), stk::io::READ_MESH);
   meshData.create_input_mesh();
-  return Teuchos::as<int>(meshData.meta_data_rcp()->spatial_dimension());
+  return Teuchos::as<int>(meshData.meta_data_ptr()->spatial_dimension());
 }
 
 std::string fileTypeToIOSSType(const std::string & fileType)
@@ -158,12 +158,12 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    meshData->add_mesh_database(fileName_, fileTypeToIOSSType(fileType_), stk::io::READ_MESH);
 
    meshData->create_input_mesh();
-   RCP<stk::mesh::MetaData> metaData = meshData->meta_data_rcp();
+   RCP<stk::mesh::MetaData> metaData = Teuchos::rcp(meshData->meta_data_ptr());
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface(metaData));
    mesh->initializeFromMetaData();
    mesh->instantiateBulkData(parallelMach);
-   meshData->set_bulk_data(mesh->getBulkData());
+   meshData->set_bulk_data(Teuchos::get_shared_ptr(mesh->getBulkData()));
 
    // read in other transient fields, these will be useful later when
    // trying to read other fields for use in solve
@@ -188,6 +188,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    buildMetaData(parallelMach, *mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
+   mesh->setBoundingBoxSearchFlag(useBBoxSearch_);
 
    return mesh;
 }
@@ -372,7 +373,7 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    }
 
    // read in periodic boundary conditions
-   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
+   parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_,useBBoxSearch_);
 
    keepPerceptData_ = paramList->get<bool>("Keep Percept Data");
 

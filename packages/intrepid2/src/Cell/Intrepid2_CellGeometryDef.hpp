@@ -513,9 +513,19 @@ namespace Intrepid2
   cellToNodes_(cellToNodes),
   nodes_(nodes)
   {
-    numCells_ = cellToNodes.extent_int(0);
-    numNodesPerCell_ = cellToNodes.extent_int(1);
-    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numNodesPerCell_ != cellTopo.getNodeCount(), std::invalid_argument, "cellToNodes.extent(1) does not match the cell topology node count");
+    if(cellToNodes.is_allocated())
+    {
+      numCells_ = cellToNodes.extent_int(0);
+      numNodesPerCell_ = cellToNodes.extent_int(1);
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numNodesPerCell_ != cellTopo.getNodeCount(), std::invalid_argument, "cellToNodes.extent(1) does not match the cell topology node count");
+    }
+    else
+    {
+      numCells_ = nodes.extent_int(0);
+      numNodesPerCell_ = nodes.extent_int(1);
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numNodesPerCell_ != cellTopo.getNodeCount(), std::invalid_argument, "nodes.extent(1) does not match the cell topology node count");
+    }
+    
   
     if (!claimAffine)
     {

@@ -737,7 +737,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         // was.
         const ArrayView<const ScalarMag> achievedTol =
           generalSolveCriteriaBelosStatusTest->achievedTol();
-        solveStatus.achievedTol = ST::zero();
+        solveStatus.achievedTol = Teuchos::ScalarTraits<ScalarMag>::zero();
         for (Ordinal i = 0; i < achievedTol.size(); ++i) {
           solveStatus.achievedTol = std::max(solveStatus.achievedTol, achievedTol[i]);
         }

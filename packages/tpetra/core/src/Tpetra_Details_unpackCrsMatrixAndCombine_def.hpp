@@ -345,9 +345,11 @@ struct UnpackCrsMatrixAndCombineFunctor {
     }
 
     constexpr bool matrix_has_sorted_rows = true; // see #6282
+    //Note BMK 6-22: this lambda must use capture-by-value [=] and not capture-by-ref [&].
+    //By ref triggers compiler bug in CUDA 10.
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-      KOKKOS_LAMBDA(const LO& j)
+      [=](const LO& j)
       {
         size_t distance = 0;
 
@@ -470,8 +472,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   join (const MaxNumEntTag,
-        volatile value_type& dst,
-        const volatile value_type& src) const
+        value_type& dst,
+        const value_type& src) const
   {
     if (dst < src) dst = src;
   }

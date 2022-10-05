@@ -111,9 +111,8 @@ public:
   template <typename T>
   stk::mesh::Field<T> & create_multistate_field(stk::topology::rank_t rank, const std::string & name, unsigned numStates)
   {
-    T initialValue = 0;
     stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
-    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initialValue);
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
     return field;
   }
 

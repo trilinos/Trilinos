@@ -61,9 +61,9 @@ public:
       stk::mesh::Field<double> &criteria2 = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "criteria2");
       stk::mesh::Field<double> &procId = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "proc_id");
 
-      stk::mesh::put_field_on_mesh(criteria1, get_meta().universal_part(), static_cast<double*>(nullptr));
-      stk::mesh::put_field_on_mesh(criteria2, get_meta().universal_part(), static_cast<double*>(nullptr));
-      stk::mesh::put_field_on_mesh(procId, get_meta().universal_part(),    static_cast<double*>(nullptr));
+      stk::mesh::put_field_on_mesh(criteria1, get_meta().universal_part(), nullptr);
+      stk::mesh::put_field_on_mesh(criteria2, get_meta().universal_part(), nullptr);
+      stk::mesh::put_field_on_mesh(procId, get_meta().universal_part(),    nullptr);
 
       stk::io::fill_mesh("generated:4x4x4", get_bulk());
 

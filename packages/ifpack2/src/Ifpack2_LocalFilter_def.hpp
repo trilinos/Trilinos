@@ -64,13 +64,23 @@ mapPairsAreFitted (const row_matrix_type& A)
 {
   const map_type& rangeMap = * (A.getRangeMap ());
   const map_type& rowMap = * (A.getRowMap ());
-  const bool rangeAndRowFitted = mapPairIsFitted (rangeMap, rowMap);
+  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
 
   const map_type& domainMap = * (A.getDomainMap ());
   const map_type& columnMap = * (A.getColMap ());
-  const bool domainAndColumnFitted = mapPairIsFitted (domainMap, columnMap);
+  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
 
-  return rangeAndRowFitted && domainAndColumnFitted;
+  //Note BMK 6-22: Map::isLocallyFitted is a local-only operation, not a collective.
+  //This means that it can return different values on different ranks. This can cause MPI to hang,
+  //even though it's supposed to terminate globally when any single rank does.
+  //
+  //This function doesn't need to be fast since it's debug-only code.
+  int localSuccess = rangeAndRowFitted && domainAndColumnFitted;
+  int globalSuccess;
+
+  Teuchos::reduceAll<int, int> (*(A.getComm()), Teuchos::REDUCE_MIN, localSuccess, Teuchos::outArg (globalSuccess));
+
+  return globalSuccess == 1;
 }
 
 
@@ -95,13 +105,15 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   using Teuchos::rcp;
 
 #ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! mapPairsAreFitted (*A), std::invalid_argument, "Ifpack2::LocalFilter: "
+  if(! mapPairsAreFitted (*A))
+  {
+    std::cout << "WARNING: Ifpack2::LocalFilter:\n" <<
     "A's Map pairs are not fitted to each other on Process "
     << A_->getRowMap ()->getComm ()->getRank () << " of the input matrix's "
-    "communicator.  "
-    "This means that LocalFilter does not currently know how to work with A.  "
-    "This will change soon.  Please see discussion of Bug 5992.");
+    "communicator.\n"
+    "This means that LocalFilter may not work with A.  "
+    "Please see discussion of Bug 5992.";
+  }
 #endif // HAVE_IFPACK2_DEBUG
 
   // Build the local communicator (containing this process only).
@@ -469,20 +481,6 @@ LocalFilter<MatrixType>::
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                  const Teuchos::ArrayView<scalar_type>& Values,
-                  size_t& numEntries) const {
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
-}
-#endif
 
 template<class MatrixType>
 void
@@ -589,22 +587,6 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getLocalRowCopy (local_ordinal_type globalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-             size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(globalRow,ind_in,val_in,NumEntries);  
-}
-#endif
-
 
 template<class MatrixType>
 void
@@ -617,18 +599,6 @@ getGlobalRowView (global_ordinal_type /*GlobalRow*/,
     "Ifpack2::LocalFilter does not implement getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type /* GlobalRow */,
-                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
-                  Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getGlobalRowView.");
-}
-#endif
 
 template<class MatrixType>
 void
@@ -640,20 +610,6 @@ getLocalRowView (local_ordinal_type /*LocalRow*/,
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getLocalRowView.");
 }
-
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getLocalRowView (local_ordinal_type /* LocalRow */,
-                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
-                 Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getLocalRowView.");
-}
-#endif
 
 
 template<class MatrixType>
@@ -889,13 +845,8 @@ typename
 LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   typedef Kokkos::Details::ArithTraits<scalar_type> STS;
   typedef Kokkos::Details::ArithTraits<mag_type> STM;
-#else
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
-#endif
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getLocalMaxNumRowEntries ();

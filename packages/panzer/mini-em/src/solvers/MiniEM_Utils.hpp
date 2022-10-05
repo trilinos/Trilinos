@@ -34,5 +34,7 @@ namespace mini_em {
 
   Teuchos::RCP<const Epetra_CrsMatrix> get_Epetra_CrsMatrix(const Thyra::DiagonalLinearOpBase<double> & op, const Epetra_Comm& comm);
 
+  Teko::LinearOp getIdentityMatrix(const Teko::LinearOp& op, double scaling);
+
 }
 #endif

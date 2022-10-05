@@ -64,47 +64,29 @@ namespace Intrepid2 {
 
   namespace FunctorCellTools {
 
-    /** \brief  Computes cell barycenter
+    /** \brief  Computes barycenter of polygonal cells
          \param  center            [out] - cell barycenter
          \param  verts             [in]  - cell vertices
     */
     template<typename centerViewType, typename vertViewType>
     KOKKOS_INLINE_FUNCTION
-    void getBaryCenter(       centerViewType center,
-                        const vertViewType verts) {
+    void getBarycenterPolygon2D(       centerViewType center,
+                                 const vertViewType verts) {
       // the enumeration already assumes the ordering of vertices (circling around the polygon)
       const ordinal_type nvert = verts.extent(0);
-      const ordinal_type dim   = verts.extent(1);
-      
-      switch (dim) {
-      case 2: {
-        center(0) = 0;
-        center(1) = 0;
-        typename centerViewType::value_type area = 0;
-        for (ordinal_type i=0;i<nvert;++i) {
-          const ordinal_type j = (i + 1)%nvert;
-          const auto scale = verts(i,0)*verts(j,1) - verts(j,0)*verts(i,1);
-          center(0) += (verts(i,0) + verts(j,0))*scale;
-          center(1) += (verts(i,1) + verts(j,1))*scale;
-          area += 0.5*scale;
-        }
-        center(0) /= (6.0*area);
-        center(1) /= (6.0*area);
-        break;
+
+      center(0) = 0;
+      center(1) = 0;
+      typename centerViewType::value_type area = 0;
+      for (ordinal_type i=0;i<nvert;++i) {
+        const ordinal_type j = (i + 1)%nvert;
+        const auto scale = verts(i,0)*verts(j,1) - verts(j,0)*verts(i,1);
+        center(0) += (verts(i,0) + verts(j,0))*scale;
+        center(1) += (verts(i,1) + verts(j,1))*scale;
+        area += 0.5*scale;
       }
-      case 3: {
-        // This method works fine for simplices, but for other 3-d shapes
-        // is not precisely accurate. Could replace with approximate integration
-        // perhaps.
-        for (ordinal_type j=0;j<dim;++j) {
-          center(j) = 0;
-          for (ordinal_type i=0;i<nvert;++i) 
-            center(j) += verts(i,j);
-          center(j) /= nvert;
-        }
-        break;
-      }
-      }
+      center(0) /= (6.0*area);
+      center(1) /= (6.0*area);
     }
     
     template<typename midPointViewType, typename nodeMapViewType, typename vertViewType>
@@ -162,7 +144,7 @@ namespace Intrepid2 {
         Kokkos::View<value_type*,Kokkos::AnonymousSpace> center(buf_center, 2);
         Kokkos::View<value_type**,Kokkos::AnonymousSpace> midpts(buf_midpts, 4, 2);
 
-        getBaryCenter(center, verts);
+        getBarycenterPolygon2D(center, verts);
         getMidPoints(midpts, _edgeMap, verts);
 
         for (ordinal_type i=0;i<nvert;++i) {
@@ -200,7 +182,7 @@ namespace Intrepid2 {
         // vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        // const ordinal_type nvert = verts.extent(0);
+        const ordinal_type nvert = verts.extent(0);
         const ordinal_type dim   = verts.extent(1);
 
         // control volume coords (N,P,D), here N corresponds to cell vertices
@@ -214,7 +196,15 @@ namespace Intrepid2 {
         Kokkos::View<value_type**,Kokkos::AnonymousSpace> edge_midpts(buf_edge_midpts, 12, 3);
         Kokkos::View<value_type**,Kokkos::AnonymousSpace> face_midpts(buf_face_midpts,  6, 3);
 
-        getBaryCenter(center, verts);
+        // find barycenter
+        //Warning! I think this assumes the Hexa is affinely mapped from the reference Hexa
+        for (ordinal_type j=0;j<3;++j) {
+          center(j) = 0;
+          for (ordinal_type i=0;i<nvert;++i) 
+            center(j) += verts(i,j);
+          center(j) /= nvert;
+        }
+
         getMidPoints(edge_midpts, _edgeMap, verts);
         getMidPoints(face_midpts, _faceMap, verts);
 
@@ -290,7 +280,7 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        //const ordinal_type nvert = verts.extent(0);
+        const ordinal_type nvert = verts.extent(0);
         const ordinal_type dim   = verts.extent(1);
 
         //  control volume coords (N,P,D), here N corresponds to cell vertices
@@ -304,7 +294,14 @@ namespace Intrepid2 {
         Kokkos::View<value_type**,Kokkos::AnonymousSpace> edge_midpts(buf_edge_midpts,  6, 3);
         Kokkos::View<value_type**,Kokkos::AnonymousSpace> face_midpts(buf_face_midpts,  4, 3);
 
-        getBaryCenter(center, verts);
+        // find barycenter
+        for (ordinal_type j=0;j<3;++j) {
+          center(j) = 0;
+          for (ordinal_type i=0;i<nvert;++i) 
+            center(j) += verts(i,j);
+          center(j) /= nvert;
+        }
+        
         getMidPoints(edge_midpts, _edgeMap, verts);
         getMidPoints(face_midpts, _faceMap, verts);
 

@@ -42,29 +42,49 @@ class UnitTestDiagnostics : public ::testing::Test {};
 class UnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
 class UnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diag"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diag"; }
 };
 
 class UnsignedWithPercentDiagnosticTester : public stk::balance::UnsignedWithPercentDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
 class DoubleWithPercentDiagnosticTester : public stk::balance::DoubleWithPercentDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
+};
+
+class MultiUnsignedDiagnosticTester : public stk::balance::MultiUnsignedDiagnostic
+{
+public:
+  MultiUnsignedDiagnosticTester(unsigned numColumns)
+    : MultiUnsignedDiagnostic(numColumns)
+  {}
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned column) override { return "Diagnostic " + std::to_string(column + 1); }
+};
+
+class MultiUnsignedWithPercentDiagnosticTester : public stk::balance::MultiUnsignedWithPercentDiagnostic
+{
+public:
+  MultiUnsignedWithPercentDiagnosticTester(unsigned numColumns)
+    : MultiUnsignedWithPercentDiagnostic(numColumns)
+  {}
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned column) override { return "Diagnostic " + std::to_string(column + 1); }
 };
 
 
@@ -93,14 +113,15 @@ TEST_F(UnitTestDiagnostics, oneRealRank_oneLogicalRank)
   diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
   diagTester.process_data(MPI_COMM_WORLD);
 
-  EXPECT_EQ(diagTester.print_header1(), "Test");
-  EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+  const unsigned column = 0;
+  EXPECT_EQ(diagTester.print_header1(column), "Test");
+  EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-  EXPECT_EQ(diagTester.print_rank_value(0), "123");
+  EXPECT_EQ(diagTester.print_rank_value(column, 0), "123");
 
-  EXPECT_EQ(diagTester.print_min(), "123");
-  EXPECT_EQ(diagTester.print_max(), "123");
-  EXPECT_EQ(diagTester.print_avg(), "123");
+  EXPECT_EQ(diagTester.print_min(column), "123");
+  EXPECT_EQ(diagTester.print_max(column), "123");
+  EXPECT_EQ(diagTester.print_avg(column), "123");
 }
 
 TEST_F(UnitTestDiagnostics, oneRealRank_twoLogicalRanks)
@@ -116,15 +137,16 @@ TEST_F(UnitTestDiagnostics, oneRealRank_twoLogicalRanks)
   diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
   diagTester.process_data(MPI_COMM_WORLD);
 
-  EXPECT_EQ(diagTester.print_header1(), "Test");
-  EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+  const unsigned column = 0;
+  EXPECT_EQ(diagTester.print_header1(column), "Test");
+  EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-  EXPECT_EQ(diagTester.print_rank_value(0), "10");
-  EXPECT_EQ(diagTester.print_rank_value(1), "20");
+  EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
+  EXPECT_EQ(diagTester.print_rank_value(column, 1), "20");
 
-  EXPECT_EQ(diagTester.print_min(), "10");
-  EXPECT_EQ(diagTester.print_max(), "20");
-  EXPECT_EQ(diagTester.print_avg(), "15");
+  EXPECT_EQ(diagTester.print_min(column), "10");
+  EXPECT_EQ(diagTester.print_max(column), "20");
+  EXPECT_EQ(diagTester.print_avg(column), "15");
 }
 
 TEST_F(UnitTestDiagnostics, twoRealRanks_oneLogicalRank)
@@ -143,14 +165,15 @@ TEST_F(UnitTestDiagnostics, twoRealRanks_oneLogicalRank)
   diagTester.process_data(MPI_COMM_WORLD);
 
   if (parallelRank == 0) {
-    EXPECT_EQ(diagTester.print_header1(), "Test");
-    EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+    const unsigned column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-    EXPECT_EQ(diagTester.print_rank_value(0), "10");
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
 
-    EXPECT_EQ(diagTester.print_min(), "10");
-    EXPECT_EQ(diagTester.print_max(), "10");
-    EXPECT_EQ(diagTester.print_avg(), "10");
+    EXPECT_EQ(diagTester.print_min(column), "10");
+    EXPECT_EQ(diagTester.print_max(column), "10");
+    EXPECT_EQ(diagTester.print_avg(column), "10");
   }
 }
 
@@ -173,15 +196,16 @@ TEST_F(UnitTestDiagnostics, twoRealRanks_twoLogicalRanks)
   diagTester.process_data(MPI_COMM_WORLD);
 
   if (parallelRank == 0) {
-    EXPECT_EQ(diagTester.print_header1(), "Test");
-    EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+    const unsigned column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-    EXPECT_EQ(diagTester.print_rank_value(0), "10");
-    EXPECT_EQ(diagTester.print_rank_value(1), "20");
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "20");
 
-    EXPECT_EQ(diagTester.print_min(), "10");
-    EXPECT_EQ(diagTester.print_max(), "20");
-    EXPECT_EQ(diagTester.print_avg(), "15");
+    EXPECT_EQ(diagTester.print_min(column), "10");
+    EXPECT_EQ(diagTester.print_max(column), "20");
+    EXPECT_EQ(diagTester.print_avg(column), "15");
   }
 }
 
@@ -205,16 +229,17 @@ TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks)
   diagTester.process_data(MPI_COMM_WORLD);
 
   if (parallelRank == 0) {
-    EXPECT_EQ(diagTester.print_header1(), "Test");
-    EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+    const unsigned column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-    EXPECT_EQ(diagTester.print_rank_value(0), "10");
-    EXPECT_EQ(diagTester.print_rank_value(1), "15");
-    EXPECT_EQ(diagTester.print_rank_value(2), "20");
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "15");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "20");
 
-    EXPECT_EQ(diagTester.print_min(), "10");
-    EXPECT_EQ(diagTester.print_max(), "20");
-    EXPECT_EQ(diagTester.print_avg(), "15");
+    EXPECT_EQ(diagTester.print_min(column), "10");
+    EXPECT_EQ(diagTester.print_max(column), "20");
+    EXPECT_EQ(diagTester.print_avg(column), "15");
   }
 }
 
@@ -238,16 +263,17 @@ TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_unsignedWithPercent)
   diagTester.process_data(MPI_COMM_WORLD);
 
   if (parallelRank == 0) {
-    EXPECT_EQ(diagTester.print_header1(), "Test");
-    EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+    const unsigned column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-    EXPECT_EQ(diagTester.print_rank_value(0),  "10 ( -94.1%)");
-    EXPECT_EQ(diagTester.print_rank_value(1), "100 ( -41.2%)");
-    EXPECT_EQ(diagTester.print_rank_value(2), "400 (+135.3%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 0),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "100 ( -41.2%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "400 (+135.3%)");
 
-    EXPECT_EQ(diagTester.print_min(),  "10 ( -94.1%)");
-    EXPECT_EQ(diagTester.print_max(), "400 (+135.3%)");
-    EXPECT_EQ(diagTester.print_avg(), "170          ");
+    EXPECT_EQ(diagTester.print_min(column),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_max(column), "400 (+135.3%)");
+    EXPECT_EQ(diagTester.print_avg(column), "170          ");
   }
 }
 
@@ -271,16 +297,201 @@ TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_doubleWithPercent)
   diagTester.process_data(MPI_COMM_WORLD);
 
   if (parallelRank == 0) {
-    EXPECT_EQ(diagTester.print_header1(), "Test");
-    EXPECT_EQ(diagTester.print_header2(), "Diagnostic");
+    const unsigned column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic");
 
-    EXPECT_EQ(diagTester.print_rank_value(0), "-0.200 (-200.0%)");
-    EXPECT_EQ(diagTester.print_rank_value(1),  "0.600 (+200.0%)");
-    EXPECT_EQ(diagTester.print_rank_value(2),  "0.200 (  +0.0%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "-0.200 (-200.0%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1),  "0.600 (+200.0%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2),  "0.200 (  +0.0%)");
 
-    EXPECT_EQ(diagTester.print_min(), "-0.200 (-200.0%)");
-    EXPECT_EQ(diagTester.print_max(),  "0.600 (+200.0%)");
-    EXPECT_EQ(diagTester.print_avg(),  "0.200          ");
+    EXPECT_EQ(diagTester.print_min(column), "-0.200 (-200.0%)");
+    EXPECT_EQ(diagTester.print_max(column),  "0.600 (+200.0%)");
+    EXPECT_EQ(diagTester.print_avg(column),  "0.200          ");
+  }
+}
+
+TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_multiUnsigned_oneColumn)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 3;
+  const int numColumns = 1;
+
+  MultiUnsignedDiagnosticTester diagTester(numColumns);
+
+  const unsigned column = 0;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 1, 15);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 0, 10);
+    diagTester.store_value(column, 2, 20);
+  }
+
+  diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
+  diagTester.process_data(MPI_COMM_WORLD);
+
+  if (parallelRank == 0) {
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 1");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "15");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "20");
+
+    EXPECT_EQ(diagTester.print_min(column), "10");
+    EXPECT_EQ(diagTester.print_max(column), "20");
+    EXPECT_EQ(diagTester.print_avg(column), "15");
+  }
+}
+
+TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_multiUnsigned_twoColumns)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 3;
+  const int numColumns = 2;
+
+  MultiUnsignedDiagnosticTester diagTester(numColumns);
+
+  unsigned column = 0;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 1, 15);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 0, 10);
+    diagTester.store_value(column, 2, 20);
+  }
+
+  column = 1;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 1, 150);
+    diagTester.store_value(column, 2, 200);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 0, 100);
+  }
+
+  diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
+  diagTester.process_data(MPI_COMM_WORLD);
+
+  if (parallelRank == 0) {
+    column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 1");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "10");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "15");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "20");
+
+    EXPECT_EQ(diagTester.print_min(column), "10");
+    EXPECT_EQ(diagTester.print_max(column), "20");
+    EXPECT_EQ(diagTester.print_avg(column), "15");
+
+    column = 1;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 2");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0), "100");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "150");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "200");
+
+    EXPECT_EQ(diagTester.print_min(column), "100");
+    EXPECT_EQ(diagTester.print_max(column), "200");
+    EXPECT_EQ(diagTester.print_avg(column), "150");
+  }
+}
+
+TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_multiUnsignedWithPercent_oneColumn)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 3;
+  const int numColumns = 1;
+
+  MultiUnsignedWithPercentDiagnosticTester diagTester(numColumns);
+
+  const unsigned column = 0;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 0, 10);
+    diagTester.store_value(column, 2, 400);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 1, 100);
+  }
+
+  diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
+  diagTester.process_data(MPI_COMM_WORLD);
+
+  if (parallelRank == 0) {
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 1");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "100 ( -41.2%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "400 (+135.3%)");
+
+    EXPECT_EQ(diagTester.print_min(column),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_max(column), "400 (+135.3%)");
+    EXPECT_EQ(diagTester.print_avg(column), "170          ");
+  }
+}
+
+TEST_F(UnitTestDiagnostics, twoRealRanks_threeLogicalRanks_multiUnsignedWithPercent_twoColumns)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 3;
+  const int numColumns = 2;
+
+  MultiUnsignedWithPercentDiagnosticTester diagTester(numColumns);
+
+  unsigned column = 0;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 0, 10);
+    diagTester.store_value(column, 2, 400);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 1, 100);
+  }
+
+  column = 1;
+  if (parallelRank == 0) {
+    diagTester.store_value(column, 0, 100);
+    diagTester.store_value(column, 2, 4000);
+  }
+  if (parallelRank == 1) {
+    diagTester.store_value(column, 1, 1000);
+  }
+
+  diagTester.collect_data(MPI_COMM_WORLD, numLogicalRanks);
+  diagTester.process_data(MPI_COMM_WORLD);
+
+  if (parallelRank == 0) {
+    column = 0;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 1");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "100 ( -41.2%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "400 (+135.3%)");
+
+    EXPECT_EQ(diagTester.print_min(column),  "10 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_max(column), "400 (+135.3%)");
+    EXPECT_EQ(diagTester.print_avg(column), "170          ");
+
+    column = 1;
+    EXPECT_EQ(diagTester.print_header1(column), "Test");
+    EXPECT_EQ(diagTester.print_header2(column), "Diagnostic 2");
+
+    EXPECT_EQ(diagTester.print_rank_value(column, 0),  "100 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 1), "1000 ( -41.2%)");
+    EXPECT_EQ(diagTester.print_rank_value(column, 2), "4000 (+135.3%)");
+
+    EXPECT_EQ(diagTester.print_min(column),  "100 ( -94.1%)");
+    EXPECT_EQ(diagTester.print_max(column), "4000 (+135.3%)");
+    EXPECT_EQ(diagTester.print_avg(column), "1700          ");
   }
 }
 

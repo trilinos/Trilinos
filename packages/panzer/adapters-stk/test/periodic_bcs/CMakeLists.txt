@@ -1,4 +1,3 @@
-
 IF(PANZER_HAVE_EPETRA)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,6 +18,15 @@ IF(PANZER_HAVE_EPETRA)
     COMM serial mpi
     NUM_MPI_PROCS 2
     )
+
+  IF(PANZER_HAVE_STKSEARCH)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      periodic_search
+      SOURCES periodic_search.cpp ${UNIT_TEST_DRIVER}
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      )
+  ENDIF()
 
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   periodic_mesh_nosubcells

@@ -27,6 +27,7 @@ enum Surface_Type
   COMPOSITE_SURFACE,
   PLANE,
   RANDOM,
+  STRING_FUNCTION,
   FACETED_SURFACE,
   // Never, ever, ever add an entry after MAX_SURFACE_TYPE.  Never.
   MAX_SURFACE_TYPE

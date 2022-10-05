@@ -593,35 +593,6 @@ namespace Tpetra {
       << ", numBytes: " << firstBadNumBytes << ".");
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal
-  RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalRowViewRaw (const LocalOrdinal lclRow,
-                      LocalOrdinal& numEnt,
-                      const LocalOrdinal*& lclColInds,
-                      const Scalar*& vals) const
-  {
-    // This is just the default implementation.  Subclasses may want
-    // to implement this method in a more efficient way, e.g., to
-    // avoid creating Teuchos::ArrayView instances.
-    Teuchos::ArrayView<const LocalOrdinal> lclColInds_av;
-    Teuchos::ArrayView<const Scalar> vals_av;
-
-    this->getLocalRowView (lclRow, lclColInds_av, vals_av);
-    numEnt = static_cast<LocalOrdinal> (lclColInds_av.size ());
-    if (numEnt == 0) {
-      lclColInds = NULL;
-      vals = NULL;
-    }
-    else {
-      lclColInds = lclColInds_av.getRawPtr ();
-      vals = vals_av.getRawPtr ();
-    }
-
-    return static_cast<LocalOrdinal> (0);
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Tpetra
 

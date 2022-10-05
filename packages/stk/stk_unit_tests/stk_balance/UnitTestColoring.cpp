@@ -104,7 +104,6 @@ public:
 
 void declare_color_fields(stk::mesh::MetaData& meta)
 {
-  const int initValue = 0;
   const stk::mesh::PartVector& parts = meta.get_parts();
   for(stk::mesh::Part* part : parts)
   {
@@ -114,7 +113,7 @@ void declare_color_fields(stk::mesh::MetaData& meta)
       stk::mesh::Part& rootTopologyPart = meta.get_topology_root_part(topo);
       stk::mesh::Field<int>& colorField = meta.declare_field<int>(stk::topology::ELEMENT_RANK,
                                                                   rootTopologyPart.topology().name() + "coloring");
-      stk::mesh::put_field_on_mesh(colorField, rootTopologyPart, &initValue);
+      stk::mesh::put_field_on_mesh(colorField, rootTopologyPart, nullptr);
     }
   }
 }
@@ -146,8 +145,7 @@ TEST(ColorByTopology, colorHeterogeneousMesh)
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
   stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord = meta.declare_field<double>(stk::topology::NODE_RANK,
                                                                                                 "coordinates");
-  stk::mesh::put_field_on_mesh(node_coord, meta.universal_part(), 3,
-                               (stk::mesh::FieldTraits<stk::mesh::fixtures::simple_fields::VectorFieldType>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(node_coord, meta.universal_part(), 3, nullptr);
 
   stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta , node_coord );
   declare_color_fields(meta);
@@ -198,8 +196,7 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
 
   setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   Vector2dFieldType & node_coord = get_meta().declare_field<double>(stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::put_field_on_mesh(node_coord, get_meta().universal_part(), 2,
-                               (stk::mesh::FieldTraits<Vector2dFieldType>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(node_coord, get_meta().universal_part(), 2, nullptr);
 
   quad_tri_mesh_meta_data(get_meta() , node_coord);
 

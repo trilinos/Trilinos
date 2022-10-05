@@ -119,8 +119,8 @@ namespace FROSch {
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         RCP<const Thyra::LinearOpBase<SC> > thyraOp = ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp.getCrsMatrix());
 
-        DefaultLinearSolverBuilder linearSolverBuilder;
-        enableFROSch<LO,GO,NO>(linearSolverBuilder);
+        LinearSolverBuilder<SC> linearSolverBuilder;
+        enableFROSch<SC,LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(sublist(this->ParameterList_,"ThyraPreconditioner"));
 
         PreconditionerFactoryBasePtr thyraFactory = linearSolverBuilder.createPreconditioningStrategy("");

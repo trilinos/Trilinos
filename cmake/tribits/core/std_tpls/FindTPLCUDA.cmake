@@ -53,67 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-# Check for CUDA support
-
-set(_CUDA_FAILURE OFF)
-
-# Have CMake find CUDA
-if(NOT _CUDA_FAILURE)
-  find_package(CUDA REQUIRED)
-  if (NOT CUDA_FOUND)
-    set(_CUDA_FAILURE ON)
-  endif()
-endif()
-
-# # Test that CUDA compiler works
-# if(NOT _CUDA_FAILURE)
-#   include(TrilinosCUDASupport)
-#   set(SRC "
-#     #include <cuda_runtime.h>
-#     __global__ void vecadd(const float* a, const float* b, float* c, int N)
-#     {
-#         int i = blockDim.x * blockIdx.x + threadIdx.x;
-#         if (i < N) c[i] = a[i] + b[i];
-#     }
-#     __global__ void vecinit(float* x, float val, int N)
-#     {
-#         int i = blockDim.x * blockIdx.x + threadIdx.x;
-#         if (i < N) x[i] = val;
-#     }
-#     int main() {
-#         const int N               = 2048;
-#         const int threadsPerBlock = 256;
-#         const int blocksPerGrid   = 8;
-#         float* a = NULL;
-#         float* b = NULL;
-#         float* c = NULL;
-#         cudamalloc((void**)&a, N);
-#         cudamalloc((void**)&b, N);
-#         cudamalloc((void**)&c, N);
-#         // init
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(a,1.0f,N);
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(b,2.0f,N);
-#         vecInit<<<blocksPerGrid, threadsPerBlock>>>(c,0.0f,N);
-#         // run
-#         vecAdd<<<blocksPerGrid, threadsPerBlock>>>(a, b, c, N);
-#     }
-#   ")
-#   check_cuda_source_compiles(${SRC} _NVCC_SUCCESS)
-#   if(NOT _NVCC_SUCCESS)
-#     set(_CUDA_FAILURE ON)
-#   endif()
-# endif()
-
-if(NOT _CUDA_FAILURE)
-  # if we haven't met failure
-  macro(package_add_cuda_library cuda_target)
-    tribits_add_library(${cuda_target} ${ARGN} CUDALIBRARY)
-  endmacro()
-  global_set(TPL_CUDA_LIBRARY_DIRS)
-  global_set(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
-  global_set(TPL_CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY} ${CUDA_cublas_LIBRARY}
-     ${CUDA_cufft_LIBRARY})
-else()
-  set(TPL_ENABLE_CUDA OFF PARENT_SCOPE)
-  message(FATAL_ERROR "\nDid not find acceptable version of CUDA compiler")
-endif()
+find_package(CUDAToolkit REQUIRED)  # Will abort if not found!
+tribits_extpkg_create_imported_all_libs_target_and_config_file( CUDA
+  INNER_FIND_PACKAGE_NAME  CUDAToolkit
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cufft  CUDA::cublas  CUDA::cudart )
+# Above, we could add more dependencies if we need

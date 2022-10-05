@@ -1,10 +1,11 @@
 TRIBITS_SUBPACKAGE(Core)
 
 # Consider 'Panzer_ENABLE_Epetra' only if '${PROJECT_NAME}_ENABLE_Epetra=ON'
+# Use global_set, so PANZER_HAVE_EPETRA is visible in other subdirs
 IF(${PROJECT_NAME}_ENABLE_Epetra AND DEFINED Panzer_ENABLE_Epetra)
-   SET(PANZER_HAVE_EPETRA ${Panzer_ENABLE_Epetra})
+   global_set(PANZER_HAVE_EPETRA ${Panzer_ENABLE_Epetra})
 ELSE()
-   SET(PANZER_HAVE_EPETRA ${${PROJECT_NAME}_ENABLE_Epetra})
+   global_set(PANZER_HAVE_EPETRA ${${PROJECT_NAME}_ENABLE_Epetra})
 ENDIF()
 
 IF(PANZER_HAVE_EPETRA)

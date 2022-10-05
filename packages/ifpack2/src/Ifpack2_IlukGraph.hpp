@@ -305,8 +305,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                            // Heuristic to get the maximum number of entries per row.
                            int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
                            numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
-                             : Kokkos::Experimental::ceil(static_cast<double>(RowMaxNumIndices) 
-                                    * Kokkos::Experimental::pow(overalloc, levelfill));
+                             : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
+                                    * Kokkos::pow(overalloc, levelfill));
                          });
    
   };
@@ -602,8 +602,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   do {
     symbolicError = false;
     try {
-      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_, 
-                                                   localOverlapGraph.row_map, localOverlapGraph.entries, 
+      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_,
+                                                   localOverlapGraph.row_map, localOverlapGraph.entries,
                                                    L_row_map, L_entries, U_row_map, U_entries );
     }
     catch (std::runtime_error &e) {

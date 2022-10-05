@@ -181,15 +181,9 @@ namespace Amesos2 {
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
 
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    using spmtx_ptr_t = typename super_t::spmtx_ptr_t;
-    using spmtx_idx_t = typename super_t::spmtx_idx_t;
-    using spmtx_val_t = typename super_t::spmtx_vals_t;
-    #else
     using spmtx_ptr_t = typename MatrixTraits<DerivedMat>::sparse_ptr_type;
     using spmtx_idx_t = typename MatrixTraits<DerivedMat>::sparse_idx_type;
     using spmtx_val_t = typename MatrixTraits<DerivedMat>::sparse_values_type;
-    #endif
 
     spmtx_ptr_t  getSparseRowPtr() const;
 

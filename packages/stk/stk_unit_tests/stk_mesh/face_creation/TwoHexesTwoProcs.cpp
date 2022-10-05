@@ -17,14 +17,20 @@ protected:
   ~FaceCreatorUsingBulkDataFaceSharingTester()
   {
     bulkData.reset();
-    delete metaData;
+    metaData.reset();
   }
 
   virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
                              unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
   {
     ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
-    metaData = new stk::mesh::MetaData(m_spatialDim, m_entityRankNames);
+
+    metaData = stk::mesh::MeshBuilder(communicator)
+                .set_spatial_dimension(m_spatialDim)
+                .set_entity_rank_names(m_entityRankNames)
+                .set_aura_option(auraOption)
+                .set_bucket_capacity(bucketCapacity).create_meta_data();
+
     set_bulk(std::make_shared<stk::unit_test_util::BulkDataFaceSharingTester>(get_meta(), get_comm(), auraOption));
   }
 

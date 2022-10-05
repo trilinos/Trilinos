@@ -92,6 +92,10 @@ namespace Teuchos
     static inline T notDefined() { return T::LAPACK_routine_not_defined_for_this_type(); }
   };
 
+  std::complex<double> convert_Fortran_complex_to_CXX_complex(_Complex double val);
+
+  std::complex<float> convert_Fortran_complex_to_CXX_complex(_Complex float val);
+
   template<typename OrdinalType, typename ScalarType>
   class LAPACK
   {

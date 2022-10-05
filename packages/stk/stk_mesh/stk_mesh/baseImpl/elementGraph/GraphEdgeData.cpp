@@ -1,5 +1,6 @@
 #include "GraphEdgeData.hpp"
 #include "ElemElemGraphImpl.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
@@ -10,35 +11,37 @@ namespace mesh
 
 void Graph::set_num_local_elements(size_t n)
 {
-    m_elemOffsets.resize(n+1);
+    m_elemOffsets.resize(n, IndexRange(m_graphEdges.size()+1, m_graphEdges.size()+1));
 }
 
 void Graph::add_new_element()
 {
-    if (m_elemOffsets.empty()) {
-      m_elemOffsets.assign(1, 0);
-    }
-    m_elemOffsets.push_back(m_graphEdges.size());
+    m_elemOffsets.push_back({m_graphEdges.size()+1, m_graphEdges.size()+1});
 }
+
 
 size_t Graph::get_num_elements_in_graph() const
 {
-    return m_elemOffsets.size() - 1;
+    return m_elemOffsets.size();
 }
 
 size_t Graph::get_num_edges() const
 {
-    return m_graphEdges.size();
+    return m_graphEdges.size() - m_numUnusedEntries;    
 }
 
 size_t Graph::get_num_edges_for_element(impl::LocalId elem) const
 {
-    return m_elemOffsets[elem+1] - m_elemOffsets[elem];
+    auto& indices = m_elemOffsets[elem];
+    return indices.second - indices.first;
 }
 
 const GraphEdge & Graph::get_edge_for_element(impl::LocalId elem1, size_t index) const
 {
-    return m_graphEdges[m_elemOffsets[elem1]+index];
+    ThrowAssertMsg(get_num_edges_for_element(elem1) != 0, "Cannot retrieve graph edge for element that has no faces");
+    ThrowAssertMsg(get_num_edges_for_element(elem1) > index, "index out of range");
+
+    return m_graphEdges[m_elemOffsets[elem1].first+index];
 }
 
 void fill_graph_edges_for_elem_side(const GraphEdgesForElement &graphEdgesForElement, int side, std::vector<GraphEdge>& edges)
@@ -61,80 +64,183 @@ std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int
 
 GraphEdgesForElement Graph::get_edges_for_element(impl::LocalId elem) const
 {
-    const unsigned begin = m_elemOffsets[elem];
-    const unsigned end = m_elemOffsets[elem+1];
-    return GraphEdgesForElement(&m_graphEdges[begin], &m_graphEdges[end]);
+    const unsigned beginOffset = m_elemOffsets[elem].first;
+    const unsigned endOffset   = m_elemOffsets[elem].second;
+
+    const GraphEdge* beginEdge = m_graphEdges.data() + beginOffset;
+    const GraphEdge* endEdge   = m_graphEdges.data() + endOffset;
+    return GraphEdgesForElement(beginEdge, endEdge);
 }
+
 
 void Graph::set_offsets()
 {
-  const unsigned numOffsets = m_elemOffsets.size();
-  m_elemOffsets.assign(std::max(1u, numOffsets), 0);
+  if (m_graphEdges.size() == 0)
+  {
+    return;
+  }
 
-  impl::LocalId prevElem = impl::INVALID_LOCAL_ID;
-  unsigned edgeCounter = 0;
-  for(const GraphEdge& edge : m_graphEdges) {
-    impl::LocalId elem1 = edge.elem1();
-    if (elem1 != prevElem) {
-      if (prevElem != impl::INVALID_LOCAL_ID) {
-        m_elemOffsets[prevElem] = edgeCounter;
+  impl::LocalId currElem = m_graphEdges[0].elem1();
+  unsigned startIdx = 0;
+  for (unsigned i=0; i < m_graphEdges.size(); ++i)
+  {
+    impl::LocalId nextElem = m_graphEdges[i].elem1();
+    if (nextElem != currElem)
+    {
+      ThrowAssertMsg(currElem >= 0 && size_t(currElem) <= m_elemOffsets.size(), "element out of range");
+      m_elemOffsets[currElem] = IndexRange(startIdx, i);
+      for (impl::LocalId elem=currElem+1; elem < nextElem; elem++)
+      {
+        m_elemOffsets[elem] = IndexRange(0, 0);
       }
-      edgeCounter = 0;
-      prevElem = elem1;
+
+      currElem = nextElem;
+      startIdx = i;
     }
-    ++edgeCounter;
   }
 
-  if (prevElem != impl::INVALID_LOCAL_ID) {
-    m_elemOffsets[prevElem] = edgeCounter;
-  }
-
-  unsigned edgeOffset = 0;
-  size_t numElems = m_elemOffsets.size()-1;
-  for(size_t i=0; i<numElems; ++i) {
-    unsigned count = m_elemOffsets[i];
-    m_elemOffsets[i] = edgeOffset;
-    edgeOffset += count;
-  }
-  m_elemOffsets.back() = edgeOffset;
+  m_elemOffsets[currElem] = IndexRange(startIdx, m_graphEdges.size());
 }
+
 
 using IterType = std::vector<GraphEdge>::iterator;
 
 void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
   ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
-  if (!graphEdges.empty()) {
-    stk::util::insert_keep_sorted(graphEdges, m_graphEdges, GraphEdgeLessByElem1());
-    set_offsets();
+
+  for (auto& edge : graphEdges)
+  {
+    insert_edge(edge);
   }
+}
+
+
+void Graph::insert_edge(const GraphEdge& graphEdge)
+{
+  auto elem1 = graphEdge.elem1();
+  auto& indices = m_elemOffsets[elem1];
+
+  if (check_for_edge(graphEdge))
+  {
+    return;
+  }
+
+  if (m_graphEdges.size() > 0 && double(m_numUnusedEntries) / m_graphEdges.size() > m_compressionThreshold)
+  {
+    compress_graph();
+  }
+
+  if (get_num_edges_for_element(elem1) == 0)
+  {
+      m_graphEdges.push_back(graphEdge);
+      indices.first  = m_graphEdges.size()-1;
+      indices.second = m_graphEdges.size();
+  } else if (indices.second >= m_graphEdges.size())
+  {
+    m_graphEdges.emplace_back();
+    insert_edge_into_sorted_range_or_next_entry(indices, graphEdge);
+  } else if (is_valid(m_graphEdges[indices.second]))
+  {
+    move_edges_to_end(elem1);
+
+    m_graphEdges.emplace_back();
+    insert_edge_into_sorted_range_or_next_entry(indices, graphEdge);
+  } else if (!is_valid(m_graphEdges[indices.second]))
+  {
+    insert_edge_into_sorted_range_or_next_entry(indices, graphEdge);
+    m_numUnusedEntries--;
+  } else
+  {
+    throw std::runtime_error("unreachable case");
+  }
+}
+
+void Graph::insert_edge_into_sorted_range_or_next_entry(IndexRange& indices, const GraphEdge& graphEdge)
+{
+    unsigned idxToInsert = find_sorted_insertion_index(indices, graphEdge);
+
+    for (unsigned i=indices.second; i > idxToInsert; i--)
+    {
+      m_graphEdges[i] = m_graphEdges[i-1];
+    }
+
+    m_graphEdges[idxToInsert] = graphEdge;
+    indices.second++;
+}
+
+
+unsigned Graph::find_sorted_insertion_index(IndexRange indices, const GraphEdge& graphEdge)
+{
+    GraphEdgeLessByElem2Only isLess;
+    for (unsigned i=indices.first; i < indices.second; ++i)
+    {
+      if (isLess(graphEdge, m_graphEdges[i]))
+      {
+          return i;
+      }
+    }
+
+    return indices.second;
 }
 
 void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 {
+  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+
   m_graphEdges.swap(graphEdges);
   set_offsets();
+  m_numUnusedEntries = 0;
 }
+
 
 void Graph::delete_sorted_edges(const std::vector<GraphEdge>& edgesToDelete)
 {
-  for(const GraphEdge& edgeToDelete : edgesToDelete) {
-    impl::LocalId elem1 = edgeToDelete.elem1();
-    for(unsigned offset = m_elemOffsets[elem1]; offset < m_elemOffsets[elem1+1]; ++offset) {
-      GraphEdge& thisEdge = m_graphEdges[offset];
-      if (thisEdge == edgeToDelete) {
-        thisEdge.vertex1 = impl::INVALID_LOCAL_ID;
-      }
-    }
-  }
+  ThrowAssertMsg(std::is_sorted(edgesToDelete.begin(), edgesToDelete.end(), GraphEdgeLessByElem1()),
+                "Input vector is expected to be sorted");
 
-  if (!edgesToDelete.empty()) {
-    const unsigned offset = m_elemOffsets[edgesToDelete[0].elem1()];
-    m_graphEdges.erase(std::remove_if(m_graphEdges.begin()+offset, m_graphEdges.end(),
-                                      [](const GraphEdge& edge)
-                                      { return edge.vertex1 == impl::INVALID_LOCAL_ID; }),
-                       m_graphEdges.end());
-    set_offsets();
+  int startIdx = 0;
+  while (size_t(startIdx) != edgesToDelete.size())
+  {
+    int endIdx = get_end_of_element_range_for_sorted_edges(edgesToDelete, startIdx);
+    for (int idx=endIdx; idx >= startIdx; idx--)
+    {
+      delete_edge(edgesToDelete[idx]);
+    }
+
+    startIdx = endIdx + 1;
+  }
+}
+
+unsigned Graph::get_end_of_element_range_for_sorted_edges(const std::vector<GraphEdge>& edges, unsigned startIdx)
+{
+    unsigned currElement = edges[startIdx].elem1();
+    unsigned endIdx = startIdx;
+    while (endIdx < edges.size() && edges[endIdx].elem1() == currElement)
+    {
+      endIdx++;
+    }
+    endIdx--;
+
+    return endIdx;
+}
+
+void Graph::delete_edge(const GraphEdge& edgeToDelete)
+{
+  impl::LocalId elem1 = edgeToDelete.elem1();
+  auto& indices = m_elemOffsets[elem1];
+  for(unsigned offset = indices.first; offset < indices.second; ++offset) {
+    if (m_graphEdges[offset] == edgeToDelete) 
+    {
+      for (unsigned i=offset; i < indices.second-1; ++i)
+      {
+        m_graphEdges[i] = m_graphEdges[i+1];
+      }
+      indices.second--;
+      m_graphEdges[indices.second] = GraphEdge();
+      m_numUnusedEntries++;
+      break;
+    }
   }
 }
 
@@ -142,7 +248,92 @@ void Graph::clear()
 {
     m_graphEdges.clear();
     m_elemOffsets.clear();
+    m_numUnusedEntries = 0;
 }
+
+
+void Graph::move_edges_to_end(impl::LocalId elem)
+{
+  auto& indices = m_elemOffsets[elem];
+  size_t newStartIdx = m_graphEdges.size();
+  for (unsigned i=indices.first; i < indices.second; ++i)
+  {
+    m_graphEdges.push_back(m_graphEdges[i]);
+    m_graphEdges[i] = GraphEdge();
+    m_numUnusedEntries++;
+  }
+
+  m_elemOffsets[elem] = IndexRange(newStartIdx, m_graphEdges.size());
+}
+
+void Graph::compress_graph()
+{
+  if (m_graphEdges.size() == 0 || m_graphEdges.size() == m_numUnusedEntries)
+    return;
+
+  impl::LocalId prevElement = 0;
+  unsigned offset = 0;
+  for (unsigned i=0; i < m_graphEdges.size(); ++i)
+  {
+    if (is_valid(m_graphEdges[i]))
+    {
+      prevElement = m_graphEdges[i].elem1();
+      break;
+    } else
+    {
+      offset++;
+    }
+  }
+
+  {
+    auto& indices = m_elemOffsets[prevElement];
+    indices.first  -= offset;
+    indices.second -= offset;
+  }
+
+  for (unsigned idx=offset; idx < m_graphEdges.size(); ++idx)
+  {
+    if (is_valid(m_graphEdges[idx]))
+    {
+      m_graphEdges[idx - offset] = m_graphEdges[idx];
+      
+      impl::LocalId currElement = m_graphEdges[idx].elem1();
+      if (currElement != prevElement)
+      {
+        auto& indices = m_elemOffsets[currElement];
+        if (indices.first != indices.second)
+        {
+          indices.first  -= offset;
+          indices.second -= offset;
+        } 
+        prevElement = currElement;
+      }
+
+    } else
+    {
+      offset++;
+    }
+  }
+
+  ThrowRequireMsg(is_valid(m_graphEdges[m_graphEdges.size() - offset - 1]), "The count of unused edges is incorrect");
+  m_graphEdges.resize(m_graphEdges.size() - offset);
+  m_numUnusedEntries = 0;
+}
+
+
+bool Graph::check_for_edge(const GraphEdge& edge)
+{
+  auto& indices = m_elemOffsets[edge.elem1()];
+  for (unsigned i=indices.first; i < indices.second; ++i)
+    if (m_graphEdges[i] == edge)
+    {
+      return true;
+    }
+
+  return false;
+}
+
+
 
 impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {

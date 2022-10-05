@@ -58,15 +58,13 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::mesh::FieldBase * coord_field = nullptr;
   if (meta.is_using_simple_fields()) {
     coord_field = &meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
     stk::io::set_field_output_type(*coord_field, "Vector_3D");
   }
   else {
     coord_field = &meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK,
                                                                                       meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*)nullptr);
+    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
   }
 
   stk::io::set_field_role(*coord_field, Ioss::Field::MESH);
@@ -79,10 +77,10 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 
 
 
-void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, meta);
+  stk::io::default_part_processing(elem_blocks, meta, handler);
 }
 
 void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta)
@@ -113,8 +111,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
         meta.declare_field<double>(stk::topology::NODE_RANK, nodesetDistFieldName);
 
       stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
-      stk::mesh::put_field_on_mesh(distribution_factors_field_per_nodeset, *part,
-                                   (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+      stk::mesh::put_field_on_mesh(distribution_factors_field_per_nodeset, *part, nullptr);
     }
   }
 }
@@ -158,12 +155,10 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
         stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
         if (meta.is_using_simple_fields()) {
-          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count,
-                                       (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count, nullptr);
         }
         else {
-          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count,
-                                       (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::ElementNode>>::data_type*)nullptr);
+          stk::mesh::put_field_on_mesh(*distribution_factors_field, *sb_part, side_node_count, nullptr);
         }
       }
     }
@@ -644,16 +639,16 @@ void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
     }
 }
 
-void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
-  stk::io::default_part_processing(face_blocks, meta);
+  stk::io::default_part_processing(face_blocks, meta, handler);
 }
 
-void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
-  stk::io::default_part_processing(edge_blocks, meta);
+  stk::io::default_part_processing(edge_blocks, meta, handler);
 }
 
 void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta)

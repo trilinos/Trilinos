@@ -113,6 +113,12 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
                          const LocalOrdinal blockSize);
 
+    //! Constructor specifying a previously constructed graph, point maps & blocksize
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, 
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointDomainMap,
+                         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointRangeMap,
+                         const LocalOrdinal blockSize);
+
 
     //! Constructor for a fused import ( not implemented )
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
@@ -400,11 +406,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     //using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
     using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    local_matrix_type getLocalMatrix () const {
-      return getLocalMatrixDevice();
-    }
-#endif
+
     local_matrix_type getLocalMatrixDevice () const;
     typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 
@@ -413,6 +415,9 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val);    
 #endif  // HAVE_XPETRA_TPETRA
 #endif  // HAVE_XPETRA_KOKKOS_REFACTOR
+
+    //! Returns the block size of the storage mechanism
+    LocalOrdinal GetStorageBlockSize() const {return mtx_->getBlockSize();}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
@@ -434,7 +439,7 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
-
+#define XPETRA_TPETRABLOCKCRSMATRIX_SHORT
 #endif // XPETRA_TPETRABLOCKCRSMATRIX_DECL_HPP
 
 

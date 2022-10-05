@@ -72,7 +72,10 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 #endif
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
@@ -463,6 +466,55 @@ namespace {
 #endif
   }
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, BlockCrs, M, MB, Scalar, LO, GO, Node )
+  {
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+    // The matrix reader does not work with complex scalars. Skip all tests then.
+    return;
+#endif
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
+    typedef Xpetra::TpetraBlockCrsMatrix<Scalar,LO,GO,Node> BlockCrsMatrixClass;
+    typedef Xpetra::Matrix<Scalar,LO,GO,Node> MatrixClass;
+    typedef Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> CrsMatrixWrapClass;
+    using helpers = Xpetra::Helpers<Scalar,LO,GO,Node>;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid ();
+
+    const size_t numLocalMeshPoints = 12;
+    const GO indexBase = 1;
+    // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
+    // RCP.  Later interface changes will let us pass in the Map by
+    // const reference and assume view semantics.
+    RCP<const map_type> meshRowMapPtr =
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
+
+    // Test w/ an empty graph
+    const LO blockSize = 4;
+    graph_type graph (meshRowMapPtr, 0);
+    graph.fillComplete ();
+
+    // Make the matrix (Tpetra)
+    RCP<BCM> blockMat = rcp(new BCM (graph, blockSize));
+    RCP<CrsMatrixClass> bmc = rcp(new BlockCrsMatrixClass(blockMat));
+    RCP<CrsMatrixWrapClass> wrap = rcp(new CrsMatrixWrapClass(bmc));
+    RCP<MatrixClass>  mat = wrap;
+
+    // Now for the checks
+    TEUCHOS_TEST_EQUALITY(helpers::isTpetraBlockCrs(mat), true, out, success);
+    TEUCHOS_TEST_EQUALITY(helpers::isTpetraCrs(mat), false, out, success);
+
+#endif
+
+  }
+
+
   //
   // INSTANTIATIONS
   //
@@ -470,7 +522,8 @@ namespace {
 
   #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
-    typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N;
+    typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N; \
+    typedef typename Xpetra::TpetraBlockCrsMatrix<S,LO,GO,N> MB##S##LO##GO##N; \
 
 #endif
 
@@ -484,11 +537,12 @@ namespace {
 
   // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, Multiply_Tpetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, Multiply_Tpetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, BlockCrs, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) 
 
   // List of tests which run only with Epetra
 #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, Multiply_Epetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, Multiply_Epetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
 
   // List of tests which run only with Epetra64
 #define XP_EPETRA64_MATRIX_INSTANT(S,LO,GO,N) \

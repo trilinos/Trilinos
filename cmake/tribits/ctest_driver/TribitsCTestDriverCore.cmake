@@ -151,7 +151,7 @@ set( CMAKE_MODULE_PATH
 
 include(TribitsConstants)
 tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(Split)
 include(PrintVar)
@@ -210,7 +210,6 @@ site_name(CTEST_SITE_DEFAULT)
 include(TribitsCTestDriverCoreHelpers)
 
 
-#
 # @FUNCTION: tribits_ctest_driver()
 #
 # Universal platform-independent CTest/CDash driver function for CTest -S
@@ -323,9 +322,10 @@ include(TribitsCTestDriverCoreHelpers)
 # * `Determining what testing-related actions are performed (tribits_ctest_driver())`_
 # * `Determining how the results are displayed on CDash (tribits_ctest_driver())`_
 # * `Specifying where the results go to CDash (tribits_ctest_driver())`_
+# * `Links to results on CDash (tribits_ctest_driver())`_
 # * `Determining what TriBITS repositories are included (tribits_ctest_driver())`_
 # * `All-at-once versus package-by-package mode (tribits_ctest_driver())`_
-# * `Mutiple ctest -S invocations (tribits_ctest_driver())`_
+# * `Multiple ctest -S invocations (tribits_ctest_driver())`_
 # * `Repository Updates (tribits_ctest_driver())`_
 # * `Other CTest Driver options (tribits_ctest_driver())`_
 # * `Return value (tribits_ctest_driver())`_
@@ -559,7 +559,7 @@ include(TribitsCTestDriverCoreHelpers)
 #     the specific set of packages to test.  If left at the default value of
 #     empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to ``ON``
 #     and that enables packages as described in `<Project>_ENABLE_ALL_PACKAGES
-#     enables all PT (cond. ST) SE packages`_.  This variable can use ',' to
+#     enables all PT (cond. ST) packages`_.  This variable can use ',' to
 #     separate package names instead of ';'.  The default value is empty "".
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
@@ -1165,6 +1165,63 @@ include(TribitsCTestDriverCoreHelpers)
 # At lease one of these vars must be set to non empty or a second submit will
 # not be performed.  For more details, see `TRIBITS_2ND_CTEST_DROP_SITE`_ and
 # `TRIBITS_2ND_CTEST_DROP_LOCATION`_.
+#
+# .. _Links to results on CDash (tribits_ctest_driver()):
+#
+# **Links to results on CDash (tribits_ctest_driver()):**
+#
+# Links to where the results will be posted on CDash are printed to STDOUT
+# before it performs any actions and at end after all of the actions and
+# submits have been completed.
+#
+# The results are printed to STDOUT in a section that looks like::
+#
+#   Link to this build's results on CDash:
+#
+#     <cdash-build-url>
+#
+#   Link to all builds for this repo version on CDash:
+#
+#     <cdash-revision-builds-url>
+#
+#   Link to all nonpassing tests for all builds for this repo version on CDash:
+#
+#     <cdash-revision-nonpassing-tests-url>
+#
+# The URL ``<cdash-build-url>`` is created from the buildname, site, and
+# buildstartime fields which is known from the TAG file created by CTest.
+# This allows access the results for this particular build on CDash by just
+# clicking that link.
+#
+# The URL ``<cdash-revision-builds-url>`` provides a link to a CDash
+# ``index.php`` query that includes all of the builds with the same base Git
+# repo SHA1.  This allows comparing the results of this build for other builds
+# for this same version of the base Git repository.
+#
+# The URL ``<cdash-revision-nonpassing-tests-url>`` gives a link to a CDash
+# ``queryTests.php`` query for all of the nonpassing tests for all of the
+# builds with this same base project Git repo SHA1.  This allows comparing
+# test failures across all of the builds for the same base project Git repo
+# version.
+#
+# NOTE: The links ``<cdash-revision-builds-url>`` and
+# ``<cdash-revision-nonpassing-tests-url>`` are only provided if the base
+# project Git repo has the ``.git/`` subdirectory and if ``git log``
+# successfully returns the SHA1 for that base Git repo.
+#
+# NOTE: The links ``<cdash-revision-builds-url>`` and
+# ``<cdash-revision-nonpassing-tests-url>`` only consider the Git SHA1 of the
+# base project Git repo.  For multi-repo projects (see `Multi-Repository
+# Support`_), you may get results for builds with different subrepo versions
+# and therefore may be comparing apples and oranges.  (Projects that commit a
+# ``<Project>SubRepoVersion.txt`` file to their base Git repo or use Git
+# Submodules will have unique base project Git repo SHA1s for different
+# versions of the project's repos.)
+#
+# In addition, a text file ``CDashResults.txt`` will be written in the build
+# directory that contains this same CDash link information shown above.  This
+# allows a process to cat the file ``CDashResults.txt`` to get links to the
+# results on CDash.
 #
 # .. _Determining what TriBITS repositories are included (tribits_ctest_driver()):
 #
@@ -2071,18 +2128,18 @@ function(tribits_ctest_driver)
     if (EXISTS "${CTEST_TESTING_TAG_FILE}")
       file(READ "${CTEST_TESTING_TAG_FILE}" TAG_FILE_CONTENTS_STR)
       message(
-	"\nPrevious file:"
-	"\n"
-	"\n  '${CTEST_TESTING_TAG_FILE}'"
-	"\n"
-	"\nexists with contents:\n"
-	"\n"
-	"${TAG_FILE_CONTENTS_STR}\n")
+        "\nPrevious file:"
+        "\n"
+        "\n  '${CTEST_TESTING_TAG_FILE}'"
+        "\n"
+        "\nexists with contents:\n"
+        "\n"
+        "${TAG_FILE_CONTENTS_STR}\n")
     else()
       message(FATAL_ERROR
-	"ERROR: Previous file '${CTEST_TESTING_TAG_FILE}' does NOT exist!"
-	"  A previous ctest_start() was not called.  Please call again"
-	" this time setting CTEST_DO_NEW_START=TRUE")
+        "ERROR: Previous file '${CTEST_TESTING_TAG_FILE}' does NOT exist!"
+        "  A previous ctest_start() was not called.  Please call again"
+        " this time setting CTEST_DO_NEW_START=TRUE")
     endif()
 
     list(APPEND CTEST_START_ARGS APPEND)
@@ -2093,9 +2150,15 @@ function(tribits_ctest_driver)
   ctest_start(${CTEST_START_ARGS})
 
   tribits_remember_if_configure_attempted()
-  tribits_get_build_url_and_write_to_file(CDASH_BUILD_URL
-    "${CTEST_BINARY_DIRECTORY}/CDashBuildUrl.txt")
-  tribits_print_build_url("Results will be submitted on CDash at:" "${CDASH_BUILD_URL}")
+
+  tribits_get_cdash_results_string_and_write_to_file(
+    CDASH_RESULTS_STRING_OUT  CDASH_RESULTS_STRING
+    CDASH_RESULTS_FILE_OUT "${CTEST_BINARY_DIRECTORY}/CDashResults.txt" )
+  message("Results will be submitted on CDash at the following links:\n\n"
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n"
+    "${CDASH_RESULTS_STRING}\n"
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+    )
 
   message(
     "\n***"
@@ -2206,12 +2269,12 @@ function(tribits_ctest_driver)
   set(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   set(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   tribits_adjust_and_print_package_dependencies()
-  # Above sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
+  # Above sets ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
 
   select_final_set_of_packages_to_directly_test()
   # Above sets ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
 
-  tribits_print_enabled_packages_list_from_var( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
+  tribits_print_packages_list_enable_status_from_var( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
     "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
 
   message(
@@ -2220,7 +2283,7 @@ function(tribits_ctest_driver)
     "\n***")
 
   if (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY
-    AND ${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0
+    AND ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES GREATER 0
     AND MODIFIED_PACKAGES_LIST
     )
     message("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
@@ -2231,13 +2294,13 @@ function(tribits_ctest_driver)
       "  Running in regular mode, processing all enabled packages!\n")
   endif()
 
-  if (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
+  if (${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES GREATER 0)
     message(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES}:"
       "  Configuring packages!\n")
   else()
     message(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES}:"
       "  Exiting the script!\n")
     report_queued_errors()
     return()
@@ -2369,7 +2432,11 @@ function(tribits_ctest_driver)
 
   report_queued_errors()
 
-  tribits_print_build_url("See results submitted on CDash at:" "${CDASH_BUILD_URL}")
+  message("\nSee results submitted on CDash at the following links:\n\n"
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n"
+    "${CDASH_RESULTS_STRING}\n"
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+    )
 
   if ((NOT UPDATE_FAILED) AND ("${${PROJECT_NAME}_FAILED_PACKAGES}" STREQUAL ""))
     message(

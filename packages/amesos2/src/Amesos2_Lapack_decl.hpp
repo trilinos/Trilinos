@@ -98,7 +98,10 @@ namespace Amesos2 {
 
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-
+    typedef Kokkos::DefaultHostExecutionSpace              HostExecSpaceType;
+    typedef Kokkos::View<int*, HostExecSpaceType>          host_size_type_array;
+    typedef Kokkos::View<int*, HostExecSpaceType>          host_ordinal_type_array;
+    typedef Kokkos::View<scalar_type*, HostExecSpaceType> host_value_type_array;
 
     /// \name Constructor/Destructor methods
     //@{ 
@@ -208,6 +211,14 @@ namespace Amesos2 {
     Teuchos::Array<int> colptr_;
     /// Store for RHS and Solution values
     mutable Teuchos::Array<scalar_type> rhsvals_;
+
+    // The following Kokkos::View's are persisting storage for A's CCS arrays
+    /// Stores the values of the nonzero entries for Umfpack
+    host_value_type_array nzvals_view_;
+    /// Stores the location in \c Ai_ and Aval_ that starts row j
+    host_ordinal_type_array rowind_view_;
+    /// Stores the row indices of the nonzero entries
+    host_size_type_array colptr_view_;
 
     /// L and U storage
     // Teuchos::SerialDenseMatrix<global_ordinal_type,scalar_type> lu_;

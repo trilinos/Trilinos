@@ -117,7 +117,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::compute ()
 {
   #ifdef HAVE_IFPACK2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ipiv_.size () != this->blockRows_.size( * scalarsPerRow_), std::logic_error,
+    ipiv_.size () != this->blockRows_.size() * this->scalarsPerRow_, std::logic_error,
     "Ifpack2::TriDiContainer::compute: ipiv_ array has the wrong size.  "
     "Please report this bug to the Ifpack2 developers.");
   #endif

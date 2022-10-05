@@ -94,10 +94,10 @@ check_getCoeffMatrix_HCURL(const subcellBasisType& subcellBasis,
 
 
 
-  INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+  INTREPID2_TEST_FOR_EXCEPTION( subcellDim > cellDim,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-      "cellDim must be greater than subcellDim.");
+      "cellDim cannot be smaller than subcellDim.");
 
   const auto subcellBaseKey = subcellTopo.getBaseKey();
   const auto cellBaseKey = cellTopo.getBaseKey();
@@ -255,18 +255,29 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   // Basis evaluation on the reference points
   //
 
-  auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
-
-  // refPtsCell = F_s (\eta_o (refPtsSubcell))
   Kokkos::DynRankView<value_type,host_device_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
-  mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
-
-
-  //mapping tangents t_j into parent cell, i.e. computing J_F J_\eta t_j
   Kokkos::DynRankView<value_type,host_device_type> trJacobianF("trJacobianF", subcellDim, cellDim );
-  OrientationTools::getRefSubcellTangents(trJacobianF, subcellParam, subcellBaseKey, subcellId, subcellOrt);
 
+  if(cellDim == subcellDim) {
+    // refPtsCell = \eta_o (refPtsSubcell)
+    mapToModifiedReference(refPtsCell,refPtsSubcell,subcellBaseKey,subcellOrt);
 
+    //mapping tangents t_j into parent cell, i.e. computing J_F J_\eta t_j
+    Kokkos::DynRankView<value_type,host_device_type> jac("data", subcellDim, subcellDim);
+    getJacobianOfOrientationMap(jac,subcellBaseKey,subcellOrt);
+    for(ordinal_type d=0; d<subcellDim; ++d)
+      for(ordinal_type j=0; j<cellDim; ++j) {
+        trJacobianF(j,d) = jac(d,j);
+    }
+  }
+  else {
+    auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
+    // refPtsCell = F_s (\eta_o (refPtsSubcell))
+    mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+
+    //mapping tangents t_j into parent cell, i.e. computing J_F J_\eta t_j
+    OrientationTools::getRefSubcellTangents(trJacobianF, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+  }
 
   // cellBasisValues = \psi_k(F_s (\eta_o (\xi_j)))
   Kokkos::DynRankView<value_type,host_device_type> cellBasisValues("cellBasisValues", numCellBasis, ndofSubcell, cellDim);

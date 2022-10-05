@@ -98,8 +98,7 @@ int main(int argc,  char **argv)
 
   stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & alpha =
     mesh_data.meta_data().declare_field<stk::mesh::Field<double,stk::mesh::SimpleArrayTag> >(stk::topology::ELEMENT_RANK, "alpha");
-  stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-  stk::mesh::put_field_on_mesh(alpha, mesh_data.meta_data().universal_part(), 1, init_np);
+  stk::mesh::put_field_on_mesh(alpha, mesh_data.meta_data().universal_part(), 1, nullptr);
 
   mesh_data.add_all_mesh_fields_as_input_fields();
   stk::mesh::FieldBase& phi = *mesh_data.meta_data().get_field (stk::topology::ELEMENT_RANK, "phi");

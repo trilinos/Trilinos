@@ -221,18 +221,18 @@ void Container<MatrixType>::DoJacobi(ConstHostView X, HostView Y, SC dampingFact
       LO LRID = blockRows_[blockOffsets_[i]];
       getMatDiag();
       auto diagView = Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
-      ISC d = one / diagView(LRID, 0);
+      ISC d = one * (static_cast<ISC> (dampingFactor)) / diagView(LRID, 0);
       for(size_t nv = 0; nv < numVecs; nv++)
       {
         ISC x = X(LRID, nv);
-        Y(LRID, nv) = x * d;
+        Y(LRID, nv) += x * d;
       }
     }
   }
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor) const
+void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor, bool nonsymScaling) const
 {
   using STS = Teuchos::ScalarTraits<SC>;
   // Overlapping Jacobi
@@ -241,8 +241,42 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
     // may happen that a partition is empty
     if(blockSizes_[i] == 0)
       continue;
-    if(blockSizes_[i] != 1)
-      weightedApply(X, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+    if(blockSizes_[i] != 1) {
+      if (!nonsymScaling) 
+        weightedApply(X, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+      else {
+        // A crummy way of doing nonsymmetric scaling. We effectively
+        // first reverse scale x, which later gets scaled inside weightedApply
+        // so the net effect is that x is not scaled.
+        // This was done to keep using weightedApply() that is defined in
+        // many spots in the code.
+        HostView tempo("", X.extent(0), X.extent(1));
+        size_t numVecs = X.extent(1);
+        LO  bOffset = blockOffsets_[i];
+        for (LO ii = 0; ii < blockSizes_[i]; ii++) {
+          LO LRID = blockRows_[bOffset++];
+          for (size_t jj = 0; jj < numVecs; jj++) tempo(LRID,jj)=X(LRID,jj)/ W(LRID,0);
+        }
+        weightedApply(tempo, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+      }
+    }
+    else    // singleton, can't access Containers_[i] as it was never filled and may be null.
+    {
+      const ISC one = STS::one();
+      size_t numVecs = X.extent(1);
+      LO LRID = blockRows_[blockOffsets_[i]];
+      getMatDiag();
+      auto diagView = Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
+      ISC recip  = one / diagView(LRID, 0);
+      ISC wval   = W(LRID,0);
+      ISC combo  = wval*recip;
+      ISC d = combo*(static_cast<ISC> (dampingFactor));
+      for(size_t nv = 0; nv < numVecs; nv++)
+      {
+        ISC x = X(LRID, nv);
+        Y(LRID, nv) = x * d + Y(LRID, nv);
+      }
+    }
   }
 }
 
@@ -304,13 +338,29 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     // singleton, can't access Containers_[i] as it was never filled and may be null.
     // a singleton calculation (just using matrix diagonal) is exact, all residuals should be zero.
     LO LRID = this->blockOffsets_[i];  // by definition, a singleton 1 row in block.
-    ConstHostView diagView = this->Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
-    ISC d = one / diagView(LRID, 0);
+    //Use the KokkosSparse internal matrix for low-overhead values/indices access
+    //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
+    using container_exec_space = typename ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space;
+    container_exec_space().fence();
+    auto localA = this->inputCrsMatrix_->getLocalMatrixHost();
+    using size_type = typename crs_matrix_type::local_matrix_host_type::size_type;
+    const auto& rowmap = localA.graph.row_map;
+    const auto& entries = localA.graph.entries;
+    const auto& values = localA.values;
+    this->getMatDiag();
+    auto diagView = this->Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
+    ISC d = (static_cast<ISC> (dampingFactor)) / diagView(LRID, 0);
     for(size_t m = 0; m < numVecs; m++)
     {
-      ISC x = X(LRID, m);
-      ISC newy = x * d;
-      Y2(LRID, m) = newy;
+      // ISC x = X(LRID, m);
+      ISC r = X(LRID, m);
+      for(size_type k = rowmap(LRID); k < rowmap(LRID + 1); k++) {
+        const LO col = entries(k);
+        r -= values(k) * Y2(col, m);
+      }
+
+      ISC newy = r * d;
+      Y2(LRID, m) += newy;
     }
   }
   else if(!this->inputCrsMatrix_.is_null() &&

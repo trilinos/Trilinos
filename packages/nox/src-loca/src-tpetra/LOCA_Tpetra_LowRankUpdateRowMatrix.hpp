@@ -108,26 +108,6 @@ namespace LOCA {
       getLocalRowView (NOX::LocalOrdinal LocalRow,
                        NOX::TRowMatrix::local_inds_host_view_type &Indices,
                        NOX::TRowMatrix::values_host_view_type &Values) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
-      virtual void
-      getGlobalRowCopy (NOX::GlobalOrdinal GlobalRow,
-                        const Teuchos::ArrayView<NOX::GlobalOrdinal> &Indices,
-                        const Teuchos::ArrayView<NOX::Scalar> &Values,
-                        size_t &NumEntries) const override;
-      virtual void
-      getLocalRowCopy (NOX::LocalOrdinal LocalRow,
-                       const Teuchos::ArrayView<NOX::LocalOrdinal> &Indices,
-                       const Teuchos::ArrayView<NOX::Scalar> &Values,
-                       size_t &NumEntries) const override;
-      virtual void
-      getGlobalRowView (NOX::GlobalOrdinal GlobalRow,
-                        Teuchos::ArrayView<const NOX::GlobalOrdinal> &indices,
-                        Teuchos::ArrayView<const NOX::Scalar> &values) const override;
-      virtual void
-      getLocalRowView (NOX::LocalOrdinal LocalRow,
-                       Teuchos::ArrayView<const NOX::LocalOrdinal>& indices,
-                       Teuchos::ArrayView<const NOX::Scalar>& values) const override;
-#endif
 
       // Use the default implementation!
       // virtual NOX::LocalOrdinal

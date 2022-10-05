@@ -111,8 +111,7 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
 
     stk::mesh::Field<double> &temperature =
         stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, "temperature", 1);
-    stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
     stkIo.populate_bulk_data();
 
     size_t fh = stkIo.create_output_mesh(ic_name, stk::io::WRITE_RESULTS);
@@ -170,8 +169,7 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
 
     stk::mesh::Field<double> &temperature =
         stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, "temperature", 1);
-    stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(temperature, stkIo.meta_data().universal_part(), nullptr);
 
     // The name of the field on the initial condition database is "temp"
     stkIo.add_input_field(ic, stk::io::MeshField(temperature, "temp",

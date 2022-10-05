@@ -205,19 +205,12 @@ MoertelT::StripZeros(const Tpetra::CrsMatrix<ST, LO, GO, N>& A, double eps)
       out = Teuchos::null; // Free memory
       return Teuchos::null;
     }
-    int numentries;
-    const int* lindices;
-    const double* values;
-//    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
-    LO err  = A.getLocalRowViewRaw(lrow,numentries,lindices,values);
-    if (err)
-    {
-      std::cout << "***ERR*** MoertelT::StripZeros:\n"
-        << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
-        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      out = Teuchos::null;
-      return Teuchos::null;
-    }
+
+    typename Tpetra::CrsMatrix<ST, LO, GO, N>::local_inds_host_view_type lindices;
+    typename Tpetra::CrsMatrix<ST, LO, GO, N>::values_host_view_type values;
+    //    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
+    A.getLocalRowView(lrow,lindices,values);
+    int numentries = (int) lindices.size();
     for (int j=0; j<numentries; ++j)
     {
       int lcol = lindices[j];

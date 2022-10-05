@@ -101,12 +101,7 @@ namespace Tpetra {
   /// This method accepts an optional list of parameters, either
   /// through the constructor or through the setParameterList()
   /// method.  Most users do not need to worry about these parameters;
-  /// the default values are fine.  However, for expert users, we
-  /// expose the following parameter:
-  /// - "Barrier between receives and sends" (\c bool): (DEPRECATED) Whether to
-  ///   execute a barrier between receives and sends, when executing
-  ///   the Import (i.e., when calling DistObject's doImport()
-  ///   (forward mode) or doExport() (reverse mode)).
+  /// the default values are fine.
   ///
   template<class LocalOrdinal,
            class GlobalOrdinal,

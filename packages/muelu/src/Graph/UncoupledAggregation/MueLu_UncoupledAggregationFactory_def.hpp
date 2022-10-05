@@ -107,6 +107,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: compute aggregate qualities");
+    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory

@@ -29,8 +29,7 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
-    stk::mesh::put_field_on_mesh(faceField, meta.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(faceField, meta.universal_part(), nullptr);
     stk::io::put_face_block_io_part_attribute(*part);
     stk::io::fill_mesh("generated:1x1x1", *bulk);
     bool connectFacesToEdges = true;
@@ -56,8 +55,7 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     meta.use_simple_fields();
 
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
-    stk::mesh::put_field_on_mesh(faceField, meta.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(faceField, meta.universal_part(), nullptr);
 
     stk::io::set_field_role(faceField, Ioss::Field::TRANSIENT);
 

@@ -82,13 +82,20 @@ public:
    */
   StepperStaggeredForwardSensitivity(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model,
     const Teuchos::RCP<Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<Teuchos::ParameterList>& sens_pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+      { setModel(appModel, appModel, appModel); }
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
 
     virtual void setSolver(

@@ -46,6 +46,7 @@
 #include "stk_mesh/base/Comm.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/FillMesh.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
 #include "UnitTestTextMeshFixture.hpp"
 
@@ -140,17 +141,7 @@ stk::mesh::Part& setupDavidNobleTestCase(stk::mesh::BulkData& bulk)
 bool isEntityInPart(stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, stk::mesh::EntityId id, const stk::mesh::Part &part)
 {
   stk::mesh::Entity entity = bulk.get_entity(rank, id);
-  const stk::mesh::PartVector &partsNodes6 = bulk.bucket(entity).supersets();
-  bool isInPart = false;
-  for(size_t i = 0; i < partsNodes6.size(); ++i)
-  {
-    if(partsNodes6[i] == &part)
-    {
-      isInPart = true;
-      break;
-    }
-  }
-  return isInPart;
+  return bulk.bucket(entity).member(part);
 }
 
 TEST(BulkDataTest, testRemovingPartsOnNodeSharedWithOneProcAndAuraToAnotherProc)
@@ -284,68 +275,74 @@ void confirm_entities_not_valid(const stk::mesh::BulkData& mesh,
   }
 }
 
+void test_aura_disconnect_elem_on_proc_boundary(stk::mesh::BulkData& mesh)
+{
+  //       3----------7----------11
+  //      /|         /|         /|
+  //     / |        / |        / |
+  //    /  |       /  |       /  |
+  //   2----------6----------10  |
+  //   |   4------|---8------|---12
+  //   |  /       |  /       |  /
+  //   | /   E1   | /  E2    | /
+  //   |/         |/         |/
+  //   1----------5----------9
+  //       P0         P1
+  //  Nodes 5,6,7,8 are shared
+  //
+  const std::string generatedMeshSpec = "generated:1x1x2";
+  stk::io::fill_mesh(generatedMeshSpec, mesh);
+
+  disconnect_elem1_on_proc0(mesh);
+
+  int thisProc = stk::parallel_machine_rank(mesh.parallel());
+  stk::mesh::EntityId auraElemId = 2;
+  if (thisProc == 1) {
+    auraElemId = 1;
+  }
+  if (thisProc == 0) {
+    check_elem_state(mesh, auraElemId, Modified);
+
+    stk::mesh::EntityState expectedAuraElemNodeStates[] = {
+      Modified, Modified, Modified, Modified,
+      Modified, Modified, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, auraElemId, expectedAuraElemNodeStates);
+
+    stk::mesh::EntityId ownedElemId = 1;
+    stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
+    EXPECT_EQ(Modified, mesh.state(ownedElem));
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Unchanged, Unchanged, Unchanged, Unchanged,
+      Created, Created, Created, Created
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+  else {
+    confirm_entities_not_valid(mesh, stk::topology::ELEM_RANK,
+                               stk::mesh::EntityIdVector{auraElemId});
+    confirm_entities_not_valid(mesh, stk::topology::NODE_RANK,
+                               stk::mesh::EntityIdVector{1, 2, 3, 4});
+
+    stk::mesh::EntityId ownedElemId = 2;
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Modified, Modified, Modified, Modified,
+      Unchanged, Unchanged, Unchanged, Unchanged
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+}
+
 TEST(BulkData, aura_disconnectElemOnProcBoundary)
 {
   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  int thisProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
   if (numProcs==2)
   {
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
-    stk::mesh::BulkData& mesh = *bulkPtr;
-
-    //       3----------7----------11
-    //      /|         /|         /|
-    //     / |        / |        / |
-    //    /  |       /  |       /  |
-    //   2----------6----------10  |
-    //   |   4------|---8------|---12
-    //   |  /       |  /       |  /
-    //   | /   E1   | /  E2    | /
-    //   |/         |/         |/
-    //   1----------5----------9
-    //       P0         P1
-    //  Nodes 5,6,7,8 are shared
-    //
-    const std::string generatedMeshSpec = "generated:1x1x2";
-    stk::io::fill_mesh(generatedMeshSpec, mesh);
-
-    disconnect_elem1_on_proc0(mesh);
-
-    stk::mesh::EntityId auraElemId = 2;
-    if (thisProc == 1) {
-      auraElemId = 1;
-    }
-    if (thisProc == 0) {
-      check_elem_state(mesh, auraElemId, Modified);
-
-      stk::mesh::EntityState expectedAuraElemNodeStates[] = {
-        Modified, Modified, Modified, Modified,
-        Modified, Modified, Modified, Modified
-      };
-      check_node_states_for_elem(mesh, auraElemId, expectedAuraElemNodeStates);
-
-      stk::mesh::EntityId ownedElemId = 1;
-      stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
-      EXPECT_EQ(Modified, mesh.state(ownedElem));
-      stk::mesh::EntityState expectedNodeStates[] = {
-        Unchanged, Unchanged, Unchanged, Unchanged,
-        Created, Created, Created, Created
-      };
-      check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
-    }
-    else {
-      confirm_entities_not_valid(mesh, stk::topology::ELEM_RANK,
-                                 stk::mesh::EntityIdVector{auraElemId});
-      confirm_entities_not_valid(mesh, stk::topology::NODE_RANK,
-                                 stk::mesh::EntityIdVector{1, 2, 3, 4});
-
-      stk::mesh::EntityId ownedElemId = 2;
-      stk::mesh::EntityState expectedNodeStates[] = {
-        Modified, Modified, Modified, Modified,
-        Unchanged, Unchanged, Unchanged, Unchanged
-      };
-      check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
-    }
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                        .set_spatial_dimension(3)
+                                                        .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                                        .create();
+    test_aura_disconnect_elem_on_proc_boundary(*bulkPtr);
   }
 }
 
@@ -372,72 +369,86 @@ void expect_recv_aura(const stk::mesh::BulkData& bulk,
   }
 }
 
+void test_aura_move_elem1_from_proc0_to_proc1(stk::mesh::BulkData& mesh)
+{
+  const std::string generatedMeshSpec = "generated:1x1x4";
+  stk::io::fill_mesh(generatedMeshSpec, mesh);
+
+  //Initial mesh:
+  //       3----------7----------11----------15-----------19
+  //      /|         /|         /|           /|          /|
+  //     / |        / |        / |          / |         / |
+  //    /  |       /  |       /  |         /  |        /  |
+  //   2----------6----------10-----------14----------18  |
+  //   |   4------|---8------|---12-------|--16-------|---20
+  //   |  /       |  /       |  /         |  /        |  /
+  //   | /   E1   | /  E2    | /    E3    | /    E4   | /
+  //   |/         |/         |/           |/          |/
+  //   1----------5----------9------------13----------17
+  //       P0         P0          P1           P1
+  //  Nodes 9,10,11,12 are shared
+  //  Elem 3 is aura-ghost on P0 and elem 2 is aura-ghost on P1
+  //  Nodes 13-16 are aura-ghosts on P0, nodes 5-8 are aura-ghosts on P1
+  //
+  int thisProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  {
+    stk::mesh::EntityIdVector elemIds[] = {{3}, {2}};
+    stk::mesh::EntityIdVector nodeIds[] = {{13,14,15,16}, {5,6,7,8}};
+    expect_recv_aura(mesh, stk::topology::ELEM_RANK, elemIds[thisProc]);
+    expect_recv_aura(mesh, stk::topology::NODE_RANK, nodeIds[thisProc]);
+  }
+
+  //---------------------------------------
+  stk::mesh::EntityProcVec elemToMove;
+  if (thisProc == 0) {
+    stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    elemToMove.push_back(stk::mesh::EntityProc(elem1, 1));
+  }
+
+  mesh.change_entity_owner(elemToMove);
+
+  //After change-entity-owner moves elem 1 to P1:
+  //       3----------7----------11----------15-----------19
+  //      /|         /|         /|           /|          /|
+  //     / |        / |        / |          / |         / |
+  //    /  |       /  |       /  |         /  |        /  |
+  //   2----------6----------10-----------14----------18  |
+  //   |   4------|---8------|---12-------|--16-------|---20
+  //   |  /       |  /       |  /         |  /        |  /
+  //   | /   E1   | /  E2    | /    E3    | /    E4   | /
+  //   |/         |/         |/           |/          |/
+  //   1----------5----------9------------13----------17
+  //       P1         P0          P1           P1
+  //  Nodes 1-12 are shared
+  //  Elem 2 is aura-ghost on P1 and elems 1 and 3 are aura-ghosts on P0
+  //  Nodes 13-16 are aura-ghosts on P0. No nodes are aura-ghosts on P1.
+  //
+  {
+    stk::mesh::EntityIdVector elemIds[] = {{1, 3}, {2}};
+    stk::mesh::EntityIdVector nodeIds[] = {{13,14,15,16}, {}};
+    expect_recv_aura(mesh, stk::topology::ELEM_RANK, elemIds[thisProc]);
+    expect_recv_aura(mesh, stk::topology::NODE_RANK, nodeIds[thisProc]);
+  }
+}
+
 TEST(BulkData, aura_moveElem1FromProc0ToProc1)
 {
-  int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  int thisProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  if (numProcs==2)
-  {
-    const unsigned spatialDim = 3;
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
-    stk::mesh::BulkData& mesh = *bulkPtr;
-    const std::string generatedMeshSpec = "generated:1x1x4";
-    stk::io::fill_mesh(generatedMeshSpec, mesh);
+  if (stk::parallel_machine_size(MPI_COMM_WORLD)==2) {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                      .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                                      .create();
+    test_aura_move_elem1_from_proc0_to_proc1(*bulkPtr);
+  }
+}
 
-    //Initial mesh:
-    //       3----------7----------11----------15-----------19
-    //      /|         /|         /|           /|          /|
-    //     / |        / |        / |          / |         / |
-    //    /  |       /  |       /  |         /  |        /  |
-    //   2----------6----------10-----------14----------18  |
-    //   |   4------|---8------|---12-------|--16-------|---20
-    //   |  /       |  /       |  /         |  /        |  /
-    //   | /   E1   | /  E2    | /    E3    | /    E4   | /
-    //   |/         |/         |/           |/          |/
-    //   1----------5----------9------------13----------17
-    //       P0         P0          P1           P1
-    //  Nodes 9,10,11,12 are shared
-    //  Elem 3 is aura-ghost on P0 and elem 2 is aura-ghost on P1
-    //  Nodes 13-16 are aura-ghosts on P0, nodes 5-8 are aura-ghosts on P1
-    //
-    {
-      stk::mesh::EntityIdVector elemIds[] = {{3}, {2}};
-      stk::mesh::EntityIdVector nodeIds[] = {{13,14,15,16}, {5,6,7,8}};
-      expect_recv_aura(mesh, stk::topology::ELEM_RANK, elemIds[thisProc]);
-      expect_recv_aura(mesh, stk::topology::NODE_RANK, nodeIds[thisProc]);
-    }
-
-    //---------------------------------------
-    stk::mesh::EntityProcVec elemToMove;
-    if (thisProc == 0) {
-      stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
-      elemToMove.push_back(stk::mesh::EntityProc(elem1, 1));
-    }
-
-    mesh.change_entity_owner(elemToMove);
-
-    //After change-entity-owner moves elem 1 to P1:
-    //       3----------7----------11----------15-----------19
-    //      /|         /|         /|           /|          /|
-    //     / |        / |        / |          / |         / |
-    //    /  |       /  |       /  |         /  |        /  |
-    //   2----------6----------10-----------14----------18  |
-    //   |   4------|---8------|---12-------|--16-------|---20
-    //   |  /       |  /       |  /         |  /        |  /
-    //   | /   E1   | /  E2    | /    E3    | /    E4   | /
-    //   |/         |/         |/           |/          |/
-    //   1----------5----------9------------13----------17
-    //       P1         P0          P1           P1
-    //  Nodes 1-12 are shared
-    //  Elem 2 is aura-ghost on P1 and elems 1 and 3 are aura-ghosts on P0
-    //  Nodes 13-16 are aura-ghosts on P0. No nodes are aura-ghosts on P1.
-    //
-    {
-      stk::mesh::EntityIdVector elemIds[] = {{1, 3}, {2}};
-      stk::mesh::EntityIdVector nodeIds[] = {{13,14,15,16}, {}};
-      expect_recv_aura(mesh, stk::topology::ELEM_RANK, elemIds[thisProc]);
-      expect_recv_aura(mesh, stk::topology::NODE_RANK, nodeIds[thisProc]);
-    }
+TEST(BulkData, aura_moveElem1FromProc0ToProc1_NoUpwardConnectivity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD)==2) {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                      .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                                      .set_upward_connectivity(false)
+                                                      .create();
+    test_aura_move_elem1_from_proc0_to_proc1(*bulkPtr);
   }
 }
 

@@ -2889,7 +2889,7 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;
-  Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+  Stratimikos::enableMueLuRefMaxwell<double,LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
 #endif
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);

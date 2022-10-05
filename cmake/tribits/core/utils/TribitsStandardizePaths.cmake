@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @FUNCTION: tribits_standardize_abs_paths()
 #
 # Function uses get_filename_component() to standardize a list of paths to be

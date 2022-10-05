@@ -217,8 +217,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -396,8 +396,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -590,8 +590,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -985,8 +985,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     template<class TagType>
     KOKKOS_INLINE_FUNCTION void
     join (TagType,
-          volatile size_t& dstErrorCount,
-          const volatile size_t& srcErrorCount) const
+          size_t& dstErrorCount,
+          const size_t& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -1306,8 +1306,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }

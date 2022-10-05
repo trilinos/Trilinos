@@ -80,6 +80,7 @@
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 
 
 // FIXME
@@ -115,7 +116,6 @@
       m_isOpen(false),
       m_isInitialized(false),
       m_isAdopted(false),
-      m_needsDelete(false),
       m_dontCheckState(false),
       m_outputActiveChildrenOnly(false),
       m_filename(),
@@ -192,9 +192,10 @@
       entity_rank_names.push_back("FAMILY_TREE");
 #endif
 
-      m_metaData = new stk::mesh::MetaData();
+      stk::mesh::MeshBuilder builder(m_comm);
+      m_bulkData = builder.create();
+      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(),[](auto ptrWeWontDelete){});
       m_metaData->initialize(m_spatialDim, entity_rank_names);
-      m_bulkData = new stk::mesh::BulkData(*m_metaData, m_comm);
 
       const unsigned p_rank = stk::parallel_machine_rank( m_comm );
 
@@ -212,12 +213,10 @@
           m_isAdopted = true;
           m_coordinatesField =
             &m_metaData->declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" );
-          stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), init_np);
+          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), nullptr);
         }
       m_isOpen = true;
       m_filename = "";
-      m_needsDelete = true;
     }
 
     void PerceptMesh::
@@ -290,8 +289,6 @@
     {
       setProperty("in_filename", in_filename);
       setProperty("file_type", type);
-
-      m_needsDelete = false;
 
       if (m_isOpen)
         {
@@ -1776,8 +1773,8 @@
 
     // ctor constructor
     PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
-      m_metaData(const_cast<stk::mesh::MetaData *>(metaData)),
-      m_bulkData(bulkData),
+      m_metaData(std::shared_ptr<stk::mesh::MetaData>(const_cast<stk::mesh::MetaData*>(metaData),[](auto ptrWeWontDelete){})),
+      m_bulkData(std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto ptrWeWontDelete){})),
       m_output_file_index(0),
       m_iossMeshDataDidPopulate(false),
         m_sync_io_regions(false),
@@ -1789,7 +1786,6 @@
         m_isOpen(true),
         m_isInitialized(true),
         m_isAdopted(true),
-        m_needsDelete(false),
         m_dontCheckState(false),
         m_outputActiveChildrenOnly(false),
         m_filename(),
@@ -1842,7 +1838,7 @@
 
     void PerceptMesh::set_bulk_data(stk::mesh::BulkData *bulkData)
     {
-      m_bulkData = bulkData;
+      m_bulkData = std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto ptrWeWontDelete){});
       m_comm = bulkData->parallel();
       if (!Teuchos::is_null(m_iossMeshData) && m_iossMeshData->is_bulk_data_null())
           m_iossMeshData->set_bulk_data(*bulkData);
@@ -1896,13 +1892,8 @@
       m_geometry_parts = 0;
       m_iossMeshData = Teuchos::null;
       m_iossMeshDataOut = Teuchos::null;
-      if (m_needsDelete)
-        {
-          if (m_bulkData) delete m_bulkData;
-          if (m_metaData) delete m_metaData;
-          m_metaData = 0;
-          m_bulkData = 0;
-        }
+      m_bulkData.reset();
+      m_metaData.reset();
     }
 
     PerceptMesh::~PerceptMesh()
@@ -1994,8 +1985,7 @@
               {
                 //std::cout << "createField scalar: " << name << std::endl;
                 ScalarIntFieldType & sfield =  m_metaData->declare_field<ScalarIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::FieldTraits<ScalarIntFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-                stk::mesh::put_field_on_mesh( sfield , *part , init_np);
+                stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
                 field = &sfield;
               }
               break;
@@ -2004,8 +1994,7 @@
               {
                 //std::cout << "createField vector: " << name << std::endl;
                 VectorIntFieldType & vfield =  m_metaData->declare_field<VectorIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::FieldTraits<VectorIntFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , init_np);
+                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
                 field = &vfield;
               }
               break;
@@ -2028,8 +2017,7 @@
               {
                 //std::cout << "createField scalar: " << name << std::endl;
                 ScalarFieldType & sfield =  m_metaData->declare_field<ScalarFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-                stk::mesh::put_field_on_mesh( sfield , *part , init_np);
+                stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
                 field = &sfield;
               }
               break;
@@ -2038,8 +2026,7 @@
               {
                 //std::cout << "createField vector: " << name << std::endl;
                 CoordinatesFieldType & vfield =  m_metaData->declare_field<CoordinatesFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
-                stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , init_np);
+                stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
                 field = &vfield;
               }
               break;
@@ -2365,13 +2352,13 @@
           switch (m_searchType)
             {
             case FieldFunction::SIMPLE_SEARCH:
-              m_searcher = new SimpleSearcher(m_bulkData);
+              m_searcher = new SimpleSearcher(m_bulkData.get());
               break;
             case FieldFunction::STK_SEARCH:
               {
                 //int spDim = last_dimension(input_phy_points);
                 if (get_spatial_dim() == 3)
-                  m_searcher = new STKSearcher(m_bulkData);
+                  m_searcher = new STKSearcher(m_bulkData.get());
                 else
                   {
                     //m_searcher = new STKSearcher<2>(this);
@@ -2460,7 +2447,7 @@
       // The coordinates field will be set to the correct dimension.
       // this call creates the MetaData
       mesh_data->create_input_mesh();
-      m_metaData = &mesh_data->meta_data();
+      m_metaData = mesh_data->meta_data_ptr();
 
       // This defines all fields found on the input mesh as stk fields
       if (!m_avoid_add_all_mesh_fields_as_input_fields)
@@ -2594,7 +2581,6 @@
 
       //----------------------------------
       // Process Bulkdata for all Entity Types. Subsetting is possible.
-      //stk::mesh::BulkData bulk_data(meta_data, comm);
 
       // Read the model (topology, coordinates, attributes, etc)
       // from the mesh-file into the mesh bulk data.
@@ -2603,7 +2589,7 @@
         {
           mesh_data->populate_bulk_data();
           m_iossMeshDataDidPopulate = true;
-          m_bulkData = &mesh_data->bulk_data();
+          m_bulkData = mesh_data->bulk_data_ptr();
         }
 
       int timestep_count = mesh_data->get_input_io_region()->get_property("state_count").get_int();
@@ -4348,8 +4334,7 @@
       {
         typedef stk::mesh::Field<stk::mesh::EntityId> GlobalIdField;
         GlobalIdField& cg_gid_field = m_metaData->declare_field<GlobalIdField>(node_rank(), "cg_gid");
-        stk::mesh::FieldTraits<GlobalIdField>::data_type* init_np = nullptr; // gcc 4.8 hack
-        stk::mesh::put_field_on_mesh( cg_gid_field , m_metaData->universal_part(), init_np);
+        stk::mesh::put_field_on_mesh( cg_gid_field , m_metaData->universal_part(), nullptr);
         stk::io::set_field_role(cg_gid_field, Ioss::Field::TRANSIENT);
       }
     }
@@ -6026,8 +6011,7 @@
           if(!m_parent_element_field)
             {
               ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(stk::topology::ELEMENT_RANK, "parent_element");
-              stk::mesh::FieldTraits<ParentElementType>::data_type* init_np = nullptr; // gcc 4.8 hack
-              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), init_np);
+              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field = &pe_field;
             }
@@ -6035,8 +6019,7 @@
           if(!m_parent_element_field_side)
             {
               ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(side_rank(), "parent_element_side");
-              stk::mesh::FieldTraits<ParentElementType>::data_type* init_np = nullptr; // gcc 4.8 hack
-              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), init_np);
+              stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field_side = &pe_field;
             }
@@ -6071,8 +6054,7 @@
           if (!m_weights_field)
             {
               m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
-              stk::mesh::FieldTraits<WeightsFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-              stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), init_np);
+              stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }
         }
@@ -6104,8 +6086,7 @@
           m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType>(node_rank(), "unprojected_coordinates");
 
           // we use first 3 slots for coordinates, last for the flag for if it has been set yet
-          stk::mesh::FieldTraits<UnprojectedCoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-          stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, init_np);
+          stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, nullptr);
           stk::io::set_field_role(*m_unprojected_coordinates, Ioss::Field::TRANSIENT);
         }
       ADD_FIELD(m_unprojected_coordinates);
@@ -6115,8 +6096,7 @@
         {
           m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType>(node_rank(), "wall_distance");
 
-          stk::mesh::FieldTraits<WallDistanceFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
-          stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), init_np);
+          stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), nullptr);
           stk::io::set_field_role(*m_wall_distance_field, Ioss::Field::TRANSIENT);
         }
       ADD_FIELD(m_wall_distance_field);

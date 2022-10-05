@@ -169,10 +169,10 @@ namespace Intrepid2
                  SubdivisionStrategy subdivisionStrategy = NO_SUBDIVISION,
                  HypercubeNodeOrdering nodeOrdering = HYPERCUBE_NODE_ORDER_TENSOR);
     
-    /** \brief  Node-based constructor for straight-edged geometry.
+    /** \brief  Node-based constructor for straight-edged geometry. 
         \param [in] cellTopo - the cell topology for all cells.
         \param [in] cellToNodes - (C,LN) container specifying the global index of the local node.
-        \param [in] nodes - (GN,D) container specifying the coordinate weight for the global node in the specified dimension.
+        \param [in] nodes - (GN,D) container specifying the coordinate weight for the global node in the specified dimension; if cellToNodes is not allocated, this must be a (C,N,D) container
         \param [in] claimAffine - whether to assume (without checking) that the mapping from reference space is affine.  (If claimAffine is false, we check whether the cell topology is simplicial, and if so, set the affine_ member variable to true.)
         \param [in] nodeOrdering - applicable for hypercube cell topologies; specifies whether to use the order used by Shards (and lowest-order Intrepid2 bases), or the one used by higher-order Intrepid2 bases.
     */

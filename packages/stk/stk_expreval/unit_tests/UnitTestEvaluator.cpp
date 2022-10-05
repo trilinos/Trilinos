@@ -45,6 +45,8 @@
 
 namespace {
 
+using ViewInt1DHostType = Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace>;
+
 bool
 has_variable(const std::vector<std::string>& variableNames, const std::string& variableName)
 {
@@ -104,26 +106,29 @@ double device_evaluate(const std::string & expression,
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
 
-  int    variableIndices[10];
-  int    variableSizes[10];
+  auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
+  auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
-    variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
-    variableSizes[varIndex]   = 1;
+    variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
+    variableSizesHost(varIndex)   = 1;
     variableHostValues(varIndex, 0)  = boundScalars[varIndex].varValue;
   }
 
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
-    variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
-    variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
+    variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
+    variableSizesHost(varIndex + boundScalars.size())   = boundVectors[varIndex].varValues.size();
     for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues.size(); ++varComponent) {
       variableHostValues(varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[varComponent];
     }
   }
 
+  auto variableIndicesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableIndicesHost);
+  auto variableSizesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableSizesHost);
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
+
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
@@ -131,7 +136,7 @@ double device_evaluate(const std::string & expression,
   Kokkos::parallel_reduce(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndices[varIndex], variableDeviceValues(varIndex, 0), variableSizes[varIndex], 1);
+      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
     }
     localResult = parsedEval.evaluate(deviceVariableMap);
   }, result);
@@ -148,8 +153,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
 
-  int    variableIndices[10];
-  int    variableSizes[10];
+  auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
+  auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
 
@@ -157,8 +162,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   typename Kokkos::View<double[numThreads], stk::ngp::MemSpace>::HostMirror hostResults = Kokkos::create_mirror_view(deviceResults);
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
-    variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
-    variableSizes[varIndex]   = 1;
+    variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
+    variableSizesHost(varIndex)   = 1;
     ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
@@ -166,8 +171,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   }
 
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
-    variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
-    variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
+    variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
+    variableSizesHost(varIndex + boundScalars.size())  = boundVectors[varIndex].varValues.size();
     ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
@@ -176,14 +181,17 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
     }
   }
 
+  auto variableIndicesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableIndicesHost);
+  auto variableSizesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableSizesHost);
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
+
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::parallel_for(numThreads, KOKKOS_LAMBDA (const int& i) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndices[varIndex], variableDeviceValues(i, varIndex, 0), variableSizes[varIndex], 1);
+      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(i, varIndex, 0), variableSizesDevice(varIndex), 1);
     }
     deviceResults(i) = parsedEval.evaluate(deviceVariableMap);
   });
@@ -937,6 +945,26 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_GREATER_EQUAL)
   EXPECT_DOUBLE_EQ(device_evaluate("1>=1"),        1);
   EXPECT_DOUBLE_EQ(device_evaluate("1>=1.000001"), 0);
   EXPECT_DOUBLE_EQ(device_evaluate("2>=(1+2)"),    0);
+}
+
+TEST(UnitTestEvaluator, noChainedComparisons)
+{
+  EXPECT_ANY_THROW(evaluate("1 < 2 < 3"));
+  EXPECT_ANY_THROW(evaluate("3 > 4 > 5"));
+  EXPECT_ANY_THROW(evaluate("0 < 4 <= 2"));
+  EXPECT_ANY_THROW(evaluate("6 > 3 >= 1"));
+  EXPECT_ANY_THROW(evaluate("1 <= 2 < 3"));
+  EXPECT_ANY_THROW(evaluate("3 >= 4 > 5"));
+  EXPECT_ANY_THROW(evaluate("1 < x < 3", {{"x", 2}}));
+  EXPECT_ANY_THROW(evaluate("1 < (2 < 3)"));
+  EXPECT_ANY_THROW(evaluate("(1 < 2) < 3"));
+  EXPECT_ANY_THROW(evaluate("(3 > 1) > 0"));
+  EXPECT_ANY_THROW(evaluate("(2 <= 5) < 0"));
+  EXPECT_ANY_THROW(evaluate("(7 >= 3) > 1"));
+  EXPECT_ANY_THROW(evaluate("1 == 1 == 1"));
+  EXPECT_ANY_THROW(evaluate("(2 == 2) == 2"));
+  EXPECT_ANY_THROW(evaluate("2 != 1 != 6"));
+  EXPECT_ANY_THROW(evaluate("(3 != 4) != 8"));
 }
 
 TEST(UnitTestEvaluator, testOpcode_UNARY_NOT)
@@ -2535,7 +2563,7 @@ TEST(UnitTestEvaluator, testAvoidEvaluatingUnsafeTernaryBranch)
   stk::expreval::getCFunctionMap().erase("length_two_array");
 }
 
-void checkUniformDist(const Kokkos::View<double*>& vals) {
+void checkUniformDist(std::vector<double> const& vals) {
   const int NUM_SAMPLES = (int)vals.size();
   const double EXPECTED_MEAN = 0.5;
   const double EXPECTED_SIGMA = 1./std::sqrt(12.);
@@ -2568,7 +2596,7 @@ void checkUniformDist(const Kokkos::View<double*>& vals) {
 void testRandom(const char * expression)
 {
   const int NUM_SAMPLES = 10000;
-  Kokkos::View<double*> results("Results", NUM_SAMPLES);
+  std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = evaluate(expression);
   }
@@ -2583,7 +2611,7 @@ TEST(UnitTestEvaluator, testFunction_rand)
 void Ngp_testRandom(const char * expression)
 {
   const int NUM_SAMPLES = 10000;
-  Kokkos::View<double*> results("Results", NUM_SAMPLES);
+  std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = device_evaluate(expression);
   }
@@ -2669,29 +2697,13 @@ TEST(UnitTestEvaluator, Ngp_testFunction_random1_repeatability)
 }
 #endif
 
-TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
-{
-  std::vector<double> result(10);
-  double time = 0;
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}});
-    time += 0.1;
-  }
-
-  time = 0;
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}}), result[i]);
-    time += 0.1;
-  }
-}
-
 TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
 {
   const int NX = 50;
   const int NY = 50;
   const int NZ = 10;
 
-  Kokkos::View<double*> result("Result", NX*NY*NZ);
+  std::vector<double> result(NX*NY*NZ);
 
   int n = 0;
 
@@ -2707,6 +2719,46 @@ TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
   }
 
   checkUniformDist(result);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_distribution)
+{
+  const int NX = 50;
+  const int NY = 50;
+  const int NZ = 10;
+
+  std::vector<double> result(NX*NY*NZ);
+
+  int n = 0;
+
+  for(int i = 0; i < NX; ++i) {
+    for(int j = 0; j < NY; ++j) {
+      for(int k = 0; k < NZ; ++k) {
+        const double x = (i-10)*1.1e-3;
+        const double y = (j-20)*1.23e-4;
+        const double z = (k+1)*1.1e-1;
+        result[n++] = device_evaluate("ts_random(0.1,x,y,z)", {{"x",x}, {"y",y}, {"z",z}});
+      }
+    }
+  }
+
+  checkUniformDist(result);
+}
+
+TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
+{
+  std::vector<double> result(10);
+  double time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}});
+    time += 0.1;
+  }
+
+  time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}}), result[i]);
+    time += 0.1;
+  }
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_repeatability)

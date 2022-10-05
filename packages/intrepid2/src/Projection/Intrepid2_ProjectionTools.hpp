@@ -780,8 +780,6 @@ public:
       using vector_host_type = Kokkos::View<value_type*,host_device_type>;
       using scratch_host_type = Kokkos::View<value_type*,host_exec_space::scratch_memory_space>;
       using matrix_host_type = Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type>;
-      using matrix_device_type = Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type>;
-      using view_rank_2d_host_type = Kokkos::View<value_type**,Kokkos::LayoutRight,host_device_type>;
       using do_not_init_tag = Kokkos::ViewAllocateWithoutInitializing;
       using host_team_policy_type = Kokkos::TeamPolicy<host_exec_space>;
       using host_range_policy_type = Kokkos::RangePolicy<host_exec_space>;

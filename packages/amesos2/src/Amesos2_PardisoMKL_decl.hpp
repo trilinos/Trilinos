@@ -115,6 +115,10 @@ namespace Amesos2 {
      */
     typedef FunctionMap<Amesos2::PardisoMKL,int_t>                  function_map;
 
+    typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+    typedef Kokkos::View<int_t*,              HostExecSpaceType>    host_size_type_array;
+    typedef Kokkos::View<int_t*,              HostExecSpaceType>    host_ordinal_type_array;
+    typedef Kokkos::View<solver_scalar_type*, HostExecSpaceType>    host_value_type_array;
 
     /// \name Constructor/Destructor methods
     //@{
@@ -271,11 +275,11 @@ namespace Amesos2 {
      */
 
     /// Stores the values of the nonzero entries for PardisoMKL
-    Teuchos::Array<solver_scalar_type> nzvals_;
+    host_value_type_array nzvals_view_;
     /// Stores the location in \c Ai_ and Aval_ that starts row j
-    Teuchos::Array<int_t> colind_;
+    host_ordinal_type_array colind_view_;
     /// Stores the row indices of the nonzero entries
-    Teuchos::Array<int_t> rowptr_;
+    host_size_type_array rowptr_view_;
     /// Persisting, contiguous, 1D store for X
     mutable Teuchos::Array<solver_scalar_type> xvals_;
     /// Persisting, contiguous, 1D store for B

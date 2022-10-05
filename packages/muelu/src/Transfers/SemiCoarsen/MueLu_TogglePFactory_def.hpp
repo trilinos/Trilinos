@@ -141,8 +141,16 @@ namespace MueLu {
     prolongatorFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
     P = coarseLevel.Get< RCP<Matrix> >("P", (prolongatorFacts_[nProlongatorFactory]).get());
     RCP<Matrix> R     = Teuchos::null;
-    if (coarseLevel.IsAvailable("RfromPfactory",(prolongatorFacts_[nProlongatorFactory]).get()))
-      R = coarseLevel.Get< RCP<Matrix> >("RfromPfactory", (prolongatorFacts_[nProlongatorFactory]).get());
+    int Rplaceholder = -1;   // Used to indicate that an R matrix has not been produced by a prolongator factory, but 
+                             // that it is capable of producing one and should be invoked a 2nd time in restrictor mode
+                             // (e.g. with PgPFactory).  prolongatorFacts_[Rplaceholder] is factory that can produce R
+                             // matrix, which might be later invoked by  MueLu_RfromP_Or_TransP
+    if (coarseLevel.IsAvailable("RfromPfactory",(prolongatorFacts_[nProlongatorFactory]).get())) {
+	 std::string strType = coarseLevel.GetTypeName("RfromPfactory", (prolongatorFacts_[nProlongatorFactory]).get());
+	 if (strType == "int") Rplaceholder = nProlongatorFactory; 
+	 else R = coarseLevel.Get< RCP<Matrix> >("RfromPfactory", (prolongatorFacts_[nProlongatorFactory]).get());
+	               // Need to get R (and set it below) so that TogglePFactory is given credit for creating R
+    }
     // do not call "Build" for "Ptent" factory since it should automatically be called recursively
     // through the "Build" call for "P"
     Ptent = coarseLevel.Get< RCP<Matrix> >("P", (ptentFacts_[nProlongatorFactory]).get());
@@ -157,7 +165,12 @@ namespace MueLu {
 
     // store prolongator with this factory identification.
     Set(coarseLevel, "P", P);
+    //  Three cases:
+    //   1) R already computed and TogglePFactory takes credit for constructing it
+    //   2) R not computed but prolongatorFacts_[Rplaceholder] can produce it
+    //   3) R not computed  and prolongator can not produce it 
     if (R !=  Teuchos::null) Set(coarseLevel, "RfromPfactory", R);
+    else if (Rplaceholder !=  -1) Set(coarseLevel, "RfromPfactory",  Teuchos::as<int>(Rplaceholder));
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "Ptent", Ptent);
     Set(coarseLevel, "Chosen P", nProlongatorFactory);

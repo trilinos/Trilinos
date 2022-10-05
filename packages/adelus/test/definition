@@ -6,13 +6,25 @@ PACKAGE_NAME=Adelus
 
 (FRAMEWORK, INSTALL) {
     DIRS = vector_random;
-    ARGS = 1000 1;
+    ARGS = 3500 1;
     COMM = MPI(1 2 3);
 }
 
 (FRAMEWORK, INSTALL) {
     DIRS = vector_random;
-    ARGS = 1000 2;
+    ARGS = 3500 2;
+    COMM = MPI(4);
+}
+
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random_fs;
+    ARGS = 3500 1;
+    COMM = MPI(1 2 3);
+}
+
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random_fs;
+    ARGS = 3500 2;
     COMM = MPI(4);
 }
 

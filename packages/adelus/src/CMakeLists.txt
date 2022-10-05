@@ -55,21 +55,23 @@ IF (TPL_ENABLE_MPI)
   #
 
   APPEND_SET(HEADERS
-    Adelus_block.h
     Adelus_distribute.hpp
     Adelus_factor.hpp
-    Adelus_pcomm.hpp
+    Adelus_forward.hpp
     Adelus_perm1.hpp
+    Adelus_perm_mat.hpp
+    Adelus_perm_rhs.hpp
     Adelus_solve.hpp
     Adelus_vars.hpp
     Adelus_xlu_solve.hpp
+    Adelus_x_factor.hpp
+    Adelus_x_solve.hpp
     Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp
     )
 
   APPEND_SET(SOURCES
-    Adelus_pcomm.cpp
     Adelus_distribute.cpp
     )
 

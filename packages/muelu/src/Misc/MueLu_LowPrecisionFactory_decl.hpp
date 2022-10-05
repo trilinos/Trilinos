@@ -102,6 +102,95 @@ namespace MueLu {
 
   }; //class LowPrecisionFactory
 
+
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class LowPrecisionFactory<double,LocalOrdinal,GlobalOrdinal,Node> : public SingleLevelFactoryBase {
+    typedef double Scalar;
+#undef MUELU_LOWPRECISIONFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    LowPrecisionFactory() { }
+
+    //! Destructor.
+    virtual ~LowPrecisionFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList() const;
+
+    //@}
+
+    //! Input
+    //@{
+
+    void DeclareInput(Level& currentLevel) const;
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    /*!
+      @brief Build method.
+
+      Converts a matrix to half precision operators and returns it in <tt>currentLevel</tt>.
+      */
+    void Build(Level& currentLevel) const;
+
+    //@}
+
+  }; //class LowPrecisionFactory
+#endif
+
+
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class LowPrecisionFactory<std::complex<double>,LocalOrdinal,GlobalOrdinal,Node> : public SingleLevelFactoryBase {
+    typedef std::complex<double> Scalar;
+#undef MUELU_LOWPRECISIONFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    LowPrecisionFactory() { }
+
+    //! Destructor.
+    virtual ~LowPrecisionFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList() const;
+
+    //@}
+
+    //! Input
+    //@{
+
+    void DeclareInput(Level& currentLevel) const;
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    /*!
+      @brief Build method.
+
+      Converts a matrix to half precision operators and returns it in <tt>currentLevel</tt>.
+      */
+    void Build(Level& currentLevel) const;
+
+    //@}
+
+  }; //class LowPrecisionFactory
+#endif
+
+
 } //namespace MueLu
 
 #define MUELU_LOWPRECISIONFACTORY_SHORT

@@ -2206,8 +2206,7 @@ TEST(BulkData, testFieldComm)
 
     BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
     PressureFieldType& p_field = fixture.fem_meta().declare_field<int>(stk::topology::NODE_RANK, "p");
-    stk::mesh::put_field_on_mesh(p_field, fixture.fem_meta().universal_part(),
-                                 (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(p_field, fixture.fem_meta().universal_part(), nullptr);
     fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -2235,8 +2234,7 @@ TEST(BulkData, testFieldComm)
   {
     stk::mesh::fixtures::simple_fields::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     PressureFieldType& p_field = fixture.m_meta.declare_field<int>(stk::topology::NODE_RANK, "p");
-    stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(),
-                                 (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(), nullptr);
     fixture.m_meta.commit();
     fixture.generate_mesh();
     stk::mesh::BulkData & bulk = fixture.m_bulk_data;
@@ -3121,11 +3119,11 @@ TEST(BulkData, ModificationEnd)
       exodusFileReader.populate_bulk_data();
     }
 
-    int elementToMove = 3;
-    int nodeToCheck = 9;
+    stk::mesh::EntityId elementToDestroy = 3;
+    stk::mesh::EntityId nodeToCheck = 9;
 
     stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK, nodeToCheck);
-    stk::mesh::EntityKey entityToMoveKey(stk::topology::ELEMENT_RANK, elementToMove);
+    stk::mesh::EntityKey entityToDestroyKey(stk::topology::ELEMENT_RANK, elementToDestroy);
 
     stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData->my_internal_comm_list().begin(),
                                                                                 stkMeshBulkData->my_internal_comm_list().end(),
@@ -3137,28 +3135,22 @@ TEST(BulkData, ModificationEnd)
 
     stkMeshBulkData->modification_begin();
 
-    ASSERT_TRUE( stkMeshBulkData->is_valid(stkMeshBulkData->get_entity(entityToMoveKey)));
+    ASSERT_TRUE( stkMeshBulkData->is_valid(stkMeshBulkData->get_entity(entityToDestroyKey)));
 
     if(stkMeshBulkData->parallel_rank() == 1)
     {
-      stkMeshBulkData->destroy_entity(stkMeshBulkData->get_entity(entityToMoveKey));
+      stkMeshBulkData->destroy_entity(stkMeshBulkData->get_entity(entityToDestroyKey));
     }
 
-    // Really testing destroy_entity
-    stkMeshBulkData->my_delete_shared_entities_which_are_no_longer_in_owned_closure();
+    stkMeshBulkData->modification_end();
 
-    iter = std::lower_bound(stkMeshBulkData->my_internal_comm_list().begin(), stkMeshBulkData->my_internal_comm_list().end(), nodeEntityKey);
-
-    ASSERT_TRUE(iter != stkMeshBulkData->my_internal_comm_list().end());
-    EXPECT_EQ(nodeEntityKey, iter->key);
-
-    if(stkMeshBulkData->parallel_rank() == 0)
-    {
-      EXPECT_TRUE(stkMeshBulkData->is_valid(iter->entity));
+    stk::mesh::Entity nodeEntity = stkMeshBulkData->get_entity(nodeEntityKey);
+    if (stkMeshBulkData->parallel_rank() == 0) {
+      EXPECT_TRUE(stkMeshBulkData->is_valid(nodeEntity));
+      EXPECT_FALSE(stkMeshBulkData->in_shared(nodeEntity));
     }
-    else
-    {
-      EXPECT_FALSE(stkMeshBulkData->is_valid(iter->entity));
+    else {
+      EXPECT_FALSE(stkMeshBulkData->is_valid(nodeEntity));
     }
 
     std::vector<size_t> globalCounts;
@@ -4431,8 +4423,7 @@ TEST(BulkData, can_we_create_shared_nodes)
       stk::mesh::Selector all_nodes = meta.universal_part();
       typedef stk::mesh::Field<double> CoordFieldType;
       CoordFieldType& coordField = meta.declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
-      stk::mesh::put_field_on_mesh(coordField, all_nodes, 3,
-                                   (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+      stk::mesh::put_field_on_mesh(coordField, all_nodes, 3, nullptr);
 
       stk::mesh::Part& elem_part = meta.declare_part_with_topology("block_1", stk::topology::BEAM_2);
       stk::io::put_io_part_attribute(elem_part);
@@ -5298,11 +5289,9 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   //declare a field for coordinates
   typedef stk::mesh::Field<double> CoordFieldType;
   CoordFieldType& coordField = meta.declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
-  stk::mesh::put_field_on_mesh(coordField, all_nodes, 2,
-                               (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(coordField, all_nodes, 2, nullptr);
   stk::mesh::Field<double>& oneField = meta.declare_field<double>(stk::topology::NODE_RANK, "field_of_one");
-  stk::mesh::put_field_on_mesh(oneField, block_1,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(oneField, block_1, nullptr);
 
   meta.commit();
   mesh.modification_begin();

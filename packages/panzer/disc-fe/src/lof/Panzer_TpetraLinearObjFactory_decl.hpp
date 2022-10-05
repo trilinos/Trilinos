@@ -72,7 +72,7 @@
 namespace panzer {
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
-class TpetraLinearObjFactory : public LinearObjFactory<Traits> 
+class TpetraLinearObjFactory : public LinearObjFactory<Traits>
                              , public ThyraObjFactory<ScalarT> {
 public:
    typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ContainerType;
@@ -94,7 +94,7 @@ public:
 
 /*************** Linear object factory methods *******************/
 
-   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const 
+   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual void writeVector(const std::string & /* identifier */, const LinearObjContainer & /* loc */, int /* id */) const
@@ -102,12 +102,12 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const
    { return buildLinearObjContainer(); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const
    { return buildGhostedLinearObjContainer(); }
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
@@ -138,11 +138,13 @@ public:
      */
    virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildReadOnlyDomainContainer() const;
 
+#ifdef PANZER_HAVE_EPETRA
    /** Build a GlobalEvaluationDataContainer that handles all domain communication.
      * This is used primarily for gather operations and hides the allocation and usage
      * of the ghosted vector from the user.
      */
    virtual Teuchos::RCP<WriteVector_GlobalEvaluationData> buildWriteDomainContainer() const;
+#endif
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */
@@ -199,7 +201,7 @@ public:
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraMatrix() const;
 
 /*************** Generic helper functions for container setup *******************/
-   
+
    /** Initialize container with a specific set of member values.
      *
      * \note This will overwrite everything in the container and zero out values

@@ -74,6 +74,9 @@ class Fic : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     //! Get the sweeps (\"nFact\") from localPrec_
     int getSweeps() const;
 
+    //! Get the name of triangular solve algorithm
+    std::string getSpTrsvType() const;
+
     //! Get the number of triangular solves (\"nTrisol\") from localPrec_
     int getNTrisol() const;
 

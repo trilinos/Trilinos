@@ -48,17 +48,17 @@ various Trilinos packages can be enabled using the following options:
 
   ``-DTrilinos_ENABLE_FLOAT=ON``
 
-    Enables suppport and explicit instantiations for the ``float`` scalar
+    Enables support and explicit instantiations for the ``float`` scalar
     data-type in all supported Trilinos packages.
 
   ``-DTrilinos_ENABLE_COMPLEX=ON``
 
-    Enables suppport and explicit instantiations for the ``std::complex<T>``
+    Enables support and explicit instantiations for the ``std::complex<T>``
     scalar data-type in all supported Trilinos packages.
 
   ``-DTrilinos_ENABLE_COMPLEX_FLOAT=ON``
 
-    Enables suppport and explicit instantiations for the
+    Enables support and explicit instantiations for the
     ``std::complex<float>`` scalar data-type in all supported Trilinos
     packages.  This is set to ``ON`` by default when
     ``-DTrilinos_ENABLE_FLOAT=ON`` and ``-DTrilinos_ENABLE_COMPLEX=ON`` are
@@ -66,7 +66,7 @@ various Trilinos packages can be enabled using the following options:
 
   ``-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON``
 
-    Enables suppport and explicit instantiations for the
+    Enables support and explicit instantiations for the
     ``std::complex<double>`` scalar data-type in all supported Trilinos
     packages.  This is set to ``ON`` by default when
     ``-DTrilinos_ENABLE_COMPLEX=ON`` is set.
@@ -125,7 +125,7 @@ target machine.  These build-related flags are selected to create correct and
 perforamnt code and for C++ software that uses Kokkos.
 
 ============================    ======================================
-Functionality                   CMake Cache Varaible
+Functionality                   CMake Cache Variable
 ============================    ======================================
 Specify architecture            ``KOKKOS_ARCH``
 Debug builds                    ``KOKKOS_DEBUG``
@@ -218,7 +218,7 @@ Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
 Trilinos is a large collection of complex software.  Depending on what gets
-enbaled when building Trlinos, one can experience build and installation
+enabled when building Trlinos, one can experience build and installation
 problems due to this large size.
 
 When running into problems like these, the first thing that should be tried is

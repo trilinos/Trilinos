@@ -47,9 +47,9 @@ void swap(StateInProgress& a, StateInProgress& b) {
 // expand the grammar productions into marked productions
 static Configs make_configs(Grammar const& g) {
   Configs configs;
-  for (int i = 0; i < size(g.productions); ++i) {
+  for (int i = 0; i < Teuchos::size(g.productions); ++i) {
     const Grammar::Production& production = at(g.productions, i);
-    for (int j = 0; j <= size(production.rhs); ++j) {
+    for (int j = 0; j <= Teuchos::size(production.rhs); ++j) {
       configs.push_back(Config(i,j));
     }
   }
@@ -59,7 +59,7 @@ static Configs make_configs(Grammar const& g) {
 static Graph get_left_hand_sides_to_start_configs(
     Configs const& cs, Grammar const& grammar) {
   Graph lhs2sc = make_graph_with_nnodes(grammar.nsymbols);
-  for (int c_i = 0; c_i < size(cs); ++c_i) {
+  for (int c_i = 0; c_i < Teuchos::size(cs); ++c_i) {
     const Config& c = at(cs, c_i);
     if (c.dot > 0) continue;
     int p_i = c.production;
@@ -95,7 +95,7 @@ static void close(StateInProgress& state,
     const Config& config = at(cs, config_i);
     int prod_i = config.production;
     const Grammar::Production& prod = at(grammar.productions, prod_i);
-    if (config.dot == size(prod.rhs)) continue;
+    if (config.dot == Teuchos::size(prod.rhs)) continue;
     int symbol_after_dot = at(prod.rhs, config.dot);
     if (is_terminal(grammar, symbol_after_dot)) continue;
     const NodeEdges& edges = get_edges(lhs2sc, symbol_after_dot);
@@ -130,7 +130,7 @@ static void add_reduction_actions(StatesInProgress& states,
       const Config& config = at(cs, config_i);
       int prod_i = config.production;
       const Grammar::Production& prod = at(grammar.productions, prod_i);
-      if (config.dot != size(prod.rhs)) continue;
+      if (config.dot != Teuchos::size(prod.rhs)) continue;
       ActionInProgress reduction;
       reduction.action.kind = ACTION_REDUCE;
       reduction.action.production = config.production;
@@ -173,7 +173,7 @@ static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& gramma
     int start_accept_config = get_edges(lhs2sc, accept_nt).front();
     start_state.configs.push_back(start_accept_config);
     close(start_state, cs, grammar, lhs2sc);
-    int start_state_i = size(states);
+    int start_state_i = Teuchos::size(states);
     state_q.push(start_state_i);
     add_back(states, start_state);
     state_ptrs2idxs[states.back().get()] = start_state_i;
@@ -188,7 +188,7 @@ static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& gramma
       const Config& config = at(cs, config_i);
       int prod_i = config.production;
       const Grammar::Production& prod = at(grammar.productions, prod_i);
-      if (config.dot == size(prod.rhs)) continue;
+      if (config.dot == Teuchos::size(prod.rhs)) continue;
       int symbol_after_dot = at(prod.rhs, config.dot);
       transition_symbols.insert(symbol_after_dot);
     }
@@ -202,7 +202,7 @@ static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& gramma
         const Config& config = at(cs, config_i);
         int prod_i = config.production;
         const Grammar::Production& prod = at(grammar.productions, prod_i);
-        if (config.dot == size(prod.rhs)) continue;
+        if (config.dot == Teuchos::size(prod.rhs)) continue;
         int symbol_after_dot = at(prod.rhs, config.dot);
         if (symbol_after_dot != transition_symbol) continue;
         /* transition successor should just be the next index */
@@ -213,7 +213,7 @@ static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& gramma
       StatePtr2StateIndex::iterator it2 = state_ptrs2idxs.find(&next_state);
       int next_state_i;
       if (it2 == state_ptrs2idxs.end()) {
-        next_state_i = size(states);
+        next_state_i = Teuchos::size(states);
         state_q.push(next_state_i);
         add_back(states, next_state);
         state_ptrs2idxs[states.back().get()] = next_state_i;
@@ -235,7 +235,7 @@ static StatesInProgress make_lr0_parser(Configs const& cs, Grammar const& gramma
 static Graph get_productions_by_lhs(Grammar const& grammar) {
   int nsymbols = grammar.nsymbols;
   Graph lhs2prods = make_graph_with_nnodes(nsymbols);
-  for (int prod_i = 0; prod_i < size(grammar.productions); ++prod_i) {
+  for (int prod_i = 0; prod_i < Teuchos::size(grammar.productions); ++prod_i) {
     const Grammar::Production& prod = at(grammar.productions, prod_i);
     add_edge(lhs2prods, prod.lhs, prod_i);
   }
@@ -253,7 +253,7 @@ static Graph get_symbol_graph(Grammar const& grammar, Graph const& lhs2prods) {
     for (int i = 0; i < count_edges(lhs2prods, lhs); ++i) {
       int prod_i = at(lhs2prods, lhs, i);
       const Grammar::Production& prod = at(grammar.productions, prod_i);
-      for (int j = 0; j < size(prod.rhs); ++j) {
+      for (int j = 0; j < Teuchos::size(prod.rhs); ++j) {
         int rhs_symb = at(prod.rhs, j);
         dependees.insert(rhs_symb);
       }
@@ -294,7 +294,7 @@ static FirstSet get_first_set_of_string(std::vector<int> const& string,
   /* walk the string, stop when any symbol is found that doesn't
      have a null terminal descendant */
   int i;
-  for (i = 0; i < size(string); ++i) {
+  for (i = 0; i < Teuchos::size(string); ++i) {
     int symbol = at(string, i);
     bool has_null = false;
     const FirstSet& first_set = at(first_sets, symbol);
@@ -306,7 +306,7 @@ static FirstSet get_first_set_of_string(std::vector<int> const& string,
     }
     if (!has_null) break;
   }
-  if (i == size(string)) out.insert(FIRST_NULL);
+  if (i == Teuchos::size(string)) out.insert(FIRST_NULL);
   return out;
 }
 
@@ -395,9 +395,9 @@ static std::vector<FirstSet> compute_first_sets(Grammar const& grammar,
 
 StateConfigs form_state_configs(StatesInProgress const& states) {
   StateConfigs out;
-  for (int i = 0; i < size(states); ++i) {
+  for (int i = 0; i < Teuchos::size(states); ++i) {
     StateInProgress& state = *at(states, i);
-    for (int j = 0; j < size(state.configs); ++j) {
+    for (int j = 0; j < Teuchos::size(state.configs); ++j) {
       out.push_back(StateConfig(i, j));
     }
   }
@@ -406,8 +406,8 @@ StateConfigs form_state_configs(StatesInProgress const& states) {
 
 Graph form_states_to_state_configs(StateConfigs const& scs,
     StatesInProgress const& states) {
-  Graph out = make_graph_with_nnodes(size(states));
-  for (int i = 0; i < size(scs); ++i) {
+  Graph out = make_graph_with_nnodes(Teuchos::size(states));
+  for (int i = 0; i < Teuchos::size(scs); ++i) {
     const StateConfig& sc = at(scs, i);
     at(out, sc.state).push_back(i);
   }
@@ -452,12 +452,12 @@ void print_graphviz(
   file << "graph [\n";
   file << "rankdir = \"LR\"\n";
   file << "]\n";
-  for (int s_i = 0; s_i < size(sips); ++s_i) {
+  for (int s_i = 0; s_i < Teuchos::size(sips); ++s_i) {
     const StateInProgress& state = *at(sips, s_i);
     file << s_i << " [\n";
     file << "label = \"";
     file << "State " << s_i << "\\l";
-    for (int cis_i = 0; cis_i < size(state.configs); ++cis_i) {
+    for (int cis_i = 0; cis_i < Teuchos::size(state.configs); ++cis_i) {
       int c_i = at(state.configs, cis_i);
       const Config& config = at(cs, c_i);
       const Grammar::Production& prod = at(grammar->productions, config.production);
@@ -465,18 +465,18 @@ void print_graphviz(
       file << sc_i << ": ";
       const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
       file << escape_dot(lhs_name) << " ::= ";
-      for (int rhs_i = 0; rhs_i <= size(prod.rhs); ++rhs_i) {
+      for (int rhs_i = 0; rhs_i <= Teuchos::size(prod.rhs); ++rhs_i) {
         if (rhs_i == config.dot) file << " .";
-        if (rhs_i < size(prod.rhs)) {
+        if (rhs_i < Teuchos::size(prod.rhs)) {
           int rhs_symb = at(prod.rhs, rhs_i);
           const std::string& rhs_symb_name = at(grammar->symbol_names, rhs_symb);
           file << " " << escape_dot(rhs_symb_name);
         }
       }
-      if (config.dot == size(prod.rhs)) {
+      if (config.dot == Teuchos::size(prod.rhs)) {
         file << ", \\{";
         bool found = false;
-        for (int a_i = 0; a_i < size(state.actions); ++a_i) {
+        for (int a_i = 0; a_i < Teuchos::size(state.actions); ++a_i) {
           const ActionInProgress& action = at(state.actions, a_i);
           if (action.action.kind == ACTION_REDUCE &&
               action.action.production == config.production) {
@@ -499,7 +499,7 @@ void print_graphviz(
     file << "\"\n";
     file << "shape = \"record\"\n";
     file << "]\n";
-    for (int a_i = 0; a_i < size(state.actions); ++a_i) {
+    for (int a_i = 0; a_i < Teuchos::size(state.actions); ++a_i) {
       const ActionInProgress& action = at(state.actions, a_i);
       if (action.action.kind == ACTION_SHIFT) {
         int symb = *(action.context.begin());
@@ -520,18 +520,18 @@ static Graph make_immediate_predecessor_graph(
     Graph const& states2scs,
     Configs const& cs,
     GrammarPtr grammar) {
-  Graph out = make_graph_with_nnodes(size(scs));
-  for (int s_i = 0; s_i < size(states); ++s_i) {
+  Graph out = make_graph_with_nnodes(Teuchos::size(scs));
+  for (int s_i = 0; s_i < Teuchos::size(states); ++s_i) {
     const StateInProgress& state = *at(states, s_i);
-    for (int cis_i = 0; cis_i < size(state.configs); ++cis_i) {
+    for (int cis_i = 0; cis_i < Teuchos::size(state.configs); ++cis_i) {
       int config_i = at(state.configs, cis_i);
       const Config& config = at(cs, config_i);
       const Grammar::Production& prod = at(grammar->productions, config.production);
       int dot = config.dot;
-      if (dot == size(prod.rhs)) continue;
+      if (dot == Teuchos::size(prod.rhs)) continue;
       int s = at(prod.rhs, dot);
       if (is_terminal(*grammar, s)) continue;
-      for (int cis_j = 0; cis_j < size(state.configs); ++cis_j) {
+      for (int cis_j = 0; cis_j < Teuchos::size(state.configs); ++cis_j) {
         int config_j = at(state.configs, cis_j);
         const Config& config2 = at(cs, config_j);
         const Grammar::Production& prod2 = at(grammar->productions, config2.production);
@@ -552,20 +552,20 @@ static Graph find_transition_predecessors(
     Graph const& states2scs,
     Configs const& cs,
     GrammarPtr grammar) {
-  Graph out = make_graph_with_nnodes(size(scs));
-  for (int state_i = 0; state_i < size(states); ++state_i) {
+  Graph out = make_graph_with_nnodes(Teuchos::size(scs));
+  for (int state_i = 0; state_i < Teuchos::size(states); ++state_i) {
     const StateInProgress& state = *at(states, state_i);
-    for (int a_i = 0; a_i < size(state.actions); ++a_i) {
+    for (int a_i = 0; a_i < Teuchos::size(state.actions); ++a_i) {
       const ActionInProgress& action = at(state.actions, a_i);
       if (action.action.kind != ACTION_SHIFT) continue;
       TEUCHOS_ASSERT(action.context.size() == 1);
       int symbol = *(action.context.begin());
       int state_j = action.action.next_state;
       const StateInProgress& state2 = *at(states, state_j);
-      for (int cis_i = 0; cis_i < size(state.configs); ++cis_i) {
+      for (int cis_i = 0; cis_i < Teuchos::size(state.configs); ++cis_i) {
         int config_i = at(state.configs, cis_i);
         const Config& config = at(cs, config_i);
-        for (int cis_j = 0; cis_j < size(state2.configs); ++cis_j) {
+        for (int cis_j = 0; cis_j < Teuchos::size(state2.configs); ++cis_j) {
           int config_j = at(state2.configs, cis_j);
           const Config& config2 = at(cs, config_j);
           if (config.production == config2.production &&
@@ -591,12 +591,12 @@ static Graph make_originator_graph(
     Graph const& states2scs,
     Configs const& cs,
     GrammarPtr grammar) {
-  Graph out = make_graph_with_nnodes(size(scs));
+  Graph out = make_graph_with_nnodes(Teuchos::size(scs));
   Graph ipg = make_immediate_predecessor_graph(
       scs, states, states2scs, cs, grammar);
   Graph tpg = find_transition_predecessors(
       scs, states, states2scs, cs, grammar);
-  for (int sc_i = 0; sc_i < size(scs); ++sc_i) {
+  for (int sc_i = 0; sc_i < Teuchos::size(scs); ++sc_i) {
     std::set<int> originators;
     /* breadth-first search through the Transition
        Precessor Graph (tpg), followed by a single hop
@@ -634,12 +634,12 @@ static std::vector<int> get_follow_string(
   int config_i = at(state.configs, sc.config_in_state);
   const Config& config = at(cs, config_i);
   const Grammar::Production& prod = at(grammar->productions, config.production);
-  int out_size = size(prod.rhs) - (config.dot + 1);
+  int out_size = Teuchos::size(prod.rhs) - (config.dot + 1);
   std::vector<int> out;
   /* out_size can be negative */
   if (out_size < 1) return out;
   reserve(out, out_size);
-  for (int i = config.dot + 1; i < size(prod.rhs); ++i) {
+  for (int i = config.dot + 1; i < Teuchos::size(prod.rhs); ++i) {
     out.push_back(at(prod.rhs, i));
   }
   return out;
@@ -647,7 +647,7 @@ static std::vector<int> get_follow_string(
 
 static void print_string(std::vector<int> const& str, GrammarPtr grammar) {
   std::cerr << "\"";
-  for (int i = 0; i < size(str); ++i) {
+  for (int i = 0; i < Teuchos::size(str); ++i) {
     int symb = at(str, i);
     const std::string& symb_name = at(grammar->symbol_names, symb);
     std::cerr << symb_name;
@@ -671,7 +671,7 @@ enum { MARKER = -433 };
 enum { ZERO = -100 }; // actual zero is a valid index for us
 
 static void print_stack(std::vector<int> const& stack) {
-  for (int i = 0; i < size(stack); ++i) {
+  for (int i = 0; i < Teuchos::size(stack); ++i) {
     int symb = at(stack, i);
     if (symb == MARKER) std::cerr << " M";
     else if (symb == ZERO) std::cerr << " Z";
@@ -704,7 +704,7 @@ static void move_markers(
   for (int i = 0; i < r; ++i) lane.push_back(MARKER);
   if (tests_failed) {
     lane.push_back(top_addr);
-    at(in_lane, top_addr) = size(lane) - 1;
+    at(in_lane, top_addr) = Teuchos::size(lane) - 1;
   }
 }
 
@@ -776,7 +776,7 @@ static void deal_with_tests_failed(
     if (verbose) std::cerr << "    pushing " << zeta_prime_addr << " onto LANE:\n    ";
     lane.push_back(zeta_prime_addr);
     if (verbose) print_stack(lane);
-    at(in_lane, zeta_prime_addr) = size(lane) - 1;
+    at(in_lane, zeta_prime_addr) = Teuchos::size(lane) - 1;
     if (verbose) std::cerr << "    IN_LANE(" << zeta_prime_addr << ") <- ON\n";
     tests_failed = true;
     if (verbose) std::cerr << "    TESTS_FAILED <- ON\n";
@@ -784,8 +784,8 @@ static void deal_with_tests_failed(
     if (verbose) std::cerr << "    " << zeta_prime_addr << " is the second originator of " << zeta_addr << " to fail the tests\n";
     int zeta_double_prime_addr = first_originator_failed;
     if (verbose) std::cerr << "    the first was " << zeta_double_prime_addr << '\n';
-    TEUCHOS_ASSERT(at(lane, size(lane) - 1) == zeta_double_prime_addr);
-    TEUCHOS_ASSERT(at(lane, size(lane) - 2) == zeta_addr);
+    TEUCHOS_ASSERT(at(lane, Teuchos::size(lane) - 1) == zeta_double_prime_addr);
+    TEUCHOS_ASSERT(at(lane, Teuchos::size(lane) - 2) == zeta_addr);
     if (verbose) std::cerr << "    pop LANE, push {marker, " << zeta_double_prime_addr << "} onto it:\n    ";
     lane.resize(lane.size() - 1);
     lane.push_back(MARKER);
@@ -820,7 +820,7 @@ static void heuristic_propagation_of_context_sets(
   const Config& config = at(cs, config_i);
   if (config.dot != 0) return;
   const Grammar::Production& prod = at(grammar->productions, config.production);
-  for (int cis_j = 0; cis_j < size(state.configs); ++cis_j) {
+  for (int cis_j = 0; cis_j < Teuchos::size(state.configs); ++cis_j) {
     int config_j = at(state.configs, cis_j);
     if (config_j == config_i) continue;
     const Config& config2 = at(cs, config_j);
@@ -858,9 +858,9 @@ static void compute_context_set(
   std::vector<int> stack;
   // need random access, inner insert, which std::stack doesn't provide
   std::vector<int> lane;
-  std::vector<int> in_lane = make_vector<int>(size(scs), -1);
+  std::vector<int> in_lane = make_vector<int>(Teuchos::size(scs), -1);
   lane.push_back(zeta_j_addr);
-  at(in_lane, zeta_j_addr) = size(lane) - 1;
+  at(in_lane, zeta_j_addr) = Teuchos::size(lane) - 1;
   bool tests_failed = false;
   Context contexts_generated;
   if (verbose) {
@@ -873,7 +873,7 @@ static void compute_context_set(
     if (verbose) {
       std::cerr << "Top of LANE is $\\zeta$ = " << zeta_addr << '\n';
     }
-    int zeta_pointer = size(lane) - 1;
+    int zeta_pointer = Teuchos::size(lane) - 1;
     if (verbose) std::cerr << "$\\zeta$-POINTER <- " << zeta_pointer << '\n';
     int num_originators_failed = 0;
     int first_originator_failed = -1;
@@ -984,7 +984,7 @@ static void compute_context_set(
         std::cerr << "  LANE:";
         print_stack(lane);
       }
-      if (at(lane, size(lane) - 1) == MARKER) {
+      if (at(lane, Teuchos::size(lane) - 1) == MARKER) {
         if (verbose) std::cerr << "  Top of LANE is a marker\n";
         if (verbose) std::cerr << "  Start STACK popping\n";
         while (true) { // STACK popping loop
@@ -997,29 +997,29 @@ static void compute_context_set(
           }
           if (stack.back() == MARKER) {
             if (verbose) std::cerr << "    Top of STACK is a marker, pop STACK and LANE\n";
-            resize(stack, size(stack) - 1);
-            resize(lane, size(lane) - 1);
+            resize(stack, Teuchos::size(stack) - 1);
+            resize(lane, Teuchos::size(lane) - 1);
             break; // out of STACK popping, back into LANE popping
           } else if (at(complete, stack.back())) {
             if (verbose) std::cerr << "    Top of STACK is has COMPLETE flag, pop STACK\n";
-            resize(stack, size(stack) - 1);
+            resize(stack, Teuchos::size(stack) - 1);
             // back into STACK popping
           } else {
             int addr = stack.back();
             if (verbose) std::cerr << "    Top of STACK is " << addr << ", pop STACK\n";
-            resize(stack, size(stack) - 1);
+            resize(stack, Teuchos::size(stack) - 1);
             if (verbose) std::cerr << "    Push " << addr << " onto LANE\n";
             lane.push_back(addr);
             if (verbose) std::cerr << "    IN_LANE(" << addr << ") <- ON\n";
-            at(in_lane, addr) = size(lane) - 1;
+            at(in_lane, addr) = Teuchos::size(lane) - 1;
             keep_lane_popping = false;
             break; // out of STACK and LANE popping, into top-level loop
           } // end STACK top checks
         } // end STACK popping loop
-      } else if (at(lane, size(lane) - 1) == ZERO) {
+      } else if (at(lane, Teuchos::size(lane) - 1) == ZERO) {
         if (verbose) std::cerr << "  Top of LANE is a zero\n";
         if (verbose) std::cerr << "  Pop LANE\n";
-        resize(lane, size(lane) - 1); // pop LANE
+        resize(lane, Teuchos::size(lane) - 1); // pop LANE
         // back to top of LANE popping loop
       } else { // top of LANE neither marker nor zero
         int tau_addr = lane.back();
@@ -1032,12 +1032,12 @@ static void compute_context_set(
         heuristic_propagation_of_context_sets(
             tau_addr, contexts, complete,
             scs, states, states2scs, cs, grammar);
-        if (size(lane) == 1 && at(lane, 0) == zeta_j_addr) {
+        if (Teuchos::size(lane) == 1 && at(lane, 0) == zeta_j_addr) {
           if (verbose) std::cerr << "END PROGRAM\n\n";
           return;
         }
         if (verbose) std::cerr << "  Pop LANE\n";
-        resize(lane, size(lane) - 1); // pop LANE
+        resize(lane, Teuchos::size(lane) - 1); // pop LANE
         // back to top of LANE popping loop
       } // end top of LANE checks
     } // end LANE popping loop
@@ -1049,17 +1049,17 @@ static std::vector<bool> determine_adequate_states(
     GrammarPtr grammar,
     bool verbose,
     std::ostream& os) {
-  std::vector<bool> out = make_vector<bool>(size(states));
-  for (int s_i = 0; s_i < size(states); ++s_i) {
+  std::vector<bool> out = make_vector<bool>(Teuchos::size(states));
+  for (int s_i = 0; s_i < Teuchos::size(states); ++s_i) {
     const StateInProgress& state = *at(states, s_i);
     bool state_is_adequate = true;
-    for (int a_i = 0; a_i < size(state.actions); ++a_i) {
+    for (int a_i = 0; a_i < Teuchos::size(state.actions); ++a_i) {
       const ActionInProgress& action = at(state.actions, a_i);
       if (action.action.kind == ACTION_SHIFT &&
           is_nonterminal(*grammar, *(action.context.begin()))) {
         continue;
       }
-      for (int a_j = a_i + 1; a_j < size(state.actions); ++a_j) {
+      for (int a_j = a_i + 1; a_j < Teuchos::size(state.actions); ++a_j) {
         const ActionInProgress& action2 = at(state.actions, a_j);
         if (action2.action.kind == ACTION_SHIFT &&
             is_nonterminal(*grammar, *(action2.context.begin()))) {
@@ -1078,7 +1078,7 @@ static std::vector<bool> determine_adequate_states(
             const Grammar::Production& prod = at(grammar->productions, ap1->action.production);
             const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
             os << lhs_name << " ::=";
-            for (int rhs_i = 0; rhs_i < size(prod.rhs); ++rhs_i) {
+            for (int rhs_i = 0; rhs_i < Teuchos::size(prod.rhs); ++rhs_i) {
               int rhs_symb = at(prod.rhs, rhs_i);
               const std::string& rhs_symb_name = at(grammar->symbol_names, rhs_symb);
               os << " " << rhs_symb_name;
@@ -1120,12 +1120,12 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
     if (verbose) std::cerr << "The grammar is LR(0)!\n";
     return out;
   }
-  std::vector<bool> complete = make_vector<bool>(size(scs), false);
-  std::vector<Context> contexts = make_vector<Context>(size(scs));
+  std::vector<bool> complete = make_vector<bool>(Teuchos::size(scs), false);
+  std::vector<Context> contexts = make_vector<Context>(Teuchos::size(scs));
   int accept_prod_i = get_accept_production(*grammar);
   /* initialize the accepting state-configs as described in
      footnote 8 at the bottom of page 37 */
-  for (int sc_i = 0; sc_i < size(scs); ++sc_i) {
+  for (int sc_i = 0; sc_i < Teuchos::size(scs); ++sc_i) {
     StateConfig& sc = at(scs, sc_i);
     StateInProgress& state = *at(states, sc.state);
     int config_i = at(state.configs, sc.config_in_state);
@@ -1141,14 +1141,14 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
   std::vector<FirstSet> first_sets = compute_first_sets(*grammar, verbose);
   /* compute context sets for all state-configs associated with reduction
      actions that are part of an inadequate state */
-  for (int s_i = 0; s_i < size(states); ++s_i) {
+  for (int s_i = 0; s_i < Teuchos::size(states); ++s_i) {
     if (at(adequate, s_i)) continue;
     StateInProgress& state = *at(states, s_i);
-    for (int cis_i = 0; cis_i < size(state.configs); ++cis_i) {
+    for (int cis_i = 0; cis_i < Teuchos::size(state.configs); ++cis_i) {
       int config_i = at(state.configs, cis_i);
       const Config& config = at(cs, config_i);
       const Grammar::Production& prod = at(grammar->productions, config.production);
-      if (config.dot != size(prod.rhs)) continue;
+      if (config.dot != Teuchos::size(prod.rhs)) continue;
       int zeta_j_addr = at(states2scs, s_i, cis_i);
       compute_context_set(zeta_j_addr, contexts, complete, scs,
           og, states, states2scs, cs, first_sets, grammar, verbose, out);
@@ -1156,16 +1156,16 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
   }
   /* update the context sets for all reduction state-configs
      which are marked complete, even if they aren't in inadequate states */
-  for (int s_i = 0; s_i < size(states); ++s_i) {
+  for (int s_i = 0; s_i < Teuchos::size(states); ++s_i) {
     StateInProgress& state = *at(states, s_i);
-    for (int cis_i = 0; cis_i < size(state.configs); ++cis_i) {
+    for (int cis_i = 0; cis_i < Teuchos::size(state.configs); ++cis_i) {
       int sc_i = at(states2scs, s_i, cis_i);
       if (!at(complete, sc_i)) continue;
       int config_i = at(state.configs, cis_i);
       Config& config = at(cs, config_i);
       const Grammar::Production& prod = at(grammar->productions, config.production);
-      if (config.dot != size(prod.rhs)) continue;
-      for (int a_i = 0; a_i < size(state.actions); ++a_i) {
+      if (config.dot != Teuchos::size(prod.rhs)) continue;
+      for (int a_i = 0; a_i < Teuchos::size(state.actions); ++a_i) {
         ActionInProgress& action = at(state.actions, a_i);
         if (action.action.kind == ACTION_REDUCE &&
             action.action.production == config.production) {
@@ -1192,13 +1192,13 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
 Parser accept_parser(ParserInProgress const& pip) {
   const StatesInProgress& sips = pip.states;
   GrammarPtr grammar = pip.grammar;
-  Parser out(grammar, size(sips));
-  for (int s_i = 0; s_i < size(sips); ++s_i) {
+  Parser out(grammar, Teuchos::size(sips));
+  for (int s_i = 0; s_i < Teuchos::size(sips); ++s_i) {
     add_state(out);
   }
-  for (int s_i = 0; s_i < size(sips); ++s_i) {
+  for (int s_i = 0; s_i < Teuchos::size(sips); ++s_i) {
     const StateInProgress& sip = *at(sips, s_i);
-    for (int a_i = 0; a_i < size(sip.actions); ++a_i) {
+    for (int a_i = 0; a_i < Teuchos::size(sip.actions); ++a_i) {
       const ActionInProgress& action = at(sip.actions, a_i);
       if (action.action.kind == ACTION_SHIFT &&
           is_nonterminal(*grammar, *(action.context.begin()))) {

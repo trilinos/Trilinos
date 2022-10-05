@@ -38,6 +38,9 @@
 # @HEADER
 
 
+include(PrintNonemptyVarWithSpaces)
+
+
 # @FUNCTION: tribits_print_initial_dependency_info()
 #
 # Usage::
@@ -71,7 +74,7 @@ endfunction()
 # Does **not** modify any state!
 #
 function(tribits_print_tentatively_enabled_tpls)
-  foreach(TPL ${${PROJECT_NAME}_TPLS})
+  foreach(TPL ${${PROJECT_NAME}_DEFINED_TPLS})
     if (TPL_TENTATIVE_ENABLE_${TPL})
       message("-- Tentatively enabling TPL '${TPL}'")
       #print_var(TPL_ENABLE_${TPL})
@@ -89,7 +92,7 @@ endfunction()
 # Function that dumps (prints to STDOUT) the package dependency info if
 # ``${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES==TRUE``.
 #
-# Does **not** modify state!
+# This function does **not** modify any state!
 #
 function(tribits_dump_package_dependencies_info)
 
@@ -101,20 +104,32 @@ function(tribits_dump_package_dependencies_info)
     "Dump the package forward dependency information."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
 
+  message("\nPackage dependencies information:")
+
+  tribits_print_project_list_var_and_num(DEFINED_TPLS)
+  tribits_print_project_list_var_and_num(DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
+  tribits_print_project_list_var_and_num(DEFINED_TOPLEVEL_PACKAGES)
+  tribits_print_project_list_var_and_num(DEFINED_INTERNAL_PACKAGES)
+  tribits_print_project_list_var_and_num(DEFINED_PACKAGES)
+
   if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
     message("")
-    message("Printing package dependencies ...")
-    message("")
-    print_nonempty_var_with_spaces(${PROJECT_NAME}_PACKAGES  DUMMY_OUT)
-    message("")
-    print_nonempty_var_with_spaces(${PROJECT_NAME}_SE_PACKAGES  DUMMY_OUT)
-    message("")
-    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES})
       tribits_print_package_dependencies(${TRIBITS_PACKAGE})
       message("")
     endforeach()
   endif()
 
 endfunction()
+
+
+function(tribits_print_project_list_var_and_num  listVarSuffix)
+  message("")
+  if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
+    print_nonempty_var_with_spaces(${PROJECT_NAME}_${listVarSuffix}  wasPrinted)
+  endif()
+  print_var(${PROJECT_NAME}_NUM_${listVarSuffix})
+endfunction()
+
 
 #  LocalWords:  TRIBITS

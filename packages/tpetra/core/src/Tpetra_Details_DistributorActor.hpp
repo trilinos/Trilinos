@@ -48,6 +48,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
+#include "Kokkos_TeuchosCommAdapters.hpp"
+
 namespace Tpetra {
 namespace Details {
 
@@ -55,6 +57,7 @@ template <class View1, class View2>
 constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
 
 class DistributorActor {
+  static constexpr int DEFAULT_MPI_TAG = 1;
 
 public:
   DistributorActor();
@@ -91,6 +94,8 @@ public:
   bool isReady() const;
 
 private:
+  int mpiTag_;
+
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -136,6 +141,39 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
       "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
+}
+
+template <typename ViewType>
+using HostAccessibility = Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename ViewType::memory_space>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfHostAccessible = std::enable_if_t<HostAccessibility<DstViewType>::accessible &&
+                                                HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfNotHostAccessible = std::enable_if_t<!HostAccessibility<DstViewType>::accessible ||
+                                                   !HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+enableIfHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  memcpy(dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+}
+
+template <typename DstViewType, typename SrcViewType>
+enableIfNotHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  Kokkos::Compat::deep_copy_offset(dst, src, dst_offset, src_offset, size);
 }
 
 template <class ExpView, class ImpView>
@@ -188,19 +226,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  const bool doBarrier = plan.barrierBetweenRecvSend();
-#endif
 
   size_t selfReceiveOffset = 0;
-
-  // MPI tag for nonblocking receives and blocking sends in this
-  // method.  Some processes might take the "fast" path
-  // (getIndicesTo().is_null()) and others might take the "slow" path for
-  // the same doPosts() call, so the path tag must be the same for
-  // both.
-  const int pathTag = 0;
-  const int tag = plan.getTag(pathTag);
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -258,7 +285,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, curBufLen);
         requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              tag, *plan.getComm()));
+              mpiTag_, *plan.getComm()));
       }
       else { // Receiving from myself
         selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -266,16 +293,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       curBufferOffset += curBufLen;
     }
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    plan.getComm()->barrier ();
-  }
-#endif
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
@@ -321,12 +338,12 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
             subview_offset (exports, plan.getStartsTo()[p] * numPackets,
                 plan.getLengthsTo()[p] * numPackets);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
+                mpiTag_, *plan.getComm()));
         }
         else {  // DISTRIBUTOR_SEND
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself
@@ -391,8 +408,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-          deep_copy_offset(sendArray, exports, sendArrayOffset,
-              plan.getIndicesTo()[j]*numPackets, numPackets);
+          packOffset(sendArray, exports, sendArrayOffset, plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
@@ -400,7 +416,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
         send<int> (tmpSend,
             as<int> (tmpSend.size ()),
-            plan.getProcsTo()[p], tag, *plan.getComm());
+            plan.getProcsTo()[p], mpiTag_, *plan.getComm());
       }
       else { // "Sending" the message to myself
         selfNum = p;
@@ -410,8 +426,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     if (plan.hasSelfMessage()) {
       for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
-        deep_copy_offset(imports, exports, selfReceiveOffset,
-            plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
+        packOffset(imports, exports, selfReceiveOffset, plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
         ++selfIndex;
         selfReceiveOffset += numPackets;
       }
@@ -464,9 +479,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  const bool doBarrier = plan.barrierBetweenRecvSend();
-#endif
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
@@ -483,17 +495,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       "enough entries to hold the expected number of import packets.  "
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
-#endif // HAVE_TPETRA_DEBUG
-
-  // MPI tag for nonblocking receives and blocking sends in this
-  // method.  Some processes might take the "fast" path
-  // (plan.getIndicesTo().is_null()) and others might take the "slow" path for
-  // the same doPosts() call, so the path tag must be the same for
-  // both.
-  const int pathTag = 1;
-  const int tag = plan.getTag(pathTag);
-
-#ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
     (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
      "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
@@ -546,7 +547,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
         requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              tag, *plan.getComm()));
+              mpiTag_, *plan.getComm()));
       }
       else { // Receiving these packet(s) from myself
         selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -554,16 +555,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       curBufferOffset += totalPacketsFrom_i;
     }
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    plan.getComm()->barrier ();
-  }
-#endif
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);
@@ -620,12 +611,12 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
+                mpiTag_, *plan.getComm()));
         }
         else { // DISTRIBUTOR_SEND
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself
@@ -702,7 +693,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself

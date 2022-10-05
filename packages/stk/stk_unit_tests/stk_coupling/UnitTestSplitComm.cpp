@@ -37,7 +37,6 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
-#include "TestCompatibilityMode.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
@@ -517,39 +516,4 @@ TEST(UnitTestSplitComm, get_pairwise_root_ranks_2procs_invalid_color)
 
   EXPECT_ANY_THROW(splitComms.get_pairwise_root_ranks(otherColor));
 }
-
-TEST(UnitTestSplitComm, is_coupling_version_incompatible)
-{
-  TestCompatibilityMode testMode(stk::coupling::impl::Incompatible);
-  int color = 0;
-  EXPECT_ANY_THROW(stk::coupling::SplitComms(MPI_COMM_WORLD, color));
-}
-
-TEST(UnitTestSplitComm, is_coupling_version_deprecated_current)
-{
-  TestCompatibilityMode testMode(stk::coupling::impl::Current);
-  int color = 0;
-  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
-  splitComms.set_free_comms_in_destructor(true);
-  EXPECT_FALSE(splitComms.is_coupling_version_deprecated());
-}
-
-TEST(UnitTestSplitComm, is_coupling_version_deprecated_BackwardsCompatible)
-{
-  TestCompatibilityMode testMode(stk::coupling::impl::BackwardsCompatible);
-  int color = 0;
-  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
-  splitComms.set_free_comms_in_destructor(true);
-  EXPECT_FALSE(splitComms.is_coupling_version_deprecated());
-}
-
-TEST(UnitTestSplitComm, is_coupling_version_deprecated_deprecated)
-{
-  TestCompatibilityMode testMode(stk::coupling::impl::Deprecated);
-  int color = 0;
-  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
-  splitComms.set_free_comms_in_destructor(true);
-  EXPECT_TRUE(splitComms.is_coupling_version_deprecated());
-}
-
 }

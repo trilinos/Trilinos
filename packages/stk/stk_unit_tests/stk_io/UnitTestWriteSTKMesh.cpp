@@ -227,8 +227,7 @@ protected:
         setup_empty_mesh(auraOption, bucketCapacity);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
-        const int initValue = 0;
-        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }
@@ -241,8 +240,7 @@ protected:
         stk::io::put_io_part_attribute(surface_part);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
-        const int initValue = 0;
-        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
 
@@ -540,8 +538,7 @@ protected:
         setup_empty_mesh(auraOption, bucketCapacity);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<int>(stk::topology::NODE_RANK, "nodal_field");
-        const int initValue = 0;
-        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }
@@ -554,8 +551,7 @@ protected:
         stk::io::put_io_part_attribute(surface_part);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<int>(stk::topology::NODE_RANK, "nodal_field");
-        const int initValue = 0;
-        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
 

@@ -231,10 +231,15 @@ PartRepository::~PartRepository()
 
 static const char INTERNAL_PART_PREFIX  = '{';
 static const char INTERNAL_PART_POSTFIX = '}';
+
+bool is_internal_part_name(const std::string& partName)
+{
+    return partName.size() > 2 && partName.front() == INTERNAL_PART_PREFIX && partName.back() == INTERNAL_PART_POSTFIX;
+}
+
 bool is_internal_part(const Part& part)
 {
-    const std::string& partName = part.name();
-    return partName.size() > 2 && partName.front() == INTERNAL_PART_PREFIX && partName.back() == INTERNAL_PART_POSTFIX;
+    return is_internal_part_name(part.name());
 }
 std::string convert_to_internal_name(const std::string& part_name)
 {

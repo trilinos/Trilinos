@@ -164,34 +164,6 @@ namespace Xpetra {
     //! Computes the operator-multivector application.
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=Teuchos::ScalarTraits< Scalar >::one(), Scalar beta=Teuchos::ScalarTraits< Scalar >::zero()) const = 0;
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumCols() const {
-      return getLocalNumCols();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
-
     //@}
 
   }; // RowMatrix class

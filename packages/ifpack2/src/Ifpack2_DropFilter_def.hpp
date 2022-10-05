@@ -288,18 +288,6 @@ getGlobalRowCopy (GlobalOrdinal /*GlobalRow*/,
 }
 
 //==========================================================================
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
-template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
-                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
-                                                  size_t &/* NumEntries */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter does not implement getGlobalRowCopy.");
-}
-#endif
-
-//==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::
   getLocalRowCopy (LocalOrdinal LocalRow,
@@ -335,21 +323,6 @@ void DropFilter<MatrixType>::
 }
 
 //==========================================================================
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
-                                              const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                                              const Teuchos::ArrayView<Scalar> &Values,
-                                              size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
-}
-#endif
-
-//==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
                                                   global_inds_host_view_type &/*indices*/,
@@ -358,15 +331,6 @@ void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
   throw std::runtime_error("Ifpack2::DropFilter: does not support getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
-                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter: does not support getGlobalRowView.");
-}
-#endif
 //==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
@@ -375,16 +339,6 @@ void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::DropFilter: does not support getLocalRowView.");
 }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
-                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter: does not support getLocalRowView.");
-}
-#endif
 
 //==========================================================================
 template<class MatrixType>

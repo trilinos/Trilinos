@@ -9,5 +9,5 @@ std::string WithSubpackages::getC()
 
 std::string WithSubpackages::depsC()
 {
-  return std::string("B ") + depsB();
+  return std::string("B ") + depsB() + std::string(" A ") + depsA();
 }

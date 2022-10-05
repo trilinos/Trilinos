@@ -1047,6 +1047,9 @@ namespace BaskerNS
     using Mag = typename STS::magnitudeType;
     const Entry zero (0.0);
     const Entry one  (1.0);
+    const Mag eps = STS::eps ();
+    const Mag normA = BTF_A.gnorm;
+    const Mag normA_blk = BTF_A.anorm;
 
     //Get needed variables
     const Int L_col = S(lvl)(kid);
@@ -1277,47 +1280,67 @@ namespace BaskerNS
       #endif
     }
 
-    U.tpivot = pivot;
-    //printf("lower pivot: %e, k: %d, kid: %d \n", U.tpivot, k, kid);
-
-    //local only
-    //opivot = pivot;
-   
     #ifdef BASKER_DEBUG_NFACTOR_COL
-    if(kid>=0)
-    printf("pivot found: %f , kid: %d \n", pivot, kid);
+    //if(kid>=0)
+    printf("pivot found: %f , kid: %d (normA=%e -> tol=%e)\n", pivot, kid, normA_blk, normA_blk * sqrt(eps));
     #endif
 
     if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
     {
-      const Mag eps = STS::eps ();
-      const Mag normA = BTF_A.gnorm;
-      const Mag normA_blk = BTF_A.anorm;
       if(Options.verbose == BASKER_TRUE)
       {
-        cout << "Error: Col Matrix is singular, col k = " << k << ", lvl = " << l <<endl;
+        cout << endl << endl;
+        cout << "---------------------------" << endl;
+        cout << "Error: Col Matrix is singular, col k = " << k
+             << ", lvl = " << lvl << ", l = " << l << endl;
         cout << "MaxIndex: " << maxindex << " pivot " << pivot << endl;
         cout << " norm(A)   = " << normA     << " (global)" << endl
              << " norm(A)   = " << normA_blk << " (block)"  << endl
-             << " replace_tiny_pivot = " << Options.replace_tiny_pivot << endl;
-        if (Options.replace_tiny_pivot && normA_blk >= abs(zero) && maxindex != BASKER_MAX_IDX) {
-          cout << "  replace tiny pivot with " << normA_blk * eps << endl;
+             << " replace_zero_pivot = " << Options.replace_zero_pivot << endl;
+        if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          cout << "  + replace zero pivot with " << normA_blk * sqrt(eps) << endl;
+        } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          cout << "  - replace zero pivot with " << normA_blk * eps << endl;
         }
+        cout << "---------------------------" << endl;
       }
        
       if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          pivot = normA_blk * sqrt(eps);
+          X(maxindex) = pivot;
+      } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
         pivot = normA_blk * eps;
         X(maxindex) = pivot;
       } else {
         // replace-tiny-pivot not requested, or the current column is structurally empty after elimination
-        // TODO: should we "add" tiny pivot to diagonal?  
         thread_array(kid).error_type   = BASKER_ERROR_SINGULAR;
         thread_array(kid).error_blk    = L_col;
         thread_array(kid).error_subblk = -1;
         thread_array(kid).error_info   = k;
         return BASKER_ERROR;
       }
+    } else if (Options.replace_tiny_pivot && normA_blk > abs(zero) && abs(pivot) < normA_blk * sqrt(eps)) {
+      if (Options.verbose == BASKER_TRUE)
+      {
+        cout << endl << endl;
+        cout << "---------------------------" << endl;
+        cout << "Col Matrix : replace tiny pivot col k = " << k
+             << ", lvl = " << lvl << ", l = " << l << endl;
+        cout << " pivot " << pivot << " -> "
+             << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
+             << endl;
+        cout << "---------------------------" << endl;
+      }
+      if (STS::real(pivot) >= abs(zero)) {
+        pivot = normA_blk * sqrt(eps);
+      } else {
+        pivot = -normA_blk * sqrt(eps);
+      }
+      X(maxindex) = pivot;
     }
+    U.tpivot = pivot;
+    //printf("lower pivot: %e, k: %d, kid: %d \n", U.tpivot, k, kid);
+
   
     //gperm[maxindex] = k;
     gperm(maxindex+brow_g) = k+brow_g; 
@@ -2018,362 +2041,6 @@ namespace BaskerNS
 
     return 0;
   }//end t_blk_col_copy_atomic()
-
-
-//defaunft   (bgood still needs removed)
-//Used for O(dim(S)*p) Atomics
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::t_n_col_copy_atomic
-  (
-   Int kid,
-   Int team_leader,
-   Int lvl,
-   Int l,
-   Int k
-  )
-  {
-    printf("______________ERROR__________________\n");
-    printf("___SHOULD NOT BE CALLED____________\n");
-
-    //Setup local variables
-    Int A_col = S[lvl][kid];
-    Int A_row = (lvl==1)?(2):S[l+1][kid]%(LU_size[A_col]); 
-    Int CM_index = kid;
-    BASKER_MATRIX_VIEW &B = AV[A_col][A_row];
-    B.init_perm(&gperm);
-    B.init_offset(k, 0);
-    team_leader = find_leader(kid, l);
-    ENTRY_1DARRAY   X = thread_array[kid].ews;
-    ENTRY_1DARRAY   XL= thread_array[team_leader].ews;
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-    printf("Callled t_n_col_copy_atomic, kid: %d \n", kid);
-    printf("Copying col, kid: %d  lvl: %d l: %d \n", kid,lvl, l);
-    printf("Copying Col, kid: %d  A: %d %d to C: %d tl: % d\n",
-        kid, A_col, A_row, CM_index, team_leader);
-#endif
-
-    //--------------Move other into leader's X--------//
-    if(kid != team_leader)
-    {
-      //printf("----ATOMIC MOVE KID: %d \n", kid);
-      for(Int i = B.srow; i < (B.srow+B.nrow); i++)
-      {
-        Int t = gpermi[i]; //gives us old numbering
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-        if(kid>=0)
-        {
-          printf("move, consider, i %d t %d kid %d \n",
-              i, t, kid);
-        }
-#endif
-        //Note used any more
-        if(t < A.max_idx)
-        {
-          if(X[t] != 0)
-          {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-            if(kid>=0)
-            {
-              printf("less--- %d, %f kid %d \n", 
-                  t, X[t], kid);
-            }		
-#endif
-            Kokkos::atomic_fetch_add(&(XL[t]),
-                X[t]);
-            X[t] = 0;
-          }//If not zero
-        }//If been permuted
-        else
-        {
-          if(X[i] !=0)
-          {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-            if(kid>=0){
-              printf("more--- %d, %f, kid %d \n", 
-                  i,X[i], kid);
-            }
-#endif
-            Kokkos::atomic_fetch_add(&(XL[i]),
-                X[i]);
-            X[i] = 0;
-          }//If not zero
-        }//If not been permuted
-      }//if in Sep lvls
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-      if(kid>=0)
-      {
-        printf("move other levels, l: %d lvl: %d kid: %d \n",
-            l, lvl, kid);
-      }
-#endif
-      if((l+1) == lvl)
-      {
-        //collect nnz in tree above
-        Int tree_ptr = A_col;
-        for(Int ll = lvl; ll < tree.nlvls; ll++)
-        {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("Recurse Tree, kid: %d tptr: %d \n",
-                kid, tree_ptr);
-          }
-#endif
-
-          tree_ptr = tree.treetab[tree_ptr];
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("update kid: %d tptr: %d col: %d %d \n",
-                kid, tree_ptr, tree.col_tabs[tree_ptr], 
-                tree.col_tabs[tree_ptr]);
-          }
-#endif
-
-          for(Int i = tree.col_tabs[tree_ptr]; 
-              i < tree.col_tabs[tree_ptr+1]; i++)
-          {
-
-            if(X[i] != 0)
-            {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-              if(kid>=0)
-              {
-                printf("r moving %d %f kid: %d \n",
-                    i, X[i],kid);
-              }
-#endif
-              Kokkos::atomic_fetch_add(&(XL[i]),
-                  X[i]);
-              X[i] = 0;
-            }//if not zero
-          }//rows
-        }//all tree nodes above
-      }//if a factor
-    }//if not team_leader
-
-    return 0;
-  }//end t_n_col_copy_atomic()
-
-  //Used for O(dim(S)*dim(S)) atomics
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::t_col_copy_atomic
-  (
-   Int kid,
-   Int team_leader,
-   Int lvl, 
-   Int l, 
-   Int k
-  )
-  {
-    printf("SHOULD NOT BE CALLED \n");
-
-    //Setup local variables
-    Int A_col = S[lvl][kid];
-    Int A_row = (lvl==1)?(2):S[l+1][kid]%(LU_size[A_col]); 
-    //Int A_row = S[l+1][kid]%(LU_size[A_col]);
-    Int CM_index = kid;
-    //Bgood(removed)
-    //BASKER_MATRIX_VIEW &B = AV[A_col][A_row];
-    //B.init_perm(&gperm);
-    //B.init_offset(k, 0);
-    BASKER_MATRIX &B = AVM[A_col][A_row];
-    team_leader = find_leader(kid, l);
-    ENTRY_1DARRAY   X = thread_array[team_leader].ews;
-    BASKER_MATRIX  &C = thread_array[kid].C;
-    Int nnz = 0;
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-    printf("copy_2 col, kid: %d  lvl: %d l: %d \n", kid,lvl, l);
-    printf("Copy_2 Col, kid: %d  A: %d %d to C: %d \n",
-        kid, A_col, A_row, CM_index);
-#endif
-
-    //B.info();
-    //B.base->info();
-
-
-    Int bcol = B.scol;
-    //Add
-    //Bgood(remove)
-    //for(Int i = B.offset; i < B.m_offset; i++)
-    for(Int i = B.col_ptr[k-bcol]; i < B.col_ptr[k-bcol+1]; i++)
-    {
-      Int B_row = B.row_idx(i);
-      Int j = gperm[B_row];
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-      if(kid>=0){
-        printf("Scaning_2 A: %d %d lvl: %d l: %d K: %d\n",
-            B_row, j, lvl, l, kid);
-      }
-#endif
-
-      if(j > A.nrow)//Not yet permuted (Sep only)
-      {
-        if(lvl == (l+1))//factor
-        {
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0){
-            printf("Add_2 (%d) A:3 %d, %f before value: %f kid: %d\n",
-                l, B_row, B.val(i), X[B_row], kid);
-          }
-#endif
-
-          X[B_row] += B.val(i);
-
-        }
-      }
-      else
-      {
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-        if(kid>=0){
-          printf("Considerin_2: %d %d with start %d kid: %d\n",
-              B_row, j, B.srow, kid);
-        }
-#endif
-
-        if((j >= B.srow) && (j < B.srow+B.nrow))
-        {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("add_2 A: %d %f kid: %d \n", 
-                B_row, B.val(i), kid);
-          }
-#endif                     
-          X[B_row] += B.val(i);
-        }//if in my submatrix/view  
-      }//if permuted
-    }//over all B in columne
-
-    //Copy into struc
-#ifdef BASKER_DEBUG_NFACTOR_COL
-    if(kid>=0)
-    {
-      printf("Moving_2 sep values [%d %d], kid: %d  \n", 
-          B.srow, (B.srow+B.nrow),kid); 
-    }   
-#endif
-    for(Int i = B.srow; i < (B.srow+B.nrow); i++)
-    {
-      Int t = gpermi[i]; //gives us old numbering
-
-#ifdef BASKER_DEBBUG_NFACTOR_COL
-      if(kid>=0)
-      {
-        printf("move_2, consider, i %d t %d kid %d \n",
-            i, t, kid);
-      }
-#endif
-      //Note used anymore
-      if(t < A.max_idx)
-      {
-        if(X[t] != 0)
-        {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("less--2 %d, %f kid %d \n", t, X[t], kid);
-          }		
-#endif
-          C.row_idx[nnz] = t;
-          C.val[nnz] = X[t];
-          nnz++;
-          X[t] = 0;
-        }
-      }
-      else
-      {
-        if(X[i]!=0)
-        {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("more--2 %d, %f, kid %d \n", i,X[i], kid);}
-#endif
-          C.row_idx[nnz] = i;
-          C.val[nnz] = X[i];
-          nnz++;
-          X[i] = 0;
-        }
-      }
-    }
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-    if(kid>=0)
-    {
-      printf("move_2 other levels, l: %d lvl: %d kid:  %d \n",
-          l, lvl, kid);}
-#endif
-      if((l+1) == lvl)
-      {
-        //collect nnz in tree above
-        Int tree_ptr = A_col;
-        for(Int ll = lvl; ll < tree.nlvls; ll++)
-        {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
-          {
-            printf("Recur_2 Tree Above, kid: %d tree_ptr: %d \n",
-                kid, tree_ptr);}
-#endif
-
-            tree_ptr = tree.treetab[tree_ptr];
-
-#ifdef BASKER_DEBUG_NFACTOR_COL
-            if(kid>=0)
-            {
-              printf("updat_2 kid: %d tree_ptr: %d col: %d %d \n",
-                  kid, tree_ptr, tree.col_tabs[tree_ptr], 
-                  tree.col_tabs[tree_ptr]);}
-#endif
-
-              for(Int i = tree.col_tabs[tree_ptr]; 
-                  i < tree.col_tabs[tree_ptr+1]; i++)
-              {
-
-                if(X[i] != 0)
-                {
-#ifdef BASKER_DEBUG_NFACTOR_COL
-                  if(kid>=0)
-                  {
-                    printf("r_2 moving %d %f kid: %d \n", 
-                        i, X[i],kid);
-                  }
-#endif
-                  C.row_idx[nnz] = i;
-                  C.val[nnz] = X[i];
-                  nnz++;
-                  X[i] = 0;
-                }
-              }//rows
-        }//all tree nodes above
-
-      }//if a factor
-
-      C.col_ptr[0] = 0;
-      C.col_ptr[1] = nnz;  
-
-      //Bgood(removed)
-      //B.flip_base(&(thread_array[kid].C));
-      //B.k_offset = k;
-
-      if(kid == 0)
-      {	
-        //printf("\n--------------------TEST----------------\n");
-        //B.base->print();
-      }
-      return 0;
-  }//end t_col_reduce()
 
 
   //local idx local blk

@@ -55,6 +55,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
 #include <spmv/KokkosKernels_spmv_data.hpp>
@@ -90,12 +91,12 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
   srand(17312837);
   matrix_type A;
   if (filename)
-    A = KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type>(filename);
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(filename);
   else {
     Offset nnz = 10 * numRows;
     // note: the help text says the bandwidth is fixed at 0.01 * numRows
     // CAVEAT:  small problem sizes are problematic, b/c of 0.01*numRows
-    A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(
+    A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
         numRows, numCols, nnz, 0, 0.01 * numRows);
   }
   SPMVTestData test_data = setup_test(&data, A, rows_per_thread, team_size,

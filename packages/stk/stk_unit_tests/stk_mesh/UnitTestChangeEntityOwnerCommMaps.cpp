@@ -116,8 +116,7 @@ public:
     stk::mesh::Field<double> &field = m_stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK,
                                                                               m_commListNodeFieldName, 1);
     m_commListNodeField = &field;
-    stk::mesh::put_field_on_mesh(*m_commListNodeField, m_stkMeshMetaData.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*m_commListNodeField, m_stkMeshMetaData.universal_part(), nullptr);
   }
 
   void addSharingCommMapNodeField()
@@ -125,8 +124,7 @@ public:
     stk::mesh::Field<double> &field = m_stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK,
                                                                               m_sharingCommMapNodeFieldName, 1);
     m_sharingCommMapNodeField = &field;
-    stk::mesh::put_field_on_mesh(*m_sharingCommMapNodeField, m_stkMeshMetaData.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*m_sharingCommMapNodeField, m_stkMeshMetaData.universal_part(), nullptr);
   }
 
   void addAuraCommMapNodeField()
@@ -134,8 +132,7 @@ public:
     stk::mesh::Field<double> &field = m_stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK,
                                                                               m_auraCommMapNodeFieldName, 1);
     m_auraCommMapNodeField = &field;
-    stk::mesh::put_field_on_mesh(*m_auraCommMapNodeField, m_stkMeshMetaData.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*m_auraCommMapNodeField, m_stkMeshMetaData.universal_part(), nullptr);
   }
 
   void addAuraCommMapElementField()
@@ -143,8 +140,7 @@ public:
     stk::mesh::Field<double> &field = m_stkMeshMetaData.declare_field<double>(stk::topology::ELEMENT_RANK,
                                                                               m_auraCommMapElementFieldName, 1);
     m_auraCommMapElementField = &field;
-    stk::mesh::put_field_on_mesh(*m_auraCommMapElementField, m_stkMeshMetaData.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*m_auraCommMapElementField, m_stkMeshMetaData.universal_part(), nullptr);
   }
 
   stk::mesh::Field<double> * getCommListNodeField() { return m_commListNodeField; }

@@ -119,8 +119,8 @@ int ConvergenceTet(const bool verbose) {
 
   using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  ";   ExecSpaceType().print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
   *outStream << "\n";
 
   int errorFlag = 0;
@@ -256,7 +256,7 @@ int ConvergenceTet(const bool verbose) {
   ValueType hvol_errors[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
 
   ValueType hgrad_errors_L2[4] = {7.23725, 2.20317, 0.362514, 0.049889};
-  ValueType hcurl_errors_L2[4] = {6.32367, 2.04776, 0.428591, 0.090222};
+  ValueType hcurl_errors_L2[4] = {6.24416, 2.00036, 0.428591, 0.090222};
   ValueType hdiv_errors_L2[4] = {4.60503, 1.2758, 0.260201, 0.0561971};
   ValueType hvol_errors_L2[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
 
@@ -686,7 +686,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -949,7 +949,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -1211,7 +1211,7 @@ int ConvergenceTet(const bool verbose) {
       std::vector<basisType*> basis_set;
       //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(basisDegree-1));
       basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(basisDegree-1));
-      //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
+      basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;

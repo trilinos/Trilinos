@@ -197,15 +197,12 @@
   use Tempus, and some of the features available.
 
   <table>
-    <tr><th> Number <th> Title <th> Description
-    <tr><td>  00    
-        <td> \ref 00_Basic_Problem.cpp "Basic Problem"
+    <tr><th> Title <th> Description
+    <tr><td> \ref example-00
         <td> Introduces the problem used in following examples.
-    <tr><td>  01    
-        <td> \ref 01_Utilize_Thyra.cpp "Utilize Thyra"
-        <td> Utilize Thyra Vectors instead of std::vectors.
-    <tr><td>  02    
-        <td> Use ModelEvaluator
+    <tr><td> \ref example-01
+        <td> Utilize Thyra Vectors instead of C++ arrays.
+    <tr><td> Use ModelEvaluator
         <td> Use ModelEvaluator for problem description (under construction).
   </table>
 

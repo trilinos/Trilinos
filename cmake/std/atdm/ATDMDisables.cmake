@@ -33,6 +33,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Pliris
   Komplex
   FEI
+  Krino
   TriKota
   Compadre
   STKClassic

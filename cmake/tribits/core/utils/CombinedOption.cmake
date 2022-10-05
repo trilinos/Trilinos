@@ -42,7 +42,6 @@ include(MultilineSet)
 include(ConcatStrings)
 
 
-#
 # @FUNCTION: combined_option()
 #
 # Set up a ``BOOL`` cache variable (i.e. an option) based on a set of

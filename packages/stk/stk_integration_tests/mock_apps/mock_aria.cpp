@@ -4,11 +4,12 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/Version.hpp>
+#include <stk_util/parallel/CouplingVersions_impl.hpp>
+#include <stk_util/parallel/CouplingVersions.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "StkSendAdapter.hpp"
@@ -67,6 +68,9 @@ public:
 
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+    int coupling_version_override = stk::get_command_line_option(argc, argv, "stk_coupling_version", STK_MAX_COUPLING_VERSION);
+    stk::util::impl::set_coupling_version(coupling_version_override);
+    stk::util::impl::set_error_on_reset(false);
     std::string defaultSyncMode = "Send";
     std::string syncModeString = stk::get_command_line_option<std::string>(argc, argv, "sync-mode", defaultSyncMode);
     m_syncMode = stk::coupling::string_to_sync_mode(syncModeString);
@@ -94,7 +98,7 @@ public:
     {
       std::ostringstream os;
       os << m_appName << ": STK version: " << stk::version_string()
-         << " (Coupling Version: " << stk::coupling::version() << ")" << std::endl;
+         << " (Coupling Version: " << stk::util::get_common_coupling_version() << ")" << std::endl;
       os << m_appName << ", color="<<color<<", world rank: " << myWorldRank<<" out of " << numWorldRanks
                       <<", app rank: " << myAppRank << " out of " << numAppRanks << std::endl;
       os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;

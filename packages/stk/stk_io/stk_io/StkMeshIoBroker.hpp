@@ -165,6 +165,9 @@ namespace stk {
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
       void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
+      void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
+      void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
+
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
 
@@ -176,9 +179,6 @@ namespace stk {
       // created automatically using the communicator of the m_input_region.
       // If meta data is not already set, then set the meta data from the
       // bulk data's metadata
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2022
-      STK_DEPRECATED void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
-#endif
       void set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data);
       void set_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
@@ -190,9 +190,6 @@ namespace stk {
       // this, only if needed, after you are completely done accessing
       // the input mesh and before any access to the output mesh and only
       // if the output mesh needs a different bulk data than the input mesh.
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2022
-      STK_DEPRECATED void replace_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
-#endif
       void replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data);
       void replace_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
@@ -217,6 +214,9 @@ namespace stk {
       {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
+
+      bool get_filter_empty_input_entity_blocks() const;
+      bool get_filter_empty_input_entity_blocks(size_t input_file_index) const;
 
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
@@ -620,16 +620,6 @@ namespace stk {
       const stk::mesh::MetaData &meta_data() const;
       const stk::mesh::BulkData &bulk_data() const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2022
-      // Special RCP getters for meta_data and bulk_data. Use these to handoff
-      // meta/bulk data to classes that also track meta/bulk data via RCP.
-      STK_DEPRECATED Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return Teuchos::rcp(m_metaData); }
-      STK_DEPRECATED Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return Teuchos::rcp(m_bulkData); }
-
-      STK_DEPRECATED Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return Teuchos::rcp(m_metaData); }
-      STK_DEPRECATED Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return Teuchos::rcp(m_bulkData); }
-#endif
-
       std::shared_ptr<stk::mesh::MetaData> meta_data_ptr() { return m_metaData; }
       std::shared_ptr<stk::mesh::BulkData> bulk_data_ptr() { return m_bulkData; }
 
@@ -864,6 +854,16 @@ namespace stk {
     inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
+    }
+
+    inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_entity_blocks(filterEmptyEntityBlocks);
+    }
+
+    inline void StkMeshIoBroker::set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_assembly_entity_blocks(filterEmptyAssemblyEntityBlocks);
     }
 
     inline stk::mesh::Selector StkMeshIoBroker::get_active_selector() const {

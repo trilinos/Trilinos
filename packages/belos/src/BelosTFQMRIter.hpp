@@ -110,21 +110,6 @@ namespace Belos {
   //! @name TFQMRIter Exceptions
   //@{
   
-  /** \brief TFQMRIterInitFailure is thrown when the TFQMRIter object is unable to
-   * generate an initial iterate in the TFQMRIter::initialize() routine.
-   *
-   * This std::exception is thrown from the TFQMRIter::initialize() method, which is
-   * called by the user or from the TFQMRIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown,
-   * TFQMRIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class TFQMRIterInitFailure : public BelosError {public:
-    TFQMRIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
   /** \brief TFQMRIterateFailure is thrown when the TFQMRIter object is unable to
    * compute the next iterate in the TFQMRIter::iterate() routine.
    *

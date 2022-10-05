@@ -2277,9 +2277,8 @@ public:
     const unsigned numStates = 1;
     stk::mesh::Field<double> & field = get_meta().declare_field<double>(stk::topology::ELEM_RANK, fieldName, numStates);
 
-    double init = 0.0;
-    stk::mesh::put_field_on_mesh(field, part1, &init);
-    stk::mesh::put_field_on_mesh(field, part2, &init);
+    stk::mesh::put_field_on_mesh(field, part1, nullptr);
+    stk::mesh::put_field_on_mesh(field, part2, nullptr);
 
     const std::vector<PartConfiguration> part1FullPart2Empty = {{"Part1", 2}};
     build_mesh(part1FullPart2Empty);

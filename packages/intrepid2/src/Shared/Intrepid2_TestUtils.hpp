@@ -199,6 +199,11 @@ namespace Intrepid2
     {
       basis = getTetrahedronBasis<BasisFamily>(fs, polyOrder_x);
     }
+    else if (cellTopo.getBaseKey() == shards::Wedge<>::key)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(polyOrder_y < 0, std::invalid_argument, "polyOrder_y must be specified");
+      basis = getWedgeBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y);
+    }
     else
     {
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported cell topology");
@@ -263,14 +268,54 @@ The total number of points defined will be a triangular number; if n=numPointsBa
   template <typename PointValueType, typename DeviceType>
   inline ViewType<PointValueType,DeviceType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
   {
-    const ordinal_type order = numPoints_1D - 1;
-    ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
-    ordinal_type spaceDim  = cellTopo.getDimension();
-    
-    ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
-    PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
-    
-    return inputPoints;
+    if (cellTopo.getBaseKey() == shards::Wedge<>::key)
+    {
+      shards::CellTopology lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
+      shards::CellTopology triTopo  = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
+      
+      const ordinal_type order = numPoints_1D - 1;
+      ordinal_type numPoints_tri  = PointTools::getLatticeSize(triTopo,  order);
+      ordinal_type numPoints_line = PointTools::getLatticeSize(lineTopo, order);
+      ordinal_type numPoints      = numPoints_tri * numPoints_line;
+      ordinal_type spaceDim  = cellTopo.getDimension();
+      
+      ViewType<PointValueType,DeviceType> inputPointsTri  = getView<PointValueType,DeviceType>("input points",numPoints_tri, 2);
+      ViewType<PointValueType,DeviceType> inputPointsLine = getView<PointValueType,DeviceType>("input points",numPoints_line,1);
+      PointTools::getLattice(inputPointsTri,   triTopo, order, 0, POINTTYPE_EQUISPACED );
+      PointTools::getLattice(inputPointsLine, lineTopo, order, 0, POINTTYPE_EQUISPACED );
+
+      ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
+      
+      using ExecutionSpace = typename ViewType<PointValueType,DeviceType>::execution_space;
+      
+      Kokkos::RangePolicy < ExecutionSpace > policy(0,numPoints_tri);
+      Kokkos::parallel_for( policy,
+      KOKKOS_LAMBDA (const ordinal_type &triPointOrdinal )
+      {
+        ordinal_type pointOrdinal = triPointOrdinal * numPoints_line;
+        for (ordinal_type linePointOrdinal=0; linePointOrdinal<numPoints_line; linePointOrdinal++)
+        {
+          inputPoints(pointOrdinal,0) = inputPointsTri(  triPointOrdinal,0);
+          inputPoints(pointOrdinal,1) = inputPointsTri(  triPointOrdinal,1);
+          inputPoints(pointOrdinal,2) = inputPointsLine(linePointOrdinal,0);
+          pointOrdinal++;
+        }
+      }
+      );
+            
+      return inputPoints;
+    }
+    else
+    {
+      const ordinal_type order = numPoints_1D - 1;
+      ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
+      ordinal_type spaceDim  = cellTopo.getDimension();
+      
+      ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
+      PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
+      
+      return inputPoints;
+    }
   }
 
   template<typename OutputValueType, typename DeviceType>
@@ -350,7 +395,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   // ! This returns a vector whose entries are vector<int>s containing 1-3 polynomial orders from 1 up to and including those specified
   // ! Intended for testing bases that support anisotropic polynomial degree, such as the hierarchical bases
-  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline std::vector< std::vector<int> > getBasisTestCasesUpToDegree(int spaceDim, int minDegree, int polyOrder_x, int polyOrder_y=-1, int polyOrder_z=-1)
   {
     std::vector<int> degrees(spaceDim);
     degrees[0] = polyOrder_x;
@@ -360,6 +405,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     int numCases = degrees[0];
     for (unsigned d=1; d<degrees.size(); d++)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(degrees[d] < minDegree, std::invalid_argument, "Unsupported degree/minDegree combination");
       numCases = numCases * (degrees[d] + 1 - minDegree);
     }
     std::vector< std::vector<int> > subBasisDegreeTestCases(numCases);

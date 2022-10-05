@@ -254,11 +254,10 @@ void create_n_hex_mesh_with_transient_field(int numElems, const std::string& fil
 
   stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
 
-  double initialValue = 0.0;
   std::ostringstream os;
   os << "generated:1x1x" << numElems;
 
-  stk::mesh::put_field_on_mesh(field, meta.universal_part(), 1, &initialValue);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), 1, nullptr);
   stk::io::fill_mesh(os.str(), *bulk);
 
   stk::io::StkMeshIoBroker ioBroker;
@@ -284,11 +283,10 @@ void create_n_hex_mesh_with_transient_field_and_global_data(int numElems, const 
 
   stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
 
-  double initialValue = 0.0;
   std::ostringstream os;
   os << "generated:1x1x" << numElems;
 
-  stk::mesh::put_field_on_mesh(field, meta.universal_part(), 1, &initialValue);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), 1, nullptr);
   stk::io::fill_mesh(os.str(), *bulk);
 
   stk::io::StkMeshIoBroker ioBroker;

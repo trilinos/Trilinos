@@ -74,8 +74,8 @@ public:
     auto vectorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "VectorField");
     auto stkIntField = &get_meta().declare_field<int>(stk::topology::ELEMENT_RANK, "intField", 1);
 
-    stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, nullptr);
+    stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, nullptr);
     stk::mesh::put_field_on_mesh(*stkIntField, get_meta().universal_part(), numComponent, init.data());
   }
 
@@ -188,8 +188,8 @@ public:
   {
     tensorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "TensorField");
     vectorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "VectorField");
-    stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, nullptr);
+    stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, nullptr);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numElemBlocks);
     stk::io::fill_mesh(meshSpecification, get_bulk());
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);

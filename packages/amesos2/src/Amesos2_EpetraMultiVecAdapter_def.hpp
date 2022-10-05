@@ -80,6 +80,15 @@ MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const Teuchos::RCP<multivec
 }
   
 
+Teuchos::RCP<Epetra_MultiVector>
+MultiVecAdapter<Epetra_MultiVector>::clone() const
+{
+  Teuchos::RCP<Epetra_MultiVector> Y (new Epetra_MultiVector(*mv_map_, mv_->NumVectors(), false));
+  return Y;
+}
+
+
+
 bool MultiVecAdapter<Epetra_MultiVector>::isLocallyIndexed() const
 {
   return !mv_->DistributedGlobal();

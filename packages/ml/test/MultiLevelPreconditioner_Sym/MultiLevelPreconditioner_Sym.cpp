@@ -1,7 +1,11 @@
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
-#include <malloc.h>
+#ifdef __APPLE__
+#include <stdlib.h> // C++ standard does not include malloc.h, and Apple platforms don't support this.
+#else
+#include <malloc.h> // icc (at least) does not define mallinfo() from stdlib.h.
+#endif
 #include <cstdio>
 #include "ml_config.h"
 

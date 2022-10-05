@@ -26,7 +26,7 @@
 
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
-
+#include <stk_mesh/base/MeshBuilder.hpp>
 //----------------------------------------------------------------------
 
   namespace percept {
@@ -35,8 +35,10 @@
 
     BeamFixture::BeamFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension )
-      , m_bulkData(m_metaData, comm )
+      , m_bulkDataPtr(stk::mesh::MeshBuilder(comm).set_spatial_dimension(m_spatial_dimension)
+                                                .create())
+      , m_bulkData(*m_bulkDataPtr)
+      , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_beam( m_metaData.declare_part_with_topology( "block_2", stk::topology::BEAM_2 ) )
       , m_coordinates_field( m_metaData.declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< CoordinatesFieldType >( stk::topology::ELEMENT_RANK, "centroid" ))
@@ -46,12 +48,10 @@
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
-      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
-      put_field_on_mesh( m_coordinates_field , universal, init_c);
-      put_field_on_mesh( m_centroid_field , universal, init_c);
-      put_field_on_mesh( m_temperature_field, universal, init_s);
-      put_field_on_mesh( m_volume_field, m_block_beam, init_s);
+      put_field_on_mesh( m_coordinates_field , universal, nullptr);
+      put_field_on_mesh( m_centroid_field , universal, nullptr);
+      put_field_on_mesh( m_temperature_field, universal, nullptr);
+      put_field_on_mesh( m_volume_field, m_block_beam, nullptr);
 
       if (doCommit)
         m_metaData.commit();

@@ -88,7 +88,8 @@ struct CrsMatrixGetDiagCopyWithOffsetsFunctor {
         static_cast<int>(DiagType::rank) == 1,
         "The DiagType template parameter must be a 1-D Kokkos::View.");
     static_assert(
-        std::is_same<DiagType, typename DiagType::non_const_type>::value,
+        std::is_same<typename DiagType::value_type,
+                     typename DiagType::non_const_value_type>::value,
         "The DiagType template parameter must be a nonconst Kokkos::View.");
     static_assert(Kokkos::is_view<OffsetsType>::value,
                   "The OffsetsType template parameter must be a Kokkos::View.");

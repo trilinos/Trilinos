@@ -160,7 +160,6 @@ namespace Stokhos {
     return flat_graph;
   }
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   // Create a flattened graph for a graph from a matrix with the
   // MP::Vector scalar type (each block is an identity matrix)
@@ -242,7 +241,6 @@ namespace Stokhos {
     return flat_graph;
   }
 
-#endif
 
   // Create a flattened vector by unrolling the MP::Vector scalar type.  The
   // returned vector is a view of the original
@@ -437,7 +435,6 @@ namespace Stokhos {
     return create_flat_vector_view(vec, const_flat_map);
   }
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   // Create a flattened vector by unrolling the MP::Vector scalar type.  The
   // returned vector is a view of the original
@@ -506,7 +503,6 @@ namespace Stokhos {
     return flat_vec;
   }
 
-#endif
 
   // Create a flattened matrix by unrolling the MP::Vector scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)

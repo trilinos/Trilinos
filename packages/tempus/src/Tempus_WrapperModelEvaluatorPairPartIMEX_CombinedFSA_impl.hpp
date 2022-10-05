@@ -37,8 +37,8 @@ WrapperModelEvaluatorPairPartIMEX_CombinedFSA(
 
   appExplicitModel_ = forwardModel_->getExplicitModel();
   appImplicitModel_ = forwardModel_->getImplicitModel();
-  fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, pl));
-  fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, pl));
+  fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_, appExplicitModel_, pl));
+  fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_, appImplicitModel_, pl));
 
   const int y_param_index = forwardModel_->getParameterIndex();
   const int sens_param_index = pl->get<int>("Sensitivity Parameter Index");

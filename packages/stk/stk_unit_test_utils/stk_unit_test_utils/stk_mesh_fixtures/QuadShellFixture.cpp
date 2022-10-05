@@ -75,8 +75,7 @@ QuadShellFixture::QuadShellFixture(MetaData& meta,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -94,8 +93,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -114,8 +112,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -133,8 +130,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
 
 QuadShellFixture::~QuadShellFixture()
@@ -305,8 +301,7 @@ QuadShellFixture::QuadShellFixture(MetaData& meta,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 }
 
@@ -327,8 +322,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
   m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates");
 
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 }
 
@@ -350,8 +344,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
   m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, coordsName);
 
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 }
 
@@ -371,8 +364,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
   m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates");
 
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 }
 

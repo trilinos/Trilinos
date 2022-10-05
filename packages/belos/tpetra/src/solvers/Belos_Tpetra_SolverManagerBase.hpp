@@ -198,6 +198,31 @@ public:
     return lastSolverOutput_.converged ? Belos::Converged : Belos::Unconverged;
   }
 
+  typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const {
+    using STS = Teuchos::ScalarTraits<SC>;
+    using real_type = typename STS::magnitudeType;
+    const SC one = STS::one ();
+
+    auto A = solver_->getMatrix ();
+    auto B = problem_->getRHS ();
+    auto X = problem_->getLHS ();
+
+    const size_t numVecs = B->getNumVectors ();
+    MV R (X->getMap (), numVecs, false);
+    A->apply (*X, R);
+    R.update (one, *B, -one);
+
+    Teuchos::Array<real_type> norms (numVecs);
+    R.norm2 (norms); // residual norm
+    real_type max_norm = norms[0];
+    for (size_t j = 1; j < numVecs; j++) {
+      if (norms[j] > max_norm) {
+        max_norm = norms[j];
+      }
+    }
+    return max_norm;
+  }
+
 private:
   Teuchos::RCP<Krylov<SC, MV, OP>> solver_;
   //! Output of the last solve, not including the solution (multi)vector.

@@ -85,7 +85,7 @@ namespace FROSch {
         if (!reuseCoarseBasis) {
             if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Coarse Basis" << endl;
             clearCoarseSpace(); // AH 12/11/2018: If we do not clear the coarse space, we will always append just append the coarse space
-            XMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
+            ConstXMapPtr subdomainMap = this->computeCoarseSpace(CoarseSpace_); // AH 12/11/2018: This map could be overlapping, repeated, or unique. This depends on the specific coarse operator
             if (CoarseSpace_->hasUnassembledMaps()) { // If there is no unassembled basis, the current Phi_ should already be correct
                 CoarseSpace_->assembleCoarseSpace();
                 FROSCH_ASSERT(CoarseSpace_->hasAssembledBasis(),"FROSch::CoarseOperator : !CoarseSpace_->hasAssembledBasis()");
@@ -901,6 +901,7 @@ namespace FROSch {
         GO global,sum,numRanks;
         LO local,minVal,maxVal;
         SC avg;
+        const SC ZERO = Teuchos::ScalarTraits<SC>::zero();
 
         global = coarseMapUnique->getMaxAllGlobalIndex();
         if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
@@ -909,7 +910,7 @@ namespace FROSch {
 
         local = (LO) max((LO) coarseMapUnique->getLocalNumElements(),(LO) 0);
         reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
-        avg = max(sum/SC(this->MpiComm_->getSize()),0.0);
+        avg = max(sum/SC(this->MpiComm_->getSize()),ZERO);
         reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
         reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 
@@ -954,7 +955,7 @@ namespace FROSch {
             local = (LO) max((LO) GatheringMaps_[i]->getLocalNumElements(),(LO) 0);
             reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
             reduceAll(*this->MpiComm_,REDUCE_SUM,GO(GatheringMaps_[i]->getLocalNumElements()>0),ptr(&numRanks));
-            avg = max(sum/SC(numRanks),0.0);
+            avg = max(sum/SC(numRanks),ZERO);
             reduceAll(*this->MpiComm_,REDUCE_MIN,(GatheringMaps_[i]->getLocalNumElements()>0 ? local : numeric_limits<LO>::max()),ptr(&minVal));
             reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 
@@ -981,7 +982,6 @@ namespace FROSch {
 
         return 0;
     }
-
 }
 
 #endif

@@ -56,6 +56,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
+#include "Ifpack2_OverlappingRowMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -329,6 +330,12 @@ public:
   using row_matrix_type =
     Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                       global_ordinal_type, node_type>;
+
+  //! The Tpetra::CrsMatrix specialization that is a subclass of MatrixType.
+  using crs_matrix_type =
+    Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                      global_ordinal_type, node_type>;
+
   //@}
   // \name Constructors and destructor
   //@{
@@ -774,7 +781,7 @@ private:
   /// \brief The overlapping matrix.
   ///
   /// If nonnull, this is an instance of OverlappingRowMatrix<row_matrix_type>.
-  Teuchos::RCP<row_matrix_type> OverlappingMatrix_;
+  Teuchos::RCP<OverlappingRowMatrix<row_matrix_type>> OverlappingMatrix_;
 
   //! The reordered matrix.
   Teuchos::RCP<row_matrix_type> ReorderedLocalizedMatrix_;
@@ -802,7 +809,12 @@ private:
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   //! Combine mode for off-process elements (only if overlap is used)
+  //! To average values in overlap region, set CombineMode_
+  //! to ADD and AvgOverlap_ to true (can be done via
+  //! param list by setting "schwarz: combine mode" to "AVG")
+  //! Don't average with CG as preconditioner is nonsymmetric.
   Tpetra::CombineMode CombineMode_ = Tpetra::ZERO;
+  bool AvgOverlap_ = false;
   //! If \c true, reorder the local matrix.
   bool UseReordering_ = false;
   //! Record reordering for output purposes.
@@ -844,6 +856,8 @@ private:
   mutable std::unique_ptr<MV> overlapping_B_;
   //! Cached local (possibly) overlapping output (multi)vector.
   mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached local (possibly) vector that indicates how many copies of a dof exist due to overlap
+  mutable std::unique_ptr<MV> num_overlap_copies_;
   //! Cached residual (multi)vector.
   mutable std::unique_ptr<MV> R_;
   //! Cached intermediate result (multi)vector.

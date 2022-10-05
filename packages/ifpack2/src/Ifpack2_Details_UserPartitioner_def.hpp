@@ -66,12 +66,19 @@ void
 UserPartitioner<GraphType>::
 setPartitionParameters (Teuchos::ParameterList& List)
 {
+  int partCount = 0;
+  bool  globalProvidedParts;
   userProvidedParts_ = List.isParameter("partitioner: parts");
+  globalProvidedParts = List.isParameter("partitioner: global ID parts");
+  if (  userProvidedParts_)   partCount++;
+  if (globalProvidedParts ) { partCount++;  userProvidedParts_ = true; }
+
   userProvidedMap_   = List.isParameter("partitioner: map");
-  if (userProvidedParts_ && userProvidedMap_) {
+  if (  userProvidedMap_)   partCount++;
+  if (partCount > 1) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Ifpack2::UserPartitioner::setPartitionParameters: "
-                               "you may specify only one of \"partitioner: parts\" and \"partitioner: map\","
-                               " not both");
+                               "you may specify only one of \"partitioner: parts\", \"partitioner: global ID parts\" and \"partitioner: map\","
+                               " not two of them");
   }
   if (userProvidedMap_) {
     map_ = List.get ("partitioner: map", map_);
@@ -81,12 +88,36 @@ setPartitionParameters (Teuchos::ParameterList& List)
   }
   if (userProvidedParts_) {
     typedef Teuchos::Array<typename Teuchos::ArrayRCP<typename GraphType::local_ordinal_type>> parts_type;
+    typedef Teuchos::Array<typename Teuchos::ArrayRCP<typename GraphType::global_ordinal_type>> gparts_type;
     //FIXME JJH 9-Dec-2015 - This is a potentially expensive deep copy.  Use an ArrayRCP<ArrayRCP<int>> instead.
-    this->Parts_ = List.get<parts_type>("partitioner: parts");
-    List.remove("partitioner: parts"); //JJH I observed that iterating through the ParameterList is much more
-                                       //expensive when "partitioner: collection" is a Parameter object.
-                                       //Thus, I remove it once it's fetched from the list.
+
+    // convert glboal ids to local ids before storing in Parts_
+    if (globalProvidedParts ) { 
+      gparts_type gparts;
+      gparts = List.get<gparts_type>("partitioner: global ID parts");
+      typedef Teuchos::RCP<   Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> const >  map_type;
+      map_type OverlapMap  = List.get<map_type>("OverlapRowMap");
+      this->Parts_.resize(gparts.size());
+      for (int ii = 0; ii < (int)  gparts.size(); ii++) {
+        this->Parts_[ii].resize(gparts[ii].size());
+        for (int jj = 0; jj < (int)  gparts[ii].size(); jj++) {
+          local_ordinal_type itmp =  (int) OverlapMap->getLocalElement( gparts[ii][jj] );
+          TEUCHOS_TEST_FOR_EXCEPTION(itmp == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(), std::runtime_error,  " \"partitioner: global ID parts\" requires that all global IDs within a block reside on the MPI rank owning the block. This can be done using overlapping Schwarz with a BLOCK_RELAXATION subdomain solver making sure that \"schwarz: overlap level\" is sufficient.");
+          this->Parts_[ii][jj] = itmp;
+        }
+      }
+      List.remove("partitioner: global ID parts"); //JJH I observed that iterating through the ParameterList is much more
+                                                   //expensive when "partitioner: collection" is a Parameter object.
+                                                  //Thus, I remove it once it's fetched from the list.
+    }
+    else  {
+      this->Parts_ = List.get<parts_type>("partitioner: parts");
+      List.remove("partitioner: parts"); //JJH I observed that iterating through the ParameterList is much more
+                                         //expensive when "partitioner: collection" is a Parameter object.
+                                         //Thus, I remove it once it's fetched from the list.
+    }
   }
+
 }
 
 template<class GraphType>

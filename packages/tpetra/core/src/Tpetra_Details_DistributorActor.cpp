@@ -42,14 +42,17 @@
 namespace Tpetra {
 namespace Details {
 
-  DistributorActor::DistributorActor() {
+  DistributorActor::DistributorActor()
+    : mpiTag_(DEFAULT_MPI_TAG)
+  {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers();
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   }
 
   DistributorActor::DistributorActor(const DistributorActor& otherActor)
-    : requests_(otherActor.requests_)
+    : mpiTag_(otherActor.mpiTag_),
+      requests_(otherActor.requests_)
   {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers();

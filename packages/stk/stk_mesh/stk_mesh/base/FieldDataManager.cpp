@@ -39,7 +39,6 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldMetaData, etc
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
-#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, PartVector
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire, etc
 #include "stk_util/util/AdjustForAlignment.hpp"

@@ -42,6 +42,7 @@
 //@HEADER
 */
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
@@ -128,36 +129,44 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    // Fill block with random values
-    std::vector<scalar_t> mat_val(nnz);
-    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
-
     //
     // Create graph for CrsMatrix
     //
 
-    std::vector<lno_t> mat_rowmap(nRow + 1, 0);
-    std::vector<lno_t> mat_colidx(nnz, 0);
+    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
+    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
+
+    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
+    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
+
+    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
+    auto h_matval = Kokkos::create_mirror_view(d_matval);
+
+    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(h_matval[ii]);
 
     for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
-      const auto jbeg = mat_b1.graph.row_map(ir);
-      const auto jend = mat_b1.graph.row_map(ir + 1);
+      const size_type jbeg = mat_b1.graph.row_map(ir);
+      const size_type jend = mat_b1.graph.row_map(ir + 1);
       for (lno_t ib = 0; ib < blockSize; ++ib) {
-        const lno_t my_row     = ir * blockSize + ib;
-        mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
-        for (lno_t ijk = jbeg; ijk < jend; ++ijk) {
+        const lno_t my_row   = ir * blockSize + ib;
+        h_rowmap[my_row + 1] = h_rowmap[my_row] + (jend - jbeg) * blockSize;
+        for (size_type ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
-            mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
+            h_colidx[h_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
                 col0 * blockSize + jb;
           }
         }
       }
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
+    Kokkos::deep_copy(d_matval, h_matval);
+    Kokkos::deep_copy(d_colidx, h_colidx);
+    Kokkos::deep_copy(d_rowmap, h_rowmap);
+
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, &mat_val[0], &mat_rowmap[0],
-                  &mat_colidx[0]);
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
+                  d_colidx);
 
     x_vector_type xref("new_right_hand_side", nRow);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -179,7 +188,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     // Compute the reference product
     KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
 
-    y_vector_type ybcrs("bsr_product_result", nRow);
+    y_vector_type ybcrs("bcrs_product_result", nRow);
     auto h_ybcrs = Kokkos::create_mirror_view(ybcrs);
     for (lno_t ir = 0; ir < nRow; ++ir) h_ybcrs(ir) = h_y0(ir);
     Kokkos::deep_copy(ybcrs, h_ybcrs);
@@ -187,26 +196,27 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     // Create the BlockCrsMatrix
     KokkosSparse::Experimental::BlockCrsMatrix<scalar_t, lno_t, device, void,
                                                size_type>
-        Absr(Acrs, blockSize);
+        Abcrs(Acrs, blockSize);
 
     // Compute the product with the BlockCrsMatrix format
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybcrs);
+    KokkosSparse::spmv(fOp, alpha, Abcrs, xref, beta, ybcrs);
 
     // Compare the two products
-    double error = 0.0, maxNorm = 0.0;
+    using KATS     = Kokkos::ArithTraits<scalar_t>;
+    using mag_type = typename KATS::mag_type;
+
+    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
+    mag_type error = zero_mag, maxNorm = zero_mag;
+
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybcrs, ybcrs);
     for (lno_t ir = 0; ir < nRow; ++ir) {
-      error = std::max(
-          error, Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir) - h_ybcrs(ir)));
-      maxNorm =
-          std::max(maxNorm, Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir)));
+      error   = std::max<mag_type>(error, KATS::abs(h_ycrs(ir) - h_ybcrs(ir)));
+      maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir)));
     }
 
-    double tmps =
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
-    if ((tmps > 0.0) && (maxNorm == 0)) {
+    mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
+    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
       std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
@@ -216,9 +226,8 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     //
     // --- Factor ((nnz / nRow) + 1) = Average number of non-zeros per row
     //
-    const auto tol = ((nnz / nRow) + 1) *
-                     static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
-                         Kokkos::ArithTraits<scalar_t>::epsilon()));
+    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
+                         Kokkos::ArithTraits<mag_type>::epsilon();
     if (error > tol * maxNorm) {
       std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " ratio " << error / maxNorm << " tol " << tol << " maxNorm "
@@ -231,7 +240,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
 
 /// \brief Driver routine for checking BlockCrsMatrix times multiple vector
 template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+          typename layout, typename device>
 void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
                              const lno_t bMax, int &num_errors) {
   // The mat_structure view is used to generate a matrix using
@@ -255,7 +264,7 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
-  typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft, device> block_vector_t;
+  typedef Kokkos::View<scalar_t **, layout, device> block_vector_t;
 
   h_crsMat_t mat_b1 =
       Test::generate_structured_matrix3D<h_crsMat_t>("FD", mat_structure);
@@ -273,41 +282,40 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    std::vector<scalar_t> mat_val(nnz);
-    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
+    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
+    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
 
-    //
-    // Create graph for CrsMatrix
-    //
+    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
+    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
 
-    std::vector<lno_t> mat_rowmap(nRow + 1);
-    std::vector<lno_t> mat_colidx(nnz);
+    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
+    auto h_matval = Kokkos::create_mirror_view(d_matval);
 
-    mat_rowmap.resize(nRow + 1);
-    auto *rowmap = &mat_rowmap[0];
-    rowmap[0]    = 0;
-
-    mat_colidx.resize(nnz);
-    auto *cols = &mat_colidx[0];
+    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(h_matval[ii]);
 
     for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
-      const auto jbeg = mat_b1.graph.row_map(ir);
-      const auto jend = mat_b1.graph.row_map(ir + 1);
+      const size_type jbeg = mat_b1.graph.row_map(ir);
+      const size_type jend = mat_b1.graph.row_map(ir + 1);
       for (lno_t ib = 0; ib < blockSize; ++ib) {
-        const lno_t my_row = ir * blockSize + ib;
-        rowmap[my_row + 1] = rowmap[my_row] + (jend - jbeg) * blockSize;
-        for (lno_t ijk = jbeg; ijk < jend; ++ijk) {
+        const lno_t my_row   = ir * blockSize + ib;
+        h_rowmap[my_row + 1] = h_rowmap[my_row] + (jend - jbeg) * blockSize;
+        for (size_type ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
-            cols[rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
+            h_colidx[h_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
                 col0 * blockSize + jb;
           }
         }
       }
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
+    Kokkos::deep_copy(d_matval, h_matval);
+    Kokkos::deep_copy(d_colidx, h_colidx);
+    Kokkos::deep_copy(d_rowmap, h_rowmap);
+
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, &mat_val[0], rowmap, cols);
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
+                  d_colidx);
 
     block_vector_t xref("new_right_hand_side", nRow, nrhs);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -329,7 +337,7 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
 
     KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
 
-    block_vector_t ybcrs("bsr_product_result", nRow, nrhs);
+    block_vector_t ybcrs("bcrs_product_result", nRow, nrhs);
     auto h_ybcrs = Kokkos::create_mirror_view(ybcrs);
     for (int jc = 0; jc < nrhs; ++jc)
       for (lno_t ir = 0; ir < nRow; ++ir) h_ybcrs(ir, jc) = h_y0(ir, jc);
@@ -338,37 +346,39 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     // Create the BlockCrsMatrix
     KokkosSparse::Experimental::BlockCrsMatrix<scalar_t, lno_t, device, void,
                                                size_type>
-        Absr(Acrs, blockSize);
+        Abcrs(Acrs, blockSize);
 
     // Compute the product for the BlockCrsMatrix format
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybcrs);
+    KokkosSparse::spmv(fOp, alpha, Abcrs, xref, beta, ybcrs);
 
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybcrs, ybcrs);
 
     // Compare the two products
-    double error = 0.0, maxNorm = 0.0;
+    using KATS     = Kokkos::ArithTraits<scalar_t>;
+    using mag_type = typename KATS::mag_type;
+
+    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
+    mag_type error = zero_mag, maxNorm = zero_mag;
+
     for (int jc = 0; jc < nrhs; ++jc) {
       for (int ir = 0; ir < nRow; ++ir) {
-        error   = std::max(error, Kokkos::ArithTraits<scalar_t>::abs(
-                                    h_ycrs(ir, jc) - h_ybcrs(ir, jc)));
-        maxNorm = std::max(maxNorm,
-                           Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir, jc)));
+        error   = std::max<mag_type>(error,
+                                   KATS::abs(h_ycrs(ir, jc) - h_ybcrs(ir, jc)));
+        maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir, jc)));
       }
     }
-    auto tol = ((nnz / nRow) + 1) *
-               static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
-                   Kokkos::ArithTraits<scalar_t>::epsilon()));
 
-    double tmps =
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
-    if ((tmps > 0.0) && (maxNorm == 0)) {
+    const mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
+    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
       std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
       num_errors += 1;
     }
+
+    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
+                         Kokkos::ArithTraits<mag_type>::epsilon();
 
     if (error > tol * maxNorm) {
       std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
@@ -425,7 +435,7 @@ void testSpMVBlockCrsMatrix() {
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+          typename layout, typename device>
 void testBlockCrsMatrix_SpM_MV() {
   //
   // Test for the operation Y <- alpha * Op(A) * X + beta * Y
@@ -452,7 +462,7 @@ void testBlockCrsMatrix_SpM_MV() {
       auto alpha_s = static_cast<scalar_t>(testAlphaBeta[ii]);
       auto beta_s  = static_cast<scalar_t>(testAlphaBeta[ii + 1]);
       num_errors   = 0;
-      Test_BlockCrs::check_blockcrs_times_mv<scalar_t, lno_t, size_type,
+      Test_BlockCrs::check_blockcrs_times_mv<scalar_t, lno_t, size_type, layout,
                                              device>(&mode, alpha_s, beta_s,
                                                      bMax, num_errors);
       if (num_errors > 0) {
@@ -469,282 +479,49 @@ void testBlockCrsMatrix_SpM_MV() {
 
 //////////////////////////
 
-#define EXECUTE_BCRS_TIMES_VEC_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)             \
   TEST_F(                                                                       \
       TestCategory,                                                             \
       sparse##_##bcrs_times_vec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     testSpMVBlockCrsMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                  \
   }
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(double, int, int, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(double, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(float, int64_t, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_double, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_double, int64_t, size_t,
-                            TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int64_t, size_t,
-                            TestExecSpace)
-#endif
-
-#undef EXECUTE_BCRS_TIMES_VEC_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 //////////////////////////
 
-#define EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                \
-  TEST_F(                                                                            \
-      TestCategory,                                                                  \
-      sparse##_##bcrs_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testBlockCrsMatrix_SpM_MV<SCALAR, ORDINAL, OFFSET, DEVICE>();                    \
+#define EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                   \
+  TEST_F(                                                                                       \
+      TestCategory,                                                                             \
+      sparse##_##bcrs_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    testBlockCrsMatrix_SpM_MV<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT,                          \
+                              DEVICE>();                                                        \
   }
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, TestExecSpace)
-#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, TestExecSpace)
-#endif
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutLeft, \
+                               TestExecSpace)
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, TestExecSpace)
-#endif
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, TestExecSpace)
-#endif
+#endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, TestExecSpace)
-#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, TestExecSpace)
-#endif
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)  \
+  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutRight, \
+                               TestExecSpace)
 
-#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, TestExecSpace)
-#endif
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, TestExecSpace)
-#endif
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t,
-                             TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-#endif
-
-#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
-     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
-     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t,
-                             TestExecSpace)
-#endif
+#endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
 
 #undef EXECUTE_BCRS_TIMES_MVEC_TEST

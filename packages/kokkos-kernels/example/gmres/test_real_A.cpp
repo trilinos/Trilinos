@@ -44,6 +44,7 @@
 
 #include <math.h>
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas.hpp>
@@ -72,6 +73,7 @@ int main(int /*argc*/, char** /*argv[]*/) {
   solverOpts.m          = 15;      // Max subspace size before restarting.
   solverOpts.tol        = 1e-10;   // Relative residual convergence tolerance.
   solverOpts.maxRestart = 50;
+  solverOpts.verbose    = false;  // No verbosity needed for most testing
   bool pass1            = false;
   bool pass2            = false;
 
@@ -88,7 +90,7 @@ int main(int /*argc*/, char** /*argv[]*/) {
     cOT diagDominance = 1;
     nnz               = 10 * numRows;
     sp_matrix_type A =
-        KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
             sp_matrix_type>(numRows, numCols, nnz, 0, ncOT(0.01 * numRows),
                             diagDominance);
 

@@ -93,16 +93,14 @@ TEST(Scheduler, LogarithmicOutput)
   const double dt_max = 100.0;
 
   std::mt19937 rng;
-  auto time = static_cast<unsigned>(stk::wall_time());
-  rng.seed(time);
-  std::cout << "Running with seed = " << time << std::endl;
+  rng.seed(666);
 
   std::uniform_real_distribution<double> noise(-1.0, 1.0);
 
   int step = 0;
   std::vector<double> output_times;
   while (t < 3600.0) {
-    const double fac = 1.1 + 0.1 * noise(rng);
+    const double fac = 1.1 + (0.1 - std::numeric_limits<double>::epsilon()) * noise(rng);
     dt = std::min(dt_max, fac * dt);
     dt = scheduler.adjust_dt(dt, t);
 

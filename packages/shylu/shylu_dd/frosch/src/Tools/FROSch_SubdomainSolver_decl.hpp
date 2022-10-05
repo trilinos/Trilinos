@@ -80,7 +80,7 @@
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Stratimikos_LinearSolverBuilder.hpp"
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"

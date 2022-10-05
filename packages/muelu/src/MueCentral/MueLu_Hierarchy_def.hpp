@@ -1245,9 +1245,10 @@ namespace MueLu {
           break;
         }
 
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries();
+        LO storageblocksize=Am->GetStorageBlockSize();
+        Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
         nnzPerLevel     .push_back(nnz);
-        rowsPerLevel    .push_back(Am->getGlobalNumRows());
+        rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
 
@@ -1434,8 +1435,9 @@ namespace MueLu {
     }
 
     GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "Hierarchy::ReplaceCoordinateMap: Storage block size does not evenly divide fixed block size");
 
-    size_t blkSize = A->GetFixedBlockSize();
+    size_t blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
     RCP<const Map> nodeMap = A->getRowMap();
     if (blkSize > 1) {

@@ -41,7 +41,6 @@ include(AssertDefined)
 include(PrintVar)
 
 
-#
 # @FUNCTION: print_nonempty_var()
 #
 # Print a defined variable giving its name then value only if it is not empty.

@@ -117,12 +117,12 @@ TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::Part & p4 = meta_data.declare_part("P4", NODE_RANK );
   stk::mesh::Part & p5 = meta_data.declare_part("P5", NODE_RANK );
 
-  stk::mesh::put_field_on_mesh( f0, p0, (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f1, p1, 10, (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f2, p2, 10, 20, (stk::mesh::FieldTraits<rank_two_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f3, p3, 10, 20, 30, (stk::mesh::FieldTraits<rank_three_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f4, p4, 10, 20, 30, 40, (stk::mesh::FieldTraits<rank_four_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f5, p5, 10, 20, 30, 40, 50, (stk::mesh::FieldTraits<rank_five_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0, p0, nullptr);
+  stk::mesh::put_field_on_mesh( f1, p1, 10, nullptr);
+  stk::mesh::put_field_on_mesh( f2, p2, 10, 20, nullptr);
+  stk::mesh::put_field_on_mesh( f3, p3, 10, 20, 30, nullptr);
+  stk::mesh::put_field_on_mesh( f4, p4, 10, 20, 30, 40, nullptr);
+  stk::mesh::put_field_on_mesh( f5, p5, 10, 20, 30, 40, 50, nullptr);
 
   meta_data.commit();
 
@@ -167,8 +167,7 @@ TEST(UnitTestField, fieldDataAccess_rankMustMatch)
   using MyField = stk::mesh::Field<double>;
   MyField& nodalField = meta.declare_field<double>(NODE_RANK, "nodal_field");
 
-  stk::mesh::FieldTraits<MyField>::data_type* initialValue = nullptr;
-  stk::mesh::put_field_on_mesh(nodalField, meta.universal_part(), initialValue);
+  stk::mesh::put_field_on_mesh(nodalField, meta.universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:2x2x2|sideset:xXyYzZ", bulk);
 
@@ -209,7 +208,7 @@ TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::Selector select_p0 = p0;
   std::cout <<"select_p0: "<< select_p0 << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , select_p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , select_p0 , nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -276,8 +275,8 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   std::cout <<"elem_hex_selector: "<< elem_hex_selector << std::endl;
   std::cout <<"elem_tet_selector: "<< elem_tet_selector << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , elem_hex_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f0 , elem_tet_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hex_selector, 8u , nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_tet_selector, 4u , nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -348,12 +347,12 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
   std::cout <<"elem_hexA_selector: "<< elem_hexA_selector << std::endl;
   std::cout <<"elem_hexB_selector: "<< elem_hexB_selector << std::endl;
 
-  stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 8u , nullptr);
   ASSERT_THROW(
-        stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr),
+        stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 4u , nullptr),
         std::runtime_error
         );
-  stk::mesh::put_field_on_mesh( f0 , elem_hexB_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_hexB_selector, 4u , nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -774,7 +773,7 @@ protected:
     builder.set_field_data_manager(fieldDataManager);
 
     bulkData = builder.create();
-    metaData = &(bulkData->mesh_meta_data());
+    metaData = bulkData->mesh_meta_data_ptr();
   }
 
   void setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::AutomaticAuraOption auraOption, stk::mesh::FieldDataManager * fieldDataManager)
@@ -1133,7 +1132,7 @@ TEST_F(LateFieldFixture, disable_late_fields)
 
   get_meta().disable_late_fields();
   stk::mesh::Field<int>& f = declare_field<int>("another_late_field", stk::topology::ELEM_RANK);
-  EXPECT_ANY_THROW(stk::mesh::put_field_on_mesh(f, get_meta().universal_part(), static_cast<int*>(nullptr)));
+  EXPECT_ANY_THROW(stk::mesh::put_field_on_mesh(f, get_meta().universal_part(), nullptr));
 }
 
 TEST_F(LateFieldFixture, addLateIntNodalField_multipleBuckets)

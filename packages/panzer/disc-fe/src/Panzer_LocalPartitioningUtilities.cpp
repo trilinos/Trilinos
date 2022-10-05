@@ -847,7 +847,7 @@ fillLocalCellIDs(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
   // this class comes from Mini-PIC and Matt B
   auto faceToElement = Teuchos::rcp(new panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal>());
-  faceToElement->initialize(conn);
+  faceToElement->initialize(conn, comm);
   auto elems_by_face = faceToElement->getFaceToElementsMap();
   auto face_to_lidx  = faceToElement->getFaceToCellLocalIdxMap();
 

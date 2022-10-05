@@ -15,8 +15,8 @@
   <ParameterList name="Ifpack2">
     <Parameter name="level" type="int" value="1"/>
     <Parameter name="damping factor" type="double" value="0.6"/>
-    <Parameter name="sweeps" type="int" value="5"/>
-    <Parameter name="triangular solve iterations" type="int" value="5"/>
+    <Parameter name="sweeps" type="int" value="7"/>
+    <Parameter name="triangular solve iterations" type="int" value="10"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="12"/>

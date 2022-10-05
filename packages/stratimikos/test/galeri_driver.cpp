@@ -67,7 +67,7 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Thyra_SolveSupportTypes.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
@@ -79,14 +79,14 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
-
 // Ifpack2 includes
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+# include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#endif
 
-
+template <class Scalar>
 int
-main(int argc, char *argv[]) {
-  typedef double Scalar;
+main_(int argc, char *argv[], Teuchos::CommandLineProcessor& clp) {
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Tpetra::Map<> map_type;
   typedef map_type::local_ordinal_type LocalOrdinal;
@@ -105,8 +105,7 @@ main(int argc, char *argv[]) {
     //
     // MPI initialization
     //
-    Teuchos::GlobalMPISession session (&argc, &argv, NULL);
-    Teuchos::CommandLineProcessor clp(false);
+    // Teuchos::CommandLineProcessor clp(false);
     const auto comm = Teuchos::DefaultComm<int>::getComm ();
 
     //
@@ -238,7 +237,7 @@ main(int argc, char *argv[]) {
     //
 
     // This is the Stratimikos main class (= factory of solver factory).
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
     // Register Ifpack2 as a Stratimikos preconditioner strategy.
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
@@ -256,9 +255,9 @@ main(int argc, char *argv[]) {
       prec = precFactory->createPrec();
 
       // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-      Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+      Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
       thyraInverseA = solverFactory->createOp();
-      Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+      Thyra::initializePreconditionedOp<Scalar>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
     } else {
       thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
     }
@@ -270,7 +269,7 @@ main(int argc, char *argv[]) {
 
     for (int solveno = 1; solveno < numSolves; solveno++) {
       if (!precFactory.is_null())
-        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+        Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
       thyraX->assign(0.);
 
       status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
@@ -316,3 +315,60 @@ main(int argc, char *argv[]) {
 }
 
 
+enum scalarType {
+  DOUBLE,
+  FLOAT,
+  COMPLEX_DOUBLE,
+  COMPLEX_FLOAT
+};
+
+int
+main(int argc, char *argv[]) {
+  Teuchos::CommandLineProcessor clp(false);
+  scalarType scalar = DOUBLE;
+  std::vector<const char*> availableScalarTypeStrings;
+  std::vector<scalarType> availableScalarTypes;
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  availableScalarTypeStrings.push_back("double");
+  availableScalarTypes.push_back(DOUBLE);
+#endif
+#ifdef HAVE_TPETRA_INST_FLOAT
+  availableScalarTypeStrings.push_back("float");
+  availableScalarTypes.push_back(FLOAT);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  availableScalarTypeStrings.push_back("complex<double>");
+  availableScalarTypes.push_back(COMPLEX_DOUBLE);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  availableScalarTypeStrings.push_back("complex<float>");
+  availableScalarTypes.push_back(COMPLEX_FLOAT);
+#endif
+  clp.setOption("scalarType", &scalar, availableScalarTypes.size(), availableScalarTypes.data(), availableScalarTypeStrings.data(), "scalar type");
+  clp.recogniseAllOptions(false);
+  switch (clp.parse(argc, argv, NULL)) {
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
+  }
+
+  Teuchos::GlobalMPISession session (&argc, &argv, NULL);
+
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  if (scalar == DOUBLE)
+    return main_<double>(argc, argv, clp);
+#endif
+#ifdef HAVE_TPETRA_INST_FLOAT
+  if (scalar == FLOAT)
+    return main_<float>(argc, argv, clp);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  if (scalar == COMPLEX_DOUBLE)
+    return main_<std::complex<double> >(argc, argv, clp);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  if (scalar == COMPLEX_FLOAT)
+    return main_<std::complex<float> >(argc, argv, clp);
+#endif
+}

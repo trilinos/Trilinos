@@ -157,13 +157,6 @@ namespace Tpetra {
   Teuchos::ArrayView<const size_t>
   getMultiVectorWhichVectors (const MultiVector<SC, LO, GO, NT>& X);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  // Forward definition needed for friending BlockMultiVector
-  // Need to friend it to prevent BlockMultiVector from issuing
-  // deprecation warnings.
-  template<class Scalar, class LO, class GO, class Node>
-  class BlockMultiVector;
-#endif
 
   /// \brief One or more distributed dense vectors.
   ///
@@ -1480,51 +1473,6 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Clear "modified" flags on both host and device sides.
-    TPETRA_DEPRECATED
-    void clear_sync_state ();
-
-    /// \brief Update data on device or host only if data in the other
-    ///   space has been marked as modified.
-    ///
-    /// If \c TargetDeviceType is the same as this MultiVector's
-    /// device type, then copy data from host to device.  Otherwise,
-    /// copy data from device to host.  In either case, only copy if
-    /// the source of the copy has been modified.
-    ///
-    /// This is a one-way synchronization only.  If the target of the
-    /// copy has been modified, this operation will discard those
-    /// modifications.  It will also reset both device and host modified
-    /// flags.
-    ///
-    /// \note This method doesn't know on its own whether you modified
-    ///   the data in either memory space.  You must manually mark the
-    ///   MultiVector as modified in the space in which you modified
-    ///   it, by calling the modify() method with the appropriate
-    ///   template parameter.
-    template<class TargetDeviceType>
-    TPETRA_DEPRECATED
-    void sync () {
-      view_.getDualView().template sync<TargetDeviceType> ();
-    }
-
-    //! Synchronize to Host
-    TPETRA_DEPRECATED
-    void sync_host ();
-
-    //! Synchronize to Device
-    TPETRA_DEPRECATED
-    void sync_device ();
-
-    // Friend needed to prevent deprecation warnings from BlockMultiVector's 
-    // calls to MV's sync* and modify* methods.  The friendship is temporary 
-    // to allow BlockMultiVector to access MultiVector's view_ directly,
-    // rather than call MV's deprecated functions.
-    friend BlockMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
     bool need_sync () const {
@@ -1536,28 +1484,6 @@ namespace Tpetra {
 
     //! Whether this MultiVector needs synchronization to the device.
     bool need_sync_device () const;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-    /// \brief Mark data as modified on the given device \c TargetDeviceType.
-    ///
-    /// If \c TargetDeviceType is the same as this MultiVector's
-    /// device type, then mark the device's data as modified.
-    /// Otherwise, mark the host's data as modified.
-    template<class TargetDeviceType>
-    TPETRA_DEPRECATED
-    void modify () {
-      view_.getDualView().template modify<TargetDeviceType> ();
-    }
-
-    //! Mark data as modified on the device side.
-    TPETRA_DEPRECATED
-    void modify_device ();
-
-    //! Mark data as modified on the host side.
-    TPETRA_DEPRECATED
-    void modify_host ();
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Return a view of the local data on a specific device, with the given access mode.
     ///   The return type is either dual_view_type::t_dev, dual_view_type::t_host, or the const_type of
@@ -1608,55 +1534,6 @@ namespace Tpetra {
     {
       return view_.template getView<TargetDeviceType>(s);
     }
-
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Return a view of the local data on a specific device. This is a
-    ///   generalization of getLocalViewHost() and getLocalViewDevice(). The
-    ///   returned view has type dual_view_type::t_dev or dual_view_type::t_host,
-    ///   depending on which one has a device, memory space or execution space
-    ///   matching that of TargetDeviceType.
-    ///
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// For example, suppose you create a Tpetra::MultiVector for the
-    /// Kokkos::Cuda device, like this:
-    /// \code
-    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
-    /// typedef Tpetra::Map<int, int, node_type> map_type;
-    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
-    ///
-    /// RCP<const map_type> map = ...;
-    /// mv_type DV (map, 3);
-    /// \endcode
-    /// If you want to get the CUDA device Kokkos::View, do this:
-    /// \code
-    /// typedef typename mv_type::dual_view_type dual_view_type;
-    /// typedef typename dual_view_type::t_dev device_view_type;
-    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> ();
-    /// \endcode
-    /// and if you want to get the host mirror of that View, do this:
-    /// \code
-    /// typedef typename dual_view_type::host_mirror_space host_execution_space;
-    /// typedef typename dual_view_type::t_host host_view_type;
-    /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
-    /// \endcode
-    template<class TargetDeviceType>
-    TPETRA_DEPRECATED 
-    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView () const
-    {
-      return view_.getDualView().template view<TargetDeviceType>();
-    }
-
-    //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
-    TPETRA_DEPRECATED 
-    typename dual_view_type::t_host getLocalViewHost () const;
-
-    //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
-    TPETRA_DEPRECATED 
-    typename dual_view_type::t_dev getLocalViewDevice () const;
-#endif
 
     //@}
     //! @name Mathematical methods

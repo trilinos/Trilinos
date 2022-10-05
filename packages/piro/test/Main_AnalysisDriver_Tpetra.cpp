@@ -150,9 +150,11 @@ int main(int argc, char *argv[]) {
   #endif
 
   #ifdef HAVE_PIRO_MUELU
-        using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
-        using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-        Stratimikos::enableMueLu<local_ordinal_type, global_ordinal_type>(linearSolverBuilder);
+        using scalar_type = Tpetra::CrsMatrix<>::scalar_type;
+        using local_ordinal_type = Tpetra::CrsMatrix<>::local_ordinal_type;
+        using global_ordinal_type = Tpetra::CrsMatrix<>::global_ordinal_type;
+        using node_type = Tpetra::CrsMatrix<>::node_type;
+        Stratimikos::enableMueLu<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(linearSolverBuilder);
   #endif
 
         const Teuchos::RCP<Teuchos::ParameterList> stratList = Piro::extractStratimikosParams(piroParams);

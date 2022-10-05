@@ -48,6 +48,7 @@
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
 #include "Tpetra_BlockView.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
@@ -61,6 +62,7 @@ namespace {
   using Teuchos::reduceAll;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::ScalarTraits;
   using std::endl;
   typedef Tpetra::global_size_t GST;
 
@@ -1524,6 +1526,460 @@ namespace {
     TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
+  // Test that two matrices' rows have the same entries.
+  template<class BlockCrsMatrixType>
+  bool matrices_are_same(const RCP<BlockCrsMatrixType>& A1,
+                         const RCP<BlockCrsMatrixType>& A2)
+  {
+    // Loop through A1 and make sure each row has the same
+    // entries as A2.  In the fully general case, the
+    // redistribution may have added together values, resulting in
+    // small rounding errors.  This is why we use an error tolerance
+    // (with a little bit of wiggle room).
+
+    int my_rank = A1->getRowMap()->getComm()->getRank();
+
+    using Scalar = typename BlockCrsMatrixType::scalar_type;
+    using LO = typename BlockCrsMatrixType::local_ordinal_type;
+    using GO = typename BlockCrsMatrixType::global_ordinal_type;
+    using lids_type = typename BlockCrsMatrixType::local_inds_host_view_type;
+    using vals_type = typename BlockCrsMatrixType::values_host_view_type;
+
+    using ST = ScalarTraits<Scalar>;
+    using magnitude_type = typename ST::magnitudeType;
+    const magnitude_type tol =
+       Teuchos::as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
+
+    const LO blocksize = A1->getBlockSize();
+    // Verify the blocksizes are identical
+    if (blocksize != A2->getBlockSize()) {
+      if (my_rank==0) std::cerr << "Error: Blocksizes are not the same!" << std::endl;
+      return false;
+    }
+
+    lids_type A1LocalColInds;
+    vals_type A1LocalRowVals;
+    lids_type A2LocalColInds;
+    vals_type A2LocalRowVals;
+    for (LO localrow = A1->getRowMap()->getMinLocalIndex();
+        localrow <= A1->getRowMap()->getMaxLocalIndex();
+        ++localrow)
+    {
+      size_t A1NumEntries = A1->getNumEntriesInLocalRow (localrow);
+      size_t A2NumEntries = A1->getNumEntriesInLocalRow (localrow);
+
+      // Verify the same number of entries in each row
+      if (A1NumEntries != A2NumEntries) {
+	std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+        return false;
+      }
+
+      A1->getLocalRowView (localrow, A1LocalColInds, A1LocalRowVals);
+      A2->getLocalRowView (localrow, A2LocalColInds, A2LocalRowVals);
+
+      // Verify the same number of values in each row
+      if (A1LocalRowVals.extent(0) != A2LocalRowVals.extent(0)) {
+	std::cerr << "Error: Matrices have different number of entries in at least one row!" << std::endl;
+        return false;
+      }
+
+      // There's no guarantee the matrices have the same col map, so we compare global indices in
+      // sets (because indices may be in a different order
+      std::set<GO> a1_inds;
+      std::set<GO> a2_inds;
+      typedef typename Array<Scalar>::size_type size_type;
+      for (size_type k = 0; k < static_cast<size_type> (A1NumEntries); ++k) {
+        a1_inds.insert(A1->getColMap()->getGlobalElement(A1LocalColInds[k]));
+        a2_inds.insert(A2->getColMap()->getGlobalElement(A2LocalColInds[k]));
+      }
+      if(a1_inds!=a2_inds) {
+	std::cerr << "["<<localrow<<" ] Error: Matrices have different column indices!" << std::endl;
+	std::cerr<< "A1_inds :";
+	std::for_each(a1_inds.cbegin(), a1_inds.cend(), [&](int x) {
+	    std::cerr << x << "("<<A1->getColMap()->getGlobalElement(x)<<") ";
+	  });
+	std::cerr<<std::endl;
+	std::cerr<< "A2_inds :";
+	std::for_each(a2_inds.cbegin(), a2_inds.cend(), [&](int x) {
+	    std::cerr << x << "("<<A2->getColMap()->getGlobalElement(x)<<") ";
+	  });
+	std::cerr<<std::endl;
+
+
+	return false;
+      }
+
+      // Loop over each local col entry of A1, find the corresponding col index of A2, and compare these value.
+      LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      for (size_type a1_k = 0; a1_k < static_cast<size_type> (A1NumEntries); ++a1_k) {
+        LO a2_k = INVALID;
+        for (size_type i = 0; i < static_cast<size_type> (A2NumEntries); ++i) {
+	  if (A1->getColMap()->getGlobalElement(A1LocalColInds[a1_k]) == A2->getColMap()->getGlobalElement(A2LocalColInds[i])) {
+            a2_k = i;
+	    break;
+	  }
+        }
+      
+	if(a2_k == INVALID) {
+	  std::cerr << "Cannot find corresponding column" << std::endl;
+	  return false;
+	}
+
+        const int a1_start = a1_k*blocksize*blocksize;
+        const int a2_start = a2_k*blocksize*blocksize;
+        for (int b=0; b<blocksize*blocksize; ++b) {
+          const magnitude_type rel_err = ST::magnitude(A1LocalRowVals[a1_start+b] - A2LocalRowVals[a2_start+b]);
+          if(rel_err > tol) {
+	    std::cerr << "Error: Matrices have different values!" << std::endl;
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  // Build lower diag matrix for test
+  template<class BlockCrsMatrixType>
+  void build_lower_diag_matrix (const RCP<BlockCrsMatrixType>& A) {
+
+    using LO = typename BlockCrsMatrixType::local_ordinal_type;
+    using GO = typename BlockCrsMatrixType::global_ordinal_type;
+    using Scalar = typename BlockCrsMatrixType::scalar_type;
+
+    const typename BlockCrsMatrixType::map_type row_map = *(A->getRowMap());
+    const typename BlockCrsMatrixType::map_type col_map = *(A->getColMap());
+
+    int my_rank = row_map.getComm()->getRank();
+
+    if(A->getBlockSize() != 3) {
+      if (my_rank==0) std::cerr << "Error: A->getBlockSize != 3!" << std::endl;
+      return;
+    }
+    const int blocksize = 3;
+
+    for (LO localrow = row_map.getMinLocalIndex();
+         localrow <= row_map.getMaxLocalIndex();
+         ++localrow) {
+
+      const GO globalrow = row_map.getGlobalElement(localrow);
+
+      if (globalrow == 0) {
+
+        LO local_col_indices[1];
+        local_col_indices[0] = col_map.getLocalElement(0);
+
+        Scalar values[blocksize*blocksize];
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[b] = 10*(globalrow+1);
+        }
+        A->replaceLocalValues(localrow,
+                              local_col_indices,
+                              values,
+                              1);
+      }
+      else if (globalrow == 1) {
+
+        LO local_col_indices[2];
+        local_col_indices[0] = col_map.getLocalElement(0);
+        local_col_indices[1] = col_map.getLocalElement(1);
+
+        Scalar values[2*blocksize*blocksize];
+        for (GO globalcol=0; globalcol<2; ++globalcol) {
+          int start = globalcol*blocksize*blocksize;
+          for (size_t b=0; b<blocksize*blocksize; ++b) {
+            values[start+b] = 10*(globalrow+1)+globalcol;
+          }
+        }
+        A->replaceLocalValues(localrow,
+                              local_col_indices,
+                              values,
+                              2);
+      } else {
+
+        LO local_col_indices[3];
+        local_col_indices[0] = col_map.getLocalElement(globalrow-2);
+        local_col_indices[1] = col_map.getLocalElement(globalrow-1);
+        local_col_indices[2] = col_map.getLocalElement(globalrow);
+
+        Scalar values[3*blocksize*blocksize];
+        int local_indx = 0;
+        for (GO globalcol=globalrow-2; globalcol<=globalrow; ++globalcol) {
+          int start = local_indx*blocksize*blocksize;
+          for (size_t b=0; b<blocksize*blocksize; ++b) {
+            values[start+b] = 10*(globalrow+1)+globalcol;
+          }
+          ++local_indx;
+        }
+        A->replaceLocalValues(localrow,
+                              local_col_indices,
+                              values,
+                              3);
+      }
+    }
+
+    return;
+  }
+
+  // Test BlockCrsMatrix importAndFillComplete
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, importAndFillComplete, Scalar, LO, GO, Node )
+  {
+    using Tpetra::Details::gathervPrint;
+    typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> block_crs_type;
+    typedef Tpetra::CrsGraph<LO, GO, Node> crs_graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Import<LO, GO, Node> import_type;
+    using Teuchos::REDUCE_MAX;
+
+    std::ostringstream err;
+    int lclErr = 0;
+    int gblErr = 0;
+
+    out << "Testing Tpetra::BlockCrsMatrix importAndFillComplete" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int myRank = comm->getRank ();
+    const int numRanks = comm->getSize();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "1st test: Import a diagonal BlockCrsMatrix from a source row Map "
+           "that has all indices on Process 0, to a target row Map that is "
+           "uniformly distributed over processes. Blocksize=3." << endl;
+    try {
+      Teuchos::OSTab tab1 (out);
+
+      const GO indexBase = 0;
+      const LO tgt_num_local_elements = 2;
+      const LO src_num_local_elements = (myRank == 0) ?
+        static_cast<LO> (numRanks*tgt_num_local_elements) :
+        static_cast<LO> (0);
+
+      const int blocksize = 3;
+
+      // Create row Maps for the source and target
+      RCP<const map_type> src_map =
+        rcp (new map_type (INVALID,
+                           src_num_local_elements,
+                           indexBase, comm));
+      RCP<const map_type> tgt_map =
+        rcp (new map_type (INVALID,
+                           tgt_num_local_elements,
+                           indexBase, comm));
+
+      // Build src graph.
+      Teuchos::RCP<crs_graph_type> src_graph =
+        Teuchos::rcp (new crs_graph_type (src_map, 1));
+      for (LO localrow = src_map->getMinLocalIndex();
+           localrow<=src_map->getMaxLocalIndex(); 
+           ++localrow) {
+
+        const GO globalrow = src_map->getGlobalElement(localrow);
+        GO globalcol[1];
+        globalcol[0] = globalrow;
+        
+        src_graph->insertGlobalIndices(globalrow, 1, globalcol);
+      }
+      src_graph->fillComplete();
+
+      // Build src matrix. Simple block diagonal matrix with A(b,b) = [b*b*row,...,+b*b].
+      RCP<block_crs_type> src_mat =
+        rcp (new block_crs_type (*src_graph, blocksize)); 
+      if (src_num_local_elements != 0) {
+        for (LO localrow = src_map->getMinLocalIndex();
+             localrow <= src_map->getMaxLocalIndex();
+             ++localrow) {
+          const GO globalrow = src_map->getGlobalElement(localrow);
+          LO col_indices[1];  Scalar values[blocksize*blocksize];
+          col_indices[0] = localrow; 
+          for (size_t b=0; b<blocksize*blocksize; ++b) {
+            values[b] = blocksize*blocksize*globalrow + b;
+          }
+          const LO actual_num_replaces = src_mat->replaceLocalValues(localrow,
+                                                                     col_indices,
+                                                                     values,
+                                                                     1);
+          TEST_EQUALITY_CONST(actual_num_replaces, 1);
+        }
+      }
+
+      // Create the importer
+      import_type importer (src_map, tgt_map);
+
+      // Call importAndFillComplete to get the tgt matrix
+      RCP<block_crs_type> tgt_mat =
+        Tpetra::importAndFillCompleteBlockCrsMatrix<block_crs_type> (src_mat, importer);
+     
+      // Manually build the tgt matrix and test that it matches the returned matrix
+
+      // Build tgt graph.
+      Teuchos::RCP<crs_graph_type> tgt_graph_for_testing =
+        Teuchos::rcp (new crs_graph_type (tgt_map, 1));
+      for (LO localrow = tgt_map->getMinLocalIndex();
+           localrow<=tgt_map->getMaxLocalIndex();
+           ++localrow) {
+
+        const GO globalrow = tgt_map->getGlobalElement(localrow);
+        GO globalcol[1];
+        globalcol[0] = globalrow;
+
+        tgt_graph_for_testing->insertGlobalIndices(globalrow, 1, globalcol);
+      }
+      tgt_graph_for_testing->fillComplete();
+
+      // Build tgt matrix
+      RCP<block_crs_type> tgt_mat_for_testing =
+        rcp (new block_crs_type (*tgt_graph_for_testing, blocksize));
+      for (LO localrow = tgt_map->getMinLocalIndex();
+           localrow <= tgt_map->getMaxLocalIndex();
+           ++localrow) {
+        const GO globalrow = tgt_map->getGlobalElement(localrow);
+        LO col_indices[1];  Scalar values[blocksize*blocksize];
+        col_indices[0] = localrow;
+        for (size_t b=0; b<blocksize*blocksize; ++b) {
+          values[b] = blocksize*blocksize*globalrow + b;
+        }
+        const LO actual_num_replaces = tgt_mat_for_testing->replaceLocalValues(localrow,
+                                                                               col_indices,
+                                                                               values,
+                                                                               1);
+        TEST_EQUALITY_CONST(actual_num_replaces, 1);
+      }
+
+      // Test that matrices are identical
+      bool matrices_match = matrices_are_same<block_crs_type>(tgt_mat, tgt_mat_for_testing);
+      TEST_ASSERT(matrices_match);
+     }
+     catch (std::exception& e) { // end of the first test
+       err << "Proc " << myRank << ": " << e.what () << endl;
+       lclErr = 1;
+     }
+
+     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+     TEST_EQUALITY_CONST( gblErr, 0 );
+     if (gblErr != 0) {
+       Tpetra::Details::gathervPrint (out, err.str (), *comm);
+       out << "Above test failed; aborting further tests" << endl;
+       return;
+     }
+
+     out << "2nd test: Import a lower triangular BlockCrsMatrix from a source row Map "
+            "where even processors have 1 element and odd processors have 3 elements, "
+            "to a target row Map where each processor have 2 elements. Blocksize=3." << endl;
+     try {
+       Teuchos::OSTab tab1 (out);
+
+       // This test only makes sense for even number of ranks
+       if (numRanks % 2 != 0) {
+         return;
+       }
+
+       const GO indexBase = 0;
+       LO src_num_local_elements;
+       if (myRank % 2 == 0) src_num_local_elements = 1;
+       else                 src_num_local_elements = 3;
+       LO tgt_num_local_elements = 2;
+       const int blocksize = 3;
+
+       // Create row Maps for the source and target
+       RCP<const map_type> src_map =
+         rcp (new map_type (INVALID,
+                            src_num_local_elements,
+                            indexBase, comm));
+       RCP<const map_type> tgt_map =
+         rcp (new map_type (INVALID,
+                            tgt_num_local_elements,
+                            indexBase, comm));
+       //src_map->describe(out, Teuchos::VERB_EXTREME);
+       //tgt_map->describe(out, Teuchos::VERB_EXTREME);
+
+       // Build src graph. Allow for up to 2 off-diagonal entries.
+       Teuchos::RCP<crs_graph_type> src_graph =
+         Teuchos::rcp (new crs_graph_type (src_map, 3));
+       {
+         Array<GO> cols(3);
+         for (GO globalrow = src_map->getMinGlobalIndex ();
+              globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
+           if      (globalrow==0) cols.resize(1);
+           else if (globalrow==1) cols.resize(2);
+           else                   cols.resize(3);
+           for (GO col = 0; col < cols.size(); ++col) {
+             cols[col] = globalrow - col;
+           }
+           src_graph->insertGlobalIndices (globalrow, cols());
+         }
+         src_graph->fillComplete();
+         //src_graph->describe(out, Teuchos::VERB_EXTREME);
+       }
+
+       // Build src matrix. Simple block lower-diagonal matrix with
+       // A(b1,b2) = [(b1)+10*(b2+1)].
+       RCP<block_crs_type> src_mat =
+         rcp (new block_crs_type (*src_graph, blocksize));
+       build_lower_diag_matrix<block_crs_type>(src_mat);
+       //src_mat->describe(out, Teuchos::VERB_EXTREME);
+
+       // Create the importer
+       import_type importer (src_map, tgt_map);
+
+       // Call importAndFillComplete to get the tgt matrix
+       RCP<block_crs_type> tgt_mat =
+         Tpetra::importAndFillCompleteBlockCrsMatrix<block_crs_type> (src_mat, importer);
+       //tgt_mat->describe(out, Teuchos::VERB_EXTREME);
+
+       // Manually build the tgt matrix and test that it matches the returned matrix
+
+       // Build tgt graph.
+       Teuchos::RCP<crs_graph_type> tgt_graph_for_testing =
+         Teuchos::rcp (new crs_graph_type (tgt_map, 3));
+       {
+         Array<GO> cols(3);
+         for (GO globalrow = tgt_map->getMinGlobalIndex ();
+              globalrow <= tgt_map->getMaxGlobalIndex (); ++globalrow) {
+           if      (globalrow==0) cols.resize(1);
+           else if (globalrow==1) cols.resize(2);
+           else                   cols.resize(3);
+           for (GO col = 0; col < cols.size(); ++col) {
+             cols[col] = globalrow - col;
+           }
+           tgt_graph_for_testing->insertGlobalIndices (globalrow, cols());
+         }
+         tgt_graph_for_testing->fillComplete();
+         //tgt_graph_for_testing->describe(out, Teuchos::VERB_EXTREME);
+       }
+
+       // Build tgt matrix
+       RCP<block_crs_type> tgt_mat_for_testing =
+         rcp (new block_crs_type (*tgt_graph_for_testing, blocksize));
+       build_lower_diag_matrix<block_crs_type>(tgt_mat_for_testing);
+
+
+
+       tgt_mat_for_testing->describe(out, Teuchos::VERB_EXTREME);
+       tgt_mat->describe(out, Teuchos::VERB_EXTREME);
+
+       
+
+
+       // Test that matrices are identical
+       bool matrices_match = matrices_are_same<block_crs_type>(tgt_mat, tgt_mat_for_testing);
+       TEST_ASSERT(matrices_match);
+      }
+      catch (std::exception& e) { // end of the first test
+        err << "Proc " << myRank << ": " << e.what () << endl;
+        lclErr = 1;
+      }
+
+      reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      TEST_EQUALITY_CONST( gblErr, 0 );
+      if (gblErr != 0) {
+        Tpetra::Details::gathervPrint (out, err.str (), *comm);
+        out << "Above test failed; aborting further tests" << endl;
+        return;
+      }
+   }
+
   // Test BlockCrsMatrix Export for different graphs with different
   // row Maps.  This tests packAndPrepare and unpackAndCombine.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, ExportDiffRowMaps, Scalar, LO, GO, Node )
@@ -2296,6 +2752,114 @@ namespace {
 
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, Transpose, ST, LO, GO, Node )
+  {
+    typedef Tpetra::BlockCrsMatrix<ST, LO, GO, Node> block_matrix_type;
+    typedef Tpetra::CrsMatrix<ST, LO, GO, Node>                    crs_matrix_type;
+    typedef Tpetra::Import<LO, GO, Node>                           import_type;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node>                  mv_type;
+    typedef Tpetra::Map<LO, GO, Node>                              map_type;
+    typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>          reader_type;
+    typedef Teuchos::ScalarTraits<ST>                              STS;
+    typedef typename STS::magnitudeType                            magnitude_type;
+    ST zero = STS::zero(), one = STS::one();
+
+    Teuchos::OSTab tab0 (out);
+    out << "Testing Transpose"<<std::endl;
+    Teuchos::OSTab tab1 (out);
+
+    std::ostringstream errStrm;
+
+    RCP<const Comm<int> > comm = getDefaultComm();
+    std::string matrixFile;
+    if (STS::isComplex) {
+      matrixFile = "blockA-complex.mm";
+    }
+    else {
+      matrixFile = "blockA.mm";
+    }
+
+    out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    
+    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm);
+
+    out << "Migrate input CrsMatrix to final parallel distribution" << endl;
+
+    // Migrate pointMatrix to final parallel distribution.
+    // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
+    // must stay together.  This means the serial matrix can only be migrated to 1,2 or 4 processes.  3 processes
+    // would split up dofs associate with a mesh node.
+    Tpetra::global_size_t numGlobElts = pointMatrix->getRowMap()->getGlobalNumElements();
+    const GO indexBase = 0;
+    RCP<const map_type> parPointMap =
+      rcp (new map_type (numGlobElts, indexBase, comm));
+    RCP<crs_matrix_type> parPointMatrix =
+      rcp (new crs_matrix_type (parPointMap, pointMatrix->getGlobalMaxNumRowEntries ()));
+    RCP<const import_type> importer =
+      rcp (new import_type (pointMatrix->getRowMap(), parPointMap));
+
+    parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+    parPointMatrix->fillComplete();
+    pointMatrix.swap(parPointMatrix);
+
+    
+    out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    int blockSize = 3;
+    RCP<block_matrix_type> blockMatrix = Tpetra::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+
+    // Now Transpose them both
+    Tpetra::RowMatrixTransposer<ST, LO, GO, Node> Pt(pointMatrix);
+    RCP<crs_matrix_type> newPointMatrix = Pt.createTranspose();
+
+
+    Tpetra::BlockCrsMatrixTransposer<ST, LO, GO, Node> Bt(blockMatrix);
+    RCP<block_matrix_type> newBlockMatrix = Bt.createTranspose();
+
+
+    // Check the maps
+    TEUCHOS_TEST_FOR_EXCEPTION(!blockMatrix->getDomainMap()->isSameAs(*newBlockMatrix->getRangeMap()),std::runtime_error,"Incorrect range map on transpose");
+    TEUCHOS_TEST_FOR_EXCEPTION(!blockMatrix->getRangeMap()->isSameAs(*newBlockMatrix->getDomainMap()),std::runtime_error,"Incorrect domain map on transpose");
+
+    //normalized pseudo-random vector
+    RCP<mv_type> randVec = rcp(new mv_type(newPointMatrix->getDomainMap(),1));
+    randVec->randomize();
+    Teuchos::Array<magnitude_type> normVec1(1);
+    randVec->norm2(normVec1);
+    randVec->scale(1.0/normVec1[0]);
+
+    RCP<mv_type> resultVec1 = rcp(new mv_type(newPointMatrix->getRangeMap(),1));
+    out << "CrsMatrix::apply" << endl;
+    newPointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    
+    out << "Compute norm of result" << endl;
+    resultVec1->norm2(normVec1);
+
+    RCP<mv_type> resultVec2 = rcp(new mv_type(newBlockMatrix->getRangeMap(),1));
+    out << "NewBlockMatrix::apply" << endl;
+    newBlockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+
+    Teuchos::Array<magnitude_type> normVec2(1);
+    resultVec2->norm2(normVec2);
+
+    resultVec2->update(-1.0,*resultVec1,1.0);
+    Teuchos::Array<magnitude_type> normDelta(1);
+    resultVec2->norm2(normDelta);
+    Teuchos::Array<magnitude_type> relativeError(1);
+    relativeError[0] = STS::magnitude(normDelta[0] / normVec1[0]);
+
+    std::ostringstream normStr;
+    normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
+    out << normStr.str() << std::endl;
+
+    // Correctness check
+    auto tol  = Teuchos::ScalarTraits<magnitude_type>::squareroot(Teuchos::ScalarTraits<magnitude_type>::eps());
+    TEUCHOS_TEST_FLOATING_EQUALITY(normVec1[0], normVec2[0], tol, out, success);
+
+}
+
+
+
+
 //
 // INSTANTIATIONS
 //
@@ -2307,9 +2871,11 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, getLocalDiagCopy, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, importAndFillComplete, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, point2block, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, block2point, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, block2point, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, Transpose, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

@@ -74,21 +74,13 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
+            stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, stk::mesh::BulkData::AUTO_AURA)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-            : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
+            : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option)
     {
     }
 
@@ -238,7 +230,7 @@ public:
     void my_internal_resolve_ghosted_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
+        this->m_meshModification.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_parallel_create()
@@ -286,12 +278,6 @@ public:
     void my_set_state(stk::mesh::Entity entity, stk::mesh::EntityState entity_state)
     {
         set_state(entity,entity_state);
-    }
-
-    void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
-    {
-        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
-        delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
     }
 
     void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, const std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>& new_send)

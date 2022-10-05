@@ -1189,6 +1189,18 @@ embeddedObjDeallocArrayDelete(const Embedded &embedded, EPrePostDestruction preP
 template<class T> inline
 RCP<T> rcp(T* p, bool owns_mem = true);
 
+/**
+ * Allocates and constructs an object of type \c T 
+ * passing @p args to its constructor, and returns an object of type
+ * @ref Teuchos::RCP that owns and stores a pointer to it.
+ */
+template <typename T, typename ... Args>
+inline auto make_rcp(Args&& ... args)
+{
+    return Teuchos::rcp(
+        new T(std::forward<Args>(args)...)
+    );
+}
 
 /** \brief Initialize from a raw pointer with a deallocation policy.
  *

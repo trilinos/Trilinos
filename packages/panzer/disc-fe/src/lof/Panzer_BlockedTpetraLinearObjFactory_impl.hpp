@@ -45,7 +45,9 @@
 
 // Panzer
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
+#endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalIndexer.hpp"
 
@@ -369,6 +371,7 @@ buildReadOnlyDomainContainer() const
   return ged;
 } // end of buildReadOnlyDomainContainer()
 
+#ifdef PANZER_HAVE_EPETRA
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  buildWriteDomainContainer()
@@ -388,6 +391,7 @@ buildWriteDomainContainer() const
   TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT YET IMPLEMENTED")
   return ged;
 } // end of buildWriteDomainContainer()
+#endif // PANZER_HAVE_EPETRA
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -1113,7 +1117,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraDomainVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i);
    return Teuchos::rcp(new VectorType(tMap));
 }
 
@@ -1131,7 +1135,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraRangeVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i);
    return Teuchos::rcp(new VectorType(tMap));
 }
 

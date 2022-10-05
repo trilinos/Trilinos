@@ -53,7 +53,12 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <shylu_fastutil.hpp>
+
+#ifdef HAVE_IFPACK2_METIS
+#include "metis.h"
+#endif
 
 namespace Ifpack2
 {
@@ -90,6 +95,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef Kokkos::View<  ImplScalar *, execution_space>  ImplScalarArray;
     typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;
     typedef Kokkos::View<const Scalar *, execution_space> ConstScalarArray;
+    #ifdef HAVE_IFPACK2_METIS
+    typedef Kokkos::View<idx_t*, Kokkos::HostSpace> MetisArrayHost;
+    #endif
 
     //! Constructor
     FastILU_Base(Teuchos::RCP<const TRowMatrix> mat_);
@@ -162,6 +170,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Get the "sweeps" parameter
     virtual int getSweeps() const = 0;
 
+    //! Get the name of triangular solve algorithm
+    virtual std::string getSpTrsvType() const = 0;
+
     //! Get the "triangular solve iterations" parameter
     virtual int getNTrisol() const = 0;
 
@@ -201,18 +212,26 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     {
       Params() {}
       Params(const Teuchos::ParameterList& pL, std::string precType);
-      bool standard_sptrsv;
+      bool use_metis;
+      FastILU::SpTRSV sptrsv_algo;
       int nFact;
       int nTrisol;
       int level;
+      int blkSize;
       double omega;
       double shift;
       bool guessFlag;
+      int blockSizeILU;
       int blockSize;
       static Params getDefaults();
     };
 
     Params params_;
+
+    #ifdef HAVE_IFPACK2_METIS
+    MetisArrayHost metis_perm_;
+    MetisArrayHost metis_iperm_;
+    #endif
 
     //! Construct the underlying preconditioner (localPrec_) using given params and then call localPrec_->initialize()
     // \pre !mat_.is_null()

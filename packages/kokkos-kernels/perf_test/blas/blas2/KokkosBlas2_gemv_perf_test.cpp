@@ -180,7 +180,9 @@ int main(int argc, char** argv) {
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
   const int device_id = std::max(params.use_cuda, params.use_hip) - 1;
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   // Create booleans to handle pthreads, openmp and cuda params and initialize
   // to true;

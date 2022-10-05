@@ -43,12 +43,15 @@
 #ifndef PANZER_EXPLICIT_MODEL_EVALUATOR_IMPL_HPP
 #define PANZER_EXPLICIT_MODEL_EVALUATOR_IMPL_HPP
 
-#include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
+#include "PanzerDiscFE_config.hpp"
+#ifdef PANZER_HAVE_EPETRA
+#include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "EpetraExt_RowMatrixOut.h"
+#endif
 
 namespace panzer {
 
@@ -70,11 +73,12 @@ ExplicitModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & mode
   // extract a panzer::ModelEvaluator if appropriate
   panzerModel_ = rcp_dynamic_cast<panzer::ModelEvaluator<Scalar> >(model);
 
+#ifdef PANZER_HAVE_EPETRA
   // extract a panzer::ModelEvaluator_Epetra if appropriate
   RCP<Thyra::EpetraModelEvaluator> epME = rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(model);
   if(epME!=Teuchos::null)
     panzerEpetraModel_ = rcp_dynamic_cast<const panzer::ModelEvaluator_Epetra>(epME->getEpetraModel());
-
+#endif
   // note at this point its possible that panzerModel_ = panzerEpetraModel_ = Teuchos::null
 
   buildArgsPrototypes();
@@ -119,7 +123,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  using Teuchos::RCP; 
+  using Teuchos::RCP;
   RCP<const Thyra::ModelEvaluator<Scalar> > under_me = this->getUnderlyingModel();
 
   MEB::InArgs<Scalar> under_inArgs = under_me->createInArgs();
@@ -137,7 +141,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // build a scrap vector that will contain the weak residual
     if(scrap_f_==Teuchos::null)
       scrap_f_ = Thyra::createMember(*under_me->get_f_space());
-    
+
     Thyra::assign(scrap_f_.ptr(),0.0);
     under_outArgs.set_f(scrap_f_);
   }
@@ -153,7 +157,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // invert the mass matrix
   if(f!=Teuchos::null && this->applyMassInverse_) {
-    Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr()); 
+    Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr());
   }
   else if(f!=Teuchos::null){
     Thyra::V_V(f.ptr(),*scrap_f_);
@@ -167,18 +171,18 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
   using Thyra::createMember;
-  
+
   RCP<const Thyra::ModelEvaluator<Scalar> > me = this->getUnderlyingModel();
 
   // first allocate space for the mass matrix
   mass_ = me->create_W_op();
 
-  // intialize a zero to get rid of the x-dot 
+  // intialize a zero to get rid of the x-dot
   if(zero_==Teuchos::null) {
     zero_ = Thyra::createMember(*me->get_x_space());
     Thyra::assign(zero_.ptr(),0.0);
   }
-  
+
   // request only the mass matrix from the physics
   // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
   MEB::InArgs<Scalar>  inArgs_new  = me->createInArgs();
@@ -189,11 +193,13 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
 
   // set the one time beta to ensure dirichlet conditions
   // are correctly included in the mass matrix: do it for
-  // both epetra and Tpetra. 
+  // both epetra and Tpetra.
   if(panzerModel_!=Teuchos::null)
     panzerModel_->setOneTimeDirichletBeta(1.0);
+#ifdef PANZER_HAVE_EPETRA
   else if(panzerEpetraModel_!=Teuchos::null)
     panzerEpetraModel_->setOneTimeDirichletBeta(1.0);
+#endif
   else {
     // assuming the underlying model is a delegator, walk through
     // the decerator hierarchy until you find a panzer::ME or panzer::EpetraME.
@@ -205,7 +211,7 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   MEB::OutArgs<Scalar> outArgs = me->createOutArgs();
   outArgs.set_W_op(mass_);
 
-  // this will fill the mass matrix operator 
+  // this will fill the mass matrix operator
   me->evalModel(inArgs_new,outArgs);
 
   // Teuchos::RCP<const Epetra_CrsMatrix> crsMat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*mass));
@@ -232,7 +238,7 @@ void ExplicitModelEvaluator<Scalar>::
 buildArgsPrototypes()
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  
+
   MEB::InArgsSetup<Scalar> inArgs(this->getUnderlyingModel()->createInArgs());
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_alpha,true);
@@ -262,9 +268,10 @@ setOneTimeDirichletBeta(double beta,const Thyra::ModelEvaluator<Scalar> & me) co
     return;
   }
   else {
+#ifdef PANZER_HAVE_EPETRA
     Ptr<const Thyra::EpetraModelEvaluator> epModel = ptr_dynamic_cast<const Thyra::EpetraModelEvaluator>(ptrFromRef(me));
     if(epModel!=Teuchos::null) {
-      Ptr<const panzer::ModelEvaluator_Epetra> panzerEpetraModel 
+      Ptr<const panzer::ModelEvaluator_Epetra> panzerEpetraModel
           = ptr_dynamic_cast<const panzer::ModelEvaluator_Epetra>(epModel->getEpetraModel().ptr());
 
       if(panzerEpetraModel!=Teuchos::null) {
@@ -272,11 +279,12 @@ setOneTimeDirichletBeta(double beta,const Thyra::ModelEvaluator<Scalar> & me) co
         return;
       }
     }
+#endif
   }
 
   // if you get here then the ME is not a panzer::ME or panzer::EpetraME, check
   // to see if its a delegator
- 
+
   Ptr<const Thyra::ModelEvaluatorDelegatorBase<Scalar> > delegator
       = ptr_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Scalar> >(ptrFromRef(me));
   if(delegator!=Teuchos::null) {

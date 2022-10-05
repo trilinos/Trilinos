@@ -33,7 +33,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
-
+#include <stk_mesh/base/MeshBuilder.hpp>
 //----------------------------------------------------------------------
 
   namespace percept {
@@ -51,8 +51,11 @@
 
     HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets, bool do_one_sideset ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, entity_rank_names_and_family_tree())
-      , m_bulkData(m_metaData, comm )
+      , m_bulkDataPtr(stk::mesh::MeshBuilder(comm).set_spatial_dimension(m_spatial_dimension)
+                                                  .set_entity_rank_names(entity_rank_names_and_family_tree())
+                                                  .create())
+      , m_bulkData(*m_bulkDataPtr)
+      , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_hex(        m_metaData.declare_part_with_topology(  "block_1", stk::topology::HEX_8 ))
       , m_block_wedge(      m_metaData.declare_part_with_topology( "block_2", stk::topology::WEDGE_6 ))
       , m_block_tet(        m_metaData.declare_part_with_topology( "block_3", stk::topology::TET_4 ))
@@ -72,16 +75,14 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
-      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, init_c);
-      put_field_on_mesh( m_centroid_field , universal, init_c);
-      put_field_on_mesh( m_temperature_field, universal, init_s);
-      put_field_on_mesh( m_volume_field, m_block_hex, init_s);
-      put_field_on_mesh( m_volume_field, m_block_wedge, init_s);
-      put_field_on_mesh( m_volume_field, m_block_tet, init_s);
-      put_field_on_mesh( m_volume_field, m_block_pyramid, init_s);
+      put_field_on_mesh( m_coordinates_field , universal, nullptr);
+      put_field_on_mesh( m_centroid_field , universal, nullptr);
+      put_field_on_mesh( m_temperature_field, universal, nullptr);
+      put_field_on_mesh( m_volume_field, m_block_hex, nullptr);
+      put_field_on_mesh( m_volume_field, m_block_wedge, nullptr);
+      put_field_on_mesh( m_volume_field, m_block_tet, nullptr);
+      put_field_on_mesh( m_volume_field, m_block_pyramid, nullptr);
 
       stk::io::put_io_part_attribute(  m_block_hex );
       stk::io::put_io_part_attribute(  m_block_wedge );

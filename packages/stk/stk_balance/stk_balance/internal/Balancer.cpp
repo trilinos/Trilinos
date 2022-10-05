@@ -36,6 +36,8 @@
 #include "stk_balance/internal/privateDeclarations.hpp"
 #include "stk_balance/internal/balanceCoincidentElements.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <limits>
 
@@ -75,8 +77,10 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
   DecompositionChangeList changeList(stkMeshBulkData, decomp);
   balanceSettings.modifyDecomposition(changeList);
 
-  internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
-  keep_coincident_elements_together(stkMeshBulkData, changeList);
+  if (balanceSettings.shouldFixCoincidentElements()) {
+    internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
+    keep_coincident_elements_together(stkMeshBulkData, changeList);
+  }
 
   if (balanceSettings.shouldFixSpiders()) {
     internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
@@ -86,23 +90,23 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
   const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
   const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
 
-  if (num_global_entity_migrations > 0)
-  {
+  if (num_global_entity_migrations > 0) {
     internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
     internal::rebalance(changeList);
 
-    if (balanceSettings.shouldFixMechanisms())
-    {
+    if (balanceSettings.shouldFixMechanisms()) {
       internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
       stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
     }
 
-    if (balanceSettings.shouldPrintMetrics())
+    if (balanceSettings.shouldPrintMetrics()) {
       internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
+    }
   }
 
-  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
+  internal::compute_balance_diagnostics(stkMeshBulkData, balanceSettings);
 
+  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
 
   return (num_global_entity_migrations > 0);
 }

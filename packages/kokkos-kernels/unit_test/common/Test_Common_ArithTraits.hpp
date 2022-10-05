@@ -163,8 +163,8 @@ class ArithTraitsTesterBase {
   /// \brief Combine two intermediate reduction results into \c dst.
   ///
   /// Subclasses need not and must not override this method.
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type& dst,
-                                   const volatile value_type& src) const {
+  KOKKOS_INLINE_FUNCTION void join(value_type& dst,
+                                   const value_type& src) const {
     dst = dst && src;
     // dst = 1;
   }
@@ -1722,6 +1722,10 @@ int runAllArithTraitsHostTests(std::ostream& out, const int verbose) {
   // testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out,
   // verbose);
 
+#if defined(KOKKOS_ENABLE_LIBQUADMATH)
+  success    = success && curSuccess;
+  curSuccess = testArithTraitsOnHost<__float128, DeviceType>(out, verbose);
+#endif
   return success && curSuccess;
 }
 

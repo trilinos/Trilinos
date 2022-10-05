@@ -96,7 +96,7 @@ namespace FROSch {
         }
         // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
         if (XTmp_->getMap()->lib() == UseEpetra) {
-#ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
             if (XOverlapTmp_.is_null()) XOverlapTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
             XOverlapTmp_->doImport(*XTmp_,*Scatter_,INSERT);
             const RCP<const EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = rcp_dynamic_cast<const EpetraMultiVectorT<GO,NO> >(XOverlapTmp_);
@@ -193,7 +193,17 @@ namespace FROSch {
             XExportPtr multiplicityExporter = ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
             Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,ADD);
         }
+        return 0; // RETURN VALUE
+    }
 
+    template <class SC,class LO,class GO,class NO>
+    int OverlappingOperator<SC,LO,GO,NO>::initializeSubdomainSolver(ConstXMatrixPtr localMat)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(initializeSubdomainSolverTime,"OverlappingOperator::initializeSubdomainSolver");
+        SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(localMat,
+                                                             sublist(this->ParameterList_,"Solver"),
+                                                             string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
+        SubdomainSolver_->initialize();
         return 0; // RETURN VALUE
     }
 
@@ -203,21 +213,16 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
 
         updateLocalOverlappingMatrices();
-
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
-        if (!this->IsComputed_) {
-            reuseSymbolicFactorization = false;
-        }
-
-        if (!reuseSymbolicFactorization) {
+        if (!reuseSymbolicFactorization || SubdomainSolver_.is_null()) {
+            // initializeSubdomainSolver is called during symbolic only if reuseSymbolicFactorization=true
+            // so if reuseSymbolicFactorization=false, we always call initializeSubdomainSolver 
             if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
-            SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_,
-                                                                 sublist(this->ParameterList_,"Solver"),
-                                                                 string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
-            SubdomainSolver_->initialize();
-        } else {
-            FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator: SubdomainSolver_.is_null()");
-            SubdomainSolver_->updateMatrix(OverlappingMatrix_,true);
+            initializeSubdomainSolver(this->OverlappingMatrix_);
+        } else if (this->IsComputed_) {
+            // if !IsComputed, then this is the first timing calling "compute" after initializeSubdomainSolver is called in symbolic phase
+            // so no need to do anything
+            SubdomainSolver_->updateMatrix(this->OverlappingMatrix_,true);
         }
         this->IsComputed_ = true;
         return SubdomainSolver_->compute();

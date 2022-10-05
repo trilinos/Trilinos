@@ -70,7 +70,7 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes
@@ -256,56 +256,35 @@ namespace MueLu {
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  struct StratimikosWrapperImpl {
-    static RCP<Thyra::PreconditionerBase<Scalar> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                  RCP<ParameterList> params) {
-      throw std::runtime_error("setupStratimikosPreconditioner: Requires Scalar=double");
-    }
-  };
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  struct StratimikosWrapperImpl<double,LocalOrdinal,GlobalOrdinal,Node> {
-    static RCP<Thyra::PreconditionerBase<double> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                  RCP<ParameterList> params) {
-      typedef double Scalar;
-      
-      // Build Thyra linear algebra objects
-      RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
-      
-      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-      typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
-      typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
-#ifdef HAVE_MUELU_IFPACK2
-      // Register Ifpack2 as a Stratimikos preconditioner strategy.
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
-      
-      linearSolverBuilder.setParameterList(params);
-      
-      // Build a new "solver factory" according to the previously specified parameter list.
-      // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
-      
-      auto precFactory = Thyra::createPreconditioningStrategy(linearSolverBuilder);
-      auto prec = precFactory->createPrec();
-      
-      precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
-      
-      return prec;
-    }
-  };
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Thyra::PreconditionerBase<Scalar> > 
   Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
                                                                                         RCP<ParameterList> params) {
-    return StratimikosWrapperImpl<SC,LO,GO,NO>::setupStratimikosPreconditioner(A,params);
+
+    // Build Thyra linear algebra objects
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
+
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
+    typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
+    typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
+#ifdef HAVE_MUELU_IFPACK2
+    // Register Ifpack2 as a Stratimikos preconditioner strategy.
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
+
+    linearSolverBuilder.setParameterList(params);
+
+    // Build a new "solver factory" according to the previously specified parameter list.
+    // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+
+    auto precFactory = Thyra::createPreconditioningStrategy(linearSolverBuilder);
+    auto prec = precFactory->createPrec();
+
+    precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+
+    return prec;
   }
-
-
-
 
 #endif
 

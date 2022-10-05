@@ -58,6 +58,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         # - NOTE: simple_testing.cmake can be found in the TFW_single_configure_support_scripts
         #         repository.
         cmd = ['ctest',
+               "-V",
                 "-S", f"{self.arg_ctest_driver}",
                f"-Dsource_dir:PATH={self.arg_source_dir}",
                f"-Dbuild_dir:PATH={self.arg_build_dir}",

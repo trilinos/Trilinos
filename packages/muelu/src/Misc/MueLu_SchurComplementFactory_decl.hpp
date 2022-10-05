@@ -121,11 +121,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory() { }
-
-    //! Destructor.
-    virtual ~SchurComplementFactory() { }
-    //@}
+    SchurComplementFactory() = default;
 
     //! Input
     //@{
@@ -146,8 +142,8 @@ namespace MueLu {
 
 
   private:
-
-    RCP<Matrix> ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Vector>& Ainv) const;
+    //! Schur complement calculation method.
+    RCP<Matrix> ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Matrix>& Ainv) const;
 
   }; // class SchurComplementFactory
 

@@ -45,7 +45,9 @@
 
 // Panzer
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.                 
+#ifdef PANZER_HAVE_EPETRA
+#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
+#endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalIndexer.hpp"
 
@@ -71,10 +73,10 @@ TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                        const Teuchos::RCP<const GlobalIndexer> & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
-{ 
+{
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
-   // build and register the gather/scatter evaluators with 
+   // build and register the gather/scatter evaluators with
    // the base class.
    this->buildGatherScatterEvaluators(*this);
 }
@@ -85,10 +87,10 @@ TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                        const Teuchos::RCP<const GlobalIndexer> & gidProvider,
                        const Teuchos::RCP<const GlobalIndexer> & colGidProvider)
    : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
-{ 
+{
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
-   // build and register the gather/scatter evaluators with 
+   // build and register the gather/scatter evaluators with
    // the base class.
    this->buildGatherScatterEvaluators(*this);
 }
@@ -98,11 +100,11 @@ TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ~TpetraLinearObjFactory()
 { }
 
-// LinearObjectFactory functions 
+// LinearObjectFactory functions
 /////////////////////////////////////////////////////////////////////
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<LinearObjContainer> 
+Teuchos::RCP<LinearObjContainer>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildLinearObjContainer() const
 {
@@ -112,7 +114,7 @@ buildLinearObjContainer() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<LinearObjContainer> 
+Teuchos::RCP<LinearObjContainer>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedLinearObjContainer() const
 {
@@ -122,7 +124,7 @@ buildGhostedLinearObjContainer() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhostContainer(const LinearObjContainer & in,
                        LinearObjContainer & out,int mem) const
@@ -130,14 +132,14 @@ globalToGhostContainer(const LinearObjContainer & in,
    using Teuchos::is_null;
    typedef LinearObjContainer LOC;
 
-   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in); 
-   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out); 
-  
+   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in);
+   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out);
+
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
    if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
      globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
-  
+
    if ( !is_null(t_in.get_dxdt()) && !is_null(t_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
      globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt(),true);
 
@@ -146,7 +148,7 @@ globalToGhostContainer(const LinearObjContainer & in,
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ghostToGlobalContainer(const LinearObjContainer & in,
                        LinearObjContainer & out,int mem) const
@@ -155,8 +157,8 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 
    typedef LinearObjContainer LOC;
 
-   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in); 
-   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out); 
+   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in);
+   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out);
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
@@ -171,7 +173,7 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
                           Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
@@ -185,7 +187,7 @@ ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdin
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
                           Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const
@@ -194,7 +196,7 @@ ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOr
 
    // do the global distribution
    RCP<ExportType> exporter = getGhostedExport();
-   
+
    out.resumeFill();
    out.setAllToScalar(0.0);
    out.doExport(in,*exporter,Tpetra::ADD);
@@ -202,7 +204,7 @@ ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOr
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
                           Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
@@ -216,7 +218,7 @@ globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdin
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
@@ -225,13 +227,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
-   const ContainerType & t_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows); 
-   const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
-   ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
+   const ContainerType & t_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows);
+   const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows);
+   ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs);
 
    TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f()));
    TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f()));
-   
+
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
    Teuchos::RCP<VectorType> f = t_ghosted.get_f();
@@ -248,7 +250,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       if(global_bcs_array[i]==0.0)
          continue;
 
-      if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
+      if(local_bcs_array[i]==0.0 || zeroVectorRows) {
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
@@ -262,7 +264,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 
             A->getLocalRowCopy(i,indices,values,numEntries);
 
-            for(std::size_t c=0;c<numEntries;c++) 
+            for(std::size_t c=0;c<numEntries;c++)
 	      values(c) = 0.0;
 
             A->replaceLocalValues(i,indices,values);
@@ -284,7 +286,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 
             A->getLocalRowCopy(i,indices,values,numEntries);
 
-            for(std::size_t c=0;c<numEntries;c++) 
+            for(std::size_t c=0;c<numEntries;c++)
 	      values(c) /= scaleFactor;
 
             A->replaceLocalValues(i,indices,values);
@@ -294,7 +296,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 applyDirichletBCs(const LinearObjContainer & /* counter */,
                   LinearObjContainer & /* result */) const
@@ -321,6 +323,7 @@ buildReadOnlyDomainContainer() const
   return ged;
 } // end of buildReadOnlyDomainContainer()
 
+#ifdef PANZER_HAVE_EPETRA
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  buildWriteDomainContainer()
@@ -339,6 +342,7 @@ buildWriteDomainContainer() const
   TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT IMPLEMENTED YET")
   return ged;
 } // end of buildWriteDomainContainer()
+#endif // PANZER_HAVE_EPETRA
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -349,7 +353,7 @@ getComm() const
 
 //! Get the domain space
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraDomainSpace() const
 {
@@ -365,7 +369,7 @@ getThyraDomainSpace() const
 
 //! Get the range space
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraRangeSpace() const
 {
@@ -377,7 +381,7 @@ getThyraRangeSpace() const
 
 //! Get a matrix operator
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > 
+Teuchos::RCP<Thyra::LinearOpBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraMatrix() const
 {
@@ -388,7 +392,7 @@ getThyraMatrix() const
 /////////////////////////////////////////////////////////////////////
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 initializeContainer(int mem,LinearObjContainer & loc) const
 {
@@ -397,7 +401,7 @@ initializeContainer(int mem,LinearObjContainer & loc) const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 initializeContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & loc) const
 {
@@ -410,7 +414,7 @@ initializeContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,Globa
 
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getTpetraColVector());
-    
+
    if((mem & LOC::F) == LOC::F)
       loc.set_f(getTpetraVector());
 
@@ -419,7 +423,7 @@ initializeContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,Globa
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 initializeGhostedContainer(int mem,LinearObjContainer & loc) const
 {
@@ -428,7 +432,7 @@ initializeGhostedContainer(int mem,LinearObjContainer & loc) const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & loc) const
 {
@@ -441,7 +445,7 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
 
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getGhostedTpetraColVector());
-    
+
    if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedTpetraVector());
       loc.setRequiresDirichletAdjustment(true);
@@ -458,7 +462,7 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
 
 // get the map from the matrix
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getMap() const
 {
@@ -469,7 +473,7 @@ getMap() const
 
 // get the map from the matrix
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getColMap() const
 {
@@ -479,7 +483,7 @@ getColMap() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedMap() const
 {
@@ -489,7 +493,7 @@ getGhostedMap() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedColMap() const
 {
@@ -500,7 +504,7 @@ getGhostedColMap() const
 
 // get the graph of the crs matrix
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGraph() const
 {
@@ -510,7 +514,7 @@ getGraph() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedGraph() const
 {
@@ -520,50 +524,50 @@ getGhostedGraph() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedImport() const
 {
-   if(ghostedImporter_==Teuchos::null) 
+   if(ghostedImporter_==Teuchos::null)
       ghostedImporter_ = Teuchos::rcp(new ImportType(getMap(),getGhostedMap()));
 
    return ghostedImporter_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedColImport() const
 {
    if(!hasColProvider_)
       ghostedColImporter_ = getGhostedImport(); // they are the same in this case
 
-   if(ghostedColImporter_==Teuchos::null) 
+   if(ghostedColImporter_==Teuchos::null)
       ghostedColImporter_ = Teuchos::rcp(new ImportType(getColMap(),getGhostedColMap()));
 
    return ghostedColImporter_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedExport() const
 {
-   if(ghostedExporter_==Teuchos::null) 
+   if(ghostedExporter_==Teuchos::null)
       ghostedExporter_ = Teuchos::rcp(new ExportType(getGhostedMap(),getMap()));
 
    return ghostedExporter_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedColExport() const
 {
    if(!hasColProvider_)
       ghostedColExporter_ = getGhostedExport(); // they are the same in this case
 
-   if(ghostedColExporter_==Teuchos::null) 
+   if(ghostedColExporter_==Teuchos::null)
       ghostedColExporter_ = Teuchos::rcp(new ExportType(getGhostedColMap(),getColMap()));
 
    return ghostedColExporter_;
@@ -573,7 +577,7 @@ getGhostedColExport() const
 /////////////////////////////////////////////////////////////////////
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildMap() const
 {
@@ -586,11 +590,11 @@ buildMap() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildColMap() const
 {
-   if(!hasColProvider_)  
+   if(!hasColProvider_)
      return buildMap();
 
    std::vector<GlobalOrdinalT> indices;
@@ -603,7 +607,7 @@ buildColMap() const
 
 // build the ghosted map
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedMap() const
 {
@@ -617,11 +621,11 @@ buildGhostedMap() const
 
 // build the ghosted map
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedColMap() const
 {
-   if(!hasColProvider_)  
+   if(!hasColProvider_)
      return buildGhostedMap();
 
    std::vector<GlobalOrdinalT> indices;
@@ -657,7 +661,7 @@ buildGraph() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedGraph() const
 {
@@ -665,7 +669,7 @@ buildGhostedGraph() const
    Teuchos::RCP<MapType> rMap = getGhostedMap();
    Teuchos::RCP<MapType> cMap = getGhostedColMap();
 
-   std::vector<std::string> elementBlockIds;   
+   std::vector<std::string> elementBlockIds;
    gidProvider_->getElementBlockIds(elementBlockIds);
 
    const Teuchos::RCP<const GlobalIndexer>
@@ -703,7 +707,7 @@ buildGhostedGraph() const
            }
          }
 
-         for(std::size_t j=0;j<gids.size();j++){ 
+         for(std::size_t j=0;j<gids.size();j++){
             LocalOrdinalT lid = rMap->getLocalElement(gids[j]);
             nEntriesPerRow[lid] += col_gids.size();
          }
@@ -752,43 +756,43 @@ buildGhostedGraph() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraVector() const
 {
-   Teuchos::RCP<const MapType> tMap = getGhostedMap(); 
+   Teuchos::RCP<const MapType> tMap = getGhostedMap();
    return Teuchos::rcp(new VectorType(tMap));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraColVector() const
 {
-   Teuchos::RCP<const MapType> tMap = getGhostedColMap(); 
+   Teuchos::RCP<const MapType> tMap = getGhostedColMap();
    return Teuchos::rcp(new VectorType(tMap));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraVector() const
 {
-   Teuchos::RCP<const MapType> tMap = getMap(); 
+   Teuchos::RCP<const MapType> tMap = getMap();
    return Teuchos::rcp(new VectorType(tMap));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraColVector() const
 {
-   Teuchos::RCP<const MapType> tMap = getColMap(); 
+   Teuchos::RCP<const MapType> tMap = getColMap();
    return Teuchos::rcp(new VectorType(tMap));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraMatrix() const
 {
@@ -800,11 +804,11 @@ getTpetraMatrix() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraMatrix() const
 {
-   Teuchos::RCP<CrsGraphType> tGraph = getGhostedGraph(); 
+   Teuchos::RCP<CrsGraphType> tGraph = getGhostedGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
 
@@ -812,7 +816,7 @@ getGhostedTpetraMatrix() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-const Teuchos::RCP<const Teuchos::Comm<int> > 
+const Teuchos::RCP<const Teuchos::Comm<int> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTeuchosComm() const
 {
@@ -825,7 +829,7 @@ beginFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null) 
+  if(A!=Teuchos::null)
     A->resumeFill();
 }
 
@@ -835,7 +839,7 @@ endFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null) 
+  if(A!=Teuchos::null)
     A->fillComplete(A->getDomainMap(),A->getRangeMap());
 }
 

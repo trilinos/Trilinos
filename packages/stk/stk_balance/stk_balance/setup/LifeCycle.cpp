@@ -43,6 +43,8 @@
 #include "stk_balance/internal/LogUtils.hpp"
 #include "stk_balance/rebalance.hpp"
 #include "stk_balance/internal/privateDeclarations.hpp"
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 
 #include <stk_io/FillMesh.hpp>
 
@@ -151,9 +153,16 @@ void LifeCycle::balance()
   stk::balance::BalanceIO io(m_comm, m_settings);
   const stk::balance::Balancer balancer(m_settings);
 
+  if (m_settings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(m_settings);
+  }
+
   stk::balance::BalanceMesh& mesh = io.initial_decomp();
   balancer.balance(mesh);
   io.write(mesh);
+
+  DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
+  diagPrinter.print(sierra::Env::outputP0());
 }
 
 void LifeCycle::rebalance()
@@ -172,7 +181,14 @@ void LifeCycle::rebalance()
     return;
   }
 
+  if (m_settings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(m_settings);
+  }
+
   stk::balance::rebalance(ioBroker, m_settings);
+
+  DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
+  diagPrinter.print(sierra::Env::outputP0());
 }
 
 void LifeCycle::set_output_streams()

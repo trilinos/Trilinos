@@ -18,6 +18,7 @@ template <typename Scalar>
 WrapperModelEvaluatorPairPartIMEX_StaggeredFSA<Scalar>::
 WrapperModelEvaluatorPairPartIMEX_StaggeredFSA(
   const Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
+  const bool is_pseudotransient,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList) :
   forwardModel_(forwardModel),
   use_dfdp_as_tangent_(false),
@@ -37,8 +38,8 @@ WrapperModelEvaluatorPairPartIMEX_StaggeredFSA(
 
   appExplicitModel_ = forwardModel_->getExplicitModel();
   appImplicitModel_ = forwardModel_->getImplicitModel();
-  fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, pl));
-  fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, pl));
+  fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_, appExplicitModel_, is_pseudotransient, pl));
+  fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_, appImplicitModel_, is_pseudotransient, pl));
 
   const int y_param_index = forwardModel_->getParameterIndex();
   const int sens_param_index = pl->get<int>("Sensitivity Parameter Index");

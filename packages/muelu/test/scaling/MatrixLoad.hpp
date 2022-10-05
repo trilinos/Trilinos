@@ -245,4 +245,137 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 }
 
+// Read in block information when doing user based blocks smoothing via "partitioner: global ID parts"
+// Block information is read from file userBlkFileName. This file is assumed to be 'MatrixMarket
+// matrix coordinate real general' where each row corresponds defines one
+// block. Specifically, each point dof j  residing in the ith block is
+// indicated by having a nonzero (i,j) in userBlkFileName. The file reader
+// makes the following additional assumptions
+//     1) The first line in the file is a comment
+//     2) all file entries defining blk k occur before
+//        file entries defining blk k+1.
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void readUserBlks(const std::string& userBlkFileName, const std::string& smootherOrCoarse, Teuchos::ParameterList& mueluList, 
+                  const Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A) {
+
+//     userBlkFileName          MatrixMarket file defining blocks
+//     smootherOrCoarse         Whether blocks are associated with "smoother: params" or "coarse: params"
+//     mueluList                Parameter list that is modified to reflect block informaiton found in file
+//     A                        Matrix that block smoother will be applied to
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::TimeMonitor;
+  using Teuchos::ParameterList;
+
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+
+    TEUCHOS_TEST_FOR_EXCEPTION( (smootherOrCoarse != "smoother") &&  (smootherOrCoarse != "coarse"),
+                                 std::runtime_error, "2nd argument to readUserBlks must be either \"smoother\" or \"coarse\" and not \"" + smootherOrCoarse + "\"");
+    if ( (!userBlkFileName.empty()) && (mueluList.isSublist(smootherOrCoarse + ": params"))) {
+      bool hasSubdomSolver = mueluList.sublist(smootherOrCoarse + ": params").isSublist("subdomain solver parameters");
+      if (hasSubdomSolver) {
+        if (mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").isParameter("partitioner: type")) {
+          if (mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") {
+
+            FILE   *fp;
+            int    nBlks, nRows, nnzs, ch, row, col;
+            int    procId = comm->getRank();
+            double val;
+
+            /* read block information from file only to count the # of rows */
+            /* we own within each block. We'll reopen the file later to fill*/
+            /* the Teuchos::Array for "partitioner: global ID parts"        */
+
+            fp = fopen( &userBlkFileName[0],"r");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+
+            while ( (ch= getc(fp) != '\n'))  ;  //read first line
+
+            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            TEUCHOS_TEST_FOR_EXCEPTION(nRows != (int) A->getRowMap()->getGlobalNumElements(),
+                 std::runtime_error,"number of global rows in " + userBlkFileName + " does not match those in A");
+
+            Teuchos::ArrayRCP<int> myOwnedRowsPerBlock(nBlks, 0);
+
+            for (int i = 0; i < nnzs; i++) {
+              fscanf(fp,"%d %d %lf", &row, &col, &val); row--; col--;
+              if (A->getRowMap()->getLocalElement( (GlobalOrdinal) col) != Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) (myOwnedRowsPerBlock[row])++;
+            }
+            fclose(fp);
+
+            // Assign ownership of each block to one mpirank corresponding
+            // to which mpirank owns the most rows within a block. When 
+            // ties occur, highest procId wins.                           
+
+            // first, set to procId+1 if we own the largest # of rows
+            // in block.  Otherwise, set to 0.                       
+
+            Teuchos::ArrayRCP<int> maxOwnedRowsPerBlock(nBlks, 0);
+            Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, (LocalOrdinal) nBlks, myOwnedRowsPerBlock.getRawPtr(),maxOwnedRowsPerBlock.getRawPtr());
+      
+            Teuchos::ArrayRCP<int> haveMaxOwned(nBlks, 0);
+            for (int i = 0; i < nBlks; i++) {
+              haveMaxOwned[i] = 0;
+              if ((myOwnedRowsPerBlock[i] == maxOwnedRowsPerBlock[i]) && (myOwnedRowsPerBlock[i] >0)) haveMaxOwned[i] = procId+1;
+            }
+            Teuchos::ArrayRCP<int> maxProcIdPlusOne(nBlks, 0);
+            Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, (LocalOrdinal) nBlks, haveMaxOwned.getRawPtr(), maxProcIdPlusOne.getRawPtr());
+
+            Teuchos::ArrayRCP<bool> ownBlk(nBlks, false);
+            int nOwned = 0;
+            int maxDofsInAnyBlock = 0;
+            for (int i = 0; i < nBlks; i++) {
+              TEUCHOS_TEST_FOR_EXCEPTION(maxProcIdPlusOne[i] == 0, std::runtime_error,
+                "some blocks are not owned by any processor?");
+              if (maxProcIdPlusOne[i] == procId+1) { ownBlk[i] = true;  nOwned++; maxDofsInAnyBlock += myOwnedRowsPerBlock[i];}
+            }
+            maxDofsInAnyBlock *= 2; // We only have an estimate as to the largest number of dofs in any block (as some dofs
+            maxDofsInAnyBlock++;    // might reside on other processors. So we multiple our estimate by 2 hoping to be large
+                                    // enough. Later, we check to see if things are not large enough and re-allocate space
+                                    // in this case. 
+
+            Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > blockLists(nOwned,Teuchos::null);
+
+            Teuchos::Array<int> buffer(maxDofsInAnyBlock,0);
+
+            int curRow, currentOwnedRow = 0;
+
+            // reopen userBlkFilename and record block information in blockLists
+
+            fp = fopen( &userBlkFileName[0],"r");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+
+            while ( (ch= getc(fp) != '\n'))  ;
+            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+
+            fscanf(fp,"%d %d %lf", &row, &col, &val); row=row-1; col=col-1;
+            int jj = 1;
+            while (jj <= nnzs ) {
+              if (ownBlk[row] == true) {
+
+                int i = 0;
+                curRow = row;
+                while ((row == curRow) && (jj <= nnzs)){
+                  if (i == maxDofsInAnyBlock) {
+                    maxDofsInAnyBlock *= 2; 
+                    buffer.resize(maxDofsInAnyBlock);
+                  }
+                  buffer[i] = col; i++;
+                  fscanf(fp,"%d %d %lf", &row, &col, &val); jj++; row=row-1; col=col-1;
+                }
+                blockLists[currentOwnedRow] = Teuchos::arcp<GlobalOrdinal>(i);
+                for (int k = 0; k < i; k++) { blockLists[currentOwnedRow][k] = (GlobalOrdinal) buffer[k];   }
+                currentOwnedRow++;
+              }
+              else { fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
+            }
+            fclose(fp);
+            mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").set< Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > >("partitioner: global ID parts", blockLists);
+          }
+        }
+      }
+    }
+}
+
 #endif

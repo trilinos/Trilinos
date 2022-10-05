@@ -68,12 +68,10 @@ protected:
   void declare_centroid_field()
   {
     centroid = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "centroid");
-    stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3, nullptr);
 
     hostCentroid = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "hostCentroid");
-    stk::mesh::put_field_on_mesh(*hostCentroid, get_meta().universal_part(), 3,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*hostCentroid, get_meta().universal_part(), 3, nullptr);
   }
 
   void declare_centroid_partial_mesh(unsigned numBlocks)
@@ -82,8 +80,7 @@ protected:
     for(unsigned i = 1; i <= numBlocks; i++) {
       const std::string partName = "block_" + std::to_string(i);
       stk::mesh::Part& part = get_meta().declare_part(partName, stk::topology::ELEM_RANK);
-      stk::mesh::put_field_on_mesh(*centroid, part, 3,
-                                  (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+      stk::mesh::put_field_on_mesh(*centroid, part, 3, nullptr);
     }
   }
 

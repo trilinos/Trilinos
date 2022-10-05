@@ -119,8 +119,8 @@ int ConvergenceTri(const bool verbose) {
   using ExecSpaceType = typename DeviceType::execution_space;
   using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  ";   ExecSpaceType().print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
   *outStream << "\n";
 
   int errorFlag = 0;
@@ -625,7 +625,7 @@ int ConvergenceTri(const bool verbose) {
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HCURL_TRI(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HCURL_TRI(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -883,7 +883,7 @@ int ConvergenceTri(const bool verbose) {
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(basisDegree));
       basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(basisDegree));
-      //basis_set.push_back(new typename  CG_HBasis::HDIV_TRI(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HDIV_TRI(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -1145,7 +1145,7 @@ int ConvergenceTri(const bool verbose) {
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(basisDegree-1));
       basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(basisDegree-1));
-      //basis_set.push_back(new typename  CG_HBasis::HVOL_TRI(basisDegree-1));
+      basis_set.push_back(new typename  CG_HBasis::HVOL_TRI(basisDegree-1));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;

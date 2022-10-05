@@ -453,6 +453,9 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
+
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector & X,
                   const MultiVector & B,
@@ -860,6 +863,9 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
+
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                   const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
@@ -1262,6 +1268,9 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

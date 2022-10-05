@@ -371,9 +371,9 @@ public:
     //
     if (commOwnsMesh[0])
     {
-      metaA = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      metaA = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
       metaA->use_simple_fields();
-      meshA = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaA, pmSub));
+      meshA = stk::mesh::MeshBuilder(pmSub).create(metaA);
       build_mesh(*metaA, *meshA, info.num_elements, info.num_nodes, info.element_ids, element_ownerA, &info.elem_node_ids[0], info.node_sharingA, info.coordinates, create_faces);
     }
 
@@ -381,9 +381,9 @@ public:
     //
     if (commOwnsMesh[1])
     {
-      metaB = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      metaB = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
       metaB->use_simple_fields();
-      meshB = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaB, pmSub));
+      meshB = stk::mesh::MeshBuilder(pmSub).create(metaB);
       build_mesh(*metaB, *meshB, info.num_elements, info.num_nodes, info.element_ids, element_ownerB, &info.elem_node_ids[0], info.node_sharingB, info.coordinates, create_faces);
     }
   }
@@ -503,9 +503,9 @@ protected:
   SearchById copySearch;
   bool receiverIncludesSharedNodes = false;
   const size_t spatial_dimension = 3;
-  std::unique_ptr<stk::mesh::MetaData> metaA;
+  std::shared_ptr<stk::mesh::MetaData> metaA;
   std::unique_ptr<stk::mesh::BulkData> meshA;
-  std::unique_ptr<stk::mesh::MetaData> metaB;
+  std::shared_ptr<stk::mesh::MetaData> metaB;
   std::unique_ptr<stk::mesh::BulkData> meshB;
   ScalarIntField * scalarIntTargetField = nullptr;
   ScalarDoubleField * scalarDoubleTargetField = nullptr;

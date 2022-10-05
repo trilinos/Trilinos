@@ -595,6 +595,8 @@ namespace BaskerNS
   }//end t_init_factor()
 
 
+  // ALM : strictly-lower triangular blocks (no diagonal blocks)
+  // AVM :          upper triangular blocks (with diagonal blocks)
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::t_init_2DA
@@ -603,22 +605,11 @@ namespace BaskerNS
   )
   {
     /*if (kid == 1) {
-      printf(" BTF_A_2D = [\n" );
-      for(Int j = 0; j < BTF_A.ncol; j++) {
-        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-        }
-      }
-      printf("];\n");
-      printf(" A_2D = [\n" );
-      for(Int j = 0; j < A.ncol; j++) {
-        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-          printf("%d %d %e\n", A.row_idx[k], j, A.val[k]);
-        }
-      }
-      printf("];\n");
+      BTF_A.print_matrix("BTF_A_2D.dat");
+          A.print_matrix(    "A_2D.dat");
     }*/
-    // extract strictly Lower blockks into ALM
+    //if (kid == 0) printf( " >> t_init_2DA <<\n" );
+    // extract strictly Lower blocks into ALM
     // (blocks in strictly lower part, diagonal blocks are in AVM)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
@@ -640,18 +631,12 @@ namespace BaskerNS
             printf(" > kid=%d, lvl=%d: convert2D ALM(%d, %d) with (%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, row,
                    ALM(b)(row).nrow,ALM(b)(row).ncol, ALM(b)(row).nnz, ALM(b)(row).srow,ALM(b)(row).scol);
             printf("[\n");
-            for(Int j = 0; j < BTF_A.ncol; j++) {
-              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-              }
-            }
-            printf("];\n");
           }*/
           if(Options.btf == BASKER_FALSE)
           {
             #ifdef BASKER_DEBUG_INIT
-            printf("ALM alloc: b=%d row=%d kid=%d btf=%d\n",
-                    b, row, kid, Options.btf);
+            printf("ALM(%d,%d: %dx%d) alloc with A: kid=%d btf=%d\n",
+                    b, row, ALM(b)(row).nrow, ALM(b)(row).ncol, kid, Options.btf);
             #endif
             ALM(b)(row).convert2D(A, alloc, kid);
           }
@@ -659,8 +644,8 @@ namespace BaskerNS
           {
             //printf("Using BTF AL \n");
             #ifdef BASKER_DEBUG_INIT
-            printf("ALM alloc (btf): b=%d row=%d kid=%d \n",
-                   b, row, kid);
+            printf("ALM(%d,%d, %dx%d) alloc (btf) with BTF_A: kid=%d \n",
+                   b, row, ALM(b)(row).nrow, ALM(b)(row).ncol, kid);
             #endif
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
           }
