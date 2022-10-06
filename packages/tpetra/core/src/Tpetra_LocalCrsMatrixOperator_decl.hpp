@@ -363,6 +363,17 @@ namespace Tpetra {
          rowsPerThread_(rowsPerThread), vectorLength_(vectorLength) {}
 
       
+      // a kind of crummy scal implementation that we can put in an execution space instance
+      struct ScalTag{};
+      KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
+        if (i >= Y_.extent(0)) {return;}
+        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+          Y_(i, k) *= beta_;
+        }
+      }
+
+      struct SimpleTag{};
+
       /* simplified version brought from Kokkos Kernels
       */
       template <int UNROLL>
@@ -512,6 +523,35 @@ namespace Tpetra {
         }
       }
 
+
+      KOKKOS_INLINE_FUNCTION void operator()(SimpleTag, const ordinal_type i) const {
+
+        if (i >= A_.numRows()) {
+          return;
+        }
+
+        const KokkosSparse::SparseRowViewConst<local_matrix_device_type> row = 
+            RowViewer::view(A_, offRankOffsets_, i);
+
+        // this implementation may be best for a single vector (not multivector)
+        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+          MultiVectorScalar sum = 0;
+
+          for (ordinal_type ri = 0; ri < row.length; ++ri) {
+            value_type A_ij = row.value(ri);
+            ordinal_type j = row.colidx(ri);
+            sum += A_ij * X_(j, k); 
+          }
+          sum *= alpha_;
+
+          if (0 == beta_) {
+            Y_(i,k) = sum;
+          } else {
+            Y_(i,k) = beta_ * Y_(i,k) + sum;
+          } 
+        }
+      }
+
       static void launch(const MultiVectorScalar &alpha, 
         const local_matrix_device_type &A, 
         x_type &X, 
@@ -520,10 +560,38 @@ namespace Tpetra {
         const OffsetDeviceViewType &offRankOffsets,
         const execution_space &space) {
 
-        /* nothing to do */
+        if (std::is_same<RowViewer, OnRankRowViewer<OffsetDeviceViewType>>::value) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::on-rank\n";
+        } else if (std::is_same<RowViewer, OffRankRowViewer<OffsetDeviceViewType>>::value) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::off-rank\n";
+        }
+
+        // still need to scal A.numRows() == 0
         if (0 == A.numRows()) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch scal only\n";
+          // TODO: define a common scal operator
+          SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets, 0/*unused*/, 0/*unused*/);
+          Kokkos::parallel_for("SpmvMvFunctor scal",
+                              Kokkos::RangePolicy<ScalTag, execution_space>(
+                                  space, 0, Y.extent(0)),
+                              op);
           return;
         }
+
+
+#if 0
+#if defined(KOKKOS_ENABLE_SERIAL)
+        if (std::is_same<execution_space, Kokkos::Serial>::value) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch simple only\n";
+          SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets, 0/*unused*/, 0/*unused*/);
+          Kokkos::parallel_for("SpmvMvFunctor simple",
+            Kokkos::RangePolicy<SimpleTag, execution_space>(
+                space, 0, A.numRows()),
+            op);
+          return;
+        }
+#endif
+#endif
 
         const ordinal_type NNZPerRow = A.nnz() / A.numRows();
 
@@ -531,11 +599,12 @@ namespace Tpetra {
         while ((vectorLength * 2 * 3 <= NNZPerRow) && (vectorLength < 8)) {
           vectorLength *= 2;
         }
-        // std::cerr << __FILE__<<":"<<__LINE__<<": vectorLength=" << vectorLength << "\n";
+        
 
         const ordinal_type rowsPerThread =
             KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
 
+        std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch vectorLength="<<vectorLength <<"\n";
         SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets,
                   rowsPerThread, vectorLength);
 
@@ -643,7 +712,7 @@ namespace Tpetra {
       // a kind of crummy scal implementation that we can put in an execution space instance
       struct ScalTag{};
       KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
-        if (i >= A_.numRows()) {return;}
+        if (i >= Y_.extent(0)) {return;}
         for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
           Y_(i, k) *= beta_;
         }
@@ -657,12 +726,16 @@ namespace Tpetra {
         const OffsetDeviceViewType &offRankOffsets,
         const execution_space &space) {
 
-
         SpmvMvTransFunctor op(alpha, A, X, beta, Y, offRankOffsets);
         Kokkos::parallel_for("SpmvMvTransFunctor scal",
                             Kokkos::RangePolicy<ScalTag, execution_space>(
-                                space, 0, A.numRows()),
+                                space, 0, Y.extent(0)),
                             op);
+
+        // nothing to do
+        if (0 == A.numRows()) {
+          return;
+        }
 
         const ordinal_type NNZPerRow = A.nnz() / A.numRows();
 
