@@ -4732,7 +4732,19 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.isConstantStride()=" << Y_in.isConstantStride() << "\n";
     // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
 
-    const bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
+    bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
+
+    // TODO:
+    // X_in on the domain map. Local part of domain map may not match the column map
+    // ith entry of X_in may not correspond to column i of the matrix in local indices
+    // so can't always call on-rank SpMV on X_in directly
+    if ( !getColMap()->isLocallyFitted(*getDomainMap())  ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getColMap()->isLocallyFitted(*getDomainMap())\n";
+      overlap = false;
+    }
+
+    // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: getRowMap()->isLocallyFitted(*getRangeMap())=" << getRowMap()->isLocallyFitted(*getRangeMap()) << "\n";
+
         // && std::is_same<exec_space, Kokkos::Cuda>::value;
     // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: overlap=" << overlap << "\n";
 
@@ -4870,17 +4882,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Export.  In that case, the local multiply result will go into
     // the row Map multivector. 
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
-    // Y_rowMap has some value already if mustExport, so create for the other two cases
-    if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
-      // Force creating the MV if it hasn't been created already.
-      // This will reuse a previously created cached MV.
-      Y_rowMap = getRowMapMultiVector (Y_in, true);
 
-      // If beta == 0, we don't need to copy Y_in into Y_rowMap,
-      // since we're overwriting it anyway.
-      if (!yIsOverwritten) {
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
-        Tpetra::deep_copy (*Y_rowMap, Y_in);
+    if (!mustExport) {
+      // Y_rowMap has some value already if mustExport, so create for the other two cases
+      if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
+        // Force creating the MV if it hasn't been created already.
+        // This will reuse a previously created cached MV.
+        Y_rowMap = getRowMapMultiVector (Y_in, true);
+
+        // only do this if we
+        // If beta == 0, we don't need to copy Y_in into Y_rowMap,
+        // since we're overwriting it anyway.
+        if (!yIsOverwritten) {
+          // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
+          Tpetra::deep_copy (*Y_rowMap, Y_in);
+        }
       }
     }
 
@@ -5005,8 +5021,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         Y_in.scale (beta);
       }
       // Do the Export operation.
-      // TODO: why are we sure Y_rowMap was used
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.doExport(Y_rowmap, ...)\n";
+      std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.doExport(Y_rowmap, exporter, ADD_ASSIGN)\n";
       Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
     } else {
       // if used the temporary MV, copy it to the input. otherwise, the input was used directly
