@@ -100,6 +100,55 @@ namespace {
       testingTol();
   }
 
+template<class Array1, class Array2, class ScalarMag>
+bool compareFloatingArraysAbs(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  )
+{
+  using Teuchos::as;
+  bool success = true;
+
+  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
+        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+    return false;
+  }
+
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const ScalarMag err = std::fabs(a1[i] - a2[i]);
+    if ( !(err <= tol) ) {
+      out
+        <<"\nError, fabs("<<a1_name<<"["<<i<<"],"
+        <<a2_name<<"["<<i<<"]) = fabs("<<a1[i]<<","<<a2[i]<<") = "
+        <<err<<" <= tol = "<<tol<<": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
+
+  return success;
+
+}
+
+/* compare floating-point arrays with an absolute tolerance
+*/
+#define TEST_COMPARE_FLOATING_ARRAYS_ABS( a1, a2, tol ) \
+  { \
+    const bool result = compareFloatingArraysAbs(a1,#a1,a2,#a2,tol,out); \
+    if (!result) success = false; \
+  }
+
   using std::endl;
 
   using Teuchos::as;
@@ -1072,6 +1121,27 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Array<Mag> norm(2), exact(2,MT_ZERO);
     X.putScalar(ONE);
 
+    /* 
+    Lots of approximations in this error 2*testingTol<Mag>(), producing a quite loose upper bound
+
+    1) assume the error of each individual operation is at most 1/2 ULP
+    2) approximate ULP as eps() * value, miniFE matrix has some 1s and x is 0-1, so take ULP = eps
+
+    3) max error we could accumulate in a row is then 1/2 * number of ops * eps()
+       = 1/2 * rowLength * 2 * eps()
+       let's just pretend all rows are the same length
+    
+    4) norm is numRows additional operations on top of that
+
+    tol = numRows * rowLen * eps() 
+    tol = numRows * NNZ / numRows * eps()
+    tol = NNZ * eps()
+
+    */
+
+    const Mag absTol = testingTol<Mag>() * A1->getGlobalNumEntries();
+    std::cerr << __FILE__<<":"<<__LINE__<<": TOLERANCE=" << absTol << "\n";
+
     // Do a std::vector version 
     {
       Y1a.putScalar(ZERO);Y1b.putScalar(ZERO);
@@ -1091,12 +1161,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else{TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm,absTol);}
 
       compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else {TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm,absTol);}
     }
 
     // Do a std::vector version w/ a nice combination of options
@@ -1127,17 +1197,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
         compare.norm1(norm());
         if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-        else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        else{TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm, absTol);}
         
         compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
         compare.norm1(norm());
         if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-        else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        else {TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm, absTol);}
       }
     }
 
     // Teuchos::Array version
-    // Do a std::vector version 
     {
       Y1a.putScalar(ZERO);Y2a.putScalar(ZERO);
       Y1b.putScalar(ZERO);Y2b.putScalar(ZERO);
@@ -1156,12 +1225,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else{TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm,absTol);}
 
       compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else {TEST_COMPARE_FLOATING_ARRAYS_ABS(exact,norm,absTol);}
     }
 
   }
@@ -1180,6 +1249,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExtractBlockDiagonal,      LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ApplyHelpers,      LO, GO, SCALAR, NODE )  
+
+#if 0
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ApplyHelpers,      LO, GO, SCALAR, NODE )  
+#endif
 
 #define UNIT_TEST_GROUP_NO_ORDINAL_SCALAR( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ScaleBlockDiagonal,      LO, GO, SCALAR, NODE ) \
