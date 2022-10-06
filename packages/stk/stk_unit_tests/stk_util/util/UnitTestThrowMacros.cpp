@@ -261,7 +261,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   // Also, OpenMP seems to produce an abort (in adddition to a throw?).
   //
   // testNGPThrowRequireMsg();
@@ -301,7 +301,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowRequire();
 #else
@@ -333,7 +333,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowAssertMsg();
 #else
@@ -367,7 +367,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowAssertMsg();
 #else
@@ -390,7 +390,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorMsgIf();
 #else
@@ -422,7 +422,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorIf();
 #else
@@ -451,7 +451,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorMsg();
 #else

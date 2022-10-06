@@ -214,22 +214,26 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
 
     stk::parallel_machine_barrier(mesh.parallel());
 
-    stk::performance_tests::Timer timer(mesh.parallel());
-    timer.start_timing();
+    const unsigned NUM_RUNS = 5;
+    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
+    batchTimer.initialize_batch_timer();
+  
+    for (unsigned j = 0; j < NUM_RUNS; j++) {
+      batchTimer.start_batch_timer();
 
-    for(int iter=0; iter<num_iters; ++iter) {
-        for (size_t ghost_i = 0 ; ghost_i<mesh.ghostings().size() ; ++ghost_i) {
-            stk::mesh::communicate_field_data(*mesh.ghostings()[ghost_i], const_fields);
-        }
+      for(int iter=0; iter<num_iters; ++iter) {
+          for (size_t ghost_i = 0 ; ghost_i<mesh.ghostings().size() ; ++ghost_i) {
+              stk::mesh::communicate_field_data(*mesh.ghostings()[ghost_i], const_fields);
+          }
+      }
+
+      for(int iter=0; iter<num_iters; ++iter) {
+          stk::mesh::communicate_field_data(mesh, const_fields);
+      }
+
+      batchTimer.stop_batch_timer();
     }
-
-    for(int iter=0; iter<num_iters; ++iter) {
-        stk::mesh::communicate_field_data(mesh, const_fields);
-    }
-
-    timer.update_timing();
-
-    timer.print_timing(num_iters);
+    batchTimer.print_batch_timing(num_iters);
 }
 
 void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, int num_iters)
@@ -248,15 +252,19 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, int num_ite
 
     stk::parallel_machine_barrier(mesh.parallel());
 
-    stk::performance_tests::Timer timer(mesh.parallel());
-    timer.start_timing();
+    const unsigned NUM_RUNS = 5;
+    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
+    batchTimer.initialize_batch_timer();
+  
+    for (unsigned j = 0; j < NUM_RUNS; j++) {
+      batchTimer.start_batch_timer();
 
-    for(int iter=0; iter<num_iters; ++iter) {
+      for(int iter=0; iter<num_iters; ++iter) {
         stk::mesh::communicate_field_data(mesh, const_fields);
+      }
+      batchTimer.stop_batch_timer();
     }
-
-    timer.update_timing();
-    timer.print_timing(num_iters);
+    batchTimer.print_batch_timing(num_iters);
 }
 
 void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const stk::mesh::Ghosting& ghosting, int num_iters, bool syncToHostEveryIter)
@@ -275,19 +283,23 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
 
     stk::parallel_machine_barrier(mesh.parallel());
 
-    stk::performance_tests::Timer timer(mesh.parallel());
-    timer.start_timing();
+    const unsigned NUM_RUNS = 5;
+    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
+    batchTimer.initialize_batch_timer();
+  
+    for (unsigned j = 0; j < NUM_RUNS; j++) {
+      batchTimer.start_batch_timer();
 
-    for(int iter=0; iter<num_iters; ++iter) {
+      for(int iter=0; iter<num_iters; ++iter) {
         if(syncToHostEveryIter) {
-            set_modify_on_device<double>(ngpFields);
+          set_modify_on_device<double>(ngpFields);
         }
 
         stk::mesh::communicate_field_data(mesh, ngpFields, true, true);
+      }
+      batchTimer.stop_batch_timer();
     }
-
-    timer.update_timing();
-    timer.print_timing(num_iters);
+    batchTimer.print_batch_timing(num_iters);
 }
 
 void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
@@ -384,7 +396,7 @@ TEST(CommunicateFieldData, Ghosting_MultiBlock)
     createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
 
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-    test_communicate_field_data_ghosting(stkMeshBulkData, 1000);
+    test_communicate_field_data_ghosting(stkMeshBulkData, 300);
 }
 
 TEST(CommunicateFieldData, NgpGhosting)

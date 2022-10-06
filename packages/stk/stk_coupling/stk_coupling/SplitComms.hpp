@@ -50,7 +50,7 @@ class SplitCommsImpl
 
   PairwiseRanks get_pairwise_root_ranks(int otherColor) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
+#ifndef STK_HIDE_DEPRECATED_CODE  // remove November 2022
 STK_DEPRECATED
   bool is_coupling_version_deprecated() const;
 #endif

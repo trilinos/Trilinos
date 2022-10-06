@@ -61,7 +61,7 @@ class NgpFieldAccess : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpFieldAccess()
-    : timer(get_comm())
+    : batchTimer(get_comm())
   { }
 
 protected:
@@ -118,7 +118,7 @@ protected:
     }
   }
 
-  stk::performance_tests::Timer timer;
+  stk::performance_tests::BatchTimer batchTimer;
   stk::mesh::Field<double> *centroid;
   stk::mesh::Field<double> *hostCentroid;
 };
@@ -127,51 +127,58 @@ TEST_F(NgpFieldAccess, Centroid)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 1000;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 100;
   const int ELEMS_PER_DIM = 120;
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for (int i = 0; i <NUM_ITERS; i++) {
+      stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
+    }
+    verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, get_meta().universal_part());
+    batchTimer.stop_batch_timer();
   }
-  verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, get_meta().universal_part());
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(NgpFieldAccess, HostCentroid)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 1000;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 100;
   const int ELEMS_PER_DIM = 120;
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
-  for (int run=0; run<NUM_RUNS; run++) {
-    stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
-  }
+  stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
 
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    stk::performance_tests::calculate_centroid_using_host_coord_fields(get_bulk(), *hostCentroid);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < NUM_ITERS; i++) {
+      stk::performance_tests::calculate_centroid_using_host_coord_fields(get_bulk(), *hostCentroid);
+    }
+    compare_and_verify_average_centroids(ELEMS_PER_DIM, get_meta().universal_part());
+    batchTimer.stop_batch_timer();
   }
-  compare_and_verify_average_centroids(ELEMS_PER_DIM, get_meta().universal_part());
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(NgpFieldAccess, CentroidMultiBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 5;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 100;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 
@@ -182,24 +189,28 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   stk::mesh::PartVector elemBlockParts;
   stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
 
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    for (const stk::mesh::Part* blockPart : elemBlockParts) {
-      stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
-            get_bulk(), *blockPart, *centroid);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < NUM_ITERS; i++) {
+      for (const stk::mesh::Part* blockPart : elemBlockParts) {
+        stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
+              get_bulk(), *blockPart, *centroid);
+      }
     }
-  }
 
-  verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, get_meta().universal_part());
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+    verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, get_meta().universal_part());
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(NgpFieldAccess, CentroidPartialBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 500;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 250;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
   int BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option<int>("-n", 50);
@@ -213,17 +224,21 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   stk::mesh::PartVector elemBlockParts;
   stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
 
-  timer.start_timing();
-  stk::mesh::get_updated_ngp_mesh(get_bulk());
-  for (int run=0; run<NUM_RUNS; run++) {
-    for (const stk::mesh::Part* blockPart : elemBlockParts) {
-      stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
-            get_bulk(), *blockPart, *centroid);
-      verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, *blockPart);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+  
+    stk::mesh::get_updated_ngp_mesh(get_bulk());
+    for (int i = 0; i < NUM_ITERS; i++) {
+      for (const stk::mesh::Part* blockPart : elemBlockParts) {
+        stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
+              get_bulk(), *blockPart, *centroid);
+        verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, *blockPart);
+      }
     }
+    batchTimer.stop_batch_timer();
   }
-
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
+
 }

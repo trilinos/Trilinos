@@ -652,8 +652,8 @@ void Bucket::initialize_slot(unsigned ordinal, Entity entity)
 {
   mark_for_modification();
   m_entities[ordinal]    = entity;
-  if (mesh().is_valid(entity)) {
-    mesh().set_state(entity, Created);
+  if (mesh().is_valid(entity) && mesh().state(entity) == Unchanged) {
+    mesh().set_state(entity, Modified);
   }
 }
 

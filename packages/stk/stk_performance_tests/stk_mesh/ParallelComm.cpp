@@ -9,7 +9,8 @@ TEST(ParallelDataExchangePerf, parallel_data_exchange_t_dense)
   MPI_Comm comm = MPI_COMM_WORLD;
   int commSize = stk::parallel_machine_size(comm);
   int dataSize = 1024 * 1024;
-  int numRuns  = 100;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS  = 100;
 
   std::vector<std::vector<int>> sendData(commSize);
   std::vector<std::vector<int>> recvData(commSize);
@@ -22,18 +23,18 @@ TEST(ParallelDataExchangePerf, parallel_data_exchange_t_dense)
       sendData[i][j] = j;
   }
 
-  stk::performance_tests::Timer timer(comm);
-  MPI_Barrier(comm);
-  timer.start_timing();  
+  stk::performance_tests::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
 
-  for (int i=0; i < numRuns; ++i)
-  {
-    stk::parallel_data_exchange_t(sendData, recvData, comm);
+    for (int i = 0; i < NUM_ITERS; ++i)
+    {
+      stk::parallel_data_exchange_t(sendData, recvData, comm);
+    }
+    batchTimer.stop_batch_timer();
   }
-
-  MPI_Barrier(comm);
-  timer.update_timing();
-  timer.print_timing(numRuns);
+  batchTimer.print_batch_timing(NUM_ITERS);
 
   // Intel MPI
   // np=1: [0.078, 0.110]

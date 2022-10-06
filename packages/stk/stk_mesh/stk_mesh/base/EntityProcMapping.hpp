@@ -63,19 +63,47 @@ struct EntityAndProcs
 
   bool find_proc(int p) const
   {
-    return (proc == p || std::find(procs.begin(), procs.end(), p) != procs.end());
+    return ((proc == p) ||
+            ((proc < 0) && (std::find(procs.begin(), procs.end(), p) != procs.end())));
+  }
+
+  void add_proc(int p)
+  {
+    if (proc < 0) {
+      stk::util::insert_keep_sorted_and_unique(p, procs);
+    }
+    else if (proc != p) {
+      procs.reserve(2);
+      procs.push_back(proc);
+      stk::util::insert_keep_sorted_and_unique(p, procs);
+      proc = -1;
+    }
+  }
+
+  void erase_proc(int p)
+  {
+    if (proc == p) {
+      proc = -1;
+    }
+    else if (proc < 0) {
+      std::vector<int>::iterator iter = std::find(procs.begin(), procs.end(), p);
+      if (iter != procs.end()) {
+        procs.erase(iter);
+        if (procs.empty()) {
+          proc = -1;
+        }
+        else if (procs.size() == 1) {
+          proc = procs[0];
+          procs.clear();
+        }
+      }
+    }
   }
 
   Entity entity;
   int proc;
   std::vector<int> procs;
 };
-
-inline
-bool is_valid(Entity entity)
-{
-  return entity.local_offset() != 0;
-}
 
 class EntityProcMapping {
 public:
@@ -91,30 +119,19 @@ public:
         n = -1;
       }
     }
-//    std::fill(entityOffsets.begin(), entityOffsets.end(), -1);
     entityOffsets.resize(sizeOfEntityIndexSpace, -1);
     entitiesAndProcs.clear();
   }
  
   void addEntityProc(Entity entity, int proc)
   {
-    int offset = entityOffsets[entity.local_offset()];
+    const int offset = entityOffsets[entity.local_offset()];
     if (offset < 0) {
       entityOffsets[entity.local_offset()] = entitiesAndProcs.size();
       entitiesAndProcs.emplace_back(entity, proc);
     }
     else {
-      EntityAndProcs& entityAndProcs = entitiesAndProcs[offset];
-      entityAndProcs.entity = entity;
-      if (entityAndProcs.proc < 0) {
-        stk::util::insert_keep_sorted_and_unique(proc, entityAndProcs.procs);
-      }
-      else if (entityAndProcs.proc != proc) {
-        entityAndProcs.procs.reserve(2);
-        entityAndProcs.procs.push_back(proc);
-        stk::util::insert_keep_sorted_and_unique(entityAndProcs.proc, entityAndProcs.procs);
-        entityAndProcs.proc = -1;
-      }
+      entitiesAndProcs[offset].add_proc(proc);
     }
   }
 
@@ -125,29 +142,12 @@ public:
 
   void eraseEntityProc(Entity entity, int proc)
   {
-    int offset = entityOffsets[entity.local_offset()];
+    const int offset = entityOffsets[entity.local_offset()];
     if (offset < 0) {
       return;
     }
     else {
-      EntityAndProcs& eap = entitiesAndProcs[offset];
-      if (eap.proc == proc) {
-        eap.proc = -1;
-        eap.entity = Entity();
-        entityOffsets[entity.local_offset()] = -1;
-      }
-      else {
-        std::vector<int>::iterator iter = std::find(eap.procs.begin(),
-                                                    eap.procs.end(),
-                                                    proc);
-        if (iter != eap.procs.end()) {
-          eap.procs.erase(iter);
-          if (eap.procs.empty()) {
-            eap.proc = -1;
-            eap.entity = Entity();
-          }
-        }
-      }
+      entitiesAndProcs[offset].erase_proc(proc);
     }
   }
 
@@ -161,14 +161,7 @@ public:
   bool find(Entity entity, int proc) const
   {
     const int offset = entityOffsets[entity.local_offset()];
-    if (offset >= 0) {
-      const EntityAndProcs& eap = entitiesAndProcs[offset];
-      return (eap.entity == entity) &&
-         ((eap.proc == proc) ||
-          (std::find(eap.procs.begin(), eap.procs.end(), proc) != eap.procs.end())
-         );
-    }
-    return false;
+    return (offset >= 0) ? entitiesAndProcs[offset].find_proc(proc) : false;
   }
 
   bool find(const EntityProc& entityProc) const
@@ -179,6 +172,18 @@ public:
   bool find(Entity entity) const
   {
     return (entityOffsets[entity.local_offset()] >= 0);
+  }
+
+  EntityAndProcs* find_entity_procs(Entity entity)
+  {
+    const int offset = entityOffsets[entity.local_offset()];
+    return  offset >= 0 ? &entitiesAndProcs[offset] : nullptr;
+  }
+
+  const EntityAndProcs* find_entity_procs(Entity entity) const
+  {
+    const int offset = entityOffsets[entity.local_offset()];
+    return  offset >= 0 ? &entitiesAndProcs[offset] : nullptr;
   }
 
   size_t get_num_procs(Entity entity) const
@@ -194,10 +199,10 @@ public:
   void visit_entity_procs(const Alg& alg)
   {
     for(const EntityAndProcs& entProcs : entitiesAndProcs) {
-      if (is_valid(entProcs.entity) && entProcs.proc >= 0) {
+      if (entProcs.proc >= 0) {
         alg(entProcs.entity, entProcs.proc);
       }
-      else if (is_valid(entProcs.entity)) {
+      else {
         for(int p : entProcs.procs) {
           alg(entProcs.entity, p);
         }

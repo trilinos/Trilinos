@@ -42,6 +42,7 @@
 #include "stk_mesh/base/GetNgpField.hpp"
 #include "stk_mesh/base/GetNgpMesh.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 
 namespace stk {
 namespace performance_tests {
@@ -146,38 +147,46 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, stk::
   calculate_centroid_using_coord_field<CoordFieldType>(bulk, bulk.mesh_meta_data().locally_owned_part(), centroid);
 }
 
+inline
+void calc_centroid(const double** coordData, int numNodes, double* centroid)
+{
+  centroid[0] = 0.0;
+  centroid[1] = 0.0;
+  centroid[2] = 0.0;
+
+  for(int i=0; i<numNodes; ++i) {
+    centroid[0] += coordData[i][0];
+    centroid[1] += coordData[i][1];
+    centroid[2] += coordData[i][2];
+  }
+
+  centroid[0] /= numNodes;
+  centroid[1] /= numNodes;
+  centroid[2] /= numNodes;
+}
+
 inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase& centroid)
 {
   stk::mesh::Selector selector(centroid);
   selector &= bulk.mesh_meta_data().locally_owned_part();
-  auto& bucketVector = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
   const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
 
-  for(auto bucket : bucketVector) {
-    const unsigned centroidNumPerEntity = stk::mesh::field_scalars_per_entity(centroid, *bucket);
-    const unsigned coordNumPerEntity = stk::mesh::field_scalars_per_entity(coords, *bucket);
-    EXPECT_EQ(centroidNumPerEntity, coordNumPerEntity);
-    auto numNodes = bucket->topology().num_nodes();
+  const int maxNumNodes = 8;
+  const double*elemNodeCoords[maxNumNodes];
 
-    for(auto elem : *bucket) {
-      double* centroidData = reinterpret_cast<double*>(stk::mesh::field_data(centroid, elem));
-      std::fill(centroidData, centroidData+centroidNumPerEntity, 0.0);
+  auto centroidCalculator = [&](stk::mesh::Entity elem, const stk::mesh::Entity* nodes, size_t numNodes)
+  {
+      ThrowAssertMsg(numNodes <= maxNumNodes, "numNodes("<<numNodes<<") must be <= maxNumNodes("<<maxNumNodes<<")");
 
-      auto nodes = bulk.begin_nodes(elem);
-      EXPECT_EQ(numNodes, bulk.num_nodes(elem));
-
-      for(unsigned j = 0; j < coordNumPerEntity; j++) {
-        for(unsigned i = 0; i < numNodes; i++) {
-          auto node = nodes[i];
-
-          double* coordData = reinterpret_cast<double*>(stk::mesh::field_data(coords, node));
-          centroidData[j] += coordData[j];
-        }
-
-        centroidData[j] /= numNodes;
+      for(size_t i = 0; i < numNodes; i++) {
+        elemNodeCoords[i] = reinterpret_cast<double*>(stk::mesh::field_data(coords, nodes[i]));
       }
-    }
-  }
+
+      double* centroidData = reinterpret_cast<double*>(stk::mesh::field_data(centroid, elem));
+      calc_centroid(elemNodeCoords, numNodes, centroidData);
+  };
+
+  stk::mesh::for_each_entity_run_with_nodes(bulk, stk::topology::ELEM_RANK, selector, centroidCalculator);
 }
 
 inline

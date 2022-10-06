@@ -148,7 +148,10 @@ PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, unsign
   return PairIterEntityComm( ghostBegin , end );
 }
 
-void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity );
+void pack_entity_info(const BulkData& mesh,
+                      CommBuffer& buf,
+                      const Entity entity,
+                      bool onlyPackDownwardRelations = false);
 
 void unpack_entity_info(
   CommBuffer     & buf,

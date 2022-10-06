@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "stk_util/parallel/MPITag.hpp"
+#include "IbarrierReplacement.hpp"
 
 namespace stk {
 namespace impl {
@@ -13,7 +14,7 @@ class DeletionGroup
     using EntryCountInt = unsigned long long int;
     MPI_Datatype EntryCountIntDatatype = MPI_UNSIGNED_LONG_LONG;
 
-    DeletionGroup(MPI_Comm comm);
+    DeletionGroup(MPI_Comm comm, int barrier_tag);
 
     ~DeletionGroup();
 
@@ -46,6 +47,7 @@ class DeletionGroup
     bool m_barrierActuallyInProgress;
     EntryCountInt m_entryCount;
     std::vector<int> m_tags;
+    IbarrierReplacement m_ibarrier;
 
 #ifndef NDEBUG
     MPI_Request m_req_debug;
