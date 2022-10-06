@@ -42,7 +42,6 @@
 #include <percept/GeometryVerifier.hpp>
 #include <percept/function/internal/SimpleSearcher.hpp>
 #include <percept/function/internal/STKSearcher.hpp>
-#include <percept/structured/BlockStructuredGrid.hpp>
 
 #  if defined( STK_PERCEPT_HAS_GEOMETRY )
 
@@ -155,6 +154,7 @@
       ,m_unprojected_coordinates(0)
       ,m_avoid_add_all_mesh_fields_as_input_fields(false)
       ,m_markNone(false)
+      ,m_useSimpleFields(false)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -195,6 +195,9 @@
       stk::mesh::MeshBuilder builder(m_comm);
       m_bulkData = builder.create();
       m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(),[](auto ptrWeWontDelete){});
+      if (m_useSimpleFields) {
+        m_metaData->use_simple_fields();
+      }
       m_metaData->initialize(m_spatialDim, entity_rank_names);
 
       const unsigned p_rank = stk::parallel_machine_rank( m_comm );
@@ -212,8 +215,8 @@
           m_isCommitted = false;
           m_isAdopted = true;
           m_coordinatesField =
-            &m_metaData->declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" );
-          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), nullptr);
+            &m_metaData->declare_field<CoordinatesFieldType_type>( stk::topology::NODE_RANK, "coordinates" );
+          stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), m_spatialDim, nullptr);
         }
       m_isOpen = true;
       m_filename = "";
@@ -564,7 +567,7 @@
           for (unsigned ifld = 0; ifld < nfields; ifld++)
             {
               stk::mesh::FieldBase *field = fields[ifld];
-              if (print_info) stream << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field->name() << " field_array_rank= " << field->field_array_rank()
+              if (print_info) stream << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field->name()
                                      << " field.entity_rank= " << field->entity_rank()
                                      << mendl;
               unsigned nfr = field->restrictions().size();
@@ -637,7 +640,7 @@
           for (unsigned ifld = 0; ifld < nfields; ifld++)
             {
               stk::mesh::FieldBase *field = fields[ifld];
-              if (print_info) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field->name() << " rank= " << field->field_array_rank() << std::endl;
+              if (print_info) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field->name() << std::endl;
               if (print_info) std::cout << "P[" << p_rank << "] info>    " << *field << std::endl;
 
               unsigned nfr = field->restrictions().size();
@@ -663,14 +666,7 @@
     int PerceptMesh::
     get_spatial_dim()
     {
-#if !STK_PERCEPT_LITE
-      if (m_block_structured_grid)
-        return 3;
-      else
-        return m_metaData->spatial_dimension();
-#else
       return m_metaData->spatial_dimension();
-#endif
     }
 
     uint64_t PerceptMesh::
@@ -729,14 +725,6 @@
     get_number_nodes()
     {
       size_t nnodes=0;
-#if !STK_PERCEPT_LITE
-      if (get_block_structured_grid())
-        {
-          std::vector<typename StructuredGrid::MTNode> nodes;
-          nnodes = get_block_structured_grid()->parallel_count_nodes();
-        }
-      else
-#endif
         {
           std::vector<size_t> count ;
           stk::mesh::Selector selector(get_fem_meta_data()->locally_owned_part() );
@@ -1825,6 +1813,7 @@
       ,m_unprojected_coordinates(0)
       ,m_avoid_add_all_mesh_fields_as_input_fields(false)
       ,m_markNone(false)
+      ,m_useSimpleFields((metaData) ? metaData->is_using_simple_fields() : false)
     {
       //if (!bulkData)
       //  throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1834,6 +1823,17 @@
       if (isCommitted)
         setCoordinatesField();
       s_static_singleton_instance = this;
+    }
+
+    void PerceptMesh::use_simple_fields()
+    {
+      m_useSimpleFields = true;
+      if (m_iossMeshData) {
+        m_iossMeshData->use_simple_fields();
+      }
+      if (m_metaData) {
+        m_metaData->use_simple_fields();
+      }
     }
 
     void PerceptMesh::set_bulk_data(stk::mesh::BulkData *bulkData)
@@ -1881,6 +1881,9 @@
         entity_rank_names.push_back("FAMILY_TREE");
   #endif
         m_iossMeshData->set_rank_name_vector(entity_rank_names);
+        if (m_useSimpleFields) {
+          m_iossMeshData->use_simple_fields();
+        }
     }
 
     void PerceptMesh::destroy()
@@ -1907,9 +1910,9 @@
       }
       if (NULL == m_coordinatesField && m_metaData->is_commit())
         {
-          m_coordinatesField = m_metaData->get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+          m_coordinatesField = m_metaData->get_field(stk::topology::NODE_RANK, "coordinates");
           if (!m_coordinatesField)
-            m_coordinatesField = reinterpret_cast<CoordinatesFieldType *>(const_cast<stk::mesh::FieldBase *>(m_metaData->coordinate_field()));
+            m_coordinatesField = const_cast<stk::mesh::FieldBase *>(m_metaData->coordinate_field());
 
           if (m_coordinatesField == NULL) {
             throw std::runtime_error("PerceptMesh::setCoordinatesField() could not obtain the field from meta data");
@@ -1917,12 +1920,12 @@
         }
     }
 
-    void PerceptMesh::setCoordinatesField(CoordinatesFieldType * coordinates) {
+    void PerceptMesh::setCoordinatesField(stk::mesh::FieldBase * coordinates) {
       if ( m_metaData == NULL ) {
-        throw std::runtime_error("PerceptMesh::setCoordinatesField(CoordinatesFieldType * coordinates) requires metadata ");
+        throw std::runtime_error("PerceptMesh::setCoordinatesField(stk::mesh::FieldBase * coordinates) requires metadata ");
       }
       if ( m_coordinatesField != NULL && m_coordinatesField != coordinates ) {
-        throw std::runtime_error("PerceptMesh::setCoordinatesField(CoordinatesFieldType * coordinates) called after coordinates field is already set.");
+        throw std::runtime_error("PerceptMesh::setCoordinatesField(stk::mesh::FieldBase * coordinates) called after coordinates field is already set.");
       }
       m_coordinatesField = coordinates;
     }
@@ -1984,7 +1987,7 @@
               // scalar
               {
                 //std::cout << "createField scalar: " << name << std::endl;
-                ScalarIntFieldType & sfield =  m_metaData->declare_field<ScalarIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
+                ScalarIntFieldType & sfield =  m_metaData->declare_field<int>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
                 field = &sfield;
               }
@@ -1993,8 +1996,9 @@
               // vector
               {
                 //std::cout << "createField vector: " << name << std::endl;
-                VectorIntFieldType & vfield =  m_metaData->declare_field<VectorIntFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
+                VectorIntFieldType & vfield =  m_metaData->declare_field<int>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
+                stk::io::set_field_output_type(vfield, "Vector_3D");
                 field = &vfield;
               }
               break;
@@ -2016,7 +2020,7 @@
               // scalar
               {
                 //std::cout << "createField scalar: " << name << std::endl;
-                ScalarFieldType & sfield =  m_metaData->declare_field<ScalarFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
+                ScalarFieldType & sfield =  m_metaData->declare_field<double>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( sfield , *part , nullptr);
                 field = &sfield;
               }
@@ -2025,8 +2029,9 @@
               // vector
               {
                 //std::cout << "createField vector: " << name << std::endl;
-                CoordinatesFieldType & vfield =  m_metaData->declare_field<CoordinatesFieldType>(static_cast<stk::topology::rank_t>(entity_rank), name);
+                CoordinatesFieldType & vfield =  m_metaData->declare_field<double>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
+                stk::io::set_field_output_type(vfield, "Vector_3D");
                 field = &vfield;
               }
               break;
@@ -2274,7 +2279,7 @@
         {
           return NULL;
         }
-      double * fdata = stk::mesh::field_data( static_cast<const stk::mesh::Field<double>&>(*field) , entity );
+      double * fdata = static_cast<double*>(stk::mesh::field_data(*field, entity));
       return fdata;
     }
 
@@ -2321,7 +2326,7 @@
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
                 stk::mesh::Entity node = bucket[iElement];
-                double * node_coord_data = (double*)this->field_data( coord_field , node);
+                double * node_coord_data = this->field_data( coord_field , node);
                 //for (int ii=0; ii < get_spatial_dim(); ii++)
                 double sum=0.0;
                 sum += square(node_coord_data[0] - x);
@@ -2890,7 +2895,7 @@
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
           stk::mesh::FieldBase *field = fields[ifld];
-          std::cout << "PerceptMesh::dump: Field[" << ifld << "]= " << field->name() << " rank= " << field->field_array_rank() << std::endl;
+          std::cout << "PerceptMesh::dump: Field[" << ifld << "]= " << field->name() << std::endl;
           //std::cout << *field << std::endl;
           unsigned nfr = field->restrictions().size();
           std::cout << "PerceptMesh::dump: number of field restrictions= " << nfr << std::endl;
@@ -3020,8 +3025,8 @@
         {
           unsigned in0 = cell_topo_data->edge[iedgeOrd].node[0];
           unsigned in1 = cell_topo_data->edge[iedgeOrd].node[1];
-          double * node_coord_data_0 = (double*)this->field_data( coord_field , elem_nodes[in0].entity());
-          double * node_coord_data_1 = (double*)this->field_data( coord_field , elem_nodes[in1].entity());
+          double * node_coord_data_0 = this->field_data( coord_field , elem_nodes[in0].entity());
+          double * node_coord_data_1 = this->field_data( coord_field , elem_nodes[in1].entity());
 
           double edge_length = 0.0;
           for (int iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
@@ -3047,70 +3052,11 @@
       if (max_edge_length_in) *max_edge_length_in = max_edge_length;
       return edge_length_ave;
     }
-
-#if !STK_PERCEPT_LITE
-    double PerceptMesh::edge_length_ave(const typename StructuredGrid::MTElement entity, typename StructuredGrid::MTField* coord_field_in , double* min_edge_length_in, double* max_edge_length_in, const typename StructuredGrid::MTCellTopology * topology_data_in)
-    {
-      std::shared_ptr<BlockStructuredGrid> bsg = get_block_structured_grid();
-      typename StructuredGrid::MTField *coord_field = (coord_field_in ? coord_field_in : bsg->m_fields["coordinates"].get());
-      const typename StructuredGrid::MTCellTopology * const cell_topo_data = 0;
-      (void)cell_topo_data;
-
-      //shards::CellTopology cell_topo(cell_topo_data);
-
-      int spaceDim = get_spatial_dim();
-
-      const typename StructuredGrid::MTElement elem = entity;
-      //const MyPairIterRelation elem_nodes(*get_bulk_data(), elem, stk::topology::NODE_RANK );
-      std::vector<typename StructuredGrid::MTNode> nodes_buffer;
-      const typename StructuredGrid::MTNode *elem_nodes = get_nodes<StructuredGrid>(this, elem, &nodes_buffer);
-
-      double edge_length_ave=0.0;
-      double min_edge_length = -1.0;
-      double max_edge_length = -1.0;
-      unsigned edge_count = 12;
-      const int edges[12][2] = {{0,1},{1,3},{3,2},{2,0}, {4,5},{5,7},{7,6},{6,4}, {0,4},{1,5},{2,6},{3,7} };
-      for (unsigned iedgeOrd = 0; iedgeOrd < edge_count; ++iedgeOrd)
-        {
-          unsigned in0 = edges[iedgeOrd][0];
-          unsigned in1 = edges[iedgeOrd][1];
-
-          double node_coord_data_0[3];
-          percept::get_field<StructuredGrid>(node_coord_data_0, 3, this, coord_field, elem_nodes[in0]);
-
-          double node_coord_data_1[3];
-          percept::get_field<StructuredGrid>(node_coord_data_1, 3, this, coord_field, elem_nodes[in1]);
-
-          double edge_length = 0.0;
-          for (int iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
-            {
-              edge_length +=
-                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd])*
-                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd]);
-            }
-          edge_length = std::sqrt(edge_length);
-          edge_length_ave += edge_length / ((double)edge_count);
-          if(iedgeOrd == 0)
-            {
-              min_edge_length = edge_length;
-              max_edge_length = edge_length;
-            }
-          else
-            {
-              min_edge_length = std::min(min_edge_length, edge_length);
-              max_edge_length = std::max(max_edge_length, edge_length);
-            }
-        }
-      if (min_edge_length_in) *min_edge_length_in = min_edge_length;
-      if (max_edge_length_in) *max_edge_length_in = max_edge_length;
-      return edge_length_ave;
-    }
-#endif
 
 #if !STK_PERCEPT_LITE
     // static
     void PerceptMesh::
-    findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+    findMinMaxEdgeLength(stk::mesh::BulkData& bulkData, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
                          FieldContainer<double>& elem_min_edge_length, FieldContainer<double>& elem_max_edge_length)
     {
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket.topology()).getCellTopologyData();
@@ -3136,8 +3082,8 @@
 
               unsigned in0 = bucket_cell_topo_data->edge[iedgeOrd].node[0];
               unsigned in1 = bucket_cell_topo_data->edge[iedgeOrd].node[1];
-              double * node_coord_data_0 = (double*)stk::mesh::field_data( coord_field , elem_nodes[in0].entity());
-              double * node_coord_data_1 = (double*)stk::mesh::field_data( coord_field , elem_nodes[in1].entity());
+              double * node_coord_data_0 = static_cast<double*>(stk::mesh::field_data( coord_field , elem_nodes[in0].entity()));
+              double * node_coord_data_1 = static_cast<double*>(stk::mesh::field_data( coord_field , elem_nodes[in1].entity()));
 
               //elem_nodes[in0].entity()->identifier(), elem_nodes[in1].entity()->identifier());
               double edge_length = 0.0;
@@ -3234,8 +3180,8 @@
           double sum=0.0;
           int spatialDim = get_spatial_dim();
           stk::mesh::FieldBase *coord_field = get_coordinates_field();
-          double *c_0 = field_data(coord_field, node_0);
-          double *c_1 = field_data(coord_field, node_1);
+          double *c_0 = static_cast<double*>(field_data(coord_field, node_0));
+          double *c_1 = static_cast<double*>(field_data(coord_field, node_1));
           for (int i=0; i < spatialDim; i++)
             {
               sum += (c_0[i] - c_1[i])*(c_0[i] - c_1[i]);
@@ -3866,12 +3812,12 @@
             for (unsigned ifld = 0; ifld < fields_1.size(); ifld++)
               {
                 stk::mesh::FieldBase *field_1 = fields_1[ifld];
-                if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << ifld << "]= " << field_1->name() << " rank= " << field_1->field_array_rank() << std::endl;
+                if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << ifld << "]= " << field_1->name() << std::endl;
               }
             for (unsigned ifld = 0; ifld < fields_2.size(); ifld++)
               {
                 stk::mesh::FieldBase *field_2 = fields_2[ifld];
-                if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << ifld << "]= " << field_2->name() << " rank= " << field_2->field_array_rank() << std::endl;
+                if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << ifld << "]= " << field_2->name() << std::endl;
               }
             diff = true;
           }
@@ -3887,15 +3833,15 @@
 
                 if (settings && (*settings)["ignore_these_fields"].size() && (*settings)["ignore_these_fields"].find(field_1->name()) != std::string::npos)
                   {
-                    if (print) std::cout << "P[" << p_rank << "] info> skipping   Field[" << ifld << "]= " << field_1->name() << " rank= " << field_1->field_array_rank() << std::endl;
+                    if (print) std::cout << "P[" << p_rank << "] info> skipping   Field[" << ifld << "]= " << field_1->name() << std::endl;
                     continue;
                   }
 
                 if (0)
                   {
-                    if (print) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field_1->name() << " rank= " << field_1->field_array_rank() << std::endl;
+                    if (print) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field_1->name() << std::endl;
                     if (print) std::cout << "P[" << p_rank << "] info>    " << *field_1 << std::endl;
-                    if (print) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field_2->name() << " rank= " << field_2->field_array_rank() << std::endl;
+                    if (print) std::cout << "P[" << p_rank << "] info>    Field[" << ifld << "]= " << field_2->name() << std::endl;
                     if (print) std::cout << "P[" << p_rank << "] info>    " << *field_2 << std::endl;
                   }
 
@@ -4014,12 +3960,12 @@
                                                 for (unsigned jfld = 0; jfld < fields_1.size(); jfld++)
                                                   {
                                                     stk::mesh::FieldBase *field_0_1 = fields_1[jfld];
-                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << jfld << "]= " << field_0_1->name() << " rank= " << field_0_1->field_array_rank() << std::endl;
+                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field1[" << jfld << "]= " << field_0_1->name() << std::endl;
                                                   }
                                                 for (unsigned jfld = 0; jfld < fields_2.size(); jfld++)
                                                   {
                                                     stk::mesh::FieldBase *field_0_2 = fields_2[jfld];
-                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << jfld << "]= " << field_0_2->name() << " rank= " << field_0_2->field_array_rank() << std::endl;
+                                                    if (1) std::cout << "P[" << p_rank << "] info>    Field2[" << jfld << "]= " << field_0_2->name() << std::endl;
                                                   }
 
                                                 msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
@@ -4332,8 +4278,7 @@
 
       // global id
       {
-        typedef stk::mesh::Field<stk::mesh::EntityId> GlobalIdField;
-        GlobalIdField& cg_gid_field = m_metaData->declare_field<GlobalIdField>(node_rank(), "cg_gid");
+        stk::mesh::Field<stk::mesh::EntityId> & cg_gid_field = m_metaData->declare_field<stk::mesh::EntityId>(node_rank(), "cg_gid");
         stk::mesh::put_field_on_mesh( cg_gid_field , m_metaData->universal_part(), nullptr);
         stk::io::set_field_role(cg_gid_field, Ioss::Field::TRANSIENT);
       }
@@ -4411,27 +4356,8 @@
 
     }
 
-    void PerceptMesh::copy_field(typename StructuredGrid::MTField* field_dest, typename StructuredGrid::MTField* field_src)
-    {
-#if !STK_PERCEPT_LITE
-      get_block_structured_grid()->copy_field(field_dest, field_src);
-#endif
-    }
-
     void PerceptMesh::copy_field(const std::string dest_field, const std::string src_field)
     {
-#if !STK_PERCEPT_LITE
-        if (m_block_structured_grid.get()) {
-            typename StructuredGrid::MTField* field_dest = &*(m_block_structured_grid->m_fields[dest_field]);
-            VERIFY_OP_ON(field_dest, !=, 0,"invalid destination field in PerceptMesh::copy_field");
-
-            typename StructuredGrid::MTField* field_src  = &*(m_block_structured_grid->m_fields[src_field]);
-            VERIFY_OP_ON(field_src, !=, 0,"invalid source field in PerceptMesh::copy_field");
-
-            get_block_structured_grid()->copy_field(field_dest, field_src);
-        }
-#endif
-
         if (get_bulk_data()) {
             stk::mesh::FieldBase * field_dest = get_field(node_rank(), dest_field);
             VERIFY_OP_ON(field_dest, !=, 0,"invalid destination field in PerceptMesh::copy_field");
@@ -5950,20 +5876,15 @@
     FieldType * find_field_possible_array_tag(const stk::mesh::MetaData & meta,
         const stk::mesh::EntityRank rank, const std::string & field_name)
     {
-      auto result = meta.get_field<FieldType>(rank, field_name);
-      if(!result)
-      {
-        // Fmwk codes always register fields with the stk::mesh::SimpleArrayTag even if they
-        // are length 1. Searching for the field with the array tag is a workaround to detect
-        // the field if it was already registered by a code using Fmwk.
-        using DataType = typename stk::mesh::FieldTraits<FieldType>::data_type;
-        auto result_array_tag = meta.get_field<stk::mesh::Field<DataType, stk::mesh::SimpleArrayTag> >(rank, field_name);
-        if(result_array_tag)
-        {
-          result = reinterpret_cast<FieldType *>(result_array_tag);
-        }
-      }
-      return result;
+      stk::mesh::FieldBase * result = meta.get_field(rank, field_name);
+
+      // Note: This is dangerous, but apparently Percept has been getting away with
+      // it for years without problems.  Once all apps have been migrated to the
+      // new simple_fields workflow, this code can be replaced with a
+      // generic get_field<data_type>() call without a reinterpret cast because there
+      // won't be any ambiguity about the absence/presence/type of extra Field
+      // template parameters.
+      return reinterpret_cast<FieldType *>(result);
     }
 
     void PerceptMesh::register_and_set_refine_fields()
@@ -5980,10 +5901,10 @@
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
           if(!m_refine_field) m_refine_field = dynamic_cast<RefineFieldType *>(add_field_int("refine_field", stk::topology::ELEMENT_RANK, scalarDimension));
 
-          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field_orig");
+          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
           if(!m_refine_field_orig) m_refine_field_orig = dynamic_cast<RefineFieldType *>(add_field_int("refine_field_orig", stk::topology::ELEMENT_RANK, scalarDimension));
         }
 
@@ -6010,7 +5931,7 @@
           m_parent_element_field = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), stk::topology::ELEMENT_RANK, "parent_element");
           if(!m_parent_element_field)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(stk::topology::ELEMENT_RANK, "parent_element");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(stk::topology::ELEMENT_RANK, "parent_element");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field = &pe_field;
@@ -6018,7 +5939,7 @@
           m_parent_element_field_side = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), side_rank(), "parent_element_side");
           if(!m_parent_element_field_side)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType>(side_rank(), "parent_element_side");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(side_rank(), "parent_element_side");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field_side = &pe_field;
@@ -6029,7 +5950,7 @@
               m_node_registry_field = find_field_possible_array_tag<NodeRegistryFieldType>(*get_fem_meta_data(), node_rank(), "node_registry");
               if (!m_node_registry_field)
                 {
-                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType>(node_rank(), "node_registry");
+                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType_type>(node_rank(), "node_registry");
                   std::vector<NodeRegistryFieldType_type> vals(NUM_NR_FIELD_SLOTS, static_cast<NodeRegistryFieldType_type>(0));
                   stk::mesh::put_field_on_mesh( nr_field , get_fem_meta_data()->universal_part(), NUM_NR_FIELD_SLOTS, &vals[0]);
                   stk::io::set_field_role(nr_field, Ioss::Field::TRANSIENT);
@@ -6042,7 +5963,7 @@
       if (!m_new_nodes_field_set)
         {
           m_new_nodes_field_set = true;
-          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType>(node_rank(), "new_nodes");
+          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType_type>(node_rank(), "new_nodes");
           if(!m_new_nodes_field) m_new_nodes_field = dynamic_cast<NewNodesType *>(add_field_int("new_nodes", node_rank(), scalarDimension));
 
         }
@@ -6050,7 +5971,7 @@
       if (!m_weights_field_set)
         {
           m_weights_field_set = true;
-          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
           if (!m_weights_field)
             {
               m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
@@ -6080,10 +6001,10 @@
 
     void PerceptMesh::register_and_set_smoothing_fields()
     {
-      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType>(node_rank(), "unprojected_coordinates");
+      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
       if(!m_unprojected_coordinates)
         {
-          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType>(node_rank(), "unprojected_coordinates");
+          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
 
           // we use first 3 slots for coordinates, last for the flag for if it has been set yet
           stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, nullptr);
@@ -6091,10 +6012,10 @@
         }
       ADD_FIELD(m_unprojected_coordinates);
 
-      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType>(node_rank(), "wall_distance");
+      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
       if(!m_wall_distance_field)
         {
-          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType>(node_rank(), "wall_distance");
+          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
 
           stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), nullptr);
           stk::io::set_field_role(*m_wall_distance_field, Ioss::Field::TRANSIENT);
@@ -6110,20 +6031,20 @@
       if (!m_refine_level_field_set)
         {
           m_refine_level_field_set = true;
-          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
+          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
         }
 
       if (!m_parent_element_field_set)
         {
           m_parent_element_field_set = true;
-          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType>(eMesh.element_rank(), "parent_element");
-          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType>(eMesh.side_rank(), "parent_element_side");
+          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.element_rank(), "parent_element");
+          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.side_rank(), "parent_element_side");
         }
 
       const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
@@ -7030,8 +6951,8 @@
         {
           stk::mesh::Entity const newNode = eMesh.get_bulk_data()->get_entity( stk::topology::NODE_RANK , thisPerceptMesh.identifier(vecNodes[ii]) );
           VERIFY_OP_ON(eMesh.is_valid(newNode), ==, true, "bad newNode");
-          double *ndata = stk::mesh::field_data( *thisPerceptMesh.get_coordinates_field() , vecNodes[ii] );
-          double *ndataNew = stk::mesh::field_data( *eMesh.get_coordinates_field() , newNode );
+          double *ndata = static_cast<double*>(stk::mesh::field_data( *thisPerceptMesh.get_coordinates_field() , vecNodes[ii] ));
+          double *ndataNew = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , newNode ));
           for (unsigned j=0; j < 3; ++j)
             ndataNew[j] = ndata[j];
         }
@@ -7243,53 +7164,9 @@
 #endif
     }
 
-    void PerceptMesh::nodal_field_axpby(double alpha, typename StructuredGrid::MTField* field_x, double beta, typename StructuredGrid::MTField* field_y)
-      {
-#if !STK_PERCEPT_LITE
-        get_block_structured_grid()->nodal_field_axpby(alpha, field_x, beta, field_y);
-#endif
-      }
-
-    void PerceptMesh::nodal_field_axpbypgz(double alpha, typename StructuredGrid::MTField* field_x,
-                                           double beta, typename StructuredGrid::MTField* field_y,
-                                           double gamma, typename StructuredGrid::MTField* field_z)
-      {
-#if !STK_PERCEPT_LITE
-        get_block_structured_grid()->nodal_field_axpbypgz(alpha, field_x, beta, field_y, gamma, field_z);
-#endif
-      }
-
-    long double PerceptMesh::nodal_field_dot(typename StructuredGrid::MTField* field_x, typename StructuredGrid::MTField* field_y)
-      {
-#if !STK_PERCEPT_LITE
-        return get_block_structured_grid()->nodal_field_dot(field_x, field_y);
-#else
-        return 0;
-#endif
-      }
-
-    void PerceptMesh::nodal_field_set_value(typename StructuredGrid::MTField* field_x, double value)
-      {
-#if !STK_PERCEPT_LITE
-        get_block_structured_grid()->nodal_field_set_value(field_x, value);
-#endif
-      }
-
     long double PerceptMesh::nodal_field_dot(const std::string field_x, const std::string field_y)
     {
         long double dot = 0;
-
-#if !STK_PERCEPT_LITE
-        if (m_block_structured_grid.get()) {
-            typename StructuredGrid::MTField* x = &*(m_block_structured_grid->m_fields[field_x]);
-            VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_dot");
-
-            typename StructuredGrid::MTField* y = &*(m_block_structured_grid->m_fields[field_y]);
-            VERIFY_OP_ON(y, !=, 0,"invalid y field in PerceptMesh::nodal_field_dot");
-
-            dot += get_block_structured_grid()->nodal_field_dot(x, y);
-        }
-#endif
 
         if (get_bulk_data()) {
             stk::mesh::FieldBase * x = get_field(node_rank(), field_x);
@@ -7305,15 +7182,6 @@
 
     void PerceptMesh::nodal_field_set_value(const std::string field_x, double value)
     {
-#if !STK_PERCEPT_LITE
-        if (m_block_structured_grid.get()) {
-            typename StructuredGrid::MTField* x = &*(m_block_structured_grid->m_fields[field_x]);
-            VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_set_value");
-
-            get_block_structured_grid()->nodal_field_set_value(x, value);
-        }
-#endif
-
         if (get_bulk_data()) {
             stk::mesh::FieldBase * x = get_field(node_rank(), field_x);
             VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_set_value");
@@ -7324,18 +7192,6 @@
 
     void PerceptMesh::nodal_field_axpby(double alpha, const std::string field_x, double beta, const std::string field_y)
     {
-#if !STK_PERCEPT_LITE
-        if (m_block_structured_grid.get()) {
-            typename StructuredGrid::MTField* x = &*(m_block_structured_grid->m_fields[field_x]);
-            VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_axpby");
-
-            typename StructuredGrid::MTField* y = &*(m_block_structured_grid->m_fields[field_y]);
-            VERIFY_OP_ON(y, !=, 0,"invalid y field in PerceptMesh::nodal_field_axpby");
-
-            get_block_structured_grid()->nodal_field_axpby(alpha, x, beta, y);
-        }
-#endif
-
         if (get_bulk_data()) {
             stk::mesh::FieldBase * x = get_field(node_rank(), field_x);
             VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_axpby");
@@ -7350,19 +7206,6 @@
                                            double beta,  const std::string field_y,
                                            double gamma, const std::string field_z)
     {
-#if !STK_PERCEPT_LITE
-        if (m_block_structured_grid.get()) {
-            typename StructuredGrid::MTField* x = &*(m_block_structured_grid->m_fields[field_x]);
-            VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_axpbypgz");
-            typename StructuredGrid::MTField* y = &*(m_block_structured_grid->m_fields[field_y]);
-            VERIFY_OP_ON(y, !=, 0,"invalid y field in PerceptMesh::nodal_field_axpbypgz");
-            typename StructuredGrid::MTField* z = &*(m_block_structured_grid->m_fields[field_z]);
-            VERIFY_OP_ON(z, !=, 0,"invalid z field in PerceptMesh::nodal_field_axpbypgz");
-
-            get_block_structured_grid()->nodal_field_axpbypgz(alpha, x, beta, y, gamma, z);
-        }
-#endif
-
         if (get_bulk_data()) {
             stk::mesh::FieldBase * x = get_field(node_rank(), field_x);
             VERIFY_OP_ON(x, !=, 0,"invalid x field in PerceptMesh::nodal_field_axpbypgz");

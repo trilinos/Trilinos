@@ -67,7 +67,7 @@
 
       const stk::mesh::EntityRank m_elem_rank;
 
-      CoordinatesFieldType & m_coordinates_field;
+      CoordinatesFieldType * m_coordinates_field;
 
       unsigned m_npts;
       Point *m_points;

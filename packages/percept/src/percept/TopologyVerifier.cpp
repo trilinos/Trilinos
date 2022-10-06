@@ -104,8 +104,7 @@
     {
       const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
-      stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
-        meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+      stk::mesh::FieldBase *coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
 
       //mesh::Selector select_owned( meta_data.locally_owned_part() );
 
@@ -120,7 +119,7 @@
           // Number of elems in this bucket of elems and elem field data
           const unsigned number_elems = bucket.size();
 
-          double * elem_node_data = stk::mesh::field_data( *coord_field , bucket, 0 );
+          double * elem_node_data = static_cast<double*>(stk::mesh::field_data( *coord_field , bucket, 0 ));
           //double * elem_centroid_data = field_data( elem_centroid_field , bucket.begin() );
 
           // FIXME

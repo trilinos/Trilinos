@@ -73,7 +73,7 @@ namespace rebalance {
 
 class GeomDecomp: public Partition {
 public:
-  typedef mesh::Field<double,mesh::Cartesian> VectorField ;
+  typedef mesh::Field<double> VectorField;
 public:
 
   GeomDecomp( ParallelMachine comm): Partition(comm) {}
@@ -97,7 +97,7 @@ public:
    *
    */
   static void entity_to_point(stk::mesh::BulkData& bulk_data, const mesh::Entity  & entity,
-                            const VectorField   & ref,
+                            const stk::mesh::FieldBase   & ref,
                             std::vector<double> & coor);
 
   /** \brief Used to return the nodal entities that \a compute_entity_centroid averages.
@@ -113,7 +113,7 @@ public:
    */
 
   static std::vector< mesh::Entity > entity_coordinates(stk::mesh::BulkData& bulk_data, const mesh::Entity     & entity,
-                                                               const VectorField     & ref,
+                                                               const stk::mesh::FieldBase     & ref,
                                                                std::vector<std::vector<double> >    & coordinates);
 
   /** \brief  Returns a vector of vectors containing the coordinates of the nodes that were used to compute the centroid.
@@ -131,7 +131,7 @@ public:
    *
    */
   static std::vector<std::vector<double> > compute_entity_centroid(stk::mesh::BulkData& bulk_data, const mesh::Entity     & entity,
-                                                               const VectorField   & ref,
+                                                               const stk::mesh::FieldBase   & ref,
                                                                std::vector<double> & coor);
   /** \brief Check existence of library entry name on domain library.
    * This is a simple one line convenience function

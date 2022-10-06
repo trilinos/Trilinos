@@ -113,8 +113,6 @@ namespace percept {
     stk::parallel_machine_finalize();
 #endif
 
-    Kokkos::finalize();
-
     std::exit(exit_code);
   }      
 
@@ -2071,12 +2069,6 @@ namespace percept {
     m_comm = stk::ParallelMachine(stk::parallel_machine_init(&argc, &argv));
 #endif
 
-    // don't pass "--help" to Kokkos, as it clutters output!
-    // actually, we don't really need to pass in anything
-    int kokkos_argc(1);
-    char ** kokkos_argv = &argv[0]; // executable name
-    Kokkos::initialize( kokkos_argc, &kokkos_argv[0] );
-
     EXCEPTWATCH;
 
     p_rank = stk::parallel_machine_rank(m_comm);
@@ -2107,6 +2099,8 @@ namespace percept {
 //    std::string output_mesh_save = output_mesh;
 
     eMeshP.reset(new percept::PerceptMesh);
+    eMeshP->use_simple_fields();
+
     if (output_active_elements_only)
       eMeshP->output_active_children_only(true);
 

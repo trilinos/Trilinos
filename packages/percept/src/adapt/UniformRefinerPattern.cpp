@@ -644,16 +644,13 @@
 
     void addDistributionFactorToNewPart(stk::mesh::MetaData & meta, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
     {
-      const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*old_part);
+      stk::mesh::FieldBase *df_field = const_cast<stk::mesh::FieldBase*>(stk::io::get_distribution_factor_field(*old_part));
       if (df_field) {
-    	  const std::string field_name = df_field->name();
-          stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field =
-            &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(new_part->primary_entity_rank(), field_name);
-          stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
-          stk::io::set_distribution_factor_field(*new_part, *distribution_factors_field);
+          stk::io::set_field_role(*df_field, Ioss::Field::MESH);
+          stk::io::set_distribution_factor_field(*new_part, *df_field);
           int side_node_count = new_part->topology().num_nodes();
-          stk::mesh::put_field_on_mesh(*distribution_factors_field, *new_part, side_node_count, nullptr);
-        }
+          stk::mesh::put_field_on_mesh(*df_field, *new_part, side_node_count, nullptr);
+      }
     }
 
     void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)

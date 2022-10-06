@@ -59,12 +59,12 @@ namespace percept {
 
         shards::CellTopology cell_topo(cell_topo_data);
         //const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::topology::NODE_RANK); /NLM
-        CoordinatesFieldType* coordField = eMesh.get_coordinates_field();
+        stk::mesh::FieldBase* coordField = eMesh.get_coordinates_field();
 
         std::array<double *,3> node_coords;
         for (int i=0; i<3; ++i)
           {
-             node_coords[i] = stk::mesh::field_data( *coordField , elem_nodes[i] );
+             node_coords[i] = static_cast<double*>(stk::mesh::field_data( *coordField , elem_nodes[i] ));
           }
         const std::array<int, 3> node_rank = get_rank_of_nodes_based_on_coordinates( node_coords );
 
@@ -161,8 +161,8 @@ namespace percept {
                         rank_node_1 = rank_temp;
                       }
 
-                    double * const coord_0 = stk::mesh::field_data( *coordField , node_0 );
-                    double * const coord_1 = stk::mesh::field_data( *coordField , node_1 );
+                    double * const coord_0 = static_cast<double*>(stk::mesh::field_data( *coordField , node_0 ));
+                    double * const coord_1 = static_cast<double*>(stk::mesh::field_data( *coordField , node_1 ));
                     double edge_len_squared = 0.0;
 
                     edge_len_squared =

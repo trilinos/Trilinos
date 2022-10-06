@@ -22,7 +22,7 @@ namespace percept
 
 Percept_API_KLSolver::Percept_API_KLSolver(
    const stk::mesh::BulkData & mesh,
-   const stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi,
+   const stk::mesh::Field<double> & phi,
    std::vector<double> & lambda)
   : 
   RFGen::API_KLSolver(),
