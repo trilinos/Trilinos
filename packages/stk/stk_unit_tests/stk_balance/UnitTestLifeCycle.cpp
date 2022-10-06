@@ -69,6 +69,7 @@ protected:
     stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial("1x1x4",
                                                                                              m_inFile,
                                                                                              transientFieldName,
+                                                                                             stk::topology::NODE_RANK,
                                                                                              globalVariableName,
                                                                                              transientTimeSteps,
                                                                                              stk::unit_test_util::IdAndTimeFieldValueSetter());

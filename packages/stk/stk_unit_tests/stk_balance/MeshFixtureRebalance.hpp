@@ -152,7 +152,7 @@ protected:
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
 
-  void setup_initial_mesh_with_transient_field_data(const std::string & inputMeshSpec)
+  virtual void setup_initial_mesh_with_transient_field_data(const std::string & inputMeshSpec)
   {
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "transient_field";
@@ -160,6 +160,7 @@ protected:
     stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
+                                                                                             stk::topology::NODE_RANK,
                                                                                              m_globalVariableName,
                                                                                              m_transientTimeSteps,
                                                                                              stk::unit_test_util::IdAndTimeFieldValueSetter());
@@ -169,8 +170,6 @@ protected:
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
-
-  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") = 0;
 
   void clean_up_temporary_files()
   {

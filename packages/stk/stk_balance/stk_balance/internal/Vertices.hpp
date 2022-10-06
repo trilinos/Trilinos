@@ -81,6 +81,11 @@ protected:
 
   void fillVertexWeights(const stk::mesh::BulkData& bulkData, const stk::balance::BalanceSettings& balanceSettings, const stk::mesh::EntityVector &entities, const std::vector<stk::mesh::Selector> &selectors);
 
+  void fillFieldVertexWeightsOld(const stk::balance::BalanceSettings& balanceSettings,
+                              const stk::mesh::BulkData& stkMeshBulkData,
+                              const std::vector<stk::mesh::Selector>& selectors,
+                              const stk::mesh::EntityVector &entitiesToBalance);
+
   void fillFieldVertexWeights(const stk::balance::BalanceSettings& balanceSettings,
                               const stk::mesh::BulkData& stkMeshBulkData,
                               const std::vector<stk::mesh::Selector>& selectors,

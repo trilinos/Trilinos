@@ -44,6 +44,7 @@
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/CommEntityMods.hpp>
 
 namespace stk { namespace unit_test_util {
 
@@ -224,13 +225,19 @@ public:
     void my_internal_resolve_shared_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
+        this->m_meshModification.delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing); 
+        
+        stk::mesh::impl::CommEntityMods commEntityMods(*this, internal_comm_list());
+        commEntityMods.communicate(stk::mesh::impl::CommEntityMods::PACK_SHARED);
+        this->m_meshModification.internal_resolve_shared_modify_delete(commEntityMods.get_shared_mods(), entitiesToRemoveFromSharing, entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()
     {
-        stk::mesh::EntityVector entitiesNoLongerShared;
-        this->m_meshModification.internal_resolve_ghosted_modify_delete(entitiesNoLongerShared);
+        stk::mesh::impl::CommEntityMods commEntityMods(*this, internal_comm_list());
+        commEntityMods.communicate(stk::mesh::impl::CommEntityMods::PACK_GHOSTED);
+        this->m_meshModification.internal_resolve_ghosted_modify_delete(commEntityMods.get_ghosted_mods());
     }
 
     void my_internal_resolve_parallel_create()

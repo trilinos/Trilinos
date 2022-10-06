@@ -226,6 +226,10 @@ STK_MATH_FORCE_INLINE double if_then_else(const bool b, double v1, double v2) {
   return b ? v1 : v2;
 }
 
+STK_MATH_FORCE_INLINE long double if_then_else(const bool b, long double v1, long double v2) {
+  return b ? v1 : v2;
+}
+
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
 STK_MATH_FORCE_INLINE T if_then_else_zero(const bool b, T v) {
   return b ? v : static_cast<T>(0);

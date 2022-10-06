@@ -70,7 +70,7 @@ public:
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
 
-  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") override
+  void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb")
   {
     m_balanceSettings.set_num_output_processors(numFinalProcs);
     m_balanceSettings.setDecompMethod(decompMethod);

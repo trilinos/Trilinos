@@ -62,6 +62,15 @@ void for_each_entity_run(const BulkData &mesh,
     impl::for_each_selected_entity_run(mesh, rank, selectAll, functor);
 }
 
+template <typename ALGORITHM_TO_RUN_PER_ENTITY>
+void for_each_entity_run_with_nodes(const BulkData &mesh,
+                                    stk::topology::rank_t rank,
+                                    const Selector& selector,
+                                    const ALGORITHM_TO_RUN_PER_ENTITY &functor)
+{
+    impl::for_each_selected_entity_run_with_nodes(mesh, rank, selector, functor);
+}
+
 } // namespace mesh
 } // namespace stk
 
