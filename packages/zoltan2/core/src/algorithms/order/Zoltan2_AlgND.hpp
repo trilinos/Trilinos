@@ -91,11 +91,11 @@ namespace Zoltan2
 
     const RCP<const Environment> mEnv;
     const RCP<const Comm<int>> mProblemComm;
-    modelFlag_t graphFlags;
 
     std::string mPartitionMethod;
 
     const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;
+    modelFlag_t graphFlags;
 
     void getBoundLayer(part_t levelIndx, const std::vector<part_t> &partMap,
                        const part_t *parts, const std::set<lno_t> &excVerts,

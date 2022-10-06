@@ -125,7 +125,7 @@ public:
   typedef GraphAdapter<User, UserCoord> base_adapter_t;
 #endif
 
-  enum BaseAdapterType adapterType() const {return GraphAdapterType;}
+  enum BaseAdapterType adapterType() const override {return GraphAdapterType;}
 
   /*! \brief Destructor
    */
@@ -303,14 +303,14 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNumIDs() const {
+  size_t getLocalNumIDs() const override {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       return getLocalNumVertices();
     else
       return getLocalNumEdges();
    }
 
-  void getIDsView(const gno_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const override {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       getVertexIDsView(Ids);
     else {
@@ -324,14 +324,14 @@ public:
     }
   }
 
-  int getNumWeightsPerID() const {
+  int getNumWeightsPerID() const override {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       return getNumWeightsPerVertex();
     else
       return getNumWeightsPerEdge();
   }
 
-  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const override {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       getVertexWeightsView(wgt, stride, idx);
     else {

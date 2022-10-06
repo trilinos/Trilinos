@@ -118,7 +118,7 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum BaseAdapterType adapterType() const {return VectorAdapterType;}
+  enum BaseAdapterType adapterType() const override {return VectorAdapterType;}
 
   ///////////////////////////////////////////////////////////////
   // User's adapter interface:

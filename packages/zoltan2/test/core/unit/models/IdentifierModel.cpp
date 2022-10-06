@@ -47,7 +47,6 @@
 //
 //   TODO  test with BasicIdentifierAdapter with weights
 
-#include "Kokkos_CopyViews.hpp"
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
