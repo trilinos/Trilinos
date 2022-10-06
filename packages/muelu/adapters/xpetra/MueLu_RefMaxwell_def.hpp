@@ -831,9 +831,10 @@ namespace MueLu {
           A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
 
           if (enable_reuse_) {
-            if (!parameterList_.get<bool>("rap: triple product", false))
+            if (coarseLevel.IsAvailable("AP reuse data", rapFact.get()))
               A22_AP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", rapFact.get());
-            A22_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
+            if (coarseLevel.IsAvailable("RAP reuse data", rapFact.get()))
+              A22_RAP_reuse_data_ = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", rapFact.get());
           }
         }
       } else {
