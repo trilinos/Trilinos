@@ -276,9 +276,6 @@ namespace {
     myOut << "Create Distributor from sends (mix of contiguous and noncontiguous)" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     TEST_NOTHROW( numImports = distributor.createFromSends(exportImageIDs) );
 
     myOut << "Test the resulting Distributor" << endl;
@@ -632,9 +629,6 @@ namespace {
     myOut << "Create Distributor from noncontiguous sends" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     numImports = distributor.createFromSends(exportImageIDs);
 
     myOut << "Test the resulting Distributor" << endl;
@@ -846,9 +840,6 @@ namespace {
         }
       }
       Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-      TEST_THROW( numRemoteIDs = distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
       numRemoteIDs = distributor.createFromSends(exportImageIDs);
 
       // Make sure that Distributor output doesn't cause a hang.

@@ -131,13 +131,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_THROW_Efficiency_Warnings
-  HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-  "Enable exception throwing for Tpetra efficiency warnings."
-  ${Tpetra_THROW_Warnings}
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Efficiency_Warnings
   HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   "Enable printing of Tpetra efficiency warnings."
