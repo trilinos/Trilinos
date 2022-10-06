@@ -927,28 +927,31 @@ macro(tribits_postprocess_optional_tpl_enables PACKAGE_NAME)
 endmacro()
 
 
-# Set an individual package variable enable based on the global value
+# Set an individual package variable enable variable (to on or off) based on a
+# global enable value
 #
-macro(tribits_set_all_packages_package_enable_variable   PACKAGE_ARCH_VAR   PACKAGE_VAR)
+macro(tribits_set_package_enable_based_on_global_enable  projectEnableVar
+    packageEnableVar
+  )
 
   if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     message("")
-    message("TRIBITS_SET_ALL_PACKAGES_PACKAGE_ENABLE_VARIABLE:")
-    message("-- " "${PACKAGE_ARCH_VAR} = ${${PACKAGE_ARCH_VAR}}")
-    message("-- " "${PACKAGE_VAR} = ${${PACKAGE_VAR}}")
+    message("TRIBITS_SET_PACKAGE_ENABLE_BASED_ON_GLOBAL_ENABLE:")
+    message("-- " "${projectEnableVar} = ${${projectEnableVar}}")
+    message("-- " "${packageEnableVar} = ${${packageEnableVar}}")
   endif()
 
-  if ("${${PACKAGE_VAR}}" STREQUAL "")
-    if (${PACKAGE_ARCH_VAR})
-      message("-- " "Setting ${PACKAGE_VAR}=ON")
-      set(${PACKAGE_VAR} ON)
+  if ("${${packageEnableVar}}" STREQUAL "")
+    if (${projectEnableVar})
+      message("-- " "Setting ${packageEnableVar}=ON")
+      set(${packageEnableVar} ON)
     elseif (
-      (NOT ${PACKAGE_ARCH_VAR})
+      (NOT ${projectEnableVar})
       AND
-      (NOT "${PACKAGE_ARCH_VAR}" STREQUAL "")
+      (NOT "${projectEnableVar}" STREQUAL "")
       )
-      message("-- " "Setting ${PACKAGE_VAR}=OFF")
-      set(${PACKAGE_VAR} OFF)
+      message("-- " "Setting ${packageEnableVar}=OFF")
+      set(${packageEnableVar} OFF)
     else()
       if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         message("-- " "ELSE")
@@ -958,14 +961,28 @@ macro(tribits_set_all_packages_package_enable_variable   PACKAGE_ARCH_VAR   PACK
     endif()
   else()
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      message("-- " "${PACKAGE_VAR} NOT DEFAULT")
+      message("-- " "${packageEnableVar} NOT DEFAULT")
     endif()
   endif()
 
   if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    message("-- " "${PACKAGE_VAR} = ${${PACKAGE_VAR}}")
+    message("-- " "${packageEnableVar} = ${${packageEnableVar}}")
   endif()
 
+endmacro()
+
+
+# Set an individual package test or examples enable to on only if global enable var is on
+#
+macro(tribits_set_package_enable_based_on_global_enable_on  projectEnableVar
+    packageEnableVar
+  )
+  if ("${${packageEnableVar}}" STREQUAL "")
+    if (${projectEnableVar})
+      message("-- " "Setting ${packageEnableVar}=ON")
+      set(${packageEnableVar} ON)
+    endif()
+  endif()
 endmacro()
 
 
@@ -977,22 +994,22 @@ macro(tribits_apply_all_package_enables  PACKAGE_NAME)
   tribits_implicit_package_enable_is_allowed( "" ${PACKAGE_NAME}
     PROCESS_PACKAGE_ENABLE )
   if (PACKAGE_IS_PMPP  AND  PROCESS_PACKAGE_ENABLE)
-    tribits_set_all_packages_package_enable_variable(
+    tribits_set_package_enable_based_on_global_enable(
       ${PROJECT_NAME}_ENABLE_ALL_PACKAGES ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} )
   endif()
 endmacro()
 
 
 # Macro used to set ${TRIBITS_PACKAGE)_ENABLE_TESTS and ${TRIBITS_PACKAGE)_ENABLE_EXAMPLES
-# based on ${PROJECT_NAME}_ENABLE_ALL_PACKAGES
+# based on ${PROJECT_NAME}_ENABLE_TESTS and ${PROJECT_NAME}_ENABLE_EXAMPLES 
 #
 macro(tribits_apply_test_example_enables PACKAGE_NAME)
   if (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
     tribits_is_primary_meta_project_package(${PACKAGE_NAME}  PACKAGE_IS_PMPP)
     if (PACKAGE_IS_PMPP)
-      tribits_set_all_packages_package_enable_variable(
+      tribits_set_package_enable_based_on_global_enable_on(
         ${PROJECT_NAME}_ENABLE_TESTS ${PACKAGE_NAME}_ENABLE_TESTS )
-      tribits_set_all_packages_package_enable_variable(
+      tribits_set_package_enable_based_on_global_enable_on(
         ${PROJECT_NAME}_ENABLE_EXAMPLES ${PACKAGE_NAME}_ENABLE_EXAMPLES )
     endif()
   endif()
