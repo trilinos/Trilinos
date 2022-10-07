@@ -16,13 +16,13 @@
     <Parameter name="Minimum Permeability"           type="double"  value="3e-7"     />
     <Parameter name="Maximum Permeability"           type="double"  value="3e-6"     />
     <Parameter name="Diffuser Radius"                type="double"  value="10.0"     />
-    <Parameter name="Diffuser Top"                   type="double"  value="9.9763392"/>
+    <Parameter name="Diffuser Top"                   type="double"  value="14.0"  />
     <Parameter name="Inlet Radius"                   type="double"  value="0.6875"   />
     <!-- UNIFORM VELOCITY OBJECTIVE INFO -->
     <Parameter name="Tracking Coefficient"           type="double"  value="1e0"      />
     <Parameter name="Use Optimal Constant Velocity"  type="bool"    value="true"     />
     <Parameter name="Only Use Axial Velocity"        type="bool"    value="false"    />
-    <Parameter name="Target Type"                    type="int"     value="1"        />
+    <Parameter name="Target Type"                    type="int"     value="2"        />
     <Parameter name="Target Radial Velocity"         type="double"  value="0.0"      />
     <Parameter name="Target Axial Velocity"          type="double"  value="15.0"     />
     <Parameter name="Use Polynomial Weight"          type="bool"    value="false"     />
@@ -52,7 +52,7 @@
 
   <!-- ===========  MESH INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Mesh">
-    <Parameter name="File Name" type="string" value="../../mesh/axi-spherical.txt" />
+    <Parameter name="File Name" type="string" value="../../mesh/axi-nonconvex.txt" />
   </ParameterList>
 
   <ParameterList name="Solver">

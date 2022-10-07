@@ -1,8 +1,8 @@
 
-IF(${PROJECT_NAME}_ENABLE_Intrepid AND
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
+   ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Ifpack2  AND
    ${PROJECT_NAME}_ENABLE_MueLu    AND
-   ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
@@ -18,16 +18,11 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    ProjectAxisymmetricFilteredDarcyDataCopy
+    NonsmoothTR_KouriBaraldi2022_DataCopy
     SOURCE_FILES
-      input.xml
-      input-nonconvex.xml
-      input-sphere.xml
-      plotDarcy.m
-      plotDarcyAxi.m
-      plotmesh.m
-      README.md
-      run.sh
+      input_ex01.xml
+      process3D.sh
+      meshfiles/truss3d.jou
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
