@@ -409,6 +409,12 @@ namespace Belos {
         mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                      alpha, A, B_mv, beta);
       }
+      Kokkos::fence();  // Belos with Thyra's MvTimesMatAddMv allowed failures
+                        // when fence was not applied after mv.multiply; 
+                        // adding the fence fixed the tests in Thyra.  
+                        // Out of an abundance of caution (and with blessing 
+                        // from @hkthorn), we add the fence here as well.  
+                        // #8821 KDD
     }
 
     /// \brief <tt>mv := alpha*A + beta*B</tt>
