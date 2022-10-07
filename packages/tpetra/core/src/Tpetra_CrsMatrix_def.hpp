@@ -4742,6 +4742,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getColMap()->isLocallyFitted(*getDomainMap())\n";
       overlap = false;
     }
+    if ( !getRowMap()->isLocallyFitted(*getRangeMap())  ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getRowMap()->isLocallyFitted(*getRangeMap())\n";
+      overlap = false;
+    }
 
     // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: getRowMap()->isLocallyFitted(*getRangeMap())=" << getRowMap()->isLocallyFitted(*getRangeMap()) << "\n";
 
@@ -4890,10 +4894,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // This will reuse a previously created cached MV.
         Y_rowMap = getRowMapMultiVector (Y_in, true);
 
-        // only do this if we
         // If beta == 0, we don't need to copy Y_in into Y_rowMap,
         // since we're overwriting it anyway.
-        if (!yIsOverwritten) {
+        if (beta != ZERO) {
           // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
@@ -4927,26 +4930,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (mustImport) {
       // Import from the domain Map MV to the column Map MV.
       if (overlap) {
-        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport/endImport");
         // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
-        // X_colMapNonConst->beginImport (X_in, *importer, INSERT);
         // make sure other incoming tpetra operations are done before local SpMV is started
         Spaces::exec_space_wait(defaultSpace, offRankSpace);
         X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
+        X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
       } else {
         ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
         X_colMapNonConst->doImport (X_in, *importer, INSERT);
-        X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       }
-    }
-
-    // finish an input if it was started
-    if (mustImport && overlap) {
-      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: endImport");
-      // X_colMapNonConst->endImport(X_in, *importer, INSERT);
-      X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
-    }
+    } 
 
     // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
     // Kokkos::fence();
@@ -4965,8 +4960,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
         // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
-        // this->localApplyOnRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
-        // this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       }
     } else {
       if (overlap) {
@@ -4982,11 +4975,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApply(*X_colMap, Y_in, ...)\n";
         this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(*X_colMap, Y_in, ...)\n";
-        // this->localApplyOnRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(*X_colMap, Y_in, ...)\n";
-        // this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       }
     }
 
