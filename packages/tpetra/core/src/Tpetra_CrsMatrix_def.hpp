@@ -4742,10 +4742,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getColMap()->isLocallyFitted(*getDomainMap())\n";
       overlap = false;
     }
-    if ( !getRowMap()->isLocallyFitted(*getRangeMap())  ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getRowMap()->isLocallyFitted(*getRangeMap())\n";
-      overlap = false;
-    }
+    // if ( !getRowMap()->isLocallyFitted(*getRangeMap())  ) {
+    //   std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getRowMap()->isLocallyFitted(*getRangeMap())\n";
+    //   overlap = false;
+    // }
 
     // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: getRowMap()->isLocallyFitted(*getRangeMap())=" << getRowMap()->isLocallyFitted(*getRangeMap()) << "\n";
 
@@ -4916,7 +4916,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         Spaces::exec_space_wait(defaultSpace, onRankSpace);
       if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_rowmap, ...)\n";
-        this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
       } else {
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_in, ...)\n";
         this->localApplyOnRank(onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
@@ -4958,7 +4958,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
-        this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
         // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
       }
     } else {
