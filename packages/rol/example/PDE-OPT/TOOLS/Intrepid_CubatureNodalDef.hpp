@@ -79,12 +79,12 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureNodal<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
                                                                ArrayWeight & cubWeights) const {
   // check size of cubPoints and cubWeights
-  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numPoints_*cellDim_ ) || ( (int)cubWeights.size() < numPoints_ ) ), std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (unsigned)cubPoints.size() < numPoints_*cellDim_ ) || ( (unsigned)cubWeights.size() < numPoints_ ) ), std::out_of_range,
                               ">>> ERROR (CubatureNodal): Insufficient space allocated for cubature points or weights.");
 
   CellTools<Scalar>::getReferenceSubcellVertices(cubPoints, cellDim_, 0, cellTopo_);
 
-  for (int pointId = 0; pointId < numPoints_; pointId++) {
+  for (unsigned pointId = 0; pointId < numPoints_; pointId++) {
     cubWeights(pointId) = weightVal_;
   }
 
