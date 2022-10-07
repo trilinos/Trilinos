@@ -445,9 +445,9 @@ def PhactoriLocalToGlobalCellsWithMinMaxDataUsingMPI(localPidMinMaxCellPair, tup
     globalMaxCell = PhactoriSampledCellInfo()
     globalMinCell.SerializeSetFromFloatAndIntArray(globalSerializedFloatArray, globalSerializedIntArray, 0, tupleSize)
     globalMaxCell.SerializeSetFromFloatAndIntArray(globalSerializedFloatArray, globalSerializedIntArray, 1, tupleSize)
- 
+
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriLocalToGlobalCellsWithMinMaxDataUsingMPI returning\n")
-    return [globalMinCell, globalMaxCell] 
- 
+    return [globalMinCell, globalMaxCell]
+
 #phactori_combine_to_single_python_file_subpiece_end_1

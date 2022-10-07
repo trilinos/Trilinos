@@ -227,4 +227,3 @@ fi
 
 # Remove temporary files
 if [ -e Blot.90.$$ ] ; then rm -f Blot.90.$$ ; fi
-

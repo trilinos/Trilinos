@@ -18,7 +18,7 @@ public:
   Node_Set();
   Node_Set(int file_id, size_t id);
   Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs = 0);
-  Node_Set(const Node_Set &) = delete;
+  Node_Set(const Node_Set &)                  = delete;
   const Node_Set &operator=(const Node_Set &) = delete;
 
   ~Node_Set() override;

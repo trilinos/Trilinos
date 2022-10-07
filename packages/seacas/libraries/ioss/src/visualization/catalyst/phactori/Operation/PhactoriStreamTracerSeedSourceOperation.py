@@ -104,14 +104,14 @@ class PhactoriStreamTracerSeedSourceOperation(PhactoriOperationSpecifics):
     #self.InternalParaViewFilterPtr.InitialStepLength = 0.01
 
     self.DebugPrintInputPortAndOutputPortInfo("pre filter update 1\n")
- 
+
     SetActiveSource(self.InternalParaViewFilterPtr)
     SetActiveSource(savedActiveSource)
 
     UpdatePipelineWithCurrentTimeArgument(self.InternalParaViewFilterPtr)
 
     self.DebugPrintInputPortAndOutputPortInfo("post filter update 1\n")
- 
+
     if PhactoriDbg(100):
       myDebugPrint3("self.InternalParaViewFilterPtr: " + str(self.InternalParaViewFilterPtr) + "\n", 100)
 

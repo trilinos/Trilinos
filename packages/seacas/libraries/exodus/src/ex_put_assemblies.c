@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -167,6 +167,8 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
   /* leave define mode  */
   if (in_define) {
     if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
       free(entlst_id);
       EX_FUNC_LEAVE(EX_FATAL);
     }

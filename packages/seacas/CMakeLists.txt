@@ -34,7 +34,7 @@ set(SEACASExodus_ENABLE_SHARED_DEFAULT "OFF")
 # On windows (and probably other systems), we only want a single
 # exodus library and not both static and shared.
 if (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-  if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+  if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
     if (BUILD_SHARED_LIBS)
       set(SEACASExodus_ENABLE_STATIC_DEFAULT "ON")
     else()

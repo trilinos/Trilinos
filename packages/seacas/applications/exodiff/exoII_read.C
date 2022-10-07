@@ -940,8 +940,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   SMART_ASSERT(file_id >= 0);
 
   // Determine max size of entity and variable names on the database
-  int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  ex_set_max_name_length(file_id, name_length);
+  int length_name = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  ex_set_max_name_length(file_id, length_name);
 
   ex_init_params info{};
   info.title[0] = '\0';
@@ -997,7 +997,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                   Coordinate Names...
 
-  char **coords = get_name_array(3, name_length);
+  char **coords = get_name_array(3, length_name);
   err           = ex_get_coord_names(file_id, coords);
   if (err < 0) {
     Error("Failed to get coordinate names!  Aborting...\n");

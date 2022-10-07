@@ -283,4 +283,3 @@ class PhactoriSegment:
     return intersectionFlag
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

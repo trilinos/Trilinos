@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -101,7 +101,7 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
 
   /* inquire id's of previously defined dimensions  */
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim)) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != NC_NOERR) {
     /* If not found, then this file is storing 0 nodes.
        Return immediately */
     EX_FUNC_LEAVE(EX_NOERR);
