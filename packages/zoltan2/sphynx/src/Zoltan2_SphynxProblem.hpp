@@ -189,7 +189,7 @@ static void setSphynxValidatorsInList(
 
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
-                         Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) override;
+                         Environment &env, bool& removeSelfEdges, bool& isGraphType, bool& needConsecutiveGlobalIds) override;
 
     ///////////////////////////////////////////////////////////////////////////
     /////////////////////// MEMBER FUNCTIONS  /////////////////////////////////
@@ -215,12 +215,14 @@ static void setSphynxValidatorsInList(
   /////////////////////// MORE MEMBER FUNCTIONS  ////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
 
-
   template <typename Adapter>
-  void SphynxProblem<Adapter>::processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
-                                                     Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) {
-      this->algName_ = std::string("sphynx");
-}
+  void SphynxProblem<Adapter>::processAlgorithmName(
+      const std::string &algorithm, const std::string &defString,
+      const std::string &model, Environment &env, bool &removeSelfEdges,
+      bool &isGraphType, bool &needConsecutiveGlobalIds)
+  {
+    this->algName_ = std::string("sphynx");
+  }
 
   template <typename Adapter>
   void SphynxProblem<Adapter>::createAlgorithm()

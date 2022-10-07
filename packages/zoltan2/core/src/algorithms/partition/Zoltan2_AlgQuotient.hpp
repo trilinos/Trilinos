@@ -85,8 +85,9 @@ public:
    */
   AlgQuotient(const RCP<const Environment> &env__,
           const RCP<const Comm<int> > &problemComm__,
-          const RCP<const IdentifierAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const IdentifierAdapter<user_t> > &adapter__,
+          const modelFlag_t& graphFlags_) :
+    env(env__), problemComm(problemComm__), adapter(adapter__), graphFlags(graphFlags_)
   {
     std::string errStr = "cannot build CommGraphModel from IdentifierAdapter, ";
     errStr            += "AlgQuotient requires Graph Adapter";
@@ -95,8 +96,9 @@ public:
 
   AlgQuotient(const RCP<const Environment> &env__,
           const RCP<const Comm<int> > &problemComm__,
-          const RCP<const VectorAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const VectorAdapter<user_t> > &adapter__,
+          const modelFlag_t& graphFlags_) :
+    env(env__), problemComm(problemComm__), adapter(adapter__), graphFlags(graphFlags_)
   {
     std::string errStr = "cannot build CommGraphModel from VectorAdapter, ";
     errStr            += "AlgQuotient requires Graph Adapter";
@@ -105,8 +107,9 @@ public:
 
   AlgQuotient(const RCP<const Environment> &env__,
           const RCP<const Comm<int> > &problemComm__,
-          const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__,
+          const modelFlag_t& graphFlags_) :
+    env(env__), problemComm(problemComm__), adapter(adapter__), graphFlags(graphFlags_)
   {
     std::string errStr = "cannot build CommGraphModel from MatrixAdapter, ";
     errStr            += "AlgQuotient has not been implemented for Matrix Adapter yet.";
@@ -115,8 +118,9 @@ public:
 
   AlgQuotient(const RCP<const Environment> &env__,
           const RCP<const Comm<int> > &problemComm__,
-          const RCP<const MeshAdapter<user_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const MeshAdapter<user_t> > &adapter__,
+          const modelFlag_t& graphFlags_) :
+    env(env__), problemComm(problemComm__), adapter(adapter__), graphFlags(graphFlags_)
   {
     std::string errStr = "cannot build CommGraphModel from MeshAdapter, ";
     errStr            += "AlgQuotient has not been implemented for Mesh Adapter yet.";
@@ -125,11 +129,12 @@ public:
 
   AlgQuotient(const RCP<const Environment> &env__,
           const RCP<const Comm<int> > &problemComm__,
-          const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) :
-    env(env__), problemComm(problemComm__), adapter(adapter__)
+          const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__,
+          const modelFlag_t& graphFlags_) :
+    env(env__), problemComm(problemComm__), adapter(adapter__), graphFlags(graphFlags_)
   {
     this->innerAlgorithm =
-        rcp(new AlgParMETIS<Adapter, graphModel_t>(env, problemComm, adapter));
+        rcp(new AlgParMETIS<Adapter, graphModel_t>(env, problemComm, adapter, graphFlags));
   }
 
   /*! \brief Set up validators specific to this algorithm
@@ -148,6 +153,7 @@ private:
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
   const RCP<const base_adapter_t> adapter;
+  modelFlag_t graphFlags;
 
   RCP<Algorithm<Adapter>> innerAlgorithm;               // algorithm to partition the quotient graph
   RCP<PartitioningSolution<Adapter>> quotientSolution;  // the solution stored on the active ranks

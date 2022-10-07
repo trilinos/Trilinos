@@ -379,7 +379,7 @@ public:
 protected:
   void initializeProblem();
   virtual void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
-                       Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds);
+                       Environment &env, bool& removeSelfEdges, bool &isGraphType, bool& needConsecutiveGlobalIds);
 
   void createPartitioningProblem(bool newData);
   virtual void createAlgorithm();
@@ -554,12 +554,14 @@ template <typename Adapter>
           using model_t = GraphModel<base_adapter_t>;
           this->algorithm_ = rcp(new AlgParMETIS<Adapter, model_t>(this->envConst_,
                                                 this->comm_,
-                                                this->baseInputAdapter_));
+                                                this->baseInputAdapter_,
+                                                this->graphFlags_));
         }
         else if (algName_ == std::string("quotient")) {
           this->algorithm_ = rcp(new AlgQuotient<Adapter>(this->envConst_,
                            this->comm_,
-                           this->baseInputAdapter_));
+                           this->baseInputAdapter_,
+                           this->graphFlags_));
                      //"parmetis")); // The default alg. to use inside Quotient
         }                                                    // is ParMETIS for now.
         else if (algName_ == std::string("pulp")) {
@@ -713,7 +715,7 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::processAlgorithmName(
     const std::string &algorithm, const std::string &defString,
     const std::string &model, Environment &env, bool &removeSelfEdges,
-    bool &needConsecutiveGlobalIds) {
+    bool &isGraphType, bool &needConsecutiveGlobalIds) {
   ParameterList &pl = env.getParametersNonConst();
 
   if (algorithm != defString) {
@@ -747,6 +749,7 @@ void PartitioningProblem<Adapter>::processAlgorithmName(
       algName_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
+      isGraphType = true;
     } else {
       // Parameter list should ensure this does not happen.
       throw std::logic_error("parameter list algorithm is invalid");
@@ -769,6 +772,7 @@ void PartitioningProblem<Adapter>::processAlgorithmName(
         algName_ = std::string("metis");
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
+      isGraphType = true;
 #else
 #ifdef HAVE_ZOLTAN2_PULP
       // TODO: XtraPuLP
@@ -873,7 +877,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Determine algorithm, model, and algorithm requirements.  This
   // is a first pass.  Feel free to change this and add to it.
 
-  this->processAlgorithmName(algorithm, defString, model, env, removeSelfEdges, needConsecutiveGlobalIds);
+  this->processAlgorithmName(algorithm, defString, model, env, removeSelfEdges,
+                             isGraphModel, needConsecutiveGlobalIds);
 
   // Hierarchical partitioning?
 
