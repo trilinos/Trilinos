@@ -37,11 +37,7 @@ ENDIF()
 #
 
 ADD_SUBDIRECTORY(src)
-
-# All tests are based on Epetra, currently
-IF ( Piro_ENABLE_Epetra)
-  TRIBITS_ADD_TEST_DIRECTORIES(test)
-ENDIF ()
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 #
 # D) Do standard postprocessing

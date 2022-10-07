@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         if (doAll) {
             switch (iTest) {
                 case 0:
-                    inputFile = "input_Solve_NOX_4.xml";
+                    inputFile = "input_Solve_NOX_Thyra.xml";
                     break;
                 default:
                     std::cout << "iTest logic error " << std::endl;
