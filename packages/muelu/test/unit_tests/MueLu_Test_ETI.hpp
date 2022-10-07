@@ -184,12 +184,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp,  lib, argc, argv);
 #  endif
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
-        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONG) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #  endif
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #  endif
 #  if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
@@ -200,6 +200,15 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #  endif
+#  if defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        if (inst == Xpetra::COMPLEX_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,long long,Node>(clp,  lib, argc, argv);
+#  endif
+#  if defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        if (inst == Xpetra::FLOAT_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,long long,Node>(clp,  lib, argc, argv);
+#  endif
+
         throw RuntimeError("Found no suitable Default instantiation");
 #endif
       } else if (node == "serial") {
@@ -218,12 +227,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
 #    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
@@ -233,6 +242,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG)
+        if (inst == Xpetra::COMPLEX_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,long long,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG)
+        if (inst == Xpetra::FLOAT_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
         throw RuntimeError("Found no suitable Serial instantiation");
 #  endif
@@ -256,12 +273,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib,  argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
 #    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
@@ -271,6 +288,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG)
+        if (inst == Xpetra::COMPLEX_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,long long,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG)
+        if (inst == Xpetra::FLOAT_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
         throw RuntimeError("Found no suitable OpenMP instantiation");
 #  endif
@@ -293,12 +318,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
 #    endif
 #    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
@@ -308,6 +333,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG)
+        if (inst == Xpetra::COMPLEX_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,long long,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG)
+        if (inst == Xpetra::FLOAT_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
         throw RuntimeError("Found no suitable Cuda instantiation");
 #  endif
@@ -330,12 +363,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #    endif
-#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONG_LONG)
+        if (inst == Xpetra::DOUBLE_INT_LONG_LONG)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
 #    endif
 #    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
@@ -345,6 +378,14 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_COMPLEX_INT_LONG_LONG)
+        if (inst == Xpetra::COMPLEX_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,long long,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_FLOAT_INT_LONG_LONG)
+        if (inst == Xpetra::FLOAT_INT_LONG_LONG)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
         throw RuntimeError("Found no suitable HIP instantiation");
 #  endif
