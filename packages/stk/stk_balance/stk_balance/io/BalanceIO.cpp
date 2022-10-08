@@ -63,6 +63,11 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
 
   stkIo.populate_bulk_data();
 
+  if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
+    const int numTimeSteps = stkIo.get_num_time_steps();
+    stkIo.read_defined_input_fields_at_step(numTimeSteps, nullptr);
+  }
+
   if(stkIo.check_integer_size_requirements() == 8) {
     bulkData.set_large_ids_flag(true);
   }

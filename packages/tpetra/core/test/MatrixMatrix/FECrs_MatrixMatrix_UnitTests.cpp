@@ -239,6 +239,10 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
                        const Tpetra::CrsMatrix<ST,LO,GO,NT>& B,
                        Teuchos::FancyOStream &out)
 {
+  using TST = Teuchos::ScalarTraits<ST>;
+  using MT = typename TST::magnitudeType;
+  auto eps = 1000*Teuchos::ScalarTraits<MT>::eps();
+
   // They should have the same row/range/domain maps
   if (!A.getRowMap()->isSameAs(*B.getRowMap())) {
     out<<"Compare: RowMap failed.\n";
@@ -318,7 +322,8 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
       }
 
       // Finally, check the numerical values
-      if (valsB[pos]!=valsA[j]) {
+
+      if( TST::magnitude(valsB[pos]-valsA[j]) > eps) {
         out << "Compare: global row " << grow << " has different values.\n";
         return false;
       }
@@ -376,6 +381,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
         Tpetra::MatrixMatrix::Multiply(  A, transA,   B, transB,   C, true, "", params);
 
         success = compare_matrices(C,feC,out);
+
         TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
       }
     }

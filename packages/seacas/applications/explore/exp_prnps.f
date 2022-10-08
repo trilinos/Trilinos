@@ -224,4 +224,3 @@ C ... See if all values are the same
 10090 FORMAT ((2x,3(2X, A)))
 10080 FORMAT (1X)
       END
-

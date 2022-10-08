@@ -1605,14 +1605,14 @@
                   double drop_off_coeffs[3] = {1,1,1};  // FIXME
                   int nlayers_drop_off = 40;
                   niter = 1;
-                  percept::ReferenceMeshSmootherAlgebraic pmmpsi(&m_eMesh, selector,NULL, mesh_geometry, niter, 1.e-4, drop_off_coeffs, nlayers_drop_off);
+                  percept::ReferenceMeshSmootherAlgebraic pmmpsi(&m_eMesh, selector, mesh_geometry, niter, 1.e-4, drop_off_coeffs, nlayers_drop_off);
                   pmmpsi.m_do_animation = 0;
                   pmmpsi.m_use_ref_mesh = use_ref_mesh;
                   pmmpsi.run();
                 }
               else
                 {
-                  percept::ReferenceMeshSmootherConjugateGradientImpl<STKMesh> pmmpsi(&m_eMesh, selector,NULL, mesh_geometry, niter, tol);
+                  percept::ReferenceMeshSmootherConjugateGradientImpl<STKMesh> pmmpsi(&m_eMesh, selector, mesh_geometry, niter, tol);
                   pmmpsi.m_use_ref_mesh = use_ref_mesh;
                   pmmpsi.run();
                 }

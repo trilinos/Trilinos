@@ -58,7 +58,7 @@ class StkSimdViewFixture : public ::testing::Test {
   
   //virtual void TearDown() {
   static void TearDownTestCase() {
-    Kokkos::finalize_all();
+    Kokkos::finalize();
     //printf("STK_Kokkos: Tearing down fixture.\n");
   }  
 };

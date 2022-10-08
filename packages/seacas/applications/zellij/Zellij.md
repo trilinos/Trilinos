@@ -138,7 +138,7 @@ The first line of the lattice definition begins with the line `BEGIN_LATTICE {i}
 
 The last line of the lattice definition is the line `END_LATTICE`.  When that line is encountered, zellij will begin outputting the mesh.
 
-Between the `BEGIN_LATTICE` and `END_LATTICE` are `{j}` lines with `{i}` entries per line.  The entries are any of the _key_s that were specified in the unit cell dictionary.  
+Between the `BEGIN_LATTICE` and `END_LATTICE` are `{j}` lines with `{i}` entries per line.  The entries are any of the _key_s that were specified in the unit cell dictionary.
 
 As an example, here is a valid lattice definition using the keys of the example dictionary from the previous section:
 
@@ -178,10 +178,10 @@ END_LATTICE
 ## Unit Cell Template Mesh Requirements
 Zellij requires that the boundary mesh (`X` and `Y` faces) of each of the unit cell templates be a _regular_ "structured" mesh.  Basically this means that the faces of the mesh elements on the boundary are in a regular rectangular grid such that each mesh face is rectangular (90 degree corners) and that the boundary mesh on the minimum `X` face is the same as that on the maximum `X` face and similarly for the minimum `Y` face and the maximum `Y` face.
 
-Additionally, the X faces on _all_ unit cells must match and the Y faces on _all_ 
+Additionally, the X faces on _all_ unit cells must match and the Y faces on _all_
 unit cells must match both in structure and in coordinate extent. This requirement is verified during execution. The `Z` faces are less constrained with the only requirement being that the coordinate extents of all `Z` faces must be the same (which follows from the `X` and `Y` face requirement); the structure of the mesh on the `Z` faces is arbitrary.
 
-The unit cell meshes can contain any number of element blocks; however, each element block _must_ contain hexahedral elements with 8-nodes per element.  The element blocks do not need to be the same in each unit cell mesh, but if they do share the same element block `id`, then those elements will be combined into the same element block in the output mesh with the same `id`.  
+The unit cell meshes can contain any number of element blocks; however, each element block _must_ contain hexahedral elements with 8-nodes per element.  The element blocks do not need to be the same in each unit cell mesh, but if they do share the same element block `id`, then those elements will be combined into the same element block in the output mesh with the same `id`.
 
 The output mesh will contain the union of all element blocks existing on the input mesh unit cells.  For example, if:
 
@@ -368,7 +368,7 @@ for each j : J
       for each element block in cell(i,j) mesh
          read block connectivity
          map local node ids to global node ids
-         write block connectivity 
+         write block connectivity
 ```
 
 The maximum memory use will be the size of storage needed for the `x` `y` and `z` coordinates of a unit cell mesh or the storage needed to hold the connectivity for a single unit cell element block.
@@ -389,12 +389,12 @@ For a large model, the majority of the execution time is related to:
 The Exodus format which is used for the unit cell template meshes and the output mesh uses the NetCDF library for on-disk storage.  There are several variants of the NetCDF on-disk storage including the format: `netcdf3`, `netcdf4`, and `netcdf5` and the integer size (32-bit integers or 64-bit integers).  Although these details are usually transparent to the user, they can affect the execution time especially when very large meshes are being processed.
 
 #### Format
-The `netcdf3` format is the original native NetCDF format.  At the time the library was being developed, the `byte endianness` of data stored on disk was not standard among the computes in use at that time and the NetCDF developers had to pick an `endianness` for the data.  They picked the XDR standard which stood for _eXternal Data Representation_ which was used for communicating between different computer systems.  Regretfully, the representation used by XDR turned out to be opposite of the representation used by (almost?) all systems in use today, so each read and write of data in the `netcdf3` format results in a translation of the endianness.  This translation is very fast, but is overhead that would not be needed if the on-disk format was the opposite representation.  This representation is also used by the `netcdf5` format.  
+The `netcdf3` format is the original native NetCDF format.  At the time the library was being developed, the `byte endianness` of data stored on disk was not standard among the computes in use at that time and the NetCDF developers had to pick an `endianness` for the data.  They picked the XDR standard which stood for _eXternal Data Representation_ which was used for communicating between different computer systems.  Regretfully, the representation used by XDR turned out to be opposite of the representation used by (almost?) all systems in use today, so each read and write of data in the `netcdf3` format results in a translation of the endianness.  This translation is very fast, but is overhead that would not be needed if the on-disk format was the opposite representation.  This representation is also used by the `netcdf5` format.
 
 However, the NetCDF `netcdf4` format is based on using the HDF5 library to manage the underlying data format on disk and it can read and write data using the native endianness of the system on which the data is being read and written and therefore does not incur the cost of transforming the data's endianness.
 
 #### Integer Size
-By default, most current mesh generators will output a mesh using 32-bit integer data.  This is sufficient to represent a mesh with up to approximately 2.1 billion nodes and elements.  
+By default, most current mesh generators will output a mesh using 32-bit integer data.  This is sufficient to represent a mesh with up to approximately 2.1 billion nodes and elements.
 
 If the input mesh and the output mesh have the same integer size, then there is no data conversion needed.  The data will be read as `N`-bit integers, processed as `N`-bit integers, and written as `N`-bit integers.  However, if the input mesh is `N`-bit integers and the output mesh is `M`-bit integers, then the NetCDF library will convert all integer data (element block connectivity typically) from `N` bits to `M` bits which for large meshes can incur an execution time overhead.
 
@@ -408,11 +408,11 @@ For minimal overhead, it is recommended that:
 
 *  Use the `netcdf4` format for all input and output meshes
 *  Use the same integer size for all input and output meshes
-  *  The integer size of the output mesh can be specified using the `-32` or `-64` options.  
+  *  The integer size of the output mesh can be specified using the `-32` or `-64` options.
   *  The `-64` option is the default.
 
 It is most efficient if the format and integer size of the input mesh matches the output mesh.  The format of the input meshes can be converted using the `io_shell` application with the `-netcdf4` and `-64` or `-32` options. The format and integer size of a mesh can be queried using the `exo_format` application.
-         
+
 For illustration, here is the execution time for several runs with different format and integer size.  In all cases, the input and output mesh sizes are the same:
 
 | input   | output  | integer input | integer output | execution time |

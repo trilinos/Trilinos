@@ -66,7 +66,7 @@
                                 //, m_parallelEval(true)
     {
       const stk::mesh::MetaData& metaData = bulk->mesh_meta_data();
-      m_coordinatesField = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      m_coordinatesField = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
     }
 
     FieldFunction::FieldFunction(const char *name, stk::mesh::FieldBase *field, PerceptMesh& eMesh,
@@ -80,7 +80,7 @@
     {
 
       const stk::mesh::MetaData& metaData = m_bulkData->mesh_meta_data();
-      m_coordinatesField = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      m_coordinatesField = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
     }
 

@@ -54,14 +54,14 @@ namespace stk {
  * Output vectors for send-procs and recv-procs will have
  * length num-send-procs and num-recv-procs respectively.
  */
-#ifndef STK_HIDE_DEPRECATED_CODE // delete coupling version 5 is deprecated
-STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
+// delete coupling version 5 is deprecated
+void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
                      const unsigned * const send_size,
                      unsigned * const recv_size,
                      std::vector<int>& output_send_procs,
                      std::vector<int>& output_recv_procs);
 
-STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
+void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
                                    const std::vector<CommBuffer>& send_bufs ,
                                          std::vector<CommBuffer>& recv_bufs,
                                    std::vector<int>& send_procs,
@@ -72,18 +72,17 @@ STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
  * set recv sizes (recv_size array has length number-of-MPI-processor-ranks).
  */
 
-STK_DEPRECATED void comm_recv_msg_sizes(ParallelMachine comm ,
+void comm_recv_msg_sizes(ParallelMachine comm ,
                      const unsigned * const send_size ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      unsigned * const recv_size);
 
-STK_DEPRECATED void comm_recv_msg_sizes(ParallelMachine comm ,
+void comm_recv_msg_sizes(ParallelMachine comm ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      const std::vector<CommBuffer>& send_bufs,
                      std::vector<CommBuffer>& recv_bufs);
-#endif
 
 class CommSparse {
 public:

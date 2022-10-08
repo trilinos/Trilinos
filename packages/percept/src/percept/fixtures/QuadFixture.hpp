@@ -88,13 +88,15 @@
             bulk_data(*bulk_data_ptr),
             meta_data(bulk_data_ptr->mesh_meta_data()),
             quad_part( meta_data.declare_part("block_1", stk::topology::ELEMENT_RANK ) ),
-            coord_field( meta_data.declare_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates") ),
             NX( nx ),
             NY( ny ),
             generate_sidesets(generate_sidesets_in),
             debug_geom_side_sets_as_blocks(debug_geom_side_sets_as_blocks_in)
         {
           enum { SpatialDim = 2 };
+
+          meta_data.use_simple_fields();
+          coord_field = &meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
 
           set_bounding_box(0,(double)NX,0,(double)NY);
 
@@ -104,7 +106,7 @@
 
           //put coord-field on all nodes:
           put_field_on_mesh(
-                    coord_field,
+                    *coord_field,
                     meta_data.universal_part(),
                     SpatialDim,
                     nullptr
@@ -280,7 +282,7 @@
                   unsigned nx = 0, ny = 0;
                   node_ix_iy(elem_node[i], nx, ny);
 
-                  Scalar * data = stk::mesh::field_data( coord_field , node );
+                  Scalar * data = static_cast<double*>(stk::mesh::field_data( *coord_field , node ));
 
                   //data[0] = nx ;
                   // data[1] = ny ;
@@ -306,7 +308,7 @@
         stk::mesh::BulkData&   bulk_data ;
         stk::mesh::MetaData&   meta_data ;
         stk::mesh::Part      & quad_part ;
-        CoordinatesFieldType       & coord_field ;
+        stk::mesh::FieldBase * coord_field ;
         const unsigned         NX ;
         const unsigned         NY ;
         stk::mesh::Part *side_parts[4];

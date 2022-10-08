@@ -90,6 +90,8 @@ namespace percept
       builder.set_entity_rank_names(get_entity_rank_names(3u));
       m_bulkData = builder.create();
       m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(), [](auto ptrWeWontDelete){});
+      m_metaData->use_simple_fields();
+
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -99,7 +101,7 @@ namespace percept
               m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , stk::topology::ELEMENT_RANK ));
             }
         }
-      m_coordinates_field = &m_metaData->declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" );
+      m_coordinates_field = &m_metaData->declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
 
       // set cell topology
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -114,8 +116,7 @@ namespace percept
       // Field restrictions:
       stk::mesh::Part & universal = m_metaData->universal_part();
 
-      put_field_on_mesh( *m_coordinates_field , universal , nullptr);
-
+      put_field_on_mesh( *m_coordinates_field , universal , m_metaData->spatial_dimension(), nullptr);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {

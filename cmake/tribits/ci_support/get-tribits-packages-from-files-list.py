@@ -51,7 +51,7 @@ usageHelp = \
 r"""get-tribits-packages-from-files-list.py --deps-xml-file=<DEPS_XML_FILE> \
     --files-list-file=<FILES_LIST_FILE> [--project-dir=<projectDir>]
 
-This script returns a comma-seprated list of all of the project's TriBITS SE
+This script returns a comma-seprated list of all of the project's TriBITS
 packages that must be directly tested for changes in the input list of files.
 This may also include the special package name 'ALL_PACKAGES' which means that
 at least one changed file (e.g. <projectDir>/CMakeLists.txt) should result in

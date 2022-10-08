@@ -34,30 +34,28 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
                                  const stk::mesh::EntityVector &entities,
                                  const std::vector<stk::mesh::Selector> &selectors)
 {
-  if (balanceSettings.areVertexWeightsProvidedViaFields()) {
+  mVertexWeights.resize(entities.size(), 0.0);
+  if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONSTANT) {
+    for (size_t i = 0; i < entities.size(); ++i) {
+      mVertexWeights[i] = 1;
+    }
+  }
+  else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::TOPOLOGY) {
+    for (size_t i = 0; i < entities.size(); ++i) {
+      mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
+    }
+  }
+  else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONNECTIVITY) {
+    const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(bulkData);
+    for (size_t i = 0; i < entities.size(); ++i) {
+      mVertexWeights[i] = *stk::mesh::field_data(connectivityWeights, entities[i]);
+    }
+  }
+  else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::FIELD) {
     fillFieldVertexWeights(balanceSettings, bulkData, selectors, entities);
   }
   else {
-    mVertexWeights.resize(entities.size(), 0.0);
-    if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONSTANT) {
-      for (size_t i = 0; i < entities.size(); ++i) {
-        mVertexWeights[i] = 1;
-      }
-    }
-    else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::TOPOLOGY) {
-      for (size_t i = 0; i < entities.size(); ++i) {
-        mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
-      }
-    }
-    else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONNECTIVITY) {
-      const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(bulkData);
-      for (size_t i = 0; i < entities.size(); ++i) {
-        mVertexWeights[i] = *stk::mesh::field_data(connectivityWeights, entities[i]);
-      }
-    }
-    else {
-      ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
-    }
+    ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
   }
 
   const BlockWeightMultipliers & blockWeightMultipliers = balanceSettings.getVertexWeightBlockMultipliers();
@@ -103,7 +101,7 @@ void Vertices::fillFieldVertexWeights(const stk::balance::BalanceSettings& balan
         for(size_t weight_index=0;weight_index<numCriteria;weight_index++)
         {
           unsigned index = stk::balance::internal::get_index(numSelectors, numCriteria, i, sel, weight_index);
-          mVertexWeights[index] = balanceSettings.getGraphVertexWeight(entitiesToBalance[i], weight_index);
+          mVertexWeights[index] = balanceSettings.getFieldVertexWeight(stkMeshBulkData, entitiesToBalance[i], weight_index);
         }
       }
     }

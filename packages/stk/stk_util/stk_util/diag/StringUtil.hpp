@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/String.hpp"       // for String, operator<<
 #include "stk_util/util/FeatureTest.hpp"  // for SIERRA_USE_PLATFORM_DEMANGLER
 #include <cstddef>                        // for size_t
@@ -516,7 +517,7 @@ std::istream &getline(std::istream &is, sierra::String &s, char eol = '\n');
  * @brief Class <b>less_nocase</b> implements a case insensitive compare functor.
  */
 template <class T>
-struct less_nocase : public std::binary_function<T, T, bool>
+struct less_nocase
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -549,7 +550,7 @@ struct less_nocase : public std::binary_function<T, T, bool>
  * @brief Class specialization <b>less_nocase</b> for <b>String</b>.
  */
 template <>
-struct less_nocase<String> : public std::binary_function<String, String, bool>
+struct less_nocase<String>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -582,7 +583,7 @@ struct less_nocase<String> : public std::binary_function<String, String, bool>
  * @brief Class specialization <b>less_nocase</b> for <b>std::string</b>.
  */
 template <>
-struct less_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
+struct less_nocase<std::string>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -615,7 +616,7 @@ struct less_nocase<std::string> : public std::binary_function<std::string, std::
  * @brief Class specialization <b>less_nocase</b> for <b>char const pointer</b>.
  */
 template<>
-struct less_nocase<const char *> : public std::binary_function<const char *, const char *, bool>
+struct less_nocase<const char *>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is less than
@@ -641,11 +642,13 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
   }
 };
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after November 2022
+
 /**
  * @brief Class <b>equal_nocase</b> implements a case insensitive compare functor.
  */
 template <class T>
-struct equal_nocase : public std::binary_function<T, T, bool>
+struct STK_DEPRECATED equal_nocase : public std::binary_function<T, T, bool>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
@@ -677,7 +680,7 @@ struct equal_nocase : public std::binary_function<T, T, bool>
  * @brief Class specialization <b>equal_nocase</b> for <b>String</b>.
  */
 template <>
-struct equal_nocase<String> : public std::binary_function<String, String, bool>
+struct STK_DEPRECATED equal_nocase<String> : public std::binary_function<String, String, bool>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
@@ -709,7 +712,7 @@ struct equal_nocase<String> : public std::binary_function<String, String, bool>
  * @brief Class specialization <b>equal_nocase</b> for <b>std::string</b>.
  */
 template <>
-struct equal_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
+struct STK_DEPRECATED equal_nocase<std::string> : public std::binary_function<std::string, std::string, bool>
 {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
@@ -741,7 +744,7 @@ struct equal_nocase<std::string> : public std::binary_function<std::string, std:
  * @brief Class specialization <b>equal_nocase</b> for <b>char const pointer</b>.
  */
 template <>
-struct equal_nocase<const char *> : public std::binary_function<const char *, const char *, bool> {
+struct STK_DEPRECATED equal_nocase<const char *> : public std::binary_function<const char *, const char *, bool> {
   /**
    * @brief Member function <b>operator()</b> returns true if the <b>lhs</b> is equal to
    * <b>rhs</b>.
@@ -762,6 +765,8 @@ struct equal_nocase<const char *> : public std::binary_function<const char *, co
     return result ;
   }
 };
+
+#endif
 
 /**
  * @brief Class <b>hash_nocase</b> is a traits class for hash functions.

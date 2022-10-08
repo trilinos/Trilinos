@@ -235,6 +235,7 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
     if (myRank_ == 0) {
       options_.usage();
       fmt::print("\n\tCan also set options via CPUP_OPTIONS environment variable.\n\n"
+		 "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#cpup\n"
                  "\tWrites: current_directory/basename.output_extension\n"
                  "\tReads:  root/sub/basename.extension.#p.0 to\n"
                  "\t\troot/sub/basename.extension.#p.#p-1\n"

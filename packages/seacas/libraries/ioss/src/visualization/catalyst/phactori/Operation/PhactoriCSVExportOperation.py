@@ -67,7 +67,7 @@ class PhactoriCSVExportOperation(PhactoriOperationSpecifics):
     if (self.Precision < 1) or (self.Precision > 100):
       myDebugPrint3AndException("PhactoriCSVExportOperation:\n"
         "precision must be 1-100, not " + str(self.Precision) + "\n")
-    
+
 
   def ParseParametersFromJson(self, inJson):
     self.ParseOutputFilenameParametersFromJson(inJson)
@@ -120,4 +120,3 @@ class PhactoriCSVExportOperation(PhactoriOperationSpecifics):
           "ExportOperationData returning\n", 100)
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

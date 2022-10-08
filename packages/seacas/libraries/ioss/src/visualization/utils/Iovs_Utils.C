@@ -231,7 +231,7 @@ namespace Iovs {
 
   void Utils::writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props)
   {
-    if(dbinfo.parallelUtils->parallel_rank() == 0) {
+    if (dbinfo.parallelUtils->parallel_rank() == 0) {
       CatalystLogging catLog = CatalystLogging();
       catLog.setProperties(&props);
       catLog.writeToLogFile();
@@ -259,7 +259,7 @@ namespace Iovs {
     return (stat(filepath.c_str(), &buffer) == 0);
   }
 
-  std::string Utils::getDatabaseOutputFilePath(const std::string &          databaseFilename,
+  std::string Utils::getDatabaseOutputFilePath(const std::string           &databaseFilename,
                                                const Ioss::PropertyManager &properties)
   {
 
@@ -502,7 +502,7 @@ namespace Iovs {
     dbinfo.parallelUtils->barrier();
   }
 
-  void Utils::reportCatalystErrorMessages(const std::vector<int> &        error_codes,
+  void Utils::reportCatalystErrorMessages(const std::vector<int>         &error_codes,
                                           const std::vector<std::string> &error_messages,
                                           int                             myRank)
   {

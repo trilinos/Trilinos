@@ -170,7 +170,7 @@ public:
                   const std::string& base_name)
   {
     if(this->dd) {
-      vtkCGNSMultiBlockDataSet *cgnsmbds = 
+      vtkCGNSMultiBlockDataSet *cgnsmbds =
       vtkCGNSMultiBlockDataSet::SafeDownCast(dd->GetInputDescriptionByName("input")->GetGrid());
       cgnsmbds->CreateBase(base_id, base_name);
     }
@@ -190,7 +190,7 @@ public:
                              int size)
   {
     if(this->dd) {
-      vtkCGNSMultiBlockDataSet *cgnsmbds = 
+      vtkCGNSMultiBlockDataSet *cgnsmbds =
       vtkCGNSMultiBlockDataSet::SafeDownCast(dd->GetInputDescriptionByName("input")->GetGrid());
       cgnsmbds->AddStructuredZoneData(base_id,
                                       zone_id,

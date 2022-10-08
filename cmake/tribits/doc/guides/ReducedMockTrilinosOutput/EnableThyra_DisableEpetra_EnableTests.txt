@@ -1,5 +1,5 @@
-Disabling forward required SE packages and optional intra-package support that have a \
- dependency on disabled SE packages Trilinos_ENABLE_<TRIBITS_PACKAGE>=OFF ...
+Disabling forward required packages and optional intra-package support that have a \
+ dependency on disabled packages Trilinos_ENABLE_<TRIBITS_PACKAGE>=OFF ...
 
 -- Setting Trilinos_ENABLE_Triutils=OFF because Triutils has a required library dependence \
  on disabled package Epetra
@@ -16,17 +16,17 @@ Disabling forward required SE packages and optional intra-package support that h
 -- Setting Thyra_ENABLE_ThyraEpetraExt=OFF because Thyra has an optional library \
  disabled package ThyraEpetraExt
 
-Final set of enabled packages:  Teuchos RTOp Thyra 3
-Final set of enabled SE packages:  Teuchos RTOp ThyraCoreLibs Thyra 4
-Final set of non-enabled packages:  Epetra Triutils EpetraExt 3
-Final set of non-enabled SE packages:  Epetra Triutils EpetraExt ThyraGoodStuff \
+Final set of enabled top-level packages:  Teuchos RTOp Thyra 3
+Final set of enabled packages:  Teuchos RTOp ThyraCoreLibs Thyra 4
+Final set of non-enabled top-level packages:  Epetra Triutils EpetraExt 3
+Final set of non-enabled packages:  Epetra Triutils EpetraExt ThyraGoodStuff \
  ThyraCrazyStuff ThyraEpetra ThyraEpetraExt 7
-Final set of enabled TPLs:  BLAS LAPACK 2
-Final set of non-enabled TPLs:  MPI Boost UMFPACK AMD PETSC 5
+Final set of enabled external packages/TPLs:  BLAS LAPACK 2
+Final set of non-enabled external packages/TPLs:  MPI Boost UMFPACK AMD PETSC 5
 
 Configuring individual enabled Trilinos packages ...
 
-Processing enabled package: Teuchos (Libs)
-Processing enabled package: RTOp (Libs)
-Processing enabled package: Thyra (CoreLibs, Tests, Examples)
+Processing enabled top-level package: Teuchos (Libs)
+Processing enabled top-level package: RTOp (Libs)
+Processing enabled top-level package: Thyra (CoreLibs, Tests, Examples)
 

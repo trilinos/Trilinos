@@ -60,7 +60,7 @@ void vtkCGNSMultiBlockDataSet::CreateBase(int base_id,
   base bs;
   bs.base_location = location;
 
-  base_id_to_base_map[base_id] = bs; 
+  base_id_to_base_map[base_id] = bs;
 }
 
 void vtkCGNSMultiBlockDataSet::AddStructuredZoneData(int base_id,
@@ -153,7 +153,7 @@ void vtkCGNSMultiBlockDataSet::AddStructuredZoneData(int base_id,
       for(int j=0; j<size;j++) {
         da->InsertValue(j, data[comp_count * j + i]);
       }
- 
+
       if(is_cell_field) {
         sg->GetCellData()->AddArray(da);
       }

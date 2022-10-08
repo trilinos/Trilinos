@@ -142,12 +142,12 @@ int main(int argc,  char **argv)
   }
 
   stk::io::StkMeshIoBroker mesh_data(comm);
+  mesh_data.use_simple_fields();
 
   mesh_data.add_mesh_database(input_mesh, "exodus", stk::io::READ_MESH);
   mesh_data.create_input_mesh();
 
-  stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi = 
-    mesh_data.meta_data().declare_field<stk::mesh::Field<double,stk::mesh::SimpleArrayTag> >(stk::topology::ELEMENT_RANK, "phi");
+  stk::mesh::Field<double> & phi =  mesh_data.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, "phi");
   stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, nullptr);
 
   mesh_data.populate_bulk_data();

@@ -98,4 +98,3 @@ if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
-

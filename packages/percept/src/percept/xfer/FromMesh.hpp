@@ -59,7 +59,7 @@ public :
   typedef std::pair< stk::search::Box<double>,EntityProc> BoundingBox;
 
   FromMesh(stk::mesh::BulkData    &bulkData,
-           stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates,
+           stk::mesh::FieldBase * coordinates,
            stk::mesh::FieldBase * field,
            const stk::ParallelMachine   comm) :
     fromMetaData_   (bulkData.mesh_meta_data()),
@@ -86,7 +86,7 @@ public :
 
   const stk::mesh::MetaData    &fromMetaData_;
   stk::mesh::BulkData    &fromBulkData_;
-  stk::mesh::Field<double, stk::mesh::Cartesian> *fromcoordinates_;
+  stk::mesh::FieldBase *fromcoordinates_;
   std::vector<stk::mesh::FieldBase *> fromFields_;
   const stk::ParallelMachine   comm_;
 

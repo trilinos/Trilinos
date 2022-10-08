@@ -25,7 +25,7 @@ C     LASTER   Error return
 
 C***********************************************************************
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
 
 C     Look for a void that is not followed by a dictionary entry.
 C     If one is found, release the space to the system.

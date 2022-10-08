@@ -61,36 +61,40 @@ TEST(selector_timings, selector_timings)
   // down in order to keep things running in a reasonable amount of
   // time.
 #ifdef _GLIBCXX_DEBUG
-  size_t N = 1000;
+  size_t N = 500;
 #else
-  size_t N = 100000;
+  size_t N = 50000;
 #endif
 
-  VariableSelectorFixture fix(N);
+  const unsigned NUM_RUNS = 5;
+  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    VariableSelectorFixture fix(N);
 
-  size_t total_buckets_grabbed = 0;
+    size_t total_buckets_grabbed = 0;
 
-  stk::performance_tests::Timer timer(MPI_COMM_WORLD);
-  timer.start_timing();
+    batchTimer.start_batch_timer();
 
-  for (size_t n = 1 ; n<N; n*=2) {
-    // Selector creation
-    stk::mesh::Selector selectUnion;
-    for (size_t part_i = 0 ; part_i<n ; ++part_i) {
-      selectUnion |= *fix.m_declared_part_vector[part_i];
+    for (size_t n = 1 ; n<N; n*=2) {
+      // Selector creation
+      stk::mesh::Selector selectUnion;
+      for (size_t part_i = 0 ; part_i<n ; ++part_i) {
+        selectUnion |= *fix.m_declared_part_vector[part_i];
+      }
+
+      // Selector usage:
+      stk::mesh::EntityRank entity_rank = stk::topology::NODE_RANK;
+      stk::mesh::BucketVector const& buckets_out =  fix.m_BulkData.get_buckets(entity_rank, selectUnion);
+      total_buckets_grabbed += buckets_out.size();
     }
 
-    // Selector usage:
-    stk::mesh::EntityRank entity_rank = stk::topology::NODE_RANK;
-    stk::mesh::BucketVector const& buckets_out =  fix.m_BulkData.get_buckets(entity_rank, selectUnion);
-    total_buckets_grabbed += buckets_out.size();
+    std::cout << "total_buckets_grabbed: " << total_buckets_grabbed << std::endl;
+
+    batchTimer.stop_batch_timer();
   }
-
-  std::cout << "total_buckets_grabbed: " << total_buckets_grabbed << std::endl;
-
-  timer.update_timing();
   const int numIterations = 1;
-  timer.print_timing(numIterations);
+  batchTimer.print_batch_timing(numIterations);
 }
 
 TEST(Verify, selectorAlgorithmicComplexity)

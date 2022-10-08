@@ -88,8 +88,6 @@
 
   namespace percept {
 
-    class BlockStructuredGrid;
-
     template<typename T> class Histograms;
 
     static const unsigned EntityRankEnd = 6;
@@ -131,6 +129,13 @@
       /// Create a Mesh object that doesn't own its constituent MetaData and BulkData, pointers to which are adopted
       /// by this constructor.
       PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+
+      // add use_simple_fields() for the constructor that does not take a MetaData, because it will either
+      // be created internally or created through StkMeshIoBroker, and there are unconverted app codes that need
+      // to recover the old behavior.
+      // Must convert all percept testing to call use_simple_fields().
+
+      void use_simple_fields();
 
       void set_io_broker(stk::io::StkMeshIoBroker *mesh_data);
 
@@ -345,7 +350,7 @@
                                   bool print=true, bool print_all_field_diffs=false, std::map<std::string,std::string> *settings = 0);
 
       /// return a pointer to the field containing node coordinates
-      CoordinatesFieldType* get_coordinates_field() {
+      stk::mesh::FieldBase* get_coordinates_field() {
         // this should have been set by a previous internal call to setCoordinatesField
         return m_coordinatesField;
       }
@@ -434,7 +439,6 @@
 
       /// copy field data from one field (field_src) to another (field_dest)
       void copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src);
-      void copy_field(typename StructuredGrid::MTField* field_dest, typename StructuredGrid::MTField* field_src);
       void copy_field(const std::string dest_field, const std::string src_field);
 
       template<class FieldTypeDst, class FieldTypeSrc>
@@ -486,7 +490,6 @@
 
       /// axpby calculates: y = alpha*x + beta*y
       void nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y);
-      void nodal_field_axpby(double alpha, typename StructuredGrid::MTField* field_x, double beta, typename StructuredGrid::MTField* field_y);
       void nodal_field_axpby(double alpha, const std::string field_x, double beta, const std::string field_y);
 
       /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
@@ -494,22 +497,16 @@
                                 double beta,  stk::mesh::FieldBase* field_y,
                                 double gamma, stk::mesh::FieldBase* field_z);
 
-      void nodal_field_axpbypgz(double alpha, typename StructuredGrid::MTField* field_x,
-                                double beta,  typename StructuredGrid::MTField* field_y,
-                                double gamma, typename StructuredGrid::MTField* field_z);
-
       void nodal_field_axpbypgz(double alpha, const std::string field_x,
                                 double beta,  const std::string field_y,
                                 double gamma, const std::string field_z);
 
       /// dot calculates: x.y
       long double nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y);
-      long double nodal_field_dot(typename StructuredGrid::MTField* field_x, typename StructuredGrid::MTField* field_y);
       long double nodal_field_dot(const std::string field_x, const std::string field_y);
 
       /// set field to constant value
       void nodal_field_set_value(stk::mesh::FieldBase* field_x, double value = 0.0);
-      void nodal_field_set_value(typename StructuredGrid::MTField* field_x, double value = 0.0);
       void nodal_field_set_value(const std::string field_x, double value = 0.0);
 
       /// remove blocks in the mesh used solely for geometry association, during output of the mesh to Exodus.
@@ -952,10 +949,8 @@
       double edge_length_ave(const stk::mesh::Entity entity, stk::mesh::FieldBase* coord_field = 0, double* min_edge_length=0, double* max_edge_length=0,  const CellTopologyData * topology_data_in = 0);
 
 #if !STK_PERCEPT_LITE
-      double edge_length_ave(const typename StructuredGrid::MTElement entity, typename StructuredGrid::MTField* coord_field = 0, double* min_edge_length=0, double* max_edge_length=0, const typename StructuredGrid::MTCellTopology * topology_data_in = 0);
-
       static
-      void findMinMaxEdgeLength(stk::mesh::BulkData& bulk, const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+      void findMinMaxEdgeLength(stk::mesh::BulkData& bulk, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
                                 Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 #endif
 
@@ -1019,7 +1014,7 @@
       bool checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname);
 
       /// Cache internal pointer to coordinate field
-      void setCoordinatesField(CoordinatesFieldType * coordinates);
+      void setCoordinatesField(stk::mesh::FieldBase * coordinates);
 
       /// Cache internal pointer to coordinate field
       void setCoordinatesField();
@@ -1082,11 +1077,6 @@ private:
       int parallel_owner_rank(stk::mesh::Entity entity) const { return m_bulkData->parallel_owner_rank(entity); }
       int owner_rank(stk::mesh::Entity entity) const { return m_bulkData->parallel_owner_rank(entity); }
 
-#if !STK_PERCEPT_LITE
-      std::shared_ptr<BlockStructuredGrid> get_block_structured_grid() { return m_block_structured_grid; }
-      void set_block_structured_grid(std::shared_ptr<BlockStructuredGrid> bsg) { m_block_structured_grid = bsg; }
-#endif
-
 #endif // SWIG
 
       Teuchos::RCP<stk::io::StkMeshIoBroker>  get_ioss_mesh_data() { return m_iossMeshData; }
@@ -1098,15 +1088,11 @@ private:
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshDataOut;
 
-#if !STK_PERCEPT_LITE
-      std::shared_ptr<BlockStructuredGrid>  m_block_structured_grid;
-#endif
-
       size_t                                m_output_file_index;
       bool                                  m_iossMeshDataDidPopulate;
       bool                                  m_sync_io_regions;
       bool                                  m_remove_io_orig_topo_type;
-      CoordinatesFieldType*                      m_coordinatesField;
+      stk::mesh::FieldBase*                 m_coordinatesField;
       int                                   m_spatialDim;
       bool                                  m_ownData;
       bool                                  m_isCommitted;
@@ -1185,6 +1171,7 @@ private:
     public:
       bool m_markNone;
     private:
+      bool m_useSimpleFields;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

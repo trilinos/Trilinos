@@ -63,11 +63,12 @@ public:
   using DoubleVecField = stk::mesh::Field<double>;
 
   NgpFieldAccessPerformance()
-    : timer(get_comm()),
+    : batchTimer(get_comm()),
       m_fieldDataManager(nullptr)
   { }
 
   virtual ~NgpFieldAccessPerformance() {
+    reset_mesh();
     delete m_fieldDataManager;
     m_fieldDataManager = nullptr;
   }
@@ -83,13 +84,23 @@ public:
     builder.set_field_data_manager(&fieldDataManager);
     builder.set_bucket_capacity(bucketCapacity);
 
-    bulkData = builder.create();
+        if(nullptr == metaData) {
+          metaData = builder.create_meta_data();
+          metaData->use_simple_fields();
+        }
+
+        if(nullptr == bulkData) {
+          bulkData = builder.create(metaData);
+          m_auraOption = auraOption;
+          m_bucketCapacity = bucketCapacity;
+        }
   }
 
   DoubleVecField * createNodalVectorField(const std::string &field_name)
   {
+    const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
     DoubleVecField &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, field_name);
-    stk::mesh::put_field_on_entire_mesh_with_initial_value(field, initial_value);
+    stk::mesh::put_field_on_mesh(field, field.mesh_meta_data().universal_part(), spatialDimension, initial_value);
     return &field;
   }
 
@@ -101,7 +112,7 @@ public:
     forceField = createNodalVectorField("force");
   }
 
-  void testVectorFieldSum()
+  void testVectorFieldSum(unsigned NUM_ITERS)
   {
     stk::mesh::NgpField<double> & ngpDispField  = stk::mesh::get_updated_ngp_field<double>(*dispField);
     stk::mesh::NgpField<double> & ngpVelField   = stk::mesh::get_updated_ngp_field<double>(*velField);
@@ -110,27 +121,22 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
 
-    const int numRuns = 500000;
-
-    timer.start_timing();
-    for (int run = 0; run < numRuns; ++run) {
-      stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, get_meta().locally_owned_part(),
-                                     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex & index)
-                                     {
-                                       for (int component = 0; component < spatialDimension; ++component) {
-                                         ngpForceField(index, component) = alpha * ngpDispField(index, component) +
-                                                                           beta * ngpVelField(index, component) +
-                                                                           gamma * ngpAccField(index, component);
-                                       }
-                                     });
-    }
-    timer.update_timing();
-    timer.print_timing(numRuns);
+      for (unsigned i = 0; i < NUM_ITERS; ++i) {
+        stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, get_meta().locally_owned_part(),
+                                       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex & index)
+                                       {
+                                         for (int component = 0; component < spatialDimension; ++component) {
+                                           ngpForceField(index, component) = alpha * ngpDispField(index, component) +
+                                                                             beta * ngpVelField(index, component) +
+                                                                             gamma * ngpAccField(index, component);
+                                         }
+                                       });
+      }
 
     ngpForceField.modify_on_device();
   }
 
-  void testHostVectorFieldSum()
+  void testHostVectorFieldSum(unsigned NUM_ITERS)
   {
     stk::mesh::get_updated_ngp_field<double>(*dispField);
     stk::mesh::get_updated_ngp_field<double>(*velField);
@@ -138,54 +144,44 @@ public:
     stk::mesh::get_updated_ngp_field<double>(*forceField);
     const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
 
-    const int numRuns = 5000;
-
-    timer.start_timing();
-    for (int run = 0; run < numRuns; ++run) {
-      const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
-      for (const stk::mesh::Bucket * bucket : buckets) {
-        for (const stk::mesh::Entity & entity : *bucket) {
-          const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
-          const double *  velFieldData = stk::mesh::field_data(*velField, entity);
-          const double *  accFieldData = stk::mesh::field_data(*accField, entity);
-          double * forceFieldData = stk::mesh::field_data(*forceField, entity);
-          for (int component = 0; component < spatialDimension; ++component) {
-            forceFieldData[component] = alpha * dispFieldData[component] +
-                                        beta *   velFieldData[component] +
-                                        gamma *  accFieldData[component];
+      for (unsigned i = 0; i < NUM_ITERS; ++i) {
+        const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
+        for (const stk::mesh::Bucket * bucket : buckets) {
+          for (const stk::mesh::Entity & entity : *bucket) {
+            const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
+            const double *  velFieldData = stk::mesh::field_data(*velField, entity);
+            const double *  accFieldData = stk::mesh::field_data(*accField, entity);
+            double * forceFieldData = stk::mesh::field_data(*forceField, entity);
+            for (int component = 0; component < spatialDimension; ++component) {
+              forceFieldData[component] = alpha * dispFieldData[component] +
+                                          beta *   velFieldData[component] +
+                                          gamma *  accFieldData[component];
+            }
           }
         }
       }
-    }
-    timer.update_timing();
-    timer.print_timing(numRuns);
   }
 
-  void testPureHostVectorFieldSum()
+  void testPureHostVectorFieldSum(unsigned NUM_ITERS)
   {
     const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
 
-    const int numRuns = 5000;
-
-    timer.start_timing();
-    for (int run = 0; run < numRuns; ++run) {
-      const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
-      for (const stk::mesh::Bucket * bucket : buckets) {
-        for (const stk::mesh::Entity & entity : *bucket) {
-          const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
-          const double *  velFieldData = stk::mesh::field_data(*velField, entity);
-          const double *  accFieldData = stk::mesh::field_data(*accField, entity);
-          double * forceFieldData = stk::mesh::field_data(*forceField, entity);
-          for (int component = 0; component < spatialDimension; ++component) {
-            forceFieldData[component] = alpha * dispFieldData[component] +
-                                        beta *   velFieldData[component] +
-                                        gamma *  accFieldData[component];
+      for (unsigned i = 0; i < NUM_ITERS; ++i) {
+        const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
+        for (const stk::mesh::Bucket * bucket : buckets) {
+          for (const stk::mesh::Entity & entity : *bucket) {
+            const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
+            const double *  velFieldData = stk::mesh::field_data(*velField, entity);
+            const double *  accFieldData = stk::mesh::field_data(*accField, entity);
+            double * forceFieldData = stk::mesh::field_data(*forceField, entity);
+            for (int component = 0; component < spatialDimension; ++component) {
+              forceFieldData[component] = alpha * dispFieldData[component] +
+                                          beta *   velFieldData[component] +
+                                          gamma *  accFieldData[component];
+            }
           }
         }
       }
-    }
-    timer.update_timing();
-    timer.print_timing(numRuns);
   }
 
   void checkResult()
@@ -234,7 +230,7 @@ public:
   static constexpr double beta = 0.3333333;
   static constexpr double gamma = 3.14159;
 
-  stk::performance_tests::Timer timer;
+  stk::performance_tests::BatchTimer batchTimer;
   stk::mesh::FieldDataManager * m_fieldDataManager;
 
   DoubleVecField * dispField;
@@ -255,7 +251,16 @@ TEST_F(NgpFieldAccessPerformance, pureHost_vectorSum_DefaultFieldDataManager)
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
-  testPureHostVectorFieldSum();
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    testPureHostVectorFieldSum(NUM_ITERS);
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+
   checkHostResult();
 }
 
@@ -271,7 +276,16 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
-  testHostVectorFieldSum();
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    testHostVectorFieldSum(NUM_ITERS);
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+
   checkHostResult();
 }
 
@@ -287,7 +301,16 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_DefaultFieldDataManager)
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
-  testVectorFieldSum();
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    testVectorFieldSum(NUM_ITERS);
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+
   checkResult();
 }
 
@@ -295,14 +318,23 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_ContiguousFieldDataManager)
 {
   if (get_parallel_size() != 1) return;
 
-  unsigned numElemsPerDim = 100;
+  unsigned numElemsPerDim = 25;
   m_fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
 
   setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), *bulkData);
 
-  testVectorFieldSum();
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 50000;
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    testVectorFieldSum(NUM_ITERS);
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+
   checkResult();
 }
 

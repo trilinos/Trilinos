@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -39,6 +39,9 @@ C .. Get filename from command line.  If not specified, emit error message
      *    ' [-mesh mesh_file.g]')
         CALL PRTERR ('CMDSPEC',
      *    '                   [-interpolated int_file.int] base"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#mapvar')
         stop 'Syntax Error'
       end if
 
@@ -64,6 +67,9 @@ C     All (except for base) should be of the form "-option file"
      *' [-mesh mesh_file.g]')
           CALL PRTERR ('CMDSPEC',
      *'                   [-interpolated int_file.int] base"')
+          CALL PRTERR ('CMDSPEC',
+     *         'Documentation: https://sandialabs.github.io' //
+     $         '/seacas-docs/sphinx/html/index.html#mapvar')
           stop 'Syntax Error'
         end if
 
@@ -83,6 +89,9 @@ C     All (except for base) should be of the form "-option file"
      *' [-mesh mesh_file.g]')
           CALL PRTERR ('CMDSPEC',
      *'                   [-interpolated int_file.int] base"')
+          CALL PRTERR ('CMDSPEC',
+     *         'Documentation: https://sandialabs.github.io' //
+     $         '/seacas-docs/sphinx/html/index.html#mapvar')
           stop 'Syntax Error'
         end if
       end do

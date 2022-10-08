@@ -112,42 +112,42 @@ bool greater_equal_case( const std::string & lhs , const std::string & rhs )
 //----------------------------------------------------------------------
 
 /** \brief  Case-insensitive equality compare binary function object. */
-struct EqualCase : public std::binary_function<std::string,std::string,bool> {
+struct EqualCase {
   /** \brief  Case-insensitive equality compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return equal_case( lhs , rhs ); }
 };
 
 /** \brief  Case-insensitive inequality compare binary function object. */
-struct NotEqualCase : public std::binary_function<std::string,std::string,bool> {
+struct NotEqualCase {
   /** \brief  Case-insensitive inequality compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return not_equal_case( lhs , rhs ); }
 };
 
 /** \brief  Case-insensitive less-than compare binary function object. */
-struct LessCase : public std::binary_function<std::string,std::string,bool> {
+struct LessCase {
   /** \brief  Case-insensitive less-than compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return less_case( lhs , rhs ); }
 };
 
 /** \brief  Case-insensitive less-than-or-equal-to compare binary function object. */
-struct LessEqualCase : public std::binary_function<std::string,std::string,bool> {
+struct LessEqualCase {
   /** \brief  Case-insensitive less-than-or-equal-to compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return less_equal_case( lhs , rhs ); }
 };
 
 /** \brief  Case-insensitive greater-than compare binary function object. */
-struct GreaterCase : public std::binary_function<std::string,std::string,bool> {
+struct GreaterCase {
   /** \brief  Case-insensitive greater-than compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return greater_case( lhs , rhs ); }
 };
 
 /** \brief  Case-insensitive greater-than-or-equal-to compare binary function object. */
-struct GreaterEqualCase : public std::binary_function<std::string,std::string,bool> {
+struct GreaterEqualCase {
   /** \brief  Case-insensitive greater-than-or-equal-to compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return greater_equal_case( lhs , rhs ); }

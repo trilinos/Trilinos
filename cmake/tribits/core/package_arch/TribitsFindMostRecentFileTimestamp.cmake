@@ -492,10 +492,10 @@ endfunction()
 #   ``SHOW_OVERALL_MOST_RECENT_FILE``
 #
 #     If specified, then only the most recent modified file over all of the
-#     individual directories for each category (i.e. one for upstream SE
-#     package source dirs, one for upstream SE package binary dirs, one for
-#     the package's source dir, and one for the package's own binary dir) is
-#     printed to STDOUT.
+#     individual directories for each category (i.e. one for upstream package
+#     source dirs, one for upstream package binary dirs, one for the package's
+#     source dir, and one for the package's own binary dir) is printed to
+#     STDOUT.
 #
 #   ``CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>``
 #
@@ -513,7 +513,7 @@ endfunction()
 # * `tribits_find_most_recent_source_file_timestamp()`_
 # * `tribits_find_most_recent_binary_file_timestamp()`_
 #
-# to determine the most recent modified files in the upstream TriBITS SE
+# to determine the most recent modified files in the upstream TriBITS
 # packages' source and binary directories as well as the most recent source
 # file for the current package.  It then compares these timestamps to the most
 # recent binary file timestamp in this package's binary directory.  If any of
@@ -572,11 +572,11 @@ function(tribits_determine_if_current_package_needs_rebuilt)
   # Only search parent packages to cut down on dirs searched
   set(ENABLED_UPSTREAM_PACKAGES)
   set(CURRENT_PARENT_PACKAGE)
-  foreach(UPSTREAM_SE_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
+  foreach(upstreamPackage ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
     # Assume we will append
-    set(APPEND_PACKAGE ${UPSTREAM_SE_PACKAGE})
+    set(APPEND_PACKAGE ${upstreamPackage})
     # If is a subpackage we only append the parent packages
-    set(PARENT_PACKAGE ${${UPSTREAM_SE_PACKAGE}_PARENT_PACKAGE})
+    set(PARENT_PACKAGE ${${upstreamPackage}_PARENT_PACKAGE})
     if (PARENT_PACKAGE)
       set(APPEND_PACKAGE ${PARENT_PACKAGE})
     endif()
@@ -587,11 +587,11 @@ function(tribits_determine_if_current_package_needs_rebuilt)
   #print_var(ENABLED_UPSTREAM_PACKAGES)
 
   #
-  # C) Determine the most recent files on the upstream SE packages
+  # C) Determine the most recent files on the upstream packages
   #
 
   if (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
-    message("\nDetermining most recent source file in upstream SE packages"
+    message("\nDetermining most recent source file in upstream packages"
       " from ${PACKAGE_NAME}:")
   endif()
   set(UPSTREAM_SOURCE_BASE_DIRS)
@@ -608,7 +608,7 @@ function(tribits_determine_if_current_package_needs_rebuilt)
   #print_var(MOST_RECENT_UPSTREAM_SOURCE_FILEPATH)
 
   if (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
-    message("\nDetermining most recent binary file in upstream SE packages"
+    message("\nDetermining most recent binary file in upstream packages"
       " from ${PACKAGE_NAME}:")
   endif()
   set(UPSTREAM_BINARY_BASE_DIRS)
@@ -663,13 +663,13 @@ function(tribits_determine_if_current_package_needs_rebuilt)
   if (MOST_RECENT_THIS_BINARY_FILEPATH)
 
     tribits_update_package_out_of_date(
-      "upstream SE package source" ${MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP}
+      "upstream package source" ${MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP}
          "${MOST_RECENT_UPSTREAM_SOURCE_FILEPATH}"
       ${MOST_RECENT_THIS_PACKAGE_BINARY_TIMESTAMP} "${MOST_RECENT_THIS_BINARY_FILEPATH}"
       CURRENT_PACKAGE_OUT_OF_DATE_OUT )
 
     tribits_update_package_out_of_date(
-      "upstream SE package binary" ${MOST_RECENT_UPSTREAM_BINARY_TIMESTAMP}
+      "upstream package binary" ${MOST_RECENT_UPSTREAM_BINARY_TIMESTAMP}
          "${MOST_RECENT_UPSTREAM_BINARY_FILEPATH}"
       ${MOST_RECENT_THIS_PACKAGE_BINARY_TIMESTAMP} "${MOST_RECENT_THIS_BINARY_FILEPATH}"
       CURRENT_PACKAGE_OUT_OF_DATE_OUT )
@@ -683,7 +683,7 @@ function(tribits_determine_if_current_package_needs_rebuilt)
     if (NOT CURRENT_PACKAGE_OUT_OF_DATE_OUT)
       message("-- This package's most recent binary file"
         " ${MOST_RECENT_THIS_BINARY_FILEPATH}"
-        " is more recent than its upstream SE package source or binary files"
+        " is more recent than its upstream package source or binary files"
         " or this package's source files!")
     endif()
 

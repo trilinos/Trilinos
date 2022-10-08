@@ -43,22 +43,17 @@
       int innerIter;
       double gradNorm;
       int parallelIterations;
-//      typename MeshType::MTSelector *m_boundarySelector;
       STKMesh::MTSelector *m_stk_boundarySelector;
-      StructuredGrid::MTSelector *m_sgrid_boundarySelector;
     public:
       typename MeshType::MTMeshGeometry *m_meshGeometry;
 
     public:
 
       MeshSmootherImpl(PerceptMesh *eMesh,
-//                   typename MeshType::MTSelector *boundary_selector=0,
                    STKMesh::MTSelector *stk_select=0,
-                   StructuredGrid::MTSelector *sgrid_select=0,
                    typename MeshType::MTMeshGeometry *meshGeometry=0,
                        int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20);
 
-      StructuredGrid::MTSelector * get_sgrid_select()const {return m_sgrid_boundarySelector;}
       STKMesh::MTSelector * get_stkmesh_select() const {return m_stk_boundarySelector;}
 
       virtual ~MeshSmootherImpl() {}

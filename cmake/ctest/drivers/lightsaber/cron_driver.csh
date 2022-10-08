@@ -30,11 +30,23 @@ setenv TDD_DEBUG_VERBOSE 1
 source ~/.cshrc
 
 
+# Machine independent cron_driver:
+set SCRIPT_DIR `cd "\`dirname \"$0\"\`";pwd`
+
+# Trilinos source repo
+setenv TRILINOS_SOURCE $SCRIPT_DIR/../../../..
+
+# folder with the machine specific build info
+setenv BUILDS_DIR $TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
+
+
+
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
 # would first run old cron_driver.sh and only then pull
 
 # ===========================================================================
+# GCC family
 setenv CTEST_CONFIGURATION "default"
 module purge
 module load sems-gcc/10.1.0
@@ -62,10 +74,10 @@ setenv OMP_NUM_THREADS 2
 #setenv TDD_FORCE_CMAKE_INSTALL 0
 setenv TRIBITS_TDD_USE_SYSTEM_CTEST 1
 
-# Machine independent cron_driver:
-setenv SCRIPT_DIR `dirname "$0"`
-echo "SCRIPT_DIR = " $SCRIPT_DIR
-$SCRIPT_DIR/../cron_driver.py
+# Actually run stuff
+ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_avatar_lightsaber.cmake
+ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_float_lightsaber.cmake
+
 
 module load sems-netcdf-c
 module load sems-boost
@@ -75,6 +87,33 @@ module unload sems-cmake
 module unload sems-openmpi
 module unload sems-gcc
 # ===========================================================================
+
+# ===========================================================================
+# OneAPI family
+setenv CTEST_CONFIGURATION "default"
+module purge
+module load sems-gcc/10.1.0
+module load oneapi
+export I_MPI_CXX=dpcpp
+
+echo "Configuration = $CTEST_CONFIGURATION"
+env
+
+setenv OMP_NUM_THREADS 1
+
+# Set variables to work aroun TriBITS problems
+#setenv TDD_FORCE_CMAKE_INSTALL 0
+setenv TRIBITS_TDD_USE_SYSTEM_CTEST 1
+
+# Actually run stuff
+ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_sycl_cpu_lightsaber.cmake
+
+
+module unload oneapi
+module unload sems-gcc
+# ===========================================================================
+
+
 
 echo
 echo "Ending nightly Trilinos development testing on lightsaber: `date`"

@@ -43,7 +43,8 @@ enum class VertexWeightMethod
 {
   CONSTANT = 0,
   TOPOLOGY,
-  CONNECTIVITY
+  CONNECTIVITY,
+  FIELD
 };
 
 std::string vertex_weight_method_name(VertexWeightMethod method);

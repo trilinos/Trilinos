@@ -49,7 +49,7 @@ class ChangePartsTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   ChangePartsTest() : stk::unit_test_util::simple_fields::MeshFixture(),
-    timer(get_comm()),
+    batchTimer(get_comm()),
     elementsOnBlock1(true)
   {
   }
@@ -154,7 +154,7 @@ protected:
   stk::mesh::PartVector parts;
   stk::mesh::PartVector block1PartVector;
   stk::mesh::PartVector block2PartVector;
-  stk::performance_tests::Timer timer;
+  stk::performance_tests::BatchTimer batchTimer;
 
 private:
   bool elementsOnBlock1;
@@ -164,7 +164,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 100);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 
@@ -175,22 +176,24 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
   stk::mesh::EntityVector elements;
   get_bulk().get_entities(stk::topology::ELEM_RANK, stk::mesh::Selector(*block1PartVector[0]), elements);
 
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
-    prepare_move_elements_between_block1_and_block2(addParts, removeParts);
-
-    timer.start_timing();
-    get_bulk().batch_change_entity_parts(elements, addParts, removeParts);
-    timer.update_timing();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      prepare_move_elements_between_block1_and_block2(addParts, removeParts);
+      get_bulk().batch_change_entity_parts(elements, addParts, removeParts);
+    }
+    batchTimer.stop_batch_timer();
   }
-
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(ChangePartsTest, changeEntityPartsUsingSelectorSimplePerfTest)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 100);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 5000);
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 
@@ -198,64 +201,72 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingSelectorSimplePerfTest)
 
   stk::mesh::PartVector addParts;
   stk::mesh::PartVector removeParts;
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
-    prepare_move_elements_between_block1_and_block2(addParts, removeParts);
-    stk::mesh::Selector elemSelector(*removeParts[0]);
 
-    timer.start_timing();
-    get_bulk().batch_change_entity_parts(elemSelector, stk::topology::ELEM_RANK, addParts, removeParts);
-    timer.update_timing();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      prepare_move_elements_between_block1_and_block2(addParts, removeParts);
+      stk::mesh::Selector elemSelector(*removeParts[0]);
+      get_bulk().batch_change_entity_parts(elemSelector, stk::topology::ELEM_RANK, addParts, removeParts);
+    }
+    batchTimer.stop_batch_timer();
   }
-
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithEntityVector)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 500000);
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
   numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
 
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
-    elements_from_block1_to_other_blocks();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      elements_from_block1_to_other_blocks();
+      elements_back_to_block1();
 
-    elements_back_to_block1();
-
-    timer.start_timing();
-    for(unsigned j = 0; j < numBlocks; j++) {
-      get_bulk().get_buckets(stk::topology::ELEM_RANK, stk::mesh::Selector(*parts[j]));
+      for(unsigned block = 0; block < numBlocks; block++) {
+        get_bulk().get_buckets(stk::topology::ELEM_RANK, stk::mesh::Selector(*parts[block]));
+      }
     }
-    timer.update_timing();
+    batchTimer.stop_batch_timer();
   }
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithSelector)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 500000);
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
   numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
 
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
-    elements_from_block1_to_other_blocks();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      elements_from_block1_to_other_blocks();
+      elements_back_to_block1_using_selector();
 
-    elements_back_to_block1_using_selector();
-
-    timer.start_timing();
-    for(unsigned j = 0; j < numBlocks; j++) {
-      get_bulk().get_buckets(stk::topology::ELEM_RANK, stk::mesh::Selector(*parts[j]));
+      for(unsigned block = 0; block < numBlocks; block++) {
+        get_bulk().get_buckets(stk::topology::ELEM_RANK, stk::mesh::Selector(*parts[block]));
+      }
     }
-    timer.update_timing();
+    batchTimer.stop_batch_timer();
   }
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 }

@@ -48,7 +48,7 @@ public :
   typedef std::pair< stk::search::Sphere<double>, EntityProc> BoundingBox;
 
   ToMesh(stk::mesh::BulkData    &bulkData,
-	 stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates,
+   stk::mesh::FieldBase * coordinates,
 	 stk::mesh::FieldBase * field,
 	 const stk::ParallelMachine   comm,
 	 TransferType transferType,
@@ -74,7 +74,7 @@ public :
 
   const stk::mesh::MetaData    &toMetaData_;
   stk::mesh::BulkData    &toBulkData_;
-  stk::mesh::Field<double, stk::mesh::Cartesian>         *tocoordinates_;
+  stk::mesh::FieldBase         *tocoordinates_;
   std::vector<stk::mesh::FieldBase *> toFields_;
   const stk::ParallelMachine            comm_;
   TransferType transferType_;
