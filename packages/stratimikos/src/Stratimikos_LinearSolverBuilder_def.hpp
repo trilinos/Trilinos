@@ -42,7 +42,6 @@
 //#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
 
 #include "Stratimikos_InternalConfig.h"
-#include "Stratimikos_LinearSolverBuilder.hpp"
 #include "Thyra_DelayedLinearOpWithSolveFactory.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
