@@ -100,7 +100,7 @@ def main():
     try:
         print(writer)
     
-        # TODO -> CREATE SUBPROCESS TO CAPTURE OUTPUT AND PIPE TO <MDV>
+        # TODO -> CREATE SUBPROCESS TO CAPTURE OUTPUT AND PIPE TO <MDV> 
         # pause(STOP)
         # subprocess.call(["| "])
         # os.system(writer + "| mdv ")
