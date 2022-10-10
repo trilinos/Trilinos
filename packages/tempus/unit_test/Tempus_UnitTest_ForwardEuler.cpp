@@ -406,7 +406,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
 
   auto time = solutionHistory->getWorkingState()->getTime();
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
-  }
+}
 
 } // namespace Tempus_Test
 
