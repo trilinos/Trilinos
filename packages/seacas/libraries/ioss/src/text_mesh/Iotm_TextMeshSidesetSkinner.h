@@ -110,9 +110,6 @@ namespace Iotm {
       void skin_blocks(const TextMeshData<EntityId, Topology> &textMeshData,
                        std::vector<std::pair<EntityId, int>>  &elemSidePairs)
       {
-        using FaceConnections = typename SideAdjacencyGraph<EntityId, Topology>::FaceConnections;
-        using FaceConnection  = typename SideAdjacencyGraph<EntityId, Topology>::FaceConnection;
-
         populate_skin_blocks(textMeshData.partIds);
 
         if (!m_skinBlocks.empty()) {
@@ -121,11 +118,11 @@ namespace Iotm {
           reset_text_mesh_data();
 
           for (auto iter = BaseClass::begin(); iter != BaseClass::end(); iter++) {
-            size_t                 elemIndex       = iter->first;
-            const FaceConnections &faceConnections = iter->second;
+            size_t                   elemIndex       = iter->first;
+            const auto& faceConnections = iter->second;
 
             std::vector<bool> hasConnection(faceConnections.numSides, false);
-            for (const FaceConnection &connection : faceConnections.connections) {
+            for (const auto &connection : faceConnections.connections) {
               hasConnection[connection.thisSide - 1] = true;
             }
 

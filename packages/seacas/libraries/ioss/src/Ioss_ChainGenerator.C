@@ -213,7 +213,7 @@ namespace Ioss {
           // See if there is an element attached to the `opp_side`
           if (opp_face->elementCount_ > 1) {
             // Determine which is current element and which is adjacent element...
-            int  index       = (opp_face->element[0] / 10 == element) ? 1 : 0;
+            int  index       = ((INT)(opp_face->element[0] / 10) == element) ? 1 : 0;
             auto nxt_element = opp_face->element[index] / 10;
             auto nxt_side    = opp_face->element[index] % 10;
             if (element_chains[nxt_element - 1] == Ioss::chain_entry_t<INT>()) {

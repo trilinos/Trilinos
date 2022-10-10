@@ -583,15 +583,15 @@ namespace {
         // It is possible that the first name(s) that match with two
         // suffices have a basename that match other names with only a
         // single suffix lc_cam_x, lc_cam_y, lc_sfarea.
-        for (int i = index + 1; i < num_names; i++) {
-          char                    *tst_name = names[i];
+        for (int ii = index + 1; ii < num_names; ii++) {
+          char                    *tst_name = names[ii];
           std::vector<std::string> subtokens;
           field_tokenize(tst_name, suffix_separator, subtokens);
-          if ((truth_table == nullptr || truth_table[i] == 1) && // Defined on this entity
+          if ((truth_table == nullptr || truth_table[ii] == 1) && // Defined on this entity
               std::strncmp(name, tst_name, bn_len) == 0 &&       // base portion must match
               (!same_length || (strlen(tst_name) == name_length)) &&
               subtokens.size() == num_tokens) {
-            which_names.push_back(i);
+            which_names.push_back(ii);
           }
         }
 

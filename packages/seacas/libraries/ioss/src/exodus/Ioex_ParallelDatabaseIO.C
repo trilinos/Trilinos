@@ -2404,7 +2404,6 @@ int64_t ParallelDatabaseIO::get_Xset_field_internal(const Ioss::EntitySet *ns,
 
   // Find corresponding set in file decomp class...
   if (role == Ioss::Field::MESH) {
-    ex_entity_type type = Ioex::map_exodus_type(ns->type());
     int64_t        id   = Ioex::get_id(ns, &ids_);
 
     if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
@@ -3865,7 +3864,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
 	int *comp32 = reinterpret_cast<int *>(component.data());
 
 	int index = comp;
-	for (size_t i = 0; i < my_element_count; i++) {
+	for (int64_t i = 0; i < my_element_count; i++) {
 	  comp32[i] = data32[index];
 	  index += comp_count;
 	}
@@ -3875,14 +3874,12 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
 	int64_t *comp64 = reinterpret_cast<int64_t *>(component.data());
 
 	int index = comp;
-	for (size_t i = 0; i < my_element_count; i++) {
+	for (int64_t i = 0; i < my_element_count; i++) {
 	  comp64[i] = data64[index];
 	  index += comp_count;
 	}
       }
       size_t eb_offset   = eb->get_offset(); // Offset of beginning of the element block elements for this block
-      size_t proc_offset = eb->get_optional_property("_processor_offset", 0); // Offset of this processors elements within that block.
-      size_t file_count  = eb->get_optional_property("locally_owned_count", my_element_count);
       int    index     = -1 * (field.get_index() + comp); // Negative since specifying index, not id to exodus API.
       
       ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, index, proc_offset + eb_offset + 1, file_count, component.data());
