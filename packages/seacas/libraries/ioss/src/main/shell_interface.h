@@ -40,6 +40,7 @@ namespace IOShell {
     std::string              decomp_method;
     std::string              decomp_extra{"processor_id"};
     std::string              compose_output{"default"};
+    std::string              customField{""};
     double                   maximum_time{std::numeric_limits<double>::max()};
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};

@@ -8,6 +8,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_EntityType.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <Ioss_Sort.h>
@@ -79,27 +80,31 @@ namespace Ioss {
     /** \brief set the stream for all streams (output, debug, and warning) to the specified
      * `out_stream`
      */
-    static void set_all_streams(std::ostream &out_stream)
-    {
-      m_outputStream  = &out_stream;
-      m_debugStream   = &out_stream;
-      m_warningStream = &out_stream;
-    }
+    static void set_all_streams(std::ostream &out_stream);
+
+    /** \brief get the debug stream.
+     */
+    static std::ostream &get_debug_stream();
+
+    /** \brief get the warning stream.
+     */
+    static std::ostream &get_warning_stream();
+
+    /** \brief get the output stream.
+     */
+    static std::ostream &get_output_stream();
 
     /** \brief set the output stream to the specified `output_stream`
      */
-    static void set_output_stream(std::ostream &output_stream) { m_outputStream = &output_stream; }
+    static void set_output_stream(std::ostream &output_stream);
 
     /** \brief set the debug stream to the specified `debug_stream`
      */
-    static void set_debug_stream(std::ostream &debug_stream) { m_debugStream = &debug_stream; }
+    static void set_debug_stream(std::ostream &debug_stream);
 
     /** \brief set the warning stream to the specified `warning_stream`
      */
-    static void set_warning_stream(std::ostream &warning_stream)
-    {
-      m_warningStream = &warning_stream;
-    }
+    static void set_warning_stream(std::ostream &warning_stream);
 
     /** \brief set the pre-warning text
      * Sets the text output prior to a warning to the specified text.
@@ -191,7 +196,7 @@ namespace Ioss {
 
     template <size_t size> static void copy_string(char (&output)[size], const char *source)
     {
-      // Copy the string — don’t copy too many bytes.
+      // Copy the string don't copy too many bytes.
       copy_string(output, source, size);
     }
 
@@ -286,6 +291,12 @@ namespace Ioss {
     static int         get_number(const std::string &suffix);
     static int         extract_id(const std::string &name_id);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
+
+    /** Return the trailing digits (if any) from `name`
+     * `hex20` would return the string `20`
+     * `tetra` would return an empty string.
+     */
+    static std::string get_trailing_digits(const std::string &name);
 
     /** \brief create a string that describes the list of input `ids` collapsing ranges if possible.
      *
@@ -394,6 +405,13 @@ namespace Ioss {
      */
     static bool substr_equal(const std::string &prefix, const std::string &str);
 
+    /** Check all values in `data` to make sure that if they are converted to a double and
+     * back again, there will be no data loss.  This requires that the value be less than 2^53.
+     * This is done in the exodus database since it stores all transient data as doubles...
+     */
+    static bool check_int_to_real_overflow(const Ioss::Field &field, int64_t *data,
+                                           size_t num_entity);
+
     /** \brief Get a string containing `uname` output.
      *
      *  This output contains information about the current computing platform.
@@ -490,7 +508,9 @@ namespace Ioss {
     static std::string variable_name_kluge(const std::string &name, size_t component_count,
                                            size_t copies, size_t max_var_len);
 
-    static std::string shape_to_string(const ElementShape &shape);
+    static std::string shape_to_string(const Ioss::ElementShape &shape);
+
+    static std::string entity_type_to_string(const Ioss::EntityType &type);
 
     /** \brief Create a nominal mesh for use in history databases.
      *
@@ -513,9 +533,9 @@ namespace Ioss {
 
   inline std::ostream &OUTPUT() { return *Utils::m_outputStream; }
 
-  inline std::ostream &DEBUG() { return *Utils::m_debugStream; }
+  inline std::ostream &DebugOut() { return *Utils::m_debugStream; }
 
-  inline std::ostream &WARNING()
+  inline std::ostream &WarnOut()
   {
     *Utils::m_warningStream << Utils::m_preWarningText;
     return *Utils::m_warningStream;

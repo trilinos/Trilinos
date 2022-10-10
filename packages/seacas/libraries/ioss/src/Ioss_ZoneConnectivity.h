@@ -9,6 +9,7 @@
 #include <Ioss_CodeTypes.h>
 #include <array>
 #include <cassert>
+#include <fmt/ostream.h>
 #include <string>
 
 #if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
@@ -142,3 +143,4 @@ namespace Ioss {
     bool equal_(const Ioss::ZoneConnectivity &rhs, bool quiet) const;
   };
 } // namespace Ioss
+
