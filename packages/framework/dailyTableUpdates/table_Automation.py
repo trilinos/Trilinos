@@ -59,7 +59,7 @@ def main():
         last_Friday = today + relativedelta(weekday=FR(ONE_OFF))
     
     except:
-        print("Veiw needed dependencies above\n\n")
+        print("View needed dependencies above\n\n")
         
     
     
