@@ -1,0 +1,5 @@
+<ParameterList name="MueLu">
+
+  <Parameter        name="sigma" type="string"   value="if (x >= 0.0 &amp;&amp; y >= 0.0 &amp;&amp; x &lt;= 0.5 &amp;&amp; y &lt;= 0.5)"/>
+
+</ParameterList>
