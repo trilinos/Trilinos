@@ -4739,7 +4739,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // ith entry of X_in may not correspond to column i of the matrix in local indices
     // so can't always call on-rank SpMV on X_in directly
     if ( !getColMap()->isLocallyFitted(*getDomainMap())  ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getColMap()->isLocallyFitted(*getDomainMap())\n";
+      // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: false = getColMap()->isLocallyFitted(*getDomainMap())\n";
       overlap = false;
     }
     // if ( !getRowMap()->isLocallyFitted(*getRangeMap())  ) {
