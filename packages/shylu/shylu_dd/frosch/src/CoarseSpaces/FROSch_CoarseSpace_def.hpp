@@ -141,8 +141,8 @@ namespace FROSch {
 
                             Kokkos::RangePolicy<execution_space> policy (0, LocalLength_i);
                             // Xpetra wrapper for Tpetra MV
-                            auto unassembledXTpetraMVector = rcp_dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO>>(UnassembledSubspaceBases_[i]);
-                            auto   assembledXTpetraMVector = rcp_dynamic_cast<      TpetraMultiVector<SC,LO,GO,NO>>(AssembledBasis_);
+                            auto unassembledXTpetraMVector = rcp_dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO>>(UnassembledSubspaceBases_[i], true);
+                            auto   assembledXTpetraMVector = rcp_dynamic_cast<      TpetraMultiVector<SC,LO,GO,NO>>(AssembledBasis_, true);
                             // Tpetra MV
                             auto unassembledTpetraMVector = unassembledXTpetraMVector->getTpetra_MultiVector();
                             auto   assembledTpetraMVector = assembledXTpetraMVector->getTpetra_MultiVector();

@@ -814,8 +814,8 @@ namespace FROSch {
                 using SCView       = typename TMVector::dual_view_type::t_dev;
                 using ConstSCView  = typename TMVector::dual_view_type::t_dev::const_type;
                 // Xpetra wrapper for Tpetra MV
-                auto mVPhiIXTpetraMVector = rcp_dynamic_cast<const xTMVector>(mVPhiI);
-                auto mVPhiXTpetraMVector = rcp_dynamic_cast<       xTMVector>(mVPhi);
+                auto mVPhiIXTpetraMVector = rcp_dynamic_cast<const xTMVector>(mVPhiI, true);
+                auto mVPhiXTpetraMVector = rcp_dynamic_cast<       xTMVector>(mVPhi, true);
                 // Tpetra MV
                 auto mVPhiITpetraMVector = mVPhiIXTpetraMVector->getTpetra_MultiVector();
                 auto mVPhiTpetraMVector = mVPhiXTpetraMVector->getTpetra_MultiVector();

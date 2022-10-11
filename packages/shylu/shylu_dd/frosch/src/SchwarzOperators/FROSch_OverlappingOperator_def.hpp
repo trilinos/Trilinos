@@ -139,8 +139,8 @@ namespace FROSch {
                 using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
                 using TMVector     = Tpetra::MultiVector<SC,LO,GO,NO>;
                 // Xpetra wrapper for Tpetra MV
-                auto yXTpetraMVector = rcp_dynamic_cast<const xTMVector>(YOverlap_);
-                auto xXTpetraMVector = rcp_dynamic_cast<      xTMVector>(XTmp_);
+                auto yXTpetraMVector = rcp_dynamic_cast<const xTMVector>(YOverlap_, true);
+                auto xXTpetraMVector = rcp_dynamic_cast<      xTMVector>(XTmp_, true);
                 // Tpetra MV
                 auto yTpetraMVector = yXTpetraMVector->getTpetra_MultiVector();
                 auto xTpetraMVector = xXTpetraMVector->getTpetra_MultiVector();
