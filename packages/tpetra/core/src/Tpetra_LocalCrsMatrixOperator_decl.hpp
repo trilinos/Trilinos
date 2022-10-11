@@ -447,7 +447,12 @@ namespace Tpetra {
         // split 0..UNROLL over the vector lanes of the calling thread
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(dev, UNROLL), [&](ordinal_type k) {
-              Y_(iRow, kk + k) = beta_ * Y_(iRow, kk + k) + sum[k];
+              if (0 == beta_) {
+                Y_(iRow, kk + k) = sum[k];
+              } else {
+                Y_(iRow, kk + k) = beta_ * Y_(iRow, kk + k) + sum[k];
+              }
+              
             }
         );
         
@@ -561,9 +566,9 @@ namespace Tpetra {
         const execution_space &space) {
 
         if (std::is_same<RowViewer, OnRankRowViewer<OffsetDeviceViewType>>::value) {
-          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::on-rank\n";
+          // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::on-rank\n";
         } else if (std::is_same<RowViewer, OffRankRowViewer<OffsetDeviceViewType>>::value) {
-          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::off-rank\n";
+          // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::off-rank\n";
         }
 
         // still need to scal A.numRows() == 0
@@ -604,7 +609,6 @@ namespace Tpetra {
         const ordinal_type rowsPerThread =
             KokkosSparse::RowsPerThread<execution_space>(NNZPerRow);
 
-        std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch vectorLength="<<vectorLength <<"\n";
         SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets,
                   rowsPerThread, vectorLength);
 
