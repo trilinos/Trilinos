@@ -809,13 +809,23 @@ namespace FROSch {
                 GOIndView     indicesIDofsAllData ("indicesIDofsAllData", numIndices);
                 Kokkos::deep_copy(indicesIDofsAllData, indicesIDofsAllHostData);
 
+                using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
+                using TMVector     = Tpetra::MultiVector<SC,LO,GO,NO>;
+                using SCView       = typename TMVector::dual_view_type::t_dev;
+                using ConstSCView  = typename TMVector::dual_view_type::t_dev::const_type;
+                // Xpetra wrapper for Tpetra MV
+                auto mVPhiIXTpetraMVector = rcp_dynamic_cast<const xTMVector>(mVPhiI);
+                auto mVPhiXTpetraMVector = rcp_dynamic_cast<       xTMVector>(mVPhi);
+                // Tpetra MV
+                auto mVPhiITpetraMVector = mVPhiIXTpetraMVector->getTpetra_MultiVector();
+                auto mVPhiTpetraMVector = mVPhiXTpetraMVector->getTpetra_MultiVector();
+                // View
+                auto mvPhiIView = mVPhiITpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto mvPhiView = mVPhiTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
                 for (UN j=0; j<numLocalBlockColumns[i]; j++) {
-                    auto mVPhiIData = mVPhiI->getData(itmp);
-                    auto mVPhiData  = mVPhi->getDataNonConst(itmp);
-
+                    CopyPhiViewFunctor<GOIndView, ConstSCView, SCView> functor(j, indicesIDofsAllData, mvPhiIView, mvPhiView);
                     for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                         Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);
-                        CopyPhiDataFunctor<GOIndView> functor(mVPhiData, mVPhiIData, indicesIDofsAllData);
                         Kokkos::parallel_for(
                             "FROSch_HarmonicCoarseOperator::fillPhiData", policy, functor);
                     }
