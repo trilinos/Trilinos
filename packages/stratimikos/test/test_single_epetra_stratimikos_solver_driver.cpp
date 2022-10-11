@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "test_single_stratimikos_solver.hpp"
+#include "test_single_epetra_stratimikos_solver.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
     }
 
     success
-      = Thyra::test_single_stratimikos_solver(
+      = Thyra::test_single_epetra_stratimikos_solver(
         &paramList, dumpAll, verbose?&*out:0
         );
 

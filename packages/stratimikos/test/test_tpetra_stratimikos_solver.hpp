@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
-#define TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
+#ifndef TEST_SINGLE_TPETRA_STRATIMIKOS_SOLVER_HPP
+#define TEST_SINGLE_TPETRA_STRATIMIKOS_SOLVER_HPP
 
 #include "Stratimikos_Config.h"
 #include "Teuchos_ConfigDefs.hpp"
@@ -50,12 +50,12 @@ namespace Teuchos { class ParameterList; }
 
 namespace Thyra {
 
-/** \brief Testing function for a single stratimikos solver for a single
+/** \brief Testing function for a single tpetra stratimikos solver for a single
  * matrix.
  *
  * \ingroup stratimikos_testing_grp
  */
-bool test_single_stratimikos_solver(
+bool test_tpetra_stratimikos_solver(
   Teuchos::ParameterList                  *paramList
   ,const bool                             dumpAll
   ,Teuchos::FancyOStream                  *out
@@ -63,4 +63,4 @@ bool test_single_stratimikos_solver(
 
 } // namespace Thyra
 
-#endif // TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
+#endif // TEST_SINGLE_TPETRA_STRATIMIKOS_SOLVER_HPP
