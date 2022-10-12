@@ -87,7 +87,7 @@ namespace Zoltan2{
  *
  *  \todo follow ordering with partitioning
  *  \todo - Should Problems and Solution have interfaces for returning
- *          views and for returning RCPs?  Or just one?  At a minimum, 
+ *          views and for returning RCPs?  Or just one?  At a minimum,
  *          we should have the word "View" in function names that return views.
  */
 
@@ -112,7 +112,7 @@ public:
 
   OrderingProblem(Adapter *A, ParameterList *p,
                   const RCP<const Teuchos::Comm<int> > &comm) :
-    Problem<Adapter>(A, p, comm) 
+    Problem<Adapter>(A, p, comm)
   {
     HELLO;
     createOrderingProblem();
@@ -122,7 +122,7 @@ public:
   /*! \brief Constructor that takes an MPI communicator
    */
   OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm) :
-  OrderingProblem(A, p, 
+  OrderingProblem(A, p,
                   rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
                                             Teuchos::opaqueWrapper(mpicomm))))
   {}
@@ -130,7 +130,7 @@ public:
 
   /*! \brief Constructor that uses a default communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p) : 
+  OrderingProblem(Adapter *A, ParameterList *p) :
   OrderingProblem(A, p, Tpetra::getDefaultComm())
   {}
 
@@ -184,7 +184,7 @@ public:
   //  to false if he/she is computing a new solution using the same input data,
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
-  
+
   void solve(bool updateInputData=true);
 
   //!  \brief Get the local ordering solution to the problem.
@@ -232,6 +232,7 @@ private:
   RCP<LocalOrderingSolution<lno_t> > localOrderingSolution_;
   RCP<GlobalOrderingSolution<gno_t> > globalOrderingSolution_;
 
+  size_t localNumObjects_;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -240,8 +241,6 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 {
   HELLO;
 
-  size_t nVtx = this->baseModel_->getLocalNumObjects();
-
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
@@ -249,10 +248,10 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
       get<std::string>("order_method_type", "local");
 
     if(method_type == "local" || method_type == "both") {
-      localOrderingSolution_ = rcp(new LocalOrderingSolution<lno_t>(nVtx));
+      localOrderingSolution_ = rcp(new LocalOrderingSolution<lno_t>(localNumObjects_));
     }
     if(method_type == "global" || method_type == "both") {
-      globalOrderingSolution_ = rcp(new GlobalOrderingSolution<gno_t>(nVtx));
+      globalOrderingSolution_ = rcp(new GlobalOrderingSolution<gno_t>(localNumObjects_));
     }
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -263,7 +262,7 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 
   std::string method = this->params_->template
     get<std::string>("order_method", "rcm");
-  
+
   // TODO: Ignore case
   try
   {
@@ -279,27 +278,34 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
         alg.globalOrder(globalOrderingSolution_);       \
       }
 
+  modelFlag_t graphFlags;
+  graphFlags.set(REMOVE_SELF_EDGES);
+  graphFlags.set(BUILD_LOCAL_GRAPH);
+
   if (method.compare("rcm") == 0) {
-    AlgRCM<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    AlgRCM<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                               this->comm_, this->envConst_, graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("natural") == 0) {
-    AlgNatural<base_adapter_t> alg(this->identifierModel_, this->params_,
-      this->comm_);
+    AlgNatural<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                   this->comm_, this->envConst_);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("random") == 0) {
-    AlgRandom<base_adapter_t> alg(this->identifierModel_, this->params_,
-      this->comm_);
+    AlgRandom<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                  this->comm_, this->envConst_);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("sorted_degree") == 0) {
-    AlgSortedDegree<base_adapter_t> alg(this->graphModel_, this->params_,
-      this->comm_);
+    AlgSortedDegree<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                        this->comm_, this->envConst_,
+                                        graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
-  if (method.compare("metis") == 0) {
-    AlgMetis<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+  else if (method.compare("metis") == 0) {
+    AlgMetis<base_adapter_t> alg(this->baseInputAdapter_, this->params_,
+                                 this->comm_, this->envConst_, graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
   else if (method.compare("minimum_degree") == 0) {
@@ -307,8 +313,8 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
       "order_package", "amd");
     if (pkg.compare("amd") == 0)
     {
-      AlgAMD<base_adapter_t> alg(this->graphModel_,
-        this->params_, this->comm_);
+      AlgAMD<base_adapter_t> alg(this->baseInputAdapter_,
+        this->params_, this->comm_, this->envConst_, graphFlags);
       ZOLTAN2_COMPUTE_ORDERING
     }
   }
@@ -320,8 +326,7 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
   else if (method.compare("nd") == 0) {
-    AlgND<Adapter> alg(this->envConst_, this->comm_, this->graphModel_,
-      this->coordinateModel_,this->baseInputAdapter_);
+    AlgND<base_adapter_t> alg(this->envConst_, this->comm_, this->baseInputAdapter_, graphFlags);
     ZOLTAN2_COMPUTE_ORDERING
   }
 #endif
@@ -338,7 +343,7 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
 //}
 
 ////////////////////////////////////////////////////////////////////////
-//! createOrderingProblem 
+//! createOrderingProblem
 //  Method with common functionality for creating a OrderingProblem.
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
@@ -358,9 +363,9 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   std::string method = this->params_->template
     get<std::string>("order_method", "rcm");
 
-  if ((method == std::string("rcm")) || 
-      (method == std::string("sorted_degree")) || 
-      (method == std::string("metis")) || 
+  if ((method == std::string("rcm")) ||
+      (method == std::string("sorted_degree")) ||
+      (method == std::string("metis")) ||
       (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
@@ -375,47 +380,69 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   // Select Model based on parameters and InputAdapter type
 
-  std::bitset<NUM_MODEL_FLAGS> graphFlags;
-  std::bitset<NUM_MODEL_FLAGS> idFlags;
+  // std::bitset<NUM_MODEL_FLAGS> graphFlags;
+  // std::bitset<NUM_MODEL_FLAGS> idFlags;
 
 
   //MMW: need to change this to allow multiple models
   //     as I did with partitioning, use modelAvail_
 
-  switch (modelType) {
+  const auto adapterType = this->baseInputAdapter_->adapterType();
+  switch (modelType)
+  {
 
   case GraphModelType:
-    graphFlags.set(REMOVE_SELF_EDGES);
-    graphFlags.set(BUILD_LOCAL_GRAPH);
-    this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
-
-    this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-      this->graphModel_);
-
+  {
+    switch (adapterType)
+    {
+    case MatrixAdapterType:
+    {
+      localNumObjects_ = this->baseInputAdapter_->getLocalNumIDs();
+    }
     break;
 
+    case GraphAdapterType:
+    {
+      const auto ia = dynamic_cast<const GraphAdapter<user_t> *>(&(*(this->baseInputAdapter_)));
+      localNumObjects_ = ia->getLocalNumVertices();
+    }
+    break;
+
+    case MeshAdapterType:
+    {
+      const auto ia = dynamic_cast<const MeshAdapter<user_t> *>(&(*(this->baseInputAdapter_)));
+      localNumObjects_ = ia->getLocalNumOf(ia->getPrimaryEntityType());
+    }
+    break;
+
+    default:{
+        // Avoid warning
+    }
+    }
+  }
+  break;
 
   case IdentifierModelType:
-    this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, idFlags));
-
-    this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-      this->identifierModel_);
-
-    break;
+  {
+    localNumObjects_ = this->baseInputAdapter_->getLocalNumIDs();
+  }
+  break;
 
   case HypergraphModelType:
   case CoordinateModelType:
-    std::cout << __func__zoltan2__ 
-              << " Model type " << modelType << " not yet supported." 
+  {
+    std::cout << __func__zoltan2__
+              << " Model type " << modelType << " not yet supported."
               << std::endl;
-    break;
+  }
+  break;
 
   default:
-    std::cout << __func__zoltan2__ << " Invalid model" << modelType 
+  {
+    std::cout << __func__zoltan2__ << " Invalid model" << modelType
               << std::endl;
-    break;
+  }
+  break;
   }
 }
 } //namespace Zoltan2
