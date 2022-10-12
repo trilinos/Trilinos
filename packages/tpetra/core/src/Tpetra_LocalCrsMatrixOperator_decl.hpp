@@ -368,7 +368,11 @@ namespace Tpetra {
       KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
         if (i >= Y_.extent(0)) {return;}
         for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
-          Y_(i, k) *= beta_;
+          if (0 == beta_) {
+            Y_(i, k) = 0;
+          } else {
+            Y_(i, k) *= beta_;
+          }
         }
       }
 
@@ -718,7 +722,11 @@ namespace Tpetra {
       KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
         if (i >= Y_.extent(0)) {return;}
         for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
-          Y_(i, k) *= beta_;
+          if (0 == beta_) {
+            Y_(i, k) = 0;
+          } else {
+            Y_(i, k) *= beta_;
+          }
         }
       }
 
