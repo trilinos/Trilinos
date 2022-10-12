@@ -4747,6 +4747,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     //   overlap = false;
     // }
 
+    // need sorted graph to get the off-rank offsets
+    if (!getCrsGraph()->isSorted()) {
+      overlap = false;
+    }
+
     // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: getRowMap()->isLocallyFitted(*getRangeMap())=" << getRowMap()->isLocallyFitted(*getRangeMap()) << "\n";
 
         // && std::is_same<exec_space, Kokkos::Cuda>::value;
