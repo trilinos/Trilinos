@@ -79,7 +79,7 @@ using real = double;
 
 namespace {
   std::string codename;
-  std::string version = "2.00 (2021-12-17)";
+  std::string version = "2.03 (2022-05-26)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -134,7 +134,11 @@ namespace {
                                  bool allow_modify);
   bool           handle_attribute(const std::vector<std::string> &tokens, Ioss::Region &region);
   bool           handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region);
+  bool           handle_time(const std::vector<std::string> &tokens, Ioss::Region &region);
+  bool           handle_rename(const std::vector<std::string> &tokens, Ioss::Region &region);
   void           update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace);
+
+  void modify_time(Ioss::Region &region, double scale, double offset);
 
   void offset_filtered_coordinates(Ioss::Region &region, real offset[3],
                                    const std::vector<int> &filter);
@@ -154,6 +158,7 @@ namespace {
   void info_entity(const Ioss::Assembly *as, bool show_property = false);
   void info_entity(const Ioss::Blob *blob, bool show_property = false);
   void info_entity(const Ioss::Region &region, bool show_property = false);
+  void info_time(const Ioss::Region &region);
 
   template <typename T>
   void info_entities(const std::vector<T *> &entities, const std::vector<std::string> &tokens,
@@ -376,6 +381,12 @@ int main(int argc, char *argv[])
     else if (Ioss::Utils::substr_equal(tokens[0], "geometry")) {
       changed |= handle_geometry(tokens, region);
     }
+    else if (Ioss::Utils::substr_equal(tokens[0], "time")) {
+      changed |= handle_time(tokens, region);
+    }
+    else if (Ioss::Utils::substr_equal(tokens[0], "rename")) {
+      changed |= handle_rename(tokens, region);
+    }
     else {
       fmt::print(stderr, fg(fmt::color::yellow), "\tWARNING: Unrecognized command: {}\n",
                  tokens[0]);
@@ -384,10 +395,8 @@ int main(int argc, char *argv[])
 
   if (changed) {
     update_assembly_info(region, interFace);
-  }
-  else {
     fmt::print(fg(fmt::color::cyan),
-               "\n\t*** Database assembly structure unchanged. No update required.\n");
+               "\n\t*** Database assembly structure modified. File update required.\n");
   }
   fmt::print("\n{} execution successful.\n", codename);
   return EXIT_SUCCESS;
@@ -508,6 +517,17 @@ namespace {
     }
   }
 
+  void info_time(const Ioss::Region &region)
+  {
+    fmt::print("\n");
+    size_t ts_count = region.get_optional_property("state_count", 0);
+    auto   width    = Ioss::Utils::number_width(ts_count);
+
+    for (size_t step = 1; step <= ts_count; step++) {
+      fmt::print("\tStep {:{}}, Time = {}\n", step, width, region.get_state_time(step));
+    }
+  }
+
   void set_db_properties(const Modify::Interface & /* interFace */, Ioss::DatabaseIO *dbi)
   {
     if (dbi == nullptr || !dbi->ok(true)) {
@@ -519,13 +539,15 @@ namespace {
   {
     bool all = Ioss::Utils::substr_equal(topic, "help");
     if (all) {
-      fmt::print("\n\tHELP [list | assembly | graph | attribute | regex | glob]\n");
-      fmt::print("\n\tEND | EXIT\n");
+      fmt::print(fmt::emphasis::bold, "\n\tHELP");
+      fmt::print(" [list | assembly | graph | attribute | regex | glob]\n");
+      fmt::print(fmt::emphasis::bold, "\n\tEND | EXIT\n");
       fmt::print("\t\tEnd command input and output changed assembly definitions (if any).\n");
-      fmt::print("\n\tQUIT\n");
-      fmt::print("\t\tEnd command input and exit with no changes to database.\n");
+      fmt::print(fmt::emphasis::bold, "\n\tQUIT\n");
+      fmt::print("\t\tEnd command input and exit with no rewriting of database. Some changes may "
+                 "have already been made.\n");
 
-      fmt::print("\n\tALLOW MODIFICATIONS\n");
+      fmt::print(fmt::emphasis::bold, "\n\tALLOW MODIFICATIONS\n");
       fmt::print("\t\tBy default, io_modify will only allow creation of new assemblies.\n"
                  "\t\tIf this command is specified, then can modify assemblies that already exist "
                  "in database.\n"
@@ -533,92 +555,128 @@ namespace {
                  "updated in place.\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "list")) {
+      fmt::print(fmt::emphasis::bold, "\n\tLIST ");
       fmt::print(
-          "\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob|summary\n");
-      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+          "elementblock|block|structuredblock|assembly|nodeset|sideset|blob|times|summary\n");
+      fmt::print(fmt::emphasis::bold, "\tLIST ");
+      fmt::print("elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
                  "{{names...}}\n");
-      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+      fmt::print(fmt::emphasis::bold, "\tLIST ");
+      fmt::print("elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
                  "MATCHES {{regex}}\n");
-      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+      fmt::print(fmt::emphasis::bold, "\tLIST ");
+      fmt::print("elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
                  "GLOB {{glob}}\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "assembly")) {
       fmt::print("\n\tFor all commands, if an assembly named `name` does not exist, it will be "
                  "created.\n");
-      fmt::print("\tASSEMBLY {{name}}\n");
+      fmt::print(fmt::emphasis::bold, "\tASSEMBLY ");
+      fmt::print("{{name}}\n");
       fmt::print("\t\tCreates an empty assembly named `name` if it does not exist.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} ADD {{name1}} {{name2}} ... {{nameL}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} ADD {{name1}} {{name2}} ... {{nameL}}\n");
       fmt::print("\t\tAdds the specified entities to the assembly.  All entities must be the same "
                  "type.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} REMOVE {{name1}} {{name2}} ... {{nameL}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} REMOVE {{name1}} {{name2}} ... {{nameL}}\n");
       fmt::print("\t\tRemoves the specified entities from the assembly.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} MATCHES {{regex}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} TYPE {{type}} MATCHES {{regex}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose name matches the {{regex}} will be added.\n");
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} GLOB {{glob}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} TYPE {{type}} GLOB {{glob}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose name matches the {{glob}} will be added.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} NAMED {{list of one or more names}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} TYPE {{type}} NAMED {{list of one or more names}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose names are listed will be added.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} RANGE {{id}} TO {{id}} BY {{step}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} TYPE {{type}} RANGE {{id}} TO {{id}} BY {{step}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose id matches the specified range will be added.\n"
                  "\t\tNo message will be output for ids not matching an entity.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} IDS {{id}}, {{id2}}, ..., {{idL}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tASSEMBLY ");
+      fmt::print("{{name}} TYPE {{type}} IDS {{id}}, {{id2}}, ..., {{idL}}\n");
       fmt::print(
           "\t\tAdds the entities of the specified type to the assembly.\n"
           "\t\tAll entities whose id matches an id in the list will be added.\n"
           "\t\tA warning message will be output if there is no entity with the requested id.\n");
 
-      fmt::print("\n\tDELETE {{name}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tDELETE ");
+      fmt::print("{{name}}\n");
       fmt::print("\t\tRemove the assembly with the specified name.\n"
                  "\t\tCurrently only supported for assemblies created during this execution; not "
                  "for assemblies\n"
                  "\t\texisting on the input database.\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "graph")) {
-      fmt::print("\n\tGRAPH OUTPUT [filename]\n");
+      fmt::print(fmt::emphasis::bold, "\n\tGRAPH OUTPUT ");
+      fmt::print("[filename]\n");
       fmt::print(
           "\t\tCreate a 'dot' input file with the structure of the assembly graph.\n"
           "\t\tFile is named 'filename' or defaults to 'assembly.dot' if filename not given.\n");
-      fmt::print("\tGRAPH CHECK\n");
+      fmt::print(fmt::emphasis::bold, "\tGRAPH CHECK\n");
       fmt::print("\t\tCheck validity of assembly graph--are there any cycles.\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "attribute")) {
-      fmt::print("\n\tATTRIBUTE {{ent_name}} ADD {{att_name}} STRING {{values...}}\n");
-      fmt::print("\tATTRIBUTE {{ent_name}} ADD {{att_name}} DOUBLE {{values...}}\n");
-      fmt::print("\tATTRIBUTE {{ent_name}} NAME {{att_name}} INTEGER {{values...}}\n");
-      fmt::print("\t\tAdd an attribute to the specified entity ('type' and 'name').\n"
+      fmt::print(fmt::emphasis::bold, "\n\tATTRIBUTE ");
+      fmt::print("{{ent_name}} ADD {{att_name}} STRING {{values...}}\n");
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE ");
+      fmt::print("{{ent_name}} ADD {{att_name}} DOUBLE {{values...}}\n");
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE ");
+      fmt::print("{{ent_name}} NAME {{att_name}} INTEGER {{values...}}\n");
+      fmt::print("\t\tAdd an attribute to the specified entity 'ent_name'.\n"
                  "\t\tThe attribute will be named 'att_name' with value(s) 'values...'\n"
                  "\t\tCan also modify the values of an existing attribute.'\n");
-      fmt::print("\tATTRIBUTE LIST {{ent_name...}}\n"
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE LIST ");
+      fmt::print("{{ent_name...}}\n"
                  "\t\tList attributes for the selected entities\n");
-      fmt::print("\tATTRIBUTE {{ent_type}} LIST\n"
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE ");
+      fmt::print("{{ent_type}} LIST\n"
                  "\t\tList attributes for all entities in the specified entity type\n");
-      fmt::print("\tATTRIBUTE {{ent_type}} MATCH {{regex}}\n"
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE ");
+      fmt::print("{{ent_type}} MATCH {{regex}}\n"
                  "\t\tList attributes for all entities in the specified entity type whose name "
                  "matches the regex.\n");
-      fmt::print("\tATTRIBUTE {{ent_type}} GLOB {{glob}}\n"
+      fmt::print(fmt::emphasis::bold, "\tATTRIBUTE ");
+      fmt::print("{{ent_type}} GLOB {{glob}}\n"
                  "\t\tList attributes for all entities in the specified entity type whose name "
                  "matches the glob.\n");
     }
+    if (all || Ioss::Utils::substr_equal(topic, "rename")) {
+      fmt::print(fmt::emphasis::bold, "\n\tRENAME ");
+      fmt::print("{{name}} TO {{new_name}}\n");
+      fmt::print(fmt::emphasis::bold, "\tRENAME ");
+      fmt::print("{{type}} {{id}} TO {{new_name}}\n");
+    }
     if (all || Ioss::Utils::substr_equal(topic, "geometry")) {
-      fmt::print("\n\tGEOMETRY ROTATE {{X|Y|Z}} {{angle}}\n");
-      fmt::print("\tGEOMETRY SCALE  {{x}} {{y}} {{z}}\n");
-      fmt::print("\tGEOMETRY OFFSET {{x}} {{y}} {{z}}\n");
-      fmt::print(
-          "\tGEOMETRY ROTATE {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}\n");
-      fmt::print(
-          "\tGEOMETRY SCALE  {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
-      fmt::print(
-          "\tGEOMETRY OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+      fmt::print(fmt::emphasis::bold, "\n\tGEOMETRY ROTATE ");
+      fmt::print("{{X|Y|Z}} {{angle}}\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY SCALE  ");
+      fmt::print("{{x}} {{y}} {{z}}\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY OFFSET ");
+      fmt::print("{{x}} {{y}} {{z}}\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY ROTATE ");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY SCALE  ");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY OFFSET ");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+    }
+    if (all || Ioss::Utils::substr_equal(topic, "time")) {
+      fmt::print(fmt::emphasis::bold, "\n\tTIME SCALE  ");
+      fmt::print("{{scale}}   (T_out = T_in * {{scale}})\n");
+      fmt::print(fmt::emphasis::bold, "\tTIME OFFSET ");
+      fmt::print("{{offset}}  (T_out = T_in + {{offset}})\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "regex")) {
       fmt::print("\n\tRegular Expression help (used in ASSEMBLY MATCHES and LIST MATCHES and "
@@ -682,6 +740,9 @@ namespace {
       else if (Ioss::Utils::substr_equal(tokens[1], "blobs")) {
         const auto &entities = region.get_blobs();
         info_entities(entities, tokens, region, "Blobs", show_attribute);
+      }
+      else if (Ioss::Utils::substr_equal(tokens[1], "times")) {
+        info_time(region);
       }
       else {
         fmt::print(stderr, fg(fmt::color::yellow), "\tWARNING: Unrecognized list option '{}'\n",
@@ -1017,6 +1078,69 @@ namespace {
     return false;
   }
 
+  bool handle_rename(const std::vector<std::string> &tokens, Ioss::Region &region)
+  {
+    //     0          1        2       3         4
+    // RENAME   {{ent_name}}   TO   {{new_name}}
+    // RENAME   {{ent_type}} {{id}}    TO    {{new_name}}
+
+    // Must be at least 4 tokens...
+    if (tokens.size() < 4) {
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: RENAME Command does not have enough tokens to be valid.\n"
+                 "\t\t{}\n",
+                 fmt::join(tokens, " "));
+      handle_help("rename");
+      return false;
+    }
+
+    // See if asking for actual entity by name or by type + id
+    Ioss::GroupingEntity *ge       = nullptr;
+    std::string           new_name = tokens[tokens.size() - 1];
+
+    if (tokens.size() == 5 && Ioss::Utils::str_equal(tokens[3], "to")) {
+      // Type + ID
+      auto entity_type = get_entity_type(tokens[1]);
+      if (entity_type == Ioss::INVALID_TYPE) {
+        fmt::print(stderr, fg(fmt::color::yellow), "WARNING: Unrecognized entity type '{}'.\n",
+                   tokens[1]);
+        return false;
+      }
+
+      int entity_id = std::stoi(tokens[2]);
+      ge            = region.get_entity(entity_id, entity_type);
+      if (ge == nullptr) {
+        fmt::print(stderr, fg(fmt::color::red), "ERROR: Entity type '{}' with id {} not found.\n",
+                   tokens[1], tokens[2]);
+        return false;
+      }
+    }
+    else if (tokens.size() == 4 && Ioss::Utils::str_equal(tokens[2], "to")) {
+      ge = region.get_entity(tokens[1]);
+      if (ge == nullptr) {
+        fmt::print(stderr, fg(fmt::color::red), "ERROR: Entity '{}' not found.\n", tokens[1]);
+        return false;
+      }
+    }
+    else {
+      fmt::print(stderr, fg(fmt::color::yellow), "\tWARNING: Unrecognized rename syntax '{}'\n",
+                 fmt::join(tokens, " "));
+      handle_help("rename");
+    }
+
+    if (ge != nullptr) {
+      int            exoid     = region.get_database()->get_file_pointer();
+      auto           ioss_type = ge->type();
+      ex_entity_type exo_type  = Ioex::map_exodus_type(ioss_type);
+      auto           ierr      = ex_put_name(exoid, exo_type, id(ge), new_name.c_str());
+      if (ierr != EX_NOERR) {
+        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
+      }
+      ge->set_name(new_name);
+    }
+    return false;
+  }
+
   void build_block_list(Ioss::Region &region, const Ioss::GroupingEntity *ge,
                         std::vector<const Ioss::ElementBlock *> &blocks)
   {
@@ -1071,6 +1195,36 @@ namespace {
       }
       return node_filter;
     }
+  }
+
+  bool handle_time(const std::vector<std::string> &tokens, Ioss::Region &region)
+  {
+    //   0      1       2
+    // TIME   SCALE  {{scale}}
+    // TIME   OFFSET {{offset}
+    if (tokens.size() < 3) {
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: TIME Command does not have enough tokens to be valid.\n"
+                 "\t\t{}\n",
+                 fmt::join(tokens, " "));
+      handle_help("time");
+      return false;
+    }
+    if (Ioss::Utils::substr_equal(tokens[1], "scale")) {
+      double scale = std::stod(tokens[2]);
+      modify_time(region, scale, 0.0);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database time scaled:  T_out = T_in * {}.\n", scale);
+      return false;
+    }
+    if (Ioss::Utils::substr_equal(tokens[1], "offset")) {
+      double offset = std::stod(tokens[2]);
+      modify_time(region, 1.0, offset);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database time offset:  T_out = T_in + {}.\n", offset);
+      return false;
+    }
+    fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized time command.\n");
+    handle_help("time");
+    return false;
   }
 
   bool handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region)
@@ -1697,4 +1851,20 @@ namespace {
       }
     }
   }
+
+  void modify_time(Ioss::Region &region, double scale, double offset)
+  {
+    size_t              ts_count = region.get_optional_property("state_count", 0);
+    std::vector<double> times(ts_count);
+
+    int exoid = region.get_database()->get_file_pointer();
+    ex_get_all_times(exoid, times.data());
+
+    for (size_t step = 0; step < ts_count; step++) {
+      times[step] = times[step] * scale + offset;
+      ex_put_time(exoid, step + 1, &times[step]);
+    }
+    region.get_min_time();
+  }
+
 } // nameSpace

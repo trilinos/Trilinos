@@ -270,7 +270,7 @@ namespace Ioss {
         }
       }
 
-      for (auto idx_id : m_globalIdMap) {
+      for (const auto &idx_id : m_globalIdMap) {
         idata[idx_id.first] = idx_id.second;
       }
 

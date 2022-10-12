@@ -38,6 +38,7 @@ SET(SOURCES "")
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
+
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Zoltan)
 IF (NOT ${PROJECT_NAME}_ENABLE_Zoltan)
   ADD_DEFINITIONS(-DNO_ZOLTAN_SUPPORT)
@@ -76,12 +77,12 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 IF (MINGW)
-  target_link_libraries(Ioss psapi)
+  target_link_libraries(Ioss PUBLIC psapi)
 ENDIF ()
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
    # add a target to generate API documentation with Doxygen
-   if(SEACASProj_ENABLE_DOXYGEN)
+   if(Seacas_ENABLE_DOXYGEN)
      find_package(Doxygen)
      if(DOXYGEN_FOUND)
        add_custom_command(TARGET Ioss

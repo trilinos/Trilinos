@@ -511,9 +511,9 @@ namespace Iovs {
         error_codes.size() == error_messages.size()) {
       for (unsigned int i = 0; i < error_codes.size(); i++) {
         if (error_codes[i] > 0) {
-          Ioss::WARNING() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
+          Ioss::WarnOut() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
                           << error_codes[i] << ", On Processor " << myRank << " **\n\n";
-          Ioss::WARNING() << error_messages[i];
+          Ioss::WarnOut() << error_messages[i];
         }
         else {
           std::ostringstream errmsg;
