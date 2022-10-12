@@ -128,8 +128,16 @@ namespace FROSch {
                 AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getLocalNumElements());
                 #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
                 if (AssembledBasis_->getMap()->lib() == UseTpetra) {
-                    UN itmp = 0;
                     using execution_space = typename XMap::local_map_type::execution_space;
+                    // Xpetra wrapper for Tpetra MV
+                    auto assembledXTpetraMVector = rcp_dynamic_cast<TpetraMultiVector<SC,LO,GO,NO>>(AssembledBasis_, true);
+                    // Tpetra MV
+                    auto assembledTpetraMVector = assembledXTpetraMVector->getTpetra_MultiVector();
+                    // Kokkos View
+                    auto assembledView = assembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                    auto assembledCols = Tpetra::getMultiVectorWhichVectors(*  assembledTpetraMVector);
+
+                    UN itmp = 0;
                     for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                         if (!UnassembledSubspaceBases_[i].is_null()) {
                             const UN Offset_i = Offsets_[i];
@@ -142,18 +150,18 @@ namespace FROSch {
                             Kokkos::RangePolicy<execution_space> policy (0, LocalLength_i);
                             // Xpetra wrapper for Tpetra MV
                             auto unassembledXTpetraMVector = rcp_dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO>>(UnassembledSubspaceBases_[i], true);
-                            auto   assembledXTpetraMVector = rcp_dynamic_cast<      TpetraMultiVector<SC,LO,GO,NO>>(AssembledBasis_, true);
                             // Tpetra MV
                             auto unassembledTpetraMVector = unassembledXTpetraMVector->getTpetra_MultiVector();
-                            auto   assembledTpetraMVector = assembledXTpetraMVector->getTpetra_MultiVector();
                             // Views
                             auto unassembledView = unassembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
-                            auto   assembledView =   assembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                            auto unassembledCols = Tpetra::getMultiVectorWhichVectors(*unassembledTpetraMVector);
                             for (UN j=0; j < NumVectors_i; j++) {
+                                int col_in  = unassembledTpetraMVector->isConstantStride() ? j      : unassembledCols[j];
+                                int col_out =   assembledTpetraMVector->isConstantStride() ? j+itmp :   assembledCols[j+itmp];
                                 Kokkos::parallel_for(
                                     "FROSch_CoarseSpace::assembleCoarseSpace", policy,
                                     KOKKOS_LAMBDA(const UN k) {
-                                        assembledView(k+Offset_i, j) = unassembledView(k, j);
+                                        assembledView(k+Offset_i, col_out) = unassembledView(k, col_in);
                                     });
                             }
                             itmp += NumVectors_i;

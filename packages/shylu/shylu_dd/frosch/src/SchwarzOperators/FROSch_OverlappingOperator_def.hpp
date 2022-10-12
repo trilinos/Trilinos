@@ -137,7 +137,6 @@ namespace FROSch {
                 Kokkos::RangePolicy<execution_space> policy (0, yMap->getLocalNumElements());
 
                 using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
-                using TMVector     = Tpetra::MultiVector<SC,LO,GO,NO>;
                 // Xpetra wrapper for Tpetra MV
                 auto yXTpetraMVector = rcp_dynamic_cast<const xTMVector>(YOverlap_, true);
                 auto xXTpetraMVector = rcp_dynamic_cast<      xTMVector>(XTmp_, true);
@@ -147,13 +146,13 @@ namespace FROSch {
                 // View
                 auto yView = yTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
                 auto xView = xTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
-                for (UN i=0; i<y.getNumVectors(); i++) {
+                for (UN j=0; j<y.getNumVectors(); j++) {
                     Kokkos::parallel_for(
                       "FROSch_OverlappingOperator::applyLocalRestriction", policy,
-                      KOKKOS_LAMBDA(const int j) {
-                        GO gID = yLocalMap.getGlobalElement(j);
+                      KOKKOS_LAMBDA(const int i) {
+                        GO gID = yLocalMap.getGlobalElement(i);
                         LO lID = yLocalOverlapMap.getLocalElement(gID);
-                        xView(j, i) = yView(lID, i);
+                        xView(i, j) = yView(lID, j);
                       });
                 }
                 Kokkos::fence();

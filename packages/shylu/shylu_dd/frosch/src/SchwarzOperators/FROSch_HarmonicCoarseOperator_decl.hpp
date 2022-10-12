@@ -135,21 +135,23 @@ namespace FROSch {
         template<class GOIndView, class ConstSCView, class SCView>
         struct CopyPhiViewFunctor
         {
-            CopyPhiViewFunctor(UN j_, GOIndView indices_, ConstSCView data_in_, SCView data_out_) :
-            j(j_),
+            CopyPhiViewFunctor(UN j_in_, GOIndView indices_, ConstSCView data_in_, UN j_out_, SCView data_out_) :
+            j_in(j_in_),
             indices (indices_),
             data_in (data_in_),
+            j_out(j_out_),
             data_out(data_out_)
             {}
 
             KOKKOS_INLINE_FUNCTION
             void operator()(const int k) const {
-                data_out(indices(k), j) = data_in(k, j);
+                data_out(indices(k), j_out) = data_in(k, j_in);
             }
 
-            UN          j;
+            UN          j_in;
             GOIndView   indices;
             ConstSCView data_in;
+            UN          j_out;
             SCView      data_out;
         };
         #endif
