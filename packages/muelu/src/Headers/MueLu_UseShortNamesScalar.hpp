@@ -419,6 +419,18 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 #ifdef MUELU_NODEPARTITIONINTERFACE_SHORT
 typedef MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> NodePartitionInterface;
 #endif
+#ifdef MUELU_XPETRAOPERATOR_SHORT
+typedef MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraOperator;
+#endif
+#ifdef MUELU_REFMAXWELL_SHORT
+typedef MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwell;
+#endif
+#ifdef MUELU_MAXWELL1_SHORT
+typedef MueLu::Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell1;
+#endif
+#ifdef MUELU_MAXWELL_UTILS_SHORT
+typedef MueLu::Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell_Utils;
+#endif
 #ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;
 #endif

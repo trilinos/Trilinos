@@ -77,8 +77,9 @@
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_Hierarchy.hpp"
+#include "MueLu_TrilinosSmoother_fwd.hpp"
+#include "MueLu_Hierarchy_fwd.hpp"
+#include "MueLu_XpetraOperator.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"

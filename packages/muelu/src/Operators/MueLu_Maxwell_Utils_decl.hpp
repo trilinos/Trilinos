@@ -126,5 +126,5 @@ namespace MueLu {
 
 } // namespace
 
-#define MUELU_REFMAXWELL_SHORT
-#endif // MUELU_REFMAXWELL_DECL_HPP
+#define MUELU_MAXWELL_UTILS_SHORT
+#endif // MUELU_MAXWELL_UTILS_DECL_HPP
