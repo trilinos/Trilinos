@@ -32,8 +32,8 @@ namespace percept {
         stk::mesh::Entity node0 = face_nodes[i0].entity();
         stk::mesh::Entity node1 = face_nodes[i1].entity();
 
-        double *n0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node0 );
-        double *n1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node1 );
+        double *n0 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node0 ));
+        double *n1 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node1 ));
         double d0 = Math::distance_3d(xyz_in, n0);
         double d1 = Math::distance_3d(xyz_in, n1);
         double ulocal = 0.0;
@@ -76,13 +76,13 @@ namespace percept {
     if (bulk.entity_rank(face) == stk::topology::ELEMENT_RANK)
       {
         if (!shell_field)
-          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
+          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
         field = shell_field;
       }
     else
       {
         if (!sideset_field)
-          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
+          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
@@ -132,13 +132,13 @@ namespace percept {
     if (bulk.entity_rank(face) == stk::topology::ELEMENT_RANK)
       {
         if (!shell_field)
-          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
+          shell_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(stk::topology::ELEMENT_RANK, "gregory_control_points_shell");
         field = shell_field;
       }
     else
       {
         if (!sideset_field)
-          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
+          sideset_field = bulk.mesh_meta_data().get_field<GregoryControlPointsType_type>(bulk.mesh_meta_data().side_rank(), "gregory_control_points");
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
@@ -318,7 +318,7 @@ namespace percept {
         }
       for (unsigned ib = 0; ib < nn; ++ib)
         {
-          double *nc = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[ib].entity() );
+          double *nc = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[ib].entity() ));
           for (unsigned jc = 0; jc < 3; jc++)
             {
               xyz[jc] += bases[ib]*nc[jc];
@@ -356,7 +356,7 @@ namespace percept {
       }
     for (unsigned ii=0; ii < nodes.size(); ++ii)
       {
-        double *nc = stk::mesh::field_data(*eMesh.get_coordinates_field(), nodes[ii].entity());
+        double *nc = static_cast<double*>(stk::mesh::field_data(*eMesh.get_coordinates_field(), nodes[ii].entity()));
         for (unsigned jj=0; jj < 3; ++jj)
           {
             xyz[jj] += bases[ii]*nc[jj];
@@ -394,7 +394,7 @@ namespace percept {
       }
     for (unsigned ii=0; ii < nodes.size(); ++ii)
       {
-        double *nc = stk::mesh::field_data(*eMesh.get_coordinates_field(), nodes[ii].entity());
+        double *nc = static_cast<double*>(stk::mesh::field_data(*eMesh.get_coordinates_field(), nodes[ii].entity()));
         for (unsigned jj=0; jj < 3; ++jj)
           {
             xyz[jj] += bases[ii]*nc[jj];

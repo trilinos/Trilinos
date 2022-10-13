@@ -50,6 +50,12 @@
 namespace Tpetra {
 namespace Details {
 
+void finalizeKokkosIfNeeded() {
+  if(!Kokkos::is_finalized()) {
+    Kokkos::finalize();
+  }
+}
+  
 void
 initializeKokkos ()
 {
@@ -70,7 +76,7 @@ initializeKokkos ()
     Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
     checkOldCudaLaunchBlocking();
 
-    std::atexit (Kokkos::finalize);
+    std::atexit (finalizeKokkosIfNeeded);
   }
 }
 

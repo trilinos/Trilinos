@@ -17,6 +17,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
 
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_IntegratorBasic.hpp"

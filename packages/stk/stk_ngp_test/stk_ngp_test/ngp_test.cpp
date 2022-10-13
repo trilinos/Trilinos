@@ -23,7 +23,7 @@ NgpTestEnvironment::~NgpTestEnvironment() {
 
 inline
 void NgpTestEnvironment::finalize() {
-  if(Kokkos::is_initialized()) Kokkos::finalize_all();
+  if(Kokkos::is_initialized()) Kokkos::finalize();
 }
 
 inline

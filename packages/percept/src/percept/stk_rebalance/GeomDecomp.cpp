@@ -32,7 +32,7 @@ namespace stk {
 namespace rebalance {
 
 std::vector< mesh::Entity > GeomDecomp::entity_coordinates(stk::mesh::BulkData& bulk_data, const mesh::Entity                 & entity,
-                                                                  const VectorField            & nodal_coor,
+                                                                  const stk::mesh::FieldBase            & nodal_coor,
                                                                   std::vector<std::vector<double> >  & coordinates)
 {
   coordinates.clear();
@@ -55,7 +55,7 @@ std::vector< mesh::Entity > GeomDecomp::entity_coordinates(stk::mesh::BulkData& 
         const mesh::Entity nent = rel.entity();
         //const unsigned ndim(nodal_coor.max_size(NODE_RANK)/sizeof(double)); // TODO - is there a better way to get this info?
         const unsigned ndim(nodal_coor.max_size(NODE_RANK)); // TODO - is there a better way to get this info?
-        double * coor = mesh::field_data(nodal_coor, nent);
+        double * coor = static_cast<double*>(mesh::field_data(nodal_coor, nent));
         if (!coor) {
           throw std::runtime_error("GeomDecomp::entity_coordinates Error: The coordinate field does not exist.");
         }
@@ -70,7 +70,7 @@ std::vector< mesh::Entity > GeomDecomp::entity_coordinates(stk::mesh::BulkData& 
 }
 
 std::vector<std::vector<double> > GeomDecomp::compute_entity_centroid(stk::mesh::BulkData& bulk_data, const mesh::Entity & entity,
-                                                                   const VectorField & nodal_coor_ref,
+                                                                   const stk::mesh::FieldBase & nodal_coor_ref,
                                                                    std::vector<double>   & centroid)
 {
   std::vector<std::vector<double> > coordinates;
@@ -151,7 +151,7 @@ void apply_rotation (std::vector<double> &coor)
 //: Convert a mesh entity to a single point
 //: in cartesian coordinates (x,y,z)
   void GeomDecomp::entity_to_point (stk::mesh::BulkData& bulk_data, const mesh::Entity            & entity,
-                               const VectorField & nodeCoord,
+                               const stk::mesh::FieldBase & nodeCoord,
                                std::vector<double>           & coor)
 {
   compute_entity_centroid(bulk_data, entity, nodeCoord, coor);

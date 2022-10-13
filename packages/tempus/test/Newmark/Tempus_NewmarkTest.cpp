@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
         err = abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0));
     }
     ftmp.close();
-    std::cout << "Max error = " << err << "\n \n";
+    out << "Max error = " << err << "\n \n";
     if (err > tolerance)
       passed = false;
 
@@ -130,12 +130,12 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
 
     // Check the order and intercept
     RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << option << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+    out << "  =========================" << std::endl;
     TEST_ASSERT(std::abs(get_ele(*(x), 0)) < 1.0e-14);
   }
 }
@@ -178,8 +178,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
 
     //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n << " (out of "
-              << nTimeStepSizes-1 << "), dt = " << dt << "\n";
+    out << "\n \n time step #" << n << " (out of "
+        << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     integrator = Tempus::createIntegratorBasic<double>(pl, model);

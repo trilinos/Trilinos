@@ -152,9 +152,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 
       bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
       if (!pass) {
-        std::cout << std::endl;
-        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+        out << std::endl;
+        out << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        out << "defaultPL -------------- \n" << *defaultPL << std::endl;
       }
       TEST_ASSERT(pass)
     }

@@ -301,10 +301,47 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
   return hingeNodes;
 }
 
+stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocks)
+{
+  stk::mesh::EntityVector nodes;
+  stk::mesh::Selector selector;
+
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::PartVector parts;
+  for(const auto& block : blocks) {
+    stk::mesh::Part* part = meta.get_part(block);
+    if(nullptr != part &&
+       part->primary_entity_rank() == stk::topology::ELEM_RANK &&
+       part->id() != stk::mesh::Part::INVALID_ID) {
+      parts.push_back(part);
+    }
+
+    selector = stk::mesh::selectUnion(parts);
+  }
+
+  if(parts.empty()) {
+    selector = meta.universal_part();
+  }
+
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes);
+
+  return nodes;
+}
+
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
 {
   stk::mesh::EntityVector nodes;
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
+
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
+
+  return hingeNodes;
+}
+
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect)
+{
+  stk::mesh::EntityVector nodes = get_mesh_nodes(bulk, blocksToDetect);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
@@ -401,12 +438,24 @@ void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNo
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
 {
-  hingeNodes = get_hinge_nodes(bulk);
+  std::vector<std::string> blocksToDetect;
+  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes);
+}
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes)
+{
+  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
 }
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
 {
-  hingeNodes = get_hinge_nodes(bulk);
+  std::vector<std::string> blocksToDetect;
+  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes, hingeEdges);
+}
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
+{
+  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
 
   if(hingeNodes.size() != 0) {
     hingeEdges = get_hinge_edges(bulk, hingeNodes);

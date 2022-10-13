@@ -141,6 +141,8 @@ function(tribits_set_base_repo_dir  BASE_DIR  REPO_DIR  BASE_REPO_DIR_OUT)
   endif()
   set(${BASE_REPO_DIR_OUT} "${BASE_DIR}${REPO_DIR_STR}" PARENT_SCOPE)
 endfunction()
+
+
 # Get the list of explicitly enabled entries
 #
 # These is the list of entries in ${LISTVAR} for which:
@@ -261,32 +263,35 @@ function(tribits_get_nonenabled_list  LISTVAR  ENABLED_PREFIX
 endfunction()
 
 
-# Macro that sets up the basic lists of enabled packages and SE packages.
+# Macro that sets up the basic lists of enabled packages and packages.
 #
-macro(tribits_set_up_enabled_lists_and_se_pkg_idx)
+macro(tribits_set_up_enabled_lists_and_pkg_idx)
 
   # ${PROJECT_NAME}_ENABLED_PACKAGES
-  tribits_get_enabled_list( ${PROJECT_NAME}_PACKAGES  ${PROJECT_NAME}
-    ${PROJECT_NAME}_ENABLED_PACKAGES  ${PROJECT_NAME}_NUM_ENABLED_PACKAGES)
+  tribits_get_enabled_list(
+    ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES  ${PROJECT_NAME}
+    ${PROJECT_NAME}_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
+    ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES)
 
-  # ${PROJECT_NAME}_ENABLED_SE_PACKAGES
-  tribits_get_enabled_list( ${PROJECT_NAME}_SE_PACKAGES  ${PROJECT_NAME}
-    ${PROJECT_NAME}_ENABLED_SE_PACKAGES  ${PROJECT_NAME}_NUM_ENABLED_SE_PACKAGES)
+  # ${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES
+  tribits_get_enabled_list( ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES  ${PROJECT_NAME}
+    ${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES
+    ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_PACKAGES)
 
-  # ${PROJECT_NAME}_REVERSE_ENABLED_SE_PACKAGES
-  set(${PROJECT_NAME}_REVERSE_ENABLED_SE_PACKAGES
-    "${${PROJECT_NAME}_ENABLED_SE_PACKAGES}")
-  list(REVERSE ${PROJECT_NAME}_REVERSE_ENABLED_SE_PACKAGES)
+  # ${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES
+  set(${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES
+    "${${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES}")
+  list(REVERSE ${PROJECT_NAME}_REVERSE_ENABLED_INTERNAL_PACKAGES)
 
-  # ${PACKAGE_NAME}_SE_PKG_IDX
-  set(SE_PKG_IDX 0)
-  foreach(TRIBITS_SE_PACKAGE ${${PROJECT_NAME}_ENABLED_SE_PACKAGES})
-    set(${TRIBITS_SE_PACKAGE}_SE_PKG_IDX ${SE_PKG_IDX})
-    math(EXPR  SE_PKG_IDX  "${SE_PKG_IDX} + 1")
+  # ${PACKAGE_NAME}_PKG_IDX
+  set(PKG_IDX 0)
+  foreach(tribitsPackage ${${PROJECT_NAME}_ENABLED_INTERNAL_PACKAGES})
+    set(${tribitsPackage}_PKG_IDX ${PKG_IDX})
+    math(EXPR  PKG_IDX  "${PKG_IDX} + 1")
   endforeach()
 
   # ${PROJECT_NAME}_ENABLED_TPLS
-  tribits_get_enabled_list( ${PROJECT_NAME}_TPLS  TPL
+  tribits_get_enabled_list( ${PROJECT_NAME}_DEFINED_TPLS  TPL
     ${PROJECT_NAME}_ENABLED_TPLS  ${PROJECT_NAME}_NUM_ENABLED_TPLS)
 
   # ${PROJECT_NAME}_REVERSE_ENABLED_TPLS

@@ -31,7 +31,7 @@ C***********************************************************************
          IF (DPOINT(ROW,1,3) .NE. -1) THEN
 
 C           The found name is a name for a character array.
-            LASTER = SUCESS
+            LASTER = SUCCESS
 
          ELSE
 
@@ -48,7 +48,7 @@ C        ENTRY NOT FOUND.
       ELSE
          CALL SRCHC (DICT(1,2), 1, NNAMES(2), NAME1, ERR, ROW)
          IF (ERR .EQ. 1) THEN
-            LASTER = SUCESS
+            LASTER = SUCCESS
          ELSE
             LASTER = NONAME
          END IF

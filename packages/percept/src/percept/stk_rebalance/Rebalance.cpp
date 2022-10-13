@@ -177,8 +177,8 @@ bool Rebalance::full_rebalance(mesh::BulkData  & bulk_data ,
 
 bool Rebalance::rebalance(mesh::BulkData   & bulk_data  ,
                                const mesh::Selector  & selector ,
-                               const VectorField     * rebal_coord_ref ,
-                               const ScalarField     * rebal_elem_weight_ref ,
+                               const stk::mesh::FieldBase     * rebal_coord_ref ,
+                               const stk::mesh::FieldBase     * rebal_elem_weight_ref ,
                                Partition & partition,
                                const stk::mesh::EntityRank rank,
                                stk::mesh::EntityVector *entities_to_rebalance ,
@@ -213,7 +213,7 @@ bool Rebalance::rebalance(mesh::BulkData   & bulk_data  ,
       throw std::runtime_error("Rebalance::rebalance: entities must be locally owned");
     if(rebal_elem_weight_ref)
     {
-      double * const w = mesh::field_data( *rebal_elem_weight_ref, *iA );
+      double * const w = static_cast<double*>(mesh::field_data( *rebal_elem_weight_ref, *iA ));
       ThrowRequireMsg( NULL != w,
         "Rebalance weight field is not defined on entities but should be defined on all entities.");
       // Should this be a throw instead???

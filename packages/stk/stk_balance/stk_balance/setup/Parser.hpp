@@ -68,6 +68,7 @@ struct OptionNames
   const std::string contactSearchEdgeWeight = "contact-search-edge-weight";
   const std::string contactSearchVertexWeightMultiplier = "contact-search-vertex-weight-mult";
   const std::string edgeWeightMultiplier = "edge-weight-mult";
+  const std::string vertexWeightFieldName = "vertex-weight-field-name";
 };
 
 class Examples
@@ -111,6 +112,7 @@ private:
   void set_print_diagnostics(BalanceSettings& settings) const;
 
   void set_vertex_weight_method(BalanceSettings& settings) const;
+  void set_vertex_weight_field_name(BalanceSettings& settings) const;
   void set_contact_search_edge_weight(BalanceSettings& settings) const;
   void set_contact_search_vertex_weight_multiplier(BalanceSettings& settings) const;
   void set_edge_weight_multiplier(BalanceSettings& settings) const;

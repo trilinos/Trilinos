@@ -298,7 +298,7 @@ TEST(UnitTestGhosting, WithShared)
 
   int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 3) {
-    return;
+    GTEST_SKIP();
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
@@ -348,6 +348,17 @@ TEST(UnitTestGhosting, WithShared)
   }
 
   stkMeshBulkData.change_ghosting(custom_shared_ghosting, send_shared);
+
+  if (myProc == otherProc) {
+    stk::mesh::Entity node9 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,9);
+    stk::mesh::Entity node10 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,10);
+    stk::mesh::Entity node11 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,11);
+    stk::mesh::Entity node12 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,12);
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node9));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node10));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node11));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node12));
+  }
 
   stkMeshBulkData.modification_end();
 

@@ -105,7 +105,7 @@ class PhactoriResampleWithDatasetOperation(PhactoriOperationSpecifics):
     self.InternalParaViewFilterPtr.CellLocator = 'Static Cell Locator'
 
     self.DebugPrintInputPortAndOutputPortInfo("pre filter update 1\n")
- 
+
     SetActiveSource(self.InternalParaViewFilterPtr)
     SetActiveSource(savedActiveSource)
 
@@ -119,7 +119,7 @@ class PhactoriResampleWithDatasetOperation(PhactoriOperationSpecifics):
     self.InternalParaViewFilterPtr.UpdatePipeline()
 
     self.DebugPrintInputPortAndOutputPortInfo("post filter update 1\n")
- 
+
     if PhactoriDbg(100):
       myDebugPrint3("self.InternalParaViewFilterPtr: " + str(self.InternalParaViewFilterPtr) + "\n", 100)
 

@@ -48,7 +48,6 @@
 #ifndef Intrepid2_HierarchicalBasis_HCURL_TET_h
 #define Intrepid2_HierarchicalBasis_HCURL_TET_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -958,7 +957,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HCURL_TET_Functor");
+      Kokkos::parallel_for("Hierarchical_HCURL_TET_Functor", policy , functor);
     }
 
     /** \brief returns the basis associated to a subCell.

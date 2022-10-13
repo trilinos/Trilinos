@@ -64,18 +64,20 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     typedef typename Adapter::offset_t offset_t;
     typedef typename Adapter::scalar_t scalar_t;
     // Class member variables
-    RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
+    const RCP<const typename Adapter::base_adapter_t> adapter_;
     RCP<Teuchos::ParameterList> pl_;
     RCP<Environment> env_;
     RCP<const Teuchos::Comm<int> > comm_;
-  
+    modelFlag_t graphFlags_;
+
   public:
   AlgSerialGreedy(
-    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+    const RCP<const typename Adapter::base_adapter_t> &adapter,
     const RCP<Teuchos::ParameterList> &pl,
     const RCP<Environment> &env,
-    const RCP<const Teuchos::Comm<int> > &comm
-  ) : model_(model), pl_(pl), env_(env), comm_(comm)
+    const RCP<const Teuchos::Comm<int> > &comm,
+    modelFlag_t graphFlags
+  ) : adapter_(adapter), pl_(pl), env_(env), comm_(comm), graphFlags_(graphFlags)
   {
   }
 
@@ -85,16 +87,17 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   )
   {
     HELLO;
-  
+
     // Color local graph. Global coloring is supported in Zoltan (not Zoltan2).
     // Get local graph.
     ArrayView<const gno_t> edgeIds;
     ArrayView<const offset_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
-  
-    const size_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
-    model_->getEdgeList(edgeIds, offsets, wgts); // Don't need wgts
-  
+
+    const auto model = rcp(new GraphModel<typename Adapter::base_adapter_t>(adapter_, env_, comm_, graphFlags_));
+    const size_t nVtx = model->getLocalNumVertices(); // Assume (0,nvtx-1)
+    model->getEdgeList(edgeIds, offsets, wgts); // Don't need wgts
+
 #if 0
     // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
@@ -116,7 +119,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     env_->timerStop(MACRO_TIMERS, "Coloring algorithm");
     return;
   }
-  
+
   // Color graph given by two arrays. API may change. Expert users only!
   void colorCrsGraph(
     const size_t nVtx,
@@ -126,22 +129,22 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   )
   {
     HELLO;
-  
+
     // Find max degree, since (max degree)+1 is an upper bound.
-    offset_t maxDegree = 0; 
+    offset_t maxDegree = 0;
     for (size_t i=0; i<nVtx; i++){
       if (offsets[i+1]-offsets[i] > maxDegree)
         maxDegree = offsets[i+1]-offsets[i];
     }
 
     // Greedy coloring.
-    // Use natural order for now. 
+    // Use natural order for now.
     // TODO: Support better orderings (e.g., Smallest-Last)
     int maxColor = 0;
- 
+
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
     Teuchos::Array<int> forbidden(maxDegree+2, 0);
-      
+
     // LeastUsed: need array of size #colors
     Teuchos::Array<lno_t> numVerticesWithColor(maxDegree+2, 0);
 
@@ -169,7 +172,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
         if (colorChoice.compare("FirstFit")){
           // Pick first (smallest) available color > 0
           for (int c=1; c <= maxColor+1; c++){
-            if (forbidden[c] != v){ 
+            if (forbidden[c] != v){
               colors[v] = c;
               break;
             }
@@ -181,7 +184,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           int numAvail = 0;
           Teuchos::Array<int> avail(maxColor+1);
           for (int c=1; c < maxColor+1; c++){
-            if (forbidden[c] != v){ 
+            if (forbidden[c] != v){
               avail[numAvail++] = c;
             }
           }
@@ -195,7 +198,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           bool foundColor = false;
           int r = (rand() % maxColor) +1;
           for (int c=r; c <= maxColor; c++){
-            if (forbidden[c] != v){ 
+            if (forbidden[c] != v){
               colors[v] = c;
               foundColor = true;
               break;
@@ -203,7 +206,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           }
           if (!foundColor){ // Look for colors in [1, r)
             for (int c=1; c < r; c++){
-              if (forbidden[c] != v){ 
+              if (forbidden[c] != v){
                 colors[v] = c;
                 foundColor = true;
                 break;
@@ -228,16 +231,16 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           // Update color counts
           numVerticesWithColor[colors[v]]++;
         }
-  
+
         if ((v==0) && colors[v]==0) colors[v]=1; // Corner case for first vertex
-        
+
         // If we used a new color, increase maxColor.
         if (colors[v] > maxColor){
           maxColor = colors[v];
         }
       }
     }
-  
+
     return;
   }
 

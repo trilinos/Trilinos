@@ -849,4 +849,3 @@ C   --Store the equation result into VARVAL
       mysqrt = sqrt(parm)
       return
       end
-

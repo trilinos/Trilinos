@@ -248,6 +248,11 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
    * side set.
    */
 
+  /* There is not partial read for this function, but all ranks must call because exodus runs NC_COLLECTIVE
+   * for all variables.  Typically, either all ranks call and get same data, or one rank reads.  To do the
+   * one rank read, we only store the data if `side_set_node_cnt_list != NULL`
+   */
+  if (side_set_node_cnt_list != NULL) {
   j = 0; /* The current element block... */
   for (ii = 0; ii < tot_num_ss_elem; ii++) {
 
@@ -286,6 +291,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       err_stat = EX_FATAL;
       goto cleanup;
     }
+  }
   }
 
 /* All done: release connectivity array space, element block ids

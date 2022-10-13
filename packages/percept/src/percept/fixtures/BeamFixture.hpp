@@ -66,10 +66,10 @@
 
       stk::mesh::Part & m_block_beam;
 
-      CoordinatesFieldType & m_coordinates_field;
-      CoordinatesFieldType & m_centroid_field;
-      ScalarFieldType & m_temperature_field;
-      ScalarFieldType & m_volume_field;
+      CoordinatesFieldType * m_coordinates_field;
+      CoordinatesFieldType * m_centroid_field;
+      ScalarFieldType * m_temperature_field;
+      ScalarFieldType * m_volume_field;
     };
 
     bool verifyMesh( const BeamFixture & mesh );

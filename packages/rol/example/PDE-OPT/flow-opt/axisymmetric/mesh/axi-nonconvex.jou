@@ -1,0 +1,80 @@
+reset
+reset aprepro
+
+#{iRadius   = 0.6875} # inlet radius
+#{oRadius   = 0.6875} # outlet radius
+#{dRadius   = 10}     # diffuser radius
+#{dHalfLen  = 14}     # diffuser half-length
+#{dStraight = 3}      # half-length of straight (axes-aligned) outer side
+#{kinkX     = 3}      # X coordinate of the kink
+#{kinkY     = 5}      # (dHalfLen-Y) Y coordinate of the kink
+#{numRefine = 1}      # number of refinements
+#{localRef  = 1}      # local refinement near inlet/outlet
+
+create vertex 0 0 0
+create vertex 0 {-dHalfLen} 0
+create vertex {oRadius} {-dHalfLen} 0
+create vertex {kinkX} {-(dHalfLen-kinkY)} 0
+create vertex {dRadius} {-dStraight} 0
+create vertex {dRadius} 0 0
+create vertex {dRadius} {dStraight} 0
+create vertex {kinkX} {dHalfLen-kinkY} 0
+create vertex {iRadius} {dHalfLen} 0
+create vertex 0 {dHalfLen} 0
+
+create curve polyline location vertex 1 2 3 4 5 6 1
+create surface curve 1 2 3 4 5 6
+create curve polyline location vertex 1 10 9 8 7 6 1
+create surface curve 7 8 9 10 11 12 
+
+imprint all
+merge all
+
+curve 1 interval 60              # 60
+curve 1 scheme bias factor 1.00  # 1.03
+curve 1 reverse bias
+mesh curve 1
+curve 2 interval 4               # 20
+mesh curve 2
+curve 3 interval 30              # 40
+curve 3 scheme bias factor 1.00  # 1.04
+mesh curve 3
+curve 4 interval 30              # 30
+mesh curve 4
+curve 5 interval 8               # 8
+mesh curve 5
+curve 6 interval 38              # 30
+mesh curve 6
+surface 1 scheme tridelaunay
+surface 1 smooth scheme condition number beta 1.17
+mesh surface 1
+
+#{If(localRef)}
+  refine curve 2 numsplit 1 radius 1.00
+#{Endif}
+
+smooth surface 1
+
+#{loop(numRefine)}
+  refine surface 1
+#{endloop}
+
+#copy mesh surface 1 onto surface 2 source curve 6 source vertex 1 target curve 6 target vertex 1
+copy mesh surface 1 onto surface 2 source vertex 1 target vertex 1 source curve 6 target curve 6 nosmoothing
+
+imprint all
+merge all
+
+sideset 1 add curve 2
+sideset 2 add curve 3 4 5 11 10 9
+sideset 3 add curve 8
+sideset 4 add curve 1 7
+sideset 5 add curve 6
+
+block 1 surface all
+#block 1 element type QUAD4
+block 1 element type TRI3
+
+quality surface all allmetrics
+export mesh "axi-nonconvex.exo" overwrite
+

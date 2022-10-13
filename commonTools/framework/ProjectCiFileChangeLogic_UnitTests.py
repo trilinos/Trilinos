@@ -110,6 +110,12 @@ class test_TribitsExampleProject_ProjectCiFileChangeLogic(unittest.TestCase):
   def test_doc(self):
     self.check('doc/anything', False)
 
+  def test_packages_something(self):
+    self.check('packages/something', False)
+
+  def test_packages_framework(self):
+    self.check('packages/framework/something', True)
+
 
 if __name__ == '__main__':
   unittest.main()

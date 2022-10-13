@@ -46,6 +46,15 @@ protected:
   }
 };
 
+class TestTextMeshAura2d : public stk::unit_test_util::simple_fields::TextMeshFixture
+{
+protected:
+  TestTextMeshAura2d() : TextMeshFixture(2)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  }
+};
+
 class TestTextMesh1d : public stk::unit_test_util::simple_fields::TextMeshFixture
 {
 protected:

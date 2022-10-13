@@ -151,6 +151,7 @@ template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
 class Field : public FieldBase {
 public:
+  using value_type = Scalar;
 
   Field(
        MetaData                   * arg_mesh_meta_data ,

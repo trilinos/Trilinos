@@ -39,6 +39,7 @@ namespace Info {
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
     std::string groupname() const { return groupname_; }
+    std::string custom_field() const { return customField_; }
 
     //! Dumps representation of data in this class to cerr
 
@@ -50,6 +51,7 @@ namespace Info {
     std::string         filename_{};
     std::string         groupname_{};
     std::string         decompMethod_{};
+    std::string         customField_{};
 
     bool checkNodeStatus_{false};
     bool computeVolume_{false};

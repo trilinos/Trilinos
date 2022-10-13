@@ -33,30 +33,17 @@ int delete_mpi_comm_key(MPI_Comm comm, int comm_keyval, void* attribute_val, voi
 }
 
 
-int destruct_mpi_key_manager(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state)
-{
-  MPIKeyManager* key_manager = reinterpret_cast<MPIKeyManager*>(extra_state);
-  key_manager->destructor();
-
-  return MPI_SUCCESS;
-}
-
 }
 
 
-MPIKeyManager::MPIKeyManager()
+MPIKeyManager::MPIKeyManager() :
+  m_destructor([=](){destructor();})
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);
   ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPIKeyManager");
 
   MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
-
-  // The deleter function will be called when MPI_Finalize is invoked.  This
-  // is the recommended way to execute callbacks, see Section 8.7.1 of the
-  // MPI 3.1 Standard.
-  MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::destruct_mpi_key_manager, &m_destructorAttrKey, this);
-  MPI_Comm_set_attr(MPI_COMM_SELF, m_destructorAttrKey, nullptr);
 
   int myRank;
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -65,18 +52,7 @@ MPIKeyManager::MPIKeyManager()
 
 MPIKeyManager::~MPIKeyManager()
 {
-  int isMpiFinalized = false;
-  MPI_Finalized(&isMpiFinalized);
-  if (isMpiFinalized) {
-    assert(m_isFinalized);
-  }
-
-  if (!isMpiFinalized)
-  {
-    // call destructor() via the MPI callback, and also ensure destructor()
-    // doesn't get called again when MPI_Finalize is called
-    MPI_Comm_delete_attr(MPI_COMM_SELF, m_destructorAttrKey);
-  }
+  m_destructor.destructor();
 }
 
 
@@ -207,8 +183,6 @@ void MPIKeyManager::destructor()
     // the comm is freed
     MPI_Comm_delete_attr(p.second, m_mpiAttrKey);
   }
-
-  m_isFinalized = true;
 }
 
 }

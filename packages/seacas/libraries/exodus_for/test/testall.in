@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2021 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -29,7 +29,7 @@ echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f_testwt${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwt, status = $ret_status" >> test.output
 
 # testrd - single precision read test
@@ -43,7 +43,7 @@ echo "begin testcp_ss" >> test.output
 ${PREFIX} ${BINDIR}/f_testcp${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testcp_ss, status = $ret_status" >> test.output
 
 # testcpnl - single-to-single, normal to large copy test
@@ -52,7 +52,7 @@ echo "begin testcpnl" >> test.output
 ${PREFIX} ${BINDIR}/f_testcpnl${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcpnl.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcpnl.dmp | tee testcpnl.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testcpnl, status = $ret_status" >> test.output
 
 # testwt1 - single precision write test with multiple side sets
@@ -62,14 +62,14 @@ echo "begin testwt1" >> test.output
 ${PREFIX} ${BINDIR}/f_testwt1${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test1.dmp | tee testwt1.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwt1, status = $ret_status" >> test.output
 
 # testrd1 - single precision read test with multiple side sets
 echo "testrd1 ..."
 echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
 ${PREFIX} ${BINDIR}/f_testrd1${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd1.dmp | tee testrd1.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testwtd - double precision write test
 echo "testwtd ..."
@@ -77,22 +77,22 @@ echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f_testwtd${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwtd, status = $ret_status" >> test.output
 
 # testrdd - double precision read test
 echo "testrdd ..."
 ${PREFIX} ${BINDIR}/f_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testwt2 - single precision write 2 files (simultaneously open) test
 echo "testwt2 ..."
 echo "begin testwt2" >> test.output
 ${PREFIX} ${BINDIR}/f_testwt2${SUFFIX} >> test.output | grep -v "property name string"
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 ${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwt2, status = $ret_status" >> test.output
 
 echo "testwt_nsid ..."
@@ -100,13 +100,13 @@ echo "begin testwt_nsid" >> test.output
 ${PREFIX} ${BINDIR}/f_testwt_nsid${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test-nsided.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test-nsided.dmp | tee testwt_nsid.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwt_nsid, status = $ret_status" >> test.output
 
 # testrd_nsid - single precision read test
 echo "testrd_nsid ..."
 ${PREFIX} ${BINDIR}/f_testrd_nsid${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd_nsid.dmp | tee testrd_nsid.res
-ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3}))
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # test_nem - nemesis routines
 echo "test_nem ..."
@@ -114,6 +114,10 @@ ${PREFIX} ${BINDIR}/f_test_nem${SUFFIX} | ${DIFF} -w - ${SRCDIR}/test_nem.dmp | 
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[1}))
 echo "end test_nem, status = $ret_status" >> test.output
 
+# test partial read/write.  Uses 'test.exo' from testwt.
+echo "test_partial ..."
+${PREFIX} ${BINDIR}/f_testwt${SUFFIX} >> test.output
+${PREFIX} ${BINDIR}/f_testpart${SUFFIX} >> test.output
 echo "************************************************************************"
 echo "************************************************************************"
 

@@ -176,8 +176,27 @@ getValidParameters () const
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
-setParameters (const Teuchos::ParameterList& List)
+setParameters (const Teuchos::ParameterList& pl)
 {
+  // CAG: Copied form Relaxation
+  // FIXME (aprokop 18 Oct 2013) Casting away const is bad here.
+  // but otherwise, we will get [unused] in pl
+  this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));
+}
+
+template<class MatrixType,class ContainerType>
+void
+BlockRelaxation<MatrixType,ContainerType>::
+setParametersImpl (Teuchos::ParameterList& List)
+{
+  if (List.isType<double>("relaxation: damping factor")) {
+    // Make sure that ST=complex can run with a damping factor that is
+    // a double.
+    scalar_type df = List.get<double>("relaxation: damping factor");
+    List.remove("relaxation: damping factor");
+    List.set("relaxation: damping factor",df);
+  }
+
   // Note that the validation process does not change List.
   Teuchos::RCP<const Teuchos::ParameterList> validparams;
   validparams = this->getValidParameters();
@@ -664,12 +683,14 @@ initialize ()
       // weight of each vertex
       W_ = rcp (new vector_type (A_->getRowMap ()));
       W_->putScalar (STS::zero ());
-      Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
+      {
+        Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
 
-      for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
-        for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
-          local_ordinal_type LID = (*Partitioner_)(i,j);
-          w_ptr[LID] += STS::one();
+        for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
+          for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
+            local_ordinal_type LID = (*Partitioner_)(i,j);
+            w_ptr[LID] += STS::one();
+          }
         }
       }
       // communicate to sum together W_[k]'s (# of blocks/patches) that update
@@ -681,6 +702,7 @@ initialize ()
         typedef Tpetra::MultiVector<        typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type,  typename MatrixType::global_ordinal_type,typename MatrixType::node_type> scMV;
         import_type theImport = A_->getGraph()->getImporter();
         scMV nonOverLapW(theImport->getSourceMap(), 1, false);
+        Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
         Teuchos::ArrayRCP<scalar_type> nonOverLapWArray = nonOverLapW.getDataNonConst(0);
         nonOverLapW.putScalar(STS::zero ());
         for (int ii = 0; ii < (int) theImport->getSourceMap()->getLocalNumElements(); ii++)  nonOverLapWArray[ii] = w_ptr[ii];

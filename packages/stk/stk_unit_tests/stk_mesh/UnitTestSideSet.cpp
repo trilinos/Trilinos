@@ -37,6 +37,23 @@ void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{&fromBlock});
 }
 
+void copy_elems_from_block_to_block(stk::mesh::BulkData& bulk,
+                                    const std::vector<stk::mesh::EntityId>& elemIDs,
+                                    const std::string& fromBlockName,
+                                    const std::string& toBlockName)
+{
+  stk::mesh::Part& toBlock = *bulk.mesh_meta_data().get_part(toBlockName);
+
+  stk::mesh::EntityVector elems;
+  for(stk::mesh::EntityId elemID : elemIDs) {
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
+    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    elems.push_back(elem);
+  }
+
+  bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{});
+}
+
 void create_sides_between_blocks(stk::mesh::BulkData& bulk,
                                  const std::string& block1Name,
                                  const std::string& block2Name,
@@ -1189,5 +1206,30 @@ TEST_F(ParallelCoincidence, checkParallelNonCoincidenceWithElemElemGraph)
 
     test_parallel_coincidence(expectedValues);
   }
+}
+
+TEST(Skinning, createSidesForBlock)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                            .set_spatial_dimension(3)
+                                                            .create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
+  stk::mesh::Part& surface1 = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+  stk::io::put_io_part_attribute(block2);
+  stk::io::put_io_part_attribute(surface1);
+  meta.set_part_id(block2, 2);
+  meta.set_part_id(surface1, 1);
+
+  stk::io::fill_mesh("generated:2x2x2", bulk);
+
+  copy_elems_from_block_to_block(bulk, {1, 2}, "block_1", "block_2");
+
+  stk::mesh::create_exposed_block_boundary_sides(bulk, block2, stk::mesh::PartVector{&surface1}, (!block2));
+  EXPECT_EQ(10u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, surface1));
 }
 

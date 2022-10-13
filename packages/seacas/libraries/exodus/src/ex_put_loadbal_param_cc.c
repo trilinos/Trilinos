@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -206,6 +206,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     if ((status = nc_def_var(exoid, VAR_BOR_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to define variable \"%s\" in file ID %d",
                VAR_BOR_E_STAT, exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
       /* Leave define mode before returning */
       ex__leavedef(exoid, __func__);
 

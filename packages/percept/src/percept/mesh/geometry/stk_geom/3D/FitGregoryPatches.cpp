@@ -98,9 +98,9 @@ namespace percept {
         // Cp(i,j): i=0,n, j=0,3: Cp(i + n*j)
         const int numControlPoints = 3*MaxControlPoints();
 
-        m_eMesh.m_gregory_control_points_field = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType>(m_eMesh.side_rank(), "gregory_control_points"));
-        m_eMesh.m_gregory_control_points_field_shell = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType>(m_eMesh.element_rank(), "gregory_control_points_shell"));
-        m_eMesh.m_node_normals = &(m_eMesh.get_fem_meta_data()->declare_field<NormalsFieldType>(stk::topology::NODE_RANK, "node_normals"));
+        m_eMesh.m_gregory_control_points_field = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType_type>(m_eMesh.side_rank(), "gregory_control_points"));
+        m_eMesh.m_gregory_control_points_field_shell = &(m_eMesh.get_fem_meta_data()->declare_field<GregoryControlPointsType_type>(m_eMesh.element_rank(), "gregory_control_points_shell"));
+        m_eMesh.m_node_normals = &(m_eMesh.get_fem_meta_data()->declare_field<NormalsFieldType_type>(stk::topology::NODE_RANK, "node_normals"));
 
         if (doRegister)
           {
@@ -121,6 +121,7 @@ namespace percept {
                 if (is_surface_topology(part.topology()))
                   {
                     stk::mesh::put_field_on_mesh(*m_eMesh.m_node_normals, part, 3, nullptr);
+                    stk::io::set_field_output_type(*m_eMesh.m_node_normals, "Vector_3D");
                   }
 
                 if (!in_surface_sets(part.name()))
@@ -510,11 +511,11 @@ namespace percept {
   {
     const MyPairIterRelation face_nodes(*m_eMesh.get_bulk_data(), face, stk::topology::NODE_RANK );
 
-    double *n0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[0].entity() );
-    double *n1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[1].entity() );
-    double *n2 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[2].entity() );
+    double *n0 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[0].entity() ));
+    double *n1 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[1].entity() ));
+    double *n2 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[2].entity() ));
     // works for triangles, quads, and nonplanar quads
-    double *n3 = face_nodes.size() == 3 ? n0 : stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[3].entity() );
+    double *n3 = face_nodes.size() == 3 ? n0 : static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[3].entity() ));
     double a[3], b[3];
     for (unsigned jj=0; jj < 3; ++jj)
       {
@@ -1087,9 +1088,9 @@ namespace percept {
   {
     stk::mesh::Entity nodes[2] = {e0.first == node ? e0.second : e0.first,
                                   e1.first == node ? e1.second : e1.first};
-    double *nd0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodes[0] );
-    double *nd1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodes[1] );
-    double *nd = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node );
+    double *nd0 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodes[0] ));
+    double *nd1 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodes[1] ));
+    double *nd = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node ));
 
     double c0[3], c1[3], c[3];
     Math::copy_3d(c0, nd0);
@@ -1146,8 +1147,8 @@ namespace percept {
   getTangent(stk::mesh::Entity n0, stk::mesh::Entity n1)
   {
     Point tangent;
-    double *nd0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , n0 );
-    double *nd1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , n1 );
+    double *nd0 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , n0 ));
+    double *nd1 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , n1 ));
     for (unsigned j=0; j < 3; ++j)
       {
         tangent[j] = nd1[j] - nd0[j];
@@ -1410,8 +1411,8 @@ namespace percept {
             // maybe modified below
             MDArray n(n_0);
             MDArray np(np_0);
-            MDArray c (dim, stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node ));
-            MDArray cp (dim, stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodep ));
+            MDArray c (dim, static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , node )));
+            MDArray cp (dim, static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , nodep )));
             MDArray cf(4,3);
 
             // if (not a seam, but one of my nodes on the edge is on a seam, use face normal/special average using only the faces across my edge)

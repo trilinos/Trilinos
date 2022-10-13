@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -175,8 +175,8 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
 
   /* define dimensions and variables */
   if (obj_type == EX_GLOBAL) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "global", DIM_NUM_GLO_VAR,
-                                         VAR_NAME_GLO_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR) !=
+        EX_NOERR) {
       goto error_ret;
     }
 
@@ -204,68 +204,70 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
    * (the info that is stored in the obj_type variable truth table)
    */
   else if (obj_type == EX_ELEM_BLOCK) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "element", DIM_NUM_ELE_RED_VAR,
-                                         VAR_NAME_ELE_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "element", DIM_NUM_ELE_RED_VAR,
+                               VAR_NAME_ELE_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_NODE_SET) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "nodeset", DIM_NUM_NSET_RED_VAR,
-                                         VAR_NAME_NSET_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "nodeset", DIM_NUM_NSET_RED_VAR,
+                               VAR_NAME_NSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_SIDE_SET) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "sideset", DIM_NUM_SSET_RED_VAR,
-                                         VAR_NAME_SSET_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "sideset", DIM_NUM_SSET_RED_VAR,
+                               VAR_NAME_SSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_ASSEMBLY) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "assembly", DIM_NUM_ASSEMBLY_RED_VAR,
-                                         VAR_NAME_ASSEMBLY_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "assembly", DIM_NUM_ASSEMBLY_RED_VAR,
+                               VAR_NAME_ASSEMBLY_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_BLOB) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "blob", DIM_NUM_BLOB_RED_VAR,
-                                         VAR_NAME_BLOB_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "blob", DIM_NUM_BLOB_RED_VAR,
+                               VAR_NAME_BLOB_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_EDGE_BLOCK) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "edge", DIM_NUM_EDG_RED_VAR,
-                                         VAR_NAME_EDG_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "edge", DIM_NUM_EDG_RED_VAR,
+                               VAR_NAME_EDG_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_FACE_BLOCK) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "face", DIM_NUM_FAC_RED_VAR,
-                                         VAR_NAME_FAC_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "face", DIM_NUM_FAC_RED_VAR,
+                               VAR_NAME_FAC_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_EDGE_SET) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "edgeset", DIM_NUM_ESET_RED_VAR,
-                                         VAR_NAME_ESET_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "edgeset", DIM_NUM_ESET_RED_VAR,
+                               VAR_NAME_ESET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_FACE_SET) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "faceset", DIM_NUM_FSET_RED_VAR,
-                                         VAR_NAME_FSET_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "faceset", DIM_NUM_FSET_RED_VAR,
+                               VAR_NAME_FSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
   else if (obj_type == EX_ELEM_SET) {
-    if ((status = ex__prepare_result_var(exoid, num_vars, "elementset", DIM_NUM_ELSET_RED_VAR,
-                                         VAR_NAME_ELSET_RED_VAR)) != EX_NOERR) {
+    if (ex__prepare_result_var(exoid, num_vars, "elementset", DIM_NUM_ELSET_RED_VAR,
+                               VAR_NAME_ELSET_RED_VAR) != EX_NOERR) {
       goto error_ret;
     }
   }
 
   /* leave define mode  */
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

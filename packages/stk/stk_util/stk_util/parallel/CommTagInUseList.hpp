@@ -16,14 +16,15 @@ namespace impl {
 class CommTagInUseList
 {
   public: 
-    CommTagInUseList(MPI_Comm comm, int minTag, int deletionGroupSize, int delayCount) :
+    CommTagInUseList(MPI_Comm comm, int minTag, int deletionGroupSize, int delayCount, int barrierTag) :
       m_comm(comm),
       m_entryCount(0),
       m_minFreeTag(minTag),
       m_deletionGroupSize(deletionGroupSize),
-      m_delayCount(delayCount)
+      m_delayCount(delayCount),
+      m_barrierTag(barrierTag)
     {
-      m_deletionGroups.emplace_back(comm);
+      m_deletionGroups.emplace_back(comm, barrierTag);
     }
 
     ~CommTagInUseList();
@@ -64,6 +65,7 @@ class CommTagInUseList
     int m_minFreeTag;
     const size_t m_deletionGroupSize;
     const EntryCountInt m_delayCount;
+    const int m_barrierTag;
 };
 
 

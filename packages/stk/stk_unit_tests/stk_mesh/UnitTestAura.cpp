@@ -65,8 +65,56 @@ namespace
 {
 using stk::unit_test_util::build_mesh;
 constexpr stk::mesh::EntityState Unchanged = stk::mesh::EntityState::Unchanged;
-constexpr stk::mesh::EntityState Created   = stk::mesh::EntityState::Created;
-constexpr stk::mesh::EntityState Modified  = stk::mesh::EntityState::Modified;
+constexpr stk::mesh::EntityState Created = stk::mesh::EntityState::Created;
+constexpr stk::mesh::EntityState Modified = stk::mesh::EntityState::Modified;
+constexpr stk::mesh::EntityState Deleted = stk::mesh::EntityState::Deleted;
+
+void delete_elem2_on_p1(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+
+  if (bulk.parallel_rank() == 1) {
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+    EXPECT_TRUE(bulk.is_valid(elem2));
+    bool successfullyDestroyed = bulk.destroy_entity(elem2);
+    EXPECT_TRUE(successfullyDestroyed);
+  }
+
+  bulk.modification_end();
+}
+
+void expect_nodes_1_to_4_in_aura_on_p1(const stk::mesh::BulkData& bulk)
+{
+  if (bulk.parallel_rank() == 1) {
+    for(stk::mesh::EntityId id : {1, 2, 3, 4}) {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id);
+      EXPECT_TRUE(bulk.is_valid(node) && bulk.bucket(node).in_aura());
+    }
+  }
+}
+
+void expect_nodes_1_to_8_no_longer_valid_on_p1(const stk::mesh::BulkData& bulk)
+{
+  if (bulk.parallel_rank() == 1) {
+    for(stk::mesh::EntityId id : {1, 2, 3, 4, 5, 6, 7, 8}) {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id);
+      EXPECT_FALSE(bulk.is_valid(node));
+    }
+  }
+}
+
+TEST(BulkDataTest, destroyDependentGhostsConnectedToDeletedShared)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  expect_nodes_1_to_4_in_aura_on_p1(bulk);
+  delete_elem2_on_p1(bulk);
+  expect_nodes_1_to_8_no_longer_valid_on_p1(bulk);
+}
 
 stk::mesh::Part& setupDavidNobleTestCase(stk::mesh::BulkData& bulk)
 {
@@ -230,7 +278,88 @@ void disconnect_elem1_on_proc0(stk::mesh::BulkData& bulk)
       bulk.declare_relation(elem1, newNode, nodeOrds[n]);
     }
   }
+  bulk.modification_end();
+}
 
+void partially_disconnect_elem1_on_proc0(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::EntityId elemId = 2;
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+    bulk.destroy_entity(elem2);
+
+    elemId = 1;
+    stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+
+    const unsigned numSharedNodesToDisconnect = 2;
+    stk::mesh::EntityId sharedNodeIds[] = {5, 6};
+    stk::mesh::ConnectivityOrdinal nodeOrds[] = {4, 5};
+    stk::mesh::EntityId newNodeIds[] = {13, 14};
+
+    for(unsigned n=0; n<numSharedNodesToDisconnect; ++n) {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, sharedNodeIds[n]);
+      bulk.destroy_relation(elem1, node, nodeOrds[n]);
+      bulk.destroy_entity(node);
+      stk::mesh::Entity newNode = bulk.declare_node(newNodeIds[n]);
+      bulk.declare_relation(elem1, newNode, nodeOrds[n]);
+    }
+  }
+  bulk.modification_end();
+}
+
+void disconnect_elem2_on_proc1(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+
+  if (bulk.parallel_rank() == 1) {
+    stk::mesh::EntityId elemId = 2;
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+
+    const unsigned numSharedNodes = 4;
+    stk::mesh::EntityId sharedNodeIds[] = {5, 6, 8, 7};
+    stk::mesh::ConnectivityOrdinal nodeOrds[] = {0, 1, 2, 3};
+    stk::mesh::EntityId newNodeIds[] = {13, 14, 16, 15};
+
+    for(unsigned n=0; n<numSharedNodes; ++n) {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, sharedNodeIds[n]);
+      bulk.destroy_relation(elem2, node, nodeOrds[n]);
+      stk::mesh::Entity newNode = bulk.declare_node(newNodeIds[n]);
+      bulk.declare_relation(elem2, newNode, nodeOrds[n]);
+    }
+  }
+  bulk.modification_end();
+}
+
+void partially_disconnect_elem2_on_proc1(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+    bulk.destroy_entity(elem2);
+  }
+
+  if (bulk.parallel_rank() == 1) {
+    stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+    bulk.destroy_entity(elem1);
+
+    stk::mesh::EntityId elemId = 2;
+    stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+
+    const unsigned numSharedNodesToDisconnect = 2;
+    stk::mesh::EntityId sharedNodeIds[] = {5, 6};
+    stk::mesh::ConnectivityOrdinal nodeOrds[] = {0, 1};
+    stk::mesh::EntityId newNodeIds[] = {13, 14};
+
+    for(unsigned n=0; n<numSharedNodesToDisconnect; ++n) {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, sharedNodeIds[n]);
+      bulk.destroy_relation(elem2, node, nodeOrds[n]);
+      stk::mesh::Entity newNode = bulk.declare_node(newNodeIds[n]);
+      bulk.declare_relation(elem2, newNode, nodeOrds[n]);
+    }
+  }
   bulk.modification_end();
 }
 
@@ -246,6 +375,7 @@ void check_node_states_for_elem(const stk::mesh::BulkData& mesh,
     EXPECT_EQ(expectedNodeStates[n], mesh.state(nodes[n]))
         <<"state="<<mesh.state(nodes[n])
        <<" for node "<<mesh.identifier(nodes[n])
+      <<" of elem "<<mesh.identifier(elem)
       <<" on proc "<<mesh.parallel_rank()
      <<" expectedNodeState="<<expectedNodeStates[n];
   }
@@ -256,7 +386,10 @@ void check_elem_state(const stk::mesh::BulkData& mesh,
                       stk::mesh::EntityState expectedState)
 {
   stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elemId);
-  ASSERT_TRUE(mesh.is_valid(elem));
+  const bool expectValid = expectedState != Deleted;
+  if (expectValid) {
+    ASSERT_TRUE(mesh.is_valid(elem))<<"elem "<<elemId;
+  }
   EXPECT_EQ(expectedState, mesh.state(elem))
       <<"state="<<mesh.state(elem)
      <<" for elem "<<elemId
@@ -275,24 +408,8 @@ void confirm_entities_not_valid(const stk::mesh::BulkData& mesh,
   }
 }
 
-void test_aura_disconnect_elem_on_proc_boundary(stk::mesh::BulkData& mesh)
+void test_aura_disconnect_elem_from_shared_owned_nodes(stk::mesh::BulkData& mesh)
 {
-  //       3----------7----------11
-  //      /|         /|         /|
-  //     / |        / |        / |
-  //    /  |       /  |       /  |
-  //   2----------6----------10  |
-  //   |   4------|---8------|---12
-  //   |  /       |  /       |  /
-  //   | /   E1   | /  E2    | /
-  //   |/         |/         |/
-  //   1----------5----------9
-  //       P0         P1
-  //  Nodes 5,6,7,8 are shared
-  //
-  const std::string generatedMeshSpec = "generated:1x1x2";
-  stk::io::fill_mesh(generatedMeshSpec, mesh);
-
   disconnect_elem1_on_proc0(mesh);
 
   int thisProc = stk::parallel_machine_rank(mesh.parallel());
@@ -305,7 +422,7 @@ void test_aura_disconnect_elem_on_proc_boundary(stk::mesh::BulkData& mesh)
 
     stk::mesh::EntityState expectedAuraElemNodeStates[] = {
       Modified, Modified, Modified, Modified,
-      Modified, Modified, Modified, Modified
+      Unchanged, Unchanged, Unchanged, Unchanged
     };
     check_node_states_for_elem(mesh, auraElemId, expectedAuraElemNodeStates);
 
@@ -333,17 +450,167 @@ void test_aura_disconnect_elem_on_proc_boundary(stk::mesh::BulkData& mesh)
   }
 }
 
-TEST(BulkData, aura_disconnectElemOnProcBoundary)
+void test_aura_partially_disconnect_elem_from_shared_owned_nodes(stk::mesh::BulkData& mesh)
 {
-  int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (numProcs==2)
-  {
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
-                                                        .set_spatial_dimension(3)
-                                                        .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
-                                                        .create();
-    test_aura_disconnect_elem_on_proc_boundary(*bulkPtr);
+  partially_disconnect_elem1_on_proc0(mesh);
+
+  int thisProc = stk::parallel_machine_rank(mesh.parallel());
+  stk::mesh::EntityId auraElemId = 2;
+  if (thisProc == 1) {
+    auraElemId = 1;
   }
+  if (thisProc == 0) {
+    check_elem_state(mesh, auraElemId, Created);
+
+    stk::mesh::EntityState expectedAuraElemNodeStates[] = {
+      Created, Created, Modified, Modified,
+      Modified, Modified, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, auraElemId, expectedAuraElemNodeStates);
+
+    stk::mesh::EntityId ownedElemId = 1;
+    stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
+    EXPECT_EQ(Modified, mesh.state(ownedElem));
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Unchanged, Unchanged, Unchanged, Unchanged,
+      Created, Created, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+  else {
+    check_elem_state(mesh, auraElemId, Created);
+    stk::mesh::EntityState expectedAuraElemNodeStates[] = {
+      Modified, Modified, Modified, Modified,
+      Created, Created, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, auraElemId, expectedAuraElemNodeStates);
+
+    stk::mesh::EntityId ownedElemId = 2;
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Modified, Modified, Modified, Modified,
+      Unchanged, Unchanged, Unchanged, Unchanged
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+}
+
+void test_aura_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::BulkData& mesh)
+{
+  disconnect_elem2_on_proc1(mesh);
+
+  int thisProc = stk::parallel_machine_rank(mesh.parallel());
+  stk::mesh::EntityId auraElemId = 2;
+  if (thisProc == 1) {
+    auraElemId = 1;
+  }
+  if (thisProc == 0) {
+    check_elem_state(mesh, auraElemId, Deleted);
+    confirm_entities_not_valid(mesh, stk::topology::NODE_RANK,
+                               stk::mesh::EntityIdVector{9, 10, 11, 12});
+
+    stk::mesh::EntityId ownedElemId = 1;
+    stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
+    EXPECT_EQ(Modified, mesh.state(ownedElem));
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Unchanged, Unchanged, Unchanged, Unchanged,
+      Modified, Modified, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+  else {
+    confirm_entities_not_valid(mesh, stk::topology::ELEM_RANK,
+                               stk::mesh::EntityIdVector{auraElemId});
+    confirm_entities_not_valid(mesh, stk::topology::NODE_RANK,
+                               stk::mesh::EntityIdVector{1, 2, 3, 4});
+
+    stk::mesh::EntityId ownedElemId = 2;
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Created, Created, Created, Created,
+      Unchanged, Unchanged, Unchanged, Unchanged
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+}
+
+void test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::BulkData& mesh)
+{
+  partially_disconnect_elem2_on_proc1(mesh);
+
+  int thisProc = stk::parallel_machine_rank(mesh.parallel());
+  stk::mesh::EntityId auraElemId = 2;
+  if (thisProc == 1) {
+    auraElemId = 1;
+  }
+  if (thisProc == 0) {
+    check_elem_state(mesh, auraElemId, Created);
+
+    stk::mesh::EntityId ownedElemId = 1;
+    stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
+    EXPECT_EQ(Modified, mesh.state(ownedElem));
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Unchanged, Unchanged, Unchanged, Unchanged,
+      Modified, Modified, Modified, Modified
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+  else {
+    check_elem_state(mesh, auraElemId, Created);
+
+    stk::mesh::EntityId ownedElemId = 2;
+    stk::mesh::EntityState expectedNodeStates[] = {
+      Created, Created, Modified, Modified,
+      Unchanged, Unchanged, Unchanged, Unchanged
+    };
+    check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
+  }
+}
+
+class Aura2Hex2Proc : public stk::unit_test_util::simple_fields::MeshFixture
+{
+public:
+  Aura2Hex2Proc()
+  {
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2) {
+      setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+      //       3----------7----------11
+      //      /|         /|         /|
+      //     / |        / |        / |
+      //    /  |       /  |       /  |
+      //   2----------6----------10  |
+      //   |   4------|---8------|---12
+      //   |  /       |  /       |  /
+      //   | /   E1   | /  E2    | /
+      //   |/         |/         |/
+      //   1----------5----------9
+      //       P0         P1
+      //  Nodes 5,6,7,8 are shared
+      //
+    }
+  }
+};
+
+TEST_F(Aura2Hex2Proc, disconnectElemFromSharedOwnedNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  test_aura_disconnect_elem_from_shared_owned_nodes(get_bulk());
+}
+
+TEST_F(Aura2Hex2Proc, partiallyDisconnectElemFromSharedOwnedNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  test_aura_partially_disconnect_elem_from_shared_owned_nodes(get_bulk());
+}
+
+TEST_F(Aura2Hex2Proc, disconnectElemFromSharedNotOwnedNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  test_aura_disconnect_elem_from_shared_not_owned_nodes(get_bulk());
+}
+
+TEST_F(Aura2Hex2Proc, partiallyDisconnectElemFromSharedNotOwnedNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(get_bulk());
 }
 
 void expect_recv_aura(const stk::mesh::BulkData& bulk,

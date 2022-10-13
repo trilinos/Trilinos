@@ -118,6 +118,18 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
+inline
+std::ostream& operator<<(std::ostream& os, EntityState state)
+{
+  switch(state) {
+  case Unchanged: os<<"Unchanged"; break;
+  case Created: os<<"Created"; break;
+  case Modified: os<<"Modified"; break;
+  case Deleted: os<<"Deleted"; break;
+  default: break;
+  };
+  return os;
+}
 
 template< class FieldType > struct FieldTraits ;
 

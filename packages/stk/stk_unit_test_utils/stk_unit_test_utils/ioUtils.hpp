@@ -192,6 +192,7 @@ private:
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
                                                           const std::string &fileName,
                                                           const std::string& fieldName,
+                                                          stk::topology::rank_t fieldRank,
                                                           const std::string& globalVariableName,
                                                           const std::vector<double>& timeSteps,
                                                           const FieldValueSetter &fieldValueSetter);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ namespace SEAMS {
     /** Required for virtual functions */
     ~Scanner() override;
 
-    void add_include_file(const std::string &filename, bool must_exist);
+    bool add_include_file(const std::string &filename, bool must_exist);
     int  yywrap() override;
     void yyerror(const char *s);
     void LexerOutput(const char *buf, int size) override;
@@ -57,6 +57,7 @@ namespace SEAMS {
 
     char *rescan(char *string);
     char *execute(char *string);
+    char *import_handler(char *string);
     char *if_handler(double x);
     char *elseif_handler(double x);
     char *switch_handler(double x);

@@ -364,6 +364,8 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    
+    using HostBasis = HierarchicalBasis_HCURL_TRI<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar, useCGBasis>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
@@ -396,6 +398,7 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Hierarchical H(curl) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Hierarchical H(curl) triangle polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
@@ -409,6 +412,7 @@ namespace Intrepid2
         for (int i=0; i<numFunctionsPerEdge; i++)
         {
           this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0) = i+1; // the multiplicands involving the gradients of the vertex functions are first degree polynomials; hence the +1 (the remaining multiplicands are order i = 0,…,p-1).
+          this->fieldOrdinalH1PolynomialDegree_(i+fieldOrdinalOffset,0) = i+2;
         }
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
@@ -426,6 +430,7 @@ namespace Intrepid2
           for (int i=0; i<ij_sum; i++)
           {
             this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinal,0) = ij_sum+2;
             fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
           }
         }

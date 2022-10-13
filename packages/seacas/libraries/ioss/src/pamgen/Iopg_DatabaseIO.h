@@ -50,7 +50,8 @@ namespace Iopg {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              Ioss_MPI_Comm                communicator,
+                              const Ioss::PropertyManager &properties) const;
   };
 
   class DatabaseIO : public Ioss::DatabaseIO
@@ -58,7 +59,7 @@ namespace Iopg {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO &from) = delete;
+    DatabaseIO(const DatabaseIO &from)            = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 

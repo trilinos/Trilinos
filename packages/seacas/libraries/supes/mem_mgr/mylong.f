@@ -57,7 +57,7 @@ C     Get current location and length.
 
       CALL MYFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
 C     Save the current location of the array.
 
@@ -101,7 +101,7 @@ C     we request a space of '1' to maintain a valid pointer.
          return
       end if
 
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
       if (chrcol .eq. 1) then
         DPOINT(ROW,CHRCOL,1) = newadr+1-myloc

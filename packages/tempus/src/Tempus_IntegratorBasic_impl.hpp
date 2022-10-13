@@ -11,6 +11,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 
@@ -63,6 +64,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
   stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
 
+  initialize();
 }
 
 
@@ -443,14 +445,29 @@ void IntegratorBasic<Scalar>::checkTimeStep()
     return;
   }
 
+  // Timestep size is at the minimum timestep size and the step failed.
+  if (ws->getTimeStep() <= timeStepControl_->getMinTimeStep() &&
+      ws->getSolutionStatus() == Status::FAILED) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
+    Teuchos::OSTab ostab(out, 1, "checkTimeStep");
+    *out << "Failure - Stepper has failed and the time step size is "
+         << "at the minimum.\n"
+         << "  Solution Status = " << toString(ws->getSolutionStatus())
+         << std::endl
+         << "  (TimeStep = " << ws->getTimeStep()
+         << ") <= (Minimum TimeStep = "
+         << timeStepControl_->getMinTimeStep()
+         << ")" << std::endl;
+    setStatus(Status::FAILED);
+    return;
+  }
+
   // Check Stepper failure.
   if (ws->getSolutionStatus() == Status::FAILED ||
        // Constant time step failure
        ((timeStepControl_->getStepType() == "Constant") &&
-        (ws->getTimeStep() != timeStepControl_->getInitTimeStep()) &&
-        (ws->getOutput() != true) &&
-        (ws->getTime() != timeStepControl_->getFinalTime())
-       )
+        !approxEqual(ws->getTimeStep(), timeStepControl_->getInitTimeStep()))
      )
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -696,8 +713,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
-  using Teuchos::rcp;
-  auto integrator = rcp(new IntegratorBasic<Scalar>());
+  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
 
   auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
   auto stepper = sf->createStepper(stepperType, model);

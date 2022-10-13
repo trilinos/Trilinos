@@ -9,7 +9,7 @@
 # and then generates a CMake fragment file <package-enables-cmake-out> which
 # provides the set of enables of Trilinos packages needed to test the changed
 # files and optionally also a <package-subproject-list-out> CMake fragment
-# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statment which
+# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statement which
 # provides the list of subprojects (TriBITS packages) to display on CDash.
 #
 # For example, to generate a file for the set of enables to test changes in
@@ -138,7 +138,7 @@ echo "***"
 echo
 
 echo
-echo "A) Generate the Trilinos Packages definition and depencencies XML file"
+echo "A) Generate the Trilinos Packages definition and dependencies XML file"
 echo
 
 generate_trilinos_package_dependencies_xml_file

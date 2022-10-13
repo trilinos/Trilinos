@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -78,11 +78,17 @@ C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#exotxt')
         GOTO 140
       else if (narg .gt. 2) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#exotxt')
         GOTO 140
       end if
 

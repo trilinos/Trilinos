@@ -37,8 +37,11 @@
 #define stk_util_parallel_ParallelVectorConcat_hpp
 
 #include "stk_util/parallel/Parallel.hpp" 
+#include "stk_util/parallel/MPIDatatypeGenerator.hpp"
+#include <limits>
 #include <vector> 
 #include "stk_util/diag/String.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 
@@ -69,8 +72,8 @@ namespace stk {
   //    std::string
   //    sierra::String
   //
-  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec ) {
-
+  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec )
+  {
     const unsigned p_size = parallel_machine_size( comm );
 
     //  Check for serial simplified early out condition
@@ -80,9 +83,9 @@ namespace stk {
     }
 
     globalVec.clear();
-  
-    int sizeT     = sizeof(T);
-    int localSize = sizeT * localVec.size();
+
+    ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
+    int localSize = localVec.size();
 
     //
     //  Determine the total number of bytes being sent by each other processor.
@@ -94,16 +97,24 @@ namespace stk {
       // Unknown failure, pass error code up the chain
       return mpiResult;
     }
+
+    size_t totalSize = 0;
+    for (auto& size : messageSizes)
+    {
+      totalSize += size;
+    }
+
+    ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
+    globalVec.resize(totalSize);
+
     //
     //  Compute the offsets into the resultant array
     //
-    std::vector<int> offsets(p_size+1);
+    std::vector<int> offsets(p_size);
     offsets[0] = 0;
-    for(unsigned iproc=1; iproc<p_size+1; ++iproc) {
+    for(unsigned iproc=1; iproc<p_size; ++iproc) {
       offsets[iproc] = offsets[iproc-1] + messageSizes[iproc-1];
     }
-    unsigned int totalSize = (offsets[p_size])/sizeT;
-    globalVec.resize(totalSize);
 
     //
     //  Do the all gather to copy the actual array data and propogate to all processors
@@ -111,8 +122,9 @@ namespace stk {
     //  interface argument.
     //
     T* ptrNonConst = const_cast<T*>(localVec.data());
+    MPI_Datatype datatype = stk::generate_mpi_datatype<T>();
 
-    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, globalVec.data(), messageSizes.data(), offsets.data(), MPI_CHAR, comm);
+    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, datatype, globalVec.data(), messageSizes.data(), offsets.data(), datatype, comm);
     return mpiResult;
   }
 
