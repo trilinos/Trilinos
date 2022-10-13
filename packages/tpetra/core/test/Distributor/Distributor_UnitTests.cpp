@@ -662,7 +662,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
@@ -895,7 +894,6 @@ namespace {
       }
       // check the values
       TEST_COMPARE_ARRAYS(expectedImports,imports);
-#endif
       // All procs fail if any proc fails
       int globalSuccess_int = -1;
       reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
