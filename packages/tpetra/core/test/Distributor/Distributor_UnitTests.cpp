@@ -305,7 +305,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
