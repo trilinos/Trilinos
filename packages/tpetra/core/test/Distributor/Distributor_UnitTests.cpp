@@ -276,9 +276,6 @@ namespace {
     myOut << "Create Distributor from sends (mix of contiguous and noncontiguous)" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     TEST_NOTHROW( numImports = distributor.createFromSends(exportImageIDs) );
 
     myOut << "Test the resulting Distributor" << endl;
@@ -308,7 +305,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
@@ -632,9 +628,6 @@ namespace {
     myOut << "Create Distributor from noncontiguous sends" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     numImports = distributor.createFromSends(exportImageIDs);
 
     myOut << "Test the resulting Distributor" << endl;
@@ -669,7 +662,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
@@ -846,9 +838,6 @@ namespace {
         }
       }
       Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-      TEST_THROW( numRemoteIDs = distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
       numRemoteIDs = distributor.createFromSends(exportImageIDs);
 
       // Make sure that Distributor output doesn't cause a hang.
@@ -905,7 +894,6 @@ namespace {
       }
       // check the values
       TEST_COMPARE_ARRAYS(expectedImports,imports);
-#endif
       // All procs fail if any proc fails
       int globalSuccess_int = -1;
       reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
