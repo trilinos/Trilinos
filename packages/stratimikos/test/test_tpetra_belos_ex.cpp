@@ -54,6 +54,8 @@
 #include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
+#include "Stratimikos_BelosTpetraPrecHelpers.hpp"
+
 int main(int argc, char* argv[])
 {
 
@@ -151,6 +153,9 @@ int main(int argc, char* argv[])
 
     RCP<Thyra::LinearSolverBuilderBase<double> >
       linearSolverBuilder = rcp(new Stratimikos::DefaultLinearSolverBuilder);
+
+    // Register Belos+Tpetra as preconditioner:
+    Stratimikos::enableBelosPrecTpetra<Tpetra::CrsMatrix<Scalar,LO,GO,NO>>(*linearSolverBuilder);
 
     linearSolverBuilder->setParameterList(solverBuilderSL);
 
