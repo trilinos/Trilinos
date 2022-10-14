@@ -25,7 +25,7 @@ TEST(RunTimer, runs)
         }
     );
     EXPECT_TRUE(runInfo.mean > 0.0);
-    EXPECT_TRUE(runInfo.numRuns > 0);
+    EXPECT_TRUE(runInfo.numRuns >= minRuns);
 
     unitTestUtils::print_run_info(std::cerr,
                                   "test",

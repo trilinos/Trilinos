@@ -52,6 +52,43 @@ namespace mesh
 {
 class BulkData;
 
+struct PartChangeAccumulator
+{
+  Entity entity;
+  OrdinalVector partOrdinals;
+
+  PartChangeAccumulator()
+  : entity(Entity()) {}
+
+  PartChangeAccumulator(Entity entity_)
+  : entity(entity_) {}
+
+  PartChangeAccumulator(Entity entity_, const OrdinalVector& partOrdinals_)
+  : entity(entity_), partOrdinals(partOrdinals_) {}
+
+  bool operator!=(const Entity& entity_) const
+  {
+    return entity != entity_;
+  }
+
+  bool operator<(const Entity& entity_) const
+  {
+    return entity < entity_;
+  }
+
+  bool operator!=(const PartChangeAccumulator &rhs) const
+  {
+    return entity != rhs.entity;
+  }
+
+  bool operator<(const PartChangeAccumulator &rhs) const
+  {
+    return entity < rhs.entity;
+  }
+};
+
+using PartChangeAccumulatorVector = std::vector<PartChangeAccumulator>;
+
 struct SideSetHelper
 {
   SideSetHelper(BulkData& mesh_, const Selector& activeSelector_, std::ostream *outputStream_ = nullptr)
@@ -65,6 +102,7 @@ struct SideSetHelper
     outputStream = &ostrm;
   }
 
+  void remove_side_entry_from_sideset(SideSet* sideset, const SideSetEntry& entry, std::set<const Part*> *touchedSidesetParts = nullptr);
   void remove_side_entry_from_sidesets(Entity elem, ConnectivityOrdinal ordinal, std::set<const Part*> *touchedSidesetParts = nullptr);
   void remove_side_entry_from_sidesets(SideSetVector& sidesets, Entity elem, ConnectivityOrdinal ordinal, std::set<const Part*> *touchedSidesetParts = nullptr);
 
