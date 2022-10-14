@@ -59,7 +59,7 @@ bool MeshModification::modification_begin(const std::string description)
 
 void MeshModification::set_entity_state(size_t entity_index, stk::mesh::EntityState state)
 {
-   m_entity_states[entity_index] = state;
+  m_entity_states[entity_index] = state;
 }
 
 bool MeshModification::modification_end(modification_optimization opt)

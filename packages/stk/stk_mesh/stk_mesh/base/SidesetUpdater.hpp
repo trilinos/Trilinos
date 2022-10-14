@@ -285,6 +285,8 @@ private:
     std::vector<BlockToSurfaceMapping> m_cachedBlockToSurfaceMapping;
     bool m_elemChangedRankedParts;
 
+    PartChangeAccumulatorVector m_accumulatedElementPartChanges;
+
     const Selector& get_cached_sideset_selector(const Part* part);
     const ConstPartVector& get_cached_surfaces_touching_block(const Part& part);
 
@@ -313,6 +315,13 @@ private:
     SideSet* get_or_create_connectivity_based_sideset(const Part& part, bool checkSubsets);
 
     void resolve_relation_updates();
+
+    void resolve_faces_affected_by_connected_element_part_change();
+
+    void accumulate_element_block_part_changes(Entity entity, const OrdinalVector& parts);
+    void fill_info_for_element_affected_by_block_part_change(Entity entity,
+                                                             SideSetSelectorVector& sidesetsAndSelectors,
+                                                             std::vector<std::pair<Entity, unsigned>>& sideAndPartOrdinalVec);
 };
 
 }} // end stk mesh namespaces

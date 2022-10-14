@@ -33,6 +33,7 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"     // for connect_edge_to_el...
 #include "stk_topology/topology.hpp"               // for topology, topology...
 #include "stk_util/diag/StringUtil.hpp"            // for case_strcmp
+#include "stk_util/environment/RuntimeWarning.hpp"
 #include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, pack_a...
 #include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
 #include "stk_util/util/ReportHandler.hpp"         // for ThrowRequireMsg
@@ -263,10 +264,23 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
         if (stk::io::include_entity(block)) {
             std::vector<INT> elem_side ;
 
-            stk::mesh::Part *sb_part = get_part_for_grouping_entity(*region, meta, block);
-            if (sb_part == nullptr)
-            {
-               sb_part = get_part_for_grouping_entity(*region, meta, sset);
+            stk::mesh::Part *sbPart = get_part_for_grouping_entity(*region, meta, block);
+            if (sbPart == nullptr) {
+               sbPart = get_part_for_grouping_entity(*region, meta, sset);
+            }
+
+            stk::mesh::SideSet *sbSideSet = nullptr;
+            if(nullptr != sbPart) {
+                if(sbPart->id() != stkSideSetPart->id())
+                  stk::RuntimeWarning() << "process_surface_entity: sideblock " << sbPart->name() << " with id " << sbPart->id()
+                                        << " does not have the same id as parent sideset "
+                                        << stkSideSetPart->name() << " with id " << stkSideSetPart->id();
+
+                const stk::mesh::Part& sbParentPart = stk::mesh::get_sideset_parent(*sbPart);
+
+                if(sbParentPart.mesh_meta_data_ordinal() != stkSideSetPart->mesh_meta_data_ordinal()) {
+                  sbSideSet = & bulk.create_sideset(*sbPart);
+                }
             }
 
             stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -283,8 +297,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             block->get_field_data("element_side", elem_side);
             stk::mesh::PartVector add_parts;
 
-            if(nullptr != sb_part) {
-                add_parts.push_back(sb_part);
+            if(nullptr != sbPart) {
+                add_parts.push_back(sbPart);
             }
 
             // Get topology of the sides being defined to see if they
@@ -321,8 +335,12 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 
                     ThrowRequireMsg((par_dimen == 1) || (par_dimen == 2), "Invalid value for par_dimen:" << par_dimen);
 
-                    if(nullptr != stkSideSet) {
-                        stkSideSet->add({elem, side_ordinal});
+                    if(nullptr != sbSideSet) {
+                        sbSideSet->add({elem, side_ordinal});
+                    } else {
+                         if(nullptr != stkSideSet) {
+                           stkSideSet->add({elem, side_ordinal});
+                         }
                     }
 
                     if (par_dimen == 1) {

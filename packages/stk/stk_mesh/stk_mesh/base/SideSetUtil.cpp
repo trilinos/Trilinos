@@ -161,6 +161,7 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
             for(unsigned i=0;i<numElements;++i) {
                 bool isOwned = bulkData.bucket(elements[i]).owned();
                 bool isSelected = elementSelector(bulkData.bucket(elements[i]));
+
                 if(isOwned && isSelected) {
                     newSides.emplace_back(elements[i], ordinals[i]);
                 }

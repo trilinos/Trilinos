@@ -115,9 +115,6 @@ public:
   {
     double batchTime = stk::wall_dtime(batchStartTime);
     double batchTimeAll = stk::get_global_sum(communicator, batchTime);
-    if (stk::parallel_machine_rank(communicator) == 0) {
-      std::cout << "batch time = " << batchTimeAll << std::endl;
-    }
     minBatchTime = std::min(minBatchTime, batchTimeAll);
 
     size_t batchGpuMemUsage = stk::get_max_gpu_mem_used_across_procs(communicator) - batchBaselineGpuUsage;

@@ -5323,16 +5323,9 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   stk::mesh::Entity node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
   stk::mesh::Entity node5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
 
-  if (parallel_rank == 0)
-  {
-    mesh.add_node_sharing(node2, 1);
-    mesh.add_node_sharing(node5, 1);
-  }
-  else
-  {
-    mesh.add_node_sharing(node2, 0);
-    mesh.add_node_sharing(node5, 0);
-  }
+  int otherProc = 1 - parallel_rank;
+  mesh.add_node_sharing(node2, otherProc);
+  mesh.add_node_sharing(node5, otherProc);
 
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(mesh, stk::topology::NODE_RANK, nodes);
@@ -5368,8 +5361,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   {
     double* data_ptr = stk::mesh::field_data(oneField, block_1_nodes[n]);
     EXPECT_TRUE(data_ptr != NULL);
-    double value = (NULL == data_ptr) ? 0.0 : *data_ptr;
-    EXPECT_DOUBLE_EQ(1.0, value);
+    EXPECT_DOUBLE_EQ(1.0, *data_ptr);
   }
 
   //
@@ -5400,8 +5392,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   {
     double* data_ptr = stk::mesh::field_data(oneField, block_1_nodes[n]);
     EXPECT_TRUE(data_ptr != NULL);
-    double value = (NULL == data_ptr) ? 0.0 : *data_ptr;
-    EXPECT_DOUBLE_EQ(1.0, value);
+    EXPECT_DOUBLE_EQ(1.0, *data_ptr)<<"node "<<mesh.identifier(block_1_nodes[n]);
   }
 }
 

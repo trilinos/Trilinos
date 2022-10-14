@@ -131,14 +131,16 @@ public:
     const Part* get_part() const;
     size_t capacity() const { return m_data.capacity(); }
 
-    void set_accept_all_internal_non_coincident_entries(bool flag) {m_acceptAllInternalNonCoincidentEntries = flag;}
-    bool get_accept_all_internal_non_coincident_entries() const {return m_acceptAllInternalNonCoincidentEntries;}
+    void set_accept_all_internal_non_coincident_entries(bool flag);
+    bool get_accept_all_internal_non_coincident_entries() const;
 
     bool is_modified() const {return m_isModified;}
     void clear_modification_flag() {m_isModified = false;}
 
     bool is_automatically_updated() const {return m_isAutomaticallyUpdated;}
     void set_automatic_update(bool flag) {m_isAutomaticallyUpdated = flag;}
+
+    const BulkData& get_bulk_data() const { return m_bulk; }
 
 private:
     const BulkData& m_bulk;
@@ -171,18 +173,24 @@ public:
   {
     if(m_sideset->get_part()->mesh_meta_data_ordinal() < rhs.m_sideset->get_part()->mesh_meta_data_ordinal()) {
       return true;
+    } else if(m_sideset->get_part()->mesh_meta_data_ordinal() == rhs.m_sideset->get_part()->mesh_meta_data_ordinal() &&
+              m_part->mesh_meta_data_ordinal()                <  rhs.m_part->mesh_meta_data_ordinal()) {
+      return true;
+    } else {
+      return false;
     }
-    return false;
   }
 
   inline bool operator!=( const stk::mesh::SideSetSelector& rhs ) const
   {
-    return m_sideset->get_part()->mesh_meta_data_ordinal() != rhs.m_sideset->get_part()->mesh_meta_data_ordinal();
+    return (m_sideset->get_part()->mesh_meta_data_ordinal() != rhs.m_sideset->get_part()->mesh_meta_data_ordinal()) ||
+           (m_part->mesh_meta_data_ordinal()                != rhs.m_part->mesh_meta_data_ordinal());
   }
 
   inline bool operator==( const stk::mesh::SideSetSelector& rhs ) const
   {
-    return m_sideset->get_part()->mesh_meta_data_ordinal() == rhs.m_sideset->get_part()->mesh_meta_data_ordinal();
+    return (m_sideset->get_part()->mesh_meta_data_ordinal() == rhs.m_sideset->get_part()->mesh_meta_data_ordinal()) &&
+           (m_part->mesh_meta_data_ordinal()                == rhs.m_part->mesh_meta_data_ordinal());
   }
 
   inline const Part&     part()     const {return *m_part;}
