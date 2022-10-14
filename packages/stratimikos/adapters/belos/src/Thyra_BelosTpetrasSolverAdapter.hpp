@@ -115,6 +115,10 @@ namespace Thyra {
         problem_->setProblem();
     }
 
+    typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const {
+      return tpetra_solver->achievedTol();
+    }
+
     //! solve
     Belos::ReturnType solve() override {
       auto  A = problem_->getOperator();
