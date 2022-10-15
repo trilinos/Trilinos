@@ -80,7 +80,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, zero_based_side_ord, sideRank);
     if(bulk_data.is_valid(side))
     {
-      const stk::mesh::Bucket &sideBucket = bulk_data.bucket(side);
+      stk::mesh::Bucket &sideBucket = bulk_data.bucket(side);
       bool sideIsSelected = false;
 
       if (sideBucket.bucket_id() == previousBucketId) {

@@ -42,7 +42,7 @@ template <typename Adapter>
 class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 
   public:
-    
+
     using lno_t = typename Adapter::lno_t;
     using gno_t = typename Adapter::gno_t;
     using offset_t = typename Adapter::offset_t;
@@ -50,7 +50,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using base_adapter_t = typename Adapter::base_adapter_t;
     using map_t = Tpetra::Map<lno_t,gno_t>;
     using femv_scalar_t = int;
-    using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>; 
+    using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>;
     using device_type = typename femv_t::device_type;
     using execution_space = typename device_type::execution_space;
     using memory_space = typename device_type::memory_space;
@@ -58,7 +58,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using host_mem = typename femv_t::host_view_type::device_type::memory_space;
 
   private:
-    //serial and parallel local partial distance-2 coloring function 
+    //serial and parallel local partial distance-2 coloring function
     template<class ExecutionSpace, typename MemorySpace>
     void localColoring(const size_t nVtx,
 		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> adjs_view,
@@ -92,7 +92,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 
       //call coloring
       KokkosGraph::Experimental::bipartite_color_rows(&kh, nVtx, nVtx, offset_view, adjs_view, true);
-      
+
 
       //output total time
       if(this->verbose){
@@ -101,7 +101,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 		 <<"\n";
       }
     }
-    
+
     //Entry point for parallel local coloring
     virtual void colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*, device_type> adjs_view,
@@ -133,7 +133,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 					       vertex_list,
 					       vertex_list_size,
 					       recolor);
-      
+
     }
   public:
     //serial and parallel partial distance-2 conflict detection function
@@ -158,7 +158,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 			    Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> gid,
 			    Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> ghost_degrees,
 			    bool recolor_degrees){
-      
+
       Kokkos::RangePolicy<ExecutionSpace> policy(0,boundary_verts_view.extent(0));
       size_t local_recoloring_size;
       Kokkos::parallel_reduce("PD2 conflict detection",policy, KOKKOS_LAMBDA(const uint64_t& i,size_t& recoloring_size){
@@ -188,7 +188,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
               } else {
                 vid_d2_degree = ghost_degrees(vid_d2-n_local);
               }
-	      //resolve conflict 
+	      //resolve conflict
               if(curr_lid != vid_d2 && femv_colors(vid_d2) == curr_color){
                 if(curr_degree < vid_d2_degree && recolor_degrees){
                   found = true;
@@ -238,7 +238,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
           }
         });
         Kokkos::fence();
-        			    
+
     }
     //Entry point for parallel conflict detection
     virtual void detectConflicts(const size_t n_local,
@@ -343,11 +343,11 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
           if(found) break;
         }
       }
-      
+
       //Initialize the boundary on host
       boundary_verts = Kokkos::View<lno_t*, device_type>("boundary verts",boundary_size_temp);
       typename Kokkos::View<lno_t*, device_type>::HostMirror boundary_verts_host = Kokkos::create_mirror_view(boundary_verts);
-      
+
       //reset the boundary size count to use as an index to construct the view
       boundary_size_temp = 0;
 
@@ -370,7 +370,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       }
       //copy boundary over to device views
       Kokkos::deep_copy(boundary_verts, boundary_verts_host);
-      
+
       //initialize the verts_to_send views
       Kokkos::parallel_for("init verts to send",
        Kokkos::RangePolicy<execution_space, int>(0,n_local),
@@ -403,7 +403,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       const RCP<Environment> &env_,
       const RCP<const Teuchos::Comm<int> > &comm_)
     : AlgTwoGhostLayer<Adapter>(adapter_,pl_,env_,comm_){}
-    
+
 
 
 }; //end class

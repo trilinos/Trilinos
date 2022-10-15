@@ -36,9 +36,9 @@ namespace mesh
         ThrowRequireMsg(m_bulk.entity_rank(entry.element) == stk::topology::ELEMENT_RANK,
                        "ERROR, stk::mesh::SideSet::add only allows element-rank entities.");
 
-	bool modified = stk::util::insert_keep_sorted_and_unique(entry, m_data);
-	m_isModified |= modified;
-	return modified;
+        bool modified = stk::util::insert_keep_sorted_and_unique(entry, m_data);
+        m_isModified |= modified;
+        return modified;
     }
 
     bool SideSet::add(Entity element, ConnectivityOrdinal side)
@@ -122,5 +122,14 @@ namespace mesh
       return m_part;
     }
 
+    void SideSet::set_accept_all_internal_non_coincident_entries(bool flag)
+    {
+      m_acceptAllInternalNonCoincidentEntries = flag;
+    }
+
+    bool SideSet::get_accept_all_internal_non_coincident_entries() const
+    {
+      return m_acceptAllInternalNonCoincidentEntries;
+    }
 }
 }

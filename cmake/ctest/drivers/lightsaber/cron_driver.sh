@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/bash
 
 echo
 echo "Starting nightly Trilinos development testing on lightsaber: `date`"
@@ -8,36 +8,36 @@ echo
 # TrilinosDriver settings:
 #
 
-setenv TDD_PARALLEL_LEVEL 2
+export TDD_PARALLEL_LEVEL=2
 
 # Trilinos settings:
 #
 
 # Submission mode for the *TrilinosDriver* dashboard
-setenv TDD_CTEST_TEST_TYPE Nightly
+export TDD_CTEST_TEST_TYPE=Nightly
 
 
 # Machine specific environment
 #
 
-setenv TDD_HTTP_PROXY "http://wwwproxy.sandia.gov:80"
-setenv TDD_HTTPS_PROXY "https://wwwproxy.sandia.gov:80"
-setenv http_proxy "http://wwwproxy.sandia.gov:80"
-setenv https_proxy "https://wwwproxy.sandia.gov:80"
-setenv TDD_FORCE_CMAKE_INSTALL 1
-setenv TDD_DEBUG_VERBOSE 1
+export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80"
+export TDD_HTTPS_PROXY="https://wwwproxy.sandia.gov:80"
+export http_proxy="http://wwwproxy.sandia.gov:80"
+export https_proxy="https://wwwproxy.sandia.gov:80"
+export TDD_FORCE_CMAKE_INSTALL=1
+export TDD_DEBUG_VERBOSE=1
 
-source ~/.cshrc
+source ~/.bashrc
 
 
 # Machine independent cron_driver:
-set SCRIPT_DIR `cd "\`dirname \"$0\"\`";pwd`
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 
 # Trilinos source repo
-setenv TRILINOS_SOURCE $SCRIPT_DIR/../../../..
+export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
 
 # folder with the machine specific build info
-setenv BUILDS_DIR $TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
+export BUILDS_DIR=$TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
 
 
 
@@ -47,7 +47,7 @@ setenv BUILDS_DIR $TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
 
 # ===========================================================================
 # GCC family
-setenv CTEST_CONFIGURATION "default"
+export CTEST_CONFIGURATION="default"
 module purge
 module load sems-gcc/10.1.0
 module load sems-openmpi/4.0.5
@@ -65,14 +65,14 @@ module load sems-netcdf-c/4.7.3
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-setenv OMP_NUM_THREADS 2
+export OMP_NUM_THREADS=2
 
-# Update Avatar 
+# Update Avatar
 (cd /home/nightlyTesting/avatar; git pull --rebase )
 
 # Set variables to work aroun TriBITS problems
 #setenv TDD_FORCE_CMAKE_INSTALL 0
-setenv TRIBITS_TDD_USE_SYSTEM_CTEST 1
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Actually run stuff
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_avatar_lightsaber.cmake
@@ -90,7 +90,7 @@ module unload sems-gcc
 
 # ===========================================================================
 # OneAPI family
-setenv CTEST_CONFIGURATION "default"
+export CTEST_CONFIGURATION="default"
 module purge
 module load sems-gcc/10.1.0
 module load oneapi
@@ -99,11 +99,11 @@ export I_MPI_CXX=dpcpp
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-setenv OMP_NUM_THREADS 1
+export OMP_NUM_THREADS=1
 
 # Set variables to work aroun TriBITS problems
 #setenv TDD_FORCE_CMAKE_INSTALL 0
-setenv TRIBITS_TDD_USE_SYSTEM_CTEST 1
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Actually run stuff
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_sycl_cpu_lightsaber.cmake

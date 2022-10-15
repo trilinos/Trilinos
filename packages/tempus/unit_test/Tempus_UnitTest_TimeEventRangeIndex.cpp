@@ -260,9 +260,7 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, createTimeEventRange)
   // Construct TimeEventRangeIndex from ParameterList.
   auto teri = Tempus::createTimeEventRangeIndex<double>(pl);
 
-  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
-  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //teri->describe(*my_out, Teuchos::VERB_EXTREME);
+  teri->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE( teri->getName()       , ==, "Unit Test Time Event Range Index");
   TEST_COMPARE( teri->getType()       , ==, "Range Index");

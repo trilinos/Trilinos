@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "test_single_stratimikos_solver.hpp"
+#include "test_single_epetra_stratimikos_solver.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -55,7 +55,7 @@
 #  include "Epetra_SerialComm.h"
 #endif
 
-bool Thyra::test_single_stratimikos_solver(
+bool Thyra::test_single_epetra_stratimikos_solver(
   Teuchos::ParameterList *paramList_inout
   ,const bool dumpAll
   ,Teuchos::FancyOStream *out
@@ -84,7 +84,7 @@ bool Thyra::test_single_stratimikos_solver(
     }
 
     // Create list of valid parameter sublists
-    Teuchos::ParameterList validParamList("test_single_stratimikos_solver");
+    Teuchos::ParameterList validParamList("test_single_epetra_stratimikos_solver");
     validParamList.set("Matrix File","fileName");
     validParamList.set("Solve Adjoint",false);
     validParamList.sublist("Linear Solver Builder").disableRecursiveValidation();

@@ -57,6 +57,7 @@ namespace Ioss {
                       EntityBlock derived class. Examples would be thickness
                       of the elements in a shell element block or the radius
                       of particles in a particle element block. */
+      MAP,
       COMMUNICATION,
       MESH_REDUCTION, /**< A field which summarizes some non-transient data
                          about an entity (\sa REDUCTION). This could be an
@@ -91,7 +92,7 @@ namespace Ioss {
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
-    Field(const Ioss::Field &from) = default;
+    Field(const Ioss::Field &from)      = default;
     Field &operator=(const Field &from) = default;
     ~Field()                            = default;
 
@@ -106,6 +107,7 @@ namespace Ioss {
     bool is_invalid() const { return type_ == INVALID; }
 
     const std::string &get_name() const { return name_; }
+    std::string       &get_name() { return name_; }
 
     /** \brief Get name of the 'component_indexth` component (1-based)
      *
@@ -159,8 +161,12 @@ namespace Ioss {
     void check_type(BasicType the_type) const;
 
     bool               is_type(BasicType the_type) const { return the_type == type_; }
+
     std::string        type_string() const;
     static std::string type_string(BasicType type);
+
+    std::string        role_string() const;
+    static std::string role_string(RoleType role);
 
     bool add_transform(Transform *my_transform);
     bool transform(void *data);
@@ -169,11 +175,12 @@ namespace Ioss {
   private:
     std::string name_;
 
-    size_t         rawCount_{};   // Count of items in field before transformation
-    size_t         transCount_{}; // Count of items in field after transformed
-    size_t         size_{};       // maximum data size (in bytes) required to hold entire field
-    mutable size_t index_{}; // Optional flag that can be used by a client to indicate an ordering.
-                             // Unused by field itself.
+    size_t rawCount_{};   // Count of items in field before transformation
+    size_t transCount_{}; // Count of items in field after transformed
+    size_t size_{};       // maximum data size (in bytes) required to hold entire field
+    mutable size_t
+        index_{}; // Optional flag that can be used by a client to indicate an ordering.
+                  // Unused by field itself.  Used by some DatabaeIO objects to set ordering.
     BasicType type_{INVALID};
     RoleType  role_{INTERNAL};
 

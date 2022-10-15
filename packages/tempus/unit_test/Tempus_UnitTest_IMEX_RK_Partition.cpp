@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.
-  //std::cout << "order = " << stepper->getOrder() << std::endl;
+  //out << "order = " << stepper->getOrder() << std::endl;
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 

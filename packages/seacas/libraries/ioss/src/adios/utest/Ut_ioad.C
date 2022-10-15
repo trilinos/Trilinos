@@ -3,9 +3,8 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#define CATCH_CONFIG_RUNNER
-#include <catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest.h>
 
 #include "Ioss_CodeTypes.h"
 #include "Ioss_CommSet.h"      // for CommSet
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
-  const int result = Catch::Session().run(argc, argv);
+  const int result = doctest::Context().run(argc, argv);
 #ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
@@ -422,7 +421,7 @@ void create_database(std::string type, std::string file_name)
   db->closeDatabase();
 }
 
-TEST_CASE("Ioad", "[Ioad]")
+DOCTEST_TEST_CASE("Ioad")
 {
 
   Ioss::Init::Initializer::initialize_ioss();
@@ -468,7 +467,7 @@ template <> const std::string get_entity_type_test<Ioss::SideBlock>()
   return sideblock.type_string();
 }
 
-TEST_CASE("Ioad_BlockNames", "[Ioad]")
+DOCTEST_TEST_CASE("Ioad_BlockNames")
 {
   REQUIRE(get_entity_type_test<Ioss::SideBlock>() == Ioad::get_entity_type<Ioss::SideBlock>());
   REQUIRE(get_entity_type_test<Ioss::SideSet>() == Ioad::get_entity_type<Ioss::SideSet>());

@@ -5,16 +5,22 @@
 // See packages/seacas/LICENSE for details
 
 #include <gtest/gtest.h>
+#ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
+#endif
 
 int main(int argc, char **argv)
 {
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
+#endif
 
   testing::InitGoogleTest(&argc, argv);
   int errorCode = RUN_ALL_TESTS();
 
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
+#endif
 
   return errorCode;
 }

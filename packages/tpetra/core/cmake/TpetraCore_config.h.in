@@ -43,9 +43,6 @@
 /* Define if want to build tpetra-print_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_WARNINGS
 
-/* Define if want to build tpetra-throw_efficiency_warnings */
-#cmakedefine HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-
 /* Define if want to build tpetra-print_efficiency_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 

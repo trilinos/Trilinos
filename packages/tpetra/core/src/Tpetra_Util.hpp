@@ -63,15 +63,11 @@
 #include <ostream>
 #include <sstream>
 
-#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+#if defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
 /// \brief Print or throw an efficency warning.
 ///
 /// This macro is only for use by Tpetra developers.  It is only to be
 /// used in the implementation of a Tpetra class' instance method.
-///
-/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
-/// exception of type Exception, whose exception message will include
-/// \c msg (along with other useful information).
 ///
 /// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
 /// given message to std::cerr, along with other useful information.
@@ -86,18 +82,13 @@
 /// throw_exception_test: Boolean expression to evaluate.  If true,
 /// this macro will trigger the efficiency warning.  The test will be
 /// evaluated at most once.  Nevertheless, the test should not have
-/// side effects, since it will not be evaluated at all if neither
-/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
-/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
-///
-/// Exception: The type of exception to throw, if throw_exception_test
-/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
-/// defined.  The Exception should be a subclass of std::exception.
+/// side effects, since it will not be evaluated at all if
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined.
 ///
 /// msg: The message to include in the warning.  The warning also
 /// includes the name of the class, and other useful information.
 ///
-#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)  \
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,msg)  \
 { \
   const bool tpetraEfficiencyWarningTest = (throw_exception_test); \
   if (tpetraEfficiencyWarningTest) { \
@@ -109,7 +100,6 @@
     if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest) { \
       std::cerr << err << std::endl; \
     } \
-    TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest, Exception, err); \
   } \
 }
 #else
@@ -117,10 +107,6 @@
 ///
 /// This macro is only for use by Tpetra developers.  It is only to be
 /// used in the implementation of a Tpetra class' instance method.
-///
-/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
-/// exception of type Exception, whose exception message will include
-/// \c msg (along with other useful information).
 ///
 /// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
 /// given message to std::cerr, along with other useful information.
@@ -136,17 +122,12 @@
 /// this macro will trigger the efficiency warning.  The test will be
 /// evaluated at most once.  Nevertheless, the test should not have
 /// side effects, since it will not be evaluated at all if neither
-/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
-/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
-///
-/// Exception: The type of exception to throw, if throw_exception_test
-/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
-/// defined.  The Exception should be a subclass of std::exception.
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined.
 ///
 /// msg: The message to include in the warning.  The warning also
 /// includes the name of the class, and other useful information.
 ///
-#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,msg)
 #endif
 
 // handle an abuse warning, according to HAVE_TPETRA_THROW_ABUSE_WARNINGS and HAVE_TPETRA_PRINT_ABUSE_WARNINGS
