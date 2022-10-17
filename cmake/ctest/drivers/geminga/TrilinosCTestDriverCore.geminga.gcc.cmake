@@ -113,7 +113,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Options for valgrind, if needed
   SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-      "--trace-children=yes --leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+      "--max-stackframe=3835488 --trace-children=yes --leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
   SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions.txt")
 
 
