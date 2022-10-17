@@ -1637,7 +1637,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
 
-        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        const int INVALID = Teuchos::OrdinalTraits<int>::invalid();
         return MapFactory<LO,int,NO>::Build(lib,INVALID,mapArrayView,0,comm);
     }
 
@@ -1690,7 +1690,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
 
-        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        const long long INVALID = Teuchos::OrdinalTraits<long long>::invalid();
         return MapFactory<LO,long long,NO>::Build(lib,INVALID,mapArrayView,0,comm);
     }
 
