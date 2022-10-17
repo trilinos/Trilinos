@@ -1038,13 +1038,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill vector
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    for (LocalOrdinal j=0; j<pce_size; ++j)
-      val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
-        nrow, pce_size, row, j);
-    x_view[i] = val;
+  {
+    ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      for (LocalOrdinal j=0; j<pce_size; ++j)
+        val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
+          nrow, pce_size, row, j);
+      x_view[i] = val;
+    }
   }
 
   // Multiply
