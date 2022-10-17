@@ -411,35 +411,54 @@ namespace Thyra {
                 xpetraOp = fROSch_LinearOp->getXpetraOperator();
             }
 
-            if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
-                RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                AOP->resetMatrix(A);
-                schwarzPreconditioner = AOP;
-            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
-                RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > GP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                GP->resetMatrix(A);
-                schwarzPreconditioner = GP;
-            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
-                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > RGP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                RGP->resetMatrix(A);
-                schwarzPreconditioner = RGP;
-            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
-                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                OLP->resetMatrix(A);
-                schwarzPreconditioner = OLP;
-            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
-                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                TLP->resetMatrix(A);
-                schwarzPreconditioner = TLP;
-            } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
-                RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLBP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
-                TLBP->resetMatrix(A);
-                schwarzPreconditioner = TLBP;
-            } else {
-                FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+            if (useHalfPrecision)
+            {
+                if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner") ||
+                    !paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
+                    auto ANonConst = rcp_const_cast<XMatrix>(A);
+                    auto halfA = rcp_const_cast<const HalfPrecMatrix>(Xpetra::convertToHalfPrecision(ANonConst));
+                    auto halfPrecOp = rcp_dynamic_cast<HalfPrecOp>(xpetraOp);
+                    auto halfXpetraOp = rcp_dynamic_cast<Operator<HalfSC,LO,GO,NO>>(halfPrecOp->GetHalfPrecisionOperator());
+                    RCP<OneLevelPreconditioner<HalfSC,LO,GO,NO> > TLP = rcp_dynamic_cast<OneLevelPreconditioner<HalfSC,LO,GO,NO> >(halfXpetraOp, true);
+                    TLP->resetMatrix(halfA);
+
+                    halfSchwarzPreconditioner = rcp_dynamic_cast<SchwarzPreconditioner<HalfSC,LO,GO,NO> >(halfXpetraOp, true);
+                    halfSchwarzPreconditioner->compute();
+                }
+            } else
+#endif
+            {
+                if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("AlgebraicOverlappingPreconditioner")) {
+                    RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > AOP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    AOP->resetMatrix(A);
+                    schwarzPreconditioner = AOP;
+                } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("GDSWPreconditioner")) {
+                    RCP<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> > GP = rcp_dynamic_cast<AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    GP->resetMatrix(A);
+                    schwarzPreconditioner = GP;
+                } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner")) {
+                    RCP<OneLevelPreconditioner<SC,LO,GO,NO> > RGP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    RGP->resetMatrix(A);
+                    schwarzPreconditioner = RGP;
+                } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("OneLevelPreconditioner")) {
+                    RCP<OneLevelPreconditioner<SC,LO,GO,NO> > OLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    OLP->resetMatrix(A);
+                    schwarzPreconditioner = OLP;
+                } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
+                    RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    TLP->resetMatrix(A);
+                    schwarzPreconditioner = TLP;
+                } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
+                    RCP<OneLevelPreconditioner<SC,LO,GO,NO> > TLBP = rcp_dynamic_cast<OneLevelPreconditioner<SC,LO,GO,NO> >(xpetraOp, true);
+                    TLBP->resetMatrix(A);
+                    schwarzPreconditioner = TLBP;
+                } else {
+                    FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
+                }
+                // recompute SchwarzPreconditioner
+                schwarzPreconditioner->compute();
             }
-            // recompute SchwarzPreconditioner
-            schwarzPreconditioner->compute();
         }
     }
 
