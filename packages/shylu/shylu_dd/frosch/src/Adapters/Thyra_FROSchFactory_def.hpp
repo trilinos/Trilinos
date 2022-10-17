@@ -115,7 +115,9 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
 
         // Check whether to use HalfPrecision
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
         const bool useHalfPrecision = paramList_->get<bool>("Use Half Precision", false);
+#endif
 
         // Retrieve Matrix
         ConstXMatrixPtr A = ThyraUtils<SC,LO,GO,NO>::toXpetra(fwdOp);
