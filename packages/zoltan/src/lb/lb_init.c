@@ -125,7 +125,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
 size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct const *zz) 
 {
   size_t bufSize = 0;
-  struct Zoltan_LB_Struct *lb = &(zz->LB);
+  const struct Zoltan_LB_Struct *lb = &(zz->LB);
 
   /* Copy 12 integers from zz->LB */
   bufSize += 12 * sizeof(int);
@@ -158,7 +158,7 @@ size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct const *zz)
 void Zoltan_LB_Serialize(struct Zoltan_Struct const *zz, char **buf)
 {
   char *bufptr = *buf;
-  struct Zoltan_LB_Struct *lb = &(zz->LB);
+  const struct Zoltan_LB_Struct *lb = &(zz->LB);
 
   /* Copy 12 integers; if add more, update Zoltan_LB_Serialize_Size */
   int *intptr = (int *) bufptr;

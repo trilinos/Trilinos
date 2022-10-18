@@ -1376,10 +1376,10 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
 
   /* rescale right hand side and solution */
 
-  if ( (action == AZ_SCALE_RHS) ) {
+  if (action == AZ_SCALE_RHS) {
        for (irow = 0; irow < N; irow++) b[irow] *= sc_vec[irow];
   }
-  if ( action == AZ_INVSCALE_RHS)  {
+  if (action == AZ_INVSCALE_RHS)  {
        for (irow = 0; irow < N; irow++) b[irow] /= sc_vec[irow];
   }
   if (action == AZ_SCALE_MAT_RHS_SOL) {
@@ -1626,10 +1626,10 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
     } /* VBR */
   }
 
-  if ( (action == AZ_SCALE_RHS) ) {
+  if (action == AZ_SCALE_RHS) {
        for (row = 0; row < N; row++) b[row] *= sc_vec[row];
   }
-  if ( action == AZ_INVSCALE_RHS)  {
+  if (action == AZ_INVSCALE_RHS)  {
        for (row = 0; row < N; row++) b[row] /= sc_vec[row];
   }
   if (action == AZ_SCALE_MAT_RHS_SOL) {
@@ -1934,10 +1934,10 @@ void AZ_equil_scaling(int action, AZ_MATRIX *Amat,
     free((void *) colsum);
   }
 
-  if ( (action == AZ_SCALE_RHS) ) {
+  if (action == AZ_SCALE_RHS) {
        for (row = 0; row < N; row++) b[row] *= sc_vec[row];
   }
-  if ( action == AZ_INVSCALE_RHS)  {
+  if (action == AZ_INVSCALE_RHS)  {
        for (row = 0; row < N; row++) b[row] /= sc_vec[row];
   }
   if (action == AZ_SCALE_MAT_RHS_SOL) {
