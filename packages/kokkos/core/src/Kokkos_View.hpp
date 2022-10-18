@@ -1765,7 +1765,7 @@ as_view_of_rank_n(View<Args...> v) {
 // Placeholder implementation to compile generic code for DynRankView; should
 // never be called
 template <unsigned N, typename T, typename... Args>
-KOKKOS_FUNCTION std::enable_if_t<
+std::enable_if_t<
     N != View<T, Args...>::Rank &&
         std::is_same<typename ViewTraits<T, Args...>::specialize, void>::value,
     View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
