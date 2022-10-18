@@ -516,10 +516,11 @@ namespace Belos {
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
         c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
                                      strideC, numColsC);
-        Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
-                                          Kokkos::pair<int,int>(0, numRowsC),
-                                          Kokkos::pair<int,int>(0, numColsC)),
-                          C_view_dev);
+        for (int j=0; j<numColsC; ++j)
+          Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
+                                            Kokkos::pair<int,int>(0, numRowsC),
+                                            j),
+                            Kokkos::subview(C_view_dev, Kokkos::ALL, j));
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
                         C_view_tmp.data(),
                         C_view_host.data());
