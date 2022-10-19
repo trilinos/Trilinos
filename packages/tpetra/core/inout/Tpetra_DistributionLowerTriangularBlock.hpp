@@ -511,7 +511,7 @@ public:
   }
 
   void apply(const mvector_t &x, mvector_t &y, Teuchos::ETransp mode,
-             scalar_t alpha, scalar_t beta) const
+             scalar_t alpha, scalar_t beta) const override
   {
     scalar_t ZERO =  Teuchos::ScalarTraits<scalar_t>::zero();
     scalar_t ONE =  Teuchos::ScalarTraits<scalar_t>::one();
@@ -558,15 +558,15 @@ public:
     }
   }
 
-  Teuchos::RCP<const map_t> getDomainMap() const {
+  Teuchos::RCP<const map_t> getDomainMap() const override {
     return lowerTriangularMatrix->getDomainMap();
   }
 
-  Teuchos::RCP<const map_t> getRangeMap() const {
+  Teuchos::RCP<const map_t> getRangeMap() const override {
     return lowerTriangularMatrix->getRangeMap();
   }
 
-  bool hasTransposeApply() const {return true;}  // Symmetric matrix
+  bool hasTransposeApply() const override {return true;}  // Symmetric matrix
 
 private:
   const Teuchos::RCP<const matrix_t > lowerTriangularMatrix;

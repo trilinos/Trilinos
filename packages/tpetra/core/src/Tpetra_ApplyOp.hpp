@@ -121,7 +121,7 @@ namespace Tpetra {
              Tpetra::MultiVector<Scalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
              Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
+             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const override
       {
         operator_->template applyTempl<Scalar,Scalar> (X, Y, mode, alpha, beta);
       }
