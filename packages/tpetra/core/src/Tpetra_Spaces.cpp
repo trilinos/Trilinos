@@ -10,17 +10,6 @@ namespace Tpetra {
 namespace Spaces {
 namespace detail {
 
-// Tpetra's managed spaces
-#ifdef KOKKOS_ENABLE_CUDA
-/*extern*/ std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
-#ifdef KOKKOS_ENABLE_SERIAL
-/*extern*/ std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
-#ifdef KOKKOS_ENABLE_OPENMP
-/*extern*/ std::vector<Kokkos::OpenMP> openMPSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
-
 #ifdef KOKKOS_ENABLE_CUDA
 /*extern*/ CudaPriorityRange cudaPriorityRange;
 /*extern*/ cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
@@ -38,33 +27,7 @@ void lazy_init() {
     // LOG_INFO("CUDA Priority: high:   " << cudaPriorityRange.high);
 #endif
     // LOG_INFO("Tpetra::Spaces::detail::lazy_init() done");
-}
-
-void initialize() {
-    lazy_init();
-}
-
-void finalize() {
-    if (!initialized) { return; }
-    LOG_INFO("Tpetra::Spaces::finalize()...");
-#ifdef KOKKOS_ENABLE_CUDA
-    CUDA_RUNTIME(cudaEventDestroy(detail::execSpaceWaitEvent));
-    for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
-        detail::cudaSpaces[i].clear();
-    }
-#endif
-#ifdef KOKKOS_ENABLE_OPENMP
-    for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
-        detail::openMPSpaces[i].clear();
-    }
-#endif
-#ifdef KOKKOS_ENABLE_SERIAL
-    for (int i = 0; i < static_cast<int>(Priority::NUM_LEVELS); ++i) {
-        detail::serialSpaces[i].clear();
-    }
-#endif
-    initialized = false;
-    LOG_INFO("Tpetra::Spaces::finalize() done");
+    initialized = true;
 }
 
 } // namespace detail

@@ -65,12 +65,12 @@ inline void success_or_throw(cudaError_t err, const char *file, const int line) 
 #define CUDA_RUNTIME(x) Tpetra::Spaces::detail::success_or_throw((x), __FILE__, __LINE__)
 #endif // KOKKOS_ENABLE_CUDA
 
-/* query the runtime to map Tpetra::Priorities to the implementation priority
-   set up `cudaEvent_t`s 
+/*! \brief Automaticallyed called by functions in the Tpetra::Spaces namespace
+
+    * Prepares resources for Kokkos::CUDA exec space instance sync
+    * Tpetra::Priority to CUDA stream priorities
 */
 void lazy_init();
-void initialize();
-void finalize();
 
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -83,17 +83,6 @@ struct CudaPriorityRange {
 extern CudaPriorityRange cudaPriorityRange;
 extern cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
 #endif // KOKKOS_ENABLE_CUDA
-
-// Tpetra's managed spaces
-#ifdef KOKKOS_ENABLE_CUDA
-extern std::vector<Kokkos::Cuda> cudaSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
-#ifdef KOKKOS_ENABLE_SERIAL
-extern std::vector<Kokkos::Serial> serialSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
-#ifdef KOKKOS_ENABLE_OPENMP
-extern std::vector<Kokkos::OpenMP> openMPSpaces[static_cast<int>(Priority::NUM_LEVELS)];
-#endif
 
 
 // Tpetra's managed spaces
@@ -122,108 +111,36 @@ template <typename Space>
 using IsOpenMP = std::enable_if_t<std::is_same<Space, Kokkos::OpenMP>::value, bool>;
 #endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_ENABLE_CUDA
-    template <typename Space, Priority priority, 
-    IsCuda<Space> = true >
-    std::vector<Space> &spaces() {
-        lazy_init();
-        return cudaSpaces[static_cast<int>(priority)];
-    }
-#endif // KOKKOS_ENABLE_CUDA
-#ifdef KOKKOS_ENABLE_SERIAL
-    template <typename Space, Priority priority, 
-    IsSerial<Space> = true >
-    std::vector<Space> &spaces() {
-        lazy_init();
-        return serialSpaces[static_cast<int>(priority)];
-    }
-#endif // KOKKOS_ENABLE_SERIAL
-#ifdef KOKKOS_ENABLE_OPENMP
-    template <typename Space, Priority priority, 
-    IsOpenMP<Space> = true >
-    std::vector<Space> &spaces() {
-        lazy_init();
-        return openMPSpaces[static_cast<int>(priority)];
-    }
-#endif // KOKKOS_ENABLE_OPENMP
-
 
 } // namespace detail
 
-/* Get execution space i for a given priority
-
-    In some algorithms, the desired priority of independent operations
-    may be statically known
-
-    Catch-all when we don't implement priority for spaces (non-CUDA)
-*/
-template <typename Space, Priority priority = Priority::medium
+template <typename ExecSpace, Priority priority = Priority::medium
 #ifdef KOKKOS_ENABLE_CUDA
-, detail::NotCuda<Space> = true
-#endif
+, detail::NotCuda<ExecSpace> = true
+#endif // KOKKOS_ENABLE_CUDA
 >
-Space &get(int i = 0) {
-    detail::lazy_init();
-    if (i < 0) {
-        throw std::runtime_error("requested exec space < 0 from Spaces::get");
-    }
-    if (i >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
-        std::cerr << "WARNING: requested space " << i << std::endl;
-    }
-
-    while (detail::spaces<Space, priority>().size() <= size_t(i)) {
-        detail::spaces<Space, priority>().push_back(Space());
-    }
-    return detail::spaces<Space, priority>()[i];
+ExecSpace make_instance() {
+    return ExecSpace();
 }
 
-/* Implement priority for CUDA spaces
-*/
 #ifdef KOKKOS_ENABLE_CUDA
-template <typename Space, Priority priority = Priority::medium, 
-detail::IsCuda<Space> = true >
-Kokkos::Cuda &get(int i = 0) {
-    detail::lazy_init();
-
-    if (i < 0) {
-        throw std::runtime_error("requested exec space < 0 from Spaces::get");
-    }
-    if (i >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
-        std::cerr << "WARNING: requested space " << i << std::endl;
-    }
-
-    while (detail::spaces<Space, priority>().size() <= size_t(i)) {
-        cudaStream_t stream;
-        int prio;
-        switch (priority) {
-            case Priority::high: prio = detail::cudaPriorityRange.high; break;
-            case Priority::medium: prio = detail::cudaPriorityRange.medium; break;
-            case Priority::low: prio = detail::cudaPriorityRange.low; break;
-            default: throw std::runtime_error("unexpected Tpetra Space priority");
-        }
-        CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
-        std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
-        Kokkos::Cuda space (stream, true /*Kokkos will manage this stream*/);
-        detail::spaces<Space, priority>().push_back(space);
-    }
-    return detail::spaces<Space, priority>()[i];
-
-}
-#endif
-
-/* get Space i with priority prio
-*/
-template <typename Space>
-Space &get(int i, const Priority &prio) {
-    detail::lazy_init();
-    switch(prio) {
-        case Priority::high: return get<Space, Priority::high>(i);
-        case Priority::medium: return get<Space, Priority::medium>(i);
-        case Priority::low: return get<Space, Priority::low>(i);
+template <typename ExecSpace, Priority priority = Priority::medium, 
+detail::IsCuda<ExecSpace> = true >
+Kokkos::Cuda make_instance() {
+    detail::lazy_init(); // CUDA priorities
+    cudaStream_t stream;
+    int prio;
+    switch (priority) {
+        case Priority::high: prio = detail::cudaPriorityRange.high; break;
+        case Priority::medium: prio = detail::cudaPriorityRange.medium; break;
+        case Priority::low: prio = detail::cudaPriorityRange.low; break;
         default: throw std::runtime_error("unexpected Tpetra Space priority");
     }
+    CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
+    std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
+    return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
 }
-
+#endif // KOKKOS_ENABLE_CUDA
 
 
 /* cause future work submitted to waiter to wait for the current work in waitee to finish

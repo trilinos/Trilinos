@@ -39,7 +39,6 @@
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
-#include "Tpetra_Spaces.hpp"
 
 #ifdef HAVE_TPETRACORE_MPI
 #  include <Teuchos_DefaultMpiComm.hpp> // this includes mpi.h too
@@ -243,8 +242,6 @@ namespace Tpetra {
       initKokkosIfNeeded (argc, argv, myRank);
     }
 
-    Spaces::detail::initialize();
-    
     tpetraIsInitialized_ = true;
   }
 
@@ -263,8 +260,6 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
     }
-
-    Spaces::detail::initialize();
 
     tpetraIsInitialized_ = true;
 
@@ -309,20 +304,18 @@ namespace Tpetra {
       initKokkosIfNeeded (argc, argv, myRank);
     }
 
-    Spaces::detail::initialize();
-
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;
   }
 
   void finalize ()
   {
+
     if (! tpetraIsInitialized_) {
-      return; // user didn't call initialize(), so do nothing at all
+      return; // user didn't call initialize(), so don't do anything else
     }
 
-    // Clean up any Kokkos execution space management
-    Spaces::detail::finalize();
+
 
     // Tpetra should only finalize Kokkos if it initialized Kokkos.
     // See Github Issue #434.
