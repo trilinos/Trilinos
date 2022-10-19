@@ -499,8 +499,6 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      message("Stokhos_ENABLE_Tpetra = ${Stokhos_ENABLE_Tpetra}")
-      message("HAVE_TPETRA_CUDA = ${HAVE_TPETRA_CUDA}")
       IF (Stokhos_ENABLE_Tpetra)
 
         IF (HAVE_TPETRA_PTHREAD)
@@ -539,7 +537,6 @@ IF(Stokhos_ENABLE_Sacado)
         ENDIF()
 
         IF (HAVE_TPETRA_CUDA)
-          message("enabling TpetraCrsMatrixUQPCEUnitTest_Cuda")
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixUQPCEUnitTest_Cuda
             SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp
