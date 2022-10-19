@@ -54,6 +54,7 @@
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
+#include "Tpetra_SpaceManager.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -423,7 +424,8 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public SpaceManager2
   {
   public:
     //! @name Typedefs
@@ -3828,35 +3830,6 @@ public:
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
 
-  protected:
-    /// \brief Column Map MultiVector used in apply().
-    ///
-    /// This is a column Map MultiVector.  It is used as the target of
-    /// the forward mode Import operation (if necessary) in apply(),
-    /// and the source of the reverse mode Export
-    /// operation (if necessary) in these methods.  Both of these
-    /// methods create this MultiVector on demand if needed, and reuse
-    /// it (if possible) for subsequent calls.
-    ///
-    /// This is declared <tt>mutable</tt> because the methods in
-    /// question are const, yet want to cache the MultiVector for
-    /// later use.
-    mutable Teuchos::RCP<MV> importMV_;
-
-    /// \brief Row Map MultiVector used in apply().
-    ///
-    /// This is a row Map MultiVector.  It is uses as the source of
-    /// the forward mode Export operation (if necessary) in apply(),
-    /// and the target of the reverse mode Import
-    /// operation (if necessary) in these methods.  Both of these
-    /// methods create this MultiVector on demand if needed, and reuse
-    /// it (if possible) for subsequent calls.
-    ///
-    /// This is declared <tt>mutable</tt> because the methods in
-    /// question are const, yet want to cache the MultiVector for
-    /// later use.
-    mutable Teuchos::RCP<MV> exportMV_;
-
     /// \brief Create a (or fetch a cached) column Map MultiVector.
     ///
     /// \param X_domainMap [in] A domain Map Multivector.  The
@@ -3904,6 +3877,44 @@ public:
     Teuchos::RCP<MV>
     getRowMapMultiVector (const MV& Y_rangeMap,
                           const bool force = false) const;
+
+  protected:
+    /// \brief Column Map MultiVector used in apply().
+    ///
+    /// This is a column Map MultiVector.  It is used as the target of
+    /// the forward mode Import operation (if necessary) in apply(),
+    /// and the source of the reverse mode Export
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> importMV_;
+
+    /// \brief Row Map MultiVector used in apply().
+    ///
+    /// This is a row Map MultiVector.  It is uses as the source of
+    /// the forward mode Export operation (if necessary) in apply(),
+    /// and the target of the reverse mode Import
+    /// operation (if necessary) in these methods.  Both of these
+    /// methods create this MultiVector on demand if needed, and reuse
+    /// it (if possible) for subsequent calls.
+    ///
+    /// This is declared <tt>mutable</tt> because the methods in
+    /// question are const, yet want to cache the MultiVector for
+    /// later use.
+    mutable Teuchos::RCP<MV> exportMV_;
+
+    
+
+    //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
+    void
+    applyNonTransposeOverlapped (const MV& X_in,
+                       MV& Y_in,
+                       Scalar alpha,
+                       Scalar beta) const;
 
     //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
     void

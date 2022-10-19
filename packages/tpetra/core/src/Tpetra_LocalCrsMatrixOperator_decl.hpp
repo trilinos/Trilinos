@@ -45,6 +45,7 @@
 #include "Tpetra_Spaces.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
+#include "Tpetra_Core.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -549,7 +550,17 @@ namespace Tpetra {
           for (ordinal_type ri = 0; ri < row.length; ++ri) {
             value_type A_ij = row.value(ri);
             ordinal_type j = row.colidx(ri);
-            sum += A_ij * X_(j, k); 
+            value_type X_jk = X_(j, k);
+            // if (j >= X_.extent(0)) {
+            //   printf("X row violation %d >= %d\n", int(j), int(X_.extent(0)));
+            // }
+            // if (X_jk > 30 || X_jk != X_jk) {
+            //   printf("XXXXXXX %d %d %d %e\n", int(i), int(j), int(k), double(X_jk));
+            // }
+            // if (A_ij > 30 || A_ij != A_ij) {
+            //   printf("AAAAAAA %d %d %d %e\n", int(i), int(j), int(k), double(A_ij));
+            // }
+            sum += A_ij * X_jk;
           }
           sum *= alpha_;
 
@@ -569,14 +580,43 @@ namespace Tpetra {
         const OffsetDeviceViewType &offRankOffsets,
         const execution_space &space) {
 
+#if 0
+        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ","
+                  << " y[" << Y.extent(0) << "] = A[" << A.numRows() <<"," <<A.numCols() << "] * x[" << X.extent(0) << "]\n";
+#endif
+#if 0
+        int xNans;
+        Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<execution_space>(space, 0, X.extent(0)),
+            [&](size_t i, int &lnans) {
+              for (size_t k = 0; k < X.extent(1); ++k) {
+                lnans += std::isnan(X(i,k)) || std::isinf(X(i,k));
+              }
+            }
+        ,xNans);
+
+      int yNans;
+        Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<execution_space>(space, 0, Y.extent(0)),
+            [&](size_t i, int &lnans) {
+              for (size_t k = 0; k < Y.extent(1); ++k) {
+                lnans += std::isnan(Y(i,k)) || std::isinf(Y(i,k));
+              }
+            }
+        ,yNans);
+
         if (std::is_same<RowViewer, OnRankRowViewer<OffsetDeviceViewType>>::value) {
-          // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::on-rank\n";
+          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ","
+                    << " SpmvMvFunctor::on-rank  alpha=" << alpha << " beta=" << beta << " xNans=" << xNans << " yNans=" << yNans << "\n";
         } else if (std::is_same<RowViewer, OffRankRowViewer<OffsetDeviceViewType>>::value) {
-          // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::off-rank\n";
+          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ","
+                    << " SpmvMvFunctor::off-rank alpha=" << alpha << " beta=" << beta << " xNans=" << xNans << " yNans=" << yNans << "\n";
         }
+#endif
+
 
         // still need to scal A.numRows() == 0
-        if (0 == A.numRows()) {
+        if (0 == A.numRows() || 0 == alpha) {
           std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch scal only\n";
           // TODO: define a common scal operator
           SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets, 0/*unused*/, 0/*unused*/);
@@ -626,8 +666,35 @@ namespace Tpetra {
                             Kokkos::TeamPolicy<execution_space>(
                                 space, nteams, teamSize, vectorLength),
                             op);
-      }
 
+#if 0
+        Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<execution_space>(space, 0, X.extent(0)),
+            [&](size_t i, int &lnans) {
+              for (size_t k = 0; k < X.extent(1); ++k) {
+                lnans += std::isnan(X(i,k)) || std::isinf(X(i,k));
+              }
+            }
+        ,xNans);
+
+        Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<execution_space>(space, 0, Y.extent(0)),
+            [&](size_t i, int &lnans) {
+              for (size_t k = 0; k < Y.extent(1); ++k) {
+                lnans += std::isnan(Y(i,k)) || std::isinf(Y(i,k));
+              }
+            }
+        ,yNans);
+
+        if (std::is_same<RowViewer, OnRankRowViewer<OffsetDeviceViewType>>::value) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ",";
+          std::cerr << " SpmvMvFunctor::on-rank  xNans=" << xNans << " yNans=" << yNans << "\n";
+        } else if (std::is_same<RowViewer, OffRankRowViewer<OffsetDeviceViewType>>::value) {
+          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ",";
+          std::cerr << " SpmvMvFunctor::off-rank xNans=" << xNans << " yNans=" << yNans << "\n";
+        }
+#endif
+      }
     };
 
 

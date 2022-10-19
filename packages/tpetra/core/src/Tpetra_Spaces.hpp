@@ -123,6 +123,8 @@ ExecSpace make_instance() {
     return ExecSpace();
 }
 
+
+
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename ExecSpace, Priority priority = Priority::medium, 
 detail::IsCuda<ExecSpace> = true >
@@ -134,7 +136,7 @@ Kokkos::Cuda make_instance() {
         case Priority::high: prio = detail::cudaPriorityRange.high; break;
         case Priority::medium: prio = detail::cudaPriorityRange.medium; break;
         case Priority::low: prio = detail::cudaPriorityRange.low; break;
-        default: throw std::runtime_error("unexpected Tpetra Space priority");
+        default: throw std::runtime_error("unexpected static Tpetra Space priority");
     }
     CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
     std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
@@ -142,6 +144,15 @@ Kokkos::Cuda make_instance() {
 }
 #endif // KOKKOS_ENABLE_CUDA
 
+template <typename ExecSpace>
+ExecSpace make_instance(const Priority &prio) {
+    switch (prio) {
+        case Priority::high: return make_instance<ExecSpace, Priority::high>();
+        case Priority::medium: return make_instance<ExecSpace, Priority::medium>();
+        case Priority::low: return make_instance<ExecSpace, Priority::low>();
+        default: throw std::runtime_error("unexpected dynamic Tpetra Space priority");
+    }
+}
 
 /* cause future work submitted to waiter to wait for the current work in waitee to finish
   may return immediately (e.g., before waitee's work is done)

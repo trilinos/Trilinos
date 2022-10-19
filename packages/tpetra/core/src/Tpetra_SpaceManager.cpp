@@ -2,6 +2,15 @@
 
 namespace Tpetra {
 
+SpaceManager2::SpaceManager2() {
+    // priority only implemented for CUDA, other instances are all equivalent
+#ifdef KOKKOS_ENABLE_CUDA
+    for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
+        cudaSpace[i] = Spaces::make_instance<Kokkos::Cuda>(static_cast<Spaces::Priority>(i));
+    }
+#endif
+}
+
 SpaceManager::~SpaceManager() {
 #ifdef KOKKOS_ENABLE_CUDA
     for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
