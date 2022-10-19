@@ -82,6 +82,30 @@ void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t ra
     }
 }
 
+template<typename ALGORITHM_TO_RUN_PER_ENTITY>
+void for_each_selected_entity_run_with_nodes(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+                                             const ALGORITHM_TO_RUN_PER_ENTITY& functor)
+{
+    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+    const size_t numBuckets = buckets.size();
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t j=0; j<numBuckets; j++)
+    {
+        stk::mesh::Bucket& bucket = *buckets[j];
+        const size_t numNodesPerEntity = bucket.topology().num_nodes();
+        const Entity* nodes = bucket.begin_nodes(0);
+        const size_t bucketSize = bucket.size();
+        for(size_t i=0; i<bucketSize; i++)
+        {
+            Entity entity = bucket[i];
+            functor(entity, nodes, numNodesPerEntity);
+            nodes += numNodesPerEntity;
+        }
+    }
+}
+
 template <typename ALGORITHM_PER_ENTITY>
 void for_each_selected_entity_run_no_threads(const BulkData &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
 {

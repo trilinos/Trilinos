@@ -197,7 +197,7 @@ public:
     const OffsetType total = numOffsets*count;
     const char funcName[] =
       "Tpetra::Details::computeOffsetsFromConstantCount";
-    Kokkos::parallel_for (range, functor, funcName);
+    Kokkos::parallel_for (funcName, range, functor);
     return total;
   }
 

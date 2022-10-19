@@ -143,7 +143,7 @@
         const percept::MyPairIterRelation elem_nodes (Base::m_eMesh, element, Base::m_eMesh.node_rank());
         //VERIFY_OP_ON(elem_nodes.size(), ==, 3, "only for tris");
 
-        CoordinatesFieldType* coordField = Base::m_eMesh.get_coordinates_field();
+        stk::mesh::FieldBase* coordField = Base::m_eMesh.get_coordinates_field();
 
         unsigned numSubDimNeededEntities = 0;
         numSubDimNeededEntities = cell_topo_data->edge_count;
@@ -241,7 +241,7 @@
         const percept::MyPairIterRelation elem_nodes (Base::m_eMesh, element,  Base::m_eMesh.node_rank());
         //VERIFY_OP_ON(elem_nodes.size(), ==, 3, "only for tris");
 
-        CoordinatesFieldType* coordField = Base::m_eMesh.get_coordinates_field();
+        stk::mesh::FieldBase* coordField = Base::m_eMesh.get_coordinates_field();
 
         unsigned numSubDimNeededEntities = 0;
         numSubDimNeededEntities = cell_topo_data->edge_count;

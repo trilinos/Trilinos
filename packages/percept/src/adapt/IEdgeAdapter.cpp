@@ -21,7 +21,7 @@
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::topology::NODE_RANK);
 
-      CoordinatesFieldType* coordField = m_eMesh.get_coordinates_field();
+      stk::mesh::FieldBase* coordField = m_eMesh.get_coordinates_field();
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -65,8 +65,8 @@
                 {
                   stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
                   stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  double * const coord0 = static_cast<double*>(stk::mesh::field_data( *coordField , node0 ));
+                  double * const coord1 = static_cast<double*>(stk::mesh::field_data( *coordField , node1 ));
                   double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
                   double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -89,7 +89,7 @@
       CellTopology cell_topo(cell_topo_data);
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::topology::NODE_RANK);
 
-      CoordinatesFieldType* coordField = m_eMesh.get_coordinates_field();
+      stk::mesh::FieldBase* coordField = m_eMesh.get_coordinates_field();
 
       unsigned numSubDimNeededEntities = 0;
       numSubDimNeededEntities = cell_topo_data->edge_count;
@@ -99,8 +99,8 @@
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-          double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double * const coord0 = static_cast<double*>(stk::mesh::field_data( *coordField , node0 ));
+          double * const coord1 = static_cast<double*>(stk::mesh::field_data( *coordField , node1 ));
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 
@@ -122,7 +122,7 @@
       const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::topology::NODE_RANK);
 
       int spatialDimension = m_eMesh.get_spatial_dim();
-      CoordinatesFieldType* coordField = m_eMesh.get_coordinates_field();
+      stk::mesh::FieldBase* coordField = m_eMesh.get_coordinates_field();
 
       unsigned numSubDimNeededEntities = 0;
       numSubDimNeededEntities = cell_topo_data->edge_count;
@@ -132,8 +132,8 @@
         {
           stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
           stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-          double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-          double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+          double * const coord0 = static_cast<double*>(stk::mesh::field_data( *coordField , node0 ));
+          double * const coord1 = static_cast<double*>(stk::mesh::field_data( *coordField , node1 ));
           double  dcoord0[3] = {coord0[0],coord0[1], (spatialDimension==2?0:coord0[2])};
           double  dcoord1[3] = {coord1[0],coord1[1], (spatialDimension==2?0:coord1[2])};
 

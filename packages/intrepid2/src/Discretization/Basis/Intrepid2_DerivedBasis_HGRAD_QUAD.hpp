@@ -93,7 +93,7 @@ namespace Intrepid2
       name_ = basisName.str();
 
       order_x_= polyOrder_x;
-      order_y_ = polyOrder_x;
+      order_y_ = polyOrder_y;
       pointType_ = pointType;
       
       this->setShardsTopologyAndTags();

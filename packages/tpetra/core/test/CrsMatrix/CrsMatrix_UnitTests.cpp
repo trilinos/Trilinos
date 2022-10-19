@@ -116,10 +116,6 @@ namespace { // (anonymous)
       MV mv(map,1);
       zero = rcp( new MAT(map,0) );
       TEST_THROW(zero->apply(mv,mv), std::runtime_error);
-#   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
-      // throw exception because we required increased allocation
-      TEST_THROW(zero->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
-#   endif
       zero->fillComplete();
     }
     STD_TESTS((*zero));

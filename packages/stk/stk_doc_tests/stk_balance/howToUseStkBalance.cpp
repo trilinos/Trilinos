@@ -18,7 +18,6 @@ public:
     virtual ~RcbSettings() {}
 
     virtual bool isIncrementalRebalance() const { return false; }
-    virtual bool areVertexWeightsProvidedViaFields() const { return false; }
     virtual std::string getDecompMethod() const { return std::string("rcb"); }
     virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
     virtual bool shouldPrintMetrics() const { return true; }
@@ -220,33 +219,24 @@ class FieldVertexWeightSettings : public stk::balance::GraphCreationSettings
 public:
     FieldVertexWeightSettings(const stk::balance::DoubleFieldType &weightField,
                               const double defaultWeight = 0.0)
-      : m_weightField(weightField),
-        m_defaultWeight(defaultWeight) { }
+  {
+    setVertexWeightMethod(stk::balance::VertexWeightMethod::FIELD);
+    setVertexWeightFieldName(weightField.name());
+    setDefaultFieldWeight(defaultWeight);
+  }
+
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.0001; }
     virtual std::string getDecompMethod() const { return "rcb"; }
 
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-    {
-        const double *weight = stk::mesh::field_data(m_weightField, entity);
-        if(weight) return *weight;
-
-        return m_defaultWeight;
-    }
-
 protected:
     FieldVertexWeightSettings() = delete;
     FieldVertexWeightSettings(const FieldVertexWeightSettings&) = delete;
     FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
-
-    const stk::balance::DoubleFieldType &m_weightField;
-    const double m_defaultWeight;
 };
 
 //ENDRcbFieldSettings
@@ -310,7 +300,6 @@ public:
     virtual ~MultipleCriteriaSelectorSettings() = default;
 
     virtual bool isMultiCriteriaRebalance() const { return true;}
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
 protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
@@ -378,37 +367,22 @@ class MultipleCriteriaFieldSettings : public ParmetisSettings
 public:
     MultipleCriteriaFieldSettings(const std::vector<stk::mesh::Field<double>*> critFields,
                                   const double default_weight = 0.0)
-      : m_critFields(critFields), m_defaultWeight(default_weight)
-    { }
-    virtual ~MultipleCriteriaFieldSettings() = default;
-
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-    virtual int getNumCriteria() const { return m_critFields.size(); }
-    virtual bool isMultiCriteriaRebalance() const { return true;}
-
-    using ParmetisSettings::getGraphVertexWeight;
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
     {
-        ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
-        const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
-        if(weight != nullptr)
-        {
-            ThrowRequireWithSierraHelpMsg(*weight >= 0);
-            return *weight;
-        }
-        else
-        {
-            return m_defaultWeight;
-        }
+      setNumCriteria(critFields.size());
+      setVertexWeightMethod(stk::balance::VertexWeightMethod::FIELD);
+      for (unsigned i = 0; i < critFields.size(); ++i) {
+        setVertexWeightFieldName(critFields[i]->name(), i);
+      }
+      setDefaultFieldWeight(default_weight);
     }
+    virtual ~MultipleCriteriaFieldSettings() override = default;
+
+    virtual bool isMultiCriteriaRebalance() const { return true;}
 
 protected:
     MultipleCriteriaFieldSettings() = delete;
     MultipleCriteriaFieldSettings(const MultipleCriteriaFieldSettings&) = delete;
     MultipleCriteriaFieldSettings& operator=(const MultipleCriteriaFieldSettings&) = delete;
-
-    const std::vector<stk::mesh::Field<double>*> m_critFields;
-    const double m_defaultWeight;
 };
 //ENDMultiCriteriaFieldSettings
 

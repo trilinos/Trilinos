@@ -179,70 +179,95 @@ TEST_F( NgpMeshChangeElementPartMembership, Timing )
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 200;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 200;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-
-  for (int i=0; i<NUM_RUNS; i++) {
-    change_element_part_membership(i);
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    batchTimer.start_batch_timer();
+  
+    for (int i = 0; i < NUM_ITERS; i++) {
+      change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F( NgpMeshChangeElementPartMembership, TimingWithAura )
 {
   if (get_parallel_size() != 2) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 200;
-
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 50;
+    
   stk::parallel_machine_barrier(get_comm());
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
-
-  for (int i=0; i<NUM_RUNS; i++) {
-    change_element_part_membership(i);
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
+    batchTimer.start_batch_timer();
+  
+    for (int i = 0; i < NUM_ITERS; i++) {
+      change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 400;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 200;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-  for (int i=0; i<NUM_RUNS; i++) {
-    batch_change_element_part_membership(i);
+    for (int i = 0; i < NUM_ITERS; i++) {
+      batch_change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F( NgpMeshCreateEntity, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 100;
+  const unsigned NUM_RUNS = 5;
+  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  const int NUM_ITERS = 100;
+  #else
+  const int NUM_ITERS = 5000;
+  #endif
+  const int NUM_FAKE_ITERS = 5000;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh();
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
 
-  for (int i=0; i<NUM_RUNS; i++) {
-    create_entity(i);
+    for (int i=0; i<NUM_ITERS; i++) {
+      create_entity(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_FAKE_ITERS);
 }
 
 TEST_F( NgpMeshGhosting, Timing )
@@ -251,64 +276,51 @@ TEST_F( NgpMeshGhosting, Timing )
 
   std::string perfCheck = stk::unit_test_util::simple_fields::get_option("-perf_check", "PERF_CHECK");
 #ifdef NDEBUG
-  const int NUM_OUTER_RUNS = (perfCheck=="NO_PERF_CHECK" ? 1 : 5);
-  const int NUM_INNER_RUNS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
+  const int NUM_INNER_ITERS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
 #else
-  const int NUM_OUTER_RUNS = 1;
-  const int NUM_INNER_RUNS = 1;
+  const int NUM_INNER_ITERS = 1;
 #endif
 
-  stk::parallel_machine_barrier(get_comm());
-
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-
-  for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
+  const unsigned NUM_RUNS = 5;
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
     setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-
-    for (int i=0; i<NUM_INNER_RUNS; i++) {
+    batchTimer.start_batch_timer();
+  
+    for (int i = 0; i < NUM_INNER_ITERS; i++) {
       ghost_element(i);
     }
 
-    const bool lastIteration = outer == (NUM_OUTER_RUNS-1);
-    if (!lastIteration) {
-      reset_mesh();
-    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-
-  timer.update_timing();
-  timer.print_timing(NUM_OUTER_RUNS * NUM_INNER_RUNS);
+  batchTimer.print_batch_timing(NUM_INNER_ITERS);
 }
+
 TEST_F( NgpMeshGhosting, TimingWithAura )
 {
   if (get_parallel_size() != 2) return;
 
 #ifdef NDEBUG
-  const int NUM_OUTER_RUNS = 5;
-  const int NUM_INNER_RUNS = 100;
+  const int NUM_INNER_ITERS = 50;
 #else
-  const int NUM_OUTER_RUNS = 1;
-  const int NUM_INNER_RUNS = 1;
+  const int NUM_INNER_ITERS = 1;
 #endif
 
-  stk::parallel_machine_barrier(get_comm());
-
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-
-  for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
+  const unsigned NUM_RUNS = 5;
+  stk::performance_tests::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
     setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
+    batchTimer.start_batch_timer();
 
-    for (int i=0; i<NUM_INNER_RUNS; i++) {
+    for (int i = 0; i < NUM_INNER_ITERS; i++) {
       ghost_element(i);
     }
 
-    const bool lastIteration = outer == (NUM_OUTER_RUNS-1);
-    if (!lastIteration) {
-      reset_mesh();
-    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-
-  timer.update_timing();
-  timer.print_timing(NUM_OUTER_RUNS * NUM_INNER_RUNS);
+  batchTimer.print_batch_timing(NUM_INNER_ITERS);
 }

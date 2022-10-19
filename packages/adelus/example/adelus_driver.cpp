@@ -168,11 +168,9 @@ int main( int argc, char* argv[] )
 #else
   hipGetDeviceCount ( &gpu_count );
 #endif
-  Kokkos::InitArguments args;
-  args.num_threads = 0;
-  args.num_numa    = 0;
-  args.device_id   = rank%nptile;
-  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.device_id, gpu_count);
+  Kokkos::InitializationSettings args;
+  args.set_num_threads(1);
+  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.get_device_id(), gpu_count);
 
   MPI_Barrier (MPI_COMM_WORLD);
 

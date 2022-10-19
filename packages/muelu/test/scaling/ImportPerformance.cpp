@@ -752,7 +752,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
                 try {
                     runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
                     mueluList = runList  .sublist("MueLu", mustAlreadyExist);
-                } catch (Teuchos::Exceptions::InvalidParameterName& e) {
+                } catch (Teuchos::Exceptions::InvalidParameterName&) {
                     stop = true;
                 }
             }

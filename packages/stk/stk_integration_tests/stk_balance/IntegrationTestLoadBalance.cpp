@@ -91,11 +91,6 @@ public:
   {
     return BalanceSettings::LOAD_BALANCE;
   }
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-  {
-    return 1.0;
-  }
 };
 
 class OurColoringSettings : public ColoringSettings

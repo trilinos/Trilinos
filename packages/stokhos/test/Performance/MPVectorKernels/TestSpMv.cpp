@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::InitArguments init_args;
-      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_num_threads(num_cores*num_hyper_threads);
       Kokkos::initialize( init_args );
 
       std::cout << std::endl
@@ -144,8 +144,8 @@ int main(int argc, char *argv[])
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::InitArguments init_args;
-      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_num_threads(num_cores*num_hyper_threads);
       Kokkos::initialize( init_args );
 
       std::cout << std::endl
@@ -167,8 +167,8 @@ int main(int argc, char *argv[])
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::InitArguments init_args;
-      init_args.device_id = device_id;
+      Kokkos::InitializationSettings init_args;
+      init_args.set_device_id(device_id);
       Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;

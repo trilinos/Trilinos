@@ -23,11 +23,11 @@ tracking.
 \section avail Availability
 
 The Exodus library source code is available on Github at
-https://github.com/gsjaardema/seacas
+https://github.com/sandialabs/seacas
 
 For bug reports, documentation errors, and enhancement suggestions, contact:
 - Gregory D. Sjaardema
-- WEB:   https://github.com/gsjaardema/seacas/issues
+- WEB:   https://github.com/sandialabs/seacas/issues
 - EMAIL: gdsjaar@sandia.gov
 - EMAIL: gsjaardema@gmail.com
 - PHONE: (505) 844-2701 (office)
@@ -35,7 +35,7 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 \section license License
 The EXODUS library is licensed under the BSD open source license.
 
-     Copyright(C) 1999-2021 National Technology & Engineering Solutions
+     Copyright(C) 1999-2022 National Technology & Engineering Solutions
      of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
      NTESS, the U.S. Government retains certain rights in this software.
 

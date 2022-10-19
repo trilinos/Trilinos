@@ -231,6 +231,78 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   }
 }
 
+TEST(ChangeElemParts, DontMarkSharedNodesModifiedUnnecessarily)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs > 2) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& myPart = meta.declare_part("myPart");
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  bulk.modification_begin();
+  stk::mesh::Part& block1 = *meta.get_part("block_1");
+  stk::mesh::PartVector parts = {&block1, &myPart};
+  stk::mesh::EntityId elemId = bulk.parallel_rank() + 1;
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+  bulk.change_entity_parts(elem, parts);
+  bulk.modification_end();
+
+  //elem should be "modified" because it was not already in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  //node 5 should not be "modified" because it was already in block_1 and
+  //shouldn't be induced into myPart
+  stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_FALSE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Unchanged, bulk.state(node5));
+}
+
+TEST(ChangeElemParts, addThenRemoveElemPart_checkSharedNode)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs > 2) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& myPart = meta.declare_part_with_topology("myPart", stk::topology::HEX_8);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  stk::mesh::Part& block1 = *meta.get_part("block_1");
+  stk::mesh::PartVector parts = {&block1, &myPart}, empty;
+  stk::mesh::EntityId elemId = bulk.parallel_rank() + 1;
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+
+  bulk.modification_begin();
+  bulk.change_entity_parts(elem, parts, empty);
+  bulk.modification_end();
+
+  //elem should be "modified" because it was not already in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  EXPECT_TRUE(bulk.bucket(elem).member(myPart));
+  //node 5 should be "modified" because it was also added to myPart
+  stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_TRUE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
+
+  bulk.modification_begin();
+  bulk.change_entity_parts(elem, empty, parts);
+  bulk.modification_end();
+
+  //elem should be "modified" because it is no longer in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  EXPECT_FALSE(bulk.bucket(elem).member(myPart));
+  //node 5 should be "modified" because it is no longer in myPart
+  EXPECT_FALSE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
+}
+
 class TestChangePartsWithSelector : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:

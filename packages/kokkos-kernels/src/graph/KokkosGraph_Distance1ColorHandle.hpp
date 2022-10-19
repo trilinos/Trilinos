@@ -560,9 +560,9 @@ class GraphColoringHandle {
       if (color_max < colors(i)) color_max = colors(i);
     }
 
+    // max-plus semiring equivalent of "plus"
     KOKKOS_INLINE_FUNCTION
-    void join(volatile color_t &dst, const volatile color_t &src)
-        const {  // max -plus semiring equivalent of "plus"
+    void join(color_t &dst, const color_t &src) const {
       if (dst < src) {
         dst = src;
       }

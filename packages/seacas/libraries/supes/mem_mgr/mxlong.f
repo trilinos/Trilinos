@@ -54,14 +54,14 @@ C     Get current location and length.
 
       CALL MXFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
 C     Save the current location of the array.
 
       OLDLOC = DPOINT(ROW,1,1)
       OLDLEN = DPOINT(ROW,1,2)
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
       oldadr = oldloc+myloc-1
       memret = -998
       memlen = newlen
@@ -83,7 +83,7 @@ C      Need to call malloc instead of realloc.
         return
       end if
 
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
       DPOINT(ROW,1,1) = oldadr+1-myloc
       NEWLOC = DPOINT(ROW,1,1) + OFFSET

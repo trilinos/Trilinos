@@ -118,6 +118,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
   set_vertex_weight_method(settings);
+  set_vertex_weight_field_name(settings);
   set_contact_search_edge_weight(settings);
   set_contact_search_vertex_weight_multiplier(settings);
   set_edge_weight_multiplier(settings);
@@ -205,7 +206,10 @@ void Parser::add_options_to_parser()
 
   stk::CommandLineOption vertexWeightMethod{m_optionNames.vertexWeightMethod, "",
                            "Method used to calculate vertex weights given to the partitioner. "
-                           "[constant|topology|connectivity]"};
+                           "[constant|topology|connectivity|field]"};
+  stk::CommandLineOption vertexWeightFieldName{m_optionNames.vertexWeightFieldName, "",
+                           "Field name for field vertex weights given to the partitioner. "
+                           "Using this option implies --vertex-weight-method=field."};
   stk::CommandLineOption contactSearchEdgeWeight{m_optionNames.contactSearchEdgeWeight, "",
                            "Graph edge weight to use between elements that are determined to be "
                            "in contact."};
@@ -235,6 +239,7 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_flag(useNested);
 
   m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
+  m_commandLineParser.add_optional<std::string>(vertexWeightFieldName);
   m_commandLineParser.add_optional<double>(contactSearchEdgeWeight, DefaultSettings::faceSearchEdgeWeight);
   m_commandLineParser.add_optional<double>(contactSearchVertexWeightMultiplier, DefaultSettings::faceSearchVertexMultiplier);
   m_commandLineParser.add_optional<double>(edgeWeightMultiplier, DefaultSettings::graphEdgeWeightMultiplier);
@@ -442,9 +447,22 @@ void Parser::set_vertex_weight_method(BalanceSettings &settings) const
       settings.setVertexWeightMethod(VertexWeightMethod::CONNECTIVITY);
       settings.setGraphEdgeWeightMultiplier(10.0);
     }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::FIELD)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
+    }
     else {
       ThrowErrorMsg("Unrecognized vertex weight method: " << vertexWeightMethodName);
     }
+  }
+}
+
+void Parser::set_vertex_weight_field_name(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightFieldName)) {
+    settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
+    settings.setGraphEdgeWeightMultiplier(1.0);
+    const std::string vertexWeightFieldName = m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightFieldName);
+    settings.setVertexWeightFieldName(vertexWeightFieldName);
   }
 }
 

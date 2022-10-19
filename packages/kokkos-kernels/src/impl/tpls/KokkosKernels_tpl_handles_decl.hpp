@@ -48,7 +48,7 @@
 #include "KokkosBlas_tpl_spec.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 namespace KokkosKernels {
 namespace Impl {

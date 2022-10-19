@@ -188,7 +188,9 @@ int main(int argc, char** argv) {
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;

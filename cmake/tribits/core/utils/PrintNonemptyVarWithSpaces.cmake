@@ -43,26 +43,26 @@ include(AppendStringVarWithSep)
 
 # @FUNCTION: print_nonempty_var_with_spaces()
 #
-# Print a defined variable giving its name then value printed with spaces
-# instead of ``';'`` but only if it is not empty.
+# Print a list variable giving its name then value printed with spaces instead
+# of ``';'``, but only if the list is non-empty.
 #
 # Usage::
 #
-#    print_nonempty_var_with_spaces(<varName>  <printedVarInOut>)
+#    print_nonempty_var_with_spaces(<varName>  <printedVarOut>)
 #
 # Prints the variable as::
 #
 #    <varName>: <ele0> <ele1> ...
 #
-# If ``$<printedVarInOut>`` is ``TRUE`` on input, then the variable is not
-# touched. If however, the variable ``$<printedVarInOut>`` is not ``TRUE`` on
-# input, then it is set to ``TRUE`` on output.
+# If ``<printedVarOut>`` is ``TRUE`` on input, then the variable is not
+# touched. If however, the variable ``<printedVarOut>`` is not ``TRUE`` and
+# the list ``<varName>`` in non-empty, then ``<printedVarOut>`` is set to
+# ``TRUE`` on output.
 #
-function(print_nonempty_var_with_spaces  VARIBLE_NAME  PRINTED_VAR_OUT)
-  assert_defined(VARIBLE_NAME)
-  if (NOT "${${VARIBLE_NAME}}" STREQUAL "")
-    string(REPLACE ";" " " OUTSTR "${${VARIBLE_NAME}}")
-    message("-- ${VARIBLE_NAME}: ${OUTSTR}")
-    set(${PRINTED_VAR_OUT} TRUE PARENT_SCOPE)
+function(print_nonempty_var_with_spaces  variableName  printedVarOut)
+  if (NOT "${${variableName}}" STREQUAL "")
+    string(REPLACE  ";"  " "  OUTSTR  "${${variableName}}")
+    message("-- ${variableName}: ${OUTSTR}")
+    set(${printedVarOut}  TRUE  PARENT_SCOPE)
   endif()
 endfunction()

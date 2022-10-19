@@ -61,8 +61,10 @@
 #include "BelosTFQMRSolMgr.hpp"
 #include "BelosBiCGStabSolMgr.hpp"
 #include "BelosFixedPointSolMgr.hpp"
-
 #include "BelosThyraAdapter.hpp"
+
+#include "Thyra_BelosTpetrasSolverAdapter.hpp"
+
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -104,6 +106,15 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BiCGStab_name = "BiCGStab";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::FixedPoint_name = "Fixed Point";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmres_name = "TPETRA GMRES";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmresPipeline_name = "TPETRA GMRES PIPELINE";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmresSingleReduce_name = "TPETRA GMRES SINGLE REDUCE";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmresSstep_name = "TPETRA GMRES S-STEP";
+
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
 
@@ -400,7 +411,11 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "MINRES",
         "TFQMR",
         "BiCGStab",
-        "Fixed Point"
+        "Fixed Point",
+        "TPETRA GMRES",
+        "TPETRA GMRES PIPELINE",
+        "TPETRA GMRES SINGLE REDUCE",
+        "TPETRA GMRES S-STEP"
         ),
       tuple<std::string>(
         "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
@@ -431,8 +446,8 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
 
         "Variant of GMRES that performs subspace recycling to accelerate "
         "convergence for sequences of solves with related linear systems.  "
-	"Individual linear systems are deflated out as they are solved.  "
-	"The current implementation only supports real-valued Scalar types.",
+        "Individual linear systems are deflated out as they are solved.  "
+        "The current implementation only supports real-valued Scalar types.",
 
         "CG solver for symmetric (Hermitian in complex arithmetic) positive "
         "definite linear systems, that performs subspace recycling to "
@@ -445,7 +460,15 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
 
         "BiCGStab solver for nonsymmetric linear systems.",
 
-        "Fixed point iteration"
+        "Fixed point iteration",
+
+        "Native Tpetra implementation of GMRES",
+
+        "Native Tpetra implementation of pipeline GMRES",
+
+        "Native Tpetra implementation of single-reduce GMRES",
+
+        "Native Tpetra implementation of s-step GMRES"
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
@@ -458,7 +481,11 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_MINRES,
         SOLVER_TYPE_TFQMR,
         SOLVER_TYPE_BICGSTAB,
-        SOLVER_TYPE_FIXEDPOINT
+        SOLVER_TYPE_FIXEDPOINT,
+        SOLVER_TYPE_TPETRA_GMRES,
+        SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
+        SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
+        SOLVER_TYPE_TPETRA_GMRES_SSTEP
         ),
       &*validParamList
       );
@@ -540,6 +567,30 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     {
       Belos::FixedPointSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(FixedPoint_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(TpetraGmres_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Thyra::BelosTpetraGmresPipeline<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(TpetraGmresPipeline_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Thyra::BelosTpetraGmresSingleReduce<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(TpetraGmresSingleReduce_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Thyra::BelosTpetraGmresSstep<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(TpetraGmresSstep_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -939,6 +990,66 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       else {
         iterativeSolver = rcp(new Belos::FixedPointSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
+      break;
+    }
+    case SOLVER_TYPE_TPETRA_GMRES:
+    {
+      // Get the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &tpetraGmresPL = solverTypesPL.sublist(TpetraGmres_name);
+        solverPL = Teuchos::rcp( &tpetraGmresPL, false );
+      }
+      // Create the solver, always
+      iterativeSolver = rcp(new Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t>());
+      // Set the Problem & PL
+      iterativeSolver->setProblem( lp );
+      iterativeSolver->setParameters( solverPL );
+      break;
+    }
+    case SOLVER_TYPE_TPETRA_GMRES_PIPELINE:
+    {
+      // Get the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &tpetraGmresPipelinePL = solverTypesPL.sublist(TpetraGmresPipeline_name);
+        solverPL = Teuchos::rcp( &tpetraGmresPipelinePL, false );
+      }
+      // Create the solver, always
+      iterativeSolver = rcp(new Thyra::BelosTpetraGmresPipeline<Scalar,MV_t,LO_t>());
+      // Set the Problem & PL
+      iterativeSolver->setProblem( lp );
+      iterativeSolver->setParameters( solverPL );
+      break;
+    }
+    case SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE:
+    {
+      // Get the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &tpetraGmresSingleReducePL = solverTypesPL.sublist(TpetraGmresSingleReduce_name);
+        solverPL = Teuchos::rcp( &tpetraGmresSingleReducePL, false );
+      }
+      // Create the solver, always
+        iterativeSolver = rcp(new Thyra::BelosTpetraGmresSingleReduce<Scalar,MV_t,LO_t>());
+      // Set the Problem & PL
+      iterativeSolver->setProblem( lp );
+      iterativeSolver->setParameters( solverPL );
+      break;
+    }
+    case SOLVER_TYPE_TPETRA_GMRES_SSTEP:
+    {
+      // Get the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &tpetraGmresSstepPL = solverTypesPL.sublist(TpetraGmresSstep_name);
+        solverPL = Teuchos::rcp( &tpetraGmresSstepPL, false );
+      }
+      // Create the solver, always
+      iterativeSolver = rcp(new Thyra::BelosTpetraGmresSstep<Scalar,MV_t,LO_t>());
+      // Set the Problem & PL
+      iterativeSolver->setProblem( lp );
+      iterativeSolver->setParameters( solverPL );
       break;
     }
 

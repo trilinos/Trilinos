@@ -50,13 +50,24 @@ ENDIF()
 # Stratimikos example
 #
 IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
-
+  
   # build executable
   TRIBITS_ADD_EXECUTABLE(
     Stratimikos
     SOURCES Stratimikos.cpp
     COMM serial mpi
     )
+
+  # Teko build
+  IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
+    TRIBITS_ADD_EXECUTABLE(
+      Teko
+      SOURCES Teko.cpp
+      COMM serial mpi
+    )
+  ENDIF()
+
+
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(advanced_stratimikos_cp
     SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList.yaml stratimikos_ParameterList2.xml
@@ -87,7 +98,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-
+    
   ENDIF()
 
 ENDIF()

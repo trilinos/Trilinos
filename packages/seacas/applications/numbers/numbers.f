@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 
@@ -64,13 +64,19 @@ C .. Get filename from command line.  If not specified, emit error message
 
       if (narg .lt. 1) then
         CALL PRTERR ('FATAL', 'Filename(s) not specified.')
-        CALL PRTERR ('FATAL',
+        CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "numbers filename [output]"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#numbers')
         GOTO 60
       else if (narg .gt. 2) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('FATAL',
+        CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "numbers filename [output]"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#numbers')
         GOTO 60
       end if
 
@@ -339,10 +345,12 @@ C ... CALCULATE ELEMENT CENTROIDS FOR LATER USE
 
       CALL ELCENT ( A(IECEN), A(IX), A(IR), NDIM, NUMEL, NNODES, NUMNP)
       CALL HEADER (NDIM, TITLE, NUMEL, NUMNP, AXI, DBNAME(:LNAM))
+
       CALL COMMAND (A, IA, TITLE, A(ITIME), A(ITSEL), A(IM),
-     *  A(IDSP), A(IR), A(IX), A(ID), A(IW), A(IISEV),
-     *  NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
-     *  NQAREC, C(KQAREC), NINFO, C(KINFO), DBNAME(:LNAM))
+     *     A(IDSP), A(IR), A(IX), A(ID), A(IW), A(IISEV),
+     *     NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
+     *     NQAREC, C(KQAREC), NINFO, C(KINFO), DBNAME(:LNAM),
+     *     a(itimscr))
       GO TO 60
 
  55   CONTINUE

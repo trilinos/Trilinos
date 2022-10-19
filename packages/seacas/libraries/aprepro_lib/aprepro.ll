@@ -1,7 +1,7 @@
 /* -*- Mode: c++ -*- */
 
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,6 +39,18 @@ typedef SEAMS::Parser::token_type token_type;
    extern bool echo;
    void yyerror(const char *s);
  }
+
+namespace {
+  bool string_is_ascii(const char *line, size_t len)
+  {
+    for (size_t i = 0; i < len; i++) {
+      if (!(std::isspace(line[i]) || std::isprint(line[i]))) {
+	return false;
+      }
+    }
+    return true;
+  }
+} // namespace
 
 int file_must_exist = 0; /* Global used by include/conditional include */
 
@@ -280,7 +292,7 @@ integer {D}+({E})?
     }
   }
 
-  .*"\n" { /* Do not increment line count */ 
+  .*"\n" { /* Do not increment line count */
     ;
   }
 }
@@ -707,7 +719,7 @@ integer {D}+({E})?
     };
   }
 
-  void Scanner::add_include_file(const std::string &filename, bool must_exist)
+  bool Scanner::add_include_file(const std::string &filename, bool must_exist)
   {
     std::fstream *yytmp = nullptr;
     if (must_exist)
@@ -729,6 +741,7 @@ integer {D}+({E})?
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(yytmp, YY_BUF_SIZE));
       curr_index = 0;
     }
+    return yytmp != nullptr;
   }
 
   void Scanner::LexerOutput(const char *buf, int size)
@@ -762,6 +775,11 @@ integer {D}+({E})?
         return 0;
       }
 
+      if (!string_is_ascii(line, strlen(line))) {
+        yyerror("input line contains non-ASCII (probably UTF-8) characters which will most likely "
+                "be parsed incorrectly.");
+      }
+
       ap_gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
@@ -781,6 +799,10 @@ integer {D}+({E})?
         return -1;
       }
       else {
+	if (!string_is_ascii(buf, yyin->gcount())) {
+	  yyerror("input file contains non-ASCII (probably UTF-8) characters which will most likely "
+		  "be parsed incorrectly.");
+	}
         return yyin->gcount();
       }
     }
@@ -950,6 +972,41 @@ integer {D}+({E})?
 
       auto ins = new std::istringstream(new_string); // Declare an input string stream.
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
+    }
+    return (nullptr);
+  }
+
+  char *Scanner::import_handler(char *string)
+  {
+    /*
+     * NOTE: The closing } has not yet been scanned in the call to rescan();
+     *       therefore, we read it ourselves using input().
+     */
+    int i = 0;
+    while ((i = yyFlexLexer::yyinput()) != '}' && i != EOF)
+      curr_index++; /* eat up values */
+
+    add_include_file(string, true);
+    std::string info_string = std::string("Imported File: '") + string + "'";
+    aprepro.info(info_string, true);
+
+    if (!aprepro.doIncludeSubstitution) {
+      yy_push_state(VERBATIM);
+    }
+
+    /*
+     * Now we need to push back the closing } so it is the first thing read.
+     * We no longer have the initial file stream (is is pushed down on stack)
+     * so we need to add a new file stream consisting of just a single character.
+     * Wasteful, but best I can come up with at this time.
+     */
+    aprepro.ap_file_list.push(SEAMS::file_rec("_string_", 0, true, -1));
+    std::string new_string("}");
+    auto        ins = new std::istringstream(new_string); // Declare an input string stream.
+    yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
+    
+    if (aprepro.ap_options.debugging) {
+      std::cerr << "DEBUG IMPORT: " << string << "\n";
     }
     return (nullptr);
   }

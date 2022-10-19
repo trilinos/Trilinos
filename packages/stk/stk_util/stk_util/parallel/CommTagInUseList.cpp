@@ -83,7 +83,7 @@ void CommTagInUseList::erase(MPITagData& tag)
 #else
     comm = tag.get_comm();
 #endif
-    m_deletionGroups.emplace_back(comm);
+    m_deletionGroups.emplace_back(comm, m_barrierTag);
   }
 
   tag.set_free();

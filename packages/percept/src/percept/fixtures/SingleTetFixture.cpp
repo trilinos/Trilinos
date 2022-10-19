@@ -45,15 +45,17 @@
       , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_tet(        m_metaData.declare_part_with_topology( "block_1", stk::topology::TET_4 ))
       , m_elem_rank( stk::topology::ELEMENT_RANK )
-      , m_coordinates_field( m_metaData.declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" ))
       , m_npts(npts), m_points(points)
       , m_ntets(ntets), m_tetIds(tetIds)
       , m_elem_id_start(elem_id_start)
     {
+      m_metaData.use_simple_fields();
+      m_coordinates_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
+
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
+      put_field_on_mesh( *m_coordinates_field , universal, m_spatial_dimension, nullptr);
 
       if (doCommit)
         m_metaData.commit();
@@ -113,7 +115,7 @@
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < npts ; ++i ) {
             stk::mesh::Entity const node = m_bulkData.get_entity( stk::topology::NODE_RANK , i + 1 );
-            double * const coord = stk::mesh::field_data( m_coordinates_field , node );
+            double * const coord = stk::mesh::field_data( *m_coordinates_field , node );
             coord[0] = pts[i][0] ;
             coord[1] = pts[i][1] ;
             coord[2] = pts[i][2] ;

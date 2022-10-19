@@ -37,40 +37,40 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
-  main_driver_energy-ss --exodus-io-num-procs=1
-  TEST_0 EXEC main_driver 
-    ARGS  --i=energy-ss.xml
+  main_driver_energy-ss
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss.xml --exodus-io-num-procs=1
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
-  TEST_1 EXEC main_driver 
-    ARGS  --i=energy-ss-tp.xml
+  TEST_1 EXEC main_driver
+    ARGS  --i=energy-ss-tp.xml --exodus-io-num-procs=1
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-transient
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=energy-transient.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-blocked
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-blocked.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-loca-eigenvalue
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-loca-eigenvalue.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-blocked-tp
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-blocked-tp.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
@@ -84,7 +84,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-neumann
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=energy-neumann.xml --flux-calc
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 1
@@ -92,7 +92,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_meshmotion
-  TEST_0 EXEC main_driver 
+  TEST_0 EXEC main_driver
     ARGS  --i=meshmotion.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 2
@@ -101,7 +101,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 IF(${PACKAGE_NAME}_ENABLE_Teko)
   TRIBITS_ADD_ADVANCED_TEST(
     main_driver_energy-transient-blocked
-    TEST_0 EXEC main_driver 
+    TEST_0 EXEC main_driver
       ARGS  --i=energy-transient-blocked.xml
       PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     )
@@ -109,7 +109,7 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
   IF(${PACKAGE_NAME}_ENABLE_Tempus)
     TRIBITS_ADD_ADVANCED_TEST(
       main_driver_energy-transient-tempus-blocked
-      TEST_0 EXEC main_driver 
+      TEST_0 EXEC main_driver
         ARGS  --i=energy-transient-tempus-blocked.xml
         PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
       )

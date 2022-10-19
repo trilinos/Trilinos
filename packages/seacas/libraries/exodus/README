@@ -1,3 +1,6 @@
+
+See SEACAS (including Exodus) documentation at http://sandialabs.github.io/seacas-docs/
+
 ========================================================================
 CONTACT:
 
@@ -20,8 +23,3 @@ comments, suggestions, and bug reports to Greg Sjaardema
 <gdsjaar@sandia.gov>, <gsjaardema@gmail.com>
 
 Please identify the version of the package.
-
-========================================================================
-BUILDING
-
-See instructions at the top-level of the repository in README.md

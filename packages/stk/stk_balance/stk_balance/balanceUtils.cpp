@@ -23,10 +23,14 @@ BalanceSettings::BalanceSettings()
     m_isRebalancing(false),
     m_shouldFixCoincidentElements(true),
     m_initialDecompMethod("RIB"),
+    m_numCriteria(1),
+    m_defaultFieldWeight(0.0),
+    m_vertexWeightFieldNames{""},
     m_useNestedDecomp(false),
     m_shouldPrintDiagnostics(false),
     m_diagnosticElementWeightsField(nullptr),
     m_vertexConnectivityWeightField(nullptr),
+    m_vertexWeightFields{nullptr},
     m_vertexWeightMethod(DefaultSettings::vertexWeightMethod),
     m_graphEdgeWeightMultiplier(DefaultSettings::graphEdgeWeightMultiplier)
 {}
@@ -46,9 +50,25 @@ int BalanceSettings::getGraphVertexWeight(stk::topology type) const
   return 1;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
 double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
 {
-  return 1;
+  return 1.0;
+}
+#endif
+
+double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
+{
+    const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
+    const double *weight = stk::mesh::field_data(field, entity);
+    if (weight != nullptr) {
+      ThrowRequireWithSierraHelpMsg(*weight >= 0);
+      return *weight;
+    }
+    else {
+      return m_defaultFieldWeight;
+    }
 }
 
 BalanceSettings::GraphOption BalanceSettings::getGraphOption() const
@@ -160,9 +180,48 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
   return false;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
 bool BalanceSettings::areVertexWeightsProvidedViaFields() const
 {
   return false;
+}
+#endif
+
+void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned criteria_index)
+{
+  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+                  "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
+                  "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
+  m_vertexWeightFieldNames[criteria_index] = field_name;
+}
+
+std::string BalanceSettings::getVertexWeightFieldName(unsigned criteria_index) const
+{ 
+  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+                  "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
+                  "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
+  return m_vertexWeightFieldNames[criteria_index]; 
+}
+
+const stk::mesh::Field<double> * BalanceSettings::getVertexWeightField(const stk::mesh::BulkData & stkMeshBulkData, unsigned criteria_index) const
+{
+  ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
+                  "The provided criteria index (" + std::to_string(criteria_index) + ") is too large for the " +
+                  "supported number of criteria (" + std::to_string(m_vertexWeightFieldNames.size()) + ")");
+  if (m_vertexWeightFields[criteria_index] == nullptr) {
+    m_vertexWeightFields[criteria_index] =
+        stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
+                                                           getVertexWeightFieldName(criteria_index));
+    ThrowRequireMsg(m_vertexWeightFields[criteria_index] != nullptr,
+                    "Must provide a field for criteria index (" + std::to_string(criteria_index) + ")");
+  }
+  return m_vertexWeightFields[criteria_index];
+}
+
+void BalanceSettings::setDefaultFieldWeight(double defaultFieldWeight)
+{
+  m_defaultFieldWeight = defaultFieldWeight;
 }
 
 double BalanceSettings::getImbalanceTolerance() const
@@ -204,9 +263,11 @@ bool BalanceSettings::shouldPrintMetrics() const
   return false;
 }
 
-int BalanceSettings::getNumCriteria() const
-{
-  return 1;
+void BalanceSettings::setNumCriteria(int num_criteria)
+{ 
+  m_numCriteria = num_criteria;
+  m_vertexWeightFieldNames.resize(m_numCriteria); 
+  m_vertexWeightFields.resize(m_numCriteria); 
 }
 
 void BalanceSettings::modifyDecomposition(DecompositionChangeList & decomp) const
@@ -453,10 +514,13 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
   return weightTable[element1Index][element2Index];
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
 double GraphCreationSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
 {
   return 1.0;
 }
+#endif
 
 int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
 {

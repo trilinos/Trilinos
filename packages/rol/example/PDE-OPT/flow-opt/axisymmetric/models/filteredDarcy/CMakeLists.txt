@@ -21,8 +21,13 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ProjectAxisymmetricFilteredDarcyDataCopy
     SOURCE_FILES
       input.xml
+      input-nonconvex.xml
+      input-sphere.xml
       plotDarcy.m
+      plotDarcyAxi.m
       plotmesh.m
+      README.md
+      run.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

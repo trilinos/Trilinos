@@ -1,14 +1,13 @@
-#
 # Specialized logic for what file changes should trigger a global build in CI
-# testing where testing should only occur package impacted by the change.
+# testing where testing should only involve packages impacted by the change.
 #
-
 class ProjectCiFileChangeLogic:
 
   def isGlobalBuildFileRequiringGlobalRebuild(self, modifiedFileFullPath):
     modifiedFileFullPathArray = modifiedFileFullPath.split('/')
     lenPathArray = len(modifiedFileFullPathArray)
-    if lenPathArray==1:
+
+    if lenPathArray==1:  # Base project directory
       # Files directly under <projectDir>/
       if modifiedFileFullPathArray[0] == "CMakeLists.txt":
         return True
@@ -54,7 +53,6 @@ class ProjectCiFileChangeLogic:
         # cmake/TPLs/.  Any TPL file modules that change really needs to
         # trigger a global build to be safe
         return True
-
       elif modifiedFileFullPathArray[1] == 'ctest':
         # cmake/ctest/
         if lenPathArray==3:
@@ -81,6 +79,12 @@ class ProjectCiFileChangeLogic:
         # All other *.cmake files under any subdir of cmake/ should trigger
         # a global rebuild to be safe.
        return True
-    # Any other files not already covered abvoe should not trigger a global
+    elif lenPathArray >= 2 and modifiedFileFullPathArray[0] == 'packages' and \
+      modifiedFileFullPathArray[1] == 'framework' \
+      :
+      # Changes under packages/framework/ likely impact the GenConfig PR build
+      # configurations and therefore to be safe, everything needs to be tested.
+      return True
+    # Any other files not already covered above should *not* trigger a global
     # build
     return False

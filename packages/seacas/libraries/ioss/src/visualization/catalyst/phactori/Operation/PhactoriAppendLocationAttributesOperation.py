@@ -57,7 +57,7 @@ class PhactoriAppendLocationAttributesOperation(PhactoriOperationSpecifics):
           self.AppendPointLocations = 1
         else:
           self.AppendPointLocations = 0
-    
+
     key2 = "append cell centers"
     if key2 in inJson:
       testval = inJson[key2]
@@ -80,7 +80,7 @@ class PhactoriAppendLocationAttributesOperation(PhactoriOperationSpecifics):
     if PhactoriDbg(100):
       myDebugPrint3('PhactoriAppendLocationAttributesOperation:CreateParaViewFilter entered\n', 100)
     #info in block class should already be parsed and checked
-    
+
     if PhactoriDbg(100):
       myDebugPrint3('about to call UpdatePipelineWithCurrentTimeArgument\n', 100)
     UpdatePipelineWithCurrentTimeArgument(inInputFilter)

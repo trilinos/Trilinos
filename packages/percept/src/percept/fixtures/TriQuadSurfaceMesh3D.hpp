@@ -64,10 +64,10 @@
       stk::mesh::Part& m_block_quad_shell;
       stk::mesh::Part& m_block_tri_shell;
 
-      CoordinatesFieldType & m_coordinates_field;
-      // CoordinatesFieldType & m_centroid_field;
-      // ScalarFieldType & m_temperature_field;
-      // ScalarFieldType & m_volume_field;
+      CoordinatesFieldType * m_coordinates_field;
+      // CoordinatesFieldType * m_centroid_field;
+      // ScalarFieldType * m_temperature_field;
+      // ScalarFieldType * m_volume_field;
     };
 
 

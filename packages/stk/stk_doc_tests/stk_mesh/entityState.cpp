@@ -121,11 +121,11 @@ TEST(stkMeshHowTo, checkModifiedState)
 
 
 //BEGIN_AURA_MODIFIED
-TEST(stkMeshHowTo, checkAuraModifiedState)
+TEST(stkMeshHowTo, checkAuraCreatedState)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   const int parallel_size = stk::parallel_machine_size(communicator);
-  if (parallel_size != 2) { return; }
+  if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
   meshReader.use_simple_fields();
@@ -138,10 +138,10 @@ TEST(stkMeshHowTo, checkAuraModifiedState)
   if (bulk.parallel_rank() == 0) {
     EXPECT_EQ( stk::mesh::Created,  bulk.state(element1) );
     EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element2)) );
-    EXPECT_EQ( stk::mesh::Modified, bulk.state(element2) );
+    EXPECT_EQ( stk::mesh::Created, bulk.state(element2) );
   } else { // parallel_rank == 1
     EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element1)) );
-    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Created, bulk.state(element1) );
     EXPECT_EQ( stk::mesh::Created,  bulk.state(element2) );
   }
 }
@@ -152,7 +152,7 @@ TEST(stkMeshHowTo, checkCEOModifiedState)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   const int parallel_size = stk::parallel_machine_size(communicator);
-  if (parallel_size != 2) { return; }
+  if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
   meshReader.use_simple_fields();
@@ -168,8 +168,14 @@ TEST(stkMeshHowTo, checkCEOModifiedState)
   bulk.change_entity_owner(ceo_vector);
   stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
   stk::mesh::Entity element2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2);
-  EXPECT_EQ( stk::mesh::Modified,  bulk.state(element1) );
-  EXPECT_EQ( stk::mesh::Modified, bulk.state(element2) );
+  if (bulk.parallel_rank() == 0) {
+    EXPECT_EQ( stk::mesh::Modified,  bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Created, bulk.state(element2) );
+  }
+  else {
+    EXPECT_EQ( stk::mesh::Created,  bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element2) );
+  }
 }
 //END_CEO_MODIFIED
 
@@ -178,7 +184,7 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   const int parallel_size = stk::parallel_machine_size(communicator);
-  if (parallel_size != 2) { return; }
+  if (parallel_size != 2) { GTEST_SKIP(); }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
   meshReader.use_simple_fields();
@@ -210,10 +216,8 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   if (bulk.parallel_rank() == 0) {
     EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
   } else { // parallel_rank == 1
-    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Created, bulk.state(element1) );
   }
 }
 //END_PARALLEL_MODIFIED
-
-
 

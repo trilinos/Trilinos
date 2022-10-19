@@ -43,7 +43,7 @@ struct TeamVectorFindAmaxInternal {
     if (m > 0) {
       using reducer_value_type =
           typename Kokkos::MaxLoc<ValueType, IntType>::value_type;
-      reducer_value_type value;
+      reducer_value_type value{};
       Kokkos::MaxLoc<ValueType, IntType> reducer_value(value);
       Kokkos::parallel_reduce(
           Kokkos::TeamVectorRange(member, m),

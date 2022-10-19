@@ -37,6 +37,23 @@ void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{&fromBlock});
 }
 
+void copy_elems_from_block_to_block(stk::mesh::BulkData& bulk,
+                                    const std::vector<stk::mesh::EntityId>& elemIDs,
+                                    const std::string& fromBlockName,
+                                    const std::string& toBlockName)
+{
+  stk::mesh::Part& toBlock = *bulk.mesh_meta_data().get_part(toBlockName);
+
+  stk::mesh::EntityVector elems;
+  for(stk::mesh::EntityId elemID : elemIDs) {
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
+    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    elems.push_back(elem);
+  }
+
+  bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{});
+}
+
 void create_sides_between_blocks(stk::mesh::BulkData& bulk,
                                  const std::string& block1Name,
                                  const std::string& block2Name,
@@ -990,6 +1007,100 @@ TEST_F(SideSetModification, noAddedSidesetEntry_AfterCreateFaceWithDeclareElemen
   }
 }
 
+TEST_F(SideSetModification, emptySideset_AfterRemoveOneConnectedElementFromBlock)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_test("generated:1x1x1");
+  EXPECT_EQ(0u, m_sideset->size());
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+
+  get_bulk().modification_begin();
+  stk::mesh::ConnectivityOrdinal sidesetOrdinal = 5;
+  stk::mesh::Entity side = get_bulk().declare_element_side(m_elem1, sidesetOrdinal, stk::mesh::PartVector{m_sidePart});
+  get_bulk().modification_end();
+
+  EXPECT_EQ(1u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+  EXPECT_EQ(1u, m_sideset->size());
+  EXPECT_TRUE(m_sideset->contains(m_elem1, sidesetOrdinal));
+  EXPECT_EQ(1u, get_bulk().num_elements(side));
+
+  stk::mesh::Part* block_1 = get_meta().get_part("block_1");
+  ASSERT_TRUE(block_1 != nullptr);
+  ASSERT_TRUE(get_bulk().bucket(side).member(*block_1));
+
+  get_bulk().modification_begin();
+  get_bulk().change_entity_parts(m_elem1, stk::mesh::PartVector{}, stk::mesh::PartVector{block_1});
+  get_bulk().modification_end();
+
+  EXPECT_FALSE(get_bulk().bucket(side).member(*block_1));
+  EXPECT_EQ(0u, m_sideset->size());
+}
+
+TEST_F(SideSetModification, noChange_AfterRemoveThenAddInSameModCycleOneConnectedElementFromBlock)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_test("generated:1x1x1");
+  EXPECT_EQ(0u, m_sideset->size());
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+
+  get_bulk().modification_begin();
+  stk::mesh::ConnectivityOrdinal sidesetOrdinal = 5;
+  stk::mesh::Entity side = get_bulk().declare_element_side(m_elem1, sidesetOrdinal, stk::mesh::PartVector{m_sidePart});
+  get_bulk().modification_end();
+
+  EXPECT_EQ(1u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+  EXPECT_EQ(1u, m_sideset->size());
+  EXPECT_TRUE(m_sideset->contains(m_elem1, sidesetOrdinal));
+  EXPECT_EQ(1u, get_bulk().num_elements(side));
+
+  stk::mesh::Part* block_1 = get_meta().get_part("block_1");
+  ASSERT_TRUE(block_1 != nullptr);
+  ASSERT_TRUE(get_bulk().bucket(side).member(*block_1));
+
+  get_bulk().modification_begin();
+  get_bulk().change_entity_parts(m_elem1, stk::mesh::PartVector{}, stk::mesh::PartVector{block_1});
+  get_bulk().change_entity_parts(m_elem1, stk::mesh::PartVector{block_1}, stk::mesh::PartVector{});
+  get_bulk().modification_end();
+
+  EXPECT_TRUE(get_bulk().bucket(side).member(*block_1));
+  EXPECT_TRUE(get_bulk().bucket(m_elem1).member(*block_1));
+  EXPECT_EQ(1u, m_sideset->size());
+  EXPECT_TRUE(m_sideset->contains(m_elem1, sidesetOrdinal));
+  EXPECT_EQ(1u, get_bulk().num_elements(side));
+}
+
+TEST_F(SideSetModification, nonEmptyInternalSideset_AfterRemoveOneConnectedElementFromBlock)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_test("generated:1x1x2");
+  EXPECT_EQ(0u, m_sideset->size());
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+
+  get_bulk().modification_begin();
+  stk::mesh::ConnectivityOrdinal sidesetOrdinal = 5;
+  stk::mesh::Entity side = get_bulk().declare_element_side(m_elem1, sidesetOrdinal, stk::mesh::PartVector{m_sidePart});
+  get_bulk().modification_end();
+
+  EXPECT_EQ(1u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK)));
+  EXPECT_EQ(2u, m_sideset->size());
+  EXPECT_TRUE(m_sideset->contains(m_elem1, sidesetOrdinal));
+  EXPECT_EQ(2u, get_bulk().num_elements(side));
+
+  stk::mesh::Part* block_1 = get_meta().get_part("block_1");
+  ASSERT_TRUE(block_1 != nullptr);
+  ASSERT_TRUE(get_bulk().bucket(side).member(*block_1));
+
+  get_bulk().modification_begin();
+  get_bulk().change_entity_parts(m_elem1, stk::mesh::PartVector{}, stk::mesh::PartVector{block_1});
+  get_bulk().modification_end();
+
+  EXPECT_TRUE(get_bulk().bucket(side).member(*block_1));
+  EXPECT_EQ(1u, m_sideset->size());
+  EXPECT_EQ(2u, get_bulk().num_elements(side));
+}
 
 class InternalSideSet : public stk::unit_test_util::simple_fields::MeshFixture
 {
@@ -1007,7 +1118,8 @@ protected:
         0,0,1,  1,0,1,   1,1,1,   0,1,1,
         0,0,2,  1,0,2,   1,1,2,   0,1,2};
 
-    get_meta().declare_part(sidesetName, stk::topology::FACE_RANK);
+    stk::mesh::Part& sidesetPart = get_meta().declare_part(sidesetName, stk::topology::FACE_RANK);
+    get_meta().set_part_id(sidesetPart, 100u);
 
     stk::unit_test_util::simple_fields::setup_text_mesh(
           get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
@@ -1189,5 +1301,30 @@ TEST_F(ParallelCoincidence, checkParallelNonCoincidenceWithElemElemGraph)
 
     test_parallel_coincidence(expectedValues);
   }
+}
+
+TEST(Skinning, createSidesForBlock)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                            .set_spatial_dimension(3)
+                                                            .create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
+  stk::mesh::Part& surface1 = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+  stk::io::put_io_part_attribute(block2);
+  stk::io::put_io_part_attribute(surface1);
+  meta.set_part_id(block2, 2);
+  meta.set_part_id(surface1, 1);
+
+  stk::io::fill_mesh("generated:2x2x2", bulk);
+
+  copy_elems_from_block_to_block(bulk, {1, 2}, "block_1", "block_2");
+
+  stk::mesh::create_exposed_block_boundary_sides(bulk, block2, stk::mesh::PartVector{&surface1}, (!block2));
+  EXPECT_EQ(10u, stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, surface1));
 }
 

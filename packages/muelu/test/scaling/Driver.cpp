@@ -505,7 +505,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
         comm->barrier();
       }
       catch(const std::exception& e) {
-        out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
+        if (isDriver)
+          out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
+        else
+          throw;
       }
 
 
@@ -551,7 +554,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
         try {
           runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
           mueluList = runList  .sublist("MueLu", mustAlreadyExist);
-        } catch (Teuchos::Exceptions::InvalidParameterName& e) {
+        } catch (Teuchos::Exceptions::InvalidParameterName&) {
           stop = true;
         }
       }

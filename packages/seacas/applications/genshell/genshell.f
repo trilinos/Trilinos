@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -88,13 +88,19 @@ C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
-        CALL PRTERR ('FATAL',
+        CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "genshell 2dfilename 3dfilename"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#genshell')
         GOTO 60
       else if (narg .gt. 2) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('FATAL',
+        CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "genshell 2dfilename 3dfilename"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#genshell')
         GOTO 60
       end if
 

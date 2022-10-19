@@ -662,9 +662,10 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -752,21 +753,50 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
     XVector_Internal x_i = x;
     YVector_Internal y_i = y;
 
-    return Impl::SPMV_MV<
-        typename AMatrix_Internal::value_type,
-        typename AMatrix_Internal::ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::size_type,
-        typename XVector_Internal::value_type**,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type**,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv(mode, alpha, A_i,
-                                                           x_i, beta, y_i);
+    bool useNative = false;
+
+// cusparseSpMM does not support conjugate mode
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    useNative = useNative || (Conjugate[0] == mode[0]);
+#endif
+    useNative = useNative || (controls.isParameter("algorithm") &&
+                              (controls.getParameter("algorithm") == "native"));
+
+    if (useNative) {
+      return Impl::SPMV_MV<
+          typename AMatrix_Internal::value_type,
+          typename AMatrix_Internal::ordinal_type,
+          typename AMatrix_Internal::device_type,
+          typename AMatrix_Internal::memory_traits,
+          typename AMatrix_Internal::size_type,
+          typename XVector_Internal::value_type**,
+          typename XVector_Internal::array_layout,
+          typename XVector_Internal::device_type,
+          typename XVector_Internal::memory_traits,
+          typename YVector_Internal::value_type**,
+          typename YVector_Internal::array_layout,
+          typename YVector_Internal::device_type,
+          typename YVector_Internal::memory_traits,
+          std::is_integral<typename AMatrix_Internal::value_type>::value,
+          false>::spmv_mv(controls, mode, alpha, A_i, x_i, beta, y_i);
+    } else {
+      return Impl::SPMV_MV<
+          typename AMatrix_Internal::value_type,
+          typename AMatrix_Internal::ordinal_type,
+          typename AMatrix_Internal::device_type,
+          typename AMatrix_Internal::memory_traits,
+          typename AMatrix_Internal::size_type,
+          typename XVector_Internal::value_type**,
+          typename XVector_Internal::array_layout,
+          typename XVector_Internal::device_type,
+          typename XVector_Internal::memory_traits,
+          typename YVector_Internal::value_type**,
+          typename YVector_Internal::array_layout,
+          typename YVector_Internal::device_type,
+          typename YVector_Internal::memory_traits>::spmv_mv(controls, mode,
+                                                             alpha, A_i, x_i,
+                                                             beta, y_i);
+    }
   }
 }
 
@@ -894,8 +924,10 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   //
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
   // available
-  bool useFallback = controls.isParameter("algorithm") &&
-                     controls.getParameter("algorithm") == "native";
+  bool useFallback =
+      controls.isParameter("algorithm") &&
+      (controls.getParameter("algorithm") == "native" ||
+       controls.getParameter("algorithm") == "experimental_bsr_tc");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   // cuSPARSE does not support the modes (C), (T), (H)
@@ -936,6 +968,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
+        std::is_integral<typename AMatrix_Internal::const_value_type>::value,
         false>::spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
     Kokkos::Profiling::popRegion();
   } else {
@@ -952,11 +985,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::value_type**,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv_bsrmatrix(controls,
-                                                                     mode,
-                                                                     alpha, A_i,
-                                                                     x_i, beta,
-                                                                     y_i);
+        typename YVector_Internal::memory_traits,
+        std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
+        spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
   }
 }
 
@@ -1072,12 +1103,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
   //
   return Experimental::Impl::SPMV_MV_BLOCKCRSMATRIX<
-      typename AMatrix_Internal::value_type,
-      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::const_value_type,
+      typename AMatrix_Internal::const_ordinal_type,
       typename AMatrix_Internal::device_type,
       typename AMatrix_Internal::memory_traits,
-      typename AMatrix_Internal::size_type,
-      typename XVector_Internal::value_type**,
+      typename AMatrix_Internal::const_size_type,
+      typename XVector_Internal::const_value_type**,
       typename XVector_Internal::array_layout,
       typename XVector_Internal::device_type,
       typename XVector_Internal::memory_traits,
@@ -1097,7 +1128,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
 /// If \c AMatrix is a KokkosSparse::Experimental::BsrMatrix, controls may have
-/// \c "algorithm" = \c "experimental_tc_bsr" to use Nvidia tensor cores on
+/// \c "algorithm" = \c "experimental_bsr_tc" to use Nvidia tensor cores on
 /// Volta or Ampere architectures. On Volta-architecture GPUs the only available
 /// precision is mixed-precision fp32 accumulator from fp16 inputs. On
 /// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
@@ -1530,8 +1561,9 @@ void spmv_struct(const char mode[], const int stencil_type,
         typename YVector_Internal::value_type**,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv(mode, alpha, A_i,
-                                                           x_i, beta, y_i);
+        typename YVector_Internal::memory_traits>::
+        spmv_mv(KokkosKernels::Experimental::Controls(), mode, alpha, A_i, x_i,
+                beta, y_i);
   }
 }
 

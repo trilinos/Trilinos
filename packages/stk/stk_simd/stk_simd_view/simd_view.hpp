@@ -34,9 +34,7 @@
 #ifndef STK_SIMD_VIEW_H
 #define STK_SIMD_VIEW_H
 
-#include <Kokkos_Macros.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_View.hpp>
 #include <stk_simd/Simd.hpp>
 #include <stk_simd/Traits.hpp>
 #include <stk_simd_view/simd_layout.hpp>
@@ -384,7 +382,7 @@ using Kokkos::create_mirror_view;
 
 template <class DataType, class ... Prop>
 typename View<DataType, Prop...>::HostMirror create_mirror_view( View<DataType, Prop...> viewArg) {
-  return typename View<DataType, Prop...>::HostMirror(viewArg.label(), viewArg.layout());
+  return typename View<DataType, Prop...>::HostMirror(viewArg);
 }
 
 template <typename A, typename B>

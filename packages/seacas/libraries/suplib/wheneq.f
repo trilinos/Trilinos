@@ -19,4 +19,3 @@ C see WHENEQ (3SCI) Math and Scientific Library, Cray Research, Inc
  100  CONTINUE
       RETURN
       END
-

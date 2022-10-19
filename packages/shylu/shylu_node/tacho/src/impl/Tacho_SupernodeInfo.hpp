@@ -52,7 +52,7 @@ struct SuperNodeInfoInitReducer {
     dst.nnz += src.nnz;
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type &dst, const volatile value_type &src) const {
+  KOKKOS_INLINE_FUNCTION void join(value_type &dst, const value_type &src) const {
     dst.max_nchildren = (src.max_nchildren > dst.max_nchildren ? src.max_nchildren : dst.max_nchildren);
     dst.max_supernode_size =
         (src.max_supernode_size > dst.max_supernode_size ? src.max_supernode_size : dst.max_supernode_size);

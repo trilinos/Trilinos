@@ -136,7 +136,7 @@ namespace Intrepid2
       return false;
     }
 
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       

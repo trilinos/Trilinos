@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.10 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.20.14 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -51,7 +51,7 @@ of global variables. Although these examples correspond to typical FE
 applications, the data format is flexible enough to accommodate a
 spectrum of uses.
 
-Copyright(C) 1999-2021 National Technology & Engineering Solutions
+Copyright(C) 1999-2022 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -70,12 +70,12 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.10 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.15 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.10 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.15 (seacas-py3), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 National Technology &
+Copyright (c) 2013-2022 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -607,23 +607,23 @@ class exodus:
         file_name : string
            name of exodus file to open
         mode : string
-          'r' for read, 'a' for append, 'w' for write
+          'r' for read, 'a' for append, 'w' for write, 'w+' for write+clobber existing file
         title : string
            database title
         array_type : string
            'ctype' for c-type arrays, 'numpy' for numpy arrays
         num_dims : int
-           number of model dimensions ('w' mode only)
+           number of model dimensions ('w'/'w+' mode only)
         num_nodes : int
-           number of model nodes ('w' mode only)
+           number of model nodes ('w'/'w+' mode only)
         num_elems : int
-           number of model elements ('w' mode only)
+           number of model elements ('w'/'w+' mode only)
         num_blocks : int
-           number of model element blocks ('w' mode only)
+           number of model element blocks ('w'/'w+' mode only)
         num_ns : int
-           number of model node sets ('w' mode only)
+           number of model node sets ('w'/'w+' mode only)
         num_ss : int
-           number of model side sets ('w' mode only)
+           number of model side sets ('w'/'w+' mode only)
 
         init_params : ex_init_params
            see `exodus.ex_init_params` for more info.
@@ -641,7 +641,9 @@ class exodus:
 
         >>> exo = exodus(file_name, mode=mode, title=title,
         ...             array_type=array_type, init_params=ex_pars)
-
+        >>> with exodus(file_name, mode=mode, title=title,\
+        ...             array_type=array_type, init_params=ex_pars) as exo:
+        ...     pass
         """
         global SHOW_BANNER
         if SHOW_BANNER:
@@ -675,7 +677,7 @@ class exodus:
         self.fileId = None
         self.__open(io_size=io_size)
         EXODUS_LIB.ex_set_max_name_length(self.fileId, MAX_NAME_LENGTH)
-        if mode.lower() == 'w':
+        if mode.lower() == 'w' or mode.lower() == 'w+':
             if init_params is not None:
                 self.init_params = init_params
                 if title is not None:
@@ -695,8 +697,8 @@ class exodus:
 
                 info = [title, numDims, numNodes, numElems, numBlocks,
                         numNodeSets, numSideSets]
-                assert None not in info
-                self.__ex_put_info(info)
+                if None not in info:
+                    self.__ex_put_info(info)
 
             self.numTimes = ctypes.c_int(0)
         else:
@@ -710,6 +712,13 @@ class exodus:
         self.coordsZ = None
         self.times = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+        if not traceback:
+            return True
 
     def summarize(self):
         """
@@ -818,12 +827,14 @@ class exodus:
     # copy to a new database
     #
     # --------------------------------------------------------------------
-    def copy(self, fileName, include_transient=False):
+    def copy(self, fileName, include_transient=False, mode='a'):
         """
-        copies exodus database to file_name and returns this copy as a
-        new exodus object
+        Copies exodus database to file_name and returns an opened copy as a
+        new exodus object. This object will need to be closed when it is done
+        being used.
 
         >>> exo_copy = exo.copy(file_name)
+        >>> exo_copy.close()
 
         Parameters
         ----------
@@ -832,7 +843,7 @@ class exodus:
 
         Returns
         -------
-        exo_copy : exodus object
+        exo_copy : exodus object opened in append mode by default
         """
         i64Status = EXODUS_LIB.ex_int64_status(self.fileId)
         fileId = EXODUS_LIB.ex_create_int(fileName.encode('ascii'), EX_NOCLOBBER|i64Status,
@@ -840,10 +851,43 @@ class exodus:
                                           ctypes.byref(self.io_ws),
                                           EX_API_VERSION_NODOT)
 
-        self.__copy_file(fileId, include_transient)
+        self.copy_file(fileId, include_transient)
         EXODUS_LIB.ex_close(fileId)
 
-        return exodus(fileName, "a")
+        return exodus(fileName, mode)
+
+
+    #
+    # copy to a new already created database
+    #
+    # --------------------------------------------------------------------
+    def copy_file(self, file_id, include_transient=False):
+        """
+        Copies exodus database to the database pointed to by `fileId`
+        Returns the passed in `file_id`.
+
+        >>> with exodus.exodus(file_name, mode='w') as exofile:
+        >>>     with exo.copy_file(exofile.fileId, include_transient=True) as exo_copy:
+        >>>         exo_copy.close()
+
+        Parameters
+        ----------
+        fileId : str
+            name of exodus file to open
+        include_transient: bool
+            should the transient data in the original file also be copied to the output file
+            or just the mesh (non-transient) portion.
+
+        Returns
+        -------
+        file_id: The file_id of the copied to file
+        
+        """
+        EXODUS_LIB.ex_copy(self.fileId, file_id)
+        if include_transient:
+            EXODUS_LIB.ex_copy_transient(self.fileId, file_id)
+
+        return file_id;
 
     #
     # general info
@@ -1607,6 +1651,33 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def get_block_id_map(self, obj_type, entity_id):
+        """
+        Gets the map of elements found in the given entity_id of an object
+        of obj_type.
+
+        *INDEX* ordering, a 1-based system going from 1 to
+        number of elements in the elem_block, used by exodus for
+        storage and input/output of array data stored on the elements;
+        a user or application can optionally use a separate element *ID* numbering system,
+        so the elem_id_map points to the element *ID* for each
+        element *INDEX*
+
+        >>> elem_block_id_map = exo.get_block_id_map("EX_ELEM_BLOCK", 100)
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<int>>  elem_id_map
+
+            if array_type == 'numpy':
+              <np_array<int>>  elem_id_map
+        """
+        return self.__ex_get_block_id_map(obj_type, entity_id)
+
+    # --------------------------------------------------------------------
+
     def get_elem_num_map(self):
         """
         **DEPRECATED** use: `get_elem_id_map()`
@@ -2315,7 +2386,7 @@ class exodus:
 
     def get_assembly(self, object_id):
         """
-        reads the assembly parameters and assembly data for one assembly 
+        reads the assembly parameters and assembly data for one assembly
         """
         assem = ex_assembly(id=object_id)
         self.__ex_get_assembly(assem)
@@ -2326,7 +2397,7 @@ class exodus:
 
     def get_assemblies(self, object_ids):
         """
-        reads the assembly parameters and assembly data for all assemblies 
+        reads the assembly parameters and assembly data for all assemblies
         with ids in object_ids
         """
         assemblies = [ex_assembly(id=object_id) for object_id in object_ids]
@@ -4490,10 +4561,13 @@ class exodus:
         # adjust one of them
         values[names.index(name)] = ctypes.c_double(value)
         # write them all
-        EXODUS_LIB.ex_put_glob_vars(self.fileId,
-                                    ctypes.c_int(step),
-                                    ctypes.c_int(numVals),
-                                    values)
+        EXODUS_LIB.ex_put_var(self.fileId,
+                              ctypes.c_int(step),
+                              ctypes.c_int(get_entity_type('EX_GLOBAL')), 
+                              ctypes.c_int(1),
+                              ctypes.c_int(0),
+                              ctypes.c_int(numVals),
+                              values)
         return True
 
     # --------------------------------------------------------------------
@@ -4520,10 +4594,13 @@ class exodus:
         gvalues = (ctypes.c_double * numVals)()
         for i in range(numVals):
             gvalues[i] = ctypes.c_double(values[i])
-        EXODUS_LIB.ex_put_glob_vars(self.fileId,
-                                    ctypes.c_int(step),
-                                    ctypes.c_int(numVals),
-                                    gvalues)
+        EXODUS_LIB.ex_put_var(self.fileId,
+                              ctypes.c_int(step),
+                              ctypes.c_int(get_entity_type('EX_GLOBAL')), 
+                              ctypes.c_int(1),
+                              ctypes.c_int(0),
+                              ctypes.c_int(numVals),
+                              gvalues)
         return True
 
     # --------------------------------------------------------------------
@@ -4820,15 +4897,6 @@ class exodus:
                                                ctypes.byref(self.comp_ws),
                                                ctypes.byref(self.io_ws),
                                                EX_API_VERSION_NODOT)
-
-    # --------------------------------------------------------------------
-
-    def __copy_file(self, fileId, include_transient=False):
-        if include_transient:
-            EXODUS_LIB.ex_copy(self.fileId, fileId)
-            EXODUS_LIB.ex_copy_transient(self.fileId, fileId)
-        else:
-            EXODUS_LIB.ex_copy(self.fileId, fileId)
 
     # --------------------------------------------------------------------
 
@@ -5267,7 +5335,7 @@ class exodus:
             set_nodes = (ctypes.c_longlong * num_node_set_nodes)()
         else:
             set_nodes = (ctypes.c_int * num_node_set_nodes)()
-        EXODUS_LIB.ex_get_node_set(self.fileId, node_set_id, ctypes.byref(set_nodes))
+        EXODUS_LIB.ex_get_set(self.fileId, ctypes.c_int(get_entity_type('EX_NODE_SET')), node_set_id, ctypes.byref(set_nodes), None)
         return set_nodes
 
     # --------------------------------------------------------------------
@@ -5282,7 +5350,7 @@ class exodus:
             node_set_nodes = (ctypes.c_int * len(nodeSetNodes))()
             for i, node_set_node in enumerate(nodeSetNodes):
                 node_set_nodes[i] = ctypes.c_int(node_set_node)
-        EXODUS_LIB.ex_put_node_set(self.fileId, node_set_id, node_set_nodes)
+        EXODUS_LIB.ex_put_set(self.fileId, ctypes.c_int(get_entity_type('EX_NODE_SET')), node_set_id, node_set_nodes, None)
 
     # --------------------------------------------------------------------
 
@@ -5433,6 +5501,21 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def __ex_get_block_id_map(self, obj_type, id):
+        obj_type = ctypes.c_int(get_entity_type(obj_type))
+        entity_id = ctypes.c_longlong(id)
+        _, numObjs,_,_ = self.__ex_get_block('EX_ELEM_BLOCK', id)
+        if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
+            id_map = (ctypes.c_longlong * numObjs.value)()
+        else:
+            id_map = (ctypes.c_int * numObjs.value)()
+        EXODUS_LIB.ex_get_block_id_map(self.fileId, obj_type, entity_id, id_map)
+        if self.use_numpy:
+            id_map = ctype_to_numpy(self, id_map)
+        return id_map
+
+    # --------------------------------------------------------------------
+
     def __ex_put_id_map(self, objType, idMap):
         inqType = ex_obj_to_inq(objType)
         obj_type = ctypes.c_int(get_entity_type(objType))
@@ -5547,10 +5630,11 @@ class exodus:
         else:
             elem_block_connectivity = (
                 ctypes.c_int * (num_elem_this_blk.value * num_nodes_per_elem.value))()
-        EXODUS_LIB.ex_get_elem_conn(
+        EXODUS_LIB.ex_get_conn(
             self.fileId,
+            ctypes.c_int(get_entity_type('EX_ELEM_BLOCK')),
             elem_block_id,
-            ctypes.byref(elem_block_connectivity))
+            ctypes.byref(elem_block_connectivity), None, None)
         return elem_block_connectivity, num_elem_this_blk, num_nodes_per_elem
 
     # --------------------------------------------------------------------
@@ -5569,10 +5653,11 @@ class exodus:
                 ctypes.c_int * (num_elem_this_blk.value * num_nodes_per_elem.value))()
             for i in range(num_elem_this_blk.value * num_nodes_per_elem.value):
                 elem_block_connectivity[i] = ctypes.c_int(connectivity[i])
-        EXODUS_LIB.ex_put_elem_conn(
+        EXODUS_LIB.ex_put_conn(
             self.fileId,
+            ctypes.c_int(get_entity_type('EX_ELEM_BLOCK')),
             elem_block_id,
-            elem_block_connectivity)
+            elem_block_connectivity, None, None)
 
     # --------------------------------------------------------------------
 
@@ -5892,9 +5977,12 @@ class exodus:
         else:
             side_set_elem_list = (ctypes.c_int * num_side_in_set)()
             side_set_side_list = (ctypes.c_int * num_side_in_set)()
-        EXODUS_LIB.ex_get_side_set(self.fileId, side_set_id,
-                                   ctypes.byref(side_set_elem_list),
-                                   ctypes.byref(side_set_side_list))
+        EXODUS_LIB.ex_get_set(
+            self.fileId, 
+            ctypes.c_int(get_entity_type('EX_SIDE_SET')), 
+            side_set_id,
+            ctypes.byref(side_set_elem_list),
+            ctypes.byref(side_set_side_list))
         return side_set_elem_list, side_set_side_list
 
     # --------------------------------------------------------------------
@@ -5913,8 +6001,9 @@ class exodus:
             for i, sse in enumerate(sideSetElements):
                 side_set_elem_list[i] = ctypes.c_int(sse)
                 side_set_side_list[i] = ctypes.c_int(sideSetSides[i])
-        EXODUS_LIB.ex_put_side_set(
+        EXODUS_LIB.ex_put_set(
             self.fileId,
+            ctypes.c_int(get_entity_type('EX_SIDE_SET')), 
             side_set_id,
             side_set_elem_list,
             side_set_side_list)
@@ -6095,10 +6184,9 @@ def collectElemConnectivity(exodusHandle, connectivity):
 
     Usage:
     ------
-    >>> exodusHandle = exodus("file.g", "r")
-    >>> connectivity = []
-    >>> collectElemConnectivity(exodusHandle, connectivity)
-    >>> exodusHandle.close()
+    >>> with exodus("file.g", "r") as exodusHandle:
+    >>>     connectivity = []
+    >>>     collectElemConnectivity(exodusHandle, connectivity)
     """
 
     if not isinstance(connectivity, list):
@@ -6130,11 +6218,10 @@ def collectLocalNodeToLocalElems(
 
     Usage:
     ------
-    >>> exodusHandle = exodus("file.g", "r")
     >>> connectivity = [] ## If this is not empty it will assume it is already filled.
     >>> localNodeToLocalElems = []
-    >>> collectLocalNodeToLocalElems(exodusHandle, connectivity, localNodeToLocalElems)
-    >>> exodusHandle.close()
+    >>> with exodus("file.g", "r") as exodusHandle:
+    >>>     collectLocalNodeToLocalElems(exodusHandle, connectivity, localNodeToLocalElems)
     """
 
     if not isinstance(connectivity, list):
@@ -6174,13 +6261,12 @@ def collectLocalElemToLocalElems(
 
     Usage:
     ------
-    >>> exodusHandle = exodus("file.g", "r")
     >>> connectivity = [] ## If this is not empty it will assume it is already filled.
     >>> localNodeToLocalElems = [] ## If this is not empty it will assume it is already filled.
     >>> localElemToLocalElems = []
-    >>> collectLocalElemToLocalElems(exodusHandle, connectivity, localNodeToLocalElems,
+    >>> with exodus("file.g", "r") as exodusHandle:
+    >>>     collectLocalElemToLocalElems(exodusHandle, connectivity, localNodeToLocalElems,
     ...                              localElemToLocalElems)
-    >>> exodusHandle.close()
     """
 
     if not isinstance(connectivity, list):

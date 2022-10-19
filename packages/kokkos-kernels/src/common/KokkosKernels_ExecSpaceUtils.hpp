@@ -42,15 +42,16 @@
 //@HEADER
 */
 
+#ifndef _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
+#define _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
+
 #include "Kokkos_Core.hpp"
+#include "KokkosKernels_Error.hpp"
 
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 #include <level_zero/zes_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
 #endif
-
-#ifndef _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
-#define _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 
 namespace KokkosKernels {
 
@@ -64,6 +65,7 @@ enum ExecSpaceType {
   Exec_HIP,
   Exec_SYCL
 };
+
 template <typename ExecutionSpace>
 KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
   ExecSpaceType exec_space = Exec_SERIAL;
@@ -205,7 +207,7 @@ inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
 template <>
 inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
     size_t& free_mem, size_t& total_mem) {
-  hipMemGetInfo(&free_mem, &total_mem);
+  KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipMemGetInfo(&free_mem, &total_mem));
 }
 #endif
 
@@ -368,12 +370,12 @@ template <>
 struct SpaceInstance<Kokkos::Experimental::HIP> {
   static Kokkos::Experimental::HIP create() {
     hipStream_t stream;
-    hipStreamCreate(&stream);
+    KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamCreate(&stream));
     return Kokkos::Experimental::HIP(stream);
   }
   static void destroy(Kokkos::Experimental::HIP& space) {
     hipStream_t stream = space.hip_stream();
-    hipStreamDestroy(stream);
+    KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamDestroy(stream));
   }
   static bool overlap() {
     // TODO: does HIP have an equivalent for CUDA_LAUNCH_BLOCKING?

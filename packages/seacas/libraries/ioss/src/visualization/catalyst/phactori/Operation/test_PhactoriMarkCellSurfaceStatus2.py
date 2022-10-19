@@ -155,6 +155,3 @@ class TestPhactoriMarkCellSurfaceStatus2(unittest.TestCase):
     self.assertEqual(testStatus, 1)
     testStatus = ssAry.GetTuple1((20*20*20-1)-421)
     self.assertEqual(testStatus, 1)
-
-
-

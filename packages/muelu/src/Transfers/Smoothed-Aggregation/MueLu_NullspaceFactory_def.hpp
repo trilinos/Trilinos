@@ -138,16 +138,17 @@ namespace MueLu {
     if(calculateRotations_) {
       Coords = Get< RCP<RealValuedMultiVector> >(currentLevel, "Coordinates");
 
-      xvals  = Coords->getData(0);
       cx     = Coords->getVector(0)->meanValue();
-      if (Coords->getNumVectors() > 1) {
-        yvals = Coords->getData(1);
+      if (Coords->getNumVectors() > 1)
         cy    = Coords->getVector(1)->meanValue();
-      }
-      if (Coords->getNumVectors() > 2) {
-        zvals = Coords->getData(2);
+      if (Coords->getNumVectors() > 2)
         cz    = Coords->getVector(2)->meanValue();
-      }
+
+      xvals  = Coords->getData(0);
+      if (Coords->getNumVectors() > 1)
+        yvals = Coords->getData(1);
+      if (Coords->getNumVectors() > 2)
+        zvals = Coords->getData(2);
     }
 
     if (currentLevel.GetLevelID() == 0) {

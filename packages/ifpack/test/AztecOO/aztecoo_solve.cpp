@@ -55,6 +55,7 @@
 #endif
 
 #include "Epetra_LinearProblem.h"
+#include "Epetra_CrsMatrix.h"
 
 #include "AztecOO.h"
 

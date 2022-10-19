@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,7 +54,7 @@ int ex_get_map(int exoid, void_int *elem_map)
 
   /* See if file contains any elements...*/
   int numelemdim;
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim)) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 

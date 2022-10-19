@@ -91,7 +91,7 @@ include(TribitsListHelpers)
 #    packages are modified and need to be retested (along with downstream
 #    packages).  For details, see `checkin-test.py`_.
 #
-# 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
+# 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `Package Test
 #    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
 #    ``PG``, ``PM``, ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are separated
 #    by a coma with no space in between such as ``"RS,PT"`` for a "Research
@@ -149,18 +149,18 @@ endmacro()
 #
 #   tribits_allow_missing_external_packages(<pkg0> <plg1> ...)
 #
-# If the missing upstream SE package ``<pkgi>`` is optional, then the effect
+# If the missing upstream package ``<pkgi>`` is optional, then the effect
 # will be to simply ignore the missing package (i.e. it will never be added to
 # package's list and not added to dependency data-structures) and remove it
-# from the dependency lists for downstream SE packages that have an optional
-# dependency on the missing upstream SE package ``<pkgi>``.  However, all
-# downstream SE packages that have a required dependency on the missing
-# upstream SE package ``<pkgi>`` will be hard disabled,
+# from the dependency lists for downstream packages that have an optional
+# dependency on the missing upstream package ``<pkgi>``.  However, all
+# downstream packages that have a required dependency on the missing
+# upstream package ``<pkgi>`` will be hard disabled,
 # i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF`` and a note on the
 # disable will be printed.
 # 
 # **WARNING**: This macro just sets the cache variable
-# ``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each SE package
+# ``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each package
 # ``<pkgi>``.  Therefore, using this function effectively turns off error
 # checking for misspelled package names so it is important to only use it when
 # it absolutely is needed (use cases mentioned below).  Also note that missing
@@ -373,12 +373,12 @@ endfunction()
 #    ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 #
 # from a `<repoDir>/PackagesList.cmake`_ file that just got read in and
-# creates/updates the variables::
+# creates/updates the top-level non-cache variables:
 #
-#   ${PROJECT_NAME}_PACKAGES
-#   ${PROJECT_NAME}_NUM_PACKAGES
-#   ${PROJECT_NAME}_LAST_PACKAGE_IDX
-#   ${PROJECT_NAME}_REVERSE_PACKAGES
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
+#   * `${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
+#   * ``${PROJECT_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX``
+#   * ``${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES``
 #
 # For each of the listed top-level (parent) packages ${PACKAGE_NAME}, it also
 # sets up constant variables defined in `TriBITS Package Top-Level Local
@@ -416,22 +416,25 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
   endif()
   list(LENGTH ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
     ${REPOSITORY_NAME}_NUM_PACKAGES_AND_FIELDS )
-  math(EXPR ${REPOSITORY_NAME}_NUM_PACKAGES
+  math(EXPR ${REPOSITORY_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
     "${${REPOSITORY_NAME}_NUM_PACKAGES_AND_FIELDS}/${PLH_NUM_FIELDS_PER_PACKAGE}")
   if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
-    print_var(${REPOSITORY_NAME}_NUM_PACKAGES)
+    print_var(${REPOSITORY_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
   endif()
-  math(EXPR ${REPOSITORY_NAME}_LAST_PACKAGE_IDX "${${REPOSITORY_NAME}_NUM_PACKAGES}-1")
+  math(EXPR ${REPOSITORY_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX
+    "${${REPOSITORY_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES}-1")
 
   # Process each of the packages defined
 
-  if (${REPOSITORY_NAME}_NUM_PACKAGES GREATER 0)
+  if (${REPOSITORY_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES GREATER 0)
 
-    foreach(PACKAGE_IDX RANGE ${${REPOSITORY_NAME}_LAST_PACKAGE_IDX})
+    foreach(PACKAGE_IDX  RANGE
+        ${${REPOSITORY_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX}
+      )
 
       if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
         message("")
-        print_var(${PROJECT_NAME}_PACKAGES)
+        print_var(${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
       endif()
 
       math(EXPR PACKAGE_NAME_IDX "${PACKAGE_IDX}*${PLH_NUM_FIELDS_PER_PACKAGE}+0")
@@ -554,7 +557,7 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
       endif()
 
       if (PACKAGE_EXISTS OR ${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK)
-        list(APPEND ${PROJECT_NAME}_PACKAGES ${TRIBITS_PACKAGE})
+        list(APPEND ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES ${TRIBITS_PACKAGE})
         tribits_insert_standard_package_options(${TRIBITS_PACKAGE}
           ${PACKAGE_TESTGROUP})
         set(${TRIBITS_PACKAGE}_PACKAGE_BUILD_STATUS INTERNAL)
@@ -584,37 +587,38 @@ macro(tribits_process_packages_and_dirs_lists  REPOSITORY_NAME  REPOSITORY_DIR)
       endif()
 
       if (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
-        print_var(${PROJECT_NAME}_PACKAGES)
+        print_var(${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
       endif()
 
     endforeach()
 
     # Get the actual number of packages that actually exist
 
-    list(LENGTH ${PROJECT_NAME}_PACKAGES ${PROJECT_NAME}_NUM_PACKAGES )
-    math(EXPR ${PROJECT_NAME}_LAST_PACKAGE_IDX "${${PROJECT_NAME}_NUM_PACKAGES}-1")
+    list(LENGTH ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
+      ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES )
+    math(EXPR ${PROJECT_NAME}_LAST_DEFINED_INTERNAL_TOPLEVEL_PACKAGE_IDX
+      "${${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES}-1")
 
     # Create a reverse list for later use
 
-    set(${PROJECT_NAME}_REVERSE_PACKAGES ${${PROJECT_NAME}_PACKAGES})
-    list(REVERSE ${PROJECT_NAME}_REVERSE_PACKAGES)
+    set(${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES
+      ${${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES})
+    list(REVERSE ${PROJECT_NAME}_REVERSE_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
 
   else()
 
-    set(${REPOSITORY_NAME}_NUM_PACKAGES 0)
+    set(${REPOSITORY_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES 0)
 
   endif()
 
-  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    print_var(${REPOSITORY_NAME}_NUM_PACKAGES)
-  endif()
-
-  print_var(${PROJECT_NAME}_NUM_PACKAGES)
+  message("-- After reading above PackagesList.cmake file: "
+    "${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES"
+    "='${${PROJECT_NAME}_NUM_DEFINED_INTERNAL_TOPLEVEL_PACKAGES}'")
 
   # Print the final set of packages in debug mode
 
   if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    print_var(${PROJECT_NAME}_PACKAGES)
+    print_var(${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
   endif()
 
 endmacro()

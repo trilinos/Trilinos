@@ -41,6 +41,10 @@ ELSE()
       LIBRARY_PATHS
         ${MKL_ROOT}/lib/intel64
         ${ENV_LIBDIRS}
+      HEADER
+        mkl.h
+      HEADER_PATHS
+        ${MKL_ROOT}/include
     )
   ENDIF()
 ENDIF()

@@ -46,13 +46,14 @@
 #define _KOKKOSGSIMP_HPP
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Bitset.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 // FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
@@ -62,7 +63,7 @@ namespace Impl {
 
 template <typename HandleType, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS>
+          KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS>
 class PointGaussSeidel {
  public:
   typedef lno_row_view_t_ in_lno_row_view_t;
@@ -136,7 +137,7 @@ class PointGaussSeidel {
       pool_memory_space;
 
   typedef
-      typename KokkosKernels::Impl::MatrixRowIndex<format, nnz_lno_t, size_type>
+      typename KokkosSparse::Impl::MatrixRowIndex<format, nnz_lno_t, size_type>
           RowIndex;
 
  private:
@@ -979,8 +980,8 @@ class PointGaussSeidel {
       gsHandle->set_long_row_x(long_row_x);
     } else {
       // Just sort rows by ID.
-      KokkosKernels::sort_crs_graph<MyExecSpace, decltype(color_xadj),
-                                    decltype(color_adj)>(color_xadj, color_adj);
+      KokkosSparse::sort_crs_graph<MyExecSpace, decltype(color_xadj),
+                                   decltype(color_adj)>(color_xadj, color_adj);
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     MyExecSpace().fence();
@@ -1104,7 +1105,7 @@ class PointGaussSeidel {
           // std::cout << "level_2_mem:" << level_2_mem << std::endl;
 
           size_type num_large_rows = 0;
-          KokkosKernels::Impl::kk_reduce_numrows_larger_than_threshold<
+          KokkosSparse::Impl::kk_reduce_numrows_larger_than_threshold<
               row_lno_persistent_work_view_t, MyExecSpace>(
               brows, permuted_xadj, num_values_in_l1, num_large_rows);
           num_big_rows = KOKKOSKERNELS_MACRO_MIN(

@@ -84,8 +84,8 @@ LinInterp<FROM,TO>::filter_to_nearest (
   const stk::mesh::BulkData &fromBulkData = FromElem.fromBulkData_;
   stk::mesh::BulkData &toBulkData = ToPoints.toBulkData_;
 
-  const stk::mesh::Field<double, stk::mesh::Cartesian> *fromcoordinates = FromElem.fromcoordinates_;
-  const stk::mesh::Field<double, stk::mesh::Cartesian> *tocoordinates   = ToPoints.tocoordinates_;
+  const stk::mesh::FieldBase *fromcoordinates = FromElem.fromcoordinates_;
+  const stk::mesh::FieldBase *tocoordinates   = ToPoints.tocoordinates_;
 
   stk::mesh::EntityRank toRank = ToPoints.toFields_[0]->entity_rank();
 
@@ -146,7 +146,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
       for ( int ni = 0; ni < num_nodes; ++ni ) {
         stk::mesh::Entity node = elem_node_rels[ni];
 
-        const double * fromcoords = stk::mesh::field_data(*fromcoordinates, node );
+        const double * fromcoords = static_cast<double*>(stk::mesh::field_data(*fromcoordinates, node ));
         for ( unsigned j = 0; j < nDim; ++j ) {
 	  cellWorkset(0,ni,j) = fromcoords[j];
         }

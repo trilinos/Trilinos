@@ -352,7 +352,7 @@ void stkCallback_Centroid_Coord( void *data,
   int lid = local_id[  0 ]; // Local Element ID
 
   const mesh::Entity  target_entity =  zdata->mesh_entity( lid );
-  const GeomDecomp::VectorField & coor = * zdata->entity_coord_ref();
+  const stk::mesh::FieldBase & coor = * zdata->entity_coord_ref();
   const unsigned                        nd   =  zdata->spatial_dimension();
 
   /*
@@ -568,8 +568,8 @@ Zoltan::Zoltan(stk::mesh::BulkData& bulk, ParallelMachine pm, const unsigned ndi
 
 void
 Zoltan::set_mesh_info( const std::vector<mesh::Entity > &mesh_entities,
-                          const VectorField * nodal_coord_ref,
-                          const ScalarField * elem_weight_ref)
+                          const stk::mesh::FieldBase * nodal_coord_ref,
+                          const stk::mesh::FieldBase * elem_weight_ref)
 {
   MeshInfo mesh_info(&m_bulk);
 
@@ -725,7 +725,7 @@ Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
   return 0;
 }
 
-const VectorField *
+const stk::mesh::FieldBase *
 Zoltan::entity_coord_ref() const
 {
    return m_mesh_information_.nodal_coord_ref;
@@ -748,7 +748,7 @@ Zoltan::entity_weight(const unsigned moid ) const
   return mo_weight;
 }
 
-const ScalarField *
+const stk::mesh::FieldBase *
 Zoltan::entity_weight_ref() const
 {
   return m_mesh_information_.elem_weight_ref;

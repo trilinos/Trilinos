@@ -51,8 +51,10 @@
 #include "../../../../TOOLS/pde.hpp"
 #include "../../../../TOOLS/fe.hpp"
 #include "../../../../TOOLS/fieldhelper.hpp"
-
 #include "../../../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_HGRAD_TRI_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_CubatureNodal.hpp"
+
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
@@ -123,19 +125,23 @@ public:
     if (elemType == "TRI") {
       if (basisDegPres == 2)
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      else 
+      else
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      if (basisDegCtrl == 1)
+      if (basisDegCtrl == 2)
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
-        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     else {
       if (basisDegPres == 2)
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      else 
+      else
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      if (basisDegCtrl == 1)
+      if (basisDegCtrl == 2)
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
@@ -145,7 +151,12 @@ public:
     // Quadrature rules.
     shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                           // create cubature factory
-    cellCub_ = cubFactory.create(cellType, cubDegree);                           // create default cubature
+    if (cubDegree == -1) {  // nodal cubature
+      cellCub_ = ROL::makePtr<Intrepid::CubatureNodal<Real, Intrepid::FieldContainer<Real>, Intrepid::FieldContainer<Real>>>(cellType);
+    }
+    else {                  // default cubature
+      cellCub_ = cubFactory.create(cellType, cubDegree);
+    }
 
     // Other problem parameters.
     Real filterRadius = parlist.sublist("Problem").get("Filter Radius", 1e-2);

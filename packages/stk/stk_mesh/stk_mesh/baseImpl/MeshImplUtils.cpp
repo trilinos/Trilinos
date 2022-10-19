@@ -1356,8 +1356,10 @@ void insert_upward_relations(const BulkData& bulk_data,
       for (int r = 0; r < numRels; ++r) {
         Entity const upwardEntity = rels[r];
         if (bulk_data.is_valid(upwardEntity) && bulk_data.bucket(upwardEntity).owned()) {
+          const EntityAndProcs* entitySharingProcs = entitySharing.find_entity_procs(upwardEntity);
           for(int sharingProc : sharingProcs) {
-            if (upwardRank >= stk::topology::ELEM_RANK || !entitySharing.find(upwardEntity, sharingProc)) {
+            if (upwardRank >= stk::topology::ELEM_RANK ||
+                (entitySharingProcs == nullptr || !entitySharingProcs->find_proc(sharingProc))) {
               send.addEntityProc(upwardEntity, sharingProc);
             }
           }
@@ -1365,8 +1367,10 @@ void insert_upward_relations(const BulkData& bulk_data,
       }
     }
     else {
+      const EntityAndProcs* entitySharingProcs = entitySharing.find_entity_procs(entity);
       for(int sharingProc : sharingProcs) {
-        if (entityRank >= stk::topology::ELEM_RANK || !entitySharing.find(entity, sharingProc)) {
+        if (entityRank >= stk::topology::ELEM_RANK ||
+            (entitySharingProcs==nullptr || !entitySharingProcs->find_proc(sharingProc))) {
           send.addEntityProc(entity,sharingProc);
         }
       }

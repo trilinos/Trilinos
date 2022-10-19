@@ -10,30 +10,21 @@
 #define ReferenceMeshSmootherConjugateGradientDef_hpp
 
 #include <percept/PerceptUtils.hpp>
-#include <percept/mesh/mod/smoother/gradient_functors.hpp>
-#include <percept/mesh/mod/smoother/get_alpha_0_refmesh.hpp>
-
 
 namespace percept {
 
 template <typename MeshType>
 ReferenceMeshSmootherConjugateGradientImpl<MeshType>::
 ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
-//                                       typename MeshType::MTSelector *boundary_selector,
                                        STKMesh::MTSelector *stk_select,
-                                       StructuredGrid::MTSelector *sgrid_select,
                                        typename MeshType::MTMeshGeometry *meshGeometry,
                                        int inner_iterations,
                                        double grad_norm,
                                        int parallel_iterations)
 
-  :  Base(eMesh, stk_select, sgrid_select,meshGeometry, inner_iterations, grad_norm, parallel_iterations), m_max_edge_length_factor(1.0),
+  :  Base(eMesh, stk_select, meshGeometry, inner_iterations, grad_norm, parallel_iterations), m_max_edge_length_factor(1.0),
      m_coord_updater(this,m_eMesh,0),
-     m_metric_computinator(this->m_metric,eMesh,0,0,0,0) ,
-     sgrid_metric(eMesh,0.0,0),
-     m_sgrid_gradient(eMesh,Base::m_sgrid_boundarySelector),
-     m_sgrid_get_alpha_0(eMesh,Base::m_sgrid_boundarySelector),
-     sgrid_gels(eMesh)
+     m_metric_computinator(this->m_metric,eMesh,0,0,0,0)
 {}
 
   template<>
@@ -63,70 +54,6 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
       return min;
     return nm;
   }
-
-  KOKKOS_INLINE_FUNCTION
-  void find_connected_cells(PerceptMesh *eMesh, typename StructuredGrid::MTNode node, std::vector<StructuredCellIndex>& cells)
-  { //madbrew   doesn't seem to take into account block interfaces
-    unsigned iblock = node[3];
-    std::shared_ptr<StructuredBlock> sgrid = eMesh->get_block_structured_grid()->m_sblocks[iblock];
-    // const unsigned A0 = sgrid->m_access_ordering[0], A1 = sgrid->m_access_ordering[1], A2 = sgrid->m_access_ordering[2];
-    // const unsigned L0 = sgrid->m_loop_ordering[0], L1 = sgrid->m_loop_ordering[1], L2 = sgrid->m_loop_ordering[2];
-
-    const int sizes[3] = {static_cast<int>(sgrid->m_sizes.node_size[0]),
-                          static_cast<int>(sgrid->m_sizes.node_size[1]),
-                          static_cast<int>(sgrid->m_sizes.node_size[2])};
-    //unsigned Asizes[3] = {sgrid->m_sizes.node_size[A0], sgrid->m_sizes.node_size[A1], sgrid->m_sizes.node_size[A2]};
-
-    //unsigned indx[3]{0,0,0};
-
-    for (int i0 = node[0]-1; i0 <= static_cast<int>(node[0]); ++i0)
-      {
-        if (i0 < 0 || i0 > sizes[0]-2) continue;
-        for (int i1 = node[1]-1; i1 <= static_cast<int>(node[1]); ++i1)
-          {
-            if (i1 < 0 || i1 > sizes[1]-2) continue;
-            for (int i2 = node[2]-1; i2 <= static_cast<int>(node[2]); ++i2)
-              {
-                if (i2 < 0 || i2 > sizes[2]-2) continue;
-                cells.emplace_back( StructuredCellIndex{{static_cast<unsigned>(i0),static_cast<unsigned>(i1),static_cast<unsigned>(i2),iblock}} );
-              }
-          }
-      }
-  }
-
-  template<>
-  Double
-  ReferenceMeshSmootherConjugateGradientImpl< StructuredGrid >::
-  nodal_edge_length_ave(typename StructuredGrid::MTNode node)
-  {
-    Double nm=0.0;
-
-    double min=std::numeric_limits<double>::max();
-    Double nele = 0.0;
-    std::vector<StructuredCellIndex> node_elems;
-    find_connected_cells(m_eMesh, node, node_elems);
-
-#ifndef KOKKOS_ENABLE_CUDA
-    RMSCG_PRINT("tmp srk1 node_elems.size= " << node_elems.size());
-#endif
-    for (unsigned ii=0; ii < node_elems.size(); ++ii)
-      {
-        StructuredCellIndex element = node_elems[ii];
-        double lmin=0,lmax=0;
-        double elem_edge_len = m_eMesh->edge_length_ave(element, m_coord_field_original, &lmin, &lmax);
-
-#ifndef KOKKOS_ENABLE_CUDA
-        RMSCG_PRINT("tmp srk1 node_elems.size= " << node_elems.size());
-#endif
-
-        if (lmin < min) min=lmin;
-        nm += elem_edge_len;
-        nele += 1.0;
-      }
-    nm /= nele;
-    return nm;
-  }
-
 
   template<typename MeshType>
   void ReferenceMeshSmootherConjugateGradientImpl< MeshType >::
@@ -215,23 +142,6 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
     }
   }
 
-  template<>
-  GenericAlgorithm_snap_nodes<StructuredGrid>::
-  GenericAlgorithm_snap_nodes(RefMeshSmoother *rms, PerceptMesh *eMesh, double& dm) : m_rms(rms), m_eMesh(eMesh), dmax(dm)
-  {
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    coord_field = bsg->m_fields["coordinates"].get();
-    coord_field_current   = coord_field;
-
-    //on_locally_owned_part = SGridSelector();
-    //on_globally_shared_part =  SGridSelector();
-    spatialDim = 3;
-
-    dmax=0.0;
-
-    bsg->get_nodes(nodes);
-  }
-
   template<typename MeshType>
   void GenericAlgorithm_snap_nodes<MeshType>::
   operator()(int64_t& index)
@@ -316,17 +226,6 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
 #endif
   }
 
-  template<>
-  void ReferenceMeshSmootherConjugateGradientImpl< StructuredGrid >::
-  snap_nodes()
-  { //madbrew: underlying snap_to function doesn't have an sgrid implementation so this is turned off for now in order to get whole smoother GPU safe
-    /*
-    double dmax=0.0;
-    GenericAlgorithm_snap_nodes<StructuredGrid> ga(this, m_eMesh, dmax);
-    ga.run(); //operator has GPU problematic code
-    */
-  }
-
 template<typename MeshType>
 Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
         Double alpha, double multiplicative_edge_scaling, bool& valid,
@@ -339,27 +238,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
 
     valid = true;
 
-
-    if (m_eMesh->get_block_structured_grid()) { //if you have a structured Mesh
-
-        (m_stage > 0 ?
-                sgrid_metric.m_metric.m_untangling = false :
-                sgrid_metric.m_metric.m_untangling = true);
-
-        sgrid_metric.m_metric.m_use_ref_mesh = m_use_ref_mesh;
-        sgrid_metric.mtot = mtot;
-        sgrid_metric.n_invalid = n_invalid;
-        sgrid_metric.valid = valid;
-        unsigned noBlocks =
-                m_eMesh->get_block_structured_grid()->m_sblocks.size();
-        for (unsigned iBlock = 0; iBlock < noBlocks; iBlock++) {
-            sgrid_metric.run(iBlock);
-            mtot += sgrid_metric.mtot;
-            n_invalid += sgrid_metric.n_invalid;
-            valid = valid && sgrid_metric.valid;
-        }
-
-    }//sgrid code
 
     if (m_eMesh->get_bulk_data()) {//if you have a stk mesh
         //for each block      //madbrew: how is the idea of an unstructured block represented on a stk mesh?
@@ -446,21 +324,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
     cg_g_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_g");
     cg_s_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_s");
     cg_r_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_r");
-  }
-
-  template<>
-  GenericAlgorithm_line_search<StructuredGrid>::
-  GenericAlgorithm_line_search(RefMeshSmoother *rms, PerceptMesh *eMesh, double mf_mult) : m_rms(rms), m_eMesh(eMesh), mfac_mult(mf_mult)
-  {
-    restarted = false;
-    extra_print = false;
-    if (m_eMesh->getProperty("ReferenceMeshSmootherConjugateGradientImpl::line_search.extra_print") == "true")
-      extra_print = true;
-
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    cg_g_field                               = bsg->m_fields["cg_g"].get();
-    cg_s_field                               = bsg->m_fields["cg_s"].get();
-    cg_r_field                               = bsg->m_fields["cg_r"].get();
   }
 
   template<typename MeshType>
@@ -677,20 +540,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
       }
   }
 
-  template<>
-  GenericAlgorithm_get_surface_normals<StructuredGrid>::
-  GenericAlgorithm_get_surface_normals(RefMeshSmoother *rms, PerceptMesh *eMesh) : m_rms(rms), m_eMesh(eMesh)
-  {
-    norm.resize(3,0.0);
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    cg_normal_field                          = bsg->m_fields["cg_normal"].get();
-    VERIFY_OP_ON(cg_normal_field, !=, 0, "must have cg_normal_field");
-
-    //on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-    //on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
-
-    bsg->get_nodes(nodes);
-  }
 #endif
 
   template<typename MeshType>
@@ -760,11 +609,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
   void ReferenceMeshSmootherConjugateGradientImpl< MeshType >::
   get_edge_lengths(PerceptMesh * eMesh)
   {
-    if (eMesh->get_block_structured_grid()) {
-//        sGrid_GenericAlgorithm_get_edge_lengths sgrid_gels(eMesh); //turn this into member so it doesn't recalculate the adjacency field ever iteration
-        sgrid_gels.calc_edge_lengths();
-    }
-
     if (eMesh->get_bulk_data()) {
         GenericAlgorithm_get_edge_lengths<MeshType> gae(this, eMesh);
         gae.run();
@@ -797,19 +641,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
           }
       }
   }
-
-  template<>
-  GenericAlgorithm_get_edge_lengths<StructuredGrid>::
-  GenericAlgorithm_get_edge_lengths(RefMeshSmoother *rms, PerceptMesh *eMesh) : m_rms(rms), m_eMesh(eMesh)
-  {
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    cg_edge_length_field                     = bsg->m_fields["cg_edge_length"].get();
-
-    //on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-    //on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
-    bsg->get_nodes(nodes);
-  }
-
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ////////
@@ -909,13 +740,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
   get_alpha_0()
   {
       Double alpha_tot=0.0;
-      if(m_eMesh->get_block_structured_grid())
-      {
-          m_sgrid_get_alpha_0.reset_alpha();
-          m_sgrid_get_alpha_0.calc_alpha();
-          alpha_tot+=m_sgrid_get_alpha_0.alpha;
-      }
-
       if (m_eMesh->get_bulk_data()) {
         GenericAlgorithm_get_alpha_0<MeshType> ga0(this, m_eMesh);
         ga0.run();
@@ -961,23 +785,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
             }
         }
     }
-  }
-
-  template<>
-  GenericAlgorithm_get_alpha_0<StructuredGrid>::
-  GenericAlgorithm_get_alpha_0(RefMeshSmoother * rms, PerceptMesh *eMesh) : m_rms(rms), m_eMesh(eMesh)
-  {
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    cg_s_field                               = bsg->m_fields["cg_s"].get();
-    cg_edge_length_field                     = bsg->m_fields["cg_edge_length"].get();
-
-    //on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-    //on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
-    spatialDim = 3;
-
-    alpha = std::numeric_limits<double>::max();
-    alpha_set = false;
-    bsg->get_nodes(nodes);
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1135,20 +942,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
     on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
     on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
 
-  }
-
-  template<>
-  GenericAlgorithmBase_get_gradient<StructuredGrid>::
-  GenericAlgorithmBase_get_gradient(RefMeshSmoother *rms, PerceptMesh *eMesh) :  m_rms(rms), m_eMesh(eMesh), spatialDim(eMesh->get_spatial_dim())
-  {
-    rms->m_scale = 1.e-10;
-
-    std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-    coord_field                              = bsg->m_fields["coordinates"].get();
-    coord_field_current                      = coord_field;
-    cg_g_field                               = bsg->m_fields["cg_g"].get();
-    cg_r_field = bsg->m_fields["cg_r"].get();
-    cg_edge_length_field                     = bsg->m_fields["cg_edge_length"].get();
   }
 
   template<class MeshType>
@@ -1345,13 +1138,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
   }
 
   template<>
-  void GenericAlgorithm_get_gradient_1<StructuredGrid>::
-  MTSetTopo(int64_t index) const
-  {
-    //Base::m_rms->m_metric->m_topology_data = topos[index];
-  }
-
-  template<>
   GenericAlgorithm_get_gradient_1<STKMesh>::
   GenericAlgorithm_get_gradient_1(ReferenceMeshSmootherConjugateGradientImpl<STKMesh> *rms, PerceptMesh *eMesh)
     : GenericAlgorithmBase_get_gradient<STKMesh>(rms, eMesh)
@@ -1383,19 +1169,6 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
               }
           }
       }
-  }
-
-  template<>
-  GenericAlgorithm_get_gradient_1<StructuredGrid>::
-  GenericAlgorithm_get_gradient_1(ReferenceMeshSmootherConjugateGradientImpl<StructuredGrid> *rms, PerceptMesh *eMesh) : GenericAlgorithmBase_get_gradient<StructuredGrid>(rms, eMesh)
-  {
-    eMesh->nodal_field_set_value("cg_g", 0.0);
-
-    // get elements
-    //FIXME if (MeshSmootherImpl<STKMesh>::select_bucket(**k, m_eMesh))
-    std::shared_ptr<BlockStructuredGrid> bsg = eMesh->get_block_structured_grid();
-    bsg->get_elements(elements);
-    topos.resize(elements.size(), static_cast<const typename StructuredGrid::MTCellTopology *>(0));
   }
 
   template<typename MeshType>
@@ -1470,30 +1243,11 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
       }
   }
 
-  template<>
-  GenericAlgorithm_get_gradient_2<StructuredGrid>::
-  GenericAlgorithm_get_gradient_2(ReferenceMeshSmootherConjugateGradientImpl<StructuredGrid> *rms, PerceptMesh *eMesh) :  GenericAlgorithmBase_get_gradient<StructuredGrid>(rms, eMesh)
-  {
-    eMesh->get_block_structured_grid()->get_nodes(nodes);
-  }
-
 //  /// fills cg_g_field with f'(x)
   template<typename MeshType>
   void ReferenceMeshSmootherConjugateGradientImpl< MeshType >::
   get_gradient()
   {
-      if (m_eMesh->get_block_structured_grid()) { //if you have a structured Mesh
-
-          m_eMesh->nodal_field_set_value("cg_g", 0.0);
-          m_scale = 1.e-10;
-
-          (m_stage > 0 ?
-                  m_sgrid_gradient.m_metric.m_untangling = false :
-                  m_sgrid_gradient.m_metric.m_untangling = true);
-
-          m_sgrid_gradient.run();
-      }//sgrid code
-
       if (m_eMesh->get_bulk_data()) {//if you have a stk mesh
           GenericAlgorithm_get_gradient_1<MeshType> ga_1(this, m_eMesh);
           ga_1.run();

@@ -70,8 +70,8 @@ namespace stk {
        */
       virtual bool rebalance(mesh::BulkData & bulk_data ,
                              const mesh::Selector & selector ,
-                             const VectorField * coord_ref ,
-                             const ScalarField * elem_weight_ref,
+                             const stk::mesh::FieldBase * coord_ref ,
+                             const stk::mesh::FieldBase * elem_weight_ref,
                              Partition & partition,
                              const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank,
                              stk::mesh::EntityVector *entities_list = 0,

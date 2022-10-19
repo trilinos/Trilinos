@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -107,7 +107,7 @@ C     is set to 'GENESIS', write exodusI format
       CALL EXCPUS (TIME1)
       TITLE = ' '
       DEFSCH = 'M'
-      VERSN = 'FASTQ 3.24'
+      VERSN = 'FASTQ-3.24'
       DEFSIZ = 0.
       SNAP = .TRUE.
       TBZOOM = .FALSE.

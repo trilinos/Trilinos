@@ -40,8 +40,9 @@ namespace Ioss {
     static Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)MPI_COMM_SELF; }
     static Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)MPI_COMM_NULL; }
 #else
-    static constexpr Ioss_MPI_Comm comm_world() { return 0; }
-    static constexpr Ioss_MPI_Comm comm_self() { return 0; }
+    // NOTE: These values match those used in siMPI package.
+    static constexpr Ioss_MPI_Comm comm_world() { return -100; }
+    static constexpr Ioss_MPI_Comm comm_self() { return -100; }
     static constexpr Ioss_MPI_Comm comm_null() { return 0; }
 #endif
 

@@ -79,6 +79,8 @@ using default_scalar = double;
 using default_scalar    = float;
 #elif defined(KOKKOSKERNELS_INST_HALF)
 using default_scalar    = Kokkos::Experimental::half_t;
+#elif defined(KOKKOSKERNELS_INST_BHALF)
+using default_scalar = Kokkos::Experimental::bhalf_t;
 #else
 using default_scalar = double;
 #endif

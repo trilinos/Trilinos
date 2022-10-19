@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
       integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
     TEST_EQUALITY(pS->getName(), "PhysicsStateTest");
     pSC = Teuchos::rcp_dynamic_cast<PhysicsStateCounter<double> >(pS);
-    //std::cout << " Counter = " << pSC->getCounter() << std::endl;
+    //out << " Counter = " << pSC->getCounter() << std::endl;
     TEST_EQUALITY(pSC->getCounter(), (int)(1.0/dt));
 
 
@@ -145,11 +145,11 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = ForwardEuler" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
+  out << "  Stepper = ForwardEuler" << std::endl;
+  out << "  =========================" << std::endl;
+  out << "  Expected order: " << order << std::endl;
+  out << "  Observed order: " << slope << std::endl;
+  out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.051123, 1.0e-4 );
 

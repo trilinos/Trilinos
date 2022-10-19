@@ -47,6 +47,9 @@ std::string vertex_weight_method_name(VertexWeightMethod method) {
   case (VertexWeightMethod::CONNECTIVITY) : {
     return "connectivity";
   }
+  case (VertexWeightMethod::FIELD) : {
+    return "field";
+  }
   default: {
     return "unknown";
   }

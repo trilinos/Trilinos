@@ -8,7 +8,7 @@
 
 #include <string>
 
-#define STK_MAX_COUPLING_VERSION 8
+#define STK_MAX_COUPLING_VERSION 9
 #define STK_MIN_COUPLING_VERSION 0                                                                               
  
 namespace stk {

@@ -53,7 +53,6 @@
 #ifndef Intrepid2_DerivedBasis_HCURL_QUAD_h
 #define Intrepid2_DerivedBasis_HCURL_QUAD_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include "Intrepid2_Polynomials.hpp"
@@ -100,7 +99,7 @@ namespace Intrepid2
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
@@ -229,7 +228,7 @@ namespace Intrepid2
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const override
     {
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
@@ -373,7 +372,7 @@ namespace Intrepid2
     */
     virtual bool requireOrientation() const override
     {
-      return (this->getDofCount(1,0) > 0); //if it has edge DOFs, than it needs orientations
+      return true;
     }
 
     /** \brief  Returns basis name

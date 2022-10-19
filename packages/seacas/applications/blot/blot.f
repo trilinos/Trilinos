@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -240,6 +240,9 @@ C   --Open database file
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
      *    ' [-nomap node|element|all] filename"')
+        CALL PRTERR ('CMDSPEC',
+     *       'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#blot')
         GOTO 190
       end if
 
@@ -252,6 +255,9 @@ C   --Open database file
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
      *    ' [-nomap node|element|all] [-show_filename] filename"')
+        CALL PRTERR ('CMDSPEC',
+     *       'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#blot')
         GOTO 170
       END IF
       EXODUS = .FALSE.

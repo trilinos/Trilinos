@@ -216,7 +216,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 {
 //  stk::mesh::BulkData& bulkData = *eMesh->get_bulk_data();
   pre_process(eMesh);
-  CoordinatesFieldType* coordField = eMesh->get_coordinates_field();
+  stk::mesh::FieldBase* coordField = eMesh->get_coordinates_field();
 
 
 
@@ -307,7 +307,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
     int spatialDim = eMesh->get_spatial_dim();
     if(evaluators.size() > 1)
     {
-      double * coords = eMesh->field_data(*coordField , nodeToEval.first);
+      double * coords = static_cast<double*>(eMesh->field_data(*coordField , nodeToEval.first));
       double orig_pos[3] = {coords[0], coords[1], (spatialDim==3 ? coords[2] : 0) };
       double smallest_dist_sq = std::numeric_limits<double>::max();
       double best_pos[3] = {0,0,0};
@@ -456,11 +456,11 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
 
 void MeshGeometry::snap_node(PerceptMesh *eMesh, stk::mesh::Entity node, GeometryHandle geomHand /*size_t evaluator_idx*/)
 {
-  CoordinatesFieldType* coordField = eMesh->get_coordinates_field();
+  stk::mesh::FieldBase* coordField = eMesh->get_coordinates_field();
 
   {
     int spatialDim = eMesh->get_spatial_dim();
-    double * coord_in = eMesh->field_data( *coordField , node );
+    double * coord_in = static_cast<double*>(eMesh->field_data( *coordField , node ));
     double coord[3] = {coord_in[0], coord_in[1], (spatialDim==3?coord_in[2]:0)};
     double delta[3] = {coord[0], coord[1], coord[2]};
 
@@ -504,10 +504,10 @@ void MeshGeometry::print_node_movement_summary()
 
 void MeshGeometry::normal_at(PerceptMesh *eMesh, stk::mesh::Entity node, GeometryHandle & curveOrSurfaceEvaluator/*size_t& curveOrSurfaceEvaluator*//*size_t evalautor_idx*/, std::vector<double>& normal)
 {
-  CoordinatesFieldType* coordField = eMesh->get_coordinates_field();
+  stk::mesh::FieldBase* coordField = eMesh->get_coordinates_field();
 
   {
-    double * coord = eMesh->field_data( *coordField , node );
+    double * coord = static_cast<double*>(eMesh->field_data( *coordField , node ));
 
     geomKernel->normal_at(coord, curveOrSurfaceEvaluator, /*geomEvaluators[evaluator_idx]->mGeometry,*/ normal, (void *)(&node));
   }
@@ -515,10 +515,10 @@ void MeshGeometry::normal_at(PerceptMesh *eMesh, stk::mesh::Entity node, Geometr
 
 void MeshGeometry::point_at(PerceptMesh *eMesh, stk::mesh::Entity node, GeometryHandle & curveOrSurfaceEvaluator/*size_t& curveOrSurfaceEvaluator*//*size_t evalautor_idx*/, std::vector<double>& coords, bool use_node_coords)
 {
-  CoordinatesFieldType* coordField = eMesh->get_coordinates_field();
+  stk::mesh::FieldBase* coordField = eMesh->get_coordinates_field();
 
   {
-    double * coord_in = eMesh->field_data( *coordField , node );
+    double * coord_in = static_cast<double*>(eMesh->field_data( *coordField , node ));
     if (!use_node_coords)
       {
         coord_in = &coords[0];
@@ -563,14 +563,14 @@ bool MeshGeometry::contains_dbg_node
   stk::mesh::Bucket &bucket
 )
 {
-  CoordinatesFieldType* coordField = eMesh->get_coordinates_field();
+  stk::mesh::FieldBase* coordField = eMesh->get_coordinates_field();
   const unsigned num_nodes_in_bucket = bucket.size();
 
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
   {
     stk::mesh::Entity node = bucket[iNode];
 
-    double * coord = eMesh->field_data( *coordField , node );
+    double * coord = static_cast<double*>(eMesh->field_data( *coordField , node ));
     if ( is_dbg_node( coord ) )
     {
       return true;

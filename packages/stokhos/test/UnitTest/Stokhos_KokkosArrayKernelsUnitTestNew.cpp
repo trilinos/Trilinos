@@ -368,9 +368,9 @@ int main( int argc, char* argv[] ) {
   // const size_t team_count       = 1 ;
   // const size_t threads_per_team = 1 ;
 
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = team_count*threads_per_team;
-  init_args.device_id = 0;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(team_count*threads_per_team);
+  init_args.set_device_id(0);
   Kokkos::initialize( init_args );
   Kokkos::print_configuration( std::cout );
 

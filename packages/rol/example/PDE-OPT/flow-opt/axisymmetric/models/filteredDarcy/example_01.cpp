@@ -194,8 +194,8 @@ int main(int argc, char *argv[]) {
       h0p = ROL::makePtr<ROL::StdVector<RealT>>(dim,ROL::ROL_INF<RealT>());
       l1_ptr = fobj->getAssembler()->createControlVector();
       h1_ptr = fobj->getAssembler()->createControlVector();
-      l1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(l1_ptr,pde,assembler,*parlist);
-      h1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(h1_ptr,pde,assembler,*parlist);
+      l1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(l1_ptr,pdeFilter,fobj->getAssembler(),*parlist);
+      h1p = ROL::makePtr<PDE_PrimalOptVector<RealT>>(h1_ptr,pdeFilter,fobj->getAssembler(),*parlist);
       l1p->setScalar(0.0);
       h1p->setScalar(1.0);
       lp = ROL::makePtr<PDE_OptVector<RealT>>(l1p,l0p,myRank);
@@ -281,6 +281,23 @@ int main(int argc, char *argv[]) {
     assembler->printDataPDE(pde,u_ptr,f_ptr);
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
     //pdecon->outputTpetraData();
+
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>> conFilter;
+    ROL::Ptr<PDE_Constraint<RealT>>         pdeconFilter;
+    ROL::Ptr<Assembler<RealT>>              assemblerFilter;
+    conFilter = ROL::makePtr<PDE_Constraint<RealT>>(pdeFilter,meshMgr,comm,*parlist,*outStream);
+    pdeconFilter = ROL::dynamicPtrCast<PDE_Constraint<RealT>>(conFilter);
+    assemblerFilter = pdeconFilter->getAssembler();
+    ROL::Ptr<Tpetra::MultiVector<>> filteru_ptr, filterz_ptr;
+    ROL::Ptr<ROL::TpetraMultiVector<RealT>> filteru, filterz;
+    filteru_ptr = assemblerFilter->createStateVector();
+    filterz_ptr = assemblerFilter->createControlVector();
+    filteru = ROL::makePtr<PDE_PrimalSimVector<RealT>>(filteru_ptr,pdeFilter,assemblerFilter,*parlist);
+    filterz = ROL::makePtr<PDE_PrimalOptVector<RealT>>(filterz_ptr,pdeFilter,assemblerFilter,*parlist);
+    filteru->setScalar(0.0);
+    filterz->setScalar(0.0);
+    pdeconFilter->solve(*filteru, *filteru, *filterz, tol);
+    pdeconFilter->outputTpetraData();
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

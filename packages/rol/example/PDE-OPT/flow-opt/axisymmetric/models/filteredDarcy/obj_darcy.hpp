@@ -768,8 +768,10 @@ private:
   const ROL::Ptr<FE<Real>>                    fePrs_, feCtrl_;
   const ROL::Ptr<Permeability<Real>>          perm_;
   ROL::Ptr<Intrepid::FieldContainer<Real>>    target_, weight_;
-  Real                                        rad_, yvel_, frac_, twpow_;
-  bool                                        onlyAxial_;
+  Real                                        rad_, yvel_, frac_, twpow_, top_;
+  std::vector<Real>                           rvec_, zvec_;
+  int                                         targetType_;
+  bool                                        onlyAxial_, optimizeFrac_, invertFrac_, polyWeight_, veloWeight_;
 
   Real xTarget(const std::vector<Real> &x) const {
     const Real X = x[0], Y = x[1];
@@ -777,7 +779,21 @@ private:
     //return xWeight(x) ? -X*Y/std::sqrt(rad_*rad_-Y*Y) : zero;
     //return polyWeight(x) * (-X*Y/std::sqrt(rad_*rad_-Y*Y));
     //return -X*Y/std::sqrt(rad_*rad_-Y*Y);
-    return -X*Y/((rad_*rad_-Y*Y)*(rad_*rad_-Y*Y));
+    if (targetType_ == 1)
+      return -X*Y/((rad_*rad_-Y*Y)*(rad_*rad_-Y*Y));
+    else if (targetType_ == 2) {
+      Real slope = 0;
+      Real xVal = 0;
+      for (int i=0; i<5; ++i) {
+        if ((Y >= zvec_[i]) && (Y < zvec_[i+1])) {
+          slope = (rvec_[i+1] - rvec_[i]) / (zvec_[i+1] - zvec_[i]);
+          xVal  = X*slope/std::pow(rvec_[i] + slope*(Y-zvec_[i]), 3);
+        }
+      }
+      return xVal;
+    }
+    else
+      throw Exception::NotImplemented(">>> Desired target type (not 1 or 2) not implemented.");
   }
 
   Real yTarget(const std::vector<Real> &x) const {
@@ -786,7 +802,21 @@ private:
     //return yWeight(x) ? std::sqrt(rad_*rad_-Y*Y) : zero;
     //return polyWeight(x) * std::sqrt(rad_*rad_-Y*Y);
     //return std::sqrt(rad_*rad_-Y*Y);
-    return one/(rad_*rad_-Y*Y);
+    if (targetType_ == 1)
+      return one/(rad_*rad_-Y*Y);
+    else if (targetType_ == 2) {
+      Real slope = 0;
+      Real yVal = 0;
+      for (int i=0; i<5; ++i) {
+        if ((Y >= zvec_[i]) && (Y < zvec_[i+1])) {
+          slope = (rvec_[i+1] - rvec_[i]) / (zvec_[i+1] - zvec_[i]);
+          yVal  = 1.0/std::pow(rvec_[i] + slope*(Y-zvec_[i]), 2);
+        }
+      }
+      return yVal;
+    }
+    else
+      throw Exception::NotImplemented(">>> Desired target type (not 1 or 2) not implemented.");
   }
 
   Real xWeight(const std::vector<Real> &x) const {
@@ -794,15 +824,26 @@ private:
   }
 
   Real yWeight(const std::vector<Real> &x) const {
-    //const Real zero(0), one(1), Y = x[1];
-    //return (std::abs(Y) <= frac_*rad_ ? one : zero);
-    return polyWeight(x);
+    if (optimizeFrac_) {
+      const Real zero(0), one(1), Y = x[1];
+      if (invertFrac_)
+        return (std::abs(Y)  > frac_*top_ ? one : zero);
+      else
+        return (std::abs(Y) <= frac_*top_ ? one : zero);
+    }
+    else if (polyWeight_)
+      return polyWeight(x);
+    else if (veloWeight_)
+      return 1.0/(std::pow(xTarget(x), 2) + std::pow(yTarget(x), 2));
+    else
+      return 1.0;
   }
 
   Real polyWeight(const std::vector<Real> &x) const {
     const Real zero(0), one(1), Y = x[1], p = twpow_;
-    const Real yTOP = 9.976339196;
-    const Real yBOT = -yTOP;
+    Real yTOP(0), yBOT(0);
+    yTOP = top_;
+    yBOT = -yTOP;
     Real val = 0, at = 0, bt = 0;
     at = one / std::pow(-yTOP,p);
     bt = one / std::pow(-yBOT,p);
@@ -817,18 +858,40 @@ private:
 
 public:
   QoI_VelocityTracking_Darcy(Teuchos::ParameterList             &list,
-                              const ROL::Ptr<FE<Real>>           &fePrs,
-                              const ROL::Ptr<FE<Real>>           &feCtrl,
-                              const ROL::Ptr<Permeability<Real>> &perm)
+                             const ROL::Ptr<FE<Real>>           &fePrs,
+                             const ROL::Ptr<FE<Real>>           &feCtrl,
+                             const ROL::Ptr<Permeability<Real>> &perm)
     : fePrs_(fePrs), feCtrl_(feCtrl), perm_(perm) {
-    rad_         = list.sublist("Problem").get("Diffuser Radius",5.0);
-    yvel_        = list.sublist("Problem").get("Target Axial Velocity",15.0);
-    frac_        = list.sublist("Problem").get("Integration Domain Fraction",0.95);
-    onlyAxial_   = list.sublist("Problem").get("Only Use Axial Velocity",false);
-    twpow_       = list.sublist("Problem").get("Target Weighting Power",0.0);
-    Real xWScal  = list.sublist("Problem").get("Radial Tracking Scale",1.0);
-    Real yWScal  = list.sublist("Problem").get("Axial Tracking Scale",1.0);
-    bool useNorm = list.sublist("Problem").get("Use Normalized Misfit",false);
+
+    rvec_.resize(6);
+    zvec_.resize(6);
+
+    rad_          = list.sublist("Problem").get("Diffuser Radius",10.0);
+    top_          = list.sublist("Problem").get("Diffuser Top",9.9763392);
+    rvec_[0]      = list.sublist("Problem").get("r0",0.6875);
+    zvec_[0]      = list.sublist("Problem").get("z0",-14.001);
+    rvec_[1]      = list.sublist("Problem").get("r1",3.0);
+    zvec_[1]      = list.sublist("Problem").get("z1",-9.0);
+    rvec_[2]      = list.sublist("Problem").get("r2",10.0);
+    zvec_[2]      = list.sublist("Problem").get("z2",-3.0);
+    rvec_[3]      = list.sublist("Problem").get("r3",10.0);
+    zvec_[3]      = list.sublist("Problem").get("z3",3.0);
+    rvec_[4]      = list.sublist("Problem").get("r4",3.0);
+    zvec_[4]      = list.sublist("Problem").get("z4",9.0);
+    rvec_[5]      = list.sublist("Problem").get("r5",0.6875);
+    zvec_[5]      = list.sublist("Problem").get("z5",14.001);
+    yvel_         = list.sublist("Problem").get("Target Axial Velocity",15.0);
+    optimizeFrac_ = list.sublist("Problem").get("Optimize Domain Fraction",false);
+    invertFrac_   = list.sublist("Problem").get("Invert Domain Fraction",false);
+    frac_         = list.sublist("Problem").get("Integration Domain Fraction",1.00);
+    polyWeight_   = list.sublist("Problem").get("Use Polynomial Weight",false);
+    veloWeight_   = list.sublist("Problem").get("Use Target Velocity Weight",false);
+    onlyAxial_    = list.sublist("Problem").get("Only Use Axial Velocity",false);
+    targetType_   = list.sublist("Problem").get("Target Type", 1);
+    twpow_        = list.sublist("Problem").get("Target Weighting Power",0.0);
+    Real xWScal   = list.sublist("Problem").get("Radial Tracking Scale",1.0);
+    Real yWScal   = list.sublist("Problem").get("Axial Tracking Scale",1.0);
+    bool useNorm  = list.sublist("Problem").get("Use Normalized Misfit",false);
     useNorm = onlyAxial_ ? false : useNorm;
     xWScal  = onlyAxial_ ? static_cast<Real>(0) : xWScal;
     const int c = fePrs_->gradN()->dimension(0);
