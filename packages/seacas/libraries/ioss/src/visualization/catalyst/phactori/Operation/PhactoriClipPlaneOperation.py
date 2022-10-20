@@ -191,4 +191,3 @@ keys and instead have keys with "point on plane A", "point and plane B", and
     if PhactoriDbg():
       myDebugPrint3("PhactoriClipPlaneOperation::UpdateClip returning\n")
 #phactori_combine_to_single_python_file_subpiece_end_1
-

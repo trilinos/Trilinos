@@ -1,104 +1,114 @@
+# On windows, `tribits_add_executable` will still add the `.exe` suffix
+# However, `tribits_add_test` will strip it...
+if(WIN32)
+ SET(ADD_SUFFIX "")
+else()
+ SET(ADD_SUFFIX "NOEXESUFFIX")
+endif()
 
-TRIBITS_ADD_EXECUTABLE(
- Utst_utils
- SOURCES Utst_utils.C
-)
-
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_utils
 	NAME Utst_utils
+	SOURCES Utst_utils.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
 	NUM_MPI_PROCS 1
 )
 
-TRIBITS_ADD_EXECUTABLE(
- Utst_iofx
- SOURCES Utst_IofxDatabaseIO.C
-)
-
-TRIBITS_ADD_TEST(
-	Utst_iofx
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	Utst_database_io
 	NAME Utst_iofx
 	ARGS "--filename ${CMAKE_CURRENT_SOURCE_DIR}/ADeDA.e"
 	NUM_MPI_PROCS 1
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	SOURCES Utst_IofxDatabaseIO.C
 )
 
-TRIBITS_ADD_EXECUTABLE(
- Utst_ioel
- SOURCES Utst_ioel.C
-)
-
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_ioel
 	NAME Utst_ioel
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	SOURCES Utst_ioel.C
 	NUM_MPI_PROCS 1
 )
 
-TRIBITS_ADD_EXECUTABLE(
- Utst_blob_write_read
- SOURCES Utst_blob_write_read.C
-)
-
-TRIBITS_ADD_TEST(
-        Utst_blob_write_read
+if (TPL_ENABLE_Pnetcdf)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	Utst_blob_write_read
 	NAME Utst_blob_write_read
-	NUM_MPI_PROCS 1
-	COMM mpi serial
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	SOURCES Utst_blob_write_read.C
 	XHOSTTYPE Windows
   )
+ELSE()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	Utst_blob_write_read
+	NAME Utst_blob_write_read
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	SOURCES Utst_blob_write_read.C
+	NUM_MPI_PROCS 1
+	XHOSTTYPE Windows
+  )
+ENDIF()
 
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
-TRIBITS_ADD_EXECUTABLE(
- Utst_sort
- SOURCES Utst_sort.C
-)
-
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_sort
+	SOURCES Utst_sort.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
 	NAME Utst_sort
 	NUM_MPI_PROCS 1
 )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE(
- Utst_map
- SOURCES Utst_map.C
-)
-
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_map
 	NAME Utst_map
 	NUM_MPI_PROCS 1
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	SOURCES Utst_map.C
 )
 
 IF (TPL_ENABLE_CGNS)
 SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp.C PROPERTIES COMPILE_FLAGS -O0)
 SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_rocket.C PROPERTIES COMPILE_FLAGS -O0)
 SET_SOURCE_FILES_PROPERTIES(Utst_structured_decomp_herron.C PROPERTIES COMPILE_FLAGS -O0)
-TRIBITS_ADD_EXECUTABLE(
- Utst_structured_decomp
- SOURCES Utst_structured_decomp.C Utst_structured_decomp_herron.C Utst_structured_decomp_rocket.C
-)
-
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_structured_decomp
 	NAME Utst_structured_decomp
 	NUM_MPI_PROCS 1
+	SOURCES Utst_structured_decomp.C Utst_structured_decomp_herron.C Utst_structured_decomp_rocket.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
 )
 ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
-TRIBITS_ADD_EXECUTABLE(
- Utst_superelement
- SOURCES Utst_superelement.C
-)
-
-TRIBITS_ADD_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_superelement
 	NAME Utst_superelement
 	NUM_MPI_PROCS 1
 	ARGS ${CMAKE_CURRENT_SOURCE_DIR}/cbr2.ncf
+	SOURCES Utst_superelement.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
 )
 ENDIF()
 

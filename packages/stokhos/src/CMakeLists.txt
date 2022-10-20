@@ -1107,6 +1107,8 @@ IF (Stokhos_ENABLE_Sacado)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
+        LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RefMaxwell)
+        LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::Maxwell_Utils)
       ENDIF()
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)

@@ -571,6 +571,22 @@ public:
       return blockParts;
   }
 
+  std::vector<const stk::mesh::Part*> get_surfaces_touched_by_block(const stk::mesh::Part* block) const
+  {
+      std::vector<const stk::mesh::Part*> surfaceParts;
+
+      SurfaceBlockMap::const_iterator iter = m_surfaceToBlock.begin();
+      for(; iter != m_surfaceToBlock.end(); ++iter) {
+
+        if(std::binary_search(iter->second.begin(), iter->second.end(), block->mesh_meta_data_ordinal()))
+        {
+            const stk::mesh::Part* part = this->get_parts()[iter->first];
+            surfaceParts.push_back(part);
+        }
+      }
+      return surfaceParts;
+  }
+
   size_t count_blocks_touching_surface(const stk::mesh::Part* surface) const
   {
       size_t numBlocks = 0;

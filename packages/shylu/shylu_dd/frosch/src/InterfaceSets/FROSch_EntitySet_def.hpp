@@ -124,6 +124,7 @@ namespace FROSch {
             reduceAll(*localToGlobalNodesMap->getComm(),REDUCE_MAX,localNumberEntities,ptr(&maxLocalNumberEntities));
 
             GOVec localToGlobalVector(0);
+            const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
             if (globalNumberEntities>0) {
                 // Set the Unique iD
                 setUniqueIDToFirstGlobalNodeID();
@@ -133,7 +134,7 @@ namespace FROSch {
                     entities[i] = getEntity(i)->getUniqueID()+1;
                     getEntity(i)->setLocalID(i);
                 }
-                XMapPtr entityMapping = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,entities(),0,localToGlobalNodesMap->getComm());
+                XMapPtr entityMapping = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),INVALID,entities(),0,localToGlobalNodesMap->getComm());
 
                 GOVec allEntities(maxLocalNumberEntities*localToGlobalNodesMap->getComm()->getSize(),0);
                 //localToGlobalNodesMap->getComm().GatherAll(&(entities->at(0)),&(allEntities->at(0)),maxLocalNumberEntities);
@@ -153,7 +154,7 @@ namespace FROSch {
                 }
 
             }
-            EntityMap_ = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),-1,localToGlobalVector(),0,localToGlobalNodesMap->getComm());
+            EntityMap_ = MapFactory<LO,GO,NO>::Build(localToGlobalNodesMap->lib(),INVALID,localToGlobalVector(),0,localToGlobalNodesMap->getComm());
             EntityMapIsUpToDate_ = true;
         }
         return 0;

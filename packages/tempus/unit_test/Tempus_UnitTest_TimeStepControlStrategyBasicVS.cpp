@@ -147,8 +147,7 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyBasicVS, setNextTimeStep)
       }
 
       solutionHistory->promoteWorkingState();
-      //auto x = solutionHistory->getCurrentState()->getX();
-      //std::cout << "  x = " << get_ele(*(x), 0) << std::endl;
+      //out << "  x = " << get_ele(*(x), 0) << std::endl;
     }
 
     auto currentState = solutionHistory->getCurrentState();
@@ -181,7 +180,7 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyBasicVS, setNextTimeStep)
 
       solutionHistory->promoteWorkingState();
       //auto x = solutionHistory->getCurrentState()->getX();
-      //std::cout << "  x = " << get_ele(*(x), 0) << std::endl;
+      //out << "  x = " << get_ele(*(x), 0) << std::endl;
     }
 
     auto currentState = solutionHistory->getCurrentState();

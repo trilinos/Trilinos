@@ -1,10 +1,12 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -44,6 +46,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
 Matrix filtering (MueLu::FilteredAFactory)

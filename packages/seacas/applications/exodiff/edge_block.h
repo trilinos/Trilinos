@@ -25,7 +25,7 @@ public:
   int Check_State() const;
 
 private:
-  Edge_Block(const Edge_Block &) = delete;                  // Not written.
+  Edge_Block(const Edge_Block &)                  = delete; // Not written.
   const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
 
   void entity_load_params() override;

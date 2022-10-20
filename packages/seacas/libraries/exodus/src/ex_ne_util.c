@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,7 +39,6 @@ char *ne_ret_string;
 /*****************************************************************************/
 int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
 {
-
   int status;
   int varid;
   if ((status = nc_inq_varid(exoid, ne_var_name, &varid)) != NC_NOERR) {
@@ -56,8 +55,7 @@ int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id n
     int     ndims;
     int     dimid[1];
     nc_type var_type;
-    if ((status = nc_inq_var(exoid, varid, (char *)0, &var_type, &ndims, dimid, (int *)0)) !=
-        NC_NOERR) {
+    if ((status = nc_inq_var(exoid, varid, NULL, &var_type, &ndims, dimid, NULL)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find dimension ID for variable \"%s\" "

@@ -3747,3 +3747,106 @@ void F2C(expecm, EXPECM)(int *idne, entity_id *map_id, void_int *elem_ids, void_
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);
   }
 }
+
+/*
+ * read the values of a single variable for a partial block at one time
+ * step to the database; assume the first time step and variable index
+ * are 1
+ * \sa ex_get_partial_var()
+ */
+void F2C(exgpv, EXGPV)(int *idexo, int *time_step, int *var_type, int *var_index, entity_id *obj_id,
+                       void_int *start_index, void_int *num_entities, real *var_vals, int *ierr)
+{
+  int64_t start_index64, num_entities64;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    start_index64  = *(int64_t *)start_index;
+    num_entities64 = *(int64_t *)num_entities;
+  }
+  else {
+    start_index64  = *(int *)start_index;
+    num_entities64 = *(int *)num_entities;
+  }
+  if ((*ierr = ex_get_partial_var(*idexo, *time_step, (ex_entity_type)*var_type, *var_index,
+                                  *obj_id, start_index64, num_entities64, var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write variable slab to file id %d", *idexo);
+    ex_err_fn(*idexo, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * writes the values of a single variable for a partial block at one time
+ * step to the database; assume the first time step and variable index
+ * are 1
+ * \sa ex_put_partial_var()
+ */
+void F2C(exppv, EXPPV)(int *idexo, int *time_step, int *var_type, int *var_index, entity_id *obj_id,
+                       void_int *start_index, void_int *num_entities, real *var_vals, int *ierr)
+{
+  int64_t start_index64, num_entities64;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    start_index64  = *(int64_t *)start_index;
+    num_entities64 = *(int64_t *)num_entities;
+  }
+  else {
+    start_index64  = *(int *)start_index;
+    num_entities64 = *(int *)num_entities;
+  }
+  if ((*ierr = ex_put_partial_var(*idexo, *time_step, (ex_entity_type)*var_type, *var_index,
+                                  *obj_id, start_index64, num_entities64, var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write variable slab to file id %d", *idexo);
+    ex_err_fn(*idexo, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * reads the coordinates of some of the nodes in the model for the specified component
+ * \sa ex_get_partial_coord_component
+ */
+void F2C(exgpcc, EXGPCC)(int *exoid, void_int *start_node_num, void_int *num_nodes, int *component,
+                         real *coor, int *ierr)
+{
+  int64_t start_node_num64, num_nodes64;
+  if (ex_int64_status(*exoid) & EX_BULK_INT64_API) {
+    start_node_num64 = *(int64_t *)start_node_num;
+    num_nodes64      = *(int64_t *)num_nodes;
+  }
+  else {
+    start_node_num64 = *(int *)start_node_num;
+    num_nodes64      = *(int *)num_nodes;
+  }
+  if ((*ierr = ex_get_partial_coord_component(*exoid, start_node_num64, num_nodes64, *component,
+                                              coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Error: failed to read coordinate component  slab to file id %d", *exoid);
+    ex_err_fn(*exoid, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * writes the coordinates of some of the nodes in the model for the specified component
+ * \sa ex_put_partial_coord_component
+ */
+
+void F2C(exppcc, EXPPCC)(int *exoid, void_int *start_node_num, void_int *num_nodes, int *component,
+                         real *coor, int *ierr)
+{
+  int64_t start_node_num64, num_nodes64;
+  if (ex_int64_status(*exoid) & EX_BULK_INT64_API) {
+    start_node_num64 = *(int64_t *)start_node_num;
+    num_nodes64      = *(int64_t *)num_nodes;
+  }
+  else {
+    start_node_num64 = *(int *)start_node_num;
+    num_nodes64      = *(int *)num_nodes;
+  }
+  if ((*ierr = ex_put_partial_coord_component(*exoid, start_node_num64, num_nodes64, *component,
+                                              coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Error: failed to write coordinate component  slab to file id %d", *exoid);
+    ex_err_fn(*exoid, __func__, errmsg, EX_MSG);
+  }
+}

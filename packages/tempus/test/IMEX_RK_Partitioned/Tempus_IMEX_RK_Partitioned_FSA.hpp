@@ -280,11 +280,11 @@ void test_vdp_fsa(const std::string& method_name,
 
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-    std::cout << "  Stepper = " << stepperType << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Expected order: " << order << std::endl;
-    std::cout << "  Observed order: " << slope << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepperType << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Expected order: " << order << std::endl;
+    out << "  Observed order: " << slope << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY( slope, stepperOrders[m], 0.02 );
     TEST_FLOATING_EQUALITY( ErrorNorm[0], stepperErrors[m], 1.0e-4 );
 

@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -33,7 +33,7 @@ C        READ AND INTERPRET ALL INPUT DATA
       include 'nu_io.blk'
 
       DIMENSION TRANGE(3), CENT(3)
-      PARAMETER (MXNAM = 20)
+      PARAMETER (MXNAM = 132)
       DIMENSION KV(MXNAM), RV(MXNAM), IVAL(MXNAM)
       CHARACTER*32  CV(MXNAM), NAME, CTMP
       CHARACTER*16 LABEL(32), TYPE, PROMPT
@@ -42,7 +42,7 @@ C        READ AND INTERPRET ALL INPUT DATA
      *   LTMP2, LTMP3, LTMP4, CENTER
       LOGICAL FFNUMB, FFMATC, HELP, MATSTR, FFEXST
 
-      CHARACTER*8 CMDTBL(37), SORTBL(12), LISTBL(20)
+      CHARACTER*8 CMDTBL(38), SORTBL(12), LISTBL(20)
       SAVE CMDTBL, SORTBL, LISTBL
 C      --CMDTBL - the valid commands table
 C      --SORTBL - the valid sort options table
@@ -59,7 +59,7 @@ C   --changing the table.
      *   'TMIN    ', 'MASS    ', 'PRINT   ', 'ECHO    ', 'SELECT  ',
      *   'WAVESPEE', 'TIMESTEP', 'ALLTIMES', 'NINTV   ', 'ZINTV   ',
      *   'SUM     ', 'AVERAGE ', 'CONDITIO', 'ESUM    ', 'EAVERAGE',
-     *   'QUIT    ', '        '/
+     *   'QUIT    ', 'MCAVITY ', '        '/
 
       DATA SORTBL /
      *   'X       ', 'Y       ', 'Z       ', 'T       ', 'DISTANCE',
@@ -309,6 +309,42 @@ C ... For 3d, if no center specified use 0,0,0 unless user enters 'centroid'
          ELSE
          END IF
          CALL CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
+     *      A(IBC5),A(IBC6), A(IBC7), A(IBC8), DISP, NUMNP, NDIM,
+     *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER)
+
+      ELSE IF (NAME .EQ. 'MCAVITY') THEN
+         NUMCAV = 0
+ 66      CONTINUE
+         IF (FFNUMB (IFLD, KV)) THEN
+           NUMCAV = MIN(NUMCAV + 1, MAXCAV)
+           CALL FFINTG (IFLD, KV, IVAL,
+     *       'cavity boundary flag', 0, ICAV(NUMCAV), *20)
+           GO TO 66
+         END IF
+
+         CENT(1) = 0.0
+         CENT(2) = 0.0
+         CENT(3) = 0.0
+         CENTER = .FALSE.
+C ... For 3d, if no center specified use 0,0,0 unless user enters 'centroid'
+         IF (NDIM .eq. 3) then
+           center = .true.
+         end if
+         IF (FFMATC (IFLD, KV, CV, 'CENTROID', 5)) THEN
+           CENTER = .FALSE.
+         ELSE IF (FFMATC (IFLD, KV, CV, 'CENTER', 1)) THEN
+           CALL FFREAL (IFLD, KV, RV, 'X coordinate of center',
+     *       0.0, CENT(1), *20)
+           CALL FFREAL (IFLD, KV, RV, 'Y coordinate of center',
+     *       0.0, CENT(2), *20)
+           IF (NDIM .EQ. 3) THEN
+             CALL FFREAL (IFLD, KV, RV, 'Z coordinate of center',
+     *         0.0, CENT(3), *20)
+           END IF
+           CENTER = .TRUE.
+         ELSE
+         END IF
+         CALL MULTI_CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
      *      A(IBC5),A(IBC6), A(IBC7), A(IBC8), DISP, NUMNP, NDIM,
      *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER)
 

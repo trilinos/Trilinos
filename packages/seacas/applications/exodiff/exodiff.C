@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -2096,7 +2096,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
   bool diff_flag = false;
 
   std::string name        = "Distribution Factors";
-  int         name_length = name.length();
+  int         length_name = name.length();
 
   if (!interFace.quiet_flag && file1.Num_Side_Sets() > 0) {
     fmt::print("Sideset Distribution Factors:\n");
@@ -2191,7 +2191,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
               std::string buf = fmt::format(
                   "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}"
                   ".{}-{})",
-                  name, name_length, interFace.ss_df_tol.abrstr(), v1, v2, d, sset1->Id(),
+                  name, length_name, interFace.ss_df_tol.abrstr(), v1, v2, d, sset1->Id(),
                   id_map[sset1->Side_Id(e).first - 1], (int)sset1->Side_Id(e).second, (int)i + 1);
               DIFF_OUT(buf);
             }
@@ -2205,7 +2205,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
     }
     else {
       std::string buf = fmt::format("   {:<{}}     diff: sideset side counts differ for sideset {}",
-                                    name, name_length, sset1->Id());
+                                    name, length_name, sset1->Id());
       DIFF_OUT(buf);
       diff_flag = true;
     }
@@ -2221,7 +2221,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
       Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
       std::string    buf =
           fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
-                      name_length, interFace.ss_df_tol.abrstr(), max_diff.val1, max_diff.val2,
+                      length_name, interFace.ss_df_tol.abrstr(), max_diff.val1, max_diff.val2,
                       max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
                       (int)sset->Side_Id(max_diff.id).second);
       DIFF_OUT(buf);

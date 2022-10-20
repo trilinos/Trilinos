@@ -382,7 +382,7 @@ using Kokkos::create_mirror_view;
 
 template <class DataType, class ... Prop>
 typename View<DataType, Prop...>::HostMirror create_mirror_view( View<DataType, Prop...> viewArg) {
-  return typename View<DataType, Prop...>::HostMirror(viewArg.label(), viewArg.layout());
+  return typename View<DataType, Prop...>::HostMirror(viewArg);
 }
 
 template <typename A, typename B>

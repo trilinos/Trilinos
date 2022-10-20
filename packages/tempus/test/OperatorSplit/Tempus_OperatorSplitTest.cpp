@@ -124,11 +124,11 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   RCP<Thyra::VectorBase<double> > x = integrator->getX();
 
   // Check the order and intercept
-  std::cout << "  Stepper = " << stepper->description() << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                       << get_ele(*(x      ), 1) << std::endl;
-  std::cout << "  =========================" << std::endl;
+  out << "  Stepper = " << stepper->description() << std::endl;
+  out << "  =========================" << std::endl;
+  out << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                 << get_ele(*(x      ), 1) << std::endl;
+  out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -2.223910, 1.0e-4);
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1),  0.565441, 1.0e-4);
 }

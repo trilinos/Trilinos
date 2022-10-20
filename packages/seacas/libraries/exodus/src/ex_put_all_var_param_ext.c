@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -115,7 +115,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
     goto error_ret;
   }
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &num_nod_dim)) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &num_nod_dim) != NC_NOERR) {
     num_nod_dim = -1; /* There is probably no nodes on this file */
   }
 
@@ -200,59 +200,52 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
     }
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge, DIM_NUM_EDG_VAR,
-                          numedblkdim, numedvardim, num_edge_blk, &edblk_ids, VAR_NAME_EDG_VAR,
-                          VAR_EBLK_TAB, &edblk_stat, vp->edge_var_tab, &edblk_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge, DIM_NUM_EDG_VAR,
+                     numedblkdim, numedvardim, num_edge_blk, &edblk_ids, VAR_NAME_EDG_VAR,
+                     VAR_EBLK_TAB, &edblk_stat, vp->edge_var_tab, &edblk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_FACE_BLOCK, "face", "face block", vp->num_face, DIM_NUM_FAC_VAR,
-                          numfablkdim, numfavardim, num_face_blk, &fablk_ids, VAR_NAME_FAC_VAR,
-                          VAR_FBLK_TAB, &fablk_stat, vp->face_var_tab, &fablk_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_FACE_BLOCK, "face", "face block", vp->num_face, DIM_NUM_FAC_VAR,
+                     numfablkdim, numfavardim, num_face_blk, &fablk_ids, VAR_NAME_FAC_VAR,
+                     VAR_FBLK_TAB, &fablk_stat, vp->face_var_tab, &fablk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status = ex_define_vars(exoid, EX_ELEM_BLOCK, "element", "element block", vp->num_elem,
-                               DIM_NUM_ELE_VAR, numelblkdim, numelvardim, num_elem_blk, &eblk_ids,
-                               VAR_NAME_ELE_VAR, VAR_ELEM_TAB, &eblk_stat, vp->elem_var_tab,
-                               &eblk_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_ELEM_BLOCK, "element", "element block", vp->num_elem,
+                     DIM_NUM_ELE_VAR, numelblkdim, numelvardim, num_elem_blk, &eblk_ids,
+                     VAR_NAME_ELE_VAR, VAR_ELEM_TAB, &eblk_stat, vp->elem_var_tab,
+                     &eblk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_NODE_SET, "nodeset", "node set", vp->num_nset, DIM_NUM_NSET_VAR,
-                          numnsetdim, nsetvardim, num_nset, &nset_ids, VAR_NAME_NSET_VAR,
-                          VAR_NSET_TAB, &nset_stat, vp->nset_var_tab, &nset_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_NODE_SET, "nodeset", "node set", vp->num_nset, DIM_NUM_NSET_VAR,
+                     numnsetdim, nsetvardim, num_nset, &nset_ids, VAR_NAME_NSET_VAR, VAR_NSET_TAB,
+                     &nset_stat, vp->nset_var_tab, &nset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_EDGE_SET, "edgeset", "edge set", vp->num_eset, DIM_NUM_ESET_VAR,
-                          numesetdim, esetvardim, num_eset, &eset_ids, VAR_NAME_ESET_VAR,
-                          VAR_ESET_TAB, &eset_stat, vp->eset_var_tab, &eset_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_EDGE_SET, "edgeset", "edge set", vp->num_eset, DIM_NUM_ESET_VAR,
+                     numesetdim, esetvardim, num_eset, &eset_ids, VAR_NAME_ESET_VAR, VAR_ESET_TAB,
+                     &eset_stat, vp->eset_var_tab, &eset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_FACE_SET, "faceset", "face set", vp->num_fset, DIM_NUM_FSET_VAR,
-                          numfsetdim, fsetvardim, num_fset, &fset_ids, VAR_NAME_FSET_VAR,
-                          VAR_FSET_TAB, &fset_stat, vp->fset_var_tab, &fset_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_FACE_SET, "faceset", "face set", vp->num_fset, DIM_NUM_FSET_VAR,
+                     numfsetdim, fsetvardim, num_fset, &fset_ids, VAR_NAME_FSET_VAR, VAR_FSET_TAB,
+                     &fset_stat, vp->fset_var_tab, &fset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status =
-           ex_define_vars(exoid, EX_SIDE_SET, "sideset", "side set", vp->num_sset, DIM_NUM_SSET_VAR,
-                          numssetdim, ssetvardim, num_sset, &sset_ids, VAR_NAME_SSET_VAR,
-                          VAR_SSET_TAB, &sset_stat, vp->sset_var_tab, &sset_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_SIDE_SET, "sideset", "side set", vp->num_sset, DIM_NUM_SSET_VAR,
+                     numssetdim, ssetvardim, num_sset, &sset_ids, VAR_NAME_SSET_VAR, VAR_SSET_TAB,
+                     &sset_stat, vp->sset_var_tab, &sset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if ((status = ex_define_vars(exoid, EX_ELEM_SET, "elemset", "element set", vp->num_elset,
-                               DIM_NUM_ELSET_VAR, numelsetdim, elsetvardim, num_elset, &elset_ids,
-                               VAR_NAME_ELSET_VAR, VAR_ELSET_TAB, &elset_stat, vp->elset_var_tab,
-                               &elset_varid)) != EX_NOERR) {
+  if (ex_define_vars(exoid, EX_ELEM_SET, "elemset", "element set", vp->num_elset, DIM_NUM_ELSET_VAR,
+                     numelsetdim, elsetvardim, num_elset, &elset_ids, VAR_NAME_ELSET_VAR,
+                     VAR_ELSET_TAB, &elset_stat, vp->elset_var_tab, &elset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
@@ -260,6 +253,8 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 
   in_define = 0;
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
 

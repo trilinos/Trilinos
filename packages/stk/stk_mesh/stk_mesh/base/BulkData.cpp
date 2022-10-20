@@ -57,6 +57,7 @@
 #include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/diag/StringUtil.hpp"
+#include "stk_util/environment/RuntimeWarning.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
@@ -5345,29 +5346,30 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
 
                 parts_to_actually_remove.clear();
 
-                const bool remote_changes_needed = !( parallel_size() == 1 || !bucket(e_to).shared() );
-                if (remote_changes_needed)
+                if(!parts_to_remove_assuming_not_induced_from_other_entities.empty())
                 {
-                    Bucket *bucket_old = bucket_ptr(e_to);
-                    if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity) || this->in_receive_ghost(entity) ))
-                    {
-                        m_meshModification.set_shared_entity_changed_parts();
-                    }
-
-                    // Don't remove parts until modification_end to avoid losing field data with bucket churn.
-                    mark_entity_and_upward_related_entities_as_modified(e_to);
+                    scratchSpace.clear();
+                    internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(entity,
+                                                                                          e_to,
+                                                                                          scratchSpace);
+                    internal_fill_parts_to_actually_remove(parts_to_remove_assuming_not_induced_from_other_entities,
+                                                           scratchSpace,
+                                                           parts_to_actually_remove);
                 }
-                else
+
+                if (!parts_to_actually_remove.empty())
                 {
-                    if(!parts_to_remove_assuming_not_induced_from_other_entities.empty())
+                    const bool remote_changes_needed = !( parallel_size() == 1 || !bucket(e_to).shared() );
+                    if (remote_changes_needed)
                     {
-                        scratchSpace.clear();
-                        internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(entity,
-                                                                                              e_to,
-                                                                                              scratchSpace);
-                        internal_fill_parts_to_actually_remove(parts_to_remove_assuming_not_induced_from_other_entities,
-                                                               scratchSpace,
-                                                               parts_to_actually_remove);
+                        Bucket *bucket_old = bucket_ptr(e_to);
+                        if (bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity) || this->in_receive_ghost(entity) ))
+                        {
+                            m_meshModification.set_shared_entity_changed_parts();
+                            // Don't remove parts until modification_end to avoid losing field data with bucket churn.
+                            parts_to_actually_remove.clear();
+                            mark_entity_and_upward_related_entities_as_modified(e_to);
+                        }
                     }
                 }
                 m_modSummary.track_induced_parts(entity, e_to, addParts, parts_to_actually_remove);
@@ -6138,9 +6140,48 @@ bool BulkData::does_sideset_exist(const stk::mesh::Part &part) const
     return m_sideSetData.does_sideset_exist(part);
 }
 
+namespace {
+bool part_is_connected_to_shell_block(const BulkData& bulk, const stk::mesh::Part &part)
+{
+  bool connected = false;
+  const MetaData& meta = bulk.mesh_meta_data();
+  std::vector<const stk::mesh::Part*> touchingBlocks = meta.get_blocks_touching_surface(&part);
+
+  for(const stk::mesh::Part* touchingBlock : touchingBlocks) {
+    connected |= meta.get_topology(*touchingBlock).is_shell();
+  }
+  return connected;
+}
+
+void check_sideset_part_constraints(const BulkData& bulk, const stk::mesh::Part &part)
+{
+  const MetaData& meta = bulk.mesh_meta_data();
+  if(part.primary_entity_rank() != meta.side_rank() && !part_is_connected_to_shell_block(bulk, part))
+    stk::RuntimeWarning() << "create_sideset: part " << part.name()
+                                                     << " has rank " << part.primary_entity_rank();
+  if((part.id() == stk::mesh::Part::INVALID_ID) && (part.name() != "universal_sideset"))
+    stk::RuntimeWarning() << "create_sideset: part " << part.name()
+                                                       << " has invalid id ";
+
+  for(const stk::mesh::Part* subsetPart : part.subsets()) {
+    if(subsetPart->primary_entity_rank() == meta.side_rank()) {
+      if(subsetPart->id() != part.id())
+        stk::RuntimeWarning() << "create_sideset: part " << part.name()
+                                                         << " with id " << part.id()
+                                                         << "; subset sideblock part " << subsetPart->name()
+                                                         << " has different id " << subsetPart->id();
+    }
+  }
+}
+}
+
 SideSet& BulkData::create_sideset(const stk::mesh::Part &part, bool fromInput)
 {
-    return m_sideSetData.create_sideset(part, fromInput);
+  if(!m_sideSetData.does_sideset_exist(part)) {
+    check_sideset_part_constraints(*this, part);
+  }
+
+  return m_sideSetData.create_sideset(part, fromInput);
 }
 
 const SideSet& BulkData::get_sideset(const stk::mesh::Part &part) const

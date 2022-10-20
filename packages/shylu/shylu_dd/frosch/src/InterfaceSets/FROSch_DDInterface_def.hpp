@@ -169,7 +169,9 @@ namespace FROSch {
                 indicesGammaDofs[Interface_->getEntity(0)->getGammaDofID(i,k)] = Interface_->getEntity(0)->getGlobalDofID(i,k);
             }
         }
-        XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),INVALID,indicesGammaDofs(),0,MpiComm_);
         matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),ScalarTraits<SC>::one());
 
         // Operate on hierarchy
@@ -751,6 +753,7 @@ namespace FROSch {
         }
 
         // Different communication strategies
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         switch (CommStrategy_) {
             case CommCrsMatrix:
                 {
@@ -764,7 +767,7 @@ namespace FROSch {
                     for (int i=0; i<NumMyNodes_; i++) {
                         commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
                     }
-                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),INVALID,myPID(),0,NodesMap_->getComm());
 
                     commMat->fillComplete(domainMap,NodesMap_);
                     commMatTmp->doExport(*commMat,*commExporter,INSERT);
@@ -798,7 +801,7 @@ namespace FROSch {
                     for (int i=0; i<NumMyNodes_; i++) {
                         commGraph->insertGlobalIndices(NodesMap_->getGlobalElement(i),myPID());
                     }
-                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+                    XMapPtr domainMap = MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),INVALID,myPID(),0,NodesMap_->getComm());
 
                     commGraph->fillComplete(domainMap,NodesMap_); // AH 08/07/2019: Can we remove some fillComplete?
                     commGraphTmp->doExport(*commGraph,*commExporter,INSERT);

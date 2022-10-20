@@ -145,7 +145,6 @@ namespace Xpetra {
                Teuchos::ETransp mode = Teuchos::NO_TRANS,
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta = Teuchos::ScalarTraits<Scalar>::one()) const{
-      typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>     tMV;
       typedef Xpetra::TpetraMultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node> tMVHalf;
       Tpetra::deep_copy(*Teuchos::rcp_dynamic_cast<tMVHalf>(X_)->getTpetra_MultiVector(),
                         toTpetra(X));

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -249,7 +249,7 @@ C     here and then refuse to run...
      *      'FATAL ERROR: Mapvar is buggy and cannot correctly'
      *      ' handle interpolating a mesh with nodal variables,',
      *      /,14x,'multiple timesteps and multiple element blocks.',
-     *      /,14x,'See https://github.com/gsjaardema/seacas/packages'
+     *      /,14x,'See https://github.com/sandialabs/seacas/packages'
      *      '/seacas/MAPVAR.md')
         stop('INTERNAL ERROR')
       end if
@@ -262,7 +262,7 @@ C ... Warn if multiple blocks...
      *      ' handle interpolating a mesh with nodal variables',
      *      /,9x,'and multiple element blocks. Shared nodes',
      *      ' might be incorrect.',
-     *      /,9x,'See https://github.com/gsjaardema/seacas/packages'
+     *      /,9x,'See https://github.com/sandialabs/seacas/packages'
      *      '/seacas/MAPVAR.md')
         end if
       end if
@@ -515,13 +515,23 @@ C else icompl = 0
         INSUB  = 1
         ICOMPL = 1
         IF (IM .GT. 1)THEN
-          IDBBM1 = IA(NMAP-5)
+C ... Get the block b id from the previous time through...
+C     `IA(NMAP)` is the root of the `MP(1:3,1:MBLK)` array. 
+C                      ida    idb    isc    ida    ida    idb         isc
+C     Memory ordering (1,1), (2,1), (3,1), (1,2), (2,2), (3,2), ..., (3,3)-
+C                     +0     +1     +2     +3     +4     +5
+C ida = ia(nmap+(3*im-1)+0) = ia(nmap + 3 * im - 3)
+C idb = ia(nmap+(3*im-2)+1  = ia(nmap + 3 * im - 2)
+
+C ... This is MP(2,IM-1)...
+          IDBBM1 = IA(NMAP + 3 * im - 5)
           IF (IDBLKB .EQ. IDBBM1)THEN
             INSUB = 2
           END IF
         END IF
         IF (IM .LT. IMP)THEN
-          IDBBP1 = IA(NMAP+1)
+C ... This is MP(2,IM+1)...
+          IDBBP1 = IA(NMAP+ 3 * im + 1)
           IF (IDBLKB .EQ. IDBBP1)THEN
             ICOMPL = 0
           END IF

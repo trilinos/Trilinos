@@ -51,24 +51,24 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // This file contains the Sphynx algorithm.
-// 
-// Sphynx is a graph partitioning algorithm that is based on a spectral method. 
+//
+// Sphynx is a graph partitioning algorithm that is based on a spectral method.
 // It has three major steps:
 // 1) compute the Laplacian matrix of the input graph,
 // 2) compute logK+1 eigenvectors on the Laplacian matrix,
-// 3) use eigenvector entries as coordinates and compute a K-way partition on 
-//    them using a geometric method. 
-// 
-// Step1: Sphynx provides three eigenvalue problems and hence Laplacian matrix: 
-//        i) combinatorial (Lx = \lambdax, where L = A - D) 
+// 3) use eigenvector entries as coordinates and compute a K-way partition on
+//    them using a geometric method.
+//
+// Step1: Sphynx provides three eigenvalue problems and hence Laplacian matrix:
+//        i) combinatorial (Lx = \lambdax, where L = A - D)
 //        ii) generalized (Lx = \lambdaDx, where L = A - D)
-//        iii) normalized  (L_nx, \lambdax, where Ln = D^{-1/2}LD^{-1/2} 
+//        iii) normalized  (L_nx, \lambdax, where Ln = D^{-1/2}LD^{-1/2}
 //             and L = A - D)
 //
-// Step2: Sphynx calls the LOBPCG algorithm provided in Anasazi to obtain 
-//        logK+1 eigenvectors. 
-// Step3: Sphynx calls the MJ algorithm provided in Zoltan2Core to compute the 
-//        partition. 
+// Step2: Sphynx calls the LOBPCG algorithm provided in Anasazi to obtain
+//        logK+1 eigenvectors.
+// Step3: Sphynx calls the MJ algorithm provided in Zoltan2Core to compute the
+//        partition.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Zoltan2Sphynx_config.h"
@@ -112,11 +112,11 @@ namespace Zoltan2 {
 
     using graph_t = Tpetra::CrsGraph<lno_t, gno_t, node_t>;
     using matrix_t = Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>;
-    using mvector_t = Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>;  
+    using mvector_t = Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>;
     using op_t = Tpetra::Operator<scalar_t, lno_t, gno_t, node_t>;
 
     enum problemType {COMBINATORIAL, GENERALIZED, NORMALIZED};
-    
+
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////// CONSTRUCTORS ////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ namespace Zoltan2 {
               const RCP<const Comm<int> > &comm,
 	      const RCP<const XpetraCrsGraphAdapter<graph_t> > &adapter) :
       env_(env), params_(params), sphynxParams_(sphynxParams), comm_(comm), adapter_(adapter)
-    { 
+    {
 
       // Don't compute the Laplacian if the number of requested parts is 1
       const Teuchos::ParameterEntry *pe = params_->getEntryPtr("num_global_parts");
@@ -149,12 +149,12 @@ namespace Zoltan2 {
 
 	// Get the graph from XpetraCrsGraphAdapter if skipPrep_ is true
 	// We assume the graph has all of the symmetric and diagonal entries
-	if(skipPrep_) 
+	if(skipPrep_)
 	  graph_ = adapter_->getUserGraph();
 	else {
 	  throw std::runtime_error("\nSphynx Error: Preprocessing has not been implemented yet.\n");
-	} 
-	
+	}
+
 	// Check if the graph is regular
 	determineRegularity();
 
@@ -176,7 +176,7 @@ namespace Zoltan2 {
 
     void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
- 
+
     int LOBPCGwrapper(const int numEigenVectors);
 
     template<typename problem_t>
@@ -195,12 +195,12 @@ namespace Zoltan2 {
     void eigenvecsToCoords(Teuchos::RCP<mvector_t> &eigenVectors,
 			   int computedNumEv,
 			   Teuchos::RCP<mvector_t> &coordinates);
-    
+
 
     void computeWeights(std::vector<const weight_t *> vecweights,
 			std::vector<int> strides);
-		       
-  
+
+
     void MJwrapper(const Teuchos::RCP<const mvector_t> &coordinates,
 		   std::vector<const weight_t *> weights,
 		   std::vector<int> strides,
@@ -213,9 +213,9 @@ namespace Zoltan2 {
 
     ///////////////////////////////////////////////////////////////////////////
     // Determine input graph's regularity = maxDegree/AvgDegree < 10.
-    // If Laplacian type is not specified, then use combinatorial for regular 
+    // If Laplacian type is not specified, then use combinatorial for regular
     // and generalized for irregular.
-    // MueLu settings will differ depending on the regularity, too. 
+    // MueLu settings will differ depending on the regularity, too.
     void determineRegularity()
     {
       // Get the row pointers in the host
@@ -223,12 +223,12 @@ namespace Zoltan2 {
       auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
       Kokkos::deep_copy(rowOffsets_h, rowOffsets);
 
-      // Get size information 
+      // Get size information
       const size_t numGlobalEntries = graph_->getGlobalNumEntries();
       const size_t numLocalRows = graph_->getLocalNumRows();
       const size_t numGlobalRows = graph_->getGlobalNumRows();
 
-      // Compute local maximum degree 
+      // Compute local maximum degree
       size_t localMax = 0;
       for(size_t i = 0; i < numLocalRows; i++){
 	if(rowOffsets_h(i+1) - rowOffsets_h(i) - 1 > localMax)
@@ -243,30 +243,30 @@ namespace Zoltan2 {
       double maxOverAvg = static_cast<double>(globalMax)/avg;
 
       // Use generalized Laplacian on irregular graphs
-      irregular_ = false; 
+      irregular_ = false;
       if(maxOverAvg > 10) {
 	irregular_ = true;
       }
 
-      // Let the user know about what we determined if verbose  
+      // Let the user know about what we determined if verbose
       if(verbosity_ > 0) {
 	if(comm_->getRank() == 0) {
-	  std::cout << "Determining Regularity --  max degree: " << globalMax 
+	  std::cout << "Determining Regularity --  max degree: " << globalMax
 		    << ", avg degree: " << avg << ", max/avg: " << globalMax/avg << std::endl
-		    << "Determined Regularity --  regular: " << !irregular_ << std::endl; 
-	  
+		    << "Determined Regularity --  regular: " << !irregular_ << std::endl;
+
 	}
       }
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // If preconditioner type is not specified: 
+    // If preconditioner type is not specified:
     //    use muelu if it is enabled, and jacobi otherwise.
-    // If eigenvalue problem type is not specified: 
-    //    use combinatorial for regular and 
+    // If eigenvalue problem type is not specified:
+    //    use combinatorial for regular and
     //        normalized for irregular with polynomial preconditioner,
     //        generalized for irregular with other preconditioners.
-    // If convergence tolerance is not specified: 
+    // If convergence tolerance is not specified:
     //    use 1e-3 for regular with jacobi and polynomial, and 1e-2 otherwise.
     // If how to decide the initial vectors is not specified:
     //    use random for regular and constant for irregular
@@ -287,7 +287,7 @@ namespace Zoltan2 {
 	  throw std::runtime_error("\nSphynx Error: " + precType_ + " is not recognized as a preconditioner.\n"
 				   + "              Possible values: muelu (if enabled), jacobi, and polynomial\n");
       }
-      
+
       // Set the default problem type
       problemType_ = COMBINATORIAL;
       if(irregular_) {
@@ -314,7 +314,7 @@ namespace Zoltan2 {
 				 + "              Possible values: combinatorial, generalized, and normalized.\n");
       }
 
-      
+
       // Set the default for tolerance
       tolerance_ = 1.0e-2;
       if(!irregular_ && (precType_ == "jacobi" || precType_ == "polynomial"))
@@ -331,7 +331,7 @@ namespace Zoltan2 {
       randomInit_ = true;
       if(irregular_)
 	randomInit_ = false;
-      
+
       // Override the initialization method with the user's preference
       pe = sphynxParams_->getEntryPtr("sphynx_initial_guess");
       if (pe) {
@@ -346,20 +346,20 @@ namespace Zoltan2 {
 	  throw std::runtime_error("\nSphynx Error: " + initialGuess + " is not recognized as an option for initial guess.\n"
 				 + "              Possible values: random and constants.\n");
       }
-       
+
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Compute the Laplacian matrix depending on the eigenvalue problem type.
     // There are 3 options for the type: combinatorial, generalized, and normalized.
-    // Combinatorial and generalized share the same Laplacian but generalized 
+    // Combinatorial and generalized share the same Laplacian but generalized
     // also needs a degree matrix.
     void computeLaplacian()
     {
-  
+
       if(problemType_ == NORMALIZED)
 	laplacian_ = computeNormalizedLaplacian();
-      else 
+      else
 	laplacian_ = computeCombinatorialLaplacian();
     }
 
@@ -372,8 +372,8 @@ namespace Zoltan2 {
 	auto rowOffsets = graph_->getLocalGraphHost().row_map;
 
 	// Create the degree matrix with max row size set to 1
- 	Teuchos::RCP<matrix_t> degMat(new matrix_t (graph_->getRowMap(), 
-						    graph_->getRowMap(), 
+ 	Teuchos::RCP<matrix_t> degMat(new matrix_t (graph_->getRowMap(),
+						    graph_->getRowMap(),
 						    1));
 
 	scalar_t *val = new scalar_t[1];
@@ -388,7 +388,7 @@ namespace Zoltan2 {
 	}
 	delete [] val;
 	delete [] ind;
-	
+
 	degMat->fillComplete(graph_->getDomainMap(), graph_->getRangeMap());
 
 	degMatrix_ = degMat;
@@ -398,18 +398,18 @@ namespace Zoltan2 {
     // Compute the combinatorial Laplacian: L = D - A.
     // l_ij = degree of vertex i if i = j
     // l_ij = -1 if i != j and a_ij != 0
-    // l_ij = 0 if i != j and a_ij = 0 
+    // l_ij = 0 if i != j and a_ij = 0
     Teuchos::RCP<matrix_t> computeCombinatorialLaplacian()
     {
       using range_policy = Kokkos::RangePolicy<
 	typename node_t::device_type::execution_space, Kokkos::IndexType<lno_t>>;
       using values_view_t = Kokkos::View<scalar_t*, typename node_t::device_type>;
       using offset_view_t = Kokkos::View<size_t*, typename node_t::device_type>;
-  
+
       const size_t numEnt = graph_->getLocalNumEntries();
       const size_t numRows = graph_->getLocalNumRows();
 
-      // Create new values for the Laplacian, initialize to -1 
+      // Create new values for the Laplacian, initialize to -1
       values_view_t newVal (Kokkos::view_alloc("CombLapl::val", Kokkos::WithoutInitializing), numEnt);
       Kokkos::deep_copy(newVal, -1);
 
@@ -441,7 +441,7 @@ namespace Zoltan2 {
     // Compute the normalized Laplacian: L_N = D^{-1/2} L D^{-1/2}, where L = D - A.
     // l_ij = 1
     // l_ij = -1/(sqrt(deg(v_i))sqrt(deg(v_j)) if i != j and a_ij != 0
-    // l_ij = 0 if i != j and a_ij = 0 
+    // l_ij = 0 if i != j and a_ij = 0
     Teuchos::RCP<matrix_t> computeNormalizedLaplacian()
     {
       using range_policy = Kokkos::RangePolicy<
@@ -455,7 +455,7 @@ namespace Zoltan2 {
       const size_t numEnt = graph_->getLocalNumEntries();
       const size_t numRows = graph_->getLocalNumRows();
 
-      // Create new values for the Laplacian, initialize to -1 
+      // Create new values for the Laplacian, initialize to -1
       values_view_t newVal (Kokkos::view_alloc("NormLapl::val", Kokkos::WithoutInitializing), numEnt);
       Kokkos::deep_copy(newVal, -1);
 
@@ -483,31 +483,31 @@ namespace Zoltan2 {
       Teuchos::RCP<matrix_t> laplacian (new matrix_t(graph_, newVal));
       laplacian->fillComplete (graph_->getDomainMap(), graph_->getRangeMap());
 
-      // Create the vector for D^{-1/2} 
+      // Create the vector for D^{-1/2}
       vector_t degInvSqrt(graph_->getRowMap(), dv);
 
       // Normalize the laplacian matrix as D^{-1/2} L D^{-1/2}
       laplacian->leftScale(degInvSqrt);
       laplacian->rightScale(degInvSqrt);
 
-      return laplacian; 
+      return laplacian;
     }
 
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////////// DATA MEMBERS ////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
-    
+
   private:
 
-    // User-provided members 
+    // User-provided members
     const Teuchos::RCP<const Environment> env_;
     Teuchos::RCP<Teuchos::ParameterList> params_;
     Teuchos::RCP<Teuchos::ParameterList> sphynxParams_;
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     const Teuchos::RCP<const Adapter> adapter_;
-    
+
     // Internal members
-    int numGlobalParts_; 
+    int numGlobalParts_;
     Teuchos::RCP<const graph_t> graph_;
     Teuchos::RCP<matrix_t> laplacian_;
     Teuchos::RCP<const matrix_t> degMatrix_;
@@ -531,7 +531,7 @@ namespace Zoltan2 {
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute a partition using the Laplacian matrix (and possibly the degree
-  // matrix as well). First call LOBPCG to compute logK+1 eigenvectors, then 
+  // matrix as well). First call LOBPCG to compute logK+1 eigenvectors, then
   // transform the eigenvectors to coordinates, and finally call MJ to compute
   // a partition on the coordinates.
   template <typename Adapter>
@@ -543,7 +543,7 @@ namespace Zoltan2 {
       size_t numRows =adapter_->getUserGraph()->getLocalNumRows();
       Teuchos::ArrayRCP<part_t> parts(numRows,0);
       solution->setParts(parts);
-      
+
       return;
 
     }
@@ -555,14 +555,14 @@ namespace Zoltan2 {
     int computedNumEv = Sphynx::LOBPCGwrapper(numEigenVectors);
 
     if(computedNumEv <= 1) {
-      throw 
+      throw
 	std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
 			   "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
 			   "               Increase either max iters or tolerance.\n");
-    
+
     }
 
-    // Transform the eigenvectors into coordinates 
+    // Transform the eigenvectors into coordinates
     Teuchos::RCP<mvector_t> coordinates;
     Sphynx::eigenvecsToCoords(eigenVectors_, computedNumEv, coordinates);
 
@@ -570,8 +570,8 @@ namespace Zoltan2 {
     std::vector<const weight_t *> weights;
     std::vector<int> wstrides;
     Sphynx::computeWeights(weights, wstrides);
-  
-    
+
+
     // Compute the partition using MJ on coordinates
     Sphynx::MJwrapper(coordinates, weights, wstrides, solution);
 
@@ -600,7 +600,7 @@ namespace Zoltan2 {
     int numfailed = 0;
     int iter = 0;
     double solvetime = 0;
-  
+
     // Get the user values for the parameters
     const Teuchos::ParameterEntry *pe;
 
@@ -612,7 +612,7 @@ namespace Zoltan2 {
     if (pe)
       useFullOrtho = pe->getValue<bool>(&useFullOrtho);
 
-  
+
     // Set Anasazi verbosity level
     int anasaziVerbosity = Anasazi::Errors + Anasazi::Warnings;
     if (verbosity_ >= 1)  // low
@@ -624,7 +624,7 @@ namespace Zoltan2 {
 	+ Anasazi::OrthoDetails
 	+ Anasazi::Debug;
 
-  
+
     // Create the parameter list to pass into solver
     Teuchos::ParameterList anasaziParams;
     anasaziParams.set("Verbosity", anasaziVerbosity);
@@ -649,7 +649,7 @@ namespace Zoltan2 {
 
     }
     else { // This implies we will use constant initial vectors.
- 
+
       // 0-th vector constant 1, other vectors constant per block
       // Create numEigenVectors blocks, but only use numEigenVectors-1 of them.
       // This assures orthogonality.
@@ -693,11 +693,11 @@ namespace Zoltan2 {
     using solver_t = Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>;
     solver_t solver(problem, anasaziParams);
 
-    if (verbosity_ > 0 && comm_->getRank() == 0) 
+    if (verbosity_ > 0 && comm_->getRank() == 0)
       anasaziParams.print(std::cout);
-  
+
     // Solve the problem
-    if (verbosity_ > 0 && comm_->getRank() == 0) 
+    if (verbosity_ > 0 && comm_->getRank() == 0)
       std::cout << "Beginning the LOBPCG solve..." << std::endl;
     Anasazi::ReturnType returnCode = solver.solve();
 
@@ -707,8 +707,8 @@ namespace Zoltan2 {
     }
     iter = solver.getNumIters();
     solvetime = (solver.getTimers()[0])->totalElapsedTime();
-  
- 
+
+
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
     solution_t sol = problem->getSolution();
@@ -724,13 +724,13 @@ namespace Zoltan2 {
       std::cout << "Solve time:            " << solvetime << std::endl;
       std::cout << "No of comp. vecs. :    " << numev << std::endl;
     }
-  
+
     return numev;
-  
+
   }
 
 
-  
+
   ///////////////////////////////////////////////////////////////////////////
   template <typename Adapter>
   template <typename problem_t>
@@ -740,14 +740,14 @@ namespace Zoltan2 {
     // Set the preconditioner
     if(precType_ == "muelu") {
       Sphynx<Adapter>::setMueLuPreconditioner(problem);
-    } 
+    }
     else if(precType_ == "polynomial") {
       Sphynx<Adapter>::setPolynomialPreconditioner(problem);
     }
     else if(precType_ == "jacobi") {
       Sphynx<Adapter>::setJacobiPreconditioner(problem);
     }
-    // else: do we want a case where no preconditioning is applied? 
+    // else: do we want a case where no preconditioning is applied?
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -775,11 +775,11 @@ namespace Zoltan2 {
     smootherParamList.set("chebyshev: ratio eigenvalue", 7.0);
     smootherParamList.set("chebyshev: eigenvalue max iterations", irregular_ ? 100 : 10);
     paramList.set("smoother: params", smootherParamList);
-    paramList.set("use kokkos refactor", true); 
+    paramList.set("use kokkos refactor", true);
     paramList.set("transpose: use implicit", true);
 
     if(irregular_) {
-	
+
       paramList.set("multigrid algorithm", "unsmoothed");
 
       paramList.set("coarse: type", "CHEBYSHEV");
@@ -790,13 +790,13 @@ namespace Zoltan2 {
 
       paramList.set("max levels", 5);
       paramList.set("aggregation: drop tol", 0.40);
-      
+
     }
 
     using prec_t = MueLu::TpetraOperator<scalar_t, lno_t, gno_t, node_t>;
     Teuchos::RCP<prec_t> prec = MueLu::CreateTpetraPreconditioner<
       scalar_t, lno_t, gno_t, node_t>(laplacian_, paramList);
-  
+
     problem->setPrec(prec);
 
 #else
@@ -818,9 +818,9 @@ namespace Zoltan2 {
       else if(verbosity_ == 3)
 	verbosity2 += Belos::Warnings + Belos::FinalSummary + Belos::TimingDetails;
       else if(verbosity_ >= 4)
-	verbosity2 += Belos::Warnings + Belos::FinalSummary + Belos::TimingDetails 
+	verbosity2 += Belos::Warnings + Belos::FinalSummary + Belos::TimingDetails
 	  + Belos::StatusTestDetails;
- 
+
       Teuchos::ParameterList paramList;
       paramList.set("Polynomial Type", "Roots");
       paramList.set("Orthogonalization","ICGS");
@@ -828,7 +828,7 @@ namespace Zoltan2 {
       paramList.set("Polynomial Tolerance", 1.0e-6 );
       paramList.set("Verbosity", verbosity2 );
       paramList.set("Random RHS", false );
-      paramList.set("Outer Solver", ""); 
+      paramList.set("Outer Solver", "");
       paramList.set("Timer Label", "Belos Polynomial Solve" );
 
       // Construct a linear problem for the polynomial solver manager
@@ -837,8 +837,8 @@ namespace Zoltan2 {
       innerPolyProblem->setOperator(laplacian_);
 
       using btop_t = Belos::TpetraOperator<scalar_t>;
-      Teuchos::RCP<btop_t> polySolver(new btop_t(innerPolyProblem, 
-						 Teuchos::rcpFromRef(paramList), 
+      Teuchos::RCP<btop_t> polySolver(new btop_t(innerPolyProblem,
+						 Teuchos::rcpFromRef(paramList),
 						 "GmresPoly", true));
       problem->setPrec(polySolver);
   }
@@ -893,7 +893,7 @@ namespace Zoltan2 {
   void Sphynx<Adapter>::computeWeights(std::vector<const weight_t *> vecweights,
 					  std::vector<int> strides)
   {
-  
+
     int numWeights = adapter_->getNumWeightsPerVertex();
     int numConstraints = numWeights > 0 ? numWeights : 1;
 
@@ -905,14 +905,14 @@ namespace Zoltan2 {
     // Will be needed if we use degree as weight
     const offset_t *offset;
     const gno_t *columnId;
-  
+
     // If user hasn't set any weights, use vertex degrees as weights
     if(numWeights == 0) {
-    
-      // Compute the weight of vertex i as the number of nonzeros in row i.  
+
+      // Compute the weight of vertex i as the number of nonzeros in row i.
       adapter_->getEdgesView(offset, columnId);
       for (size_t i = 0; i < myNumVertices; i++)
-	weights[0][i] = offset[i+1] - offset[i] - 1;   
+	weights[0][i] = offset[i+1] - offset[i] - 1;
 
       vecweights.push_back(weights[0]);
       strides.push_back(1);
@@ -923,23 +923,23 @@ namespace Zoltan2 {
       for(int j = 0; j < numConstraints; j++) {
 
 	if(adapter_->useDegreeAsVertexWeight(j)) {
-	  // Compute the weight of vertex i as the number of nonzeros in row i.  
+	  // Compute the weight of vertex i as the number of nonzeros in row i.
 	  adapter_->getEdgesView(offset, columnId);
 	  for (size_t i = 0; i < myNumVertices; i++)
-	    weights[j][i] = offset[i+1] - offset[i];   
+	    weights[j][i] = offset[i+1] - offset[i];
 	}
 	else{
 	  int stride;
 	  const weight_t *wgt = NULL;
 	  adapter_->getVertexWeightsView(wgt, stride, j);
-	
+
 	  for (size_t i = 0; i < myNumVertices; i++)
 	    weights[j][i] = wgt[i];
 	}
 
 	vecweights.push_back(weights[j]);
 	strides.push_back(1);
-	
+
       }
     }
 
@@ -947,12 +947,12 @@ namespace Zoltan2 {
 
 
   ///////////////////////////////////////////////////////////////////////////
-  // Compute a partition by calling MJ on given coordinates with given weights 
+  // Compute a partition by calling MJ on given coordinates with given weights
   template <typename Adapter>
   void Sphynx<Adapter>::MJwrapper(const Teuchos::RCP<const mvector_t> &coordinates,
 				  std::vector<const weight_t *> weights,
 				  std::vector<int> strides,
-				  const Teuchos::RCP<PartitioningSolution<Adapter>> &solution) 
+				  const Teuchos::RCP<PartitioningSolution<Adapter>> &solution)
   {
 
     Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::MJ"));
@@ -963,25 +963,25 @@ namespace Zoltan2 {
     using mj_t = Zoltan2::Zoltan2_AlgMJ<mvector_adapter_t>;
     using solution_t = Zoltan2::PartitioningSolution<mvector_adapter_t>;
 
-    
+
     size_t myNumVertices = coordinates->getLocalLength();
 
     // Create the base adapter for the multivector adapter
-    Teuchos::RCP<mvector_adapter_t> adapcoordinates(new mvector_adapter_t(coordinates, 
-									  weights, 
-									  strides)); 
-    Teuchos::RCP<const base_adapter_t> baseAdapter = 
+    Teuchos::RCP<mvector_adapter_t> adapcoordinates(new mvector_adapter_t(coordinates,
+									  weights,
+									  strides));
+    Teuchos::RCP<const base_adapter_t> baseAdapter =
       Teuchos::rcp(dynamic_cast<const base_adapter_t *>(adapcoordinates.get()), false);
 
     // Create the coordinate model using the base multivector adapter
     Zoltan2::modelFlag_t flags;
-    Teuchos::RCP<const cmodel_t> coordModel (new cmodel_t(baseAdapter, env_, comm_, flags));
+    // Teuchos::RCP<const cmodel_t> coordModel (new cmodel_t(baseAdapter, env_, comm_, flags));
 
     // Create the MJ object
     Teuchos::RCP<const Comm<int>> comm2 = comm_;
-    Teuchos::RCP<mj_t> mj(new mj_t(env_, comm2, coordModel));
+    Teuchos::RCP<mj_t> mj(new mj_t(env_, comm2, baseAdapter));
 
-    // Partition with MJ 
+    // Partition with MJ
     Teuchos::RCP<solution_t> vectorsolution( new solution_t(env_, comm2, 1, mj));
     mj->partition(vectorsolution);
 

@@ -1,4 +1,5 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
@@ -7,6 +8,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -51,6 +53,7 @@ repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+Only one partition: Skip call to the repartitioner.
 repartition: remap parts = 1
 Using original prolongator
 type = Interpolation
@@ -90,6 +93,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -134,6 +138,7 @@ repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 repartition: remap parts = 1
 Using original prolongator
 type = Interpolation
@@ -148,6 +153,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+
 Level 3
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -192,6 +198,7 @@ repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 repartition: remap parts = 1
 Using original prolongator
 type = Interpolation

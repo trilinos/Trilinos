@@ -132,6 +132,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
           "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
           # Intrepid2 tests make Geminga hang
           "-DIntrepid2_ENABLE_TESTS:BOOL=OFF"
+          # Avoid build error with Tacho tests
+          "-DTacho_ENABLE_TESTS:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"

@@ -23,5 +23,5 @@ that reads EXODUSII files can be used on files which contain NEMESIS
 information. The NEMESIS information is written and read via C or C++
 callable functions which compromise the NEMESIS I API.
 
-The exodusII package is available at https://github.com/gsjaardema/seacas.git
+The exodusII package is available at https://github.com/sandialabs/seacas.git
 

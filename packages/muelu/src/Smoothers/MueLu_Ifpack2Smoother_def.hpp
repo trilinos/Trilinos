@@ -805,8 +805,8 @@ namespace MueLu {
     // the regular SetupChebyshev
 
     // Grab the auxillary matrices and stick them on the list
-    RCP<Matrix> NodeMatrix = currentLevel.Get<RCP<Matrix> >("NodeMatrix");
-    RCP<Matrix> D0         = currentLevel.Get<RCP<Matrix> >("D0");
+    RCP<Operator> NodeMatrix = currentLevel.Get<RCP<Operator> >("NodeMatrix");
+    RCP<Operator> D0         = currentLevel.Get<RCP<Operator> >("D0");
 
     RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
     RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);

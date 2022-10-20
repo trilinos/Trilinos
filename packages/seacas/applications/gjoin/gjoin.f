@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -129,6 +129,9 @@ C ... Parse options...
      *        'Unrecognized command option "'//STRING(:LNAM)//'"'
             CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
             CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+            CALL PRTERR ('CMDSPEC',
+     *           'Documentation: https://sandialabs.github.io' //
+     $           '/seacas-docs/sphinx/html/index.html#gjoin')
             go to 150
           end if
           if (iarg .ge. narg) exit
@@ -738,4 +741,3 @@ C   This is currently used in the sideset mirroring code
  10   continue
       return
       end
-

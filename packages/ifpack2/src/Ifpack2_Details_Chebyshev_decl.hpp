@@ -509,6 +509,10 @@ private:
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
 
+  /// If true, the ChebyshevKernel operator will not to use a fused kernel
+  /// and insead use native blas/SpMV operators
+  bool ckUseNativeSpMV_;
+
   /// \brief Output stream for debug output ONLY.
   ///
   /// This is ONLY valid if debug_ is true.

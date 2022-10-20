@@ -287,8 +287,8 @@ namespace Excn {
   class CommunicationMetaData
   {
   public:
-    CommunicationMetaData()                              = default;
-    CommunicationMetaData(const CommunicationMetaData &) = delete;
+    CommunicationMetaData()                                              = default;
+    CommunicationMetaData(const CommunicationMetaData &)                 = delete;
     CommunicationMetaData &operator=(const CommunicationMetaData &other) = delete;
 
     std::vector<CommunicationMap> nodeMap{};

@@ -91,7 +91,7 @@ namespace SEAMS {
     /// construct a new parser aprepro context
     Aprepro();
     ~Aprepro();
-    Aprepro(const Aprepro &) = delete;
+    Aprepro(const Aprepro &)            = delete;
     Aprepro &operator=(const Aprepro &) = delete;
 
     enum class SYMBOL_TYPE {
