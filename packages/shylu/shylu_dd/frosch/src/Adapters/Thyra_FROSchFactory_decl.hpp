@@ -75,6 +75,11 @@
 #include <Xpetra_EpetraMap.hpp>
 #endif
 
+//Tpetra
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#include <Xpetra_TpetraHalfPrecisionOperator.hpp>
+#endif
+
 //Epetra
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Epetra_Map.h>
@@ -135,6 +140,13 @@ namespace Thyra {
         using ConstXMultiVectorPtr          = RCP<ConstXMultiVector>;
         using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
         using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+        using HalfPrecOp                    = Xpetra::TpetraHalfPrecisionOperator<SC,LO,GO,NO>;
+        using HalfSC                        = typename HalfPrecOp::HalfScalar;
+        using HalfPrecMatrix                = Matrix<HalfSC,LO,GO,NO>;
+        using HalfPrecMultiVector           = MultiVector<HalfSC,LO,GO,NO>;
+#endif
 
         using ParameterListPtr              = RCP<ParameterList>;
         using ConstParameterListPtr         = RCP<const ParameterList>;

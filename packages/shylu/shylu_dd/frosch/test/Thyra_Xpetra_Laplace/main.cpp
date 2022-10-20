@@ -177,6 +177,7 @@ int main(int argc, char *argv[])
         ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
         ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
 
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         for (UN block=0; block<(UN) NumberOfBlocks; block++) {
             Comm->barrier(); if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
 
@@ -215,7 +216,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
                 for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
                 for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
@@ -278,7 +279,7 @@ int main(int argc, char *argv[])
                 }
                 tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex()+1;
             }
-            RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+            RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
 
             tmpOffset = 0;
             KMonolithic = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMapMonolithic,K[0]->getGlobalMaxNumRowEntries());
