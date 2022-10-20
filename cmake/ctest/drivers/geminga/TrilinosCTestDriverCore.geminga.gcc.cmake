@@ -89,6 +89,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_CXX_STANDARD=17"
 
     "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+    # Avoid build error with Tacho tests
+    "-DTacho_ENABLE_TESTS:BOOL=OFF"
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 

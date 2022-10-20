@@ -475,8 +475,6 @@ namespace MueLu {
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
-    validParamList->set< bool >                  ("lightweight wrap",            true, "Experimental option for lightweight graph access");
-
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
@@ -490,10 +488,8 @@ namespace MueLu {
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
-        Input(currentLevel, "Coordinates");
-    }
+    if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
+      Input(currentLevel, "Coordinates");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -531,11 +527,6 @@ namespace MueLu {
     auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-
-    bool doLightWeightWrap = pL.get<bool>("lightweight wrap");
-    GetOStream(Warnings0) << "lightweight wrap is deprecated" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(!doLightWeightWrap, Exceptions::RuntimeError,
-                               "MueLu KokkosRefactor only supports \"lightweight wrap\"=\"true\"");
 
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
 

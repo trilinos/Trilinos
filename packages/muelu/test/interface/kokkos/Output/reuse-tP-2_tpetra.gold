@@ -1,10 +1,12 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -16,7 +18,6 @@ Build (MueLu::AmalgamationFactory_kokkos)
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
-lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
@@ -43,6 +44,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -57,6 +59,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -68,7 +71,6 @@ Build (MueLu::AmalgamationFactory_kokkos)
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
-lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
@@ -95,6 +97,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -128,12 +131,14 @@ Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -143,7 +148,6 @@ Build (MueLu::AmalgamationFactory_kokkos)
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
-lightweight wrap = 1
 matrixmatrix: kernel params -> 
  [empty list]
 Using original prolongator
@@ -170,6 +174,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -181,7 +186,6 @@ Build (MueLu::AmalgamationFactory_kokkos)
 algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
-lightweight wrap = 1
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
@@ -208,6 +212,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation

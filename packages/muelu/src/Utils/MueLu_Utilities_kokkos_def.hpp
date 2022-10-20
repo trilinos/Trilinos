@@ -134,11 +134,11 @@ namespace MueLu {
     using Vector            = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using VectorFactory     = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using local_matrix_type = typename Matrix::local_matrix_type;
-    using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
+    // using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
     using value_type        = typename local_matrix_type::value_type;
     using ordinal_type      = typename local_matrix_type::ordinal_type;
     using execution_space   = typename local_matrix_type::execution_space;
-    using memory_space      = typename local_matrix_type::memory_space;
+    // using memory_space      = typename local_matrix_type::memory_space;
     // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
     // you are likely to run into errors when handling std::complex<>
     // a good way to work around that is to use the following:

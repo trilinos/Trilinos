@@ -35,7 +35,6 @@
           <Parameter name="Verbosity" type="int" value="41"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Output Style" type="int" value="1"/>
-          <Parameter name="Filename LHS" type="string" value="X"/>
         </ParameterList>
 
       </ParameterList>

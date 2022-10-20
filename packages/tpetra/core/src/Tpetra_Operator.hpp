@@ -44,6 +44,7 @@
 
 #include <Tpetra_Operator_fwd.hpp>
 #include <Tpetra_MultiVector_fwd.hpp>
+#include <Tpetra_Vector_fwd.hpp>
 #include <Tpetra_Map_fwd.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_BLAS_types.hpp>
@@ -131,12 +132,34 @@ namespace Tpetra {
     /// <tt>mode=Teuchos::CONJ_TRANS</tt>.
     virtual bool hasTransposeApply() const;
 
+    /// \brief Whether this operator can return its diagonal.
+    ///
+    /// By default, this returns false.  Subclasses must override this
+    /// method if they can supply a diagonal.
+    virtual bool hasDiagonal() const;
+
+    /// \brief Get the diagonal of the operator.
+    ///
+    /// By default, this throws.  Subclasses must override this
+    /// method if they can supply a diagonal.
+    virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+
     //@}
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return false;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasDiagonal() const {
+    return false;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
+    TEUCHOS_ASSERT(false);
   }
 
 } // namespace Tpetra

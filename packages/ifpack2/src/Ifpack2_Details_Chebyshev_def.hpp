@@ -1084,12 +1084,12 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
   RCP<V> D_rowMap;
   if (!D_.is_null() &&
-      D_->getMap()->isSameAs(*(A.getGraph ()->getRowMap ()))) {
+      D_->getMap()->isSameAs(*(A.getRowMap ()))) {
     if (debug_)
       *out_ << "Reusing pre-existing vector for diagonal extraction" << std::endl;
     D_rowMap = Teuchos::rcp_const_cast<V>(D_);
   } else {
-    D_rowMap = Teuchos::rcp(new V (A.getGraph ()->getRowMap (), /*zeroOut=*/false));
+    D_rowMap = Teuchos::rcp(new V (A.getRowMap (), /*zeroOut=*/false));
     if (debug_)
       *out_ << "Allocated new vector for diagonal extraction" << std::endl;
   }

@@ -118,12 +118,12 @@ ENDIF() # split cpp files
 # Define the targets for package's library(s)
 #
 
-TRIBITS_ADD_LIBRARY(
-  muelu-interface
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS muelu
-  )
+# TRIBITS_ADD_LIBRARY(
+#   muelu-interface
+#   HEADERS ${HEADERS}
+#   SOURCES ${SOURCES}
+#   DEPLIBS muelu
+#   )
 
 # for debugging
 #MESSAGE("")
@@ -132,4 +132,3 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("HEADERS = ${HEADERS}")
 #MESSAGE("")
 #MESSAGE("SOURCES_INTERFACE = ${SOURCES}")
-
