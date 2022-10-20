@@ -546,6 +546,11 @@ public:
   template<class T2>
   inline RCP(const RCP<T2>& r_ptr);
 
+  /** \brief Construct from another <tt>RCP<T2></tt> and from a raw pointer.
+   */
+  template<class T2>
+  inline RCP(const RCP<T2>& r_ptr, T* ptr);
+
   /** \brief Removes a reference to a dynamically allocated object and possibly deletes
    * the object if owned.
    *
