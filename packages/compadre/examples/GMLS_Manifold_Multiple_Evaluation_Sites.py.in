@@ -41,7 +41,7 @@ for grid_num in range(grids):
             exe_name = "@CMAKE_CURRENT_BINARY_DIR@/Compadre_GMLS_Manifold_MultiSite_Test.exe"
         else:
             exe_name = "@CMAKE_CURRENT_BINARY_DIR@/GMLS_Manifold_MultiSite_Test"
-        output_commands = [exe_name,"--p","%d"%porder,"--nt","%d"%num_target_sites,"--d","3","--ns","%d"%(20*num_target_sites*pow(4,grid_num)),"--problem","MANIFOLD","--kokkos-threads=1"]
+        output_commands = [exe_name,"--p","%d"%porder,"--nt","%d"%num_target_sites,"--d","3","--ns","%d"%(20*num_target_sites*pow(4,grid_num)),"--problem","MANIFOLD","@KOKKOS_THREADS_ARG@=1"]
         print(output_commands)
         output = subprocess.check_output(output_commands, stderr=devnull)
         #print(output)
