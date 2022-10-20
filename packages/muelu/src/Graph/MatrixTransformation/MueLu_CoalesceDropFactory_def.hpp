@@ -1108,7 +1108,6 @@ namespace MueLu {
 
             // Construct Distance Laplacian diagonal
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
-            ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
             Teuchos::Array<Teuchos::ArrayRCP<const real_type>> coordData;
             if (threshold != STS::zero()) {
@@ -1121,6 +1120,7 @@ namespace MueLu {
             }
             {
             SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
+            ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             for (LO row = 0; row < numRows; row++) {
               ArrayView<const LO> indices;
 
