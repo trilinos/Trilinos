@@ -371,7 +371,10 @@ public:
   // a template parameter.
   //
   template <class field_type, typename std::enable_if<is_field<field_type>::value, int>::type = 0>
-  field_type * get_field(stk::mesh::EntityRank entity_rank, const std::string & name) const;
+  field_type * get_field(stk::mesh::EntityRank entity_rank,
+                         const std::string & name,
+                         const char * fileName = HOST_DEBUG_FILE_NAME,
+                         int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
 
   // Get a field by name, and return nullptr if it does not exist.
   // A case-insensitive name search will be performed.  An exception
@@ -381,7 +384,10 @@ public:
   // stk::mesh::Field<double> * field = meta.get_field<double>(...);
   //
   template <typename T, typename std::enable_if<not is_field<T>::value, int>::type = 0>
-  Field<T> * get_field(stk::mesh::EntityRank entity_rank, const std::string & name) const;
+  Field<T> * get_field(stk::mesh::EntityRank entity_rank,
+                       const std::string & name,
+                       const char * fileName = HOST_DEBUG_FILE_NAME,
+                       int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
 
   // Get a field by name with an unknown type.  A nullptr will be
   // returned if it does not exist.  A case-insensitive name search
@@ -822,9 +828,29 @@ Part & MetaData::get_part( unsigned ord ) const
 
 template <class field_type, typename std::enable_if<is_field<field_type>::value, int>::type>
 inline
-field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & name) const
+field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
+                                 const std::string & name,
+                                 const char * fileName,
+                                 int lineNumber) const
 {
   typedef FieldTraits< field_type > Traits ;
+
+  if (m_use_simple_fields) {
+    std::ostringstream os;
+    os << "Invalid call to MetaData::get_field() for Field '" << name << "'." << std::endl
+       << "  Cannot use a Field as the template parameter:" << std::endl
+       << "    get_field<" << sierra::demangle(typeid(field_type).name()) << ">()" << std::endl
+       << "  Please use only a datatype template parameter, e.g. get_field<"
+         << sierra::demangle(typeid(typename Traits::data_type).name()) << ">()." << std::endl;
+
+    if (lineNumber != -1) {
+      os << "  Called from: " << fileName << ":" << lineNumber << std::endl;
+    }
+    else {
+      os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
+    }
+    ThrowErrorMsg(os.str());
+  }
 
   const DataTraits & dt = data_traits< typename Traits::data_type >();
   const DataTraits & dt_void = data_traits< void >();
@@ -843,9 +869,27 @@ field_type * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const st
 
 template <typename T, typename std::enable_if<not is_field<T>::value, int>::type>
 inline
-Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & name) const
+Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
+                               const std::string & name,
+                               const char * fileName,
+                               int lineNumber) const
 {
-  return get_field<Field<T>>(arg_entity_rank, name);
+  typedef FieldTraits<Field<T>> Traits;
+
+  const DataTraits & dt = data_traits<typename Traits::data_type>();
+  const DataTraits & dt_void = data_traits<void>();
+
+  const shards::ArrayDimTag * tags[8];
+
+  Traits::assign_tags(tags);
+
+  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, Traits::Rank, tags, 0);
+
+  ThrowRequireMsg(field == nullptr || field->data_traits().type_info == dt.type_info || dt_void.type_info == dt.type_info,
+                  "field " << field->name() << " has type " << field->data_traits().type_info.name()
+                  << " when expecting type " << dt.type_info.name());
+
+  return static_cast<Field<T>*>(field);
 }
 
 
@@ -865,15 +909,19 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
 
   Traits::assign_tags( dim_tags );
 
-  if (m_use_simple_fields && (Traits::Rank != 0)) {
+  if (m_use_simple_fields) {
     std::ostringstream os;
-    os << "Cannot register Field '" << name << "' with more than the datatype template" << std::endl
-       << "    parameter: " << sierra::demangle(typeid(field_type).name()) << std::endl;
+    os << "Invalid call to MetaData::declare_field() for Field '" << name << "'." << std::endl
+       << "  Cannot use a Field as the template parameter:" << std::endl
+       << "    declare_field<" << sierra::demangle(typeid(field_type).name()) << ">()" << std::endl
+       << "  Please use only a datatype template parameter, e.g. declare_field<"
+         << sierra::demangle(typeid(typename Traits::data_type).name()) << ">()." << std::endl;
+
     if (lineNumber != -1) {
-      os << "    " << fileName << ":" << lineNumber << std::endl;
+      os << "  Called from: " << fileName << ":" << lineNumber << std::endl;
     }
     else {
-      os << "    Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
+      os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
     }
     ThrowErrorMsg(os.str());
   }
@@ -965,7 +1013,90 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
                         const char * fileName,
                         int lineNumber)
 {
-  return declare_field<Field<T>>(arg_entity_rank, name, number_of_states, fileName, lineNumber);
+  typedef FieldTraits<Field<T>> Traits;
+
+  const DataTraits & traits = data_traits<typename Traits::data_type>();
+
+  const shards::ArrayDimTag * dim_tags[8];
+
+  Traits::assign_tags(dim_tags);
+
+  const char** reservedStateSuffix = reserved_state_suffix();
+
+  // Check that the name does not have a reserved suffix
+
+  for (unsigned i = 0; i < 6; ++i) {
+    const int len_name   = name.size();
+    const int len_suffix = std::strlen( reservedStateSuffix[i] );
+    const int offset     = len_name - len_suffix;
+    if ( 0 <= offset ) {
+      const char * const name_suffix = name.c_str() + offset;
+      ThrowErrorMsgIf(equal_case( name_suffix , reservedStateSuffix[i]),
+          "For name = \"" << name_suffix <<
+          "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+          reservedStateSuffix[i] << "\"");
+    }
+  }
+
+  // Check that the field of this name has not already been declared
+
+  Field<T> * f[MaximumFieldStates] = {nullptr};
+
+  FieldBase* rawField = m_field_repo.get_field(arg_entity_rank, name,
+                                               traits, Traits::Rank, dim_tags, number_of_states);
+
+  f[0] = dynamic_cast<Field<T>*>(rawField);
+
+  if (rawField != nullptr) {
+    ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
+  }
+
+  if (f[0] != nullptr) {
+    for (unsigned i = 1; i < number_of_states; ++i) {
+      f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+    }
+  }
+  else {
+    // Field does not exist then create it
+
+    std::string field_names[MaximumFieldStates];
+
+    field_names[0] = name;
+
+    if (2 == number_of_states) {
+      field_names[1] = name;
+      field_names[1].append(reservedStateSuffix[0]);
+    }
+    else {
+      for (unsigned i = 1; i < number_of_states; ++i) {
+        field_names[i] = name;
+        field_names[i].append(reservedStateSuffix[i]);
+      }
+    }
+
+    for (unsigned i = 0; i < number_of_states; ++i) {
+
+      f[i] = new Field<T>(this,
+                          arg_entity_rank,
+                          m_field_repo.get_fields().size(),
+                          field_names[i],
+                          traits,
+                          Traits::Rank,
+                          dim_tags,
+                          number_of_states,
+                          static_cast<FieldState>(i));
+
+      m_field_repo.add_field(f[i]);
+    }
+
+    for (unsigned i = 0; i < number_of_states; ++i) {
+      f[i]->set_field_states( f );
+    }
+  }
+
+  f[0]->set_mesh(m_bulk_data);
+
+  return *f[0];
 }
 
 template <class field_type>
@@ -1243,15 +1374,62 @@ is_auto_declared_part(const Part &part)
   return stk::mesh::impl::is_internal_part(part);
 }
 
-template< class field_type >
-field_type * get_field_by_name( const std::string & name, const MetaData & metaData )
+template <class field_type, typename std::enable_if<is_field<field_type>::value, int>::type = 0>
+field_type * get_field_by_name(const std::string & name,
+                               const MetaData & metaData,
+                               const char * fileName = HOST_DEBUG_FILE_NAME,
+                               int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
-  field_type* field = NULL;
+  if (metaData.is_using_simple_fields()) {
+    typedef FieldTraits<field_type> Traits;
+    std::ostringstream os;
+    os << "Invalid call to get_field_by_name() for Field '" << name << "'." << std::endl
+       << "  Cannot use a Field as the template parameter:" << std::endl
+       << "    get_field_by_name<" << sierra::demangle(typeid(field_type).name()) << ">()" << std::endl
+       << "  Please use only a datatype template parameter, e.g. get_field_by_name<"
+         << sierra::demangle(typeid(typename Traits::data_type).name()) << ">()." << std::endl;
+
+    if (lineNumber != -1) {
+      os << "  Called from: " << fileName << ":" << lineNumber << std::endl;
+    }
+    else {
+      os << "  Please build with at least gcc-4.8.0 or clang-9.0.0 to see caller location" << std::endl;
+    }
+    ThrowErrorMsg(os.str());
+  }
+
+  field_type* field = nullptr;
   unsigned num_nonnull_fields = 0;
   for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
     field_type* thisfield = metaData.get_field<field_type>(i, name);
-    if (thisfield != NULL) {
-      if (field == NULL) {
+    if (thisfield != nullptr) {
+      if (field == nullptr) {
+        field = thisfield;
+      }
+      ++num_nonnull_fields;
+    }
+  }
+
+  if (num_nonnull_fields > 1) {
+    std::cerr << "get_field_by_name WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
+      <<". Returning the first one."<<std::endl;
+  }
+
+  return field;
+}
+
+template <typename T, typename std::enable_if<not is_field<T>::value, int>::type = 0>
+Field<T> * get_field_by_name(const std::string & name,
+                             const MetaData & metaData,
+                             const char * fileName = HOST_DEBUG_FILE_NAME,
+                             int lineNumber = HOST_DEBUG_LINE_NUMBER)
+{
+  Field<T>* field = nullptr;
+  unsigned num_nonnull_fields = 0;
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
+    Field<T>* thisfield = metaData.get_field<T>(i, name);
+    if (thisfield != nullptr) {
+      if (field == nullptr) {
         field = thisfield;
       }
       ++num_nonnull_fields;

@@ -183,7 +183,7 @@
       if (!eMesh.m_refine_level_field_set)
         {
           eMesh.m_refine_level_field_set = true;
-          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
+          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (eMesh.m_refine_level_field)

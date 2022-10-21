@@ -35,6 +35,7 @@
 #ifndef stk_util_parallel_ManagedBufferBase_hpp
 #define stk_util_parallel_ManagedBufferBase_hpp
 
+#include <stddef.h>
 #include <vector>
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 #include "stk_util/parallel/CommBuffer.hpp"

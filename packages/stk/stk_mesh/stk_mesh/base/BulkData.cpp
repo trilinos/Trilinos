@@ -2976,17 +2976,11 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
   if (parallel_size() > 1) {
     CommBroadcast bc( parallel() , 0 );
 
-    if ( bc.parallel_rank() == 0 ) {
-      bc.send_buffer().skip<char>( name.size() + 1 );
-    }
-
-    bc.allocate_buffer();
-
-    if ( bc.parallel_rank() == 0 ) {
-      bc.send_buffer().pack<char>( name.c_str() , name.size() + 1 );
-    }
-
-    bc.communicate();
+    stk::pack_and_communicate(bc, [&bc,&name](){
+      if ( bc.parallel_rank() == 0 ) {
+        bc.send_buffer().pack<char>( name.c_str() , name.size() + 1 );
+      }
+    });
 
     const char * const bc_name =
       reinterpret_cast<const char *>( bc.recv_buffer().buffer() );
@@ -3274,7 +3268,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
 
     std::ostringstream error_msg ;
     int error_count = 0 ;
-    OrdinalVector ordinal_scratch, removeParts, partOrdinals, scratchSpace;
+    OrdinalVector ordinal_scratch, removeParts, partOrdinals, scratchSpace, scratch3;
     PartVector parts ;
     std::vector<Relation> relations ;
     std::vector<EntityProc> removedRecvGhosts;
@@ -3371,7 +3365,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
             }
           }
 
-          internal_change_entity_parts( entity , partOrdinals , removeParts, ordinal_scratch, scratchSpace );
+          internal_change_entity_parts_without_propagating_to_downward_connected_entities(entity, partOrdinals, removeParts, ordinal_scratch, scratchSpace, scratch3);
 
           if ( created ) {
             log_created_parallel_copy( entity );
