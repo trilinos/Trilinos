@@ -42,7 +42,7 @@
 
 #include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
 #include "Tpetra_LocalOperator.hpp"
-#include "Tpetra_Spaces.hpp"
+#include "Tpetra_Details_Spaces.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "Tpetra_Core.hpp"
@@ -134,183 +134,255 @@ namespace Tpetra {
       }
     };
 
-#if 0
-    // cwp 21 Sep 2022
-    // A functor that does the on-rank part of a local SpMV
-    // KokkosKernels does not currently have a 4-array CSR
-    template<
+    // KokkosKernels SPMV_Functor
+    template <
     typename OffsetDeviceViewType, 
-    typename RowViewer // OnRankRowView or OffRankRowView
-    > class SpmvFunctor {
+    typename RowViewer, // OnRankRowView or OffRankRowView
+    bool CONJ
+    >
+    struct SpmvFunctor {
 
-    public:
-
-      // different SpMV execution modes
-      struct TagNonTrans{};
-      struct TagTrans{};
-      struct TagConjTrans{};
-
-      typedef LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device> local_crs_matrix_operator_type;
-      typedef typename local_crs_matrix_operator_type::local_matrix_device_type local_matrix_device_type;
-      typedef typename local_crs_matrix_operator_type::array_layout array_layout;
+      using local_crs_matrix_operator_type = LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>;
+      using local_matrix_device_type = typename local_crs_matrix_operator_type::local_matrix_device_type;
+      using array_layout = typename local_crs_matrix_operator_type::array_layout;
       
-      typedef Kokkos::View<const MultiVectorScalar**, array_layout,
-            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > x_type;
-      typedef Kokkos::View<MultiVectorScalar**, array_layout,
-            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > y_type;
-    
-    private:
-      MultiVectorScalar alpha_;
+      using x_type = Kokkos::View<const MultiVectorScalar*, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      using y_type = Kokkos::View<MultiVectorScalar*, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+      using value_type = typename local_matrix_device_type::non_const_value_type;
+      using ordinal_type = typename local_matrix_device_type::non_const_ordinal_type; 
+      using size_type = typename local_matrix_device_type::non_const_size_type; 
+
+      using execution_space = typename local_matrix_device_type::execution_space;
+      using team_policy = typename Kokkos::TeamPolicy<execution_space>;
+      using team_member = typename team_policy::member_type;
+      using ATV = Kokkos::Details::ArithTraits<value_type>;
+
+      const value_type alpha_;
       local_matrix_device_type A_;
-      x_type X_;
-      MultiVectorScalar beta_;
-      y_type Y_;
+      x_type x_;
+      const value_type beta_;
+      y_type y_;
       OffsetDeviceViewType offRankOffsets_;
+      const ordinal_type rowsPerTeam_;
 
-      typedef typename local_matrix_device_type::non_const_value_type value_type;
-      typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
-      typedef typename local_matrix_device_type::non_const_size_type size_type; 
+      SpmvFunctor(const value_type alpha, const local_matrix_device_type A, const x_type x,
+                  const value_type beta, const y_type y, const OffsetDeviceViewType &offRankOffsets,
+                  const int rowsPerTeam)
+          : alpha_(alpha),
+            A_(A),
+            x_(x),
+            beta_(beta),
+            y_(y),
+            offRankOffsets_(offRankOffsets),
+            rowsPerTeam_(rowsPerTeam) {}
 
-      typedef typename local_matrix_device_type::execution_space execution_space;
-      typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
-      typedef typename team_policy::member_type team_member;
-      typedef Kokkos::Details::ArithTraits<value_type> ATV;
-
-    public:
-      SpmvFunctor(const MultiVectorScalar &alpha, 
-      const local_matrix_device_type &A, 
-      x_type &X, 
-      const MultiVectorScalar &beta, 
-      y_type &Y,
-      const OffsetDeviceViewType &offRankOffsets) 
-        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y), offRankOffsets_(offRankOffsets) {}
-
-      /*! \brief contribution of row i
-
-          This is only the local offsets, so the offsets we want are between
-          rowPtr(i) and offRankOffsets_(i)
-      */
-      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const ordinal_type i) const {
-
-        if (i >= A_.numRows()) {
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type iRow) const {
+        using y_value_type = typename y_type::non_const_value_type;
+        if (iRow >= A_.numRows()) {
           return;
         }
 
-        const KokkosSparse::SparseRowViewConst<local_matrix_device_type> row = 
-            RowViewer::view(A_, offRankOffsets_, i);
+        const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
 
-        // this implementation may be best for a single vector (not multivector)
-        for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
-          MultiVectorScalar sum = 0;
+        const ordinal_type row_length = static_cast<ordinal_type>(row.length);
 
-          for (ordinal_type ri = 0; ri < row.length; ++ri) {
-            value_type A_ij = row.value(ri);
-            ordinal_type j = row.colidx(ri);
-            sum += A_ij * X_(j, k); 
-          }
-          sum *= alpha_;
+        y_value_type sum = 0;
+        for (ordinal_type iEntry = 0; iEntry < row_length; iEntry++) {
+          const value_type val =
+              CONJ ? ATV::conj(row.value(iEntry)) : row.value(iEntry);
+          sum += val * x_(row.colidx(iEntry));
+        }
 
-          if (0 == beta_) {
-            Y_(i,k) = sum;
-          } else {
-            Y_(i,k) = beta_ * Y_(i,k) + sum;
-          } 
+        sum *= alpha_;
+
+        if (0 == beta_) {
+          y_(iRow) = sum;
+        } else {
+          y_(iRow) = beta_ * y_(iRow) + sum;
         }
       }
 
       KOKKOS_INLINE_FUNCTION
-      void operator() (TagNonTrans, const team_member& dev) const
-      {
+      void operator()(const team_member& dev) const {
         using y_value_type = typename y_type::non_const_value_type;
 
-        const int rowsPerTeam = dev.team_size();
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(dev, 0, rowsPerTeam_),
+            [&](const ordinal_type& loop) {
+              const ordinal_type iRow =
+                  static_cast<ordinal_type>(dev.league_rank()) * rowsPerTeam_ +
+                  loop;
+              if (iRow >= A_.numRows()) {
+                return;
+              }
+              const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
+              const ordinal_type row_length = static_cast<ordinal_type>(row.length);
 
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rowsPerTeam), [&] (const ordinal_type& loop) {
+              y_value_type sum = 0;
+              Kokkos::parallel_reduce(
+                  Kokkos::ThreadVectorRange(dev, row_length),
+                  [&](const ordinal_type& iEntry, y_value_type& lsum) {
+                    const value_type val = CONJ ? ATV::conj(row.value(iEntry))
+                                                    : row.value(iEntry);
+                    lsum += val * x_(row.colidx(iEntry));
+                  },
+                  sum);
 
-          const ordinal_type iRow = static_cast<ordinal_type> ( dev.league_rank() ) * rowsPerTeam + loop;
-          if (iRow >= A_.numRows ()) {
-            return;
-          }
-          const KokkosSparse::SparseRowViewConst<local_matrix_device_type> row = 
-            RowViewer::view(A_, offRankOffsets_, iRow);
-          const ordinal_type row_length = static_cast<ordinal_type> (row.length);
-          y_value_type sum = 0;
+              Kokkos::single(Kokkos::PerThread(dev), [&]() {
+                sum *= alpha_;
 
-          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, y_value_type& lsum) {
-            const value_type val = row.value(iEntry);
-            lsum += val * X_(row.colidx(iEntry), 0);
-          },sum);
-
-          Kokkos::single(Kokkos::PerThread(dev), [&] () {
-            sum *= alpha_;
-
-            #warning "assuming rank-1 vector"
-            Y_(iRow, 0) = beta_ * Y_(iRow, 0) + sum;
-          });
-        });
+                if (0 == beta_) {
+                  y_(iRow) = sum;
+                } else {
+                  y_(iRow) = beta_ * y_(iRow) + sum;
+                }
+              });
+            });
       }
 
 
-      KOKKOS_INLINE_FUNCTION void operator()(TagTrans, const size_t i) const {
-        #warning trans unimplemented
-      }
+      struct LaunchParams {
+        ordinal_type rowsPerThread;
+        ordinal_type rowsPerTeam;
+        int teamSize;
+        int vectorLength;
+      };
 
-      KOKKOS_INLINE_FUNCTION void operator()(TagConjTrans, const size_t i) const {
-        #warning conj trans unimplemented
-      }
+      template <class execution_space>
+      static LaunchParams launch_parameters(ordinal_type numRows, int64_t nnz) {
 
-      /// \brief Kokkos dispatch of non-transpose
-      // void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
-      void launch(TagNonTrans, const execution_space &space) {
+        LaunchParams ret;
 
-#if 1 // fancy one
-        const int estNnz = A_.nnz() * 0.95; // entries are mostly on-rank.
-        if (!KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
-          if (estNnz > 10000000) {
-            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(space, 0, A_.numRows()), *this);
-          } else {
-            Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans, execution_space, Kokkos::Schedule<Kokkos::Static>>(space, 0, A_.numRows()), *this);
-          }
-        } else {
-          const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
-          int vectorLength = 1;
-          while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
-            vectorLength *= 2;
-          }
-          const int teamSize = 256 / vectorLength;
-          const int rowsPerTeam = teamSize;
-          const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
+        int64_t nnzPerRow = nnz / numRows;
 
-          if (estNnz > 10000000) {
-            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
-            Kokkos::parallel_for("on-rank", policy, *this);
-          } else {
-            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-            Kokkos::parallel_for("on-rank", policy, *this);
+        if (nnzPerRow < 1) nnzPerRow = 1;
+
+        int maxVectorLength = 1;
+      #ifdef KOKKOS_ENABLE_CUDA
+        if (std::is_same<execution_space, Kokkos::Cuda>::value)
+          maxVectorLength = 32;
+      #endif
+      #ifdef KOKKOS_ENABLE_HIP
+        if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+          maxVectorLength = 64;
+      #endif
+
+        ret.vectorLength = 1;
+        while (ret.vectorLength < maxVectorLength && ret.vectorLength * 6 < nnzPerRow)
+          ret.vectorLength *= 2;
+
+        // Determine rows per thread
+        if (ret.rowsPerThread < 1) {
+          if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>())
+            ret.rowsPerThread = 1;
+          else {
+            if (nnzPerRow < 20 && nnz > 5000000) {
+              ret.rowsPerThread = 256;
+            } else
+              ret.rowsPerThread = 64;
           }
         }
-#else // boring one
-        Kokkos::RangePolicy<execution_space, TagNonTrans> policy(space, 0, A_.numRows());
-        Kokkos::parallel_for("on-rank", policy, *this);
-#endif
-      }
 
-      // \brief Kokkos dispatch of non-transpose in default space
-      void launch(TagNonTrans t) {
-        launch(t, execution_space());
-      }
+          if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+            ret.teamSize = 256 / ret.vectorLength;
+          } else {
+            ret.teamSize = 1;
+          }
 
-      /// \brief Kokkos dispatch of transpose
-      void launch(TagTrans, execution_space &space) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans, execution_space>(space, 0, A_.numRows()), *this);
-      }
+        ret.rowsPerTeam = ret.rowsPerThread * ret.teamSize;
 
-      /// \brief Kokkos dispatch of conjugate transpose
-      void launch(TagConjTrans, execution_space &space) {
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans, execution_space>(space, 0, A_.numRows()), *this);
+        if (ret.rowsPerTeam < 0) {
+          int64_t nnzPerTeam = 4096;
+          int64_t conc         = execution_space::concurrency();
+          while ((conc * nnzPerTeam * 4 > nnz) && (nnzPerTeam > 256))
+            nnzPerTeam /= 2;
+          ret.rowsPerTeam = (nnzPerTeam + nnzPerRow - 1) / nnzPerRow;
+        }
+
+        return ret;
+      }
+      
+
+
+      static void launch(const MultiVectorScalar &alpha, 
+        const local_matrix_device_type &A, 
+        x_type &X, 
+        const MultiVectorScalar &beta, 
+        y_type &Y,
+        const OffsetDeviceViewType &offRankOffsets,
+        const execution_space &space) {
+
+        
+
+
+        if (Details::Spaces::is_gpu_exec_space<execution_space>()) {
+
+          LaunchParams params = launch_parameters<execution_space>(A.numRows(), A.nnz());
+
+          // std::cerr << __FILE__ << ":" << __LINE__ << ": rowsPerTeam=" << params.rowsPerTeam
+          //           << " vectorLength=" << params.vectorLength
+          //           << " teamSize=" << params.teamSize
+          //           << "\n";
+
+          const bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+          const bool use_static_schedule  = false;  // Forces the use of a static schedule
+          int64_t worksets = (Y.extent(0) + params.rowsPerTeam - 1) / params.rowsPerTeam;
+
+          SpmvFunctor func(alpha, A, X, beta, Y, offRankOffsets, params.rowsPerTeam);
+
+          if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
+                policy(space, 1, 1);
+            if (params.teamSize < 0)
+              policy = Kokkos::TeamPolicy<execution_space,
+                                          Kokkos::Schedule<Kokkos::Dynamic>>(
+                  space, worksets, Kokkos::AUTO, params.vectorLength);
+            else
+              policy = Kokkos::TeamPolicy<execution_space,
+                                          Kokkos::Schedule<Kokkos::Dynamic>>(
+                  space, worksets, params.teamSize, params.vectorLength);
+            Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>", policy,
+                                func);
+          } else {
+            Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
+                policy(space, 1, 1);
+            if (params.teamSize < 0)
+              policy =
+                  Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+                      space, worksets, Kokkos::AUTO, params.vectorLength);
+            else
+              policy =
+                  Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+                      space, worksets, params.teamSize, params.vectorLength);
+            Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>", policy,
+                                func);
+          }
+        } else {
+          SpmvFunctor func(alpha, A, X, beta, Y, offRankOffsets, 1);
+
+          const bool useDynamicSchedule = false;
+          const bool useStaticSchedule = false;
+          if (((A.nnz() > 10000000) || useDynamicSchedule) && !useStaticSchedule) {
+
+            Kokkos::parallel_for(
+                "KokkosSparse::spmv<NoTranspose,Dynamic>",
+                Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(
+                    space, 0, A.numRows()),
+                func);
+          } else {
+            Kokkos::parallel_for(
+                "KokkosSparse::spmv<NoTranspose,Static>",
+                Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+                    space, 0, A.numRows()),
+                func);
+          }
+        }
       }
     };
-#endif
 
     // cwp 21 Sep 2022
     // A functor that does on-rank or off-rank part of a local Sparse-matrix multivector product
@@ -421,7 +493,7 @@ namespace Tpetra {
 
             // in CUDA, each lane is actually a sub-warp (thread) so each thread's sum is not correct
             // in serial, each lane is a true vector lane so sum[k] is already correct
-            if (Spaces::is_gpu_exec_space<execution_space>()) {
+            if (Details::Spaces::is_gpu_exec_space<execution_space>()) {
               // try to sum up the sum[ii] in each vector lane
               MultiVectorScalar sumt;
               Kokkos::parallel_reduce(
@@ -617,7 +689,7 @@ namespace Tpetra {
 
         // still need to scal A.numRows() == 0
         if (0 == A.numRows() || 0 == alpha) {
-          std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch scal only\n";
+          // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch scal only\n";
           // TODO: define a common scal operator
           SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets, 0/*unused*/, 0/*unused*/);
           Kokkos::parallel_for("SpmvMvFunctor scal",
@@ -660,6 +732,7 @@ namespace Tpetra {
             Kokkos::TeamPolicy<execution_space>(space, 
                 rowsPerThread, Kokkos::AUTO, vectorLength)
                 .team_size_recommended(op, Kokkos::ParallelForTag());
+        std::cerr << __FILE__<<":"<<__LINE__<<": teamSize=" << teamSize << " vectorLength=" << vectorLength << "\n";
         const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
         const size_type nteams = (A.numRows() + rowsPerTeam - 1) / rowsPerTeam;
         Kokkos::parallel_for("SpmvMvFunctor",
@@ -898,8 +971,16 @@ namespace Tpetra {
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          typedef SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
+          if (1 == X.extent(1) && 1 == Y.extent(1)) {
+            // std::cerr << __FILE__ << ":" << __LINE__ << ": rank 1\n";
+            auto X0 = Kokkos::subview(X, Kokkos::ALL, 0);
+            auto Y0 = Kokkos::subview(Y, Kokkos::ALL, 0);
+            using Op = SpmvFunctor<OffsetDeviceViewType, RowViewer, false>;
+            Op::launch(alpha, *A_, X0, beta, Y0, offRankOffsets, execSpace);
+          } else {
+            using Op = SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false>;
+            Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
+          }
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {
@@ -941,8 +1022,16 @@ namespace Tpetra {
           return;
         }
         case Teuchos::ETransp::NO_TRANS: {
-          typedef SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
+          if (1 == X.extent(1) && 1 == Y.extent(1)) {
+            // std::cerr << __FILE__ << ":" << __LINE__ << ": rank 1\n";
+            auto X0 = Kokkos::subview(X, Kokkos::ALL, 0);
+            auto Y0 = Kokkos::subview(Y, Kokkos::ALL, 0);
+            using Op = SpmvFunctor<OffsetDeviceViewType, RowViewer, false>;
+            Op::launch(alpha, *A_, X0, beta, Y0, offRankOffsets, execSpace);
+          } else {
+            using Op = SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false>;
+            Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
+          }
           return;
         }
         case Teuchos::ETransp::CONJ_TRANS: {

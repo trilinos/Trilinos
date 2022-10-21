@@ -54,7 +54,7 @@
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
-#include "Tpetra_SpaceManager.hpp"
+#include "Tpetra_Details_SpaceManager.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -425,7 +425,7 @@ namespace Tpetra {
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public SpaceManager2
+    public Details::SpaceManager2
   {
   public:
     //! @name Typedefs

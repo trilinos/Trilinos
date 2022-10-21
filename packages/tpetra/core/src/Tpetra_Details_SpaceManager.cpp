@@ -1,6 +1,9 @@
-#include "Tpetra_SpaceManager.hpp"
+#include "Tpetra_Details_SpaceManager.hpp"
 
 namespace Tpetra {
+namespace Details {
+
+
 
 SpaceManager2::SpaceManager2() {
     // priority only implemented for CUDA, other instances are all equivalent
@@ -29,5 +32,5 @@ SpaceManager::~SpaceManager() {
 #endif
 }
 
-
+} // namespace Details
 } // namespace Tpetra

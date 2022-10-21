@@ -1,5 +1,5 @@
-#ifndef TPETRA_SPACE_HPP
-#define TPETRA_SPACE_HPP
+#ifndef TPETRA_DETAILS_SPACEs_HPP
+#define TPETRA_DETAILS_SPACEs_HPP
 
 #include <vector>
 #include <iostream>
@@ -7,6 +7,7 @@
 
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_Behavior.hpp"
+#include "Teuchos_RCP.hpp"
 
 /*! \file
 
@@ -18,8 +19,14 @@ spaces <Priority::high, 0> and <Priority::low, 0> are different.
 
 */
 
+#define THROW_RUNTIME(x) { \
+    std::stringstream ss; \
+    ss << __FILE__ << ":" << __LINE__ << ": " << x; \
+    throw std::runtime_error(ss.str()); \
+}
 
 namespace Tpetra {
+namespace Details {
 namespace Spaces {
 
 enum class Priority {
@@ -28,8 +35,6 @@ enum class Priority {
     high = 2,
     NUM_LEVELS = 3 // not to be used as a priority
 };
-
-namespace detail {
 
 /* This tracks whether spaces have been initialized.
    Not all unit-tests call Tpetra::initialize, so we
@@ -62,7 +67,7 @@ inline void success_or_throw(cudaError_t err, const char *file, const int line) 
         throw std::runtime_error(ss.str());
     }
 }
-#define CUDA_RUNTIME(x) Tpetra::Spaces::detail::success_or_throw((x), __FILE__, __LINE__)
+#define CUDA_RUNTIME(x) Tpetra::Details::Spaces::success_or_throw((x), __FILE__, __LINE__)
 #endif // KOKKOS_ENABLE_CUDA
 
 /*! \brief Automaticallyed called by functions in the Tpetra::Spaces namespace
@@ -111,39 +116,38 @@ template <typename Space>
 using IsOpenMP = std::enable_if_t<std::is_same<Space, Kokkos::OpenMP>::value, bool>;
 #endif // KOKKOS_ENABLE_OPENMP
 
-
-} // namespace detail
-
+/*! \brief Construct a Kokkos execution space instance with the requested priority
+*/
 template <typename ExecSpace, Priority priority = Priority::medium
 #ifdef KOKKOS_ENABLE_CUDA
-, detail::NotCuda<ExecSpace> = true
+, NotCuda<ExecSpace> = true
 #endif // KOKKOS_ENABLE_CUDA
 >
 ExecSpace make_instance() {
     return ExecSpace();
 }
 
-
-
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename ExecSpace, Priority priority = Priority::medium, 
-detail::IsCuda<ExecSpace> = true >
+IsCuda<ExecSpace> = true >
 Kokkos::Cuda make_instance() {
-    detail::lazy_init(); // CUDA priorities
+    lazy_init(); // CUDA priorities
     cudaStream_t stream;
     int prio;
     switch (priority) {
-        case Priority::high: prio = detail::cudaPriorityRange.high; break;
-        case Priority::medium: prio = detail::cudaPriorityRange.medium; break;
-        case Priority::low: prio = detail::cudaPriorityRange.low; break;
+        case Priority::high: prio = cudaPriorityRange.high; break;
+        case Priority::medium: prio = cudaPriorityRange.medium; break;
+        case Priority::low: prio = cudaPriorityRange.low; break;
         default: throw std::runtime_error("unexpected static Tpetra Space priority");
     }
     CUDA_RUNTIME(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
-    std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
+    // std::cerr << __FILE__ << ":" << __LINE__ << ": stream " << uintptr_t(stream) << " with prio " << prio << "\n";
     return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
 }
 #endif // KOKKOS_ENABLE_CUDA
 
+/*! \brief Construct a Kokkos execution space instance with the requested priority
+*/
 template <typename ExecSpace>
 ExecSpace make_instance(const Priority &prio) {
     switch (prio) {
@@ -154,33 +158,125 @@ ExecSpace make_instance(const Priority &prio) {
     }
 }
 
+/*! \brief Provides reusable Kokkos execution space instances
+
+    Holds a weak RCP to exec space instances, but provides strong RCPs to users.
+    When all strong RCP holders go away, the instance will also go away, restricting
+    the lifetime of the underlying instance to Tpetra objects.
+    This prevents the instance outliving Kokkos;
+*/
+template <typename ExecSpace>
+class InstanceLifetimeManager {
+public:
+    using execution_space = ExecSpace;
+    using rcp_type = Teuchos::RCP<const execution_space>;
+
+    /*! \brief Retrieve a strong `Teuchos::RCP<const ExecSpace>` to instance `i`
+
+        \tparam priority the Spaces::Details::Priority of the instance
+    */
+    template <
+      Priority priority = Priority::medium
+    >
+    rcp_type space_instance(int i = 0) const {
+        constexpr int p = static_cast<int>(priority);
+        static_assert(p < sizeof(instances), "Spaces::Priority enum error");
+
+        if (i < 0) {
+            THROW_RUNTIME("requested instance id " << i << " (< 0)");
+        }
+        if (i > Tpetra::Details::Behavior::spacesIdWarnLimit()) {
+            THROW_RUNTIME(
+                "requested instance id " << i << " (> " 
+                << Tpetra::Details::Behavior::spacesIdWarnLimit()
+                << ") set by TPETRA_SPACES_ID_WARN_LIMT");
+        }
+        
+
+        // make sure we can st
+
+        if (i <= instances[p].size()) {
+            instances[p].resize(i+1);
+        }
+
+        if (!instances[p][i]) {
+            rcp_type r = Teuchos::RCP<const execution_space>(
+                new ExecSpace(make_instance<ExecSpace, priority>())
+            );
+            instances[p][i] = r.create_weak();
+            return r;
+        }
+
+        return instances[p][i].create_strong();
+    }
+private:
+    // one vector of instances for each priority level
+    std::vector<rcp_type> instances[static_cast<int>(Spaces::Priority::NUM_LEVELS)];
+};
+
+#ifdef KOKKOS_ENABLE_CUDA
+extern InstanceLifetimeManager<Kokkos::Cuda> cudaSpaces;
+#endif
+#ifdef KOKKOS_ENABLE_SERIAL
+extern InstanceLifetimeManager<Kokkos::Serial> serialSpaces;
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+extern InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
+#endif
+
+template <typename ExecSpace, Priority priority = Priority::medium>
+Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
+
+#ifdef KOKKOS_ENABLE_CUDA
+    if (std::is_same<ExecSpace, Kokkos::Cuda>::value) {
+        return cudaSpaces.space_instance(i);
+    }
+#endif
+
+#ifdef KOKKOS_ENABLE_SERIAL
+    if (std::is_same<ExecSpace, Kokkos::Serial>::value) {
+        return serialSpaces.space_instance(i);
+    }
+#endif
+
+#ifdef KOKKOS_ENABLE_OPENMP
+    if (std::is_same<ExecSpace, Kokkos::OpenMP>::value) {
+        return openMPSpaces.space_instance(i);
+    }
+#endif
+
+    throw std::runtime_error("not implemented for space");
+
+}
+
+
 /* cause future work submitted to waiter to wait for the current work in waitee to finish
   may return immediately (e.g., before waitee's work is done)
 */
 template <typename S1, typename S2
 #ifdef KOKKOS_ENABLE_CUDA
-, detail::NotBothCuda<S1, S2> = true
+, NotBothCuda<S1, S2> = true
 #endif
 >
 void exec_space_wait(const char *msg, const S1 &waitee, const S2 &waiter) {
-    detail::lazy_init();
+    lazy_init();
     (void) waiter;
     waitee.fence(msg);
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename S1, typename S2,
-detail::BothCuda<S1, S2> = true>
+BothCuda<S1, S2> = true>
 void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
-    detail::lazy_init();
+    lazy_init();
     /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
        the state of a shared event
        this means we only need one event even if many exec_space_waits are in flight at the same time
     */
 
     // TODO: add profiling hooks
-    CUDA_RUNTIME(cudaEventRecord(detail::execSpaceWaitEvent, waitee.cuda_stream()));
-    CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), detail::execSpaceWaitEvent, 0 /*flags*/));
+    CUDA_RUNTIME(cudaEventRecord(execSpaceWaitEvent, waitee.cuda_stream()));
+    CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), execSpaceWaitEvent, 0 /*flags*/));
 }
 #endif
 
@@ -189,7 +285,7 @@ void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
 */
 template <typename S1, typename S2>
 void exec_space_wait(const S1 &waitee, const S2 &waiter) {
-    detail::lazy_init();
+    lazy_init();
     exec_space_wait("anonymous", waitee, waiter);
 }
 
@@ -223,7 +319,10 @@ is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
 
 
 } // namespace Spaces
-
+} // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_SPACE_HPP
+#undef THROW_RUNTIME
+
+#endif // TPETRA_DETAILS_SPACEs_HPP
+

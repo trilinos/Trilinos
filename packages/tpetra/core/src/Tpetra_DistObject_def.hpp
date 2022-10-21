@@ -60,7 +60,7 @@
 #include <memory>
 #include <sstream>
 
-#include "Tpetra_Spaces.hpp"
+#include "Tpetra_Details_Spaces.hpp"
 #include <execinfo.h> // DELETEME debug only
 
 namespace Tpetra {
@@ -1736,11 +1736,11 @@ namespace Tpetra {
     const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
 
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(space, execution_space());
+      Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
     }
     copyAndPermute(a, b, c, d, CM); // default instance
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+      Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
     }
   }
 
@@ -1786,11 +1786,11 @@ namespace Tpetra {
     const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
 
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(space, execution_space());
+      Details::Spaces::exec_space_wait(space, execution_space());
     }
     packAndPrepare(source, exportLIDs, exports, numPacketsPerLID, constantNumPackets); // default instance
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+      Details::Spaces::exec_space_wait(execution_space(), space);
     }
   }
 
@@ -1854,11 +1854,11 @@ namespace Tpetra {
     const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
 
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(space, execution_space());
+      Details::Spaces::exec_space_wait(space, execution_space());
     }
     unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, CM); // default instance
     if (instanceIsNotDefault) {
-      Tpetra::Spaces::exec_space_wait(execution_space(), space);
+      Details::Spaces::exec_space_wait(execution_space(), space);
     }
   }
 

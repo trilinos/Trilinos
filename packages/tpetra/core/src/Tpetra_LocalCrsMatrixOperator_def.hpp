@@ -123,8 +123,8 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
   }
   else
   {
-    std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", lcrs::apply "
-                << " y[" << Y.extent(0) << "] = A[" << A_->numRows() <<"," << A_->numCols() << "] * x[" << X.extent(0) << "]\n";
+    // std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", lcrs::apply "
+    //             << " y[" << Y.extent(0) << "] = A[" << A_->numRows() <<"," << A_->numCols() << "] * x[" << X.extent(0) << "]\n";
     KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
   }
 }
