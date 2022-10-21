@@ -210,13 +210,17 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-TRIBITS_ADD_LIBRARY(
-  muelu-adapters
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS muelu
-  ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
-  )
+IF ("${SOURCES}" STREQUAL "")
+  MESSAGE(STATUS "no adapters enabled, skipping generation of the muelu-adapters library")
+ELSE()
+  TRIBITS_ADD_LIBRARY(
+    muelu-adapters
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS muelu
+    ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
+    )
+ENDIF()
 
 # Set linker language explicitly for CUDA builds.
 set_target_properties(
