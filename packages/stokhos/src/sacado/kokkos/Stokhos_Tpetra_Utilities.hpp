@@ -276,7 +276,6 @@ namespace Stokhos {
 
     KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
-    const size_t ncols = kokkos_matrix.numCols();
     typedef GetScalarMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
     typedef typename MeanFunc::MeanViewType KokkosMeanMatrixValuesType;
     MeanFunc meanfunc(matrix_values);
