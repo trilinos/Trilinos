@@ -58,6 +58,11 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
 
+// Use new cuSPARSE SpMv/SpMM functions only in CUDA 11 or greater.
+// (while they exist in some versions of CUDA 10, they appear to not always
+// product correct results).
+#define USE_NEW_SPMV (CUSPARSE_VERSION >= 11000)
+
 namespace Stokhos {
 
 class CudaSparseSingleton {
@@ -123,7 +128,7 @@ public:
     const int n = A.graph.row_map.extent(0) - 1 ;
     const int nz = A.graph.entries.extent(0);
 
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -207,7 +212,7 @@ public:
     const int n = A.graph.row_map.extent(0) - 1 ;
     const int nz = A.graph.entries.extent(0);
 
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -307,7 +312,7 @@ public:
     }
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -522,7 +527,7 @@ public:
     }
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -626,7 +631,7 @@ public:
     const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -720,7 +725,7 @@ public:
     const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -901,7 +906,7 @@ public:
     }
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
@@ -1012,7 +1017,7 @@ public:
     }
 
     // Sparse matrix-times-multivector
-#if CUSPARSE_VERSION >= 10300
+#if USE_NEW_SPMV
     using offset_type = typename matrix_type::graph_type::size_type;
     using entry_type  = typename matrix_type::graph_type::data_type;
     const cusparseIndexType_t myCusparseOffsetType =
