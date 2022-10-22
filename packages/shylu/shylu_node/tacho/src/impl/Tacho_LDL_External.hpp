@@ -91,15 +91,18 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
         perm[i] = i;
       for (ordinal_type i = 0; i < m; ++i) {
         if (ipiv[i] < 0) {
-          const bool is_first = (i + 1) < m ? (ipiv[i + 1] == ipiv[i]) : false;
-          if (is_first) {
+          {
+            // first pivot
             ipiv[i] = 0; /// invalidate this pivot
             fpiv[i] = 0;
 
             D(i, 0) = A(i, i);
             D(i, 1) = A(i + 1, i); /// symmetric
             A(i, i) = one;
-          } else {
+          }
+          {
+            // second pivot
+            i++;
             const ordinal_type fla_pivot = -ipiv[i] - i - 1;
             fpiv[i] = fla_pivot;
             if (fla_pivot) {
