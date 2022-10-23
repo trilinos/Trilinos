@@ -50,9 +50,7 @@ if(WIN32 AND TPL_ENABLE_MPI)
   global_set(TPL_MPI_LIBRARIES ${MPI_LIBRARIES})
 endif()
 
-tribits_tpl_find_include_dirs_and_libraries(
-    MPI
-    REQUIRED_HEADERS mpi.h)
+tribits_tpl_find_include_dirs_and_libraries(MPI)
 
 # NOTE: Above, we need to generate the MPI::all_libs target and the
 # MPIConfig.cmake file that will also provide the MPI::all_libs target.
