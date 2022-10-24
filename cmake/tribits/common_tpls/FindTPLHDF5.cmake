@@ -4,17 +4,18 @@
 
 if (Netcdf_ALLOW_MODERN)
 
-  #set(minimum_modern_HDF5_version 4.7.4)
+  set(minimum_modern_HDF5_version 1.13.2)
   print_var(Netcdf_ALLOW_MODERN)
   message("-- Using find_package(HDF5 ${minimum_modern_HDF5_version} CONFIG) ...")
   find_package(HDF5  ${minimum_modern_HDF5_version}  CONFIG)
   if (HDF5_FOUND)
     message("-- Found HDF5_CONFIG=${HDF5_CONFIG}")
     message("-- Generating Netcdf::all_libs and NetcdfConfig.cmake")
+    message("-- HDF5_EXPORT_LIBRARIES=${HDF5_EXPORT_LIBRARIES}")
     tribits_extpkg_create_imported_all_libs_target_and_config_file(
       HDF5
       INNER_FIND_PACKAGE_NAME  HDF5
-      IMPORTED_TARGETS_FOR_ALL_LIBS   HDF5::HDF5)
+      IMPORTED_TARGETS_FOR_ALL_LIBS   ${HDF5_EXPORT_LIBRARIES})
   endif()
 
 endif()
