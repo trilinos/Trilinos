@@ -46,6 +46,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "Tpetra_Core.hpp"
+#include "Tpetra_Details_spmv.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -964,6 +965,10 @@ namespace Tpetra {
            const OffsetDeviceViewType &offRankOffsets) const {
 
       typedef OffRankRowViewer<OffsetDeviceViewType> RowViewer;
+
+#if 1
+      Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
+#else
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
           typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
@@ -992,6 +997,7 @@ namespace Tpetra {
         default:
           throw std::runtime_error("unexpected Teuchos::ETransp mode in off-rank SpMV");
       }
+#endif
     }
 
     /*! \brief
@@ -1015,6 +1021,10 @@ namespace Tpetra {
            const mv_scalar_type beta,
            const OffsetDeviceViewType &offRankOffsets) const {
       typedef OnRankRowViewer<OffsetDeviceViewType> RowViewer;
+
+#if 1
+      Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
+#else
       switch(mode) {
         case Teuchos::ETransp::TRANS: {
           typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
@@ -1042,6 +1052,7 @@ namespace Tpetra {
         default:
           throw std::runtime_error("unexpected Teuchos::ETransp mode in on-rank SpMV");
       }
+#endif
     }
 
 
