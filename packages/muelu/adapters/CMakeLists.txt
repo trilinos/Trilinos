@@ -62,6 +62,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
      tpetra/MueLu_CreateTpetraPreconditioner.hpp
      tpetra/MueLu_TpetraOperator_decl.hpp
      tpetra/MueLu_TpetraOperator_def.hpp
+     tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
    )
 
    IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
