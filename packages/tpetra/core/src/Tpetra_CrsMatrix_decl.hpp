@@ -425,7 +425,6 @@ namespace Tpetra {
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    // public Details::SpaceManager2
     public Details::SpaceUser
   {
   public:

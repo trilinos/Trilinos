@@ -4708,17 +4708,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
     typedef typename Node::execution_space exec_space;
 
-#if 0
-    exec_space onRankSpace = 
-      // Tpetra::Spaces::get<exec_space, Tpetra::Details::Spaces::Priority::low>();
-      space_instance<exec_space, Tpetra::Details::Spaces::Priority::low>();
-    exec_space offRankSpace = 
-      // Tpetra::Spaces::get<exec_space, Tpetra::Details::Spaces::Priority::high>();
-      space_instance<exec_space, Tpetra::Details::Spaces::Priority::high>();
-#endif
     exec_space defaultSpace;
-
-
     Teuchos::RCP<const exec_space> onRankSpace = 
       space_instance<exec_space, Tpetra::Details::Spaces::Priority::low>();
     Teuchos::RCP<const exec_space> offRankSpace = 
