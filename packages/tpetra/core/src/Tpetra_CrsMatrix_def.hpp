@@ -4708,13 +4708,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
     typedef typename Node::execution_space exec_space;
 
+#if 0
     exec_space onRankSpace = 
       // Tpetra::Spaces::get<exec_space, Tpetra::Details::Spaces::Priority::low>();
       space_instance<exec_space, Tpetra::Details::Spaces::Priority::low>();
     exec_space offRankSpace = 
       // Tpetra::Spaces::get<exec_space, Tpetra::Details::Spaces::Priority::high>();
       space_instance<exec_space, Tpetra::Details::Spaces::Priority::high>();
+#endif
     exec_space defaultSpace;
+
+
+    Teuchos::RCP<const exec_space> onRankSpace = 
+      space_instance<exec_space, Tpetra::Details::Spaces::Priority::low>();
+    Teuchos::RCP<const exec_space> offRankSpace = 
+      space_instance<exec_space, Tpetra::Details::Spaces::Priority::high>();
 
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
@@ -4835,15 +4843,15 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     */
 
       // make sure other incoming tpetra operations are done before local SpMV is started
-    Details::Spaces::exec_space_wait(defaultSpace, onRankSpace);
+    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
     if (mustExport) {
-      this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
+      this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
     } else {
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
-        this->localApplyOnRank(onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_in, ...)\n";
-        this->localApplyOnRank(onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
+        this->localApplyOnRank(*onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     } 
 
@@ -4857,9 +4865,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport/endImport");
       // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
       // make sure other incoming tpetra operations are done before import is started
-      Details::Spaces::exec_space_wait(defaultSpace, offRankSpace);
-      X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
-      X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, offRankSpace);
+      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
+      X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
+      X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       // X_colMapNonConst->doImport(X_in, *importer, INSERT);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     } 
@@ -4874,8 +4882,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
 
-      Details::Spaces::exec_space_wait(onRankSpace, defaultSpace); // wait for local SpMV
-      Details::Spaces::exec_space_wait(offRankSpace, defaultSpace); // wait for import
+      Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
+      Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
       // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_rowmap, ...)\n";
       this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       {
@@ -4901,14 +4909,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        Details::Spaces::exec_space_wait(onRankSpace, defaultSpace); // wait for local SpMV
-        Details::Spaces::exec_space_wait(offRankSpace, defaultSpace); // wait for import
+        Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
+        Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
         this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       } else {
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-        Details::Spaces::exec_space_wait(onRankSpace, defaultSpace); // wait for local SpMV
-        Details::Spaces::exec_space_wait(offRankSpace, defaultSpace); // wait for import
+        Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
+        Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
         // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_in, ...)\n";
         this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       }
@@ -5475,7 +5483,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  localApplyOffRank (typename Node::execution_space &execSpace,
+  localApplyOffRank (const typename Node::execution_space &execSpace,
                      const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                      MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
                      const Teuchos::ETransp mode,
@@ -5550,7 +5558,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  localApplyOnRank (typename Node::execution_space &execSpace,
+  localApplyOnRank (const typename Node::execution_space &execSpace,
                     const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
                     const Teuchos::ETransp mode,

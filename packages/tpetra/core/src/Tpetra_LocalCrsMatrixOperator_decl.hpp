@@ -953,7 +953,7 @@ namespace Tpetra {
     */ 
     template<typename OffsetDeviceViewType>
     void
-    applyRemoteColumns (execution_space &execSpace,
+    applyRemoteColumns (const execution_space &execSpace,
            Kokkos::View<const mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
            Kokkos::View<mv_scalar_type**, array_layout,
@@ -1005,7 +1005,7 @@ namespace Tpetra {
     */ 
     template<typename OffsetDeviceViewType>
     void
-    applyLocalColumns (execution_space &execSpace,
+    applyLocalColumns (const execution_space &execSpace,
            Kokkos::View<const mv_scalar_type**, array_layout,
              device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
            Kokkos::View<mv_scalar_type**, array_layout,

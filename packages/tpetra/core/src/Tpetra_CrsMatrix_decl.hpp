@@ -425,7 +425,8 @@ namespace Tpetra {
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public Details::SpaceManager2
+    // public Details::SpaceManager2
+    public Details::SpaceUser
   {
   public:
     //! @name Typedefs
@@ -2870,7 +2871,7 @@ public:
     with communication.
     */
     void
-    localApplyOnRank ( typename Node::execution_space &execSpace,
+    localApplyOnRank ( const typename Node::execution_space &execSpace,
                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                 MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -2885,7 +2886,7 @@ public:
         of A corresponding to off-rank X entries (X entries that will be imported).
     */
     void
-    localApplyOffRank (typename Node::execution_space &execSpace,
+    localApplyOffRank (const typename Node::execution_space &execSpace,
                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                 MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,

@@ -25,7 +25,10 @@ public:
 
     SpaceSlot() {
         for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
-            instances_[i] = nullptr; // get RCPs from instance manager
+            // retrieve an RCP from the global instance manager
+            instances_[i] = Spaces::space_instance<execution_space>(
+                static_cast<Spaces::Priority>(i)
+            );
         }
     }
 

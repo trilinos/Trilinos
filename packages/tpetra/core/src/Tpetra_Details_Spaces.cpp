@@ -1,26 +1,39 @@
 #include "Tpetra_Details_Spaces.hpp"
 
 #include <vector>
-#include <iostream>
+#include <sstream>
 
 namespace Tpetra {
 namespace Details {
 namespace Spaces {
 
 #ifdef KOKKOS_ENABLE_CUDA
-/*extern*/ CudaPriorityRange cudaPriorityRange;
-/*extern*/ cudaEvent_t execSpaceWaitEvent; // see exec_space_wait
-#endif
 
-/*extern*/ bool initialized = false;
+// cuda has default stream priority 0
+CudaInfo::CudaInfo() : initialized_(false), mediumPrio_(0) {}
+
+/*extern*/ CudaInfo cudaInfo;
+#endif
 
 void lazy_init() {
-    if (initialized) { return; }
 #ifdef KOKKOS_ENABLE_CUDA
-    CUDA_RUNTIME(cudaEventCreateWithFlags(&execSpaceWaitEvent, cudaEventDisableTiming));
-    CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaPriorityRange.low, &cudaPriorityRange.high));
+    if (!cudaInfo.initialized_) {
+        cudaInfo.initialized_ = true;
+        CUDA_RUNTIME(cudaEventCreateWithFlags(&cudaInfo.execSpaceWaitEvent_, cudaEventDisableTiming));
+        CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaInfo.lowPrio_, &cudaInfo.highPrio_));
+
+        // lower numbers are higher priorities
+        if (!(cudaInfo.lowPrio_ >= cudaInfo.mediumPrio_ && cudaInfo.mediumPrio_ >= cudaInfo.highPrio_)) {
+            std::stringstream ss;
+            ss << "CUDA stream priority does not follow assumptions."
+               << " low=" << cudaInfo.lowPrio_
+               << " medium=" << cudaInfo.mediumPrio_
+               << " high=" << cudaInfo.highPrio_
+               << " Please report this to the Tptera developers.";
+            throw std::runtime_error(ss.str());
+        }
+    }
 #endif
-    initialized = true;
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -31,6 +44,12 @@ void lazy_init() {
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
 /*extern*/ InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+/*extern*/ InstanceLifetimeManager<Kokkos::OpenMP> HIPSpaces;
+#endif
+#ifdef KOKKOS_ENABLE_SYCL
+/*extern*/ InstanceLifetimeManager<Kokkos::OpenMP> SYCLSpaces;
 #endif
 
 } // namespace Spaces
