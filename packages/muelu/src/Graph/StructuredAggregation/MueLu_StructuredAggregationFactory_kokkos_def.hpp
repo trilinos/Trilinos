@@ -206,7 +206,7 @@ namespace MueLu {
                                                                    coarseRate));
 
     *out << "The index manager has now been built" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
+    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getLocalNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
                                "The local number of elements in the graph's map is not equal to "

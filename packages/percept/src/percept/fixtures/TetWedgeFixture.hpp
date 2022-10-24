@@ -53,8 +53,9 @@
       void populate();
 
       const int m_spatial_dimension;
-      stk::mesh::MetaData m_metaData;
-      stk::mesh::BulkData m_bulkData;
+      std::shared_ptr<stk::mesh::BulkData> m_bulkDataPtr;
+      stk::mesh::BulkData& m_bulkData;
+      stk::mesh::MetaData& m_metaData;
 
       stk::mesh::Part & m_block_wedge;
       stk::mesh::Part & m_block_tet;
@@ -63,10 +64,10 @@
       stk::mesh::Part * m_sideset_tri;
       stk::mesh::Part * m_sideset_tri_subset;
 
-      CoordinatesFieldType & m_coordinates_field;
-      CoordinatesFieldType & m_centroid_field;
-      ScalarFieldType & m_temperature_field;
-      ScalarFieldType & m_volume_field;
+      CoordinatesFieldType * m_coordinates_field;
+      CoordinatesFieldType * m_centroid_field;
+      ScalarFieldType * m_temperature_field;
+      ScalarFieldType * m_volume_field;
     };
 
     bool verifyMesh( const TetWedgeFixture & mesh );

@@ -321,43 +321,6 @@ class MultiVector
     using host_execution_space = typename dual_view_type::host_mirror_space;
     using dev_execution_space  = typename dual_view_type::t_dev::execution_space;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
-    ///          only valid as long as the multivector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
-                                typename dual_view_type::t_dev_um,
-                                typename dual_view_type::t_host_um>::type
-    getLocalView() const
-    {
-        if(std::is_same<
-                      typename host_execution_space::memory_space,
-                      typename TargetDeviceType::memory_space
-           >::value) 
-        {
-            return getHostLocalView();
-        } else {
-            return getDeviceLocalView();
-        }
-    }    
-
-
-    typename dual_view_type::t_host_um getHostLocalView ()  const 
-    {
-      return getHostLocalView(Access::ReadWrite);
-    }
-
-
-    typename dual_view_type::t_dev_um  getDeviceLocalView() const 
-    {
-      return getDeviceLocalView(Access::ReadWrite);
-    }
-
-#endif
-
     virtual typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct)  const
     {
       throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));

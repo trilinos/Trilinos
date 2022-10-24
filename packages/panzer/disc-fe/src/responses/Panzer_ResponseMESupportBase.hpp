@@ -47,10 +47,13 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "PanzerDiscFE_config.hpp"
+#ifdef PANZER_HAVE_EPETRA
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Operator.h"
+#endif
 
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -69,16 +72,18 @@ public:
 
    virtual ~ResponseMESupportBase() {}
 
+#ifdef PANZER_HAVE_EPETRA
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
    //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
    virtual Teuchos::RCP<const Epetra_Map> getMap() const = 0;
 
-   /** Set the vector (to be filled) for this response. This must be 
+   /** Set the vector (to be filled) for this response. This must be
      * constructed from the vector space returned by <code>getMap</code>.
      */
    virtual void setVector(const Teuchos::RCP<Epetra_Vector> & destVec) = 0;
+#endif
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
@@ -86,7 +91,7 @@ public:
    //! Get the vector space for this response, vector space is constructed lazily.
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getVectorSpace() const = 0;
 
-   /** Set the vector (to be filled) for this response. This must be 
+   /** Set the vector (to be filled) for this response. This must be
      * constructed from the vector space returned by <code>getVectorSpace</code>.
      */
    virtual void setVector(const Teuchos::RCP<Thyra::VectorBase<double> > & destVec) = 0;
@@ -104,19 +109,21 @@ public:
      : ResponseBase(responseName) {}
 
    virtual ~ResponseMESupportBase() {}
- 
+
    //! Does this response support derivative evaluation?
    virtual bool supportsDerivative() const = 0;
 
+#ifdef PANZER_HAVE_EPETRA
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
    //! Get the <code>Epetra_MultiVector</code> for this response, map is constructed lazily.
    virtual Teuchos::RCP<Epetra_MultiVector> buildEpetraDerivative() const = 0;
 
-   /** Set the derivative (to be filled) for this response. 
+   /** Set the derivative (to be filled) for this response.
      */
    virtual void setDerivative(const Teuchos::RCP<Epetra_MultiVector> & derivative) = 0;
+#endif
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
@@ -124,7 +131,7 @@ public:
    //! Get an <code>Epetra_Operator</code> for this response, map is constructed lazily.
    virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const = 0;
 
-   /** Set the derivative (to be filled) for this response. This must be 
+   /** Set the derivative (to be filled) for this response. This must be
      * constructed from the vector space returned by <code>getMap</code>.
      */
    virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) = 0;
@@ -143,6 +150,7 @@ public:
 
    virtual ~ResponseMESupportBase() {}
 
+#ifdef PANZER_HAVE_EPETRA
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
@@ -153,6 +161,7 @@ public:
      * constructed from the vector space returned by <code>getMap</code>.
      */
    virtual void setVector(const Teuchos::RCP<Epetra_MultiVector> & destVec) = 0;
+#endif
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
@@ -179,7 +188,7 @@ public:
      : ResponseBase(responseName) {}
 
    virtual ~ResponseMESupportBase() {}
- 
+
    //! Does this response support derivative evaluation?
    virtual bool supportsDerivative() const = 0;
 
@@ -189,7 +198,7 @@ public:
    //! Get an <code>Epetra_Operator</code> for this response, map is constructed lazily.
    virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const = 0;
 
-   /** Set the derivative (to be filled) for this response. This must be 
+   /** Set the derivative (to be filled) for this response. This must be
      * constructed from the vector space returned by <code>getMap</code>.
      */
    virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) = 0;
@@ -202,6 +211,6 @@ private:
 
 #endif
 
-} 
+}
 
 #endif

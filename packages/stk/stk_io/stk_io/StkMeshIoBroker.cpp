@@ -34,72 +34,62 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/stk_config.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_util/environment/Env.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
-#include <assert.h>                                  // for assert
-#include <stdlib.h>                                  // for exit, etc
+#include <cassert>                                   // for assert
 #include <string.h>                                  // for memcpy
+#include <algorithm>                                 // for max, sort
 #include <cstdint>                                   // for int64_t
-#include <iostream>                                  // for operator<<, etc
-#include <iterator>
+#include <iostream>                                  // for operator<<, basi...
 #include <limits>                                    // for numeric_limits
-#include <map>
-#include <stdexcept>                                 // for runtime_error
-#include <stk_io/IOHelpers.hpp>
+#include <map>                                       // for _Rb_tree_iterator
+#include <memory>                                    // for make_shared, all...
+#include <set>                                       // for set
+#include <stk_io/IOHelpers.hpp>                      // for internal_read_gl...
 #include <stk_io/InputFile.hpp>                      // for InputFile
-#include <stk_io/OutputFile.hpp>                     // for InputFile
-#include <stk_io/IossBridge.hpp>                     // for FieldAndName, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <stk_mesh/base/SideSetUtil.hpp>
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
-#include <utility>                                   // for pair, make_pair
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_DBUsage.h"
+#include <stk_io/IossBridge.hpp>                     // for db_api_int_size
+#include <stk_io/OutputFile.hpp>                     // for OutputFile
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData, BulkDa...
+#include <stk_mesh/base/Comm.hpp>                    // for comm_mesh_counts
+#include <stk_mesh/base/FEMHelpers.hpp>              // for get_max_id_on_lo...
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData, entity...
+#include <stk_mesh/base/SideSetUtil.hpp>             // for toggle_sideset_u...
+#include <stk_util/environment/FileUtils.hpp>        // for filename_substit...
+#include <stk_util/util/ReportHandler.hpp>           // for ThrowErrorMsgIf
+#include <utility>                                   // for pair, move, make...
+#include "Ioss_DBUsage.h"                            // for DB_APPEND
 #include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
+#include "Ioss_EntityType.h"                         // for ELEMENTBLOCK
+#include "Ioss_Field.h"                              // for Field, Field::Ba...
 #include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_IOFactory.h"                          // for IOFactory
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
+#include "Ioss_IOFactory.h"                          // for NameList
 #include "Ioss_ParallelUtils.h"                      // for ParallelUtils
 #include "Ioss_Property.h"                           // for Property
 #include "Ioss_PropertyManager.h"                    // for PropertyManager
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
-#include "Ioss_State.h"
+#include "Ioss_Region.h"                             // for Region, Coordina...
 #include "Ioss_VariableType.h"                       // for VariableType
-#include "ProcessSetsOrBlocks.hpp"
-#include "SidesetTranslator.hpp"
-#include "StkIoUtils.hpp"
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
-#include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/SidesetUpdater.hpp"
+#include "ProcessSetsOrBlocks.hpp"                   // for process_edge_blocks
+#include "StkIoUtils.hpp"                            // for IossBlockMembership
+#include "Teuchos_RCP.hpp"                           // for RCP::operator->
+#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose
+#include "stk_io/Heartbeat.hpp"                      // for Heartbeat, Heart...
+#include "stk_io/MeshField.hpp"                      // for MeshField, MeshF...
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
-#include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_mesh/base/FieldParallel.hpp"           // for communicate_fiel...
 #include "stk_mesh/base/FieldState.hpp"              // for FieldState
 #include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
-#include "stk_util/parallel/ParallelReduceBool.hpp"
-#include "stk_util/util/ParameterList.hpp"           // for Type, etc
-#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
-#include "stk_util/util/string_case_compare.hpp"
+#include "stk_mesh/base/Selector.hpp"                // for Selector
+#include "stk_mesh/base/SideSetEntry.hpp"            // for SideSet
+#include "stk_mesh/base/SidesetUpdater.hpp"          // for SidesetUpdater
+#include "stk_mesh/base/Types.hpp"                   // for FieldVector, Ent...
+#include "stk_mesh/base/MeshBuilder.hpp"
+#include "stk_topology/topology.hpp"                 // for operator++, topo...
+#include "stk_util/parallel/Parallel.hpp"            // for parallel_machine...
+#include "stk_util/parallel/ParallelReduce.hpp"      // for all_reduce_max
+#include "stk_util/parallel/ParallelReduceBool.hpp"  // for is_true_on_any_proc
+#include "stk_util/util/ParameterList.hpp"           // for Parameter
+namespace stk { namespace mesh { class FieldDataManager; } }
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -158,7 +148,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -169,7 +160,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -220,6 +212,22 @@ stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field() const
     return * coord_field;
 }
 
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks() const
+{
+  return get_filter_empty_input_entity_blocks(m_activeMeshIndex);
+}
+
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks(size_t input_file_index) const
+{
+  validate_input_file_index(input_file_index);
+  auto ioss_input_region = m_inputFiles[input_file_index]->get_input_io_region();
+
+  bool retainEmptyBlocks = (ioss_input_region->get_assemblies().size() > 0);
+  const Ioss::PropertyManager &properties = ioss_input_region->get_database()->get_property_manager();
+  Ioss::Utils::check_set_bool_property(properties, "RETAIN_EMPTY_BLOCKS", retainEmptyBlocks);
+  return !retainEmptyBlocks;
+}
+
 size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
 {
     auto input_file = Teuchos::rcp(new InputFile(ioss_input_region));
@@ -231,7 +239,7 @@ size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_
 
 void StkMeshIoBroker::create_sideset_observer()
 {
-    ThrowRequireMsg( !Teuchos::is_null(m_bulkData), "Bulk data not initialized");
+    ThrowRequireMsg( !is_bulk_data_null(), "Bulk data not initialized");
     if (!bulk_data().has_observer_type<stk::mesh::SidesetUpdater>()) {
         stk::mesh::Selector activeSelector = get_active_selector();
         if (activeSelector == stk::mesh::Selector()) {
@@ -239,39 +247,50 @@ void StkMeshIoBroker::create_sideset_observer()
         }
 
         if(bulk_data().synchronized_count() > 0) {
-          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         } else {
-          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         }
     }
 }
 
-void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( !Teuchos::is_null(m_bulkData),
+    ThrowErrorMsgIf( m_bulkData != nullptr,
                      "Bulk data already initialized" );
     m_bulkData = arg_bulk_data;
 
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
+    if (m_metaData == nullptr) {
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto pointerWeWontDelete){});
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     m_communicator = m_bulkData->parallel();
     create_sideset_observer();
 }
 
-void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( Teuchos::is_null(m_bulkData),
+    ThrowErrorMsgIf( m_bulkData == nullptr,
                      "There is  no bulk data to replace." );
-    ThrowErrorMsgIf( Teuchos::is_null(m_metaData),
+    ThrowErrorMsgIf( m_metaData == nullptr,
                      "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
 
-    stk::mesh::MetaData &new_meta_data = arg_bulk_data->mesh_meta_data();
-    ThrowErrorMsgIf( &(*m_metaData) != &new_meta_data,
+    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
+    ThrowErrorMsgIf( m_metaData.get() != new_meta_data.get(),
                      "Meta data for both new and old bulk data must be the same." );
 
     m_bulkData = arg_bulk_data;
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
+    }
+
     create_sideset_observer();
 }
 
@@ -373,7 +392,7 @@ void StkMeshIoBroker::create_ioss_region()
 
 void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
 {
-    ThrowErrorMsgIf(!Teuchos::is_null(m_metaData),
+    ThrowErrorMsgIf(!is_meta_data_null(),
                     "There meta data associated with this StkMeshIoBroker has already been created. "
                     "It is not permissible to set the rank_name_vector() at this time.");
 
@@ -459,8 +478,12 @@ void StkMeshIoBroker::create_input_mesh()
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
     // See if meta data is null, if so, create a new one...
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcp(new stk::mesh::MetaData());
+    if (is_meta_data_null()) {
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData());
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
@@ -470,11 +493,22 @@ void StkMeshIoBroker::create_input_mesh()
         initialize_spatial_dimension(meta_data(), spatial_dimension, m_rankNames);
     }
 
+    TopologyErrorHandler handler;
+    if(get_filter_empty_input_entity_blocks()) {
+      handler = [](stk::mesh::Part &part) {
+        std::ostringstream msg ;
+        msg << "\n\nERROR: Entity Block " << part.name() << " has invalid topology\n\n";
+        throw std::runtime_error( msg.str() );
+      };
+    } else {
+      handler = [](stk::mesh::Part &part) { };
+    }
+
     process_nodeblocks(*region,    meta_data());
-    process_elementblocks(*region, meta_data());
+    process_elementblocks(*region, meta_data(), handler);
     process_sidesets(*region,      meta_data());
-    process_face_blocks(*region,   meta_data());
-    process_edge_blocks(*region,   meta_data());
+    process_face_blocks(*region,   meta_data(), handler);
+    process_edge_blocks(*region,   meta_data(), handler);
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
         process_nodesets(*region,  meta_data());
@@ -659,8 +693,8 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
     bool ints64bit = db_api_int_size(region) == 8;
     bool processAllInputNodes = true;
-    if(region->property_exists(stk::io::s_process_all_input_nodes)) {
-        processAllInputNodes = region->get_property(stk::io::s_process_all_input_nodes).get_int();
+    if(region->property_exists(stk::io::s_processAllInputNodes)) {
+        processAllInputNodes = region->get_property(stk::io::s_processAllInputNodes).get_int();
     }
 
     if (ints64bit) {
@@ -787,16 +821,10 @@ void StkMeshIoBroker::create_bulk_data()
     ThrowErrorMsgIf (region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
-    // Check if bulk_data is null; if so, create a new one...
-    if (Teuchos::is_null(m_bulkData)) {
-        stk::mesh::FieldDataManager* fieldDataManager = nullptr;
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-                                                               , region->get_database()->util().communicator()
-                                                               , stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-                                                               , false
-#endif
-       , fieldDataManager)));
+    if (is_bulk_data_null()) {
+        set_bulk_data(stk::mesh::MeshBuilder(region->get_database()->util().communicator())
+                                          .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                          .create(meta_data_ptr()));
     }
 }
 
@@ -1246,7 +1274,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
         }
     }
 
-    if (!Teuchos::is_null(m_bulkData) && m_bulkData->supports_large_ids()) {
+    if (!is_bulk_data_null() && m_bulkData->supports_large_ids()) {
         return 8;
     }
 
@@ -1257,7 +1285,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
 int StkMeshIoBroker::check_integer_size_requirements_parallel() const
 {
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         std::vector<size_t> entityCounts;
         stk::mesh::comm_mesh_counts(*m_bulkData, entityCounts);
         for (size_t i=0; i < entityCounts.size(); i++) {
@@ -1268,7 +1296,7 @@ int StkMeshIoBroker::check_integer_size_requirements_parallel() const
     }
 
     // 4. check if the maximum id exceeds INT_MAX.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
         bool foundLargeId = false;
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {

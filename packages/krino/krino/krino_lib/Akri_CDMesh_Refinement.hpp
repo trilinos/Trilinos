@@ -15,6 +15,16 @@
 
 namespace krino {
 
+class InterfaceGeometry;
+
+void
+mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
+      const InterfaceGeometry & interfaceGeometry,
+      const AuxMetaData& aux_meta,
+      const CDFEM_Support & cdfem_support,
+      const std::string & marker_field_name,
+      const int numRefinements);
+
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const InterfaceGeometry & interfaceGeometry,

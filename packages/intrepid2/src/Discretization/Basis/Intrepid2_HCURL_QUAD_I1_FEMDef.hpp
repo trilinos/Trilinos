@@ -209,7 +209,7 @@ namespace Intrepid2 {
                                  1, 3, 0, 1 };
 
       // when exec space is device, this wrapping relies on uvm.
-      //Kokkos::View<ordinal_type[16], typename DT::execution_space> tagView(tags);
+      //Kokkos::View<ordinal_type[16], DT> tagView(tags);
       OrdinalTypeArray1DHost tagView(&tags[0], 16);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:

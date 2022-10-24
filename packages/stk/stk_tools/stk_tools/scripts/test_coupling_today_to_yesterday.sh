@@ -37,7 +37,7 @@ exe 'repo sync >& $LOG_DIR/repo_sync.log'
 exe 'git rebase master'
 
 exe 'assign -p stk_integration_tests*mock >& $LOG_DIR/assign_tests.log'
-exe 'bake4tests.sh --bin-dir $BIN_DIR_CURRENT >& $LOG_DIR/bake_current.log'
+exe 'bake --bin-dir $BIN_DIR_CURRENT --targets-from-tests=assigned.tests >& $LOG_DIR/bake_current.log'
 
 exe 'testrun --allow-multipliers time --bin-dir $BIN_DIR_CURRENT'
 
@@ -55,7 +55,7 @@ exe_with_cleanup() {
   fi
 }
 
-exe_with_cleanup 'bake4tests.sh --bin-dir $BIN_DIR_PREVIOUS >& $LOG_DIR/bake_previous.log'
+exe_with_cleanup 'bake --bin-dir $BIN_DIR_PREVIOUS --targets-from-tests=assigned.tests >& $LOG_DIR/bake_previous.log'
 
 exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_aria $BIN_DIR_TEMP'
 exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_salinas $BIN_DIR_TEMP'

@@ -72,7 +72,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOMultiVector *companion, const bool perturb) const {
     const RCP<const Map> weightMap = weight_.getMap();
-    const size_t nodeNumElements = weightMap->getNodeNumElements();
+    const size_t nodeNumElements = weightMap->getLocalNumElements();
     const RCP<const Teuchos::Comm<int> > & comm = weightMap->getComm();
     int MyPid = comm->getRank(); // TODO:remove the getMap() step
     ++numCalls_;
@@ -227,7 +227,7 @@ namespace MueLu {
       //   2) If the local number of entries in MyWinners are the same, do any entries differ?  If so, repopulate MyWinners and
       //      regenerate winnerMap_.
 
-      ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
+      ArrayView<const GO> myGids = weightMap->getLocalElementList(); //== weightMap->MyGlobalElements(myGids);
       bool realloc=false;
       if (numMyWinners != numMyWinners_ || winnerMap_ == Teuchos::null) {
         // The local number of entries in MyWinners_ have changed since the last invocation, so reallocate myWinners_.

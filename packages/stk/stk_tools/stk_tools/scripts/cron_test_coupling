@@ -4,7 +4,7 @@ source ~/.bashrc
 module load sierra-devel
 
 USERNAME=william
-sierra_code=/scratch/${USERNAME}/code_v
+sierra_code=/scratch/${USERNAME}/code_votd
 
 date_suffix=`date +%F_%H-%M-%S`
 

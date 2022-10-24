@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_FileInfo_h
-#define IOSS_Ioss_FileInfo_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <ctime>       // for time_t
@@ -57,7 +56,7 @@ namespace Ioss {
     //! else: exists on some proc, but not all.
     //! In the last case, a list of processors where it is missing is returned in 'where' on
     //! processor 0.
-    int parallel_exists(MPI_Comm communicator, std::string &where) const;
+    int parallel_exists(Ioss_MPI_Comm communicator, std::string &where) const;
 
     bool exists() const;        //!< returns True if file exists, false if nonexistent
     bool is_readable() const;   //!< Exists and is readable
@@ -67,6 +66,7 @@ namespace Ioss {
     bool is_file() const;    //!< Is a plain file
     bool is_dir() const;     //!< Is a directory
     bool is_symlink() const; //!< Is a symbolic link to a file or directory
+    bool is_nfs() const;     //!< Is on an NFS filesystem
 
     time_t modified() const; //!< Time of last data modification. See 'man stat(2)'
     time_t accessed() const; //!< Time of last access
@@ -93,7 +93,7 @@ namespace Ioss {
     //! This function is used to create the path to an output directory (or history, restart, etc.)
     //!  if it does not exist.  Called by all processors. Will throw exception if path does not
     //!  specify a valid directory or if the path cannot be created.
-    static void create_path(const std::string &filename, MPI_Comm communicator);
+    static void create_path(const std::string &filename, Ioss_MPI_Comm communicator);
     static void create_path(const std::string &filename);
 
   private:
@@ -102,4 +102,3 @@ namespace Ioss {
     bool        readable_{false}; ///< this is used frequently, check on creation
   };
 } // namespace Ioss
-#endif // IOSS_Ioss_FileInfo_h

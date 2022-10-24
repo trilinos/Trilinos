@@ -106,7 +106,16 @@ namespace Belos {
   class CGIterateFailure : public BelosError {public:
     CGIterateFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
+  /** \brief CGPositiveDefiniteFailure is thrown when the the CG 'alpha = p^H*A*P' value
+   * is less than zero, indicating a breakdown in the computation due to roundoff or
+   * a non-positive-definite matrix.
+   *
+   */
+  class CGPositiveDefiniteFailure : public CGIterateFailure {public:
+    CGPositiveDefiniteFailure(const std::string& what_arg) : CGIterateFailure(what_arg)
+    {}};
+
   /** \brief CGIterationOrthoFailure is thrown when the CGIteration object is unable to
    * compute independent direction vectors in the CGIteration::iterate() routine. 
    *

@@ -60,9 +60,6 @@ Umfpack<Matrix,Vector>::Umfpack(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Umfpack,Matrix,Vector>(A, X, B)
-  , nzvals_()                   // initialize to empty arrays
-  , rowind_()
-  , colptr_()
   , is_contiguous_(true)
 {
   data_.Symbolic = NULL;
@@ -108,8 +105,8 @@ Umfpack<Matrix,Vector>::symbolicFactorization_impl()
 
     status = function_map::umfpack_symbolic(
       this->globalNumRows_,this->globalNumCols_,
-      &(this->colptr_[0]), &(this->rowind_[0]),
-      &(this->nzvals_[0]), &(data_.Symbolic), data_.Control, data_.Info);
+      &(this->colptr_view_[0]), &(this->rowind_view_[0]),
+      &(this->nzvals_view_[0]), &(data_.Symbolic), data_.Control, data_.Info);
   }
 
   return status;
@@ -133,8 +130,8 @@ Umfpack<Matrix,Vector>::numericFactorization_impl()
     }
 
     status = function_map::umfpack_numeric(
-      &(this->colptr_[0]),
-      &(this->rowind_[0]), &(this->nzvals_[0]), data_.Symbolic,
+      &(this->colptr_view_[0]),
+      &(this->rowind_view_[0]), &(this->nzvals_view_[0]), data_.Symbolic,
       &(data_.Numeric), data_.Control, data_.Info);
   }
   return status;
@@ -194,7 +191,7 @@ Umfpack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       for(size_t j = 0 ; j < nrhs; j++) {
         int status = function_map::umfpack_solve(
           UmfpackRequest,
-          &(this->colptr_[0]), &(this->rowind_[0]), &(this->nzvals_[0]),
+          &(this->colptr_view_[0]), &(this->rowind_view_[0]), &(this->nzvals_view_[0]),
           &xValues.getRawPtr()[j*i_ld_rhs],
           &bValues.getRawPtr()[j*i_ld_rhs],
           data_.Numeric, data_.Control, data_.Info);
@@ -298,9 +295,9 @@ Umfpack<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   // Only the root image needs storage allocated
   if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    rowind_.resize(this->globalNumNonZeros_);
-    colptr_.resize(this->globalNumCols_ + 1);
+    Kokkos::resize(nzvals_view_,this->globalNumNonZeros_);
+    Kokkos::resize(rowind_view_,this->globalNumNonZeros_);
+    Kokkos::resize(colptr_view_,this->globalNumCols_ + 1);
   }
 
   int nnz_ret = 0;
@@ -313,18 +310,18 @@ Umfpack<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
     if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper<
-      MatrixAdapter<Matrix>,umfpack_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                          nzvals_(), rowind_(),
-                                                          colptr_(), nnz_ret, 
+      Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array>::do_get(this->matrixA_.ptr(),
+                                                          nzvals_view_, rowind_view_,
+                                                          colptr_view_, nnz_ret, 
                                                           ROOTED,
                                                           ARBITRARY,
                                                           this->rowIndexBase_);
     } else {
-      Util::get_ccs_helper<
-      MatrixAdapter<Matrix>,umfpack_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                          nzvals_(), rowind_(),
-                                                          colptr_(), nnz_ret, 
+      Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array>::do_get(this->matrixA_.ptr(),
+                                                          nzvals_view_, rowind_view_,
+                                                          colptr_view_, nnz_ret, 
                                                           CONTIGUOUS_AND_ROOTED,
                                                           ARBITRARY,
                                                           this->rowIndexBase_);

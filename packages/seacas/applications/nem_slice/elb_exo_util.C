@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -269,8 +269,8 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     fmt::print("\ttitle: {}\n", mesh->title);
   }
   fmt::print("\tgeometry dimension: {}\n", mesh->num_dims);
-  fmt::print("\tnumber of nodes: {:L}\tnumber of elements: {:L}\n", mesh->num_nodes,
-             mesh->num_elems);
+  fmt::print("\tnumber of nodes: {}\tnumber of elements: {}\n", fmt::group_digits(mesh->num_nodes),
+             fmt::group_digits(mesh->num_elems));
   fmt::print("\tnumber of element blocks: {}\n", mesh->num_el_blks);
   fmt::print("\tnumber of node sets: {}\tnumber of side sets: {}\n", mesh->num_node_sets,
              mesh->num_side_sets);

@@ -53,8 +53,10 @@ Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother
 InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
+InverseApproximationFactory
 LineDetectionFactory
 LocalPermutationStrategy
+LowPrecisionFactory
 MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory
@@ -79,7 +81,9 @@ RebalanceBlockAcFactory
 RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
+RefMaxwellSmoother
 RegionRFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+RegionRFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ReitzingerPFactory
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
@@ -108,6 +112,8 @@ SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
 TentativePFactory
 TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+MatrixFreeTentativeP_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+MatrixFreeTentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
@@ -115,6 +121,7 @@ TopRAPFactory
 TopSmootherFactory
 TpetraOperator
 TransPFactory
+RfromP_Or_TransP
 TrilinosSmoother
 UnsmooshFactory
 UserPFactory
@@ -130,3 +137,7 @@ ZeroSubBlockAFactory
 ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 NodePartitionInterface - #if defined(HAVE_MPI)
+XpetraOperator
+RefMaxwell
+Maxwell1
+Maxwell_Utils

@@ -10,8 +10,7 @@ INCLUDE_DIRECTORIES(
 
 FILE(GLOB SOURCES src/ex_*.c)
 
-if (${SEACAS_HIDE_DEPRECATED_CODE})
-else()
+if (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
   FILE(GLOB DEP_SOURCES src/deprecated/ex_*.c)
 endif()
 TRIBITS_CONFIGURE_FILE(exodus_config.h)
@@ -52,12 +51,17 @@ endif()
 
 # Many users of the SEACAS installations still want a static exodus library...
 if (SEACASExodus_ENABLE_STATIC)
+   # NOTE: If use `TRIBITS_ADD_LIBRARY` here, then both exodus and exodus_static linked to all executables.
    ADD_LIBRARY(
            exodus_static
            STATIC
            ${SOURCES} ${DEP_SOURCES}
    )
+   target_include_directories(exodus_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+   target_link_libraries(exodus_static PUBLIC Netcdf::all_libs)
    set_property(TARGET exodus_static PROPERTY C_STANDARD 99)
+   # This keeps the library out of the `all_libs` targets...
+   set_target_properties(exodus_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
    set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
    INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
@@ -66,9 +70,9 @@ if (SEACASExodus_ENABLE_STATIC)
    InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
 endif()
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
    # add a target to generate API documentation with Doxygen
-   if(SEACASProj_ENABLE_DOXYGEN)
+   if(Seacas_ENABLE_DOXYGEN)
      find_package(Doxygen)
      if(DOXYGEN_FOUND)
        add_custom_command(TARGET exodus POST_BUILD

@@ -49,63 +49,65 @@ namespace
 //-BEGIN
 TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 1) { return; }
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 1) { return; }
 
-    const std::string restartFileName = "OneGlobalDouble.restart";
-    const std::string timeStepVarName = "timeStep";
-    const double timeStepSize = 1e-6;
-    const double currentTime = 1.0;
+  const std::string restartFileName = "OneGlobalDouble.restart";
+  const std::string timeStepVarName = "timeStep";
+  const double timeStepSize = 1e-6;
+  const double currentTime = 1.0;
 
-    //+ Write restart file with time step size as a global variable
-    {
-        stk::io::StkMeshIoBroker stkIo(communicator);
-	const std::string exodusFileName = "generated:1x1x8";
-	stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-	stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
+  //+ Write restart file with time step size as a global variable
+  {
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    const std::string exodusFileName = "generated:1x1x8";
+    stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
 
-        size_t fileIndex =
-	  stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
-        stkIo.add_global(fileIndex, timeStepVarName, Ioss::Field::REAL);
-        stkIo.begin_output_step(fileIndex, currentTime);
-        stkIo.write_global(fileIndex, timeStepVarName, timeStepSize);
-        stkIo.end_output_step(fileIndex);
-    }
+    size_t fileIndex =
+        stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
+    stkIo.add_global(fileIndex, timeStepVarName, Ioss::Field::REAL);
+    stkIo.begin_output_step(fileIndex, currentTime);
+    stkIo.write_global(fileIndex, timeStepVarName, timeStepSize);
+    stkIo.end_output_step(fileIndex);
+  }
 
-    //+ Read restart file with time step size as a global variable
-    {
-        stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
-        stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
-        stkIo.read_defined_input_fields(currentTime);
-        std::vector<std::string> globalNamesOnFile;
-        stkIo.get_global_variable_names(globalNamesOnFile);
+  //+ Read restart file with time step size as a global variable
+  {
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
+    stkIo.read_defined_input_fields(currentTime);
+    std::vector<std::string> globalNamesOnFile;
+    stkIo.get_global_variable_names(globalNamesOnFile);
 
-        ASSERT_EQ(1u, globalNamesOnFile.size());
-        EXPECT_STRCASEEQ(timeStepVarName.c_str(),
-                         globalNamesOnFile[0].c_str());
-        double timeStepSizeReadFromFile = 0.0;
-	stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
+    ASSERT_EQ(1u, globalNamesOnFile.size());
+    EXPECT_STRCASEEQ(timeStepVarName.c_str(),
+                     globalNamesOnFile[0].c_str());
+    double timeStepSizeReadFromFile = 0.0;
+    stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
 
-        const double epsilon = std::numeric_limits<double>::epsilon();
-        EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, epsilon);
+    const double epsilon = std::numeric_limits<double>::epsilon();
+    EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, epsilon);
 
-	//+ If try to get a global that does not exist, will throw
-	//+ an exception by default...
-	double value = 0.0;
-	EXPECT_ANY_THROW(stkIo.get_global("does_not_exist", value));
-	
-	//+ If the application wants to handle the error instead (without a try/catch),
-	//+ can pass in an optional boolean:
-	bool abort_if_not_found = false;
-	bool found = stkIo.get_global("does_not_exist", value, abort_if_not_found);
-	ASSERT_FALSE(found);
-    }
+    //+ If try to get a global that does not exist, will throw
+    //+ an exception by default...
+    double value = 0.0;
+    EXPECT_ANY_THROW(stkIo.get_global("does_not_exist", value));
 
-    unlink(restartFileName.c_str());
+    //+ If the application wants to handle the error instead (without a try/catch),
+    //+ can pass in an optional boolean:
+    bool abort_if_not_found = false;
+    bool found = stkIo.get_global("does_not_exist", value, abort_if_not_found);
+    ASSERT_FALSE(found);
+  }
+
+  unlink(restartFileName.c_str());
 }
 //-END
 }

@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -12,9 +12,9 @@ C  THIS IS A TEST OF THE INVERTED MAPPING OF AN ELEMENT
 
 C***********************************************************************
 
-      DOUBLE PRECISION AX, BX, CX, DX, AY, BY, CY, DY
-      DOUBLE PRECISION ALPHA, BETA, GAMMA, RAD
-      DOUBLE PRECISION XI, ETA, XI1, ETA1, XI2, ETA2
+      REAL AX, BX, CX, DX, AY, BY, CY, DY
+      REAL ALPHA, BETA, GAMMA, RAD
+      REAL XI, ETA, XI1, ETA1, XI2, ETA2
 
       LOGICAL INSIDE
 
@@ -63,7 +63,7 @@ C            CALL MESSAGE('** ERROR - NEGATIVE RADICAL IN INVMAP **')
             INSIDE = .FALSE.
             GOTO 100
          ENDIF
-         RAD = DSQRT (RAD)
+         RAD = SQRT (RAD)
          ETA1 = (- BETA + RAD) / (2. * ALPHA)
          ETA2 = (- BETA - RAD) / (2. * ALPHA)
 
@@ -87,8 +87,8 @@ C            CALL MESSAGE('** ERROR - NEGATIVE RADICAL IN INVMAP **')
             XI2 = (- AX - (DX * ETA2)) / (BX + (CX * ETA2))
          ENDIF
 
-         D1 = DSQRT (ETA1*ETA1 + XI1*XI1)
-         D2 = DSQRT (ETA2*ETA2 + XI2*XI2)
+         D1 = SQRT (ETA1*ETA1 + XI1*XI1)
+         D2 = SQRT (ETA2*ETA2 + XI2*XI2)
          IF (D1 .LT. D2) THEN
             ETA = ETA1
             XI = XI1

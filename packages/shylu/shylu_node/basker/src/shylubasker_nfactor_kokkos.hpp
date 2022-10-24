@@ -10,7 +10,7 @@
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #endif 
 
 //#include <assert.h>
@@ -425,7 +425,7 @@ namespace Basker
               #endif
 
               #ifdef BASKER_TIME_DETAIL
-              Kokkos::Impl::Timer timer_reach;
+              Kokkos::Timer timer_reach;
               #endif
 
               //Search reach if not yet considered
@@ -456,7 +456,7 @@ namespace Basker
           
 
           #ifdef BASKER_TIME_DETAIL
-          Kokkos::Impl::Timer timer_solve;
+          Kokkos::Timer timer_solve;
           #endif
           
           back_solve<Int,Entry, Exe_Space>
@@ -691,7 +691,7 @@ namespace Basker
     void operator()(const team_member  &thread) const
     {
       #ifdef BASKER_TIME_DETAIL
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       #endif
 
       //Need to wrap around Exe_Space
@@ -875,7 +875,7 @@ namespace Basker
   {
 
     #ifdef BASKER_TIME_NFACTOR
-    Kokkos::Impl::Timer timer_total;
+    Kokkos::Timer timer_total;
     #endif
    
     Int bcol = U.scol;
@@ -944,7 +944,7 @@ namespace Basker
     
  
     #ifdef BASKER_TIME_DETAIL
-    Kokkos::Impl::Timer timer_reach;
+    Kokkos::Timer timer_reach;
     double t_i_reach = 0;
     #endif
 
@@ -967,7 +967,7 @@ namespace Basker
 
         
         #ifdef BASKER_TIME_NFACTOR
-        Kokkos::Impl::Timer timer_l_r;
+        Kokkos::Timer timer_l_r;
         #endif
 
         //if not colored find local reach
@@ -1021,7 +1021,7 @@ namespace Basker
     //printf("kid: %d xnnz: %d \n", kid, xnnz);
     
     #ifdef BASKER_TIME_DETAIL
-    Kokkos::Impl::Timer timer_solve;
+    Kokkos::Timer timer_solve;
     #endif
 
     //call an atomic backsolve
@@ -1037,7 +1037,7 @@ namespace Basker
     #endif
 
     #ifdef BASKER_TIME_NFACTOR
-    Kokkos::Impl::Timer timer_book;
+    Kokkos::Timer timer_book;
     #endif
 
     //count nnz will be need in this column
@@ -1777,7 +1777,7 @@ namespace Basker
 
 
           #ifdef BASKER_TIME_DETAIL
-          Kokkos::Impl::Timer timer_reach;
+          Kokkos::Timer timer_reach;
           #endif
 
 	  for(i = A.col_ptr(k); i < A.col_ptr(k+1); i++)
@@ -1823,7 +1823,7 @@ namespace Basker
           #endif
           
           #ifdef BASKER_TIME_DETAIL
-          Kokkos::Impl::Timer timer_solve;
+          Kokkos::Timer timer_solve;
           #endif
 
           /*
@@ -2114,7 +2114,7 @@ namespace Basker
     void operator()(const team_member &thread) const
     {
       #ifdef BASKER_TIME_DETAIL
-      Kokkos::Impl::Timer timer_sep;
+      Kokkos::Timer timer_sep;
       #endif
 
       //#ifdef BASKER_TIME
@@ -2190,7 +2190,7 @@ namespace Basker
               //--------------------TRI SOLVE-----------------------//
               //check module for all level p
                #ifdef BASKER_TIME_EXTEND
-               Kokkos::Impl::Timer  timer_tri_solve;
+               Kokkos::Timer  timer_tri_solve;
                #endif
               
               //if((kid%(l+1)) == 0)
@@ -2203,7 +2203,7 @@ namespace Basker
                   #endif
 
                   #ifdef BASKER_TIME_DETAIL
-                  Kokkos::Impl::Timer  timer_tri_solve_start;
+                  Kokkos::Timer  timer_tri_solve_start;
                   #endif
              
 
@@ -2263,7 +2263,7 @@ namespace Basker
              
 
                   #ifdef BASKER_TIME_DETAIL
-                  Kokkos::Impl::Timer  timer_tri_solve_fill;
+                  Kokkos::Timer  timer_tri_solve_fill;
                   #endif
              
                   
@@ -2290,7 +2290,7 @@ namespace Basker
                       #endif
 
                       #ifdef BASKER_TIME_DETAIL
-                      Kokkos::Impl::Timer  timer_tri_solve_col;
+                      Kokkos::Timer  timer_tri_solve_col;
                       #endif
               
                       column_tri_solve<Int, Entry, Exe_Space>
@@ -2344,7 +2344,7 @@ namespace Basker
               #endif
 
               #ifdef BASKER_TIME_EXTEND
-              Kokkos::Impl::Timer timer_reduce;
+              Kokkos::Timer timer_reduce;
               #endif
 
               //-----------------REDUCE---------------------///
@@ -2452,7 +2452,7 @@ namespace Basker
               #endif
 
               #ifdef BASKER_TIME_EXTEND
-              Kokkos::Impl::Timer timer_factor;
+              Kokkos::Timer timer_factor;
               #endif
 
               ///-------------Col Factor--------------------//
@@ -2582,7 +2582,7 @@ namespace Basker
 
           
           #ifdef BASKER_TIME_EXTEND
-          Kokkos::Impl::Timer timer_rollback;
+          Kokkos::Timer timer_rollback;
           #endif
 
           if(roll_back)

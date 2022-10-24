@@ -130,6 +130,9 @@ namespace Intrepid2 {
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HVOL_C0_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
+    
+    std::string basisName_;
+
   public:
     using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
@@ -201,7 +204,7 @@ namespace Intrepid2 {
 
     virtual
     const char* getName() const override {
-      return "Intrepid2_HVOL_C0_FEM";
+      return basisName_.c_str();
     }
 
     virtual HostBasisPtr<outputValueType,pointValueType>

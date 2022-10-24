@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_expreval_lexer_hpp
 #define stk_expreval_lexer_hpp
@@ -42,7 +42,7 @@ namespace stk {
 namespace expreval {
 
 template <class T>
-T convert_cast(const std::string &s);
+T convert_cast(const std::string & s);
 
 enum Token {
   TOKEN_PLUS,
@@ -78,41 +78,34 @@ enum Token {
   TOKEN_END
 };
 
-
 class Lexem
 {
 public:
-  Lexem(Token token, const char *from, const char *to)
+  Lexem(Token token, const char * from, const char * to)
     : m_token(token),
       m_value(from, to)
   {}
 
-  Lexem(Token token, const char *value)
+  Lexem(Token token, const char * value)
     : m_token(token),
       m_value(value)
   {}
 
-  Token getToken() const {
-    return m_token;
-  }
+  Token getToken() const { return m_token; }
 
-  const std::string &getString() const {
-    return m_value;
-  }
+  const std::string &getString() const { return m_value; }
 
   template<class T>
-  T getValue() const {
-    return convert_cast<T>(m_value);
-  }
+  T getValue() const { return convert_cast<T>(m_value); }
 
 private:
-  Token			m_token;	
-  std::string		m_value;
+  Token m_token;
+  std::string m_value;
 };
 
 typedef std::vector<Lexem> LexemVector;
 
-LexemVector tokenize(const std::string &expression);
+LexemVector tokenize(const std::string & expression);
 
 } // namespace expreval
 } // namespace stk

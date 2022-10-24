@@ -42,6 +42,15 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
@@ -55,15 +64,15 @@
 
 #include <impl/Kokkos_AnalyzePolicy.hpp>
 #include <Kokkos_CudaSpace.hpp>
+#include <Cuda/Kokkos_Cuda_Error.hpp>  // CUDA_SAFE_CALL
 
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_TaskScheduler.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include <impl/Kokkos_Tags.hpp>
-#include <impl/Kokkos_ExecSpaceInitializer.hpp>
 #include <impl/Kokkos_HostSharedPtr.hpp>
+#include <impl/Kokkos_InitializationSettings.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -109,7 +118,7 @@ struct CudaDispatchProperties {
 ///
 /// An "execution space" represents a parallel execution model.  It tells Kokkos
 /// how to parallelize the execution of kernels in a parallel_for or
-/// parallel_reduce.  For example, the Threads execution space uses Pthreads or
+/// parallel_reduce.  For example, the Threads execution space uses
 /// C++11 threads on a CPU, the OpenMP execution space uses the OpenMP language
 /// extensions, and the Serial execution space executes "parallel" kernels
 /// sequentially.  The Cuda execution space uses NVIDIA's CUDA programming
@@ -183,15 +192,16 @@ class Cuda {
   /// return asynchronously, before the functor completes.  This
   /// method does not return until all dispatched functors on this
   /// device have completed.
-  static void impl_static_fence();
+  static void impl_static_fence(const std::string& name);
 
-  void fence() const;
+  void fence(const std::string& name =
+                 "Kokkos::Cuda::fence(): Unnamed Instance Fence") const;
 
   /** \brief  Return the maximum amount of concurrency.  */
   static int concurrency();
 
   //! Print configuration information to the given output stream.
-  static void print_configuration(std::ostream&, const bool detail = false);
+  void print_configuration(std::ostream& os, bool verbose = false) const;
 
   //@}
   //--------------------------------------------------
@@ -199,18 +209,9 @@ class Cuda {
 
   Cuda();
 
-  Cuda(cudaStream_t stream);
+  Cuda(cudaStream_t stream, bool manage_stream = false);
 
   //--------------------------------------------------------------------------
-  //! \name Device-specific functions
-  //@{
-
-  struct SelectDevice {
-    int cuda_device_id;
-    SelectDevice() : cuda_device_id(0) {}
-    explicit SelectDevice(int id) : cuda_device_id(id) {}
-  };
-
   //! Free any resources being consumed by the device.
   static void impl_finalize();
 
@@ -218,8 +219,7 @@ class Cuda {
   static int impl_is_initialized();
 
   //! Initialize, telling the CUDA run-time library which device to use.
-  static void impl_initialize(const SelectDevice         = SelectDevice(),
-                              const size_t num_instances = 1);
+  static void impl_initialize(InitializationSettings const&);
 
   /// \brief Cuda device architecture of the selected device.
   ///
@@ -246,7 +246,7 @@ class Cuda {
   inline Impl::CudaInternal* impl_internal_space_instance() const {
     return m_space_instance.get();
   }
-  uint32_t impl_instance_id() const noexcept { return 0; }
+  uint32_t impl_instance_id() const noexcept;
 
  private:
   Kokkos::Impl::HostSharedPtr<Impl::CudaInternal> m_space_instance;
@@ -258,22 +258,31 @@ template <>
 struct DeviceTypeTraits<Cuda> {
   /// \brief An ID to differentiate (for example) Serial from OpenMP in Tooling
   static constexpr DeviceType id = DeviceType::Cuda;
+  static int device_id(const Cuda& exec) { return exec.cuda_device(); }
 };
 }  // namespace Experimental
 }  // namespace Tools
 
 namespace Impl {
 
-class CudaSpaceInitializer : public ExecSpaceInitializerBase {
- public:
-  CudaSpaceInitializer()  = default;
-  ~CudaSpaceInitializer() = default;
-  void initialize(const InitArguments& args) final;
-  void finalize(const bool all_spaces) final;
-  void fence() final;
-  void print_configuration(std::ostream& msg, const bool detail) final;
-};
+template <class DT, class... DP>
+struct ZeroMemset<Kokkos::Cuda, DT, DP...> {
+  ZeroMemset(const Kokkos::Cuda& exec_space_instance,
+             const View<DT, DP...>& dst,
+             typename View<DT, DP...>::const_value_type&) {
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemsetAsync(
+        dst.data(), 0,
+        dst.size() * sizeof(typename View<DT, DP...>::value_type),
+        exec_space_instance.cuda_stream()));
+  }
 
+  ZeroMemset(const View<DT, DP...>& dst,
+             typename View<DT, DP...>::const_value_type&) {
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMemset(dst.data(), 0,
+                   dst.size() * sizeof(typename View<DT, DP...>::value_type)));
+  }
+};
 }  // namespace Impl
 }  // namespace Kokkos
 

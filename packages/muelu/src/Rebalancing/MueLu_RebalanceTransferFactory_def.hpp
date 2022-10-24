@@ -243,12 +243,12 @@ namespace MueLu {
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-        LO nodeNumElts = coords->getMap()->getNodeNumElements();
+        LO nodeNumElts = coords->getMap()->getLocalNumElements();
 
         // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
         LO myBlkSize = 0, blkSize = 0;
         if (nodeNumElts > 0)
-          myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
+          myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
         MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter;
@@ -262,7 +262,7 @@ namespace MueLu {
           RCP<const Map> origMap   = coords->getMap();
           GO             indexBase = origMap->getIndexBase();
 
-          ArrayView<const GO> OEntries   = importer->getTargetMap()->getNodeElementList();
+          ArrayView<const GO> OEntries   = importer->getTargetMap()->getLocalElementList();
           LO                  numEntries = OEntries.size()/blkSize;
           ArrayRCP<GO> Entries(numEntries);
           for (LO i = 0; i < numEntries; i++)

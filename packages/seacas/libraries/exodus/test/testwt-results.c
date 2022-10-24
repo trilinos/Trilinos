@@ -39,8 +39,8 @@ int main(int argc, char **argv)
 
   float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
   float  time_value;
-  char * var_names[3];
-  char * title = "This is a test";
+  char  *var_names[3];
+  char  *title = "This is a test";
 
   struct ex_block blocks[10];
 

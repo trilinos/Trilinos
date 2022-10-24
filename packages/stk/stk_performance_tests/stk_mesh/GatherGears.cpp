@@ -59,7 +59,7 @@ namespace {
 void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_centroid)
 {
   using namespace stk::mesh;
-  typedef Field<double,Cartesian> VectorField;
+  typedef Field<double> VectorField;
 
   const MetaData& meta = bulk.mesh_meta_data();
   const unsigned spatial_dim = meta.spatial_dimension();
@@ -67,7 +67,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
   std::vector<double> elem_centroid(spatial_dim, 0);
 
-  const VectorField * coord_field = meta.get_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
+  const VectorField * coord_field = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
   ThrowAssert(coord_field != nullptr);
 
   Selector local = meta.locally_owned_part();
@@ -112,8 +112,8 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
 TEST(gather_gears, gather_gears)
 {
-  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
-      stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
+  stk::mesh::fixtures::simple_fields::GearsFixture fixture(MPI_COMM_WORLD, 1,
+      stk::mesh::fixtures::simple_fields::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
   fixture.meta_data.commit();
 
   double start_time = stk::cpu_time();

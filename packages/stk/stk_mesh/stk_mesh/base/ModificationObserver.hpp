@@ -42,12 +42,26 @@ namespace stk
 namespace mesh
 {
 
+enum ModificationObserverPriority : int {
+  STK_INTERNAL   = 0,
+  STK_TRANSITION = 5,
+  APPLICATION    = 9
+};
+
+
 class ModificationObserver
 {
 public:
+    ModificationObserver()
+      : m_priority(STK_INTERNAL)
+    {}
+
     virtual ~ModificationObserver()
     {
     }
+
+    void set_priority(ModificationObserverPriority priority) { m_priority = priority; }
+    ModificationObserverPriority get_priority() const { return m_priority; }
 
     virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
     {
@@ -113,6 +127,9 @@ public:
     virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
     {
     }
+
+private:
+    ModificationObserverPriority m_priority;
 };
 
 }

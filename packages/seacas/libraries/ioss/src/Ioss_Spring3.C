@@ -1,10 +1,11 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_CodeTypes.h"           // for IntVector
+#include "Ioss_ElementPermutation.h"  // for ElementPermutation
 #include "Ioss_ElementTopology.h"     // for ElementTopology
 #include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_Spring3.h>
@@ -44,8 +45,6 @@ void Ioss::Spring3::factory()
 }
 
 Ioss::Spring3::Spring3() : Ioss::ElementTopology(Ioss::Spring3::name, "Spring_3") {}
-
-Ioss::Spring3::~Spring3() = default;
 
 int Ioss::Spring3::parametric_dimension() const { return 1; }
 int Ioss::Spring3::spatial_dimension() const { return 3; }

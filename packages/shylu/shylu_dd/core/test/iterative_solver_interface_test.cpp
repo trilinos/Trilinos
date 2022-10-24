@@ -126,7 +126,7 @@ int main(int argc, char** argv)
        << x->getGlobalLength() << endl;
 
   cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
 
 
   /*-----------------have_interface-----------------*/
@@ -164,7 +164,7 @@ int main(int argc, char** argv)
        << x->getGlobalLength() << endl;
 
   cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
 
   ShyLU::IterativeSolverInterface<Matrix_t, Vector_t> iterativesolver(A.get(), pLUList.get());
   iterativesolver.solve(b.get(),x.get());

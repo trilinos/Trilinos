@@ -346,13 +346,13 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const =0;
 
     //! Returns the number of matrix rows owned on the calling node.
-    virtual size_t getNodeNumRows() const =0;
+    virtual size_t getLocalNumRows() const =0;
 
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const =0;
 
     //! Returns the local number of entries in this matrix.
-    virtual size_t getNodeNumEntries() const =0;
+    virtual size_t getLocalNumEntries() const =0;
 
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
@@ -370,7 +370,8 @@ namespace Xpetra {
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
      */
-    virtual size_t getNodeMaxNumRowEntries() const =0;
+    virtual size_t getLocalMaxNumRowEntries() const =0;
+
 
     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
     virtual bool isLocallyIndexed() const =0;
@@ -558,10 +559,16 @@ namespace Xpetra {
         return 1;
     }; //TODO: why LocalOrdinal?
 
+
     //! Returns true, if `SetFixedBlockSize` has been called before.
     bool IsFixedBlockSizeSet() const {
       return IsView("stridedMaps");
     };
+
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    virtual LocalOrdinal GetStorageBlockSize() const = 0;
+
 
     // ----------------------------------------------------------------------------------
 
@@ -578,11 +585,6 @@ namespace Xpetra {
     // ----------------------------------------------------------------------------------
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-    /// \brief Access the underlying local Kokkos::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const = 0;
-#endif
     virtual local_matrix_type getLocalMatrixDevice () const = 0;
     virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 #else

@@ -308,6 +308,11 @@ public:
     return input_;
   }
 
+  //! Return achieved residual
+  typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const {
+    return output_.absResid;
+  }
+
 protected:
   static mag_type
   getConvergenceMetric (const mag_type r_norm_new,
@@ -389,6 +394,7 @@ private:
     }
     // See note above about a potential optimization.
     X.update (STS::one (), Delta, STS::one ()); // $X := X_0 + \Delta$
+    output_ = allOutput;
 
     return allOutput;
   }
@@ -415,6 +421,7 @@ protected:
 
 protected:
   SolverInput<SC> input_;
+  SolverOutput<SC> output_;
 
 private:
   Teuchos::RCP<const OP> A_;

@@ -51,7 +51,10 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#endif
 
 #include "user_app_EquationSetFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
@@ -63,7 +66,7 @@ namespace panzer_test_utils {
 
   Teuchos::RCP<panzer::PhysicsBlock> createPhysicsBlock()
   {
-    
+
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList("4");
 
     {
@@ -89,33 +92,33 @@ namespace panzer_test_utils {
     panzer::CellData cd(num_cells,Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >())));
 
     Teuchos::RCP<user_app::MyFactory> eqs_factory = Teuchos::rcp(new user_app::MyFactory);
-    
+
     std::string element_block_id = "eblock_id";
 
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       Teuchos::rcp(new panzer::PhysicsBlock(plist,element_block_id,default_int_order,cd,eqs_factory,gd,false));
-    
+
     return physics_block;
   }
 
   Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >
-  buildModelFactory() 
+  buildModelFactory()
   {
     user_app::MyModelFactory_TemplateBuilder builder;
 
-    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > 
-      model_factory = 
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >
+      model_factory =
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
-    
+
     model_factory->buildObjects(builder);
 
     return model_factory;
   }
 
   Teuchos::RCP<Teuchos::ParameterList> buildModelDescriptors()
-  {    
+  {
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList("Closure Models"));
     {
       p->sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
@@ -133,7 +136,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, getDOFNames)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
     const std::vector<std::string>& dof_names = physics_block->getDOFNames();
@@ -146,10 +149,10 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, getProvidedDOFs)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
-    const std::vector<panzer::StrPureBasisPair>& basis = 
+    const std::vector<panzer::StrPureBasisPair>& basis =
       physics_block->getProvidedDOFs();
 
     TEST_EQUALITY(basis.size(), 2);
@@ -164,10 +167,10 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, getBases)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
-    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& unique_basis = 
+    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& unique_basis =
       physics_block->getBases();
 
     TEST_EQUALITY(unique_basis.size(), 2);
@@ -180,16 +183,16 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, getBaseCellTopology)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
-    
+
     TEST_EQUALITY(physics_block->getBaseCellTopology().getDimension(), 3);
   }
 
   TEUCHOS_UNIT_TEST(physics_block, physicsBlockID)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
     TEST_EQUALITY(physics_block->physicsBlockID(), "4");
@@ -198,22 +201,23 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(physics_block, getCellData)
   {
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
     TEST_EQUALITY(physics_block->cellData().numCells(), 20);
     TEST_EQUALITY(physics_block->cellData().isSide(), false);
   }
 
+#ifdef PANZER_HAVE_EPETRA
   TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::GlobalIndexer> ugi 
+    Teuchos::RCP<panzer::GlobalIndexer> ugi
           = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
     PHX::FieldManager<panzer::Traits> fm;
@@ -226,33 +230,35 @@ namespace panzer {
     physics_block->buildAndRegisterScatterEvaluators(fm, elof, user_data);
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
-      panzer_test_utils::buildModelFactory(); 
+      panzer_test_utils::buildModelFactory();
 
     Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
     physics_block->buildAndRegisterClosureModelEvaluators(fm,*factory,*models, user_data);
   }
+#endif
 
   TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
   {
 
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
-   
+
 
     TEST_EQUALITY(physics_block->elementBlockID(),"eblock_id");
   }
 
+#ifdef PANZER_HAVE_EPETRA
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
   {
 
-    Teuchos::RCP<panzer::GlobalIndexer> ugi 
+    Teuchos::RCP<panzer::GlobalIndexer> ugi
           = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
       panzer_test_utils::createPhysicsBlock();
 
     Teuchos::ParameterList user_data("User Data");
@@ -272,13 +278,13 @@ namespace panzer {
     physics_block->buildAndRegisterScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
-      panzer_test_utils::buildModelFactory(); 
+      panzer_test_utils::buildModelFactory();
 
     Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
     physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Residual>(fm, *factory, *models, user_data);
     physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, *factory, *models, user_data);
   }
-
+#endif
 
 }

@@ -103,7 +103,7 @@ enum MatrixEntityType {
 */
 
 template <typename User, typename UserCoord=User>
-  class MatrixAdapter : public BaseAdapter<User> {
+  class MatrixAdapter : public AdapterWithCoordsWrapper<User, UserCoord> {
 private:
   enum MatrixEntityType primaryEntityType_;
   VectorAdapter<UserCoord> *coordinateInput_;
@@ -123,7 +123,7 @@ public:
   typedef MatrixAdapter<User,UserCoord> base_adapter_t;
 #endif
 
-  enum BaseAdapterType adapterType() const {return MatrixAdapterType;}
+  enum BaseAdapterType adapterType() const override {return MatrixAdapterType;}
 
   // Constructor; sets default primaryEntityType to MATRIX_ROW.
   MatrixAdapter() : primaryEntityType_(MATRIX_ROW),
@@ -338,7 +338,7 @@ public:
    *  \param coordData is a pointer to a VectorAdapter with the user's
    *         coordinate data.
    */
-  void setCoordinateInput(VectorAdapter<UserCoord> *coordData)
+  void setCoordinateInput(VectorAdapter<UserCoord> *coordData) override
   {
     coordinateInput_ = coordData;
     haveCoordinateInput_ = true;
@@ -352,7 +352,7 @@ public:
   /*! \brief Obtain the coordinate data registered by the user.
    *  \return pointer a VectorAdapter with the user's coordinate data.
    */
-  VectorAdapter<UserCoord> *getCoordinateInput() const
+  VectorAdapter<UserCoord> *getCoordinateInput() const override
   {
     return coordinateInput_;
   }
@@ -394,7 +394,7 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNumIDs() const
+  size_t getLocalNumIDs() const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -408,7 +408,7 @@ public:
     }
   }
 
-  void getIDsView(const gno_t *&Ids) const
+  void getIDsView(const gno_t *&Ids) const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -431,7 +431,7 @@ public:
     }
   }
 
-  int getNumWeightsPerID() const
+  int getNumWeightsPerID() const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -445,7 +445,7 @@ public:
     }
   }
 
-  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:

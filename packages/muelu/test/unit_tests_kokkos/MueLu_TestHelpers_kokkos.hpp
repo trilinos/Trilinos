@@ -224,7 +224,7 @@ namespace MueLuTests {
 
         RCP<Matrix> mtx = MatrixFactory::Build(rowMap, 3);
 
-        ArrayView<const GO> MyGlobalElements = rowMap->getNodeElementList();
+        ArrayView<const GO> MyGlobalElements = rowMap->getLocalElementList();
         GO indexBase = rowMap->getIndexBase();
 
         GO NumEntries;
@@ -256,7 +256,7 @@ namespace MueLuTests {
         GO rrmax = (rowMap->getMaxAllGlobalIndex()-offset-indexBase) / blockSize;
 
         // loop over all rows
-        LO numMyElements = rowMap->getNodeNumElements();
+        LO numMyElements = rowMap->getLocalNumElements();
         for (LO i = 0; i < numMyElements; i++) {
           GO rr = (MyGlobalElements[i]-offset-indexBase) / blockSize + indexBase;  // node index
 

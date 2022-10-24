@@ -78,13 +78,13 @@ namespace { // (anonymous)
 #define STD_TESTS(graph) \
   { \
     auto STCOMM = graph.getComm(); \
-    auto STMYGIDS = graph.getRowMap()->getNodeElementList(); \
+    auto STMYGIDS = graph.getRowMap()->getLocalElementList(); \
     size_t STMAX = 0; \
-    for (size_t STR = 0; STR < graph.getNodeNumRows(); ++STR) { \
+    for (size_t STR = 0; STR < graph.getLocalNumRows(); ++STR) { \
       TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
       STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
     } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( graph.getLocalMaxNumRowEntries(), STMAX ); \
     GST STGMAX; \
     reduceAll<int, GST> (*STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg (STGMAX)); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -241,7 +241,7 @@ namespace { // (anonymous)
     }
     params->set("Optimize Storage",false);
     graph.fillComplete(params);
-    TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
+    TEST_EQUALITY(graph.getLocalNumEntries(), (size_t)numLocal);
     TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
     //
     graph.resumeFill();
@@ -249,7 +249,7 @@ namespace { // (anonymous)
     params->set("Optimize Storage",true);
     graph.fillComplete(params);
     TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-    TEST_EQUALITY(graph.getNodeNumEntries(), 0);
+    TEST_EQUALITY(graph.getLocalNumEntries(), 0);
     TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
 
     int lclSuccess = success ? 1 : 0;
@@ -470,26 +470,26 @@ namespace { // (anonymous)
       // allocate
       RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
       // invalid, because none are allocated yet
-      TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
+      TEST_EQUALITY_CONST( test_crs->getLocalAllocationSize(), STINV );
       if (myRank != 1) {
         test_crs->insertGlobalIndices (map->getMinGlobalIndex (),
                                        tuple<GO> (map->getMinGlobalIndex ()));
       }
       test_crs->fillComplete ();
-      TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
+      TEST_EQUALITY( test_crs->getLocalAllocationSize(), numLocal );
       test_row = test_crs;
       RCP<const map_type> cmap = test_row->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumRows(), numLocal );
       TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumCols(), numLocal );
       TEST_EQUALITY( test_row->getIndexBase(), 0 );
 
       TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumEntries(), numLocal );
       TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
-      TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
+      TEST_EQUALITY( test_row->getLocalMaxNumRowEntries(), numLocal );
       STD_TESTS((*test_row));
     }
 
@@ -505,23 +505,23 @@ namespace { // (anonymous)
         // allocate with no space
         RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
         // invalid, because none are allocated yet
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), STINV );
         zero_crs->fillComplete ();
         // zero, because none were allocated.
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), 0 );
         zero = zero_crs;
         RCP<const map_type> cmap = zero->getColMap();
         TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
         TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+        TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
         TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+        TEST_EQUALITY( zero->getLocalNumCols(), 0 );
         TEST_EQUALITY( zero->getIndexBase(), 0 );
 
         TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+        TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
         TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+        TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
         STD_TESTS((*zero));
       }
     }
@@ -535,23 +535,23 @@ namespace { // (anonymous)
       // allocate with no space
       RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
       // invalid, because none are allocated yet
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), STINV );
       zero_crs->fillComplete ();
       // zero, because none were allocated.
-      TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+      TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), 0 );
       zero = zero_crs;
       RCP<const map_type> cmap = zero->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
       TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
       TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getLocalNumCols(), 0 );
       TEST_EQUALITY( zero->getIndexBase(), 0 );
 
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
       TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
       STD_TESTS((*zero));
     }
 
@@ -579,22 +579,22 @@ namespace { // (anonymous)
 
     // allocated with space for one entry per row
     RCP<graph_type> zero_crs = rcp (new graph_type (map,1));
-    TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
+    TEST_EQUALITY( zero_crs->getLocalAllocationSize(), STINV ); // zero, because none are allocated yet
 
     zero_crs->fillComplete ();
     zero = zero_crs;
     RCP<const map_type> cmap = zero->getColMap();
     TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+    TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
     TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+    TEST_EQUALITY( zero->getLocalNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
 
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+    TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
     TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+    TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
     STD_TESTS((*zero));
 
     // All procs fail if any proc fails

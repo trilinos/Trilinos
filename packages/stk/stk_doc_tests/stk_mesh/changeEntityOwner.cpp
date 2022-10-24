@@ -37,6 +37,7 @@
 #include <sstream>                      // for ostringstream, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
@@ -52,39 +53,39 @@ namespace
 
 void verify_elem_is_owned_on_p0_and_valid_as_aura_on_p1(const stk::mesh::BulkData &bulkData, stk::mesh::Entity elem)
 {
-    EXPECT_TRUE(bulkData.is_valid(elem));
-    EXPECT_EQ(0, bulkData.parallel_owner_rank(elem));
+  EXPECT_TRUE(bulkData.is_valid(elem));
+  EXPECT_EQ(0, bulkData.parallel_owner_rank(elem));
 }
 
 void verify_elem_is_now_owned_on_p1(const stk::mesh::BulkData &bulkData, stk::mesh::EntityId elemId)
 {
-    stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-    EXPECT_TRUE(bulkData.is_valid(elem));
-    EXPECT_EQ(1, bulkData.parallel_owner_rank(elem));
+  stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+  EXPECT_TRUE(bulkData.is_valid(elem));
+  EXPECT_EQ(1, bulkData.parallel_owner_rank(elem));
 }
 
 //BEGIN
 TEST(StkMeshHowTo, changeEntityOwner)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) == 2)
-    {
-        stk::mesh::MetaData metaData;
-        stk::mesh::BulkData bulkData(metaData, communicator);
-        stk::io::fill_mesh("generated:1x1x4", bulkData);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) == 2)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::mesh::MeshBuilder(communicator).create();
+    bulkDataPtr->mesh_meta_data().use_simple_fields();
+    stk::io::fill_mesh("generated:1x1x4", *bulkDataPtr);
 
-        stk::mesh::EntityId elem2Id = 2;
-        stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, elem2Id);
-        verify_elem_is_owned_on_p0_and_valid_as_aura_on_p1(bulkData, elem2);
+    stk::mesh::EntityId elem2Id = 2;
+    stk::mesh::Entity elem2 = bulkDataPtr->get_entity(stk::topology::ELEM_RANK, elem2Id);
+    verify_elem_is_owned_on_p0_and_valid_as_aura_on_p1(*bulkDataPtr, elem2);
 
-        std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
-        if (bulkData.parallel_rank() == 0)
-          elemProcPairs.push_back(std::make_pair(elem2, testUtils::get_other_proc(bulkData.parallel_rank())));
+    std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
+    if (bulkDataPtr->parallel_rank() == 0)
+      elemProcPairs.push_back(std::make_pair(elem2, testUtils::get_other_proc(bulkDataPtr->parallel_rank())));
 
-        bulkData.change_entity_owner(elemProcPairs);
+    bulkDataPtr->change_entity_owner(elemProcPairs);
 
-        verify_elem_is_now_owned_on_p1(bulkData, elem2Id);
-    }
+    verify_elem_is_now_owned_on_p1(*bulkDataPtr, elem2Id);
+  }
 }
 //END
 }

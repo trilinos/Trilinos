@@ -234,10 +234,10 @@ Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<typename Teuchos::Scala
 
   Teuchos::RCP<Matrix> A = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(map, nnz);
 
-  LO numMyElements = map->getNodeNumElements();
+  LO numMyElements = map->getLocalNumElements();
   GO indexBase     = map->getIndexBase();
 
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   std::vector<GO> inds(nnz);
   std::vector<SC> vals(nnz);
@@ -344,7 +344,6 @@ void ConstructData(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
-  using Teuchos::RCP;
   using Teuchos::TimeMonitor;
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
@@ -370,7 +369,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
-  using Teuchos::RCP;
   using Teuchos::TimeMonitor;
   using namespace std::chrono;
 

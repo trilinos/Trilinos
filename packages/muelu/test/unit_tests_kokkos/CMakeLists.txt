@@ -3,6 +3,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/BlockedTransfers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/Matrix-Free)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
@@ -17,10 +18,12 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates_kokkos.cpp
+  AmalgamationInfo_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   IndexManager_kokkos.cpp
   LWGraph_kokkos.cpp
+  MatrixFree_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
   NotayAggregationFactory.cpp
@@ -28,6 +31,7 @@ APPEND_SET(SOURCES
   SemiCoarsenPFactory_kokkos.cpp
   StructuredAggregation_kokkos.cpp
   TentativePFactory_kokkos.cpp
+  UncoupledAggregationFactory_kokkos.cpp
   UseKokkos_kokkos.cpp
   Utilities_kokkos.cpp
 )

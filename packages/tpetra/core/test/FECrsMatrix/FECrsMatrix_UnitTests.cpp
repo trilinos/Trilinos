@@ -151,12 +151,12 @@ public:
   void print(int rank, std::ostream & out) {
     using std::endl;
     out << "["<<rank<<"] Unique Map  : ";
-    for(size_t i=0; i<uniqueMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<uniqueMap->getLocalNumElements(); i++)
       out << uniqueMap->getGlobalElement(i) << " ";
     out<<endl;
 
     out << "["<<rank<<"] Overlap Map : ";
-    for(size_t i=0; i<overlapMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<overlapMap->getLocalNumElements(); i++)
       out << overlapMap->getGlobalElement(i) << " ";
     out<<endl;
 
@@ -369,7 +369,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_2, LO, GO, Scalar, No
   LO local_row = 0;
   if (fe_matrix.getRowMap()->isNodeLocalElement(local_row))
   {
-    auto num_entries = fe_matrix.getNodeNumEntries();
+    auto num_entries = fe_matrix.getLocalNumEntries();
     cols_type cols("cols",num_entries);
     Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();

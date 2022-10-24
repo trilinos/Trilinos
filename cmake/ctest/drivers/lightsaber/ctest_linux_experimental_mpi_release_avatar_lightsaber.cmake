@@ -74,11 +74,9 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 SET(Trilinos_PACKAGES TrilinosCouplings MueLu AvatarT)
 
-# Make sure I get the right branch of Avatar
-SET(Trilinos_EXTRAREPOS_BRANCH library-ize-dt)
-
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=ON"

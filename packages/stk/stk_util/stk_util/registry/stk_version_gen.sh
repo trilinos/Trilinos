@@ -64,7 +64,7 @@ LF='
 # see if there is a version file (included in release tarballs).
 # Finally, default.
 if test $(git rev-parse --git-dir 2>/dev/null) &&
-    NEW_VERSION=$(git describe --abbrev=8 HEAD 2>/dev/null) &&
+    NEW_VERSION=$(git describe --long --abbrev=8 HEAD 2>/dev/null) &&
     case "$NEW_VERSION" in
         *$LF*) (exit 1) ;;
         [0-9]*)

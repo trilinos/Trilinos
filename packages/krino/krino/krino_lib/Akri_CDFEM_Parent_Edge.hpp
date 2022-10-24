@@ -23,26 +23,29 @@ namespace krino {
 
 class CDFEM_Parent_Edge {
 public:
-  CDFEM_Parent_Edge(const std::vector<stk::mesh::Entity> & edgeNodes,
+  CDFEM_Parent_Edge(const bool oneLSPerPhase,
+    const std::vector<stk::mesh::Entity> & edgeNodes,
     const std::vector<double> & edgeNodePositions,
     const std::vector<std::vector<double> > & nodes_isovar)
   : my_edge_nodes(edgeNodes),
     my_edge_node_positions(edgeNodePositions)
   {
     ThrowAssert(edgeNodePositions.size() == nodes_isovar.size());
-    find_crossings(nodes_isovar);
+    find_crossings(oneLSPerPhase, nodes_isovar);
   }
 
-  CDFEM_Parent_Edge(const std::vector<double> & edgeNodePositions,
+  CDFEM_Parent_Edge(const bool oneLSPerPhase,
+      const std::vector<double> & edgeNodePositions,
       const std::vector<std::vector<double> > & nodes_isovar)
-  : CDFEM_Parent_Edge({}, edgeNodePositions, nodes_isovar) {}
+  : CDFEM_Parent_Edge(oneLSPerPhase, {}, edgeNodePositions, nodes_isovar) {}
 
-  CDFEM_Parent_Edge(const std::vector<stk::mesh::Entity> & edgeNodes,
+  CDFEM_Parent_Edge(const bool oneLSPerPhase,
+    const std::vector<stk::mesh::Entity> & edgeNodes,
     const std::vector<std::vector<double> > & nodes_isovar)
-  : CDFEM_Parent_Edge(edgeNodes, {0.,1.}, nodes_isovar) {}
+  : CDFEM_Parent_Edge(oneLSPerPhase, edgeNodes, {0.,1.}, nodes_isovar) {}
 
-  CDFEM_Parent_Edge(const std::vector<std::vector<double> > & nodes_isovar)
-  : CDFEM_Parent_Edge({0.,1.}, nodes_isovar) {}
+  CDFEM_Parent_Edge(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar)
+  : CDFEM_Parent_Edge(oneLSPerPhase, {0.,1.}, nodes_isovar) {}
 
   CDFEM_Parent_Edge(const std::vector<stk::mesh::Entity> & edgeNodes,
     const std::vector<double> & edgeNodePositions);
@@ -53,10 +56,10 @@ public:
 
   bool valid() const { return !my_edge_node_positions.empty(); }
 
-  void find_crossings(const std::vector<std::vector<double> > & nodes_isovar);
+  void find_crossings(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar);
   void collapse_small_segments_while_preserving_topology(const double snapTol);
 
-  void adjust_crossing_locations_based_on_node_captured_domains(const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains);
+  void adjust_crossing_locations_based_on_node_captured_domains(const bool oneLSPerPhase, const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains);
 
   bool have_crossing(const InterfaceID key) const { return my_crossings.find(key) != my_crossings.end(); }
   const CrossingMap & get_crossings() const { return my_crossings; }
@@ -74,7 +77,7 @@ public:
     CrossingSignMap::const_iterator it = my_crossing_signs.find(key);
     return it->second;
   }
-  std::tuple<double, int, bool> get_crossing_position_and_sign(const InterfaceID key) const;
+  std::tuple<double, int, bool> get_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key) const;
   unsigned get_num_nodes() const { return my_edge_node_positions.size(); }
   const std::vector<stk::mesh::Entity> & get_nodes() const { return my_edge_nodes; }
   bool have_any_crossings() const;
@@ -88,8 +91,8 @@ public:
 
 private:
   void find_crossings_multiple_levelset(const std::vector<std::vector<double> > & nodes_isovar);
-  std::pair<double, int> find_crossing_position_and_sign(const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const;
-  void find_crossings_including_fake_ones(const std::vector<std::vector<double> > & nodes_isovar);
+  std::pair<double, int> find_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const;
+  void find_crossings_including_fake_ones(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar);
   double get_fake_crossing_position(const InterfaceID key) const {
     CrossingMap::const_iterator it = my_crossings_including_fake.find(key);
     return it != my_crossings_including_fake.end() ? it->second : -1.0;

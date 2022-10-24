@@ -42,7 +42,6 @@ include(TribitsAddTestHelpers)
 include(CMakeParseArguments)
 
 
-#
 # @FUNCTION: tribits_copy_files_to_binary_dir()
 #
 # Function that copies a list of files from a source directory to a
@@ -68,7 +67,7 @@ include(CMakeParseArguments)
 # the ``ALL`` target.
 #
 # **NOTE:** The target name ``<targetName>`` must be unique from all other
-# targets in the same TriBITS SE Package.  Otherwise, one will get a configure
+# targets in the same TriBITS Package.  Otherwise, one will get a configure
 # failure complaining that a target name has already been defined.  Therefore,
 # be sure to pick long and unique target names!
 #

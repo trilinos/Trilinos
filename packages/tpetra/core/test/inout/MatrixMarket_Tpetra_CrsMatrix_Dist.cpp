@@ -124,7 +124,7 @@ public:
     if (diagonal == "exclude") {
       A_baseline->resumeFill();
       auto rowMap = A_baseline->getRowMap();
-      size_t nMyRows = rowMap->getNodeNumElements();
+      size_t nMyRows = rowMap->getLocalNumElements();
       for (size_t i = 0; i < nMyRows; i++) {
         gno_t gid = rowMap->getGlobalElement(i);
         scalar_t val = Teuchos::ScalarTraits<scalar_t>::zero();
@@ -424,7 +424,8 @@ private:
     const Teuchos::RCP<vector_t> &y_test
   )
   {
-    const scalar_t epsilon = 0.0000001;
+    const scalar_t epsilon = 10*Teuchos::ScalarTraits<scalar_t>::squareroot(Teuchos::ScalarTraits<scalar_t>::eps());
+
     int ierr = 0;
 
     // First compare the norms of the result vector to the baseline

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,14 +11,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#if defined(_MSC_VER)
-#ifdef _WIN64
-#define ssize_t __int64
-#else
-#define ssize_t long
-#endif
-#endif
 
 using IntVector = std::vector<int>;
 using IdMap     = std::vector<int>;

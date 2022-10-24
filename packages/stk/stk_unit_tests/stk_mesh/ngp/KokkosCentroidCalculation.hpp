@@ -73,6 +73,8 @@ typedef Kokkos::Serial   ExecSpace ;
 typedef Kokkos::OpenMP       MemSpace;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::CudaSpace    MemSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPSpace MemSpace;
 #else
 typedef Kokkos::HostSpace    MemSpace;
 #endif
@@ -104,17 +106,12 @@ typedef Kokkos::LayoutRight   Layout ;
 
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewMatrixType;
 typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceViewMatrixType;
-//typedef Kokkos::View<double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::Atomic> >   DeviceViewAtomicMatrixType;
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewAtomicMatrixType;
 
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceArray2DType;
-typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray2DType;
-
 typedef Kokkos::View<double***, Layout, MemSpace>   DeviceArray3DType;
-typedef Kokkos::View<const double***, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray3DType;
 
 typedef Kokkos::View<int*, Layout, MemSpace> DeviceViewIntType;
-typedef Kokkos::View<const int*, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstDeviceViewIntType;
 
 } // namespace
 

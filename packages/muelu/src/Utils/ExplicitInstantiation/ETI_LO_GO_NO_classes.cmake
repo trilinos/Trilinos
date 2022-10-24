@@ -27,6 +27,7 @@ APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::IsolatedNodeAggregationAlgorithm_ko
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::IsorropiaInterface-.?if.defined[HAVE_MUELU_ISORROPIA].&&.defined[HAVE_MPI] )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LWGraph )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LWGraph_kokkos-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
+APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LocalLWGraph_kokkos-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LeftoverAggregationAlgorithm )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LocalAggregationAlgorithm )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::LocalLexicographicIndexManager )

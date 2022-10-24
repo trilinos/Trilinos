@@ -185,20 +185,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test2, Scalar, LocalOrdinal, Glob
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill0 = prec.getNodeNumEntries();
-  TEST_EQUALITY(numFill0, crsmatrix->getNodeNumEntries());
+  numFill0 = prec.getLocalNumEntries();
+  TEST_EQUALITY(numFill0, crsmatrix->getLocalNumEntries());
 
   params.set("fact: ilut level-of-fill", 1.5);
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill1 = prec.getNodeNumEntries();
+  numFill1 = prec.getLocalNumEntries();
 
   params.set("fact: ilut level-of-fill", 2.0);
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill2 = prec.getNodeNumEntries();
+  numFill2 = prec.getLocalNumEntries();
 
   TEST_ASSERT(numFill0 < numFill1);
   TEST_ASSERT(numFill1 < numFill2);

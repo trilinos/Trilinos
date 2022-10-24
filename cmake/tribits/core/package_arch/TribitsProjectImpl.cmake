@@ -59,13 +59,14 @@ endif()
 
 include(TribitsConstants)
 tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(TribitsIncludeDirectories)
 include(TribitsFindPythonInterp)
 include(TribitsGlobalMacros)
 include(TribitsConfigureCTestCustom)
 include(TribitsGenerateResourceSpecFile)
+include(TribitsPackageDependencies)
 include(TribitsPrintDependencyInfo)
 
 include(AdvancedSet)
@@ -190,7 +191,7 @@ macro(tribits_project_impl)
   #
 
   message("")
-  message("Getting information for all enabled TPLs ...")
+  message("Getting information for all enabled external packages/TPLs ...")
   message("")
 
   tribits_process_enabled_tpls()
@@ -323,7 +324,6 @@ macro(tribits_project_impl)
 endmacro()
 
 
-#
 # @MACRO: tribits_project_enable_all()
 #
 # Process a project where you enable all of the packages by default.

@@ -123,7 +123,7 @@ namespace {
     auto permute = importer->getNumPermuteIDs();
     auto remote = importer->getNumRemoteIDs();
     auto sum = same + permute + remote;
-    auto expectedSum = target->getNodeNumElements();
+    auto expectedSum = target->getLocalNumElements();
     TEST_EQUALITY( sum, expectedSum );
 
     bool isvalid=Tpetra::Import_Util::checkImportValidity(*importer);
@@ -466,7 +466,7 @@ namespace {
 
     // Check the "FromAnswer" answer against who_owns
     bool all_is_well=true;
-    for(size_t i=0; i<FromMap->getNodeNumElements(); i++) {
+    for(size_t i=0; i<FromMap->getLocalNumElements(); i++) {
       if(f_view[i] != who_owns[FromMap->getGlobalElement(i)]) {
         std::cerr<<"["<<MyPID<<"] ERROR: Ownership of GID"<<FromMap->getGlobalElement(i)<<" is incorrect!"<<std::endl;
         all_is_well=false;

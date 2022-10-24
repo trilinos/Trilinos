@@ -51,10 +51,6 @@
     !defined(KOKKOS_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP)
 #define KOKKOS_ATOMIC_COMPARE_EXCHANGE_STRONG_HPP
 
-#if defined(KOKKOS_ENABLE_CUDA)
-#include <Cuda/Kokkos_Cuda_Version_9_8_Compatibility.hpp>
-#endif
-
 #include <impl/Kokkos_Atomic_Memory_Order.hpp>
 #include <impl/Kokkos_Memory_Fence.hpp>
 
@@ -92,7 +88,7 @@ __inline__ __device__ unsigned long long int atomic_compare_exchange(
 template <typename T>
 __inline__ __device__ T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<sizeof(T) == sizeof(int), const T&>::type val) {
+    std::enable_if_t<sizeof(T) == sizeof(int), const T&> val) {
   const int tmp = atomicCAS((int*)dest, *((int*)&compare), *((int*)&val));
   return *((T*)&tmp);
 }
@@ -100,9 +96,10 @@ __inline__ __device__ T atomic_compare_exchange(
 template <typename T>
 __inline__ __device__ T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<sizeof(T) != sizeof(int) &&
-                                sizeof(T) == sizeof(unsigned long long int),
-                            const T&>::type val) {
+    std::enable_if_t<sizeof(T) != sizeof(int) &&
+                         sizeof(T) == sizeof(unsigned long long int),
+                     const T&>
+        val) {
   using type     = unsigned long long int;
   const type tmp = atomicCAS((type*)dest, *((type*)&compare), *((type*)&val));
   return *((T*)&tmp);
@@ -111,17 +108,12 @@ __inline__ __device__ T atomic_compare_exchange(
 template <typename T>
 __inline__ __device__ T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8),
-                            const T>::type& val) {
+    std::enable_if_t<(sizeof(T) != 4) && (sizeof(T) != 8), const T>& val) {
   T return_val;
   // This is a way to (hopefully) avoid dead lock in a warp
-  int done = 0;
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-  unsigned int mask   = KOKKOS_IMPL_CUDA_ACTIVEMASK;
-  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, 1);
-#else
-  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
-#endif
+  int done                 = 0;
+  unsigned int mask        = __activemask();
+  unsigned int active      = __ballot_sync(mask, 1);
   unsigned int done_active = 0;
   while (active != done_active) {
     if (!done) {
@@ -134,11 +126,7 @@ __inline__ __device__ T atomic_compare_exchange(
         done = 1;
       }
     }
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, done);
-#else
-    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
-#endif
+    done_active = __ballot_sync(mask, done);
   }
   return return_val;
 }
@@ -196,7 +184,7 @@ inline unsigned long long atomic_compare_exchange(
 template <typename T>
 inline T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<sizeof(T) == sizeof(int), const T&>::type val) {
+    std::enable_if_t<sizeof(T) == sizeof(int), const T&> val) {
   union U {
     int i;
     T t;
@@ -215,9 +203,9 @@ inline T atomic_compare_exchange(
 template <typename T>
 inline T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<sizeof(T) != sizeof(int) &&
-                                sizeof(T) == sizeof(long),
-                            const T&>::type val) {
+    std::enable_if_t<sizeof(T) != sizeof(int) && sizeof(T) == sizeof(long),
+                     const T&>
+        val) {
   union U {
     long i;
     T t;
@@ -237,10 +225,10 @@ inline T atomic_compare_exchange(
 template <typename T>
 inline T atomic_compare_exchange(
     volatile T* const dest, const T& compare,
-    typename std::enable_if<sizeof(T) != sizeof(int) &&
-                                sizeof(T) != sizeof(long) &&
-                                sizeof(T) == sizeof(Impl::cas128_t),
-                            const T&>::type val) {
+    std::enable_if_t<sizeof(T) != sizeof(int) && sizeof(T) != sizeof(long) &&
+                         sizeof(T) == sizeof(Impl::cas128_t),
+                     const T&>
+        val) {
   union U {
     Impl::cas128_t i;
     T t;
@@ -260,12 +248,12 @@ inline T atomic_compare_exchange(
 template <typename T>
 inline T atomic_compare_exchange(
     volatile T* const dest, const T compare,
-    typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8)
+    std::enable_if_t<(sizeof(T) != 4) && (sizeof(T) != 8)
 #if defined(KOKKOS_ENABLE_ASM) && defined(KOKKOS_ENABLE_ISA_X86_64)
-                                && (sizeof(T) != 16)
+                         && (sizeof(T) != 16)
 #endif
-                                ,
-                            const T>::type& val) {
+                         ,
+                     const T>& val) {
 #if defined(KOKKOS_ENABLE_RFO_PREFETCH)
   _mm_prefetch((const char*)dest, _MM_HINT_ET0);
 #endif
@@ -387,16 +375,14 @@ KOKKOS_INLINE_FUNCTION bool _atomic_compare_exchange_strong_fallback(
 template <class T, class MemoryOrderSuccess, class MemoryOrderFailure>
 KOKKOS_INTERNAL_INLINE_DEVICE_IF_CUDA_ARCH bool _atomic_compare_exchange_strong(
     T* dest, T compare, T val, MemoryOrderSuccess, MemoryOrderFailure,
-    typename std::enable_if<
+    std::enable_if_t<
         (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8 ||
          sizeof(T) == 16) &&
-            std::is_same<
-                typename MemoryOrderSuccess::memory_order,
-                typename std::remove_cv<MemoryOrderSuccess>::type>::value &&
-            std::is_same<
-                typename MemoryOrderFailure::memory_order,
-                typename std::remove_cv<MemoryOrderFailure>::type>::value,
-        void const**>::type = nullptr) {
+            std::is_same<typename MemoryOrderSuccess::memory_order,
+                         std::remove_cv_t<MemoryOrderSuccess>>::value &&
+            std::is_same<typename MemoryOrderFailure::memory_order,
+                         std::remove_cv_t<MemoryOrderFailure>>::value,
+        void const**> = nullptr) {
   return __atomic_compare_exchange_n(dest, &compare, val, /* weak = */ false,
                                      MemoryOrderSuccess::gnu_constant,
                                      MemoryOrderFailure::gnu_constant);
@@ -406,16 +392,14 @@ template <class T, class MemoryOrderSuccess, class MemoryOrderFailure>
 KOKKOS_INTERNAL_INLINE_DEVICE_IF_CUDA_ARCH bool _atomic_compare_exchange_strong(
     T* dest, T compare, T val, MemoryOrderSuccess order_success,
     MemoryOrderFailure order_failure,
-    typename std::enable_if<
+    std::enable_if_t<
         !(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 ||
           sizeof(T) == 8 || sizeof(T) == 16) &&
-            std::is_same<
-                typename MemoryOrderSuccess::memory_order,
-                typename std::remove_cv<MemoryOrderSuccess>::type>::value &&
-            std::is_same<
-                typename MemoryOrderFailure::memory_order,
-                typename std::remove_cv<MemoryOrderFailure>::type>::value,
-        void const**>::type = nullptr) {
+            std::is_same<typename MemoryOrderSuccess::memory_order,
+                         std::remove_cv_t<MemoryOrderSuccess>>::value &&
+            std::is_same<typename MemoryOrderFailure::memory_order,
+                         std::remove_cv_t<MemoryOrderFailure>>::value,
+        void const**> = nullptr) {
   return _atomic_compare_exchange_fallback(dest, compare, val, order_success,
                                            order_failure);
 }

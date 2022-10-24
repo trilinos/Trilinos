@@ -564,6 +564,10 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    /// \brief Whether the data from an import/export operation has
+    ///        arrived, and is ready for the unpack and combine step.
+    bool transferArrived() const;
+
     //@}
     //! @name Attribute accessor methods
     //@{

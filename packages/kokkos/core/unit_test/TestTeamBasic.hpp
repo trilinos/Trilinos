@@ -83,6 +83,85 @@ TEST(TEST_CATEGORY, team_reduce) {
 }
 #endif
 
+template <typename ExecutionSpace>
+struct TestTeamReduceLarge {
+  using team_policy_t = Kokkos::TeamPolicy<ExecutionSpace>;
+  using member_t      = typename team_policy_t::member_type;
+
+  int m_range;
+
+  TestTeamReduceLarge(const int range) : m_range(range) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_t& t, int& update) const {
+    Kokkos::single(Kokkos::PerTeam(t), [&]() { update++; });
+  }
+
+  void run() {
+    int result = 0;
+    Kokkos::parallel_reduce(team_policy_t(m_range, Kokkos::AUTO), *this,
+                            result);
+    EXPECT_EQ(m_range, result);
+  }
+};
+
+TEST(TEST_CATEGORY, team_reduce_large) {
+  std::vector<int> ranges{(2LU << 23) - 1, 2LU << 23, (2LU << 24),
+                          (2LU << 24) + 1, 1LU << 29};
+  for (const auto range : ranges) {
+    TestTeamReduceLarge<TEST_EXECSPACE> test(range);
+    test.run();
+  }
+}
+
+template <typename ExecutionSpace>
+struct LargeTeamScratchFunctor {
+  using team_member = typename Kokkos::TeamPolicy<ExecutionSpace>::member_type;
+  const size_t m_per_team_bytes;
+
+  KOKKOS_FUNCTION void operator()(const team_member& member) const {
+    double* team_shared = static_cast<double*>(
+        member.team_scratch(/*level*/ 1).get_shmem(m_per_team_bytes));
+    if (team_shared == nullptr)
+      Kokkos::abort("Couldn't allocate required size!\n");
+    double* team_shared_1 = static_cast<double*>(
+        member.team_scratch(/*level*/ 1).get_shmem(sizeof(double)));
+    if (team_shared_1 != nullptr)
+      Kokkos::abort("Allocated more memory than requested!\n");
+  }
+};
+
+TEST(TEST_CATEGORY, large_team_scratch_size) {
+  const int level   = 1;
+  const int n_teams = 1;
+
+#ifdef KOKKOS_ENABLE_OPENMPTARGET
+  // Allocate slightly more than (2^31-1) bytes. The other value resulted in
+  // problems allocating too much memory.
+  const size_t per_team_extent = 268435460;
+#else
+  // Value originally chosen in the reproducer.
+  const size_t per_team_extent = 502795560;
+#endif
+
+  const size_t per_team_bytes = per_team_extent * sizeof(double);
+
+#ifdef KOKKOS_ENABLE_OPENMPTARGET
+  Kokkos::TeamPolicy<TEST_EXECSPACE> policy(
+      n_teams,
+      std::is_same<TEST_EXECSPACE, Kokkos::Experimental::OpenMPTarget>::value
+          ? 32
+          : 1);
+#else
+  Kokkos::TeamPolicy<TEST_EXECSPACE> policy(n_teams, 1);
+#endif
+  policy.set_scratch_size(level, Kokkos::PerTeam(per_team_bytes));
+
+  Kokkos::parallel_for(policy,
+                       LargeTeamScratchFunctor<TEST_EXECSPACE>{per_team_bytes});
+  Kokkos::fence();
+}
+
 TEST(TEST_CATEGORY, team_broadcast_long) {
   TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static>,
                     long>::test_teambroadcast(0, 1);
@@ -104,6 +183,69 @@ TEST(TEST_CATEGORY, team_broadcast_long) {
   TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic>,
                     long>::test_teambroadcast(1000, 1);
 }
+
+// FIXME_OPENMPTARGET CI fails with
+// Libomptarget error: Copying data from device failed.
+// Possibly, because long_wrapper is not trivially-copyable.
+#ifndef KOKKOS_ENABLE_OPENMPTARGET
+struct long_wrapper {
+  long value;
+
+  KOKKOS_FUNCTION
+  long_wrapper() : value(0) {}
+
+  KOKKOS_FUNCTION
+  long_wrapper(long val) : value(val) {}
+
+  KOKKOS_FUNCTION
+  friend void operator+=(long_wrapper& lhs, const long_wrapper& rhs) {
+    lhs.value += rhs.value;
+  }
+
+  KOKKOS_FUNCTION
+  void operator=(const long_wrapper& other) { value = other.value; }
+
+  KOKKOS_FUNCTION
+  void operator=(const volatile long_wrapper& other) volatile {
+    value = other.value;
+  }
+  KOKKOS_FUNCTION
+  operator long() const { return value; }
+};
+}  // namespace Test
+
+namespace Kokkos {
+template <>
+struct reduction_identity<Test::long_wrapper>
+    : public reduction_identity<long> {};
+}  // namespace Kokkos
+
+namespace Test {
+
+// Test for non-arithmetic type
+TEST(TEST_CATEGORY, team_broadcast_long_wrapper) {
+  static_assert(!std::is_arithmetic<long_wrapper>::value, "");
+
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static>,
+                    long_wrapper>::test_teambroadcast(0, 1);
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic>,
+                    long_wrapper>::test_teambroadcast(0, 1);
+
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static>,
+                    long_wrapper>::test_teambroadcast(2, 1);
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic>,
+                    long_wrapper>::test_teambroadcast(2, 1);
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static>,
+                    long_wrapper>::test_teambroadcast(16, 1);
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic>,
+                    long_wrapper>::test_teambroadcast(16, 1);
+
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Static>,
+                    long_wrapper>::test_teambroadcast(1000, 1);
+  TestTeamBroadcast<TEST_EXECSPACE, Kokkos::Schedule<Kokkos::Dynamic>,
+                    long_wrapper>::test_teambroadcast(1000, 1);
+}
+#endif
 
 TEST(TEST_CATEGORY, team_broadcast_char) {
   {

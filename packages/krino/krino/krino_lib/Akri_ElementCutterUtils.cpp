@@ -8,12 +8,11 @@
 
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
+#include <Akri_InterfaceGeometry.hpp>
 #include <Akri_MasterElement.hpp>
+#include <Akri_MasterElementDeterminer.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <vector>
-
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
-#include <Akri_MasterElementDeterminer.hpp>
 
 namespace krino {
 

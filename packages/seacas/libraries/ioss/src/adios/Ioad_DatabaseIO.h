@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioad_DatabaseIO_h
-#define IOSS_Ioad_DatabaseIO_h
+#pragma once
 
 #include "Ioss_EntitySet.h"
 #include "Ioss_Region.h"  // for Region, SideSetContainer, etc
@@ -38,7 +37,7 @@ namespace Ioad {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     ~DatabaseIO();
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
@@ -193,13 +192,13 @@ namespace Ioad {
 
     template <typename T>
     FieldInfoType get_expected_variable_infos_from_map(const EntityMapType &fields_map,
-                                                       const std::string &  entity_type,
-                                                       const std::string &  entity_name,
-                                                       const std::string &  var_name) const;
+                                                       const std::string   &entity_type,
+                                                       const std::string   &entity_name,
+                                                       const std::string   &var_name) const;
     FieldInfoType get_variable_infos_from_map(const EntityMapType &fields_map,
-                                              const std::string &  entity_type,
-                                              const std::string &  entity_name,
-                                              const std::string &  var_name) const;
+                                              const std::string   &entity_type,
+                                              const std::string   &entity_name,
+                                              const std::string   &var_name) const;
 
     template <typename T>
     using IsIossEntityBlock =
@@ -229,7 +228,7 @@ namespace Ioad {
                                std::string name = "");
 
     void write_properties(const Ioss::GroupingEntity *const entity,
-                          const std::string &               encoded_name);
+                          const std::string                &encoded_name);
 
     template <typename T> int64_t write_meta_data_container(const T &entity_blocks);
     std::pair<int64_t, int64_t>
@@ -241,10 +240,10 @@ namespace Ioad {
                                              const std::string &string_variable) const;
 
     void get_globals(const GlobalMapType &globals_map, const FieldsMapType &properties_map);
-    void compute_block_membership__(Ioss::SideBlock *         efblock,
+    void compute_block_membership__(Ioss::SideBlock          *efblock,
                                     std::vector<std::string> &block_membership) const override;
     void define_properties(const Ioss::GroupingEntity *entity_block,
-                           const std::string &         encoded_entity_name);
+                           const std::string          &encoded_entity_name);
 
     void read_meta_data__() override;
     void read_communication_metadata();
@@ -266,4 +265,3 @@ namespace Ioad {
     double        previous_time_streaming;
   };
 } // namespace Ioad
-#endif

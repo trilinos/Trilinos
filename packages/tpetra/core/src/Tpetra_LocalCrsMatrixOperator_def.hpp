@@ -204,4 +204,9 @@ getLocalMatrixDevice () const
 #define TPETRA_LOCALCRSMATRIXOPERATOR_INSTANT(SC,NT) \
   template class LocalCrsMatrixOperator< SC, SC, NT::device_type >;
 
+// If we want mixed versions, we use this macro.
+
+#define TPETRA_LOCALCRSMATRIXOPERATOR_MIXED_INSTANT(SC,MATSC,LO,GO,NT)    \
+  template class LocalCrsMatrixOperator< SC, MATSC, NT::device_type >;
+
 #endif // TPETRA_LOCALCRSMATRIXOPERATOR_DEF_HPP

@@ -118,7 +118,7 @@ TEST_F(NGP_Kokkos, calculate_centroid_field_on_device)
     }
 
     ScratchData scratch;
-    scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part());
+    scratch.initialize(*app.bulk, *app.coords, *app.centroid, app.meta->locally_owned_part());
 
     CentroidCalculator<ScratchData> calculator(scratch);
 
@@ -131,9 +131,9 @@ TEST_F(NGP_Kokkos, calculate_centroid_field_on_device)
     calculator.test_centroid_of_element_1();
 
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(app.meta.locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_selected_entities(app.meta->locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
     for(unsigned elementIndex=0; elementIndex<elements.size(); ++elementIndex) {
-      calculator.test_centroid_of_element(app.hostCentroid, elements[elementIndex], elementIndex);
+      calculator.test_centroid_of_element(*app.hostCentroid, elements[elementIndex], elementIndex);
     }
   }
 }

@@ -51,7 +51,7 @@
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
@@ -261,7 +261,7 @@ public:
         throw std::runtime_error(std::string("Problem fixture setup failed"));
       }
 
-      print_flag = use_print && Kokkos::Impl::SpaceAccessibility< Kokkos::HostSpace::execution_space , typename Device::memory_space >::accessible ;
+      print_flag = use_print && Kokkos::SpaceAccessibility< Kokkos::HostSpace::execution_space , typename Device::memory_space >::accessible ;
 
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
@@ -356,8 +356,8 @@ public:
       typedef DirichletComputation< FixtureType , LocalMatrixType > DirichletComputationType ;
       typedef ResponseComputation< FixtureType , LocalVectorType > ResponseComputationType ;
 
-      Kokkos::Impl::Timer wall_clock ;
-      Kokkos::Impl::Timer newton_clock ;
+      Kokkos::Timer wall_clock ;
+      Kokkos::Timer newton_clock ;
       newton_clock.reset();
 
       LocalMatrixType jacobian = g_jacobian.getLocalMatrixDevice();
@@ -753,7 +753,7 @@ Perf fenl(
 
   //------------------------------------
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
 
   Perf perf_stats = Perf() ;
 

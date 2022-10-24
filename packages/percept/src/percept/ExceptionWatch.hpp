@@ -33,7 +33,7 @@
       ExceptionWatch(int line, char const* pfname) : line_(line),
                                                      pfname_(pfname) {}
       ~ExceptionWatch() {
-        if(std::uncaught_exception()) {
+        if(std::uncaught_exception() > 0) {
           //on purpose
           printf("STACKTRACE::ExceptionWatch: line:\t%d\tfile name:\t%s\n", line_, pfname_);
           printf("%s\n", Stacktrace::demangled_stacktrace(30).c_str());

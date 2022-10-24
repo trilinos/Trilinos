@@ -167,11 +167,17 @@ typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
 typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif
+#ifdef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+typedef MueLu::InverseApproximationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InverseApproximationFactory;
+#endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
 #endif
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> LocalPermutationStrategy;
+#endif
+#ifdef MUELU_LOWPRECISIONFACTORY_SHORT
+typedef MueLu::LowPrecisionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LowPrecisionFactory;
 #endif
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapTransferFactory;
@@ -245,8 +251,14 @@ typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdina
 #ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
 typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceTransferFactory;
 #endif
+#ifdef MUELU_REFMAXWELLSMOOTHER_SHORT
+typedef MueLu::RefMaxwellSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwellSmoother;
+#endif
 #ifdef MUELU_REGIONRFACTORY_SHORT
 typedef MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory;
+#endif
+#ifdef MUELU_REGIONRFACTORY_KOKKOS_SHORT
+typedef MueLu::RegionRFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory_kokkos;
 #endif
 #ifdef MUELU_REITZINGERPFACTORY_SHORT
 typedef MueLu::ReitzingerPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReitzingerPFactory;
@@ -332,6 +344,12 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tentati
 #ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
 typedef MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory_kokkos;
 #endif
+#ifdef MUELU_MATRIXFREETENTATIVEP_KOKKOS_SHORT
+typedef MueLu::MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativeP_kokkos;
+#endif
+#ifdef MUELU_MATRIXFREETENTATIVEPFACTORY_KOKKOS_SHORT
+typedef MueLu::MatrixFreeTentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixFreeTentativePFactory_kokkos;
+#endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
 #endif
@@ -352,6 +370,9 @@ typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOper
 #endif
 #ifdef MUELU_TRANSPFACTORY_SHORT
 typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TransPFactory;
+#endif
+#ifdef MUELU_RFROMP_OR_TRANSP_SHORT
+typedef MueLu::RfromP_Or_TransP<Scalar,LocalOrdinal,GlobalOrdinal,Node> RfromP_Or_TransP;
 #endif
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TrilinosSmoother;
@@ -397,6 +418,18 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 #endif
 #ifdef MUELU_NODEPARTITIONINTERFACE_SHORT
 typedef MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> NodePartitionInterface;
+#endif
+#ifdef MUELU_XPETRAOPERATOR_SHORT
+typedef MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraOperator;
+#endif
+#ifdef MUELU_REFMAXWELL_SHORT
+typedef MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwell;
+#endif
+#ifdef MUELU_MAXWELL1_SHORT
+typedef MueLu::Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell1;
+#endif
+#ifdef MUELU_MAXWELL_UTILS_SHORT
+typedef MueLu::Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Maxwell_Utils;
 #endif
 #ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;

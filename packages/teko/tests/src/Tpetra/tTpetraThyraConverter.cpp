@@ -147,7 +147,7 @@ double compareTpetraMVToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & eX,
       TEST_MSG("         " << "stride = " << stride);
       TEST_MSG("         " << "checking elements");
       int thyraIndex = 0;      
-      for(size_t i=0;i<map.getNodeNumElements();i++) {
+      for(size_t i=0;i<map.getLocalNumElements();i++) {
          GO gid = map.getGlobalElement(i);
 
          // this is not in the range of vector elements we are interested in

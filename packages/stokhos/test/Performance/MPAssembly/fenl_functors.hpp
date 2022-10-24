@@ -56,7 +56,7 @@
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
@@ -249,7 +249,7 @@ public:
       //--------------------------------
       // Guess at capacity required for the map:
 
-      Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Timer wall_clock ;
 
       wall_clock.reset();
       phase = FILL_NODE_SET ;
@@ -476,7 +476,7 @@ public:
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( unsigned & update , const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };
@@ -1309,8 +1309,8 @@ public:
   { response = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & response ,
-             volatile const value_type & input ) const
+  void join( value_type & response ,
+             const value_type & input ) const
   { response += input ; }
 
 }; /* ResponseComputation */

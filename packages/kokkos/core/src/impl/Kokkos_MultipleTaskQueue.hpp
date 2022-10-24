@@ -58,14 +58,12 @@
 
 #include <impl/Kokkos_TaskQueueMemoryManager.hpp>
 #include <impl/Kokkos_TaskQueueCommon.hpp>
-#include <impl/Kokkos_Memory_Fence.hpp>
-#include <impl/Kokkos_Atomic_Increment.hpp>
+#include <Kokkos_Atomic.hpp>
 #include <impl/Kokkos_OptionalRef.hpp>
 #include <impl/Kokkos_LIFO.hpp>
 
 #include <string>
 #include <typeinfo>
-#include <stdexcept>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -103,10 +101,10 @@ struct MultipleTaskQueueTeamEntry {
   using ready_queue_type =
       typename TaskQueueTraits::template ready_queue_type<task_base_type>;
   using task_queue_traits         = TaskQueueTraits;
-  using task_scheduling_info_type = typename std::conditional<
+  using task_scheduling_info_type = std::conditional_t<
       TaskQueueTraits::ready_queue_insertion_may_fail,
       FailedQueueInsertionLinkedListSchedulingInfo<TaskQueueTraits>,
-      EmptyTaskSchedulingInfo>::type;
+      EmptyTaskSchedulingInfo>;
 
  private:
   // Number of allowed priorities
@@ -124,10 +122,9 @@ struct MultipleTaskQueueTeamEntry {
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION OptionalRef<task_base_type> _pop_failed_insertion(
       int priority, TaskType type,
-      typename std::enable_if<
-          task_queue_traits::ready_queue_insertion_may_fail &&
-              std::is_void<_always_void>::value,
-          void*>::type = nullptr) {
+      std::enable_if_t<task_queue_traits::ready_queue_insertion_may_fail &&
+                           std::is_void<_always_void>::value,
+                       void*> = nullptr) {
     auto* rv_ptr = m_failed_heads[priority][(int)type];
     if (rv_ptr) {
       m_failed_heads[priority][(int)type] =
@@ -143,10 +140,9 @@ struct MultipleTaskQueueTeamEntry {
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION OptionalRef<task_base_type> _pop_failed_insertion(
       int /*priority*/, TaskType /*type*/,
-      typename std::enable_if<
-          !task_queue_traits::ready_queue_insertion_may_fail &&
-              std::is_void<_always_void>::value,
-          void*>::type = nullptr) {
+      std::enable_if_t<!task_queue_traits::ready_queue_insertion_may_fail &&
+                           std::is_void<_always_void>::value,
+                       void*> = nullptr) {
     return OptionalRef<task_base_type>{nullptr};
   }
 
@@ -202,10 +198,9 @@ struct MultipleTaskQueueTeamEntry {
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION void do_handle_failed_insertion(
       runnable_task_base_type&& task,
-      typename std::enable_if<
-          task_queue_traits::ready_queue_insertion_may_fail &&
-              std::is_void<_always_void>::value,
-          void*>::type = nullptr) {
+      std::enable_if_t<task_queue_traits::ready_queue_insertion_may_fail &&
+                           std::is_void<_always_void>::value,
+                       void*> = nullptr) {
     // failed insertions, if they happen, must be from the only thread that
     // is allowed to push to m_ready_queues, so this linked-list insertion is
     // not concurrent
@@ -218,21 +213,20 @@ struct MultipleTaskQueueTeamEntry {
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION void do_handle_failed_insertion(
       runnable_task_base_type&& /*task*/,
-      typename std::enable_if<
-          !task_queue_traits::ready_queue_insertion_may_fail &&
-              std::is_void<_always_void>::value,
-          void*>::type = nullptr) {
+      std::enable_if_t<!task_queue_traits::ready_queue_insertion_may_fail &&
+                           std::is_void<_always_void>::value,
+                       void*> = nullptr) {
     Kokkos::abort("should be unreachable!");
   }
 
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION void flush_failed_insertions(
       int priority, int task_type,
-      typename std::enable_if<
+      std::enable_if_t<
           task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,  // just to make this dependent
                                                   // on template parameter
-          int>::type = 0) {
+          int> = 0) {
     // TODO @tasking @minor DSH this somethimes gets some things out of LIFO
     // order, which may be undesirable (but not a bug)
 
@@ -257,11 +251,11 @@ struct MultipleTaskQueueTeamEntry {
   template <class _always_void = void>
   KOKKOS_INLINE_FUNCTION void flush_failed_insertions(
       int, int,
-      typename std::enable_if<
+      std::enable_if_t<
           !task_queue_traits::ready_queue_insertion_may_fail &&
               std::is_void<_always_void>::value,  // just to make this dependent
                                                   // on template parameter
-          int>::type = 0) {}
+          int> = 0) {}
 
   KOKKOS_INLINE_FUNCTION
   void flush_all_failed_insertions() {
@@ -354,10 +348,10 @@ class MultipleTaskQueue final
     ~SchedulerInfo() = default;
   };
 
-  using task_scheduling_info_type = typename std::conditional<
+  using task_scheduling_info_type = std::conditional_t<
       TaskQueueTraits::ready_queue_insertion_may_fail,
       FailedQueueInsertionLinkedListSchedulingInfo<TaskQueueTraits>,
-      EmptyTaskSchedulingInfo>::type;
+      EmptyTaskSchedulingInfo>;
   using team_scheduler_info_type = SchedulerInfo;
 
   using runnable_task_base_type = RunnableTaskBase<TaskQueueTraits>;
@@ -467,7 +461,7 @@ class MultipleTaskQueue final
 
   // TODO @tasking @generalization DSH make this a property-based customization
   // point
-  static /* KOKKOS_CONSTEXPR_14 */ size_t task_queue_allocation_size(
+  static /* constexpr */ size_t task_queue_allocation_size(
       typename base_t::execution_space const& exec_space,
       typename base_t::memory_space const&,
       typename base_t::memory_pool const&) {

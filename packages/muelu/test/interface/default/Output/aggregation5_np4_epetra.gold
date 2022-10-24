@@ -8,16 +8,14 @@ smoother ->
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-lightweight wrap = 1
-Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
 Build (MueLu::BrickAggregationFactory)
 Using brick size: 3
+Generating Graph (trivial) (MueLu::BrickAggregationFactory)
 aggregation: brick x size = 3
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -42,16 +40,14 @@ smoother ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-lightweight wrap = 1
-Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
 Build (MueLu::BrickAggregationFactory)
 Using brick size: 3
+Generating Graph (trivial) (MueLu::BrickAggregationFactory)
 aggregation: brick x size = 3
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)

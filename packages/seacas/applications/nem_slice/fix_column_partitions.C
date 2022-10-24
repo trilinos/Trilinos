@@ -87,7 +87,7 @@ namespace {
 
 template int fix_column_partitions(LB_Description<int> *lb, Mesh_Description<int> const *const mesh,
                                    Graph_Description<int> const *const graph);
-template int fix_column_partitions(LB_Description<int64_t> *               lb,
+template int fix_column_partitions(LB_Description<int64_t>                *lb,
                                    Mesh_Description<int64_t> const *const  mesh,
                                    Graph_Description<int64_t> const *const graph);
 

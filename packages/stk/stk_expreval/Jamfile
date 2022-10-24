@@ -1,10 +1,10 @@
 #--------------------------------------------------------------------
-#    Copyright 2002 - 2008, 2010, 2011 National Technology &         
-#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms   
-#    of Contract DE-NA0003525 with NTESS, there is a                 
-#    non-exclusive license for use of this work by or on behalf      
-#    of the U.S. Government.  Export of this program may require     
-#    a license from the United States Government.                    
+#    Copyright 2002 - 2008, 2010, 2011 National Technology &
+#    Engineering Solutions of Sandia, LLC (NTESS). Under the terms
+#    of Contract DE-NA0003525 with NTESS, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
 #--------------------------------------------------------------------
 
 #
@@ -57,14 +57,14 @@ project votd
 # This variable should contain the applications and associated files that
 # must be installed for both developers and end users. Unless they need to
 # be visible to end users, unittests should not be placed here.
-local installed-end-user-files = 
+local installed-end-user-files =
   ;
 #
 # This variable should contain the applications and associated files that will
 # only be installed for and visible to developers.
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
-local installed-developer-files = 
+local installed-developer-files =
   stk_expreval_utest
   ;
 
@@ -100,7 +100,7 @@ install install-user-bin
   : $(installed-end-user-files)
     [ if-defined-val $(install-developer-files-arg) :
         # Targets listed here will only be installed if the --install-developer-files option
-        # is passed to bjam. This is intended for testing that requires things like 
+        # is passed to bjam. This is intended for testing that requires things like
         # unittests to be installed when they normally would not be.
         $(installed-developer-files)
     ]
@@ -156,7 +156,7 @@ lib stk_expreval
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_ngp
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.

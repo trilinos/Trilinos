@@ -212,7 +212,7 @@ public:
 
     Cuda::size_type nblock =
       std::min( (m_work + block.y - 1 ) / block.y ,
-                cuda_internal_maximum_grid_count() );
+                cuda_internal_maximum_grid_count()[0] );
     const dim3 grid( nblock , 1 , 1 );
 
     const Cuda::size_type shared = m_config.shared;

@@ -47,10 +47,6 @@
 #define KOKKOS_ATOMIC_GENERIC_HPP
 #include <Kokkos_Macros.hpp>
 
-#if defined(KOKKOS_ENABLE_CUDA)
-#include <Cuda/Kokkos_Cuda_Version_9_8_Compatibility.hpp>
-#endif
-
 // Combination operands to be used in an Compare and Exchange based atomic
 // operation
 namespace Kokkos {
@@ -192,102 +188,103 @@ struct RShiftOper {
 template <class Oper, typename T>
 KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
     const Oper& op, volatile T* const dest,
-    typename std::enable_if<sizeof(T) != sizeof(int) &&
-                                sizeof(T) == sizeof(unsigned long long int),
-                            const T>::type val) {
-  union U {
-    unsigned long long int i;
-    T t;
-    KOKKOS_INLINE_FUNCTION U() {}
-  } oldval, assume, newval;
-
-  oldval.t = *dest;
-
-  do {
-    if (check_early_exit(op, oldval.t, val)) return oldval.t;
-    assume.i = oldval.i;
-    newval.t = op.apply(assume.t, val);
-    oldval.i = Kokkos::atomic_compare_exchange((unsigned long long int*)dest,
-                                               assume.i, newval.i);
-  } while (assume.i != oldval.i);
-
-  return oldval.t;
-}
-
-template <class Oper, typename T>
-KOKKOS_INLINE_FUNCTION T atomic_oper_fetch(
-    const Oper& op, volatile T* const dest,
-    typename std::enable_if<sizeof(T) != sizeof(int) &&
-                                sizeof(T) == sizeof(unsigned long long int),
-                            const T>::type val) {
-  union U {
-    unsigned long long int i;
-    T t;
-    KOKKOS_INLINE_FUNCTION U() {}
-  } oldval, assume, newval;
-
-  oldval.t = *dest;
-
-  do {
-    if (check_early_exit(op, oldval.t, val)) return oldval.t;
-    assume.i = oldval.i;
-    newval.t = op.apply(assume.t, val);
-    oldval.i = Kokkos::atomic_compare_exchange((unsigned long long int*)dest,
-                                               assume.i, newval.i);
-  } while (assume.i != oldval.i);
-
-  return newval.t;
-}
-
-template <class Oper, typename T>
-KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
-    const Oper& op, volatile T* const dest,
-    typename std::enable_if<sizeof(T) == sizeof(int), const T>::type val) {
-  union U {
-    int i;
-    T t;
-    KOKKOS_INLINE_FUNCTION U() {}
-  } oldval, assume, newval;
-
-  oldval.t = *dest;
-
-  do {
-    if (check_early_exit(op, oldval.t, val)) return oldval.t;
-    assume.i = oldval.i;
-    newval.t = op.apply(assume.t, val);
-    oldval.i = Kokkos::atomic_compare_exchange((int*)dest, assume.i, newval.i);
-  } while (assume.i != oldval.i);
-
-  return oldval.t;
-}
-
-template <class Oper, typename T>
-KOKKOS_INLINE_FUNCTION T atomic_oper_fetch(
-    const Oper& op, volatile T* const dest,
-    typename std::enable_if<sizeof(T) == sizeof(int), const T>::type val) {
-  union U {
-    int i;
-    T t;
-    KOKKOS_INLINE_FUNCTION U() {}
-  } oldval, assume, newval;
-
-  oldval.t = *dest;
-
-  do {
-    if (check_early_exit(op, oldval.t, val)) return oldval.t;
-    assume.i = oldval.i;
-    newval.t = op.apply(assume.t, val);
-    oldval.i = Kokkos::atomic_compare_exchange((int*)dest, assume.i, newval.i);
-  } while (assume.i != oldval.i);
-
-  return newval.t;
-}
-
-template <class Oper, typename T>
-KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
-    const Oper& op, volatile T* const dest,
-    typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8), const T>::type
+    std::enable_if_t<sizeof(T) != sizeof(int) &&
+                         sizeof(T) == sizeof(unsigned long long int),
+                     const T>
         val) {
+  union U {
+    unsigned long long int i;
+    T t;
+    KOKKOS_INLINE_FUNCTION U() {}
+  } oldval, assume, newval;
+
+  oldval.t = *dest;
+
+  do {
+    if (check_early_exit(op, oldval.t, val)) return oldval.t;
+    assume.i = oldval.i;
+    newval.t = op.apply(assume.t, val);
+    oldval.i = Kokkos::atomic_compare_exchange((unsigned long long int*)dest,
+                                               assume.i, newval.i);
+  } while (assume.i != oldval.i);
+
+  return oldval.t;
+}
+
+template <class Oper, typename T>
+KOKKOS_INLINE_FUNCTION T atomic_oper_fetch(
+    const Oper& op, volatile T* const dest,
+    std::enable_if_t<sizeof(T) != sizeof(int) &&
+                         sizeof(T) == sizeof(unsigned long long int),
+                     const T>
+        val) {
+  union U {
+    unsigned long long int i;
+    T t;
+    KOKKOS_INLINE_FUNCTION U() {}
+  } oldval, assume, newval;
+
+  oldval.t = *dest;
+
+  do {
+    if (check_early_exit(op, oldval.t, val)) return oldval.t;
+    assume.i = oldval.i;
+    newval.t = op.apply(assume.t, val);
+    oldval.i = Kokkos::atomic_compare_exchange((unsigned long long int*)dest,
+                                               assume.i, newval.i);
+  } while (assume.i != oldval.i);
+
+  return newval.t;
+}
+
+template <class Oper, typename T>
+KOKKOS_INLINE_FUNCTION T
+atomic_fetch_oper(const Oper& op, volatile T* const dest,
+                  std::enable_if_t<sizeof(T) == sizeof(int), const T> val) {
+  union U {
+    int i;
+    T t;
+    KOKKOS_INLINE_FUNCTION U() {}
+  } oldval, assume, newval;
+
+  oldval.t = *dest;
+
+  do {
+    if (check_early_exit(op, oldval.t, val)) return oldval.t;
+    assume.i = oldval.i;
+    newval.t = op.apply(assume.t, val);
+    oldval.i = Kokkos::atomic_compare_exchange((int*)dest, assume.i, newval.i);
+  } while (assume.i != oldval.i);
+
+  return oldval.t;
+}
+
+template <class Oper, typename T>
+KOKKOS_INLINE_FUNCTION T
+atomic_oper_fetch(const Oper& op, volatile T* const dest,
+                  std::enable_if_t<sizeof(T) == sizeof(int), const T> val) {
+  union U {
+    int i;
+    T t;
+    KOKKOS_INLINE_FUNCTION U() {}
+  } oldval, assume, newval;
+
+  oldval.t = *dest;
+
+  do {
+    if (check_early_exit(op, oldval.t, val)) return oldval.t;
+    assume.i = oldval.i;
+    newval.t = op.apply(assume.t, val);
+    oldval.i = Kokkos::atomic_compare_exchange((int*)dest, assume.i, newval.i);
+  } while (assume.i != oldval.i);
+
+  return newval.t;
+}
+
+template <class Oper, typename T>
+KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
+    const Oper& op, volatile T* const dest,
+    std::enable_if_t<(sizeof(T) != 4) && (sizeof(T) != 8), const T> val) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
   while (!Impl::lock_address_host_space((void*)dest))
     ;
@@ -301,12 +298,8 @@ KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
   // This is a way to (hopefully) avoid dead lock in a warp
   T return_val;
   int done                 = 0;
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-  unsigned int mask        = KOKKOS_IMPL_CUDA_ACTIVEMASK;
-  unsigned int active      = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, 1);
-#else
-  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
-#endif
+  unsigned int mask        = __activemask();
+  unsigned int active      = __ballot_sync(mask, 1);
   unsigned int done_active = 0;
   while (active != done_active) {
     if (!done) {
@@ -319,11 +312,7 @@ KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
         done = 1;
       }
     }
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, done);
-#else
-    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
-#endif
+    done_active = __ballot_sync(mask, done);
   }
   return return_val;
 #elif defined(__HIP_DEVICE_COMPILE__)
@@ -356,13 +345,13 @@ KOKKOS_INLINE_FUNCTION T atomic_fetch_oper(
 template <class Oper, typename T>
 KOKKOS_INLINE_FUNCTION T
 atomic_oper_fetch(const Oper& op, volatile T* const dest,
-                  typename std::enable_if<(sizeof(T) != 4) && (sizeof(T) != 8)
+                  std::enable_if_t<(sizeof(T) != 4) && (sizeof(T) != 8)
 #if defined(KOKKOS_ENABLE_ASM) && \
     defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-                                              && (sizeof(T) != 16)
+                                       && (sizeof(T) != 16)
 #endif
-                                              ,
-                                          const T>::type& val) {
+                                       ,
+                                   const T>& val) {
 
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
   while (!Impl::lock_address_host_space((void*)dest))
@@ -377,12 +366,8 @@ atomic_oper_fetch(const Oper& op, volatile T* const dest,
   T return_val;
   // This is a way to (hopefully) avoid dead lock in a warp
   int done                 = 0;
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-  unsigned int mask        = KOKKOS_IMPL_CUDA_ACTIVEMASK;
-  unsigned int active      = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, 1);
-#else
-  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
-#endif
+  unsigned int mask        = __activemask();
+  unsigned int active      = __ballot_sync(mask, 1);
   unsigned int done_active = 0;
   while (active != done_active) {
     if (!done) {
@@ -395,11 +380,7 @@ atomic_oper_fetch(const Oper& op, volatile T* const dest,
         done = 1;
       }
     }
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, done);
-#else
-    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
-#endif
+    done_active = __ballot_sync(mask, done);
   }
   return return_val;
 #elif defined(__HIP_DEVICE_COMPILE__)

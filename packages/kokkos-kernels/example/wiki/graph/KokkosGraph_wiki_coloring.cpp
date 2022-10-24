@@ -11,7 +11,7 @@
 //    -Different constraint: two vertices separated by a path of length 1 OR 2
 //     must have different colors)
 
-int main(int argc, char* argv[])
+int main()
 {
   Kokkos::initialize();
   {

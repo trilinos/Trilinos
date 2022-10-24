@@ -101,7 +101,7 @@ namespace MueLu {
     RCP<Matrix> A         = Get< RCP<Matrix> >      (currentLevel, "A");
     LO BlkSize            = A->GetFixedBlockSize();
     RCP<const Map> rowMap = A->getRowMap();
-    LO Ndofs              = rowMap->getNodeNumElements();
+    LO Ndofs              = rowMap->getLocalNumElements();
     LO Nnodes             = Ndofs/BlkSize;
 
     // collect information provided by user

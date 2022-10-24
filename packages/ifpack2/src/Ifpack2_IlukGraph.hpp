@@ -280,11 +280,11 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
   constructOverlapGraph();
 
   // Get Maximum Row length
-  const int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries ();
+  const int MaxNumIndices = OverlapGraph_->getLocalMaxNumRowEntries ();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
-  // getNodeNumElements() returns, instead of ptrdiff_t.
-  const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
+  // getLocalNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap ()->getLocalNumElements ();
 
   using device_type = typename node_type::device_type;
   using execution_space = typename device_type::execution_space;
@@ -305,8 +305,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                            // Heuristic to get the maximum number of entries per row.
                            int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
                            numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
-                             : Kokkos::Experimental::ceil(static_cast<double>(RowMaxNumIndices) 
-                                    * Kokkos::Experimental::pow(overalloc, levelfill));
+                             : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
+                                    * Kokkos::pow(overalloc, levelfill));
                          });
    
   };
@@ -583,8 +583,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   constructOverlapGraph();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
-  // getNodeNumElements() returns, instead of ptrdiff_t.
-  const int NumMyRows = OverlapGraph_->getRowMap()->getNodeNumElements();
+  // getLocalNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap()->getLocalNumElements();
   auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
 
   if (KernelHandle->get_spiluk_handle()->get_nrows() < static_cast<size_type>(NumMyRows)) {
@@ -602,8 +602,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   do {
     symbolicError = false;
     try {
-      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_, 
-                                                   localOverlapGraph.row_map, localOverlapGraph.entries, 
+      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_,
+                                                   localOverlapGraph.row_map, localOverlapGraph.entries,
                                                    L_row_map, L_entries, U_row_map, U_entries );
     }
     catch (std::runtime_error &e) {

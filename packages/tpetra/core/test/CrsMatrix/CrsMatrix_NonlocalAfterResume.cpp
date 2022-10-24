@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), numLocal*numImages );
-    TEST_EQUALITY      ( matrix.getNodeNumEntries(),   (size_t)numLocal   );
+    TEST_EQUALITY      ( matrix.getLocalNumEntries(),   (size_t)numLocal   );
 
     comm->barrier ();
     if (myImageID == 0) {
@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     {
       size_t expected = numLocal;
       if (myImageID > 0) expected += numLocal; // super-diagonal
-      TEST_EQUALITY( matrix.getNodeNumEntries(), expected );
+      TEST_EQUALITY( matrix.getLocalNumEntries(), expected );
     }
 
     comm->barrier ();
@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       size_t expected = numLocal;
       if (myImageID > 0)           expected += numLocal; // super-diagonal
       if (myImageID < numImages-1) expected += numLocal; // sub-diagonal
-      TEST_EQUALITY( matrix.getNodeNumEntries(), expected );
+      TEST_EQUALITY( matrix.getLocalNumEntries(), expected );
     }
 
     comm->barrier ();

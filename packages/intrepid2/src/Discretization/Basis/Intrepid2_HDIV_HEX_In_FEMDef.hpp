@@ -330,14 +330,14 @@ namespace Intrepid2 {
 
     // this should be created in host and vinv should be deep copied into device space
     Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
+    Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
 
     const ordinal_type
       cardLine = lineBasis.getCardinality(),
       cardBubble = bubbleBasis.getCardinality();
 
-    this->vinvLine_   = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("Hcurl::Hex::In::vinvLine", cardLine, cardLine);
-    this->vinvBubble_ = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("Hcurl::Hex::In::vinvBubble", cardBubble, cardBubble);
+    this->vinvLine_   = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("Hcurl::Hex::In::vinvLine", cardLine, cardLine);
+    this->vinvBubble_ = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("Hcurl::Hex::In::vinvBubble", cardBubble, cardBubble);
 
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);
@@ -482,7 +482,7 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,DT>
       dofCoordsLine("dofCoordsLine", cardLine, 1),
       dofCoordsBubble("dofCoordsBubble", cardBubble, 1);
 

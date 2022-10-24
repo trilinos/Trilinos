@@ -52,7 +52,6 @@ include(MessageWrapper)
 include(TribitsGetCategoriesString)
 
 
-#
 # Do initialization for test helpers
 #
 # This must be run just before the packages define their tests and this macro
@@ -66,34 +65,32 @@ macro(tribits_add_test_helpers_init)
 endmacro()
 
 
-#
 # Wrapper function for set_tests_properties() to be used in unit testing.
 #
-
 function(tribits_set_tests_properties)
+  cmake_parse_arguments(PARSE_ARGV 0 FWD "" "" "")
   if (NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
-    set_tests_properties(${ARGN})
+    set_tests_properties(${FWD_UNPARSED_ARGUMENTS})
   endif()
   if (TRIBITS_SET_TEST_PROPERTIES_CAPTURE_INPUT)
-    append_global_set(TRIBITS_SET_TEST_PROPERTIES_INPUT ${ARGN})
+    append_global_set(TRIBITS_SET_TEST_PROPERTIES_INPUT ${FWD_UNPARSED_ARGUMENTS})
   endif()
 endfunction()
 
-#
+
 # Wrapper function for set_property(TEST ...) to be used in unit testing
 #
-
 function(tribits_set_test_property)
+  cmake_parse_arguments(PARSE_ARGV 0 FWD "" "" "")
   if (NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
-    set_property(TEST ${ARGN})
+    set_property(TEST ${FWD_UNPARSED_ARGUMENTS})
   endif()
   if (TRIBITS_SET_TEST_PROPERTIES_CAPTURE_INPUT)
-    append_global_set(TRIBITS_SET_TEST_PROPERTIES_INPUT ${ARGN})
+    append_global_set(TRIBITS_SET_TEST_PROPERTIES_INPUT ${FWD_UNPARSED_ARGUMENTS})
   endif()
 endfunction()
 
 
-#
 # Scale a timeout by ${PROJECT_NAME}_SCALE_TEST_TIMEOUT
 #
 # This function will truncate input TIMEOUT_IN but will allow for a simple
@@ -148,7 +145,6 @@ function(tribits_scale_timeout  TIMEOUT_IN  SCALED_TIMEOUT_OUT)
 endfunction()
 
 
-#
 # Function that converts a complete string of command-line arguments
 # into a form that add_test(...) can correctly deal with.
 #
@@ -159,7 +155,6 @@ endfunction()
 # active.  This allows you to pass in quoted arguments and have them
 # treated as a single argument.
 #
-
 function(tribits_convert_cmnd_arg_string_to_add_test_arg_array CMND_ARG_STRING ARG_ARRAY_VARNAME)
 
   #message("TRIBITS_CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY")
@@ -208,24 +203,15 @@ function(tribits_convert_cmnd_arg_string_to_add_test_arg_array CMND_ARG_STRING A
 endfunction()
 
 
-#
 # Determine if to add the test based on if testing is enabled for the current
-# package or subpackage.
+# package.
 #
-
 function(tribits_add_test_process_enable_tests  ADD_THE_TEST_OUT)
-  if(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
+  if(${PACKAGE_NAME}_ENABLE_TESTS)
    set(ADD_THE_TEST TRUE)
   else()
-    if (PARENT_PACKAGE_NAME STREQUAL PACKAGE_NAME)
-      set(PARENT_EANBLE_TESTS_DISABLE_MSG)
-    else()
-      set(PARENT_EANBLE_TESTS_DISABLE_MSG
-	", ${PARENT_PACKAGE_NAME}_ENABLE_TESTS='${${PARENT_PACKAGE_NAME}_ENABLE_TESTS}'"
-	)
-    endif()
     message_wrapper(
-      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}${PARENT_EANBLE_TESTS_DISABLE_MSG}'."
+      "-- ${TEST_NAME}: NOT added test because ${PACKAGE_NAME}_ENABLE_TESTS='${${PACKAGE_NAME}_ENABLE_TESTS}'."
      )
    set(ADD_THE_TEST FALSE)
   endif()
@@ -233,13 +219,11 @@ function(tribits_add_test_process_enable_tests  ADD_THE_TEST_OUT)
 endfunction()
 
 
-#
 # Determine if to add the test or not based on [X]HOST and [X]HOSTTYPE arguments
 #
 # Warning: Arguments for [X]HOST and [X]HOSTTYPE arguments are passed in
 # implicitly due to scoping of CMake.
 #
-
 function(tribits_add_test_process_host_hosttype  ADD_THE_TEST_OUT)
 
   if ("${${PROJECT_NAME}_HOSTNAME}" STREQUAL "")
@@ -318,7 +302,6 @@ function(tribits_add_test_process_host_hosttype  ADD_THE_TEST_OUT)
 endfunction()
 
 
-#
 # Determine if to add the test or not based on CATEGORIES arguments
 #
 # Warning: Argument PARSE_CATEGORIES is passed in implicitly due to scoping of
@@ -390,7 +373,6 @@ function(tribits_add_test_process_categories  ADD_THE_TEST_OUT)
 endfunction()
 
 
-#
 # FUNCTION: tribits_add_test_get_exe_binary_name()
 #
 # Get the full name of a package executable given its root name and other
@@ -432,7 +414,6 @@ function(tribits_add_test_get_exe_binary_name  EXE_NAME_IN
 endfunction()
 
 
-#
 # Adjust the directory path to an executable for a test
 #
 function(tribits_add_test_adjust_directory  EXE_BINARY_NAME  DIRECTORY
@@ -462,7 +443,6 @@ function(tribits_add_test_adjust_directory  EXE_BINARY_NAME  DIRECTORY
 endfunction()
 
 
-#
 # Get the number of MPI processes to use
 #
 function(tribits_add_test_get_num_procs_used  NUM_MPI_PROCS_IN
@@ -523,7 +503,6 @@ function(tribits_add_test_get_num_procs_used  NUM_MPI_PROCS_IN
 endfunction()
 
 
-#
 # Generate the array of arguments for an MPI run
 #
 # NOTE: The extra test program arguments are passed through ${ARGN}.
@@ -551,7 +530,6 @@ function( tribits_add_test_get_test_cmnd_array  CMND_ARRAY_OUT
 endfunction()
 
 
-#
 # Get the number of cores used by process
 #
 function(tribits_add_test_get_num_total_cores_used  TEST_NAME_IN
@@ -595,7 +573,6 @@ function(tribits_add_test_get_num_total_cores_used  TEST_NAME_IN
 endfunction()
 
 
-#
 # Read ${TEST_NAME_IN}_SET_DISABLED_AND_MSG and set output var
 # <setDisabledAndMsgOut> as used by the TRIBITS_ADD[_ADVANCED]_test()
 # functions.
@@ -622,7 +599,6 @@ function(tribits_set_disabled_and_msg  TEST_NAME_IN  PARSE_DISABLED
 endfunction()
 
 
-#
 # Read ${TEST_NAME_IN}_SET_RUN_SERIAL and set output var SET_RUN_SERIAL_OUT as
 # used by the TRIBITS_ADD[_ADVANCED]_test() functions.
 #
@@ -648,7 +624,6 @@ function(tribits_set_run_serial  TEST_NAME_IN  PARSE_RUN_SERIAL
 endfunction()
 
 
-#
 # Determine if the test should be skipped due to a disable var set
 #
 # Usage:
@@ -683,10 +658,10 @@ function(tribits_add_test_process_skip_ctest_add_test  ADD_THE_TEST_OUT)
   if(${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST OR ${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST)
     if (PARENT_PACKAGE_NAME STREQUAL PACKAGE_NAME)
       set(DISABLE_VAR_MSG
-	"${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
+        "${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
     else()
       set(DISABLE_VAR_MSG
-	"${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
+        "${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST='${${PARENT_PACKAGE_NAME}_SKIP_CTEST_ADD_TEST}'")
     endif()
     message_wrapper(
       "-- ${TEST_NAME}: NOT added test because ${DISABLE_VAR_MSG}!")
@@ -703,12 +678,14 @@ endfunction()
 #
 function(tribits_add_test_add_test TEST_NAME EXE_NAME)
 
+  string(REPLACE "${PARSE_LIST_SEPARATOR}" "\\;" args "${ARGN}")
+
   if (TRIBITS_ADD_TEST_ADD_TEST_CAPTURE)
-    append_global_set(TRIBITS_ADD_TEST_ADD_TEST_INPUT NAME ${TEST_NAME} COMMAND ${ARGN})
+    append_global_set(TRIBITS_ADD_TEST_ADD_TEST_INPUT NAME ${TEST_NAME} COMMAND ${args})
   endif()
 
   if (NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
-    add_test(NAME ${TEST_NAME} COMMAND ${ARGN})
+    add_test(NAME ${TEST_NAME} COMMAND ${args})
   endif()
 
   tribits_set_tests_properties(${TEST_NAME} PROPERTIES REQUIRED_FILES ${EXE_NAME})
@@ -731,7 +708,7 @@ function(tribits_private_add_test_set_passfail_properties TEST_NAME_IN)
 
   if (PARSE_PASS_REGULAR_EXPRESSION)
     tribits_set_tests_properties(${TEST_NAME_IN} PROPERTIES PASS_REGULAR_EXPRESSION
-      ${PARSE_PASS_REGULAR_EXPRESSION})
+      "${PARSE_PASS_REGULAR_EXPRESSION}")
   endif()
 
   if (PARSE_WILL_FAIL)
@@ -781,7 +758,10 @@ endfunction()
 function(tribits_private_add_test_set_environment  TEST_NAME_IN)
 
   if (PARSE_ENVIRONMENT)
-    tribits_set_test_property(${TEST_NAME_IN} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
+    string(REPLACE "${PARSE_LIST_SEPARATOR}" "\\;" PARSE_ENVIRONMENT
+      "${PARSE_ENVIRONMENT}")
+    tribits_set_test_property(${TEST_NAME_IN} PROPERTY ENVIRONMENT
+      "${PARSE_ENVIRONMENT}")
   endif()
 
 endfunction()
@@ -804,7 +784,6 @@ function(tribits_private_add_test_set_processors  TEST_NAME_IN
 endfunction()
 
 
-#
 # Print test added message!
 #
 function(tribits_private_add_test_print_added  TEST_NAME_IN  CATEGORIES_IN
@@ -852,7 +831,6 @@ function(tribits_private_add_test_print_added  TEST_NAME_IN  CATEGORIES_IN
 endfunction()
 
 
-#
 # Overall add test command
 #
 # NOTE: Pass the command arguments on the end in ARGSN.
@@ -886,10 +864,8 @@ function(tribits_add_test_add_test_all  TEST_NAME_IN
 endfunction()
 
 
-#
 # Set the label and keywords
 #
-
 function(tribits_private_add_test_add_label_and_keywords  TEST_NAME_IN)
 
   tribits_set_test_property(${TEST_NAME_IN} APPEND PROPERTY
@@ -903,10 +879,8 @@ function(tribits_private_add_test_add_label_and_keywords  TEST_NAME_IN)
 endfunction()
 
 
-#
 # Postprocess a test that was added
 #
-
 function(tribits_private_add_test_post_process_added_test  TEST_NAME_IN
   CATEGORIES_IN  NUM_PROCS_USED_IN  NUM_TOTAL_CORES_USED_IN
   RUN_SERIAL_IN  DISABLED_MSG_IN
@@ -938,10 +912,8 @@ function(tribits_private_add_test_post_process_added_test  TEST_NAME_IN
 endfunction()
 
 
-#
 # Add environment and resource properties to a test
 #
-
 function(tribits_private_add_test_add_environment_and_resource  TEST_NAME_IN
   NUM_PROCS_USED_IN
   )

@@ -9,13 +9,13 @@
 #ifndef Akri_MeshInput_Parser_h
 #define Akri_MeshInput_Parser_h
 
-namespace YAML { class Node; }
 namespace krino { class MeshInputOptions; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace MeshInput_Parser {
- void parse(const YAML::Node & node);
- bool parse_generated_mesh(const YAML::Node & fem_node, MeshInputOptions & options);
+ void parse(const Parser::Node & node);
+ bool parse_generated_mesh(const Parser::Node & fem_node, MeshInputOptions & options);
 }
 }
 

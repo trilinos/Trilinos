@@ -109,8 +109,19 @@ def vecDistance(inPtA, inPtB):
 def vecAdd(inVecA, inVecB):
   return [inVecA[0]+inVecB[0],inVecA[1]+inVecB[1],inVecA[2]+inVecB[2]]
 
+def vecAddInPlace(inVecA, inVecB):
+  """changes inVecA to inVecA + inVecB"""
+  inVecA[0] += inVecB[0]
+  inVecA[1] += inVecB[1]
+  inVecA[2] += inVecB[2]
+
 def vecScale(inScale, inVec):
   return [inScale*inVec[0], inScale*inVec[1], inScale*inVec[2]]
+
+def vecScaleInPlace(inScale, inVec):
+  inVec[0] *= inScale
+  inVec[1] *= inScale
+  inVec[2] *= inScale
 
 def vecMultiplyAdd(inVecA, inVecB, inMM):
   """returns inVecA + (inMM * inVecB)"""
@@ -185,4 +196,3 @@ def GetPhactoriVectorLibraryProgrammableFilterLines(pfLns):
   pfLns.append("          inVecA[2] + inMM * inVecB[2]]\n")
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

@@ -1,14 +1,20 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_io/WriteMesh.hpp"
-#include <stddef.h>                    // for size_t
-#include "Ioss_Field.h"                // for Field, Field::RoleType, etc
-#include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose, etc
+#include <cstddef>                     // for size_t
+#include "Ioss_DatabaseIO.h"           // for DatabaseIO
+#include "Ioss_Field.h"                // for Field, Field::RoleType, Field:...
+#include "Ioss_Property.h"             // for Property
+#include "Ioss_Region.h"               // for Region
+#include "Teuchos_RCP.hpp"             // for RCP::operator->
+#include "Teuchos_RCPDecl.hpp"         // for RCP
+#include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose
 #include "stk_io/IossBridge.hpp"       // for get_field_role
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
 #include "stk_mesh/base/BulkData.hpp"  // for BulkData
 #include "stk_mesh/base/MetaData.hpp"  // for MetaData
 #include "stk_mesh/base/Types.hpp"     // for FieldVector
+#include "stk_topology/topology.hpp"   // for topology, topology::ELEM_RANK
 namespace stk { namespace mesh { class FieldBase; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -33,6 +39,9 @@ void write_mesh(const std::string &filename,
 {
     size_t outputFileIndex = ioBroker.create_output_mesh(filename, databasePurpose);
     ioBroker.write_output_mesh(outputFileIndex);
+
+    auto region = ioBroker.get_output_io_region(outputFileIndex);
+    region->get_database()->closeDatabase();
 }
     
 

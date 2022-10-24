@@ -129,7 +129,7 @@ ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   ordinal_type offsetBasis = basisEPointsRange(dim,0).first;
   ordinal_type offsetTarget = targetEPointsRange(dim,0).first;
 
-  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
   auto hWeightedBasisAtBasisEPoints = Kokkos::create_mirror_view(weightedBasisAtBasisEPoints);
   auto hWeightedBasisAtTargetEPoints = Kokkos::create_mirror_view(weightedBasisAtTargetEPoints);
   auto hBasisAtBasisEPoints = Kokkos::create_mirror_view_and_copy(HostSpaceType(), basisAtBasisEPoints);

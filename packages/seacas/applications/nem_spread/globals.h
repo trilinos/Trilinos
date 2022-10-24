@@ -20,17 +20,17 @@ template <typename INT> struct ELEM_COMM_MAP
 {
   size_t map_id{0};
   size_t elem_cnt{0};
-  INT *  elem_ids{nullptr};
-  INT *  side_ids{nullptr};
-  INT *  proc_ids{nullptr};
+  INT   *elem_ids{nullptr};
+  INT   *side_ids{nullptr};
+  INT   *proc_ids{nullptr};
 };
 
 template <typename INT> struct NODE_COMM_MAP
 {
   size_t map_id{0};
   size_t node_cnt{0};
-  INT *  node_ids{nullptr};
-  INT *  proc_ids{nullptr};
+  INT   *node_ids{nullptr};
+  INT   *proc_ids{nullptr};
 };
 
 /*---------------------------------------------------------------------------*/
@@ -341,8 +341,8 @@ public:
 
   char **Info_Record{nullptr}; /* The Information Records from the original *
                                 * file                                      */
-  INT * Coordinate_Frame_Ids{nullptr};
-  T *   Coordinate_Frame_Coordinates{nullptr};
+  INT  *Coordinate_Frame_Ids{nullptr};
+  T    *Coordinate_Frame_Coordinates{nullptr};
   char *Coordinate_Frame_Tags{nullptr};
 
   std::vector<ex_assembly> Assemblies{};

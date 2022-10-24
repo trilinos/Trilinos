@@ -403,7 +403,7 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    IF (Kokkos_ENABLE_PTHREAD)
+    IF (Kokkos_ENABLE_THREADS)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewUQPCEUnitTest_Threads
         SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
@@ -589,7 +589,7 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    IF (Kokkos_ENABLE_PTHREAD)
+    IF (Kokkos_ENABLE_THREADS)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosViewMPVectorUnitTest_Threads
         SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
@@ -797,7 +797,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
       )
   ENDIF()
 
-  IF (Kokkos_ENABLE_PTHREAD)
+  IF (Kokkos_ENABLE_THREADS)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_Threads
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp

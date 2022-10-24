@@ -77,7 +77,7 @@ namespace {
 
 static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
+typedef stk::mesh::fixtures::simple_fields::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;
 
 //
@@ -91,7 +91,7 @@ typedef stk::mesh::Field<int> IntField;
 // if do_separate_wedge == true then wedge must be nonnull pointer
 void separate_wedge(
     bool do_separate_wedge,
-    stk::mesh::fixtures::GearsFixture   & fixture,
+    stk::mesh::fixtures::simple_fields::GearsFixture   & fixture,
     stk::mesh::Entity wedge,
     CartesianField & velocity_field,
     stk::mesh::Part & skin_part
@@ -145,10 +145,10 @@ void separate_wedge(
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity new_node = new_nodes[i];
       const double * const new_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
+        stk::mesh::field_data( fixture.displacement_field->field_of_state(stk::mesh::StateNew), new_node);
 
       const double * const old_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
+        stk::mesh::field_data( fixture.displacement_field->field_of_state(stk::mesh::StateOld), new_node);
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         avg_velocity_data[k] += new_displacement_data[k] - old_displacement_data[k];
@@ -193,7 +193,7 @@ void separate_wedge(
  * in the wedges argument.
  */
 void find_and_shuffle_wedges_to_separate(
-    stk::mesh::fixtures::GearsFixture & fixture,
+    stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
     stk::mesh::EntityVector & wedges
     )
 {
@@ -230,7 +230,7 @@ void find_and_shuffle_wedges_to_separate(
  * continue flying through the air.
  */
 void move_detached_wedges(
-    stk::mesh::fixtures::GearsFixture & fixture,
+    stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
     CartesianField & velocity_field
     )
 {
@@ -251,8 +251,8 @@ void move_detached_wedges(
     stk::mesh::Bucket & b = **b_itr;
 
     const stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
-    stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
-    stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateOld), b);
+    stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateNew), b);
     int ndim = fixture.meta_data.spatial_dimension();
 
     for (size_t i = 0; i < b.size(); ++i) {
@@ -267,7 +267,7 @@ void move_detached_wedges(
 //-----------------------------------------------------------------------------
 //
 
-void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixture,
+void populate_processor_id_field_data( stk::mesh::fixtures::simple_fields::GearsFixture & fixture,
     IntField & processor_field
     )
 {
@@ -300,18 +300,18 @@ TEST( gears_skinning, gears_skinning )
   const size_t NUM_GEARS = 1;
   double start_time = stk::wall_time();
 
-  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS,
-                                            stk::mesh::fixtures::GearParams(0.025, 0.6, 1.05, -0.4, 0.4));
+  stk::mesh::fixtures::simple_fields::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS,
+                                            stk::mesh::fixtures::simple_fields::GearParams(0.025, 0.6, 1.05, -0.4, 0.4));
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
   stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.meta_data.side_rank());
 
   const unsigned ONE_STATE = 1;
-  CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "velocity",ONE_STATE);
+  CartesianField & velocity_field = fixture.meta_data.declare_field<double>(stk::topology::NODE_RANK, "velocity",ONE_STATE);
   stk::topology::rank_t face_rank = static_cast<stk::topology::rank_t>(fixture.meta_data.side_rank());
-  CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>(face_rank, "face_displacement",ONE_STATE);
-  IntField & processor_field = fixture.meta_data.declare_field<IntField>(stk::topology::ELEMENT_RANK, "processor_id",ONE_STATE);
+  CartesianField & displacement = fixture.meta_data.declare_field<double>(face_rank, "face_displacement",ONE_STATE);
+  IntField & processor_field = fixture.meta_data.declare_field<int>(stk::topology::ELEMENT_RANK, "processor_id",ONE_STATE);
 
   stk::mesh::put_field_on_mesh(
       velocity_field,
@@ -362,13 +362,13 @@ TEST( gears_skinning, gears_skinning )
   }
   stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field_on_mesh( displacement, skin_part, nullptr);
+    stk::mesh::put_field_on_mesh( displacement, skin_part, 3, nullptr);
     const stk::mesh::PartVector &surf_parts = skin_part.subsets();
     for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
       stk::mesh::Part & surf_part = **ip;
       if (surf_part.primary_entity_rank() == stk::topology::ELEMENT_RANK-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field_on_mesh( displacement, surf_part, nullptr);
+        stk::mesh::put_field_on_mesh( displacement, surf_part, 3, nullptr);
       }
     }
   }
@@ -393,9 +393,9 @@ TEST( gears_skinning, gears_skinning )
   const double x = 0;
   const double y = 0;
   const double z = 0;
-  const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
+  const stk::mesh::fixtures::simple_fields::GearMovement gear_movement_data(rotation,x,y,z);
 
-  stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
+  stk::mesh::fixtures::simple_fields::Gear & gear = fixture.get_gear(0);
 
   // Iterate over the time steps, updating the locations of the entities and
   // writing the current mesh state to output files.
@@ -457,7 +457,7 @@ TEST( gears_skinning, gears_skinning )
           for ( ; node_rels_itr != node_rels_end; ++node_rels_itr)
           {
             const stk::mesh::Entity node = *node_rels_itr;
-            double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
+            double* node_disp = stk::mesh::field_data(*fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];
             elem_node_disp[2] = node_disp[2];
@@ -484,11 +484,11 @@ TEST( gears_skinning, gears_skinning )
         surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         surf_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str(), stk::io::WRITE_RESULTS);
 
-        stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
+        stk::io::set_field_role(fixture.displacement_field->field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
         stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
         stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
 
-        stkMeshIoBroker.add_field(vol_mesh_index, fixture.displacement_field.field_of_state(stk::mesh::StateNew));
+        stkMeshIoBroker.add_field(vol_mesh_index, fixture.displacement_field->field_of_state(stk::mesh::StateNew));
         stkMeshIoBroker.add_field(vol_mesh_index, displacement);
         stkMeshIoBroker.add_field(vol_mesh_index, processor_field);
       }

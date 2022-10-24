@@ -27,7 +27,7 @@ typedef struct
 
 void *error_test(void *varg)
 {
-  param *     arg = (param *)varg;
+  param      *arg = (param *)varg;
   int         i   = 0;
   char        name[32];
   const char *routine;

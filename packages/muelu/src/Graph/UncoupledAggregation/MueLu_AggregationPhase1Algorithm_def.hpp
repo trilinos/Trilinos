@@ -104,7 +104,7 @@ namespace MueLu {
 
     int              aggIndex = -1;
     size_t           aggSize  =  0;
-    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
+    std::vector<int> aggList(graph.getLocalMaxNumRowEntries());
 
     std::queue<LO>   graphOrderQueue;
 

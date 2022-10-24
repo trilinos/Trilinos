@@ -241,14 +241,14 @@ main (int argc, char *argv[])
     RCP<const map_type> map =
       rcp (new map_type (numGblIndices, indexBase, comm));
 
-    const size_t numMyElements = map->getNodeNumElements ();
+    const size_t numMyElements = map->getLocalNumElements ();
 
     // If you like, you may get the list of global indices that the
     // calling process owns.  This is unnecessary if you don't mind
     // converting local indices to global indices.
     //
     // ArrayView<const global_ordinal_type> myGlobalElements =
-    //   map->getNodeElementList ();
+    //   map->getLocalElementList ();
 
     if (myRank == 0) {
       cout << endl << "Creating the sparse matrix" << endl;

@@ -37,11 +37,21 @@
 
 #if defined(HAVE_SACADO_KOKKOSCONTAINERS)
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Layout.hpp"
 //#include "Kokkos_DynRankView.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 namespace Kokkos {
 
@@ -350,12 +360,12 @@ namespace Impl {
 template <unsigned> struct AssignDim7 {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {}
+  static void eval(Dst& dst, const size_t src_dim) {}
 };
 template <> struct AssignDim7<0u> {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {
+  static void eval(Dst& dst, const size_t src_dim) {
     dst.N7 = src_dim;
   }
 };
@@ -606,7 +616,7 @@ public:
   template< class MemoryTraits >
   struct apply {
 
-    static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
+    static_assert( Kokkos::is_memory_traits< MemoryTraits >::value , "" );
 
     typedef Kokkos::ViewTraits
       < data_type
@@ -1045,10 +1055,10 @@ void deep_copy
   typedef typename src_type::memory_space     src_memory_space ;
 
   enum { DstExecCanAccessSrc =
-   Kokkos::Impl::SpaceAccessibility< typename dst_execution_space::memory_space, src_memory_space >::accessible };
+   Kokkos::SpaceAccessibility< typename dst_execution_space::memory_space, src_memory_space >::accessible };
 
   enum { SrcExecCanAccessDst =
-   Kokkos::Impl::SpaceAccessibility< typename src_execution_space::memory_space, dst_memory_space >::accessible };
+   Kokkos::SpaceAccessibility< typename src_execution_space::memory_space, dst_memory_space >::accessible };
 
   if ( (void *) dst.data() != (void*) src.data() ) {
 

@@ -238,7 +238,7 @@ class TestPhactoriGeometricCellSampler1(unittest.TestCase):
     [[-1.5, 3.5, 6.5], [-1, -1, -1], [204.49305725097656], 0, 1, 6668, -1, -1]]
     }
     """
-    
+
     goldJson = json.loads(goldTestStringJson)
     ff = open("test_PhactoriGeometricCellSampler1_1.json", "r")
     testJson = json.load(ff)

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -42,49 +42,49 @@ public:
   int time_step_stop{-1};     // Last step to compare
   int time_step_increment{1}; // Step increment
 
-  std::pair<int, int> explicit_steps; // Only compare these two steps (db1:db2) if nonzero.
+  std::pair<int, int> explicit_steps{}; // Only compare these two steps (db1:db2) if nonzero.
 
   int max_warnings{100};
 
-  std::vector<std::string> glob_var_names;
+  std::vector<std::string> glob_var_names{};
   Tolerance                glob_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   glob_var;
+  std::vector<Tolerance>   glob_var{};
 
-  std::vector<std::string> node_var_names;
+  std::vector<std::string> node_var_names{};
   Tolerance                node_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   node_var;
+  std::vector<Tolerance>   node_var{};
 
-  std::vector<std::string> elmt_var_names;
+  std::vector<std::string> elmt_var_names{};
   Tolerance                elmt_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   elmt_var;
+  std::vector<Tolerance>   elmt_var{};
 
-  std::vector<std::string> elmt_att_names;
+  std::vector<std::string> elmt_att_names{};
   Tolerance                elmt_att_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   elmt_att;
+  std::vector<Tolerance>   elmt_att{};
 
-  std::vector<std::string> ns_var_names;
+  std::vector<std::string> ns_var_names{};
   Tolerance                ns_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   ns_var;
+  std::vector<Tolerance>   ns_var{};
 
-  std::vector<std::string> ss_var_names;
+  std::vector<std::string> ss_var_names{};
   Tolerance                ss_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   ss_var;
+  std::vector<Tolerance>   ss_var{};
 
-  std::vector<std::string> eb_var_names;
+  std::vector<std::string> eb_var_names{};
   Tolerance                eb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   eb_var;
+  std::vector<Tolerance>   eb_var{};
 
-  std::vector<std::string> fb_var_names;
+  std::vector<std::string> fb_var_names{};
   Tolerance                fb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   fb_var;
+  std::vector<Tolerance>   fb_var{};
 
   // time step exclusion data
-  std::vector<int> exclude_steps;
+  std::vector<int> exclude_steps{};
 
-  std::string file1;
-  std::string file2;
-  std::string diff_file;
-  std::string command_file;
+  std::string file1{};
+  std::string file2{};
+  std::string diff_file{};
+  std::string command_file{};
 
   bool quiet_flag{false};     // By default, warnings and other info is produced
   bool show_all_diffs{false}; // Be default, show only maximum diff for each variable;
@@ -137,7 +137,7 @@ public:
 
 private:
   void          enroll_options();
-  GetLongOption options_; //!< Options parsing
+  GetLongOption options_{}; //!< Options parsing
 };
 
 extern SystemInterface interFace;

@@ -61,6 +61,13 @@
 #include "Intrepid2_DerivedBasis_HDIV_HEX.hpp"
 #include "Intrepid2_DerivedBasis_HVOL_HEX.hpp"
 
+#include "Intrepid2_DerivedBasis_HGRAD_WEDGE.hpp"
+#include "Intrepid2_DerivedBasis_HCURL_WEDGE.hpp"
+#include "Intrepid2_DerivedBasis_HDIV_WEDGE.hpp"
+#include "Intrepid2_DerivedBasis_HVOL_WEDGE.hpp"
+
+#include "Intrepid2_SerendipityBasis.hpp"
+
 namespace Intrepid2
 {
   //! \brief EmptyBasisFamily allows us to set a default void family for a given topology
@@ -117,6 +124,12 @@ namespace Intrepid2
     using HCURL_TET = typename TetrahedronBasisFamily::HCURL;
     using HDIV_TET = typename TetrahedronBasisFamily::HDIV;
     using HVOL_TET = typename TetrahedronBasisFamily::HVOL;
+    
+    // wedge bases
+    using HGRAD_WEDGE = Basis_Derived_HGRAD_WEDGE<HGRAD_TRI, HGRAD_LINE>;
+    using HCURL_WEDGE = Basis_Derived_HCURL_WEDGE<HGRAD_TRI, HCURL_TRI, HGRAD_LINE, HVOL_LINE>;
+    using HDIV_WEDGE  = Basis_Derived_HDIV_WEDGE < HDIV_TRI, HVOL_TRI,  HGRAD_LINE, HVOL_LINE>;
+    using HVOL_WEDGE  = Basis_Derived_HVOL_WEDGE < HVOL_TRI, HVOL_LINE>;
   };
   
   /** \brief  Factory method for line bases in the given family.
@@ -197,6 +210,54 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
   }
+
+  /** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getHypercubeBasis_HGRAD(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    using BasisPtr = typename BasisFamily::BasisPtr;
+    
+    BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HGRAD, polyOrder);
+    BasisPtr tensorBasis = lineBasis;
+    
+    for (int d=1; d<spaceDim; d++)
+    {
+      tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HGRAD));
+    }
+    
+    return tensorBasis;
+  }
+
+  /** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getHypercubeBasis_HVOL(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    using BasisPtr = typename BasisFamily::BasisPtr;
+    
+    BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HVOL, polyOrder);
+    BasisPtr tensorBasis = lineBasis;
+    
+    for (int d=1; d<spaceDim; d++)
+    {
+      tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HVOL));
+    }
+    
+    return tensorBasis;
+  }
   
   /** \brief  Factory method for potentially anisotropic hexahedron bases in the given family.
       \param [in] fs          - the function space for the basis.
@@ -219,6 +280,36 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
   }
+
+  /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HGRAD(int polyOrder, int spaceDim)
+  {
+    auto fullBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyOrder, spaceDim);
+
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    auto serendipityBasis = Teuchos::rcp( new SerendipityBasis<BasisBase>(fullBasis) );
+    return serendipityBasis;
+  }
+
+  /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HVOL(int polyOrder, int spaceDim)
+  {
+    auto fullBasis = getHypercubeBasis_HVOL<BasisFamily>(polyOrder, spaceDim);
+
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    auto serendipityBasis = Teuchos::rcp( new SerendipityBasis<BasisBase>(fullBasis) );
+    return serendipityBasis;
+  }
   
   /** \brief  Factory method for isotropic tetrahedron bases in the given family.
       \param [in] fs          - the function space for the basis.
@@ -231,7 +322,6 @@ namespace Intrepid2
     using Teuchos::rcp;
     switch (fs)
     {
-      //Note: only HGRAD is available for Hierarchical basis at the moment
       case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TET (polyOrder,pointType));
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TET(polyOrder,pointType));
       case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TET (polyOrder,pointType));
@@ -252,11 +342,50 @@ namespace Intrepid2
     using Teuchos::rcp;
     switch (fs)
     {
-      //Note: only HGRAD is available for Hierarchical basis at the moment
       case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TRI (polyOrder,pointType));
       case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TRI(polyOrder,pointType));
       case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TRI (polyOrder,pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_TRI(polyOrder,pointType));
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
+    }
+  }
+
+  /** \brief  Factory method for isotropic wedge bases in the given family.
+      \param [in] fs          - the function space for the basis.
+      \param [in] polyOrder   - the polynomial order of the basis.
+      \param [in] pointType   - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getWedgeBasis(Intrepid2::EFunctionSpace fs, int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    switch (fs)
+    {
+      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_WEDGE (polyOrder, pointType));
+      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_WEDGE(polyOrder, pointType));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder, pointType));
+      case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_WEDGE(polyOrder, pointType));
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
+    }
+  }
+
+  /** \brief  Factory method for anisotropic wedge bases in the given family.
+      \param [in] fs          - the function space for the basis.
+      \param [in] polyOrder   - the polynomial order of the basis.
+      \param [in] pointType   - type of lattice used for creating the DoF coordinates.
+     */
+  template<class BasisFamily>
+  static typename BasisFamily::BasisPtr getWedgeBasis(Intrepid2::EFunctionSpace fs, ordinal_type polyOrder_xy, ordinal_type polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
+  {
+    using Teuchos::rcp;
+    switch (fs)
+    {
+      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_WEDGE (polyOrder_xy, polyOrder_z, pointType));
+      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_WEDGE(polyOrder_xy, polyOrder_z, pointType));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_WEDGE (polyOrder_xy, polyOrder_z, pointType));
+      case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_WEDGE(polyOrder_xy, polyOrder_z, pointType));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }

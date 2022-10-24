@@ -55,21 +55,23 @@ IF (TPL_ENABLE_MPI)
   #
 
   APPEND_SET(HEADERS
-    Adelus_block.h
     Adelus_distribute.hpp
     Adelus_factor.hpp
-    Adelus_pcomm.hpp
+    Adelus_forward.hpp
     Adelus_perm1.hpp
+    Adelus_perm_mat.hpp
+    Adelus_perm_rhs.hpp
     Adelus_solve.hpp
     Adelus_vars.hpp
     Adelus_xlu_solve.hpp
+    Adelus_x_factor.hpp
+    Adelus_x_solve.hpp
     Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp
     )
 
   APPEND_SET(SOURCES
-    Adelus_pcomm.cpp
     Adelus_distribute.cpp
     )
 
@@ -99,22 +101,17 @@ ENDIF()
 
 IF(Adelus_ENABLE_ZCPLX)
   MESSAGE("     Building the Z Complex library")
-#  ADD_DEFINITIONS(-DZCPLX)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
-#    ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Adelus_ENABLE_CUDAHOSTPINNED)
-    MESSAGE("     ... use Cuda Host Pinned memory for MPI")
-#    ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
+  IF(Adelus_ENABLE_HOSTPINNEDMEM)
+    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
-#    ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   IF(Adelus_ENABLE_PRINTSTATUS)
     MESSAGE("     ... allow status print")
-#    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     zadelus
@@ -124,22 +121,17 @@ IF(Adelus_ENABLE_ZCPLX)
 
 ELSEIF(Adelus_ENABLE_SCPLX)
   MESSAGE("     Building the S Complex library")
-#  ADD_DEFINITIONS(-DSCPLX)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
-#    ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Adelus_ENABLE_CUDAHOSTPINNED)
-    MESSAGE("     ... use Cuda Host Pinned memory for MPI")
-#    ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
+  IF(Adelus_ENABLE_HOSTPINNEDMEM)
+    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
-#    ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   IF(Adelus_ENABLE_PRINTSTATUS)
     MESSAGE("     ... allow status print")
-#    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     cadelus
@@ -149,22 +141,17 @@ ELSEIF(Adelus_ENABLE_SCPLX)
 
 ELSEIF(Adelus_ENABLE_SREAL)
   MESSAGE("     Building the single precision library")
-#  ADD_DEFINITIONS(-DSREAL)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
-#    ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Adelus_ENABLE_CUDAHOSTPINNED)
-    MESSAGE("     ... use Cuda Host Pinned memory for MPI")
-#    ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
+  IF(Adelus_ENABLE_HOSTPINNEDMEM)
+    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
-#    ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   IF(Adelus_ENABLE_PRINTSTATUS)
     MESSAGE("     ... allow status print")
-#    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     sadelus
@@ -174,22 +161,17 @@ ELSEIF(Adelus_ENABLE_SREAL)
 
 ELSEIF(Adelus_ENABLE_DREAL)
   MESSAGE("     Building the double precision library")
-#  ADD_DEFINITIONS(-DDREAL)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
-#    ADD_DEFINITIONS(-DGET_TIMING)
   ENDIF()
-  IF(Adelus_ENABLE_CUDAHOSTPINNED)
-    MESSAGE("     ... use Cuda Host Pinned memory for MPI")
-#    ADD_DEFINITIONS(-DCUDA_HOST_PINNED_MPI)
+  IF(Adelus_ENABLE_HOSTPINNEDMEM)
+    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
-#    ADD_DEFINITIONS(-DUSE_DEEPCOPY)
   ENDIF()
   IF(Adelus_ENABLE_PRINTSTATUS)
     MESSAGE("     ... allow status print")
-#    ADD_DEFINITIONS(-DPRINT_STATUS)
   ENDIF()
   TRIBITS_ADD_LIBRARY(
     dadelus

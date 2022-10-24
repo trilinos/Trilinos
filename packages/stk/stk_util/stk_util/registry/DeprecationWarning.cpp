@@ -22,6 +22,10 @@ namespace util
 DeprecationWarning::DeprecationWarning(const VersionNumber & removal_version)
     : my_removal_version(removal_version)
 {
+  if( my_removal_version.is_release() ) {
+    throw std::runtime_error("Cannot set deprecations on release versions");
+  }
+
   message << "Deprecated feature removed in " << removal_version << " detected.\n";
 }
 
@@ -33,7 +37,7 @@ DeprecationWarning::~DeprecationWarning()
     {
       std::cerr << "WARNING: " << message.str() << std::endl;
     }
-    stk::RuntimeWarning() << message.str();
+    stk::RuntimeWarningP0() << message.str();
   }
   else
   {

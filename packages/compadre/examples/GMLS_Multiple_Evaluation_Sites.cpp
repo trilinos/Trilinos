@@ -299,7 +299,7 @@ bool all_passed = true;
     my_GMLS.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS.setWeightingPower(2);
+    my_GMLS.setWeightingParameter(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
     my_GMLS.generateAlphas();

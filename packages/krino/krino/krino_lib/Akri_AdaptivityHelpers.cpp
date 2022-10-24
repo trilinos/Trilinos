@@ -12,6 +12,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>

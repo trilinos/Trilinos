@@ -62,13 +62,13 @@ class Bool {
     _data = x._data;
     return *this;
   }
-    
-#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(USE_STK_SIMD_NONE)
+
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
   STK_MATH_FORCE_INLINE double operator[](int i) const {
     __m512d tmp = _mm512_mask_blend_pd(_data.get(), _mm512_set1_pd(0.0), _mm512_set1_pd(1.0));
     return (reinterpret_cast<const double*>(&tmp))[i];
   }
-#elif defined(__CUDACC__) || defined(USE_STK_SIMD_NONE)
+#elif defined(__CUDACC__) || defined(__HIPCC__) || defined(USE_STK_SIMD_NONE)
   STK_MATH_FORCE_INLINE double operator[](int i) const {
     return _data.get() ? 1.0 : 0.0;
   }

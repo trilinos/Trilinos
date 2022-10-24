@@ -69,7 +69,7 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Thyra_SolveSupportTypes.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
 
 // Xpetra include
@@ -88,28 +88,8 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #endif
 
 
-// Main wrappers struct
-// Because C++ doesn't support partial template specialization of functions.
-// The reason for this is that Stratimikos only supports Scalar=double.
-// By default, don't do anything and just return success
 template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-struct MainWrappers {
-  static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]){ return EXIT_SUCCESS; }
-};
-
-
-// Partial template specialization on SC=double
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-struct MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node> {
-  static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
-};
-
-
-// Partial template specialization on SC=double
-// Stratimikos only supports Scalar=double
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
-  typedef double Scalar;
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   #include <MueLu_UseShortNames.hpp>
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::coordinateType real_type;
@@ -213,9 +193,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     //
 
     // This is the Stratimikos main class (= factory of solver factory).
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
     // Register MueLu as a Stratimikos preconditioner strategy.
-    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+    Stratimikos::enableMueLu<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
 #ifdef HAVE_MUELU_IFPACK2
     // Register Ifpack2 as a Stratimikos preconditioner strategy.
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
@@ -243,9 +223,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       prec = precFactory->createPrec();
 
       // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-      Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+      Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
       thyraInverseA = solverFactory->createOp();
-      Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+      Thyra::initializePreconditionedOp<Scalar>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
     } else {
       thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
     }
@@ -257,7 +237,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     for (int solveno = 1; solveno < numSolves; solveno++) {
       if (!precFactory.is_null())
-        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+        Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
       thyraX->assign(0.);
 
       status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
@@ -302,11 +282,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
-
-template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
-  return MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(clp, lib, argc, argv);
-}
 
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_

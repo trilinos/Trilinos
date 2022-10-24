@@ -164,11 +164,11 @@ stk::tools::BlockPairVector get_local_reconnect_list(const stk::mesh::BulkData& 
 
   for(const stk::tools::BlockPair& disconnectPair : disconnectList) {
     auto it = std::find_if(reconnectList.begin(), reconnectList.end(),
-        [disconnectPair](const stk::tools::BlockPair& lhs)
-                        {
-                         return (lhs.first->mesh_meta_data_ordinal() == disconnectPair.first->mesh_meta_data_ordinal() &&
-                                 lhs.second->mesh_meta_data_ordinal() == disconnectPair.second->mesh_meta_data_ordinal());
-                        }
+                           [disconnectPair](const stk::tools::BlockPair& lhs)
+    {
+      return (lhs.first->mesh_meta_data_ordinal() == disconnectPair.first->mesh_meta_data_ordinal() &&
+              lhs.second->mesh_meta_data_ordinal() == disconnectPair.second->mesh_meta_data_ordinal());
+    }
     );
 
     if(it != reconnectList.end()) {

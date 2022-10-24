@@ -116,7 +116,8 @@ int main(int argc, char *argv[]) {
 
     x->set(*sol);
     problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
-    problem->check(true,*outStream);
+    ROL::Ptr<ROL::Vector<RealT>> x0 = x->clone(); x->randomize(static_cast<RealT>(-2),static_cast<RealT>(2));
+    problem->check(true,*outStream,x0,static_cast<RealT>(0.1));
     problem->finalize(false,true,*outStream);
     algoU = ROL::makePtr<ROL::TypeU::TrustRegionAlgorithm<RealT>>(list);
     algoU->run(*problem,*outStream);

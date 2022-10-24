@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,7 @@
 #include "Cell.h"
 #include "Grid.h"
 #include "Ioss_ElementBlock.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Sort.h"
 
 extern unsigned int debug_level;
@@ -25,7 +26,7 @@ extern unsigned int debug_level;
 namespace {
 #ifdef USE_ZOLTAN
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 #define ZCHECK(funcall)                                                                            \
   do {                                                                                             \
     ierr = (funcall);                                                                              \
@@ -43,7 +44,7 @@ namespace {
   struct
   {
     size_t ndot; /* Length of x, y, z, and part (== # of elements) */
-    int *  vwgt; /* vertex weights */
+    int   *vwgt; /* vertex weights */
     float *x;    /* x-coordinates */
     float *y;    /* y-coordinates */
     float *z;    /* z-coordinates */
@@ -180,16 +181,16 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
 
   /* Initialize Zoltan */
   int           argc   = 0;
-  char **       argv   = nullptr;
+  char        **argv   = nullptr;
   ZOLTAN_ID_PTR zgids  = nullptr;
   ZOLTAN_ID_PTR zlids  = nullptr; /* Useful output from Zoltan_LB_Partition */
-  int *         zprocs = nullptr; /* Useful output from Zoltan_LB_Partition */
-  int *         zparts = nullptr; /* Useful output from Zoltan_LB_Partition */
+  int          *zprocs = nullptr; /* Useful output from Zoltan_LB_Partition */
+  int          *zparts = nullptr; /* Useful output from Zoltan_LB_Partition */
 
   int   ierr = 0;
   float ver  = 0.0;
   Zoltan_Initialize(argc, argv, &ver);
-  struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD);
+  struct Zoltan_Struct *zz = Zoltan_Create(Ioss::ParallelUtils::comm_world());
 
   /* Register Callback functions */
   /* Using global Zoltan_Data; could register it here instead as data field. */
@@ -226,8 +227,8 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
     ZOLTAN_ID_PTR dummy1    = nullptr;
     ZOLTAN_ID_PTR dummy2    = nullptr; /* Empty output from Zoltan_LB_Partition */
     int           dummy0    = 0;
-    int *         dummy3    = nullptr;
-    int *         dummy4    = nullptr;
+    int          *dummy3    = nullptr;
+    int          *dummy4    = nullptr;
     int           changes   = 0;
 
     ZCHECK(Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,

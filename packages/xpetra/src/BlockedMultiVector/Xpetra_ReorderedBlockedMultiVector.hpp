@@ -246,7 +246,7 @@ Teuchos::RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
       /*{
         std::cout << "MultiVector:" << std::endl;
         Teuchos::ArrayRCP<const Scalar> vData = vec->getData(0);
-        for(size_t j=0; j< vec->getMap()->getNodeNumElements(); j++) {
+        for(size_t j=0; j< vec->getMap()->getLocalNumElements(); j++) {
             std::cout << j << ": " << vec->getMap()->getGlobalElement(j) << ": " << vData[j] << std::endl;
         }
       }*/

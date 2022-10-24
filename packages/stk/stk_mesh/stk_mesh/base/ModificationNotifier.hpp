@@ -39,188 +39,194 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <memory>
+#include <algorithm>
 
 namespace stk
 {
 namespace mesh
 {
 
+struct ModificationObserverCompare {
+  bool operator()(const std::shared_ptr<ModificationObserver> & lhs,
+                  const std::shared_ptr<ModificationObserver> & rhs) const {
+    return lhs->get_priority() < rhs->get_priority();
+  }
+};
+
 class ModificationNotifier
 {
 public:
-    ModificationNotifier()
-    {
+  ModificationNotifier() = default;
+  ~ModificationNotifier() = default;
+
+  void register_observer(std::shared_ptr<ModificationObserver> observer, ModificationObserverPriority priority)
+  {
+    observer->set_priority(priority);
+    observers.push_back(observer);
+
+    std::sort(observers.begin(), observers.end(), ModificationObserverCompare());
+  }
+
+  void unregister_observer(std::shared_ptr<ModificationObserver> observer)
+  {
+    auto iter = std::find(observers.begin(), observers.end(), observer);
+    if (iter != observers.end()) {
+      observers.erase(iter);
     }
+  }
 
-    ~ModificationNotifier()
+  void notify_entity_added(stk::mesh::Entity entity)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-
+      observer->entity_added(entity);
     }
+  }
 
-    void register_observer(std::shared_ptr<ModificationObserver> observer)
+  void notify_entity_deleted(stk::mesh::Entity entity)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        observers.push_back(observer);
+      observer->entity_deleted(entity);
     }
+  }
 
-    void unregister_observer(std::shared_ptr<ModificationObserver> observer)
+  void notify_entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        auto iter = std::find(observers.begin(), observers.end(), observer);
-        if(iter != observers.end())
-            observers.erase(iter);
+      observer->entity_parts_added(entity, parts);
     }
+  }
 
-    void notify_entity_added(stk::mesh::Entity entity)
+  void notify_entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->entity_added(entity);
-        }
+      observer->entity_parts_removed(entity, parts);
     }
+  }
 
-    void notify_entity_deleted(stk::mesh::Entity entity)
+  void notify_modification_begin()
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->entity_deleted(entity);
-        }
+      observer->modification_begin_notification();
     }
+  }
 
-    void notify_entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+  void notify_started_modification_end()
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->entity_parts_added(entity, parts);
-        }
+      observer->started_modification_end_notification();
     }
+  }
 
-    void notify_entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+  void notify_finished_modification_end(MPI_Comm communicator)
+  {
+    reduce_values_for_observers(communicator);
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->entity_parts_removed(entity, parts);
-        }
+      observer->finished_modification_end_notification();
     }
+  }
 
-    void notify_modification_begin()
+  void notify_elements_about_to_move_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->modification_begin_notification();
-        }
+      observer->elements_about_to_move_procs_notification(elemProcPairsToMove);
     }
-  
-    void notify_started_modification_end()
+  }
+
+  void notify_elements_moved_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->started_modification_end_notification();
-        }
+      observer->elements_moved_procs_notification(elemProcPairsToMove);
     }
+  }
 
-    void notify_finished_modification_end(MPI_Comm communicator)
+  void notify_local_entities_created_or_deleted(stk::mesh::EntityRank rank)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        reduce_values_for_observers(communicator);
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->finished_modification_end_notification();
-        }
+      observer->local_entities_created_or_deleted_notification(rank);
     }
+  }
 
-    void notify_elements_about_to_move_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+  void notify_local_entity_comm_info_changed(stk::mesh::EntityRank rank)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->elements_about_to_move_procs_notification(elemProcPairsToMove);
-        }
+      observer->local_entity_comm_info_changed_notification(rank);
     }
+  }
 
-    void notify_elements_moved_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+  void notify_local_buckets_changed(stk::mesh::EntityRank rank)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->elements_moved_procs_notification(elemProcPairsToMove);
-        }
+      observer->local_buckets_changed_notification(rank);
     }
+  }
 
-    void notify_local_entities_created_or_deleted(stk::mesh::EntityRank rank)
+  template<typename ObserverType>
+  bool has_observer_type() const
+  {
+    bool found = false;
+
+    for(const std::shared_ptr<ModificationObserver>& observer : observers)
     {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->local_entities_created_or_deleted_notification(rank);
-        }
-    }
-
-    void notify_local_entity_comm_info_changed(stk::mesh::EntityRank rank)
-    {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->local_entity_comm_info_changed_notification(rank);
-        }
-    }
-
-    void notify_local_buckets_changed(stk::mesh::EntityRank rank)
-    {
-        for(std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            observer->local_buckets_changed_notification(rank);
-        }
-    }
-
-    template<typename ObserverType>
-    bool has_observer_type() const
-    {
-        bool found = false;
-
-        for(const std::shared_ptr<ModificationObserver>& observer : observers)
-        {
-            if (dynamic_cast<const ObserverType*>(observer.get()) != nullptr)
-            {
-                found = true;
-                break;
-            }
-        }
-        return found;
-    }
-
-    template<typename ObserverType>
-    std::vector<std::shared_ptr<ObserverType>> get_observer_type() const
-    {
-        std::vector<std::shared_ptr<ObserverType>> typed_observers;
-
-        for(const std::shared_ptr<ModificationObserver> &observer : observers)
-        {
-            ObserverType* typed_observer = dynamic_cast<ObserverType*>(observer.get());
-            if (typed_observer != nullptr)
-            {
-                typed_observers.push_back(std::dynamic_pointer_cast<ObserverType>(observer));
-            }
-        }
-
-        return typed_observers;
-    }
-
-    void notify_relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
-    {
-      for(std::shared_ptr<ModificationObserver>& observer : observers)
+      if (dynamic_cast<const ObserverType*>(observer.get()) != nullptr)
       {
-          observer->relation_destroyed(from, to, ordinal);
+        found = true;
+        break;
+      }
+    }
+    return found;
+  }
+
+  template<typename ObserverType>
+  std::vector<std::shared_ptr<ObserverType>> get_observer_type() const
+  {
+    std::vector<std::shared_ptr<ObserverType>> typed_observers;
+
+    for(const std::shared_ptr<ModificationObserver> &observer : observers)
+    {
+      ObserverType* typed_observer = dynamic_cast<ObserverType*>(observer.get());
+      if (typed_observer != nullptr)
+      {
+        typed_observers.push_back(std::dynamic_pointer_cast<ObserverType>(observer));
       }
     }
 
-    void notify_relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    return typed_observers;
+  }
+
+  void notify_relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
-      for(std::shared_ptr<ModificationObserver>& observer : observers)
-      {
-          observer->relation_declared(from, to, ordinal);
-      }
+      observer->relation_destroyed(from, to, ordinal);
     }
+  }
+
+  void notify_relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+  {
+    for(std::shared_ptr<ModificationObserver>& observer : observers)
+    {
+      observer->relation_declared(from, to, ordinal);
+    }
+  }
 
 private:
-    std::vector< std::shared_ptr<ModificationObserver> > observers;
+  std::vector<std::shared_ptr<ModificationObserver>> observers;
 
-    void reduce_values_for_observers(MPI_Comm communicator);
-    void get_values_to_reduce_from_observers(std::vector<size_t> &allObserverValues, std::vector<std::vector<size_t> >& observerValues);
-    void set_max_values_on_observers(const std::vector<size_t> &maxValues, std::vector<std::vector<size_t> >& observerValues);
+  void reduce_values_for_observers(MPI_Comm communicator);
+  void get_values_to_reduce_from_observers(std::vector<size_t> &allObserverValues, std::vector<std::vector<size_t> >& observerValues);
+  void set_max_values_on_observers(const std::vector<size_t> &maxValues, std::vector<std::vector<size_t> >& observerValues);
 };
 
 }

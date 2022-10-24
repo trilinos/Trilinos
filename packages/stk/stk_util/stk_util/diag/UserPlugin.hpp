@@ -101,7 +101,7 @@ public:
    * less functor.
    *
    */
-  struct less_nocase : public std::binary_function<NamePair, NamePair, bool>
+  struct less_nocase
   {
     bool operator()(const NamePair &lhs, const NamePair &rhs) const {
       sierra::less_nocase<NamePair::second_type> second_less_nocase;

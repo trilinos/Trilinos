@@ -138,11 +138,22 @@ public:
 
    /** Add an edge block with a string name
      */
-   void addEdgeBlock(const std::string & name,const CellTopologyData * ctData);
+//   void addEdgeBlock(const std::string & name,const CellTopologyData * ctData);
+   void addEdgeBlock(const std::string & elemBlockName,
+                     const std::string & edgeBlockName,
+                     const stk::topology & topology);
+   void addEdgeBlock(const std::string & elemBlockName,
+                     const std::string & edgeBlockName,
+                     const CellTopologyData * ctData);
 
    /** Add a face block with a string name
      */
-   void addFaceBlock(const std::string & name,const CellTopologyData * ctData);
+   void addFaceBlock(const std::string & elemBlockName,
+                     const std::string & faceBlockName,
+                     const stk::topology & topology);
+   void addFaceBlock(const std::string & elemBlockName,
+                     const std::string & faceBlockName,
+                     const CellTopologyData * ctData);
 
    /** Add a side set with a string name
      */
@@ -1099,6 +1110,15 @@ public:
    getPeriodicBCVector()
    { return periodicBCs_; }
 
+   /** Return a flag indicating if the bounding box search is used
+    * when matching periodic Ids. */ 
+   const bool & useBoundingBoxSearch() const
+   { return useBBoxSearch_; }
+
+   /** Set the periodic search flag. Indicates if the bounding box search is used */
+   void setBoundingBoxSearchFlag(const bool & searchFlag)
+   { useBBoxSearch_ = searchFlag; return; }
+
    /** Add a periodic boundary condition.
      *
      * \note This does not actually change the underlying mesh.
@@ -1115,6 +1135,8 @@ public:
    void addPeriodicBCs(const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bc_vec)
    { periodicBCs_.insert(periodicBCs_.end(),bc_vec.begin(),bc_vec.end()); }
 
+   /** Pairs DOFs on periodic entities 
+    */
    std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > >
    getPeriodicNodePairing() const;
 
@@ -1285,6 +1307,7 @@ protected:
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
+   bool useBBoxSearch_ = false;  // TODO swap this to change default periodic BC search (see also PeriodicBC_Parser.cpp)
 
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;
@@ -1300,8 +1323,6 @@ protected:
    std::map<std::string, stk::mesh::Part*> faceBlocks_;     // Face blocks
 
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
-   std::map<std::string, Teuchos::RCP<shards::CellTopology> > edgeBlockCT_;
-   std::map<std::string, Teuchos::RCP<shards::CellTopology> > faceBlockCT_;
 
    // for storing/accessing nodes
    stk::mesh::Part * nodesPart_;

@@ -48,13 +48,16 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
+#include "Kokkos_TeuchosCommAdapters.hpp"
+
 namespace Tpetra {
 namespace Details {
 
 template <class View1, class View2>
-constexpr bool areKokkosViews = Kokkos::Impl::is_view<View1>::value && Kokkos::Impl::is_view<View2>::value;
+constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
 
 class DistributorActor {
+  static constexpr int DEFAULT_MPI_TAG = 1;
 
 public:
   DistributorActor();
@@ -88,7 +91,11 @@ public:
 
   void doWaits(const DistributorPlan& plan);
 
+  bool isReady() const;
+
 private:
+  int mpiTag_;
+
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -136,6 +143,39 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
   doWaits(plan);
 }
 
+template <typename ViewType>
+using HostAccessibility = Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename ViewType::memory_space>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfHostAccessible = std::enable_if_t<HostAccessibility<DstViewType>::accessible &&
+                                                HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+using enableIfNotHostAccessible = std::enable_if_t<!HostAccessibility<DstViewType>::accessible ||
+                                                   !HostAccessibility<SrcViewType>::accessible>;
+
+template <typename DstViewType, typename SrcViewType>
+enableIfHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  memcpy(dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+}
+
+template <typename DstViewType, typename SrcViewType>
+enableIfNotHostAccessible<DstViewType, SrcViewType>
+packOffset(const DstViewType& dst,
+           const SrcViewType& src,
+           const size_t dst_offset,
+           const size_t src_offset,
+           const size_t size)
+{
+  Kokkos::Compat::deep_copy_offset(dst, src, dst_offset, src_offset, size);
+}
+
 template <class ExpView, class ImpView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView& exports,
@@ -150,9 +190,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Teuchos::includesVerbLevel;
   using Teuchos::ireceive;
   using Teuchos::isend;
-  using Teuchos::readySend;
   using Teuchos::send;
-  using Teuchos::ssend;
   using Teuchos::TypeNameTraits;
   using Teuchos::typeName;
   using std::endl;
@@ -188,25 +226,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
-  const bool doBarrier = plan.barrierBetweenRecvSend();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error,
-      "Tpetra::Distributor::doPosts(3 args, Kokkos): Ready-send version "
-      "requires a barrier between posting receives and posting ready sends.  "
-      "This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
 
   size_t selfReceiveOffset = 0;
-
-  // MPI tag for nonblocking receives and blocking sends in this
-  // method.  Some processes might take the "fast" path
-  // (getIndicesTo().is_null()) and others might take the "slow" path for
-  // the same doPosts() call, so the path tag must be the same for
-  // both.
-  const int pathTag = 0;
-  const int tag = plan.getTag(pathTag);
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -264,26 +285,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, curBufLen);
         requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              tag, *plan.getComm()));
+              mpiTag_, *plan.getComm()));
       }
       else { // Receiving from myself
         selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
       }
       curBufferOffset += curBufLen;
     }
-  }
-
-  if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // If we are using ready sends (MPI_Rsend) below, we need to do
-    // a barrier before we post the ready sends.  This is because a
-    // ready send requires that its matching receive has already
-    // been posted before the send has been posted.  The only way to
-    // guarantee that in this case is to use a barrier.
-    plan.getComm()->barrier ();
   }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -325,34 +333,17 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         exports_view_type tmpSend = subview_offset(
             exports, plan.getStartsTo()[p]*numPackets, plan.getLengthsTo()[p]*numPackets);
 
-        if (sendType == Details::DISTRIBUTOR_SEND) {
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
+        if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
             subview_offset (exports, plan.getStartsTo()[p] * numPackets,
                 plan.getLengthsTo()[p] * numPackets);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
+                mpiTag_, *plan.getComm()));
         }
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
+        else {  // DISTRIBUTOR_SEND
+          send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself
@@ -383,16 +374,29 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     typedef typename ExpView::array_layout Layout;
     typedef typename ExpView::device_type Device;
     typedef typename ExpView::memory_traits Mem;
+
+    // This buffer is long enough for only one message at a time.
+    // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
+    // of sendType requested by user. 
+    // This code path formerly errored out with message:
+    //     Tpetra::Distributor::doPosts(3 args, Kokkos): 
+    //     The "send buffer" code path
+    //     doesn't currently work with nonblocking sends.
+    // Now, we opt to just do the communication in a way that works.
+#ifdef HAVE_TPETRA_DEBUG
+    if (sendType != Details::DISTRIBUTOR_SEND) {
+      if (plan.getComm()->getRank() == 0)
+        std::cout << "The requested Tpetra send type " 
+                  << DistributorSendTypeEnumToString(sendType)
+                  << " requires Distributor data to be ordered by"
+                  << " the receiving processor rank.  Since these"
+                  << " data are not ordered, Tpetra will use Send"
+                  << " instead." << std::endl;
+    }
+#endif
+
     Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
         plan.getMaxSendLength() * numPackets);
-
-    // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
-    // sends), because the buffer is only long enough for one send.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
-        "doesn't currently work with nonblocking sends.");
 
     for (size_t i = 0; i < numBlocks; ++i) {
       size_t p = i + procIndex;
@@ -404,42 +408,15 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-          deep_copy_offset(sendArray, exports, sendArrayOffset,
-              plan.getIndicesTo()[j]*numPackets, numPackets);
+          packOffset(sendArray, exports, sendArrayOffset, plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
           subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
 
-        if (sendType == Details::DISTRIBUTOR_SEND) {
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
-          exports_view_type tmpSendBuf =
-            subview_offset (sendArray, size_t(0), plan.getLengthsTo()[p] * numPackets);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
-        }
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-        }
+        send<int> (tmpSend,
+            as<int> (tmpSend.size ()),
+            plan.getProcsTo()[p], mpiTag_, *plan.getComm());
       }
       else { // "Sending" the message to myself
         selfNum = p;
@@ -449,8 +426,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     if (plan.hasSelfMessage()) {
       for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
-        deep_copy_offset(imports, exports, selfReceiveOffset,
-            plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
+        packOffset(imports, exports, selfReceiveOffset, plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
         ++selfIndex;
         selfReceiveOffset += numPackets;
       }
@@ -471,9 +447,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Teuchos::as;
   using Teuchos::ireceive;
   using Teuchos::isend;
-  using Teuchos::readySend;
   using Teuchos::send;
-  using Teuchos::ssend;
   using Teuchos::TypeNameTraits;
   using std::endl;
   using Kokkos::Compat::create_const_view;
@@ -505,19 +479,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
-  const bool doBarrier = plan.barrierBetweenRecvSend();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): Ready-send "
-      "version requires a barrier between posting receives and posting ready "
-      "sends.  This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   // Different messages may have different numbers of packets.
   size_t totalNumImportPackets = 0;
   for (size_type ii = 0; ii < numImportPacketsPerLID.size (); ++ii) {
@@ -529,22 +495,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       "enough entries to hold the expected number of import packets.  "
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
-
-  // MPI tag for nonblocking receives and blocking sends in this
-  // method.  Some processes might take the "fast" path
-  // (plan.getIndicesTo().is_null()) and others might take the "slow" path for
-  // the same doPosts() call, so the path tag must be the same for
-  // both.
-  const int pathTag = 1;
-  const int tag = plan.getTag(pathTag);
-
-#ifdef HAVE_TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
     (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
      "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
      << requests_.size () << " != 0.");
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
   // Distributor uses requests_.size() as the number of outstanding
   // nonblocking message requests, so we resize to zero to maintain
   // this invariant.
@@ -592,25 +547,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
         requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              tag, *plan.getComm()));
+              mpiTag_, *plan.getComm()));
       }
       else { // Receiving these packet(s) from myself
         selfReceiveOffset = curBufferOffset; // Remember the offset
       }
       curBufferOffset += totalPacketsFrom_i;
     }
-  }
-
-  if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    // If we are using ready sends (MPI_Rsend) below, we need to do
-    // a barrier before we post the ready sends.  This is because a
-    // ready send requires that its matching receive has already
-    // been posted before the send has been posted.  The only way to
-    // guarantee that in this case is to use a barrier.
-    plan.getComm()->barrier ();
   }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -664,33 +607,16 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         exports_view_type tmpSend =
           subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
-        if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
+        if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
+                mpiTag_, *plan.getComm()));
         }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
+        else { // DISTRIBUTOR_SEND
+          send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(4 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself
@@ -714,13 +640,29 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     typedef typename ExpView::array_layout Layout;
     typedef typename ExpView::device_type Device;
     typedef typename ExpView::memory_traits Mem;
-    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxNumPackets); // send buffer
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(4-arg, Kokkos): "
-        "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+    // This buffer is long enough for only one message at a time.
+    // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
+    // of sendType requested by user. 
+    // This code path formerly errored out with message:
+    //     Tpetra::Distributor::doPosts(4-arg, Kokkos): 
+    //     The "send buffer" code path
+    //     doesn't currently work with nonblocking sends.
+    // Now, we opt to just do the communication in a way that works.
+#ifdef HAVE_TPETRA_DEBUG
+    if (sendType != Details::DISTRIBUTOR_SEND) {
+      if (plan.getComm()->getRank() == 0)
+        std::cout << "The requested Tpetra send type " 
+                  << DistributorSendTypeEnumToString(sendType)
+                  << " requires Distributor data to be ordered by"
+                  << " the receiving processor rank.  Since these"
+                  << " data are not ordered, Tpetra will use Send"
+                  << " instead." << std::endl;
+    }
+#endif
+
+    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", 
+                                                        maxNumPackets);
 
     Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
     size_t ioffset = 0;
@@ -749,27 +691,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           ImpView tmpSend =
             subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
-          if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (sendArray, size_t(0), numPacketsTo_p);
-            requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                  tag, *plan.getComm()));
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-          else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-            send<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
+          send<int> (tmpSend,
+              as<int> (tmpSend.size ()),
+              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself

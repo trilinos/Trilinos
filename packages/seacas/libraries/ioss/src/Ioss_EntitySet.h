@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_EntitySet_h
-#define IOSS_Ioss_EntitySet_h
+#pragma once
 
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
@@ -47,4 +46,3 @@ namespace Ioss {
     void count_attributes() const;
   };
 } // namespace Ioss
-#endif

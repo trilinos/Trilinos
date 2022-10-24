@@ -125,14 +125,14 @@ after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
 y coord name = 'ycoor'
 
-after ex_get_map, error =   0
-elem_map(0) = 1 
-elem_map(1) = 2 
-elem_map(2) = 3 
-elem_map(3) = 4 
-elem_map(4) = 5 
-elem_map(5) = 6 
-elem_map(6) = 7 
+after ex_get_id_map, error =   0
+elem_map(0) = 10 
+elem_map(1) = 20 
+elem_map(2) = 30 
+elem_map(3) = 40 
+elem_map(4) = 50 
+elem_map(5) = 60 
+elem_map(6) = 70 
 
 after ex_get_elem_blk_ids, error =   0
 

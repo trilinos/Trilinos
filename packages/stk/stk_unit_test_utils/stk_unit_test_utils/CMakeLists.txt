@@ -12,7 +12,20 @@ SET(HEADERS_NEED_IO
   GeneratedMeshToFile.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
+  TextMeshAdjacencyGraph.hpp
+  TextMeshAssembly.hpp
+  TextMeshDataTypes.hpp
+  TextMeshEntityGroup.hpp
+  TextMeshFixture.hpp
+  TextMeshFuncs.hpp
+  TextMeshNodeset.hpp
+  TextMeshSideset.hpp
+  TextMeshSidesetSkinner.hpp
+  TextMeshSidesetSplitter.hpp
+  TextMeshStkTopologyMapping.hpp
   TextMeshToFile.hpp
+  TextMeshUtils.hpp
+  TextMesh.hpp
   ioUtils.hpp
   )
 SET(SOURCES_NEED_IO
@@ -22,6 +35,7 @@ SET(SOURCES_NEED_IO
   GenerateALefRAMesh.cpp
   GeneratedMeshToFile.cpp
   ReadWriteSidesetTester.cpp
+  TextMeshFixture.cpp
   TextMeshToFile.cpp
   TextMesh.cpp
   ioUtils.cpp
@@ -29,6 +43,7 @@ SET(SOURCES_NEED_IO
   )
 
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
+  BuildMesh.hpp
   BucketTester.hpp
   MeshFixture.hpp
   MeshFileFixture.hpp
@@ -57,11 +72,14 @@ SET(SOURCES_NEED_MPI
 
 
 SET(HEADERS
+  AssemblyUtils.hpp
+  CommandLineArgs.hpp
   getOption.h
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   )
 SET(SOURCES
+  AssemblyUtils.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
   )
@@ -88,7 +106,7 @@ IF(Trilinos_ENABLE_STKMesh)
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
     
 TRIBITS_ADD_LIBRARY(
   stk_unit_test_utils

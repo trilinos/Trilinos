@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -60,7 +60,7 @@ namespace {
     Ioss::Face face(id, conn);
     auto       face_iter = faces.insert(face);
 
-    (*(face_iter.first)).add_element(element * 10 + local_face);
+    (*(face_iter.first)).add_element(element, local_face);
   }
 
   template <typename INT>
@@ -392,32 +392,35 @@ namespace Ioss {
 #if DO_TIMING
     auto endf = std::chrono::steady_clock::now();
 #endif
-    size_t face_count = 0;
     for (auto &eb : ebs) {
       resolve_parallel_faces(region_, faces_[eb->name()], hashIds_, (INT)0);
-      face_count += faces_[eb->name()].size();
     }
 #if DO_TIMING
+    size_t face_count = 0;
+    for (auto &eb : ebs) {
+      face_count += faces_[eb->name()].size();
+    }
     auto endp  = std::chrono::steady_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    fmt::print("Node ID hash time:   \t{:.6L} ms\t{:12L} nodes/second\n"
-               "Face generation time:\t{:.6L} ms\t{:12L} faces/second\n",
-               std::chrono::duration<double, std::milli>(diffh).count(),
-               INT(hashIds_.size() / std::chrono::duration<double>(diffh).count()),
-               std::chrono::duration<double, std::milli>(difff).count(),
-               INT(face_count / std::chrono::duration<double>(difff).count()));
+    fmt::print(
+        "Node ID hash time:   \t{:.6} ms\t{:12} nodes/second\n"
+        "Face generation time:\t{:.6} ms\t{:12} faces/second\n",
+        std::chrono::duration<double, std::milli>(diffh).count(),
+        fmt::group_digits(INT(hashIds_.size() / std::chrono::duration<double>(diffh).count())),
+        std::chrono::duration<double, std::milli>(difff).count(),
+        fmt::group_digits(INT(face_count / std::chrono::duration<double>(difff).count())));
 #ifdef SEACAS_HAVE_MPI
     auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
-      fmt::print("Parallel time:       \t{:.6L} ms\t{:12L} faces/second.\n",
+      fmt::print("Parallel time:       \t{:.6} ms\t{:12} faces/second.\n",
                  std::chrono::duration<double, std::milli>(diffp).count(),
-                 INT(face_count / std::chrono::duration<double>(diffp).count()));
+                 fmt::group_digits(INT(face_count / std::chrono::duration<double>(diffp).count())));
     }
 #endif
-    fmt::print("Total time:          \t{:.6L} ms\n\n",
+    fmt::print("Total time:          \t{:.6} ms\n\n",
                std::chrono::duration<double, std::milli>(endp - starth).count());
 #endif
   }
@@ -443,7 +446,7 @@ namespace Ioss {
     auto endh = std::chrono::steady_clock::now();
 #endif
 
-    auto & my_faces = faces_["ALL"];
+    auto  &my_faces = faces_["ALL"];
     size_t numel    = region_.get_property("element_count").get_int();
 
     size_t reserve = 3.2 * numel;
@@ -525,11 +528,10 @@ namespace {
     k *= m;
 
     h ^= k;
-
     h *= m;
+
     h ^= h >> r;
     h *= m;
-
     h ^= h >> r;
 
     return h;

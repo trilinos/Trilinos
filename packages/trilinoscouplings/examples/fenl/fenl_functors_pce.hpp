@@ -797,6 +797,8 @@ public:
     typedef typename RV::HostMirror HRV;
     RV rv = scalar_diffusion_coefficient.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
+    auto hqp = Kokkos::create_mirror_view(quad_points);
+    Kokkos::deep_copy(hqp, quad_points);
 
     // Note:  num_quad_points is aligned to the ensemble size to make
     // things easier
@@ -820,7 +822,7 @@ public:
       // Set quadrature point in diffusion coefficient
       for (unsigned i=0; i<dim; ++i)
         for (unsigned j=0; j< unsigned(EnsembleSize); ++j)
-          hrv(i).fastAccessCoeff(j) = quad_points(qp+j,i);
+          hrv(i).fastAccessCoeff(j) = hqp(qp+j,i);
       Kokkos::deep_copy( rv, hrv );
 
       // Compute element residual/Jacobian at quadrature point

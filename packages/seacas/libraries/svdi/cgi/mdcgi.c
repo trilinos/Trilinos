@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -18,9 +18,9 @@
 /* these are shared with sdcgi.c, and are defined there */
 
 extern device_struct devices[MAX_DEVICES];     /* list of currently active */
-extern anything *    in_params[MAX_IN_PARAMS]; /* params sent to driver */
+extern anything     *in_params[MAX_IN_PARAMS]; /* params sent to driver */
 extern short         num_devices;              /* how many items in devices*/
-extern anything *    sol_surf;                 /* current solicitation surface, */
+extern anything     *sol_surf;                 /* current solicitation surface, */
 
 /* these aren't shared with anybody */
 static int       num_oldest = 0;             /* # surfs in oldest_surfs */
@@ -90,9 +90,9 @@ void xcoon(anything **surface_id) /* which surface to turn output on for*/
 /*                                                                            */
 /******************************************************************************/
 #if defined(ADDC_)
-void xcact_(void (*device_fn)(), anything **p_surface_id)
+void xcact_(void (*device_fn)(anything **, int, anything **), anything **p_surface_id)
 #else
-void xcact(void (*device_fn)(), anything **p_surface_id)
+void xcact(void (*device_fn)(anything **, int, anything **), anything **p_surface_id)
 #endif
 {
   /* is device already initialized? */

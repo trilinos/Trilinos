@@ -174,13 +174,13 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of matrix rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! Returns the local number of entries in this matrix.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
 
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
@@ -192,7 +192,7 @@ namespace Xpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     virtual bool isLocallyIndexed() const = 0;
@@ -326,12 +326,6 @@ namespace Xpetra {
     using local_matrix_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
 						      typename local_graph_type::size_type>;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Access the underlying local KokkosSparse::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const {
-      return getLocalMatrixDevice();
-    }
-#endif
     virtual local_matrix_type getLocalMatrixDevice () const = 0;
     virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 
@@ -350,13 +344,16 @@ namespace Xpetra {
     //  Adding these functions by hand, as they're in the skip list.
 
     //! Returns the number of matrix columns owned on the calling node.
-        virtual size_t getNodeNumCols() const = 0;
+        virtual size_t getLocalNumCols() const = 0;
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
         virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
 
     //! Does this have an underlying matrix
     virtual bool hasMatrix() const = 0;
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    virtual LocalOrdinal GetStorageBlockSize() const = 0;
 
     //! Compute a residual R = B - (*this) * X
     virtual void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

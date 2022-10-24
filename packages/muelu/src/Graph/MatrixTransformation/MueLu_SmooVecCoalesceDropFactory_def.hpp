@@ -167,14 +167,14 @@ namespace MueLu {
    testVecs->randomize();    
    for (size_t kk = 0; kk < testVecs->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = testVecs->getDataNonConst(kk);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
+     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
    }
    nearNull = MultiVectorFactory::Build(A->getRowMap(), nPDEs, true);
 
    // initialize null space to constants 
    for (size_t kk = 0; kk < nearNull->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = nearNull->getDataNonConst(kk);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii += nearNull->getNumVectors() ) curVec[ii] = Teuchos::ScalarTraits<Scalar>::one();
+     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii += nearNull->getNumVectors() ) curVec[ii] = Teuchos::ScalarTraits<Scalar>::one();
    }
 
    RCP< MultiVector > zeroVec_TVecs;
@@ -283,8 +283,8 @@ namespace MueLu {
    * applying a relaxation scheme to Au = 0 where u is initial random.
    */
   
-  GO     numMyNnz = Teuchos::as<GO>(Amat.getNodeNumEntries());
-  size_t nLoc     = Amat.getRowMap()->getNodeNumElements();
+  GO     numMyNnz = Teuchos::as<GO>(Amat.getLocalNumEntries());
+  size_t nLoc     = Amat.getRowMap()->getLocalNumElements();
 
   size_t nBlks    = nLoc/nPDEs;
   if (nBlks*nPDEs != nLoc ) 
@@ -398,7 +398,7 @@ namespace MueLu {
 
    RCP<const Map> rowMap = Amat.getRowMap(); // , colMap = Amat.getColMap();
 
-   LO nAmalgNodesOnProc = rowMap->getNodeNumElements()/nPDEs;
+   LO nAmalgNodesOnProc = rowMap->getLocalNumElements()/nPDEs;
    Teuchos::Array<GO> nodalGIDs(nAmalgNodesOnProc);
    typename Teuchos::ScalarTraits<Scalar>::coordinateType temp;
    for (size_t i = 0; i < as<size_t>(nAmalgNodesOnProc); i++ ) {
@@ -421,10 +421,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badGuysDropfunc(LO row, const Teuchos::ArrayView<const LocalOrdinal>& cols, const Teuchos::ArrayView<const Scalar>& vals, const MultiVector&  testVecs, LO nPDEs, Teuchos::ArrayRCP<Scalar> & penalties, const MultiVector& nearNull, Teuchos::ArrayRCP<LO>& Bcols, Teuchos::ArrayRCP<bool>& keepOrNot, LO &Nbcols, LO nLoc) const {
+    using TST=Teuchos::ScalarTraits<Scalar>;
 
   LO nLeng  = cols.size();
-  typename Teuchos::ScalarTraits<Scalar>::coordinateType temp;
-  temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (row))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (nPDEs));
+  typename TST::coordinateType temp;
+  temp =  ((typename TST::coordinateType) (row))/((typename TST::coordinateType) (nPDEs));
   LO blkRow = as<LO>(floor(temp));
   Teuchos::ArrayRCP<Scalar> badGuy( nLeng, 0.0);
   Teuchos::ArrayRCP<Scalar> subNull(nLeng, 0.0);  /* subset of nearNull       */
@@ -449,21 +450,21 @@ namespace MueLu {
   Teuchos::ArrayRCP< const Scalar > oneNull = nearNull.getData( as<size_t>(rowDof));
 
   for (LO i = 0; i < nLeng; i++) {
-    if ((cols[i] < nLoc ) && (vals[i] != 0.0)) {   /* on processor */
-      temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (cols[i]))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (nPDEs));
+    if ((cols[i] < nLoc ) && (TST::magnitude(vals[i]) != 0.0)) {   /* on processor */
+      temp =  ((typename TST::coordinateType) (cols[i]))/((typename TST::coordinateType) (nPDEs));
       LO colDof = cols[i] - (as<LO>(floor( temp    )))*nPDEs;
       if (colDof == rowDof) { /* same dof within node as row */
         Bcols[  Nbcols] = (cols[i] - colDof)/nPDEs;
         subNull[Nbcols] = oneNull[cols[i]];
 
         if (cols[i] != row) { /* not diagonal  */
-          Scalar worstRatio = -1.0;
+          Scalar worstRatio = -TST::one();
           Scalar targetRatio = subNull[Nbcols]/oneNull[row];
           Scalar actualRatio;
           for (size_t kk = 0; kk < testVecs.getNumVectors(); kk++ ) {
             Teuchos::ArrayRCP< const Scalar > curVec = testVecs.getData(kk);
             actualRatio = curVec[cols[i]]/curVec[row];
-            if (Teuchos::ScalarTraits<SC>::magnitude(actualRatio - targetRatio) > Teuchos::ScalarTraits<SC>::magnitude(worstRatio)) {
+            if (TST::magnitude(actualRatio - targetRatio) > TST::magnitude(worstRatio)) {
                badGuy[Nbcols] = actualRatio;
                worstRatio = Teuchos::ScalarTraits<SC>::magnitude(actualRatio - targetRatio);
             }

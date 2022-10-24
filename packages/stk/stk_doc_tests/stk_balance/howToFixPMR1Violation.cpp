@@ -34,6 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_balance/fixSplitCoincidentElements.hpp>
@@ -44,11 +45,12 @@ namespace
 TEST(StkMeshHowTo, FixPMR1Violation)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
-    stk::io::fill_mesh("generated:4x4x4|sideset:xX", bulkData);
+    meta.use_simple_fields();
+    std::shared_ptr<stk::mesh::BulkData> bulkData = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+    stk::io::fill_mesh("generated:4x4x4|sideset:xX", *bulkData);
 
     stk::mesh::EntityIdProcMap elementAndDestProc;
-    EXPECT_NO_THROW(elementAndDestProc = stk::balance::make_mesh_consistent_with_parallel_mesh_rule1(bulkData));
+    EXPECT_NO_THROW(elementAndDestProc = stk::balance::make_mesh_consistent_with_parallel_mesh_rule1(*bulkData));
     EXPECT_TRUE(elementAndDestProc.size()==0u); // no elements were migrated
 }
 //END_FIX_PMR1

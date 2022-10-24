@@ -27,6 +27,7 @@ public:
 
   int major() const { return major_val; }
   int minor() const { return minor_val; }
+  bool is_release() const { return minor_val % 2 == 0; }
 
   static VersionNumber current_version();
   static void set_current_version(const VersionNumber & v);

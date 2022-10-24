@@ -88,13 +88,13 @@ void LinePartitioner<GraphType,Scalar>::computePartitions() {
 
   // Sanity Checks
   TEUCHOS_TEST_FOR_EXCEPTION(coord_.is_null(),std::runtime_error,"Ifpack2::LinePartitioner: coordinates not defined");
-  TEUCHOS_TEST_FOR_EXCEPTION((size_t)this->Partition_.size() != this->Graph_->getNodeNumRows(),std::runtime_error,"Ifpack2::LinePartitioner: partition size error");
+  TEUCHOS_TEST_FOR_EXCEPTION((size_t)this->Partition_.size() != this->Graph_->getLocalNumRows(),std::runtime_error,"Ifpack2::LinePartitioner: partition size error");
 
   // Short circuit
   if(this->Partition_.size() == 0) {this->NumLocalParts_ = 0; return;}
 
   // Set partitions to invalid to initialize algorithm
-  for(size_t i=0; i<this->Graph_->getNodeNumRows(); i++)
+  for(size_t i=0; i<this->Graph_->getLocalNumRows(); i++)
     this->Partition_[i] = invalid;
 
   // Use the auto partitioner
@@ -109,25 +109,26 @@ void LinePartitioner<GraphType,Scalar>::computePartitions() {
 template<class GraphType,class Scalar>
 int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayView<local_ordinal_type> blockIndices) const {
   typedef local_ordinal_type LO;
+  typedef magnitude_type MT;
   const LO invalid  = Teuchos::OrdinalTraits<LO>::invalid();
-  const double zero = Teuchos::ScalarTraits<double>::zero();
+  const MT zero = Teuchos::ScalarTraits<MT>::zero();
 
-  Teuchos::ArrayRCP<const double>  xvalsRCP, yvalsRCP, zvalsRCP;
-  Teuchos::ArrayView<const double> xvals, yvals, zvals;
+  Teuchos::ArrayRCP<const MT>  xvalsRCP, yvalsRCP, zvalsRCP;
+  Teuchos::ArrayView<const MT> xvals, yvals, zvals;
   xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
 
   double tol             = threshold_;
-  size_t N               = this->Graph_->getNodeNumRows();
-  size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
+  size_t N               = this->Graph_->getLocalNumRows();
+  size_t allocated_space = this->Graph_->getLocalMaxNumRowEntries();
 
   nonconst_local_inds_host_view_type cols("cols",allocated_space);
   Teuchos::Array<LO>     indices(allocated_space);
-  Teuchos::Array<double> dist(allocated_space);
+  Teuchos::Array<MT> dist(allocated_space);
 
   Teuchos::Array<LO>     itemp(2*allocated_space);
-  Teuchos::Array<double> dtemp(allocated_space);
+  Teuchos::Array<MT> dtemp(allocated_space);
 
   LO num_lines = 0;
 
@@ -138,24 +139,24 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
 
     // Get neighbors and sort by distance
     this->Graph_->getLocalRowCopy(i,cols,nz);
-    double x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
-    double y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
-    double z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
+    MT x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
+    MT y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
+    MT z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
 
     LO neighbor_len=0;
     for(size_t j=0; j<nz; j+=NumEqns_) {
-      double mydist = zero;
+      MT mydist = zero;
       LO nn = cols[j] / NumEqns_;
       if(cols[j] >=(LO)N) continue; // Check for off-proc entries
-      if(!xvals.is_null()) mydist += square<double>(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square<double>(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square<double>(z0 - zvals[nn]);
-      dist[neighbor_len] = Teuchos::ScalarTraits<double>::squareroot(mydist);
+      if(!xvals.is_null()) mydist += square<MT>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<MT>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<MT>(z0 - zvals[nn]);
+      dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[j];
       neighbor_len++;
     }
 
-    Teuchos::ArrayView<double> dist_view = dist(0,neighbor_len);
+    Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());
 
     // Number myself
@@ -177,23 +178,24 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
 }
 // ============================================================================
 template<class GraphType,class Scalar>
-void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next,  local_ordinal_type LineID, double tol,  Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<double> dtemp) const {
+void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next,  local_ordinal_type LineID, double tol,  Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<magnitude_type> dtemp) const {
   typedef local_ordinal_type LO;
+  typedef magnitude_type MT;
   const LO invalid  = Teuchos::OrdinalTraits<LO>::invalid();
-  const double zero = Teuchos::ScalarTraits<double>::zero();
+  const MT zero = Teuchos::ScalarTraits<MT>::zero();
 
-  Teuchos::ArrayRCP<const double>  xvalsRCP, yvalsRCP, zvalsRCP;
-  Teuchos::ArrayView<const double> xvals, yvals, zvals;
+  Teuchos::ArrayRCP<const MT>  xvalsRCP, yvalsRCP, zvalsRCP;
+  Teuchos::ArrayView<const MT> xvals, yvals, zvals;
   xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
 
-  size_t N               = this->Graph_->getNodeNumRows();
-  size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
+  size_t N               = this->Graph_->getLocalNumRows();
+  size_t allocated_space = this->Graph_->getLocalMaxNumRowEntries();
 
   nonconst_local_inds_host_view_type cols(itemp.data(),allocated_space);
   Teuchos::ArrayView<LO>     indices = itemp.view(allocated_space,allocated_space);
-  Teuchos::ArrayView<double> dist= dtemp();
+  Teuchos::ArrayView<MT> dist= dtemp();
 
   while (blockIndices[next] == invalid) {
     // Get the next row
@@ -201,21 +203,21 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
     LO neighbors_in_line=0;
 
     this->Graph_->getLocalRowCopy(next,cols,nz);
-    double x0 = (!xvals.is_null()) ? xvals[next/NumEqns_] : zero;
-    double y0 = (!yvals.is_null()) ? yvals[next/NumEqns_] : zero;
-    double z0 = (!zvals.is_null()) ? zvals[next/NumEqns_] : zero;
+    MT x0 = (!xvals.is_null()) ? xvals[next/NumEqns_] : zero;
+    MT y0 = (!yvals.is_null()) ? yvals[next/NumEqns_] : zero;
+    MT z0 = (!zvals.is_null()) ? zvals[next/NumEqns_] : zero;
 
     // Calculate neighbor distances & sort
     LO neighbor_len=0;
     for(size_t i=0; i<nz; i+=NumEqns) {
-      double mydist = zero;
+      MT mydist = zero;
       if(cols[i] >=(LO)N) continue; // Check for off-proc entries
       LO nn = cols[i] / NumEqns;
       if(blockIndices[nn]==LineID) neighbors_in_line++;
-      if(!xvals.is_null()) mydist += square<double>(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square<double>(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square<double>(z0 - zvals[nn]);
-      dist[neighbor_len] = Teuchos::ScalarTraits<double>::squareroot(mydist);
+      if(!xvals.is_null()) mydist += square<MT>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<MT>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<MT>(z0 - zvals[nn]);
+      dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[i];
       neighbor_len++;
     }
@@ -228,7 +230,7 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
       blockIndices[next + k] = LineID;
 
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal))
-    Teuchos::ArrayView<double> dist_view = dist(0,neighbor_len);
+    Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());
 
     if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {

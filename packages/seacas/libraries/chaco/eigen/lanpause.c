@@ -16,7 +16,7 @@ int lanpause(int      j,         /* current step */
              int      interval,  /* interval between pauses */
              double **q,         /* the Lanczos vectors */
              int      n,         /* length of Lanczos vectors */
-             int *    pausemode, /* which pausing criterion to use */
+             int     *pausemode, /* which pausing criterion to use */
              int      version,   /* which version of sel. orth. we are using */
              double   beta       /* current off-diagonal value */
 )
@@ -25,7 +25,7 @@ int lanpause(int      j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot();          /* standard dot product */
+  double        dot(double *vec1, int beg, int end, double *vec2); /* standard dot product */
   void          checkorth();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
@@ -76,7 +76,7 @@ int lanpause_float(int     j,         /* current step */
                    int     interval,  /* interval between pauses */
                    float **q,         /* the Lanczos vectors */
                    int     n,         /* length of Lanczos vectors */
-                   int *   pausemode, /* which pausing criterion to use */
+                   int    *pausemode, /* which pausing criterion to use */
                    int     version,   /* which version of sel. orth. we are using */
                    double  beta       /* current off-diagonal value */
 )
@@ -85,7 +85,7 @@ int lanpause_float(int     j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot_float();    /* standard dot product */
+  double        dot_float(float *vec1, int beg, int end, float *vec2); /* standard dot product */
   void          checkorth_float();
 
   /* Check orthogonality of last Lanczos vector against previous ones */

@@ -62,26 +62,26 @@ namespace stk { namespace mesh { namespace unit_test {
 inline
 void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
 {
-//
-//   proc 0      proc 1
-//            |
-//            |  block_2 block_3
-//            |
-//  block_1   |  10---9  9----12
-//            |  | 3  |  |  4  |
-//    4----3  |  3----8  8----11
-//    | 1  |  |
-//    1----2  |  2----7
-//            |  | 2  |
-//            |  5----6
-//            |
-//
-//shared nodes 2 and 3 should be members of block_1 and block_2 on both procs
-//nodes 8 and 9 are ghosts on proc 0, and should be members of block_2 and block_3
-//
-//if edges are added, the edge between nodes 2 and 3 should be a member of block_1 not block_2.
-//
-//also, the edge between nodes 8 and 9 should be a member of block_2 and block_3 on both procs.
+  //
+  //   proc 0      proc 1
+  //            |
+  //            |  block_2 block_3
+  //            |
+  //  block_1   |  10---9  9----12
+  //            |  | 3  |  |  4  |
+  //    4----3  |  3----8  8----11
+  //    | 1  |  |
+  //    1----2  |  2----7
+  //            |  | 2  |
+  //            |  5----6
+  //            |
+  //
+  //shared nodes 2 and 3 should be members of block_1 and block_2 on both procs
+  //nodes 8 and 9 are ghosts on proc 0, and should be members of block_2 and block_3
+  //
+  //if edges are added, the edge between nodes 2 and 3 should be a member of block_1 not block_2.
+  //
+  //also, the edge between nodes 8 and 9 should be a member of block_2 and block_3 on both procs.
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
@@ -124,25 +124,25 @@ void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
 inline
 void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 {
-//
-//   proc 0      proc 1
-//            |
-//            | block_2 block_3
-//            |
-// block_1    |         12---11
-//            |         | 4  |
-//    4----3  | 3----6  6----10
-//    | 1  |  | |  2 |
-//    1----2  | 2----5  5----9
-//            |         | 3  |
-//            |         7----8
-//            |
-//
-//nodes 5 and 6 are ghosts (aura) on proc 0,
-//and should be members of block_2 and block_3 on proc 0
-//if edges are added, the edge between nodes 5 and 6 should
-//be a member of block_2 not block_3.
-//
+  //
+  //   proc 0      proc 1
+  //            |
+  //            | block_2 block_3
+  //            |
+  // block_1    |         12---11
+  //            |         | 4  |
+  //    4----3  | 3----6  6----10
+  //    | 1  |  | |  2 |
+  //    1----2  | 2----5  5----9
+  //            |         | 3  |
+  //            |         7----8
+  //            |
+  //
+  //nodes 5 and 6 are ghosts (aura) on proc 0,
+  //and should be members of block_2 and block_3 on proc 0
+  //if edges are added, the edge between nodes 5 and 6 should
+  //be a member of block_2 not block_3.
+  //
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
@@ -200,15 +200,15 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 inline
 void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
 {
-    ThrowRequire(bulk.parallel_size() == 3);
-    stk::io::fill_mesh("generated:3x1x3", bulk);
+  ThrowRequire(bulk.parallel_size() == 3);
+  stk::io::fill_mesh("generated:3x1x3", bulk);
 
-    stk::mesh::EntityProcVec elementProcChanges;
-    if (bulk.parallel_rank() == 1) {
-        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4u),2));
-        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6u),2));
-    }
-    bulk.change_entity_owner(elementProcChanges);
+  stk::mesh::EntityProcVec elementProcChanges;
+  if (bulk.parallel_rank() == 1) {
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4u),2));
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6u),2));
+  }
+  bulk.change_entity_owner(elementProcChanges);
 }
 
 // element ids / proc_id:
@@ -230,22 +230,22 @@ void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
 inline
 void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
 {
-    ThrowRequire(bulk.parallel_size() == 3);
-    stk::io::fill_mesh("generated:3x1x3", bulk);
+  ThrowRequire(bulk.parallel_size() == 3);
+  stk::io::fill_mesh("generated:3x1x3", bulk);
 
-    stk::mesh::EntityProcVec elementProcChanges;
-    if (bulk.parallel_rank() == 1) {
-        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4),2));
-        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6),2));
-    }
-    bulk.change_entity_owner(elementProcChanges);
-    bulk.modification_begin();
-    if (bulk.parallel_rank() == 1) {
-        stk::mesh::Entity local_element5 = bulk.get_entity(stk::topology::ELEM_RANK,5);
-        const bool delete_success = bulk.destroy_entity(local_element5);
-        ThrowRequire(delete_success);
-    }
-    bulk.modification_end();
+  stk::mesh::EntityProcVec elementProcChanges;
+  if (bulk.parallel_rank() == 1) {
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4),2));
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6),2));
+  }
+  bulk.change_entity_owner(elementProcChanges);
+  bulk.modification_begin();
+  if (bulk.parallel_rank() == 1) {
+    stk::mesh::Entity local_element5 = bulk.get_entity(stk::topology::ELEM_RANK,5);
+    const bool delete_success = bulk.destroy_entity(local_element5);
+    ThrowRequire(delete_success);
+  }
+  bulk.modification_end();
 }
 
 } } } // namespace stk mesh unit_test

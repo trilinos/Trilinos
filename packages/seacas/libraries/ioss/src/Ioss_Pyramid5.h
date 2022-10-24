@@ -1,14 +1,14 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Pyramid5_h
-#define IOSS_Ioss_Pyramid5_h
+#pragma once
 
-#include <Ioss_CodeTypes.h>       // for IntVector
-#include <Ioss_ElementTopology.h> // for ElementTopology
+#include <Ioss_CodeTypes.h>          // for IntVector
+#include <Ioss_ElementPermutation.h> // for ElementPermutation
+#include <Ioss_ElementTopology.h>    // for ElementTopology
 
 // STL Includes
 
@@ -20,12 +20,13 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    ~Pyramid5() override;
+    ~Pyramid5() override = default;
 
     ElementShape shape() const override { return ElementShape::PYRAMID; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -55,4 +56,3 @@ namespace Ioss {
     Pyramid5(const Pyramid5 &) = delete;
   };
 } // namespace Ioss
-#endif // IOSS_Ioss_Pyramid5_h

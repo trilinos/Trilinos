@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.02 (2021/09/30)";
+  const char *version_string = "6.10 (2022/08/02)";
 
   void output_copyright();
 
@@ -223,7 +223,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -254,7 +254,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -284,7 +284,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -533,7 +533,7 @@ namespace SEAMS {
       std::cerr
           << "\nAprepro version " << version() << "\n"
           << "\nUsage: aprepro [options] [-I path] [-c char] [var=val] [filein] [fileout]\n"
-          << "          --debug or -d: Dump all variables, debug loops/if/endif\n"
+          << "  --debug or -d: Dump all variables, debug loops/if/endif and keep temporary files\n"
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
           << "  --dumpvars_json or -J: Dump all variables at end of run in json format\n"
           << "        --version or -v: Print version number to stderr          \n"
@@ -566,6 +566,8 @@ namespace SEAMS {
           << "\tEnter {DUMP()} for list of user-defined variables\n"
           << "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
           << "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
+          << "\tDocumentation: "
+             "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#aprepro\n\n"
           << "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n";
       exit(EXIT_SUCCESS);
     }
@@ -584,6 +586,15 @@ namespace SEAMS {
     auto ptr = new array(from);
     array_allocations.push_back(ptr);
     return ptr;
+  }
+
+  void Aprepro::redefine_array(array *array)
+  {
+    // This data pointer from an array is being redefined.  Remove it
+    // from `array_allocations` to avoid double delete.
+    array_allocations.erase(std::remove(array_allocations.begin(), array_allocations.end(), array),
+                            array_allocations.end());
+    delete array;
   }
 
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value,
@@ -611,7 +622,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = immutable ? SYMBOL_TYPE::IMMUTABLE_VARIABLE : SYMBOL_TYPE::VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, internal);
       }
@@ -629,7 +640,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = SYMBOL_TYPE::ARRAY_VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, false);
       }
@@ -714,17 +725,19 @@ namespace SEAMS {
       const auto &ptr = sym.second;
 
       if (!ptr->isInternal) {
-        if (first) {
+        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": " << std::setprecision(10)
+                        << ptr->value.var;
           first = false;
         }
-        else {
-          (*infoStream) << ",\n";
-        }
-        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": " << std::setprecision(10) << ptr->value.var;
+        else if (ptr->type == Parser::token::UNDVAR) {
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": null";
+          first = false;
         }
         else if (ptr->type == Parser::token::SVAR || ptr->type == Parser::token::IMMSVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": \"" << ptr->value.svar << "\"";
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": \"" << ptr->value.svar
+                        << "\"";
+          first = false;
         }
       }
     }

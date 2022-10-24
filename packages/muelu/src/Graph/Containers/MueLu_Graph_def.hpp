@@ -60,7 +60,7 @@ namespace MueLu {
       is basically right. But we've had some issues about how epetra handles empty columns.
       Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right.
     */
-    size_t nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
+    size_t nGhost = graph_->getColMap()->getLocalNumElements() - graph_->getDomainMap()->getLocalNumElements();
     if (nGhost < 0) nGhost = 0; // FIXME: size_t is unsigned.
 
     return nGhost;

@@ -73,6 +73,7 @@ namespace FROSch {
         this->CoarseMap_ = this->assembleCoarseMap();
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
+        this->extractLocalSubdomainMatrix_Symbolic();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return ret;
@@ -117,13 +118,14 @@ namespace FROSch {
                                                                                                                                    UN partition)
     {
         //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         UN blockId = 1; //This is not implemented for  Block Variant yet
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
         string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
-        Teuchos::Array<GO> nodeEle = nodesMap->getNodeElementList();
+        Teuchos::Array<GO> nodeEle = nodesMap->getLocalElementList();
 
         Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
         Teuchos::Array<GO> dmapEle(nodeEle.size());
@@ -159,7 +161,7 @@ namespace FROSch {
                         if (nodesMap->getComm()->getRank() == 0) std::cout<<"This should never happen\n";
                     }
                 }
-                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dmapEle,0,nodesMap->getComm());
             }
         } //RGDSW type CoarseOperator
         else if (partition == 1) {
@@ -175,12 +177,12 @@ namespace FROSch {
                         dmapEle[i] = nodeEle[i]+j*NumEnt_[6]+(dofsPerNode-1)*NumEnt_[5];
                     }
                 }
-                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dmapEle,0,nodesMap->getComm());
             }
         } else if (partition == 2) {
             FROSCH_ASSERT(false,"GDSWStar is not implemented yet!");
         }
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dofEle,0,nodesMap->getComm());
         return tmpMap;
     }
 
@@ -197,7 +199,7 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
         // Das könnte man noch ändern
-        // LÄNGEN NOCHMAL GEGEN NumberOfBlocks_ checken!!!
+        // Todo: Check the lengths of the vectors against NumberOfBlocks_
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
         this->IDofs_.resize(this->IDofs_.size()+1);
         this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
@@ -218,16 +220,35 @@ namespace FROSch {
                                                                   ConstXMultiVectorPtrVecPtr nodeListVec)
     {
         FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
-        // Das könnte man noch ändern
-        // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
-        for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
+
+        this->NumberOfBlocks_ = repeatedNodesMapVec.size();
+
+        FROSCH_ASSERT(dofsPerNodeVec.size()==this->NumberOfBlocks_,"dofsPerNodeVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(repeatedDofMapsVec.size()==this->NumberOfBlocks_,"repeatedDofMapsVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(nullSpaceBasisVec.size()==this->NumberOfBlocks_,"nullSpaceBasisVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==this->NumberOfBlocks_,"dirichletBoundaryDofsVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(nodeListVec.size()==this->NumberOfBlocks_,"nodeListVec.size()!=this->NumberOfBlocks_");
+
+        // Todo: Move this to a function in HarmonicCoarseOperator at some point
+        for (UN i=0; i<this->NumberOfBlocks_; i++) {
+            FROSCH_ASSERT(!repeatedNodesMapVec[i].is_null(),"repeatedNodesMapVec[i].is_null()");
+            FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
+            FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
+
             this->GammaDofs_.resize(this->GammaDofs_.size()+1);
             this->IDofs_.resize(this->IDofs_.size()+1);
             this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
             this->DofsMaps_.resize(this->DofsMaps_.size()+1);
             this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-            this->NumberOfBlocks_++;
-            resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],nullSpaceBasisVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
+
+            resetCoarseSpaceBlock(i,
+                                  dimension,
+                                  dofsPerNodeVec[i],
+                                  repeatedNodesMapVec[i],
+                                  repeatedDofMapsVec[i],
+                                  nullSpaceBasisVec[i],
+                                  dirichletBoundaryDofsVec[i],
+                                  nodeListVec[i]);
         }
         return 0;
     }
@@ -281,11 +302,11 @@ namespace FROSch {
                 << " | " << setw(41) << blockId
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Spatial dimensions" << right
                 << " | " << setw(41) << dimension
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Number of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
@@ -342,7 +363,7 @@ namespace FROSch {
                                                                                                   this->LevelID_,
                                                                                                   interfacePartitionOfUnity->getDDInterfaceNonConst()));
 
-                PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
+                if (this->ParameterList_->get("Remove Dirichlet Nodes",true)) PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
                 interface = interior;
 
@@ -357,7 +378,7 @@ namespace FROSch {
 
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
             } else {
-                interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
+                if (this->ParameterList_->get("Remove Dirichlet Nodes",true)) interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
 
                 // Construct Interface and Interior index sets

@@ -152,7 +152,7 @@ namespace MueLu {
     {
       int rank = graph->GetDomainMap()->getComm()->getRank();
 
-      printf("[%d,%d] graph local size = %dx%d\n",rank,currentLevel.GetLevelID(),(int)graph->GetDomainMap()->getNodeNumElements(),(int)graph->GetImportMap()->getNodeNumElements());
+      printf("[%d,%d] graph local size = %dx%d\n",rank,currentLevel.GetLevelID(),(int)graph->GetDomainMap()->getLocalNumElements(),(int)graph->GetImportMap()->getLocalNumElements());
 
       std::ofstream ofs(std::string("m_dropped_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
@@ -183,7 +183,7 @@ namespace MueLu {
       RCP<RealValuedMultiVector> mv;
            
 
-      GetOStream(Statistics1) << "Reading FC splitting from " << color_file << ", using map file " << map_file << ". On rank " << A->getRowMap()->getComm()->getRank() << " local size is " << A->getRowMap()->getNodeNumElements() << std::endl;
+      GetOStream(Statistics1) << "Reading FC splitting from " << color_file << ", using map file " << map_file << ". On rank " << A->getRowMap()->getComm()->getRank() << " local size is " << A->getRowMap()->getLocalNumElements() << std::endl;
       if(mapfile) {
         fclose(mapfile);
         RCP<const Map> colorMap = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMap(map_file, A->getRowMap()->lib(), A->getRowMap()->getComm());
@@ -385,8 +385,8 @@ namespace MueLu {
       KokkosGraph::Experimental::graph_color(&kh, 
                                              numRows, 
                                              numRows, // FIXME: This should be the number of columns
-                                             graphLWK->getRowPtrs(),
-                                             graphLWK->getEntries(),
+                                             graphLWK->getLocalLWGraph().getRowPtrs(),
+                                             graphLWK->getLocalLWGraph().getEntries(),
                                              true);
     }
     else if(graphLW) {
@@ -407,12 +407,12 @@ namespace MueLu {
     else if(graphG) {  
       // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
       RCP<const CrsGraph> graphC = graphG->GetGraph();
-      size_t numEntries = graphC->getNodeNumEntries();
+      size_t numEntries = graphC->getLocalNumEntries();
       ArrayView<const LO> indices;
       graphC->getLocalRowView(0,indices);
-      Kokkos::View<size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v("rowptrs_v",graphC->getNodeNumRows()+1);
+      Kokkos::View<size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v("rowptrs_v",graphC->getLocalNumRows()+1);
       rowptrs_v[0]=0;
-      for(LO i=0; i<(LO)graphC->getNodeNumRows()+1; i++) 
+      for(LO i=0; i<(LO)graphC->getLocalNumRows()+1; i++) 
         rowptrs_v[i+1] = rowptrs_v[i] + graphC->getNumEntriesInLocalRow(i);
       Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(&indices[0],numEntries);    
       KokkosGraph::Experimental::graph_color(&kh, 

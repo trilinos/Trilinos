@@ -93,6 +93,7 @@ class A {
 	int A_g_, A_f_;
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
+  A(const int A_g, const int A_f) : A_g_(A_g), A_f_(A_f) {}
   static Teuchos::RCP<A> create() { return Teuchos::rcp(new A); }
 	virtual ~A() TEUCHOS_NOEXCEPT_FALSE; // See below
 	virtual int A_g() { return A_g_; }

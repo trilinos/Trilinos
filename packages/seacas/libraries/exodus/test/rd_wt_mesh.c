@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,15 +31,15 @@
 
 #include "exodusII.h"
 
-#define DEFAULT_NUM_FIELDS 0
-#define DEFAULT_FILE_NAME "mesh"
+#define DEFAULT_NUM_FIELDS     0
+#define DEFAULT_FILE_NAME      "mesh"
 #define DEFAULT_NUM_ITERATIONS 1
-#define EXODUS_FILE_TYPE "e"
-#define MBYTES (1024 * 1024)
-#define MAX_STRING_LEN 128
-#define NUM_NODES_PER_ELEM 8
-#define WRITE_FILE_TYPE "new"
-#define EBLK_ID 100000
+#define EXODUS_FILE_TYPE       "e"
+#define MBYTES                 (1024 * 1024)
+#define MAX_STRING_LEN         128
+#define NUM_NODES_PER_ELEM     8
+#define WRITE_FILE_TYPE        "new"
+#define EBLK_ID                100000
 
 /*
  *      Prototypes
@@ -66,7 +66,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
                    int *node_map, int num_elems, int *elem_map, realtyp *x_coords,
                    realtyp *y_coords, realtyp *z_coords, int *connect, int close_files);
 
-double my_timer()
+double my_timer(void)
 {
 #ifdef PARALLEL_AWARE_EXODUS
   double t1 = MPI_Wtime();
@@ -179,7 +179,6 @@ int main(int argc, char **argv)
     char *env;                        /* Contents of environmental variable.  */
     int   hint;                       /* ROMIO hint index.                    */
     char  hint_value[MAX_STRING_LEN]; /* ROMIO hint value.                    */
-    int   rank;                       /* MPI process rank.                    */
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     /*      The "value" of the hint is obtained from the environment of
@@ -270,22 +269,22 @@ int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *f
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-nv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-gv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_global_fields = atoi(argv[arg]);
+        *num_global_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-ev", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_element_fields = atoi(argv[arg]);
+        *num_element_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-f", argv[arg]) == 0) {
@@ -295,17 +294,17 @@ int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *f
     }
     else if (strcmp("-M", argv[arg]) == 0) {
       if (++arg < argc) {
-        *files_per_domain = atoi(argv[arg]);
+        *files_per_domain = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-i", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_iterations = atoi(argv[arg]);
+        *num_iterations = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-w", argv[arg]) == 0) {
       if (++arg < argc) {
-        *sleep_time = atoi(argv[arg]);
+        *sleep_time = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {
@@ -707,7 +706,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   int    IO_word_size  = sizeof(realtyp);
   int    j, t, npd, err, num_elem_blk, num_node_sets, num_side_sets;
   int    iter;
-  int *  elem_var_tab = NULL;
+  int   *elem_var_tab = NULL;
   size_t file_size;
 
   struct stat file_status;
@@ -806,7 +805,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
       }
 #else
       err = ex_put_block(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, "hex", num_elems, NUM_NODES_PER_ELEM,
-                         0, 0, 0);
+                            0, 0, 0);
 #endif
       if (err) {
         printf("after ex_put_elem_block, error = %d\n", err);

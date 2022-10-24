@@ -52,7 +52,7 @@
 #include "Sacado_mpl_integral_c.hpp"
 
 // Utilities
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 template< typename IntType >
 inline
@@ -164,7 +164,7 @@ test_mpvector_spmv(const int ensemble_length,
   Stokhos::multiply( matrix, x, y, tag );
 
   execution_space().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     Stokhos::multiply( matrix, x, y, tag );
   }
@@ -242,7 +242,7 @@ test_scalar_spmv(const int ensemble_length,
   }
 
   execution_space().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     for (int e=0; e<ensemble_length; ++e) {
       KokkosSparse::spmv( "N" , value_type(1.0), matrix[e], x[e] , value_type(0.0), y[e]);

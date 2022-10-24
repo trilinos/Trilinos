@@ -69,7 +69,7 @@ namespace Excn {
     int write_meta_data(const Mesh<INT> &mesh, const std::vector<Block> &blocks,
                         const std::vector<NodeSet<INT>> &nodesets,
                         const std::vector<SideSet<INT>> &sidesets,
-                        const CommunicationMetaData &    comm);
+                        const CommunicationMetaData     &comm);
 
   private:
     template <typename INT>

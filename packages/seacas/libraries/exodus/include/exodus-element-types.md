@@ -17,6 +17,7 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       |     |      |       |           |    |
  quad    |  4  |  X   |    X  |    X      |  X |
  |       |  5  |  X   |       |           |    |
+ |       |  8  |  X   |       |           |    |
  |       |  9  |  X   |    X  |    X      |  X |
  |       | 12  |  X   |    X  |           |    |
  |       | 16  |  X   |    X  |           |    |

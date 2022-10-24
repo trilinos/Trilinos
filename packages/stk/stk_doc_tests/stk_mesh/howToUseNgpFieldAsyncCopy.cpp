@@ -33,6 +33,7 @@
 //
 
 #include <gtest/gtest.h>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
@@ -72,12 +73,16 @@ TEST(stkMeshHowTo, ngpFieldAsyncCopy)
   using IntField = stk::mesh::Field<int>;
 
   const unsigned spatialDimension = 3;
-  stk::mesh::MetaData meta(spatialDimension);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDimension);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+  bulkPtr->mesh_meta_data().use_simple_fields();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
   unsigned numStates = 1;
-  DoubleField& doubleField = meta.declare_field<DoubleField>(stk::topology::ELEM_RANK, "doubleField", numStates);
-  IntField& intField = meta.declare_field<IntField>(stk::topology::ELEM_RANK, "intField", numStates);
+  DoubleField& doubleField = meta.declare_field<double>(stk::topology::ELEM_RANK, "doubleField", numStates);
+  IntField& intField = meta.declare_field<int>(stk::topology::ELEM_RANK, "intField", numStates);
   
   double initialDoubleFieldValue = 1.0;
   double modifiedDoubleFieldValue = initialDoubleFieldValue*2;
@@ -109,6 +114,5 @@ TEST(stkMeshHowTo, ngpFieldAsyncCopy)
 
   check_field_data_on_device(bulk, ngpDoubleField, ngpIntField, modifiedDoubleFieldValue, modifiedIntFieldValue);
 }
-
 
 }

@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 
     int maxNumIters = static_cast<int>(maxItersDimFactor*dim);
 
-#if defined(HAVE_THYRA_FLOAT)
+#if defined(HAVE_TEUCHOS_INST_FLOAT)
     // Run using float
     result = runPowerMethodExample<float>(
       dim, maxNumIters, tolerance, dumpAll);
@@ -203,21 +203,19 @@ int main(int argc, char *argv[])
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
 
-#ifdef HAVE_THYRA_COMPLEX
-
-#if defined(HAVE_THYRA_FLOAT)
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT)
     // Run using std::complex<float>
     result = runPowerMethodExample<std::complex<float> >(
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
 #endif
 
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_DOUBLE)
     // Run using std::complex<double>
     result = runPowerMethodExample<std::complex<double> >(
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
-
-#endif // HAVE_THYRA_COMPLEX
+#endif
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 
@@ -226,16 +224,11 @@ int main(int argc, char *argv[])
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
 
-#ifdef HAVE_THYRA_COMPLEX
-
     // Run using std::complex<mpf_class>
     //result = runPowerMethodExample<std::complex<mpf_class> >(
     //  dim, maxNumIters, tolerance, dumpAll);
     //if(!result) success = false;
     //The above commented-out code throws a floating-point exception?
-
-#endif // HAVE_THYRA_COMPLEX
-
 
 #endif // HAVE_TEUCHOS_GNU_MP
 

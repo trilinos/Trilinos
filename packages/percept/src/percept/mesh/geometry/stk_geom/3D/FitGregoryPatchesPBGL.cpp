@@ -7,7 +7,7 @@
 // license that can be found in the LICENSE file.
 
 #if HAVE_BOOST_GRAPH
-
+ 
 // common interface
 //#include "FitGregoryPatchesPBGLDeclCommon.hpp"
 #include "FitGregoryPatches.hpp"
@@ -38,7 +38,11 @@
 #pragma warning disable 1478
 #endif // __INTEL_COMPILER
 
+#undef OMPI_SKIP_MPICXX
 #include <boost/graph/use_mpi.hpp>
+
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
+
 #include <boost/graph/distributed/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/distributed/connected_components_parallel_search.hpp>

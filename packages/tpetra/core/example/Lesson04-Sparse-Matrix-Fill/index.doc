@@ -101,7 +101,8 @@ typedef GO ...;
 typedef NT ...; 
 \endcode
 
-\section Tpetra_Lesson04_Tradeoffs_dyn_no_hint The most general case: dynamic allocation, no size hint
+
+\section Tpetra_Lesson04_Tradeoffs_dyn_hint Allocation with a size hint
 
 CrsMatrix lets you make trade-offs between flexibility and
 performance.  All of these trade-offs revolve around how much you know
@@ -110,10 +111,11 @@ advance.  In the most general case, all you know is which process owns
 which row -- the row Map.
 \code
 RCP<const Map<LO, GO, NT> > rowMap = ...; // whatever row Map you want
-RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap));
+RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap ,sizehint));
 \endcode
 This code snippet says that you want to create a sparse matrix with
-the given row distribution.  It also says that you intend each process
+the given row distribution with a certain approximate number of entries per row.  
+It also says that you intend each process
 to own all the entries in a given row.  If you want to allow a more
 general "2-D" distribution, you must also tell the constructor which
 process owns which columns of the matrix.  You do so by supplying a
@@ -121,36 +123,18 @@ process owns which columns of the matrix.  You do so by supplying a
 \code
 RCP<const Map<LO, GO, NT> > rowMap = ...; // whatever row Map you want
 RCP<const Map<LO, GO, NT> > colMap = ...; // whatever column Map you want
-RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap, colMap));
+RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap, colMap, sizehint));
 \endcode
 All the examples that follow allow you to supply a column Map if you
 which, so we omit this for brevity.
 
-Both of these ways to create a sparse matrix allocate memory for the
-entries in each row dynamically.  This means that it reallocates space
-as necessary.  We call this <i>dynamic profile</i>, where "profile"
-refers to the structure (the graph) of the sparse matrix.  (<i>Static
-profile</i>, which we describe later, does not reallocate; it fixes an
-upper bound on the number of entries allowed per row.)  CrsMatrix
-implements this currently as an array of arrays, one array per row,
-though this may change.  You might hear this array of arrays structure
-referred to as "2-D storage," versus the "1-D" storage of the
-conventional compressed sparse row format.
 
-\section Tpetra_Lesson04_Tradeoffs_dyn_hint Dynamic allocation with a size hint
-
-In the above examples, the matrix has no information about how many
-entries you want to add to each row.  Thus, it has to make some
-default assumption.  The "size hint" defaults to zero, to ensure that
-empty or nearly empty sparse matrices take as little memory as
-possible.  An initial reservation of zero entries per row may cause
-frequent reallocation if you add entries to a row many times.
-Reallocation takes time, because it requires talking to the C++
-run-time library or the system library.  It also tends to fragment
-memory and thus disturb locality, further reducing performance.
-
-If you have a pretty good idea how many entries will be in each row,
-you may give a "size hint" to the constructor.  You may do so either
+CrsMatrix lets you make trade-offs between flexibility and
+performance.  All of these trade-offs revolve around how much you know
+about the structure of the sparse matrix -- that is, its graph -- in
+advance.  In the most general case, all you know is which process owns
+which row -- the row Map --- and an approximate number of nonzeros per row.
+You may do so either
 with a single number, which is an expected upper bound on the number
 of entries in any one row, or with an upper bound for each row of the
 matrix.  The typical use case is a single upper bound, which we
@@ -162,39 +146,10 @@ const size_t maxEntriesPerRow = 3;
 RCP<CrsMatrix<ST, LO, GO, NT> > A = 
   rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap, maxEntriesPerRow));
 \endcode
-If you have an upper bound for each row, you probably could use static
-profile, but it is still legal to use dynamic profile in this case.
-
 Giving an upper bound on the number of entries per row allows the
-matrix to preallocate space for each row.  Dynamic profile still
-allows you to put more entries in a row than that, but if you don't,
-then the matrix will only allocate space once per row during the fill
-phase.
+matrix to preallocate space for each row, which is especially critical on architectures where
+memory allocation is relatively expensive (e.g. GPUs).
 
-\section Tpetra_Lesson04_Tradeoffs_static Static allocation
-
-Static allocation, what we call <i>static profile</i>, means that the
-"size hint" becomes a hard constraint.  You may either specify a
-single upper bound on the number of entries in any row, or an array
-with a separate upper bound for each row.  Here is an example of the
-former:
-\code
-// With static profile, this is a hard constraint.
-const size_t maxEntriesPerRow = 3;
-RCP<CrsMatrix<ST, LO, GO, NT> > A = 
-  rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap, 3, Tpetra::StaticProfile));
-\endcode
-What happens when you specify static profile is that the matrix
-allocates "1-D" storage.  That is, rather than the aforementioned
-"2-D" array of arrays, the matrix allocates the usual three compressed
-sparse row arrays (ptr, ind, val), with fixed space in each row (given
-either by the upper bound, or by the aforementioned array).  When
-you're done filling and call \c fillComplete(), this means the matrix
-need only "pack" the 1-D storage into its final representation by
-copying the entries that you filled in (and not any of the "slack
-space" you might have left).  Static profile also may use less memory
-than dynamic profile, because you don't have to store a complicated
-dynamic data structure for each row of the matrix.
 
 \section Tpetra_Lesson04_Tradeoffs_const_graph Constant graph
 
@@ -259,8 +214,8 @@ diagonal entry of the matrix.
 
 \section Tpetra_Lesson04_Exercise Exercise
 
-Start with the \ref Tpetra_Lesson03 example, which uses a dynamic
-profile and global indices.  Try all of the different fill techniques
+Start with the \ref Tpetra_Lesson03 example, which uses
+global indices.  Try all of the different fill techniques
 described in this lesson.  If you like, you may also try cyclic
 boundary conditions instead of Dirichlet boundary conditions in the
 1-D Poisson discretization.  (This makes the number of entries per row

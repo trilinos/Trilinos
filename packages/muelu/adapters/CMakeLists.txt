@@ -84,22 +84,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 ENDIF()
 
 #
-# Xpetra
-#
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
-APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_CreateXpetraPreconditioner.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_def.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell1_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell1_def.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell_Utils_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell_Utils_def.hpp
-
-)
-
-#
 # Stratimikos
 #
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
@@ -120,9 +104,13 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_decl.hpp
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_def.hpp
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory_decl.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory_def.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory.hpp
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
+    ${DIR}/Xpetra_ThyraLinearOp.hpp
     )
 
   # Tpetra specific extensions
@@ -180,28 +168,16 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
   GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
-  IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
-    APPEND_SET(MUELUADAPTERS_ETI_CLASSES
-      MueLu::Maxwell_Utils
-      MueLu::RefMaxwell
-      MueLu::Maxwell1
-      )
-    IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-      APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
-        Thyra::MueLuRefMaxwellPreconditionerFactory
-      )
-    ENDIF()
-  ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
       Thyra::XpetraLinearOp
     )
-  ENDIF()	
+  ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_AmgX)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::AMGXOperator
-    )    
+    )
   ENDIF()
 
   # Set the list of classes in MueLu adapters that are templated on <LO, GO, Node> for
@@ -237,7 +213,7 @@ TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu muelu-interface
+  DEPLIBS muelu
   ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
   )
 

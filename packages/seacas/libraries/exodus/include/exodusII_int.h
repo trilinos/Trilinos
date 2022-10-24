@@ -84,7 +84,7 @@ extern "C" {
 
 /* Used to map between root (file id) and group ids when using groups */
 #define EX_FILE_ID_MASK (0xffff0000) /**< Must match FILE_ID_MASK in NetCDF nc4internal.h */
-#define EX_GRP_ID_MASK (0x0000ffff)  /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
+#define EX_GRP_ID_MASK  (0x0000ffff) /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
 
 void ex__reset_error_status(void);
 
@@ -196,7 +196,7 @@ EXODUS_EXPORT int indent;
   }
 #define EX_FUNC_ENTER_INT()
 #define EX_FUNC_LEAVE(error) return error
-#define EX_FUNC_VOID() return
+#define EX_FUNC_VOID()       return
 #define EX_FUNC_UNLOCK()
 #endif
 #endif
@@ -221,67 +221,67 @@ EXODUS_EXPORT int indent;
  *       fail when they encounter a blank in a name.
  *
  */
-#define ATT_TITLE "title"             /**< the database title        */
+#define ATT_TITLE       "title"       /**< the database title        */
 #define ATT_API_VERSION "api_version" /**< the EXODUS api vers number  */
 /*! the EXODUS api vers # used for db version 2.01 and earlier              */
 #define ATT_API_VERSION_BLANK "api version"
-#define ATT_VERSION "version"    /**< the EXODUS file vers number */
-#define ATT_FILESIZE "file_size" /**< 1=large, 0=normal */
+#define ATT_VERSION           "version"   /**< the EXODUS file vers number */
+#define ATT_FILESIZE          "file_size" /**< 1=large, 0=normal */
 /*! word size of floating point numbers in file     */
 #define ATT_FLT_WORDSIZE "floating_point_word_size"
 /*! word size of floating point numbers in file used for db version
    2.01 and earlier */
 #define ATT_FLT_WORDSIZE_BLANK "floating point word size"
-#define ATT_MAX_NAME_LENGTH "maximum_name_length"
-#define ATT_INT64_STATUS "int64_status"
-#define ATT_NEM_API_VERSION "nemesis_api_version"
-#define ATT_NEM_FILE_VERSION "nemesis_file_version"
-#define ATT_PROCESSOR_INFO "processor_info"
-#define ATT_LAST_WRITTEN_TIME "last_written_time"
+#define ATT_MAX_NAME_LENGTH    "maximum_name_length"
+#define ATT_INT64_STATUS       "int64_status"
+#define ATT_NEM_API_VERSION    "nemesis_api_version"
+#define ATT_NEM_FILE_VERSION   "nemesis_file_version"
+#define ATT_PROCESSOR_INFO     "processor_info"
+#define ATT_LAST_WRITTEN_TIME  "last_written_time"
 
-#define DIM_NUM_ASSEMBLY "num_assembly" /**< number of assemblies       */
-#define DIM_NUM_BLOB "num_blob"         /**< number of blobs       */
-#define DIM_NUM_NODES "num_nodes"       /**< number of nodes                */
-#define DIM_NUM_DIM "num_dim"           /**< number of dimensions; 2- or 3-d*/
-#define DIM_NUM_EDGE "num_edge"         /**< number of edges (over all blks)*/
-#define DIM_NUM_FACE "num_face"         /**< number of faces (over all blks)*/
-#define DIM_NUM_ELEM "num_elem"         /**< number of elements             */
-#define DIM_NUM_EL_BLK "num_el_blk"     /**< number of element blocks       */
-#define DIM_NUM_ED_BLK "num_ed_blk"     /**< number of edge blocks          */
-#define DIM_NUM_FA_BLK "num_fa_blk"     /**< number of face blocks          */
-#define VAR_COORD "coord"               /**< nodal coordinates         */
-#define VAR_COORD_X "coordx"            /**< X-dimension coordinate    */
-#define VAR_COORD_Y "coordy"            /**< Y-dimension coordinate    */
-#define VAR_COORD_Z "coordz"            /**< Z-dimension coordinate    */
-#define VAR_NAME_COOR "coor_names"      /**< names of coordinates      */
-#define VAR_NAME_EL_BLK "eb_names"      /**< names of element blocks   */
-#define VAR_NAME_NS "ns_names"          /**< names of node sets        */
-#define VAR_NAME_SS "ss_names"          /**< names of side sets        */
-#define VAR_NAME_EM "emap_names"        /**< names of element maps     */
-#define VAR_NAME_EDM "edmap_names"      /**< names of edge    maps     */
-#define VAR_NAME_FAM "famap_names"      /**< names of face    maps     */
-#define VAR_NAME_NM "nmap_names"        /**< names of node    maps     */
-#define VAR_NAME_ED_BLK "ed_names"      /**< names of edge    blocks   */
-#define VAR_NAME_FA_BLK "fa_names"      /**< names of face    blocks   */
-#define VAR_NAME_ES "es_names"          /**< names of edge    sets     */
-#define VAR_NAME_FS "fs_names"          /**< names of face    sets     */
-#define VAR_NAME_ELS "els_names"        /**< names of element sets     */
-#define VAR_STAT_EL_BLK "eb_status"     /**< element block status      */
-#define VAR_STAT_ECONN "econn_status"   /**< element block edge status */
-#define VAR_STAT_FCONN "fconn_status"   /**< element block face status */
-#define VAR_STAT_ED_BLK "ed_status"     /**< edge    block status      */
-#define VAR_STAT_FA_BLK "fa_status"     /**< face    block status      */
-#define VAR_ID_EL_BLK "eb_prop1"        /**< element block ids props   */
-#define VAR_ID_ED_BLK "ed_prop1"        /**< edge    block ids props   */
-#define VAR_ID_FA_BLK "fa_prop1"        /**< face    block ids props   */
+#define DIM_NUM_ASSEMBLY             "num_assembly" /**< number of assemblies       */
+#define DIM_NUM_BLOB                 "num_blob"     /**< number of blobs       */
+#define DIM_NUM_NODES                "num_nodes"    /**< number of nodes                */
+#define DIM_NUM_DIM                  "num_dim"      /**< number of dimensions; 2- or 3-d*/
+#define DIM_NUM_EDGE                 "num_edge"     /**< number of edges (over all blks)*/
+#define DIM_NUM_FACE                 "num_face"     /**< number of faces (over all blks)*/
+#define DIM_NUM_ELEM                 "num_elem"     /**< number of elements             */
+#define DIM_NUM_EL_BLK               "num_el_blk"   /**< number of element blocks       */
+#define DIM_NUM_ED_BLK               "num_ed_blk"   /**< number of edge blocks          */
+#define DIM_NUM_FA_BLK               "num_fa_blk"   /**< number of face blocks          */
+#define VAR_COORD                    "coord"        /**< nodal coordinates         */
+#define VAR_COORD_X                  "coordx"       /**< X-dimension coordinate    */
+#define VAR_COORD_Y                  "coordy"       /**< Y-dimension coordinate    */
+#define VAR_COORD_Z                  "coordz"       /**< Z-dimension coordinate    */
+#define VAR_NAME_COOR                "coor_names"   /**< names of coordinates      */
+#define VAR_NAME_EL_BLK              "eb_names"     /**< names of element blocks   */
+#define VAR_NAME_NS                  "ns_names"     /**< names of node sets        */
+#define VAR_NAME_SS                  "ss_names"     /**< names of side sets        */
+#define VAR_NAME_EM                  "emap_names"   /**< names of element maps     */
+#define VAR_NAME_EDM                 "edmap_names"  /**< names of edge    maps     */
+#define VAR_NAME_FAM                 "famap_names"  /**< names of face    maps     */
+#define VAR_NAME_NM                  "nmap_names"   /**< names of node    maps     */
+#define VAR_NAME_ED_BLK              "ed_names"     /**< names of edge    blocks   */
+#define VAR_NAME_FA_BLK              "fa_names"     /**< names of face    blocks   */
+#define VAR_NAME_ES                  "es_names"     /**< names of edge    sets     */
+#define VAR_NAME_FS                  "fs_names"     /**< names of face    sets     */
+#define VAR_NAME_ELS                 "els_names"    /**< names of element sets     */
+#define VAR_STAT_EL_BLK              "eb_status"    /**< element block status      */
+#define VAR_STAT_ECONN               "econn_status" /**< element block edge status */
+#define VAR_STAT_FCONN               "fconn_status" /**< element block face status */
+#define VAR_STAT_ED_BLK              "ed_status"    /**< edge    block status      */
+#define VAR_STAT_FA_BLK              "fa_status"    /**< face    block status      */
+#define VAR_ID_EL_BLK                "eb_prop1"     /**< element block ids props   */
+#define VAR_ID_ED_BLK                "ed_prop1"     /**< edge    block ids props   */
+#define VAR_ID_FA_BLK                "fa_prop1"     /**< face    block ids props   */
 #define DIM_NUM_ENTITY_ASSEMBLY(num) ex__catstr("num_entity_assembly", num)
-#define VAR_ENTITY_ASSEMBLY(num) ex__catstr("assembly_entity", num)
-#define DIM_NUM_VALUES_BLOB(num) ex__catstr("num_values_blob", num)
-#define VAR_ENTITY_BLOB(num) ex__catstr("blob_entity", num)
-#define EX_ATTRIBUTE_TYPE "_type"
-#define EX_ATTRIBUTE_TYPENAME "_typename"
-#define EX_ATTRIBUTE_NAME "_name"
-#define EX_ATTRIBUTE_ID "_id"
+#define VAR_ENTITY_ASSEMBLY(num)     ex__catstr("assembly_entity", num)
+#define DIM_NUM_VALUES_BLOB(num)     ex__catstr("num_values_blob", num)
+#define VAR_ENTITY_BLOB(num)         ex__catstr("blob_entity", num)
+#define EX_ATTRIBUTE_TYPE            "_type"
+#define EX_ATTRIBUTE_TYPENAME        "_typename"
+#define EX_ATTRIBUTE_NAME            "_name"
+#define EX_ATTRIBUTE_ID              "_id"
 
 /*! element type names for each element block      */
 #define ATT_NAME_ELB "elem_type"
@@ -326,27 +326,27 @@ EXODUS_EXPORT int indent;
 #define VAR_EATTRIB(num) ex__catstr("eattrb", num)
 /*! list of attribute names for edge block num        */
 #define VAR_NAME_EATTRIB(num) ex__catstr("eattrib_name", num)
-#define VAR_NATTRIB "nattrb"
-#define VAR_NAME_NATTRIB "nattrib_name"
-#define DIM_NUM_ATT_IN_NBLK "num_att_in_nblk"
+#define VAR_NATTRIB           "nattrb"
+#define VAR_NAME_NATTRIB      "nattrib_name"
+#define DIM_NUM_ATT_IN_NBLK   "num_att_in_nblk"
 
-#define VAR_NSATTRIB(num) ex__catstr("nsattrb", num)
+#define VAR_NSATTRIB(num)      ex__catstr("nsattrb", num)
 #define VAR_NAME_NSATTRIB(num) ex__catstr("nsattrib_name", num)
 #define DIM_NUM_ATT_IN_NS(num) ex__catstr("num_att_in_ns", num)
 
-#define VAR_SSATTRIB(num) ex__catstr("ssattrb", num)
+#define VAR_SSATTRIB(num)      ex__catstr("ssattrb", num)
 #define VAR_NAME_SSATTRIB(num) ex__catstr("ssattrib_name", num)
 #define DIM_NUM_ATT_IN_SS(num) ex__catstr("num_att_in_ss", num)
 
-#define VAR_ESATTRIB(num) ex__catstr("esattrb", num)
+#define VAR_ESATTRIB(num)      ex__catstr("esattrb", num)
 #define VAR_NAME_ESATTRIB(num) ex__catstr("esattrib_name", num)
 #define DIM_NUM_ATT_IN_ES(num) ex__catstr("num_att_in_es", num)
 
-#define VAR_FSATTRIB(num) ex__catstr("fsattrb", num)
+#define VAR_FSATTRIB(num)      ex__catstr("fsattrb", num)
 #define VAR_NAME_FSATTRIB(num) ex__catstr("fsattrib_name", num)
 #define DIM_NUM_ATT_IN_FS(num) ex__catstr("num_att_in_fs", num)
 
-#define VAR_ELSATTRIB(num) ex__catstr("elsattrb", num)
+#define VAR_ELSATTRIB(num)      ex__catstr("elsattrb", num)
 #define VAR_NAME_ELSATTRIB(num) ex__catstr("elsattrib_name", num)
 #define DIM_NUM_ATT_IN_ELS(num) ex__catstr("num_att_in_els", num)
 
@@ -367,10 +367,10 @@ EXODUS_EXPORT int indent;
 /*! name attached to element block, node set, side set, element map,
     or map properties */
 #define ATT_PROP_NAME "name"
-#define VAR_MAP "elem_map"         /**< element order map         */
-#define DIM_NUM_SS "num_side_sets" /**< number of side sets            */
-#define VAR_SS_STAT "ss_status"    /**< side set status           */
-#define VAR_SS_IDS "ss_prop1"      /**< side set id properties    */
+#define VAR_MAP       "elem_map"      /**< element order map         */
+#define DIM_NUM_SS    "num_side_sets" /**< number of side sets            */
+#define VAR_SS_STAT   "ss_status"     /**< side set status           */
+#define VAR_SS_IDS    "ss_prop1"      /**< side set id properties    */
 /*! number of sides in side set num*/
 #define DIM_NUM_SIDE_SS(num) ex__catstr("num_side_ss", num)
 /*! number of distribution factors in side set num           */
@@ -383,9 +383,9 @@ EXODUS_EXPORT int indent;
 #define VAR_SIDE_SS(num) ex__catstr("side_ss", num)
 /*! list of the numth property for all side sets       */
 #define VAR_SS_PROP(num) ex__catstr("ss_prop", num)
-#define DIM_NUM_ES "num_edge_sets" /**< number of edge sets            */
-#define VAR_ES_STAT "es_status"    /**< edge set status           */
-#define VAR_ES_IDS "es_prop1"      /**< edge set id properties    */
+#define DIM_NUM_ES       "num_edge_sets" /**< number of edge sets            */
+#define VAR_ES_STAT      "es_status"     /**< edge set status           */
+#define VAR_ES_IDS       "es_prop1"      /**< edge set id properties    */
 /*! number of edges in edge set num*/
 #define DIM_NUM_EDGE_ES(num) ex__catstr("num_edge_es", num)
 /*! number of distribution factors in edge set num           */
@@ -398,9 +398,9 @@ EXODUS_EXPORT int indent;
 #define VAR_ORNT_ES(num) ex__catstr("ornt_es", num)
 /*! list of the numth property for all edge sets       */
 #define VAR_ES_PROP(num) ex__catstr("es_prop", num)
-#define DIM_NUM_FS "num_face_sets" /**< number of face sets            */
-#define VAR_FS_STAT "fs_status"    /**< face set status           */
-#define VAR_FS_IDS "fs_prop1"      /**< face set id properties    */
+#define DIM_NUM_FS       "num_face_sets" /**< number of face sets            */
+#define VAR_FS_STAT      "fs_status"     /**< face set status           */
+#define VAR_FS_IDS       "fs_prop1"      /**< face set id properties    */
 /*! number of faces in side set num*/
 #define DIM_NUM_FACE_FS(num) ex__catstr("num_face_fs", num)
 /*! number of distribution factors in face set num           */
@@ -413,95 +413,95 @@ EXODUS_EXPORT int indent;
 #define VAR_ORNT_FS(num) ex__catstr("ornt_fs", num)
 /*! list of the numth property for all face sets       */
 #define VAR_FS_PROP(num) ex__catstr("fs_prop", num)
-#define DIM_NUM_ELS "num_elem_sets" /**< number of elem sets            */
+#define DIM_NUM_ELS      "num_elem_sets" /**< number of elem sets            */
 /*! number of elements in elem set num                     */
 #define DIM_NUM_ELE_ELS(num) ex__catstr("num_ele_els", num)
 /*! number of distribution factors in element set num        */
 #define DIM_NUM_DF_ELS(num) ex__catstr("num_df_els", num)
-#define VAR_ELS_STAT "els_status" /**< elem set status           */
-#define VAR_ELS_IDS "els_prop1"   /**< elem set id properties    */
+#define VAR_ELS_STAT        "els_status" /**< elem set status           */
+#define VAR_ELS_IDS         "els_prop1"  /**< elem set id properties    */
 /*! list of elements in elem set num                 */
 #define VAR_ELEM_ELS(num) ex__catstr("elem_els", num)
 /*! list of distribution factors in elem set num */
 #define VAR_FACT_ELS(num) ex__catstr("dist_fact_els", num)
 /*! list of the numth property for all elem sets       */
 #define VAR_ELS_PROP(num) ex__catstr("els_prop", num)
-#define DIM_NUM_NS "num_node_sets" /**< number of node sets            */
+#define DIM_NUM_NS        "num_node_sets" /**< number of node sets            */
 /*! number of nodes in node set num                     */
 #define DIM_NUM_NOD_NS(num) ex__catstr("num_nod_ns", num)
 /*! number of distribution factors in node set num           */
 #define DIM_NUM_DF_NS(num) ex__catstr("num_df_ns", num)
-#define VAR_NS_STAT "ns_status" /**< node set status           */
-#define VAR_NS_IDS "ns_prop1"   /**< node set id properties    */
+#define VAR_NS_STAT        "ns_status" /**< node set status           */
+#define VAR_NS_IDS         "ns_prop1"  /**< node set id properties    */
 /*! list of nodes in node set num                     */
 #define VAR_NODE_NS(num) ex__catstr("node_ns", num)
 /*! list of distribution factors in node set num */
 #define VAR_FACT_NS(num) ex__catstr("dist_fact_ns", num)
 /*! list of the numth property for all node sets       */
 #define VAR_NS_PROP(num) ex__catstr("ns_prop", num)
-#define DIM_NUM_QA "num_qa_rec"             /**< number of QA records           */
-#define VAR_QA_TITLE "qa_records"           /**< QA records                */
-#define DIM_NUM_INFO "num_info"             /**< number of information records  */
-#define VAR_INFO "info_records"             /**< information records       */
-#define VAR_WHOLE_TIME "time_whole"         /**< simulation times for whole time steps */
+#define DIM_NUM_QA       "num_qa_rec"       /**< number of QA records           */
+#define VAR_QA_TITLE     "qa_records"       /**< QA records                */
+#define DIM_NUM_INFO     "num_info"         /**< number of information records  */
+#define VAR_INFO         "info_records"     /**< information records       */
+#define VAR_WHOLE_TIME   "time_whole"       /**< simulation times for whole time steps */
 #define VAR_ASSEMBLY_TAB "assembly_var_tab" /**< assembly variable truth table */
-#define VAR_BLOB_TAB "blob_var_tab"         /**< blob variable truth table */
-#define VAR_ELEM_TAB "elem_var_tab"         /**< element variable truth table */
-#define VAR_EBLK_TAB "edge_var_tab"         /**< edge variable truth table */
-#define VAR_FBLK_TAB "face_var_tab"         /**< face variable truth table */
-#define VAR_ELSET_TAB "elset_var_tab"       /**< elemset variable truth table */
-#define VAR_SSET_TAB "sset_var_tab"         /**< sideset variable truth table */
-#define VAR_FSET_TAB "fset_var_tab"         /**< faceset variable truth table */
-#define VAR_ESET_TAB "eset_var_tab"         /**< edgeset variable truth table */
-#define VAR_NSET_TAB "nset_var_tab"         /**< nodeset variable truth table */
-#define DIM_NUM_GLO_VAR "num_glo_var"       /**< number of global variables */
+#define VAR_BLOB_TAB     "blob_var_tab"     /**< blob variable truth table */
+#define VAR_ELEM_TAB     "elem_var_tab"     /**< element variable truth table */
+#define VAR_EBLK_TAB     "edge_var_tab"     /**< edge variable truth table */
+#define VAR_FBLK_TAB     "face_var_tab"     /**< face variable truth table */
+#define VAR_ELSET_TAB    "elset_var_tab"    /**< elemset variable truth table */
+#define VAR_SSET_TAB     "sset_var_tab"     /**< sideset variable truth table */
+#define VAR_FSET_TAB     "fset_var_tab"     /**< faceset variable truth table */
+#define VAR_ESET_TAB     "eset_var_tab"     /**< edgeset variable truth table */
+#define VAR_NSET_TAB     "nset_var_tab"     /**< nodeset variable truth table */
+#define DIM_NUM_GLO_VAR  "num_glo_var"      /**< number of global variables */
 #define VAR_NAME_GLO_VAR "name_glo_var"     /**< names of global variables */
-#define VAR_GLO_VAR "vals_glo_var"          /**< values of global variables*/
-#define DIM_NUM_NOD_VAR "num_nod_var"       /**< number of nodal variables      */
+#define VAR_GLO_VAR      "vals_glo_var"     /**< values of global variables*/
+#define DIM_NUM_NOD_VAR  "num_nod_var"      /**< number of nodal variables      */
 #define VAR_NAME_NOD_VAR "name_nod_var"     /**< names of nodal variables  */
-#define VAR_NOD_VAR "vals_nod_var"          /**< values of nodal variables \deprecated */
+#define VAR_NOD_VAR      "vals_nod_var"     /**< values of nodal variables \deprecated */
 /*! values of nodal variables */
 #define VAR_NOD_VAR_NEW(num) ex__catstr("vals_nod_var", num)
 
-#define DIM_NUM_ASSEMBLY_VAR "num_assembly_var"   /**< number of assembly variables    */
-#define VAR_NAME_ASSEMBLY_VAR "name_assembly_var" /**< names of assembly variables*/
+#define DIM_NUM_ASSEMBLY_VAR         "num_assembly_var"  /**< number of assembly variables    */
+#define VAR_NAME_ASSEMBLY_VAR        "name_assembly_var" /**< names of assembly variables*/
 #define VAR_ASSEMBLY_VAR(num1, num2) ex__catstr2("vals_assembly_var", num1, "assembly", num2)
 
-#define DIM_NUM_BLOB_VAR "num_blob_var"   /**< number of blob variables    */
-#define VAR_NAME_BLOB_VAR "name_blob_var" /**< names of blob variables*/
+#define DIM_NUM_BLOB_VAR         "num_blob_var"  /**< number of blob variables    */
+#define VAR_NAME_BLOB_VAR        "name_blob_var" /**< names of blob variables*/
 #define VAR_BLOB_VAR(num1, num2) ex__catstr2("vals_blob_var", num1, "blob", num2)
 
-#define DIM_NUM_ELE_VAR "num_elem_var"   /**< number of element variables    */
+#define DIM_NUM_ELE_VAR  "num_elem_var"  /**< number of element variables    */
 #define VAR_NAME_ELE_VAR "name_elem_var" /**< names of element variables*/
 /*! values of element variable num1 in element block num2                    */
 #define VAR_ELEM_VAR(num1, num2) ex__catstr2("vals_elem_var", num1, "eb", num2)
-#define DIM_NUM_EDG_VAR "num_edge_var"   /**< number of edge variables       */
-#define VAR_NAME_EDG_VAR "name_edge_var" /**< names of edge variables   */
+#define DIM_NUM_EDG_VAR          "num_edge_var"  /**< number of edge variables       */
+#define VAR_NAME_EDG_VAR         "name_edge_var" /**< names of edge variables   */
 /*! values of edge variable num1 in edge block num2 */
 #define VAR_EDGE_VAR(num1, num2) ex__catstr2("vals_edge_var", num1, "eb", num2)
-#define DIM_NUM_FAC_VAR "num_face_var"   /**< number of face variables       */
-#define VAR_NAME_FAC_VAR "name_face_var" /**< names of face variables   */
+#define DIM_NUM_FAC_VAR          "num_face_var"  /**< number of face variables       */
+#define VAR_NAME_FAC_VAR         "name_face_var" /**< names of face variables   */
 /*! values of face variable num1 in face block num2 */
 #define VAR_FACE_VAR(num1, num2) ex__catstr2("vals_face_var", num1, "fb", num2)
 
-#define DIM_NUM_NSET_VAR "num_nset_var"   /**< number of nodeset variables    */
+#define DIM_NUM_NSET_VAR  "num_nset_var"  /**< number of nodeset variables    */
 #define VAR_NAME_NSET_VAR "name_nset_var" /**< names of nodeset variables*/
 /*! values of nodeset variable num1 in nodeset num2    */
 #define VAR_NS_VAR(num1, num2) ex__catstr2("vals_nset_var", num1, "ns", num2)
-#define DIM_NUM_ESET_VAR "num_eset_var" /**< number of edgeset variables    */
+#define DIM_NUM_ESET_VAR       "num_eset_var" /**< number of edgeset variables    */
 /*! values of edgeset variable num1 in edgeset num2    */
-#define VAR_NAME_ESET_VAR "name_eset_var" /**< names of edgeset variables*/
+#define VAR_NAME_ESET_VAR      "name_eset_var" /**< names of edgeset variables*/
 #define VAR_ES_VAR(num1, num2) ex__catstr2("vals_eset_var", num1, "es", num2)
-#define DIM_NUM_FSET_VAR "num_fset_var"   /**< number of faceset variables    */
-#define VAR_NAME_FSET_VAR "name_fset_var" /**< names of faceset variables*/
+#define DIM_NUM_FSET_VAR       "num_fset_var"  /**< number of faceset variables    */
+#define VAR_NAME_FSET_VAR      "name_fset_var" /**< names of faceset variables*/
 /*! values of faceset variable num1 in faceset num2    */
 #define VAR_FS_VAR(num1, num2) ex__catstr2("vals_fset_var", num1, "fs", num2)
-#define DIM_NUM_SSET_VAR "num_sset_var"   /**< number of sideset variables    */
-#define VAR_NAME_SSET_VAR "name_sset_var" /**< names of sideset variables*/
+#define DIM_NUM_SSET_VAR       "num_sset_var"  /**< number of sideset variables    */
+#define VAR_NAME_SSET_VAR      "name_sset_var" /**< names of sideset variables*/
 /*! values of sideset variable num1 in sideset num2    */
 #define VAR_SS_VAR(num1, num2) ex__catstr2("vals_sset_var", num1, "ss", num2)
-#define DIM_NUM_ELSET_VAR "num_elset_var"   /**< number of element set variables*/
-#define VAR_NAME_ELSET_VAR "name_elset_var" /**< names of elemset variables*/
+#define DIM_NUM_ELSET_VAR      "num_elset_var"  /**< number of element set variables*/
+#define VAR_NAME_ELSET_VAR     "name_elset_var" /**< names of elemset variables*/
 /*! values of elemset variable num1 in elemset num2    */
 #define VAR_ELS_VAR(num1, num2) ex__catstr2("vals_elset_var", num1, "es", num2)
 
@@ -509,30 +509,30 @@ EXODUS_EXPORT int indent;
  * \defgroup ReductionVariables Variables controlling storage of reduction variables
  *@{
  */
-#define DIM_NUM_ASSEMBLY_RED_VAR "num_assembly_red_var"   /**< number of assembly variables    */
+#define DIM_NUM_ASSEMBLY_RED_VAR  "num_assembly_red_var"  /**< number of assembly variables    */
 #define VAR_NAME_ASSEMBLY_RED_VAR "name_assembly_red_var" /**< names of assembly variables*/
 #define VAR_ASSEMBLY_RED_VAR(num) ex__catstr("vals_red_var_assembly", num)
 
-#define DIM_NUM_BLOB_RED_VAR "num_blob_red_var"   /**< number of blob variables    */
+#define DIM_NUM_BLOB_RED_VAR  "num_blob_red_var"  /**< number of blob variables    */
 #define VAR_NAME_BLOB_RED_VAR "name_blob_red_var" /**< names of blob variables*/
 #define VAR_BLOB_RED_VAR(num) ex__catstr("vals_red_var_blob", num)
 
-#define DIM_NUM_ELE_RED_VAR "num_elem_red_var"   /**< number of element variables    */
+#define DIM_NUM_ELE_RED_VAR  "num_elem_red_var"  /**< number of element variables    */
 #define VAR_NAME_ELE_RED_VAR "name_elem_red_var" /**< names of element variables*/
 /*! values of element variable num in element block num                    */
 #define VAR_ELEM_RED_VAR(num) ex__catstr("vals_red_var_eb", num)
 
-#define DIM_NUM_EDG_RED_VAR "num_edge_red_var"   /**< number of edge variables       */
+#define DIM_NUM_EDG_RED_VAR  "num_edge_red_var"  /**< number of edge variables       */
 #define VAR_NAME_EDG_RED_VAR "name_edge_red_var" /**< names of edge variables   */
 /*! values of edge variable num in edge block num */
 #define VAR_EDGE_RED_VAR(num) ex__catstr("vals_red_var_edb", num)
 
-#define DIM_NUM_FAC_RED_VAR "num_face_red_var"   /**< number of face variables       */
+#define DIM_NUM_FAC_RED_VAR  "num_face_red_var"  /**< number of face variables       */
 #define VAR_NAME_FAC_RED_VAR "name_face_red_var" /**< names of face variables   */
 /*! values of face variable num in face block num */
 #define VAR_FACE_RED_VAR(num) ex__catstr("vals_red_var_fb", num)
 
-#define DIM_NUM_NSET_RED_VAR "num_nset_red_var"   /**< number of nodeset variables    */
+#define DIM_NUM_NSET_RED_VAR  "num_nset_red_var"  /**< number of nodeset variables    */
 #define VAR_NAME_NSET_RED_VAR "name_nset_red_var" /**< names of nodeset variables*/
 /*! values of nodeset variable num in nodeset num    */
 #define VAR_NS_RED_VAR(num) ex__catstr("vals_red_var_nset", num)
@@ -540,19 +540,19 @@ EXODUS_EXPORT int indent;
 #define DIM_NUM_ESET_RED_VAR "num_eset_red_var" /**< number of edgeset variables    */
 /*! values of edgeset variable num in edgeset num    */
 #define VAR_NAME_ESET_RED_VAR "name_eset_red_var" /**< names of edgeset variables*/
-#define VAR_ES_RED_VAR(num) ex__catstr("vals_red_var_eset", num)
+#define VAR_ES_RED_VAR(num)   ex__catstr("vals_red_var_eset", num)
 
-#define DIM_NUM_FSET_RED_VAR "num_fset_red_var"   /**< number of faceset variables    */
+#define DIM_NUM_FSET_RED_VAR  "num_fset_red_var"  /**< number of faceset variables    */
 #define VAR_NAME_FSET_RED_VAR "name_fset_red_var" /**< names of faceset variables*/
 /*! values of faceset variable num in faceset num    */
 #define VAR_FS_RED_VAR(num) ex__catstr("vals_red_var_fset", num)
 
-#define DIM_NUM_SSET_RED_VAR "num_sset_red_var"   /**< number of sideset variables    */
+#define DIM_NUM_SSET_RED_VAR  "num_sset_red_var"  /**< number of sideset variables    */
 #define VAR_NAME_SSET_RED_VAR "name_sset_red_var" /**< names of sideset variables*/
 /*! values of sideset variable num in sideset num    */
 #define VAR_SS_RED_VAR(num) ex__catstr("vals_red_var_sset", num)
 
-#define DIM_NUM_ELSET_RED_VAR "num_elset_red_var"   /**< number of element set variables*/
+#define DIM_NUM_ELSET_RED_VAR  "num_elset_red_var"  /**< number of element set variables*/
 #define VAR_NAME_ELSET_RED_VAR "name_elset_red_var" /**< names of elemset variables*/
 /*! values of elemset variable num in elemset num    */
 #define VAR_ELS_RED_VAR(num) ex__catstr("vals_red_var_elset", num)
@@ -564,99 +564,99 @@ EXODUS_EXPORT int indent;
 #define DIM_STR_NAME "len_name"
 /*! general dimension of length MAX_LINE_LENGTH used for long strings   */
 #define DIM_LIN "len_line"
-#define DIM_N4 "four"
-#define DIM_N1 "blob_entity"
+#define DIM_N4  "four"
+#define DIM_N1  "blob_entity"
 /*! unlimited (expandable) dimension for time steps*/
-#define DIM_TIME "time_step"
-#define VAR_ELEM_NUM_MAP "elem_num_map" /**< element numbering map     */
-#define VAR_FACE_NUM_MAP "face_num_map" /**< face numbering map     */
-#define VAR_EDGE_NUM_MAP "edge_num_map" /**< edge numbering map     */
-#define VAR_NODE_NUM_MAP "node_num_map" /**< node numbering map        */
-#define DIM_NUM_EM "num_elem_maps"      /**< number of element maps         */
+#define DIM_TIME         "time_step"
+#define VAR_ELEM_NUM_MAP "elem_num_map"  /**< element numbering map     */
+#define VAR_FACE_NUM_MAP "face_num_map"  /**< face numbering map     */
+#define VAR_EDGE_NUM_MAP "edge_num_map"  /**< edge numbering map     */
+#define VAR_NODE_NUM_MAP "node_num_map"  /**< node numbering map        */
+#define DIM_NUM_EM       "num_elem_maps" /**< number of element maps         */
 /*! the numth element map     */
 #define VAR_ELEM_MAP(num) ex__catstr("elem_map", num)
 /*! list of the numth property for all element maps    */
 #define VAR_EM_PROP(num) ex__catstr("em_prop", num)
-#define DIM_NUM_EDM "num_edge_maps" /**< number of edge maps            */
+#define DIM_NUM_EDM      "num_edge_maps" /**< number of edge maps            */
 /*! the numth edge map        */
 #define VAR_EDGE_MAP(num) ex__catstr("edge_map", num)
 /* list of the numth property for all edge maps       */
 #define VAR_EDM_PROP(num) ex__catstr("edm_prop", num)
-#define DIM_NUM_FAM "num_face_maps" /**< number of face maps            */
+#define DIM_NUM_FAM       "num_face_maps" /**< number of face maps            */
 /*! the numth face map        */
 #define VAR_FACE_MAP(num) ex__catstr("face_map", num)
 /*! list of the numth property for all face maps       */
 #define VAR_FAM_PROP(num) ex__catstr("fam_prop", num)
-#define DIM_NUM_NM "num_node_maps" /**< number of node maps            */
+#define DIM_NUM_NM        "num_node_maps" /**< number of node maps            */
 /*! the numth node map        */
 #define VAR_NODE_MAP(num) ex__catstr("node_map", num)
 /*! list of the numth property for all node maps       */
 #define VAR_NM_PROP(num) ex__catstr("nm_prop", num)
 /*! list of the numth property for all assemblies      */
 #define VAR_ASSEMBLY_PROP(num) ex__catstr("assembly_prop", num)
-#define VAR_BLOB_PROP(num) ex__catstr("blob_prop", num)
+#define VAR_BLOB_PROP(num)     ex__catstr("blob_prop", num)
 
-#define DIM_NUM_CFRAMES "num_cframes"
-#define DIM_NUM_CFRAME9 "num_cframes_9"
+#define DIM_NUM_CFRAMES  "num_cframes"
+#define DIM_NUM_CFRAME9  "num_cframes_9"
 #define VAR_FRAME_COORDS "frame_coordinates"
-#define VAR_FRAME_IDS "frame_ids"
-#define VAR_FRAME_TAGS "frame_tags"
+#define VAR_FRAME_IDS    "frame_ids"
+#define VAR_FRAME_TAGS   "frame_tags"
 
-#define VAR_ELBLK_IDS_GLOBAL "el_blk_ids_global"
-#define VAR_ELBLK_CNT_GLOBAL "el_blk_cnt_global"
-#define VAR_NS_IDS_GLOBAL "ns_ids_global"
+#define VAR_ELBLK_IDS_GLOBAL   "el_blk_ids_global"
+#define VAR_ELBLK_CNT_GLOBAL   "el_blk_cnt_global"
+#define VAR_NS_IDS_GLOBAL      "ns_ids_global"
 #define VAR_NS_NODE_CNT_GLOBAL "ns_node_cnt_global"
-#define VAR_NS_DF_CNT_GLOBAL "ns_df_cnt_global"
-#define VAR_SS_IDS_GLOBAL "ss_ids_global"
+#define VAR_NS_DF_CNT_GLOBAL   "ns_df_cnt_global"
+#define VAR_SS_IDS_GLOBAL      "ss_ids_global"
 #define VAR_SS_SIDE_CNT_GLOBAL "ss_side_cnt_global"
-#define VAR_SS_DF_CNT_GLOBAL "ss_df_cnt_global"
-#define VAR_FILE_TYPE "nem_ftype"
-#define VAR_COMM_MAP "comm_map"
-#define VAR_NODE_MAP_INT "node_mapi"
-#define VAR_NODE_MAP_INT_IDX "node_mapi_idx"
-#define VAR_NODE_MAP_BOR "node_mapb"
-#define VAR_NODE_MAP_BOR_IDX "node_mapb_idx"
-#define VAR_NODE_MAP_EXT "node_mape"
-#define VAR_NODE_MAP_EXT_IDX "node_mape_idx"
-#define VAR_ELEM_MAP_INT "elem_mapi"
-#define VAR_ELEM_MAP_INT_IDX "elem_mapi_idx"
-#define VAR_ELEM_MAP_BOR "elem_mapb"
-#define VAR_ELEM_MAP_BOR_IDX "elem_mapb_idx"
-#define VAR_INT_N_STAT "int_n_stat"
-#define VAR_BOR_N_STAT "bor_n_stat"
-#define VAR_EXT_N_STAT "ext_n_stat"
-#define VAR_INT_E_STAT "int_e_stat"
-#define VAR_BOR_E_STAT "bor_e_stat"
-#define VAR_N_COMM_IDS "n_comm_ids"
-#define VAR_N_COMM_STAT "n_comm_stat"
-#define VAR_N_COMM_INFO_IDX "n_comm_info_idx"
-#define VAR_E_COMM_IDS "e_comm_ids"
-#define VAR_E_COMM_STAT "e_comm_stat"
-#define VAR_E_COMM_INFO_IDX "e_comm_info_idx"
-#define VAR_N_COMM_NIDS "n_comm_nids"
-#define VAR_N_COMM_PROC "n_comm_proc"
-#define VAR_N_COMM_DATA_IDX "n_comm_data_idx"
-#define VAR_E_COMM_EIDS "e_comm_eids"
-#define VAR_E_COMM_SIDS "e_comm_sids"
-#define VAR_E_COMM_PROC "e_comm_proc"
-#define VAR_E_COMM_DATA_IDX "e_comm_data_idx"
+#define VAR_SS_DF_CNT_GLOBAL   "ss_df_cnt_global"
+#define VAR_FILE_TYPE          "nem_ftype"
+#define VAR_COMM_MAP           "comm_map"
+#define VAR_NODE_MAP_INT       "node_mapi"
+#define VAR_NODE_MAP_INT_IDX   "node_mapi_idx"
+#define VAR_NODE_MAP_BOR       "node_mapb"
+#define VAR_NODE_MAP_BOR_IDX   "node_mapb_idx"
+#define VAR_NODE_MAP_EXT       "node_mape"
+#define VAR_NODE_MAP_EXT_IDX   "node_mape_idx"
+#define VAR_ELEM_MAP_INT       "elem_mapi"
+#define VAR_ELEM_MAP_INT_IDX   "elem_mapi_idx"
+#define VAR_ELEM_MAP_BOR       "elem_mapb"
+#define VAR_ELEM_MAP_BOR_IDX   "elem_mapb_idx"
+#define VAR_INT_N_STAT         "int_n_stat"
+#define VAR_BOR_N_STAT         "bor_n_stat"
+#define VAR_EXT_N_STAT         "ext_n_stat"
+#define VAR_INT_E_STAT         "int_e_stat"
+#define VAR_BOR_E_STAT         "bor_e_stat"
+#define VAR_N_COMM_IDS         "n_comm_ids"
+#define VAR_N_COMM_STAT        "n_comm_stat"
+#define VAR_N_COMM_INFO_IDX    "n_comm_info_idx"
+#define VAR_E_COMM_IDS         "e_comm_ids"
+#define VAR_E_COMM_STAT        "e_comm_stat"
+#define VAR_E_COMM_INFO_IDX    "e_comm_info_idx"
+#define VAR_N_COMM_NIDS        "n_comm_nids"
+#define VAR_N_COMM_PROC        "n_comm_proc"
+#define VAR_N_COMM_DATA_IDX    "n_comm_data_idx"
+#define VAR_E_COMM_EIDS        "e_comm_eids"
+#define VAR_E_COMM_SIDS        "e_comm_sids"
+#define VAR_E_COMM_PROC        "e_comm_proc"
+#define VAR_E_COMM_DATA_IDX    "e_comm_data_idx"
 
-#define DIM_NUM_INT_NODES "num_int_node"
-#define DIM_NUM_BOR_NODES "num_bor_node"
-#define DIM_NUM_EXT_NODES "num_ext_node"
-#define DIM_NUM_INT_ELEMS "num_int_elem"
-#define DIM_NUM_BOR_ELEMS "num_bor_elem"
-#define DIM_NUM_PROCS "num_processors"
-#define DIM_NUM_PROCS_F "num_procs_file"
+#define DIM_NUM_INT_NODES    "num_int_node"
+#define DIM_NUM_BOR_NODES    "num_bor_node"
+#define DIM_NUM_EXT_NODES    "num_ext_node"
+#define DIM_NUM_INT_ELEMS    "num_int_elem"
+#define DIM_NUM_BOR_ELEMS    "num_bor_elem"
+#define DIM_NUM_PROCS        "num_processors"
+#define DIM_NUM_PROCS_F      "num_procs_file"
 #define DIM_NUM_NODES_GLOBAL "num_nodes_global"
 #define DIM_NUM_ELEMS_GLOBAL "num_elems_global"
-#define DIM_NUM_NS_GLOBAL "num_ns_global"
-#define DIM_NUM_SS_GLOBAL "num_ss_global"
+#define DIM_NUM_NS_GLOBAL    "num_ns_global"
+#define DIM_NUM_SS_GLOBAL    "num_ss_global"
 #define DIM_NUM_ELBLK_GLOBAL "num_el_blk_global"
-#define DIM_NUM_N_CMAPS "num_n_cmaps"
-#define DIM_NUM_E_CMAPS "num_e_cmaps"
-#define DIM_NCNT_CMAP "ncnt_cmap"
-#define DIM_ECNT_CMAP "ecnt_cmap"
+#define DIM_NUM_N_CMAPS      "num_n_cmaps"
+#define DIM_NUM_E_CMAPS      "num_e_cmaps"
+#define DIM_NCNT_CMAP        "ncnt_cmap"
+#define DIM_ECNT_CMAP        "ecnt_cmap"
 
 enum ex__element_type {
   EX_EL_UNK          = -1, /**< unknown entity */
@@ -736,8 +736,8 @@ struct ex__list_item
 
 struct ex__obj_stats
 {
-  int64_t *             id_vals;
-  int *                 stat_vals;
+  int64_t              *id_vals;
+  int                  *stat_vals;
   size_t                num;
   int                   exoid;
   char                  valid_ids;
@@ -774,8 +774,8 @@ EXODUS_EXPORT int     ex__get_cpu_ws(void);
 EXODUS_EXPORT int     ex__is_parallel(int exoid);
 
 EXODUS_EXPORT struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type);
-EXODUS_EXPORT int  ex__get_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
-EXODUS_EXPORT int  ex__inc_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
+EXODUS_EXPORT int  ex__get_file_item(int /*exoid*/, struct ex__list_item  **/*list_ptr*/);
+EXODUS_EXPORT int  ex__inc_file_item(int /*exoid*/, struct ex__list_item  **/*list_ptr*/);
 EXODUS_EXPORT void ex__rm_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
 
 extern struct ex__obj_stats *exoII_eb;
@@ -861,8 +861,8 @@ EXODUS_EXPORT int ex__put_homogenous_block_params(int exoid, size_t block_count,
 EXODUS_EXPORT int ne__check_file_version(int exoid);
 
 EXODUS_EXPORT int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
-                              const char * ne_var_name, /* Nemesis variable name */
-                              int64_t *    idx,         /* index variable for variable, length 2 */
+                              const char  *ne_var_name, /* Nemesis variable name */
+                              int64_t     *idx,         /* index variable for variable, length 2 */
                               ex_entity_id ne_var_id    /* NetCDF variable ID */
 );
 

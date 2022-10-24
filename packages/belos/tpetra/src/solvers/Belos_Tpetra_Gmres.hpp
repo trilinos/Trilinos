@@ -184,7 +184,7 @@ sortRitzValues (const LO m,
   LO i = 0;
   LO next_index = 0;
   real_type next_value = std::abs (RR[0]);
-  for (int i = 1; i < m; ++i) {
+  for (i = 1; i < m; ++i) {
     if (next_value < std::abs (RR[i])) {
       next_index = i;
       next_value = std::abs (RR[i]);
@@ -193,6 +193,7 @@ sortRitzValues (const LO m,
   ritzValues[0] = RR[next_index];
   RR[next_index] = RR[0];
 
+  i = 0;
   if (! STS::isComplex) {
     if (RR[i].imag() != 0.0) {
 
@@ -543,7 +544,7 @@ protected:
     vec_type Y (B.getMap (), zeroOut);
     vec_type MP (B.getMap (), zeroOut);
     MV Q (B.getMap (), restart+1, zeroOut);
-    vec_type P = * (Q.getVectorNonConst (0));
+    vec_type P0 = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
     {
@@ -555,12 +556,12 @@ protected:
     if (input.precoSide == "left") {
       {
         Teuchos::TimeMonitor LocalTimer (*precTimer);
-        M.apply (R, P);
+        M.apply (R, P0);
       }
-      b_norm = P.norm2 (); // residual norm, left-preconditioned
+      b_norm = P0.norm2 (); // residual norm, left-preconditioned
     }
     else {
-      Tpetra::deep_copy (P, R);
+      Tpetra::deep_copy (P0, R);
       b_norm = b0_norm;
     }
     real_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
@@ -575,7 +576,7 @@ protected:
       output.numIters = 0;
       output.converged = true;
       // return residual norm as B
-      Tpetra::deep_copy (B, P);
+      Tpetra::deep_copy (B, P0);
       return output;
     } else if (outPtr != NULL) {
       *outPtr << "Initial guess' residual norm " << b0_norm << endl;
@@ -597,7 +598,7 @@ protected:
     #endif
 
     // initialize starting vector
-    P.scale (one / b_norm);
+    P0.scale (one / b_norm);
     y[0] = SC {b_norm};
 
     // main loop
@@ -741,19 +742,19 @@ protected:
         if (iter >= restart) {
           // Restart: Initialize starting vector for restart
           iter = 0;
-          P = * (Q.getVectorNonConst (0));
+          P0 = * (Q.getVectorNonConst (0));
           if (input.precoSide == "left") {
             {
               Teuchos::TimeMonitor LocalTimer (*precTimer);
-              M.apply (R, P);
+              M.apply (R, P0);
             }
-            r_norm = P.norm2 (); // norm
+            r_norm = P0.norm2 (); // norm
           }
           else {
             // set the starting vector
-            Tpetra::deep_copy (P, R);
+            Tpetra::deep_copy (P0, R);
           }
-          P.scale (one / r_norm);
+          P0.scale (one / r_norm);
           y[0] = SC {r_norm};
           for (int i=1; i < restart+1; i++) {
             y[i] = STS::zero ();
@@ -779,7 +780,7 @@ protected:
     return output;
   }
 
-  // ! compute condition number
+  // ! compute matrix norm
   real_type
   computeNorm(dense_matrix_type &T)
   {

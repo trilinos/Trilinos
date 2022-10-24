@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iogn_DatabaseIO_h
-#define IOSS_Iogn_DatabaseIO_h
+#pragma once
 
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
@@ -56,7 +55,7 @@ namespace Iogn {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm                     communicator,
+                              Ioss_MPI_Comm                communicator,
                               const Ioss::PropertyManager &props) const override;
   };
 
@@ -64,8 +63,8 @@ namespace Iogn {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
-    DatabaseIO(const DatabaseIO &from) = delete;
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
+    DatabaseIO(const DatabaseIO &from)            = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
     ~DatabaseIO() override;
@@ -121,7 +120,7 @@ namespace Iogn {
     {
       return -1;
     }
-    int64_t get_field_internal(const Ioss::SideBlock *ef_blk, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::SideBlock *sb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -131,7 +130,7 @@ namespace Iogn {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -158,7 +157,7 @@ namespace Iogn {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+    int64_t put_field_internal(const Ioss::SideBlock *sb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -168,7 +167,7 @@ namespace Iogn {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+    int64_t put_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -192,7 +191,7 @@ namespace Iogn {
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
-    GeneratedMesh *          m_generatedMesh{nullptr};
+    GeneratedMesh           *m_generatedMesh{nullptr};
     std::vector<std::string> m_sideset_names{};
 
     double currentTime{0.0};
@@ -205,4 +204,3 @@ namespace Iogn {
     bool m_useVariableDf{true};
   };
 } // namespace Iogn
-#endif // IOSS_Iogn_DatabaseIO_h

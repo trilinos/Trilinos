@@ -63,7 +63,7 @@ class ClassWithNgpField
 public:
   KOKKOS_FUNCTION
   ClassWithNgpField(const stk::mesh::NgpField<double>& ngpField)
-  : m_ngpField(ngpField)
+    : m_ngpField(ngpField)
   {}
 
   KOKKOS_FUNCTION
@@ -89,8 +89,8 @@ ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngp
   ClassWithNgpField* devicePtr = static_cast<ClassWithNgpField*>(
         Kokkos::kokkos_malloc<stk::ngp::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
   Kokkos::parallel_for("construct class on device", 1,
-      MY_LAMBDA(const int i) { new (devicePtr) ClassWithNgpField(ngpField); }
-  );
+                       MY_LAMBDA(const int i) { new (devicePtr) ClassWithNgpField(ngpField); }
+                       );
   Kokkos::fence();
   return devicePtr;
 }
@@ -98,22 +98,21 @@ ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngp
 void delete_class_on_device(ClassWithNgpField* devicePtr)
 {
   Kokkos::parallel_for("device_destruct", 1,
-      KOKKOS_LAMBDA(const int i) { devicePtr->~ClassWithNgpField(); }
-  );
+                       KOKKOS_LAMBDA(const int i) { devicePtr->~ClassWithNgpField(); }
+                       );
   Kokkos::fence();
   Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));
 }
 
-class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
+class NgpMultiStateFieldTest : public stk::mesh::fixtures::simple_fields::TestHexFixture
 {
-  public:
+public:
 
   template <typename T>
   stk::mesh::Field<T> & create_multistate_field(stk::topology::rank_t rank, const std::string & name, unsigned numStates)
   {
-    T initialValue = 0;
-    stk::mesh::Field<T> & field = get_meta().declare_field<stk::mesh::Field<T>>(rank, name, numStates);
-    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initialValue);
+    stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
     return field;
   }
 
@@ -130,20 +129,57 @@ class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
   stk::mesh::Field<double>& get_field_new() { return *m_fieldNew; }
   stk::mesh::Field<double>& get_field_old() { return *m_fieldOld; }
 
+  template <typename ValueType>
+  struct CheckValueUsingNgpField {
+    CheckValueUsingNgpField(const stk::mesh::NgpField<ValueType>& _ngpField, ValueType _expectedValue)
+      : ngpField(_ngpField), expectedValue(_expectedValue)
+    {
+    }
+
+    KOKKOS_FUNCTION
+    void operator()(const stk::mesh::FastMeshIndex& entity) const
+    {
+      unsigned numComponents = ngpField.get_num_components_per_entity(entity);
+      for (unsigned component = 0; component < numComponents; ++component) {
+        NGP_EXPECT_EQ(expectedValue, ngpField(entity, component));
+      }
+    }
+
+  private:
+    stk::mesh::NgpField<ValueType> ngpField;
+    ValueType expectedValue;
+  };
+
   template<typename T>
   void check_field_data_value_on_device(const stk::mesh::NgpMesh& ngpMesh,
                                         const stk::mesh::NgpField<T>& ngpField,
                                         T expectedValue)
   {
     stk::mesh::Selector owned = ngpMesh.get_bulk_on_host().mesh_meta_data().locally_owned_part();
-    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), owned,
-                     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                       unsigned numComponents = ngpField.get_num_components_per_entity(entity);
-                       for (unsigned component=0; component<numComponents; ++component) {
-                         NGP_EXPECT_EQ(expectedValue, ngpField(entity, component));
-                       }
-                     });
+    CheckValueUsingNgpField<T> checkValueUsingNgpField(ngpField, expectedValue);
+    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), owned, checkValueUsingNgpField);
   }
+
+  template <typename ValueType>
+  struct CheckValueUsingClass {
+    CheckValueUsingClass(const ClassWithNgpField* _deviceClassPointer, ValueType _expectedValue)
+      : deviceClassPointer(_deviceClassPointer), expectedValue(_expectedValue)
+    {
+    }
+
+    KOKKOS_FUNCTION
+    void operator()(const stk::mesh::FastMeshIndex& entity) const
+    {
+      unsigned numComponents = deviceClassPointer->num_components_per_entity(entity);
+      for (unsigned component = 0; component < numComponents; ++component) {
+        NGP_EXPECT_EQ(expectedValue, deviceClassPointer->access_field_data(entity, component));
+      }
+    }
+
+  private:
+    const ClassWithNgpField* deviceClassPointer;
+    ValueType expectedValue;
+  };
 
   template<typename T>
   void check_field_data_value_on_device(const stk::mesh::NgpMesh& ngpMesh,
@@ -152,13 +188,8 @@ class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
                                         T expectedValue)
   {
     stk::mesh::Selector owned = ngpMesh.get_bulk_on_host().mesh_meta_data().locally_owned_part();
-    stk::mesh::for_each_entity_run(ngpMesh, rank, owned,
-                     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                       unsigned numComponents = deviceClassPointer->num_components_per_entity(entity);
-                       for (unsigned component=0; component<numComponents; ++component) {
-                         NGP_EXPECT_EQ(expectedValue, deviceClassPointer->access_field_data(entity, component));
-                       }
-                     });
+    CheckValueUsingClass<T> checkValueUsingClass(deviceClassPointer, expectedValue);
+    stk::mesh::for_each_entity_run(ngpMesh, rank, owned, checkValueUsingClass);
   }
 
   void perform_field_state_rotation()
@@ -166,7 +197,7 @@ class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
     stk::mesh::sync_to_host_and_mark_modified(get_meta());
     get_bulk().update_field_data_states();
   }
-  
+
   stk::mesh::Field<double>* m_fieldNew;
   stk::mesh::Field<double>* m_fieldOld;
 };

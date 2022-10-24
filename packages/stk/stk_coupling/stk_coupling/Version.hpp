@@ -11,16 +11,19 @@
 #define STK_COUPLING_VERSION_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
 #include <string>
 
 namespace stk
 {
 namespace coupling
 {
-
-int version();
+ #ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2022
+STK_DEPRECATED int version();
+#endif
 
 }
 }
+
 
 #endif /* STK_COUPLING_VERSION_HPP */

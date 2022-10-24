@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on rocketman: `date`"
+echo "Starting nightly Trilinos development testing on $HOSTNAME: `date`"
 echo
 
 #
@@ -35,21 +35,20 @@ export TDD_HTTPS_PROXY=$https_proxy
 
 . ~/.bashrc
 
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
+export MODULEPATH=$SCRIPT_DIR:$MODULEPATH
+# Trilinos source repo
+export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
+
+
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
 # would first run old cron_driver.sh and only then pull
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load sems-env
-module load sems-git
-module load sems-cmake/3.17.1
-module load sems-gcc/5.3.0
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3/base
-module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.4.1/exo_parallel
-module load sems-boost/1.63.0/base
+module load muelu-gcc
+module list
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -59,22 +58,22 @@ export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export OMP_NUM_THREADS=2
+pushd $TRILINOS_SOURCE
+if [ -n "$DO_TPETRA_TESTING" ]; then
+    ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_tpetra_rocketman.cmake
+    ctest -S $SCRIPT_DIR/mpi_release_tpetra_deprecated_code_off_downstream_enabled_no_epetra.cmake
+    ctest -S $SCRIPT_DIR/mpi_release_tpetra_deprecated_code_off_downstream_enabled.cmake
+    ctest -S $SCRIPT_DIR/mpi_release_tpetra_deprecated_code_off_downstream_enabled_GO_int.cmake
+    ctest -S $SCRIPT_DIR/ctest_linux_experimental_mpi_release_tpetra_performance_rocketman.cmake
+else
+    ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_rocketman.cmake
+    ctest -S $SCRIPT_DIR/ctest_linux_experimental_mpi_release_avatar_rocketman.cmake
+fi
+popd
 
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
-
-module unload sems-boost/1.63.0/base
-module unload sems-netcdf/4.4.1/exo_parallel
-module unload sems-hdf5/1.8.12/parallel
-module unload sems-superlu/4.3/base
-module unload sems-openmpi/1.10.1
-module unload sems-gcc/5.3.0
-module unload sems-cmake/3.10.3
-module unload sems-git
+module unload muelu-gcc
 # ===========================================================================
 
 echo
-echo "Ending nightly Trilinos development testing on rocketman: `date`"
+echo "Ending nightly Trilinos development testing on $HOSTNAME: `date`"
 echo

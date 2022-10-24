@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @FUNCTION: set_cache_on_off_empty()
 #
 # Usage::

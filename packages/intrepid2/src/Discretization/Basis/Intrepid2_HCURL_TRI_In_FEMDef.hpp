@@ -196,7 +196,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_LAGRANGIAN;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HCURL;
-    pointType_ = pointType;
+    pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
     const ordinal_type card = this->basisCardinality_;
 
@@ -206,7 +206,10 @@ namespace Intrepid2 {
     const ordinal_type  cardVecPn = spaceDim*cardPn;  // dim of (P_{n})^2 -- larger space
     const ordinal_type  cardVecPnm1 = spaceDim*cardPnm1;   // dim of (P_{n-1})^2 -- smaller space
 
-
+    // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+    // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+    INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
+    
     // Basis-dependent initializations
     constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
     constexpr ordinal_type maxCard = CardinalityHCurlTri(Parameters::MaxOrder);
@@ -292,7 +295,7 @@ namespace Intrepid2 {
     PointTools::getLattice( linePts,
                             edgeTop,
                             order+1, offset,
-                            pointType );
+                            pointType_ );
 
     // holds the image of the line points
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tri::In::edgePts", numPtsPerEdge , spaceDim );
@@ -357,7 +360,7 @@ namespace Intrepid2 {
                               this->basisCellTopology_ ,
                               order + 1 ,
                               1 ,
-                              pointType );
+                              pointType_ );
 
       Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
         phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );

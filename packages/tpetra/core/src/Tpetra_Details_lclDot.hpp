@@ -77,12 +77,12 @@ lclDot (const RV& dotsOut,
   const char prefix[] = "Tpetra::MultiVector::lclDotImpl: ";
 #endif // HAVE_TPETRA_DEBUG
 
-  static_assert (Kokkos::Impl::is_view<RV>::value,
+  static_assert (Kokkos::is_view<RV>::value,
                  "Tpetra::MultiVector::lclDotImpl: "
                  "The first argument dotsOut is not a Kokkos::View.");
   static_assert (RV::rank == 1, "Tpetra::MultiVector::lclDotImpl: "
                  "The first argument dotsOut must have rank 1.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value,
+  static_assert (Kokkos::is_view<XMV>::value,
                  "Tpetra::MultiVector::lclDotImpl: The type of the 2nd and "
                  "3rd arguments (X_lcl and Y_lcl) is not a Kokkos::View.");
   static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclDotImpl: "
@@ -145,6 +145,7 @@ lclDot (const RV& dotsOut,
 
   if (lclNumRows == 0) {
     const dot_type zero = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy (theDots, zero);
   }
   else { // lclNumRows != 0
@@ -152,6 +153,7 @@ lclDot (const RV& dotsOut,
       if (X.extent (1) == 1) {
         typename RV::non_const_value_type result =
           KokkosBlas::dot (subview (X, ALL (), 0), subview (Y, ALL (), 0));
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (theDots, result);
       }
       else {

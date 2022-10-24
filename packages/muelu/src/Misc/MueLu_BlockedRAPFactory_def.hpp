@@ -185,7 +185,7 @@ namespace MueLu {
     ArrayRCP<SC> diagVal = diagVec->getDataNonConst(0);
 
     // loop over local rows
-    for (size_t row = 0; row < c00->getNodeNumRows(); row++) {
+    for (size_t row = 0; row < c00->getLocalNumRows(); row++) {
       // get global row id
       GO grid = c00->getRowMap()->getGlobalElement(row); // global row id
 

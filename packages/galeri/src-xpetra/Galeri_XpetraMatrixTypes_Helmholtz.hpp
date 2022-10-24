@@ -96,8 +96,8 @@ namespace Galeri {
                       const double h, const double omega, const Scalar shift) {
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      LocalOrdinal NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
       Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
       GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
       GlobalOrdinal NumEntries;
@@ -156,8 +156,8 @@ namespace Galeri {
 
       Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 3);
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      LocalOrdinal NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
       Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
       GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
       GlobalOrdinal NumEntries;
@@ -228,8 +228,8 @@ namespace Galeri {
 		      const int model) {
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      LocalOrdinal NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
       GlobalOrdinal left, right, lower, upper, center;
       LocalOrdinal nnz=5;
       std::vector<Scalar> Values(nnz);
@@ -324,8 +324,8 @@ namespace Galeri {
 
       Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 5);
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      LocalOrdinal NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
       GlobalOrdinal left, right, lower, upper, center;
       LocalOrdinal nnz=5;
       std::vector<Scalar> Values(nnz);
@@ -426,8 +426,8 @@ namespace Galeri {
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 7);
 
-      LocalOrdinal                               NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      LocalOrdinal                               NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
 
       GlobalOrdinal left, right, bottom, top, front, back, center;
       std::vector<Scalar> Values(7);
@@ -542,8 +542,8 @@ namespace Galeri {
           Teuchos::RCP<Matrix> ktx = MatrixTraits<Map,Matrix>::Build(map, 7);
           Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
 
-          LocalOrdinal                               NumMyElements = map->getNodeNumElements();
-          Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+          LocalOrdinal                               NumMyElements = map->getLocalNumElements();
+          Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
 
           GlobalOrdinal left, right, bottom, top, front, back, center;
           std::vector<Scalar> Values(7);

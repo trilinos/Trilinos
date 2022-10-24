@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
   Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
   Array<GO>  interfaceGIDs;

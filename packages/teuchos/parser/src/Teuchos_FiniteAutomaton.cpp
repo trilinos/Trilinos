@@ -414,12 +414,6 @@ void simplify(FiniteAutomaton& result, FiniteAutomaton const& fa) {
   swap(result, next);
 }
 
-void make_char_nfa(FiniteAutomaton& result, bool is_deterministic_init, int nstates_reserve) {
-  using std::swap;
-  FiniteAutomaton tmp(Teuchos::NCHARS, is_deterministic_init, nstates_reserve);
-  swap(result, tmp);
-}
-
 void add_char_transition(FiniteAutomaton& fa, int from_state, char at_char, int to_state) {
   add_transition(fa, from_state, get_symbol(at_char), to_state);
 }

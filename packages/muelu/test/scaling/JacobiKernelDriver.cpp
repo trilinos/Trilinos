@@ -126,10 +126,10 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     const KCRS & Amat = Au->getLocalMatrix();
     const KCRS & Bmat = Bu->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
+    lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
@@ -161,8 +161,8 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     copy_view(Bcolind,BcolindMKL);
 
     if(std::is_same<Scalar,double>::value) {
-      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO, Bu->getNodeNumRows(), Bu->getNodeNumCols(), BrowptrMKL.data(),BrowptrMKL.data()+1,BcolindMKL.data(),(double*)Bvals.data());
+      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getLocalNumRows(), Au->getLocalNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
+      mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO, Bu->getLocalNumRows(), Bu->getLocalNumCols(), BrowptrMKL.data(),BrowptrMKL.data()+1,BcolindMKL.data(),(double*)Bvals.data());
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -221,7 +221,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     size_t cnnz = rows_end[c_rows-1];
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-    if(c_rows != A.getNodeNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    if(c_rows != A.getLocalNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
@@ -278,7 +278,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    vector_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>           import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
     typedef typename KCRS::device_type device_t;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -322,8 +322,8 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     Cnc->replaceColMap(Bu->getColMap());
 
     // Bcol2Ccol is trivial
-    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getLocalNumElements());
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
                          Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
                          KOKKOS_LAMBDA(const LO i) {
@@ -333,7 +333,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     // Acol2Brow
     local_map_type Acolmap_local = Aview.colMap->getLocalMap();
     local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
     lo_view_t targetMapToImportRow;
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);

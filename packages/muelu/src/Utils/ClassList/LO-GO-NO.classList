@@ -27,6 +27,7 @@ IsolatedNodeAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 LWGraph
 LWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+LocalLWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 LocalLexicographicIndexManager

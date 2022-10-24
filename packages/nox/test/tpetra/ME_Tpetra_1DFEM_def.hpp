@@ -70,7 +70,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   else {
     std::size_t overlapNumMyNodes;
     GO overlapMinMyGID;
-    overlapNumMyNodes = xOwnedMap_->getNodeNumElements() + 2;
+    overlapNumMyNodes = xOwnedMap_->getLocalNumElements() + 2;
     if ( (comm_->getRank() == 0) || (comm_->getRank() == (comm_->getSize() - 1)) )
       --overlapNumMyNodes;
 
@@ -103,7 +103,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   W_graph_ = createGraph();
 
   // Create the nodal coorinates
-  std::size_t numLocalNodes = xOwnedMap_->getNodeNumElements();
+  std::size_t numLocalNodes = xOwnedMap_->getLocalNumElements();
   GO minGID = xOwnedMap_->getMinGlobalIndex();
   Scalar dz = (zMax_ - zMin_)/static_cast<Scalar>(numGlobalElements_);
   nodeCoordinates_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
@@ -171,6 +171,20 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   gSpace_ = ::Thyra::createVectorSpace<Scalar, LO, GO, Node>(gMap_);
   dgdpMap_ = Teuchos::rcp(new const tpetra_map(1, 0, comm_, Tpetra::LocallyReplicated));
   dgdpSpace_ = ::Thyra::createVectorSpace<Scalar, LO, GO, Node>(dgdpMap_);
+
+  p_name_to_index_["Dummy p(0)"] = std::make_pair(0,0);
+  p_name_to_index_["Dummy p(1)"] = std::make_pair(1,0);
+  p_name_to_index_["k"] = std::make_pair(2,0);
+  p_name_to_index_["Dummy p(3)"] = std::make_pair(3,0);
+  p_name_to_index_["T_left"] = std::make_pair(4,0);
+
+  g_name_to_index_["Dummy g(0)"] = std::make_pair(0,0);
+  g_name_to_index_["Dummy g(1)"] = std::make_pair(1,0);
+  g_name_to_index_["Dummy g(2)"] = std::make_pair(2,0);
+  g_name_to_index_["Dummy g(3)"] = std::make_pair(3,0);
+  g_name_to_index_["Constraint: T_right=2"] = std::make_pair(4,0);
+  g_name_to_index_["Dummy g(5)"] = std::make_pair(5,0);
+  g_name_to_index_["Constraint: 2*T_left=T_right"] = std::make_pair(6,0);
 }
 
 // Initializers/Accessors
@@ -184,7 +198,7 @@ EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createGraph()
   // Compute graph offset array
   int numProcs = comm_->getSize();
   int myRank = comm_->getRank();
-  std::size_t numMyNodes = xOwnedMap_->getNodeNumElements();
+  std::size_t numMyNodes = xOwnedMap_->getLocalNumElements();
   std::size_t numLocalEntries = 0;
   //Kokkos::View<std::size_t*> counts("row counts", numMyNodes);
   Kokkos::View<size_type*> counts("row counts", numMyNodes);
@@ -457,7 +471,7 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Sizes for functors
   int myRank = comm_->getRank();
-  std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
+  std::size_t numMyElements = xGhostedMap_->getLocalNumElements()-1;
 
   // Get parameters, default is from nominal values
   auto k_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(2));
@@ -635,6 +649,24 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     Dg6Dp4_tpetra->putScalar(0.0);
   }
 
+}
+
+template<class Scalar, class LO, class GO, class Node>
+std::pair<int,int>
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_p_index(const std::string& p_name) const
+{
+  const auto search = p_name_to_index_.find(p_name);
+  TEUCHOS_ASSERT(search != p_name_to_index_.end());
+  return search->second;
+}
+
+template<class Scalar, class LO, class GO, class Node>
+std::pair<int,int>
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_g_index(const std::string& g_name) const
+{
+  const auto search = g_name_to_index_.find(g_name);
+  TEUCHOS_ASSERT(search != g_name_to_index_.end());
+  return search->second;
 }
 
 template<class Scalar, class LO, class GO, class Node>

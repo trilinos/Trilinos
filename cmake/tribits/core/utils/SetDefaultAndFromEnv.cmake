@@ -38,11 +38,10 @@
 # @HEADER
 
 
-
 include(SetDefault)
 include(PrintVar)
 
-#
+
 # @MACRO: set_default_and_from_env()
 #
 # Set a default value for a local variable and override from an environment

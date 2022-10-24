@@ -1,5 +1,99 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 14.0 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+CMake
+
+  - A switch to modern CMake targets in IMPORTED library targets in installed
+    `<Package>Config.cmake` files has been made that **breaks backward
+    compatibility** for some downstream CMake projects by changing how include
+    directories are handled:
+
+    With the switch to modern CMake IMPORTED targets, now include directories
+    (along with critical compiler options and other modern CMake usage
+    requirements) are propagated through linking to the IMPORTED library
+    targets in downstream customer CMake projects.  This makes the usage of
+    the variables `Trilinos_INCLUDE_DIRS` and `Trilinos_TPL_INCLUDE_DIRS`
+    unnecessary in downstream CMake projects.  The variable
+    `Trilinos_INCLUDE_DIRS` is still set but the variable
+    `Trilinos_TPL_INCLUDE_DIRS` is empty in this change to modern CMake.  To
+    get include directories for Trilinos packages and TPLs, one must link
+    against the Trilinos target `Trilinos::all_libs` or
+    `Trilinos::all_selected_libs` or by linking against the individual package
+    targets `<packageName>::all_libs` and/or the TPL targets
+    `<tplName>::all_libs`.  To upgrade downstream CMake projects that are
+    showing missing include directories (i.e. header files can't be found on
+    the compile liens) just add `target_link_libraries()` calls with the
+    appropriate `<prefix>::all_libs` targets for the desired package and/or
+    TPL.  (See the section "Using the installed software in downstream CMake
+    projects" in the updated build reference guide.)  However, backward
+    compatibility is maintained for most customers which are linking all of
+    their libraries against `${Trilinos_LIBRARIES}`.  For these projects, no
+    changes will need to be made.
+
+    However, this change to modern CMake targets will also cause downstream
+    CMake projects to pull in include directories as `SYSTEM` includes
+    (e.g. using `-isystem` instead of `-I`) from IMPORTED library targets.
+    This changes how these include directories are searched and could break
+    some fragile build environments that have the same header file names in
+    multiple include directories searched by the compiler.  Also, this will
+    silence any regular compiler warnings from header files found under these
+    include directories.  This constitutes a **break in backward
+    compatibility** that will break some customer CMake project builds that
+    use Trilinos on fragile environments where the search order of the include
+    directories is important.
+
+    There are several different approaches for addressing this change from
+    `-I` to `-isystem` for the Trilinos include directories described below.
+
+    **Approach-1:** Update to CMake 3.23 and set the Trilinos configure
+    variable:
+
+      -D Trilinos_IMPORTED_NO_SYSTEM=ON
+
+    This will change back the listing of Trilinos include directories in
+    downstream customer CMake projects from `-isystem` and `-I` and will
+    therefore restore about perfect backward compatibility.
+
+    **Approach-2:** Set the cache variable
+    `CMAKE_NO_SYSTEM_FROM_IMPORTED=TRUE` in a downstream CMake project to set
+    which will restore the include directories for the IMPORTED library
+    targets for the TriBITS project as non-SYSTEM include directories
+    (i.e. `-I`) but it will also cause all include directories for all
+    IMPORTED library targets to be non-SYSTEM (i.e. `-I`) even if they were
+    being handled as SYSTEM include directories before.  Therefore, that could
+    still break the downstream project as it might change what header files
+    are found for these other IMPORTED library targets and may expose many new
+    warnings (which may have been silenced by their include directories being
+    pulled in using `-isystem`).
+
+    **Approach-3:** Clean up the list of include directories that is searched
+    by the compiler so that only the correct header files can be found
+    (regardless of the search order).
+
+    **Approach-4:** Delete some header files in the set of searched include
+    directories so that only the correct header files can be found (regardless
+    of the search order).
+
+    **Approach-5:** Use other approaches more specific to the given customer
+    project.  For example, if multiple different versions of the googletest
+    (gtest) library header files can be found in the list of include
+    directories, then a customer project can build its own version of
+    googletest and put it's include directories first on the compile line and
+    list them with `-I` to ensure that only that version will be found, no
+    matter how many other versions of gtest are installed on the system.  For
+    an example of how this was done for one customer CMake project, see
+    https://github.com/trilinos/Trilinos/issues/8001#issuecomment-1032827124.
+
+    For more details on this change in the handling of include directories
+    with the switch to modern CMake, see
+    https://github.com/TriBITSPub/TriBITS/issues/443.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.12 Release Notes                                        #
 #                                                                             #
 ###############################################################################

@@ -1,3 +1,6 @@
+#ifndef TEST_THREADS_HPP
+#define TEST_THREADS_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -7,15 +10,13 @@
 #endif
 
 class threads : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory threads
 #define TestExecSpace Kokkos::Threads
+
+#endif  // TEST_THREADS_HPP

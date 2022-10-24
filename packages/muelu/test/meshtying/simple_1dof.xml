@@ -169,10 +169,16 @@
     </ParameterList>
 
     <!-- Build Schur Complement factory (for being used in SIMPLE type block smoother)-->
+    <ParameterList name="myInvApproxFact">
+      <Parameter name="factory" type="string" value="InverseApproximationFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+      <Parameter name="inverse: approximation type" type="string" value="lumping"/>
+    </ParameterList>
+
     <ParameterList name="mySchurCompFact">
       <Parameter name="factory" type="string" value="SchurComplementFactory"/>
+      <Parameter name="Ainv" type="string" value="myInvApproxFact"/>
       <Parameter name="omega" type="double" value="1.0"/>
-      <Parameter name="lumping" type="bool" value="true"/>
     </ParameterList>
 
     <!-- block smoother for block A_{11} respective the Schur complement operator -->

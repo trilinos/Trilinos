@@ -238,7 +238,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
    auto rowData = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
 
    // loop over all the rows
-   for(LO j=0;j< (LO) gl->getNodeNumRows();j++) {
+   for(LO j=0;j< (LO) gl->getLocalNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
       GO diagInd = -1;
@@ -376,7 +376,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
    auto rowData = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
 
    // loop over all the rows
-   for(LO j=0;j<(LO) gl->getNodeNumRows();j++) {
+   for(LO j=0;j<(LO) gl->getLocalNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
       GO diagInd = -1;
@@ -696,7 +696,7 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
-     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+     for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
         LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
         typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
         typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
@@ -755,7 +755,7 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
-     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+     for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
         LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
         typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
         typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
@@ -2122,7 +2122,7 @@ double infNorm(const LinearOp & op)
 
     // compute absolute value row sum
     diag.putScalar(0.0);
-    for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+    for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;

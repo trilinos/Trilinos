@@ -238,7 +238,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 
       //! Returns derivative component \c i with bounds checking
       SACADO_INLINE_FUNCTION

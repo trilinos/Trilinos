@@ -50,10 +50,8 @@ void create_block_and_register_fields(SimpleStkFixture & fixture)
   auto & meta = fixture.meta_data();
   meta.declare_part_with_topology("block_1", stk::topology::TRIANGLE_3_2D);
 
-  meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d> >
-      (stk::topology::NODE_RANK, "coordinates");
-  auto & load_field =
-      meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "element_weights");
+  meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
+  auto & load_field = meta.declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights");
   stk::mesh::put_field_on_mesh(load_field, meta.universal_part(), nullptr);
 
   fixture.commit();
@@ -359,16 +357,13 @@ TEST(Rebalance, MultipleWeightFields)
   stk::mesh::Part & block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part & block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
 
-  auto & coords_field = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(
-      stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::put_field_on_mesh(coords_field, meta.universal_part(), nullptr);
+  auto & coords_field = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
+  stk::mesh::put_field_on_mesh(coords_field, meta.universal_part(), 2, nullptr);
 
-  auto & weights_field_1 = meta.declare_field<stk::mesh::Field<double>>(
-      stk::topology::ELEMENT_RANK, "element_weights_1");
+  auto & weights_field_1 = meta.declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights_1");
   stk::mesh::put_field_on_mesh(weights_field_1, block_1, nullptr);
 
-  auto & weights_field_2 = meta.declare_field<stk::mesh::Field<double>>(
-      stk::topology::ELEMENT_RANK, "element_weights_2");
+  auto & weights_field_2 = meta.declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights_2");
   stk::mesh::put_field_on_mesh(weights_field_2, block_2, nullptr);
 
   meta.commit();
@@ -431,8 +426,12 @@ TEST(Rebalance, MultipleWeightFields)
                   owned_part & block_2, mesh.buckets(stk::topology::ELEMENT_RANK)));
   }
 
-  rebalance_utils::rebalance_mesh(
-      mesh, nullptr, {weights_field_1.name(), weights_field_2.name()}, "coordinates", "parmetis");
+  rebalance_utils::rebalance_mesh(mesh,
+      nullptr,
+      {weights_field_1.name(), weights_field_2.name()},
+      "coordinates",
+      10,
+      "parmetis");
 
   EXPECT_EQ(1u,
       stk::mesh::count_selected_entities(

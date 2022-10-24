@@ -41,11 +41,11 @@ TEST_F(NGP_Kokkos, calculate_average)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
   {
-    size_t size_data = stk::unit_test_util::get_command_line_option<size_t>("-s", 2);
+    size_t size_data = stk::unit_test_util::simple_fields::get_command_line_option<size_t>("-s", 2);
     std::vector<my_double> data(size_data);
     for(size_t i=0;i<data.size();++i)
       data[i]=i;
-    int num_repeat = stk::unit_test_util::get_command_line_option<size_t>("-n", 1);
+    int num_repeat = stk::unit_test_util::simple_fields::get_command_line_option<size_t>("-n", 1);
 
     struct timeval begin,end;
     gettimeofday(&begin,NULL);

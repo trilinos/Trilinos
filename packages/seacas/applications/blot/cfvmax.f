@@ -59,4 +59,3 @@ C   --   FMIN, FMAX - OUT - the face variable minimums and maximums
 
       RETURN
       END
-

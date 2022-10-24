@@ -411,13 +411,13 @@ namespace Tpetra {
       // same number of columns.)  The kernel uses this, instead of
       // copying the entire input matrix B and converting its column
       // indices to those of C.
-      lo_view_t Pcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Pcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      lo_view_t Pcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Pcol2Ccol"),Pview.colMap->getLocalNumElements()), Icol2Ccol;
 
       if (Pview.importMatrix.is_null()) {
         // mfh 27 Sep 2016: B has no "remotes," so P and C have the same column Map.
         Cimport = Pimport;
         Ccolmap = Pview.colMap;
-        const LO colMapSize = static_cast<LO>(Pview.colMap->getNodeNumElements());
+        const LO colMapSize = static_cast<LO>(Pview.colMap->getLocalNumElements());
         // Pcol2Ccol is trivial
         Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_fill",
                              Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
@@ -459,12 +459,12 @@ namespace Tpetra {
         // mfh 27 Sep 2016: What the above comment means, is that the
         // setUnion operation on Import objects could also compute these
         // local index - to - local index look-up tables.
-        Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
+        Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getLocalNumElements());
         local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_getGlobalElement",range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_getGlobalElement",range_type(0,Pview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Pcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
-        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
           });
 
@@ -492,8 +492,8 @@ namespace Tpetra {
       // (a flag value).
 
       // Run through all the hash table lookups once and for all
-      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
       Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO P_LID = Prowmap_local.getLocalElement(aidx);
@@ -572,11 +572,11 @@ namespace Tpetra {
       local_map_type Ccolmap_local = Ccolmap->getLocalMap();
 
       // Build the final importer / column map, hash table lookups for C
-      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getLocalNumElements()), Icol2Ccol;
       {
         // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
         // So, column map of C may be a strict subset of the column map of B
-        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
 
@@ -584,16 +584,16 @@ namespace Tpetra {
           TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
 
-          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
-          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getLocalNumElements());
+          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
               Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
             });
         }
       }
 
       // Run through all the hash table lookups once and for all
-      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
       Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO B_LID = Prowmap_local.getLocalElement(aidx);
@@ -676,13 +676,13 @@ namespace Tpetra {
       // same number of columns.)  The kernel uses this, instead of
       // copying the entire input matrix B and converting its column
       // indices to those of C.
-      lo_view_t Pcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Pcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      lo_view_t Pcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Pcol2Ccol"),Pview.colMap->getLocalNumElements()), Icol2Ccol;
 
       if (Pview.importMatrix.is_null()) {
         // mfh 27 Sep 2016: B has no "remotes," so P and C have the same column Map.
         Cimport = Pimport;
         Ccolmap = Pview.colMap;
-        const LO colMapSize = static_cast<LO>(Pview.colMap->getNodeNumElements());
+        const LO colMapSize = static_cast<LO>(Pview.colMap->getLocalNumElements());
         // Pcol2Ccol is trivial
         Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_fill",
                              Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
@@ -724,12 +724,12 @@ namespace Tpetra {
         // mfh 27 Sep 2016: What the above comment means, is that the
         // setUnion operation on Import objects could also compute these
         // local index - to - local index look-up tables.
-        Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
+        Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getLocalNumElements());
         local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_getGlobalElement",range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Pcol2Ccol_getGlobalElement",range_type(0,Pview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Pcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
-        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Pview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
           });
 
@@ -757,8 +757,8 @@ namespace Tpetra {
       // (a flag value).
 
       // Run through all the hash table lookups once and for all
-      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
 
       Kokkos::parallel_for("Tpetra::mult_R_A_P_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
@@ -836,11 +836,11 @@ namespace Tpetra {
       local_map_type Ccolmap_local = Ccolmap->getLocalMap();
 
       // Build the final importer / column map, hash table lookups for C
-      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getLocalNumElements()), Icol2Ccol;
       {
         // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
         // So, column map of C may be a strict subset of the column map of B
-        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
             Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
           });
 
@@ -848,16 +848,16 @@ namespace Tpetra {
           TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
                                      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
 
-          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
-          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getLocalNumElements());
+          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
               Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
             });
         }
       }
 
       // Run through all the hash table lookups once and for all
-      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
       Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
           GO aidx = Acolmap_local.getGlobalElement(i);
           LO B_LID = Prowmap_local.getLocalElement(aidx);
@@ -931,9 +931,9 @@ namespace Tpetra {
 
       // Sizes
       RCP<const map_type> Accolmap = Ac.getColMap();
-      size_t m = Rview.origMatrix->getNodeNumRows();
-      size_t n = Accolmap->getNodeNumElements();
-      size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+      size_t m = Rview.origMatrix->getLocalNumRows();
+      size_t n = Accolmap->getLocalNumElements();
+      size_t p_max_nnz_per_row = Pview.origMatrix->getLocalMaxNumRowEntries();
 
       // Routine runs on host; have to put arguments on host, too
       auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -968,7 +968,7 @@ namespace Tpetra {
         Irowptr = lclP.graph.row_map;
         Icolind = lclP.graph.entries;
         Ivals   = lclP.values;
-        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
+        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getLocalMaxNumRowEntries());
       }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1192,9 +1192,9 @@ namespace Tpetra {
 
       // Sizes
       RCP<const map_type> Accolmap = Ac.getColMap();
-      size_t m = Rview.origMatrix->getNodeNumRows();
-      size_t n = Accolmap->getNodeNumElements();
-      size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+      size_t m = Rview.origMatrix->getLocalNumRows();
+      size_t n = Accolmap->getLocalNumElements();
+      size_t p_max_nnz_per_row = Pview.origMatrix->getLocalMaxNumRowEntries();
 
       // Routine runs on host; have to put arguments on host, too
       auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -1225,7 +1225,7 @@ namespace Tpetra {
         Irowptr = lclP.graph.row_map;
         Icolind = lclP.graph.entries;
         Ivals   = lclP.values;
-        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
+        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getLocalMaxNumRowEntries());
       }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1467,46 +1467,48 @@ namespace Tpetra {
       const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
       // number of rows on the process of the fine matrix
-      // size_t m = Pview.origMatrix->getNodeNumRows();
+      // size_t m = Pview.origMatrix->getLocalNumRows();
       // number of rows on the process of the coarse matrix
-      size_t n = Ac.getRowMap()->getNodeNumElements();
+      size_t n = Ac.getRowMap()->getLocalNumElements();
       LO maxAccol = Ac.getColMap()->getMaxLocalIndex();
 
       // Get Data Pointers
-      ArrayRCP<const size_t> Arowptr_RCP, Prowptr_RCP, Irowptr_RCP;
       ArrayRCP<size_t> Acrowptr_RCP;
-      ArrayRCP<const LO> Acolind_RCP, Pcolind_RCP, Icolind_RCP;
       ArrayRCP<LO> Accolind_RCP;
-      ArrayRCP<const Scalar> Avals_RCP, Pvals_RCP, Ivals_RCP;
       ArrayRCP<SC> Acvals_RCP;
 
-      // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
+      // mfh 27 Sep 2016: get the three CSR arrays
       // out of the CrsMatrix.  This code computes R * A * (P_local +
       // P_remote), where P_local contains the locally owned rows of P,
       // and P_remote the (previously Import'ed) remote rows of P.
 
-      Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
-      Pview.origMatrix->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
+      auto Arowptr = Aview.origMatrix->getLocalRowPtrsHost();
+      auto Acolind = Aview.origMatrix->getLocalIndicesHost();
+      auto Avals   = Aview.origMatrix->getLocalValuesHost(
+                                                     Tpetra::Access::ReadOnly);
+      auto Prowptr = Pview.origMatrix->getLocalRowPtrsHost();
+      auto Pcolind = Pview.origMatrix->getLocalIndicesHost();
+      auto Pvals   = Pview.origMatrix->getLocalValuesHost(
+                                                     Tpetra::Access::ReadOnly);
+      decltype(Prowptr) Irowptr;
+      decltype(Pcolind) Icolind;
+      decltype(Pvals)   Ivals;
 
-      if (!Pview.importMatrix.is_null())
-        Pview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+      if (!Pview.importMatrix.is_null()) {
+        Irowptr = Pview.importMatrix->getLocalRowPtrsHost();
+        Icolind = Pview.importMatrix->getLocalIndicesHost();
+        Ivals   = Pview.importMatrix->getLocalValuesHost(
+                                                    Tpetra::Access::ReadOnly);
+      }
 
       // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
       // where Teuchos::ArrayRCP::operator[] may be slower than
       // Teuchos::ArrayView::operator[].
 
       // For efficiency
-      ArrayView<const size_t>   Arowptr, Prowptr, Irowptr;
-      ArrayView<const LO>       Acolind, Pcolind, Icolind;
-      ArrayView<const SC>       Avals, Pvals, Ivals;
-      ArrayView<size_t>         Acrowptr;
+      ArrayView<size_t> Acrowptr;
       ArrayView<LO> Accolind;
       ArrayView<SC> Acvals;
-      Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-      Prowptr = Prowptr_RCP();  Pcolind = Pcolind_RCP();  Pvals = Pvals_RCP();
-      if (!Pview.importMatrix.is_null()) {
-        Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
-      }
 
       //////////////////////////////////////////////////////////////////////
       // In a first pass, determine the graph of Ac.
@@ -1525,13 +1527,6 @@ namespace Tpetra {
       // Get the local transpose of the graph of P by locally transposing
       // all of P
 
-      ArrayRCP<const size_t>  Rrowptr_RCP;
-      ArrayRCP<const LO>      Rcolind_RCP;
-      ArrayRCP<const Scalar>  Rvals_RCP;
-      ArrayView<const size_t> Rrowptr;
-      ArrayView<const LO>     Rcolind;
-      ArrayView<const SC>     Rvals;
-
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
 
       using Teuchos::ParameterList;
@@ -1545,10 +1540,9 @@ namespace Tpetra {
       RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans =
         transposer.createTransposeLocal (transposeParams);
 
-      Ptrans->getAllValues(Rrowptr_RCP, Rcolind_RCP, Rvals_RCP);
-      Rrowptr = Rrowptr_RCP();
-      Rcolind = Rcolind_RCP();
-      Rvals = Rvals_RCP();
+      auto Rrowptr = Ptrans->getLocalRowPtrsHost();
+      auto Rcolind = Ptrans->getLocalIndicesHost();
+      auto Rvals = Ptrans->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
       //////////////////////////////////////////////////////////////////////
       // Construct graph
@@ -1562,8 +1556,8 @@ namespace Tpetra {
 
       size_t nnz_alloc = std::max(Ac_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
       size_t nnzPerRowA = 100;
-      if (Aview.origMatrix->getNodeNumEntries() > 0)
-        nnzPerRowA = Aview.origMatrix->getNodeNumEntries()/Aview.origMatrix->getNodeNumRows();
+      if (Aview.origMatrix->getLocalNumEntries() > 0)
+        nnzPerRowA = Aview.origMatrix->getLocalNumEntries()/Aview.origMatrix->getLocalNumRows();
       Acrowptr_RCP.resize(n+1);
       Acrowptr = Acrowptr_RCP();
       Accolind_RCP.resize(nnz_alloc);

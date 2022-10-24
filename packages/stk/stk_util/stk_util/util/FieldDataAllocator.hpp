@@ -199,6 +199,44 @@ public:
 };
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+template <typename T>
+class HIPPinnedAndMappedAllocator : public BaseFieldDataAllocator<T>
+{
+public:
+  using ValueType = typename BaseFieldDataAllocator<T>::ValueType;
+  using Pointer = typename BaseFieldDataAllocator<T>::Pointer;
+  using SizeType = typename BaseFieldDataAllocator<T>::SizeType;
+
+  HIPPinnedAndMappedAllocator() {}
+
+  HIPPinnedAndMappedAllocator(const HIPPinnedAndMappedAllocator&) {}
+
+  template <typename U>
+  HIPPinnedAndMappedAllocator (const HIPPinnedAndMappedAllocator<U>&) {}
+
+  ~HIPPinnedAndMappedAllocator() {}
+
+  static Pointer allocate(SizeType num, const void* = 0)
+  {
+    size_t size = num * sizeof(ValueType);
+
+    void* ret;
+    hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
+
+    ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
+
+    return reinterpret_cast<T*>(ret);
+  }
+
+  static void deallocate(Pointer p, SizeType)
+  {
+    hipHostFree(p);
+  }
+
+};
+#endif
+
 template <typename T1, typename T2>
 inline bool operator==(const BaseFieldDataAllocator<T1>&, const BaseFieldDataAllocator<T2>&)
 { return std::is_same<T1,T2>::value; }
@@ -210,6 +248,9 @@ inline bool operator!=(const BaseFieldDataAllocator<T1>&, const BaseFieldDataAll
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename ValueType>
 using FieldDataAllocator = CUDAPinnedAndMappedAllocator<ValueType>;
+#elif defined(KOKKOS_ENABLE_HIP)
+template <typename ValueType>
+using FieldDataAllocator = HIPPinnedAndMappedAllocator<ValueType>;
 #else
 template <typename ValueType>
 using FieldDataAllocator = PageAlignedAllocator<ValueType>;

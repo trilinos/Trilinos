@@ -251,16 +251,16 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-        LO nodeNumElts = coords->getMap()->getNodeNumElements();
+        LO nodeNumElts = coords->getMap()->getLocalNumElements();
 
         // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
         LO myBlkSize = 0, blkSize = 0;
 
         if (nodeNumElts > 0) {
-          MUELU_TEST_FOR_EXCEPTION(rebalanceImporter->getSourceMap()->getNodeNumElements() % nodeNumElts != 0,
+          MUELU_TEST_FOR_EXCEPTION(rebalanceImporter->getSourceMap()->getLocalNumElements() % nodeNumElts != 0,
                           Exceptions::RuntimeError,
-                          "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getNodeNumElements() << " not divisable by " << nodeNumElts);
-          myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
+                          "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getLocalNumElements() << " not divisable by " << nodeNumElts);
+          myBlkSize = rebalanceImporter->getSourceMap()->getLocalNumElements() / nodeNumElts;
         }
       
         MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
@@ -275,7 +275,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
           RCP<const Map> origMap   = coords->getMap();
           GO             indexBase = origMap->getIndexBase();
 
-          ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
+          ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getLocalElementList();
           LO                  numEntries = OEntries.size()/blkSize;
           ArrayRCP<GO> Entries(numEntries);
           for (LO i = 0; i < numEntries; i++)
@@ -317,7 +317,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
     if(orig_stridedRgMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
-      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = Pii->getRangeMap()->getNodeElementList();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = Pii->getRangeMap()->getLocalElementList();
       stridedRgMap = StridedMapFactory::Build(
           originalTransferOp->getRangeMap()->lib(),
           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -335,7 +335,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
     if(orig_stridedDoMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
-      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = Pii->getDomainMap()->getNodeElementList();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = Pii->getDomainMap()->getLocalElementList();
       stridedDoMap = StridedMapFactory::Build(originalTransferOp->getDomainMap()->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
         nodeDomainMapii,
@@ -356,7 +356,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     // append strided row map (= range map) to list of range maps.
     Teuchos::RCP<const Map> rangeMapii = Pii->getRowMap("stridedMaps"); // strided range map
     subBlockPRangeMaps.push_back(rangeMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = Pii->getRangeMap()->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = Pii->getRangeMap()->getLocalElementList();
     // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMapii.begin(), nodeRangeMapii.end());
     if(bThyraRangeGIDs == false)
@@ -365,7 +365,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     // append strided col map (= domain map) to list of range maps.
     Teuchos::RCP<const Map> domainMapii = Pii->getColMap("stridedMaps"); // strided domain map
     subBlockPDomainMaps.push_back(domainMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = Pii->getDomainMap()->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = Pii->getDomainMap()->getLocalElementList();
     // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMapii.begin(), nodeDomainMapii.end());
     if(bThyraDomainGIDs == false)

@@ -38,11 +38,13 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 #include <unistd.h>
 
+using stk::unit_test_util::build_mesh;
 
-class StkTopologyTest : public stk::unit_test_util::MeshFixture
+class StkTopologyTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   StkTopologyTest()
@@ -53,7 +55,7 @@ public:
   void init_mesh_with_wedge12_element(stk::mesh::BulkData& bulk)
   {
     std::string meshDesc = "0,1,WEDGE_12,1,2,3,4,5,6,7,8,9,10,11,12";
-    stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshDesc);
     stk::mesh::create_all_sides(bulk, bulk.mesh_meta_data().universal_part(), {}, true);
   }
 
@@ -103,8 +105,9 @@ TEST_F(StkTopologyTest, writeWedge12ToExodusFile)
 
   output_mesh(get_bulk(), fileName);
 
-  stk::mesh::MetaData newMeta(3);
-  stk::mesh::BulkData newBulk(newMeta, get_comm());
+  std::shared_ptr<stk::mesh::BulkData> newBulkPtr = build_mesh(3, get_comm());
+  stk::mesh::BulkData& newBulk = *newBulkPtr;
+  stk::mesh::MetaData& newMeta = newBulk.mesh_meta_data();
   stk::io::fill_mesh(fileName, newBulk);
   stk::mesh::create_all_sides(newBulk, newMeta.universal_part(), {}, true);
 

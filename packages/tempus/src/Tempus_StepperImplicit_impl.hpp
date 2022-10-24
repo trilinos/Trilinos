@@ -240,29 +240,18 @@ void StepperImplicit<Scalar>::setSolver(
 template<class Scalar>
 const Thyra::SolveStatus<Scalar>
 StepperImplicit<Scalar>::solveImplicitODE(
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
-{
-  if (getZeroInitialGuess())
-    Thyra::assign(x.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-
-  const Thyra::SolveStatus<Scalar> sStatus = (*solver_).solve(&*x);
-
-  return sStatus;
-}
-
-
-template<class Scalar>
-const Thyra::SolveStatus<Scalar>
-StepperImplicit<Scalar>::solveImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
   const Scalar time,
-  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p )
+  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y,
+  const int index                                         )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
   MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
   inArgs.set_x(x);
+  if ( y != Teuchos::null ) inArgs.set_p(index, y);
   if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
   if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
   if (inArgs.supports(MEB::IN_ARG_step_size))

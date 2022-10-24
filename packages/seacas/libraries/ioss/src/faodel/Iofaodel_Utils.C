@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -103,7 +103,7 @@ namespace Iofaodel {
   void unpack_structuredblock(lunasa::DataObject &ldo, Ioss::StructuredBlock &sb)
   {
     std::stringstream instream;
-    char *            p = (char *)ldo.GetDataPtr();
+    char             *p = (char *)ldo.GetDataPtr();
     for (int i = 0; i < ldo.GetDataSize(); i++) {
       instream << p[i];
     }
@@ -398,34 +398,11 @@ namespace Iofaodel {
     case Ioss::Field::RoleType::INFORMATION: return std::string("INFORMATION");
     case Ioss::Field::RoleType::REDUCTION: return std::string("REDUCTION");
     case Ioss::Field::RoleType::TRANSIENT: return std::string("TRANSIENT");
-    default: return std::string("INVALIDE");
+    default: return std::string("INVALID");
     }
   }
 
-  std::string to_string(const Ioss::EntityType &t)
-  {
-    switch (t) {
-    case Ioss::EntityType::NODEBLOCK: return std::string("NODEBLOCK");
-    case Ioss::EntityType::EDGEBLOCK: return std::string("EDGEBLOCK");
-    case Ioss::EntityType::FACEBLOCK: return std::string("FACEBLOCK");
-    case Ioss::EntityType::ELEMENTBLOCK: return std::string("ELEMENTBLOCK");
-    case Ioss::EntityType::NODESET: return std::string("NODESET");
-    case Ioss::EntityType::EDGESET: return std::string("EDGESET");
-    case Ioss::EntityType::FACESET: return std::string("FACESET");
-    case Ioss::EntityType::ELEMENTSET: return std::string("ELEMENTSET");
-    case Ioss::EntityType::SIDESET:
-      return std::string("SIDESET");
-      // Ioss::EntityType::SIDESET == Ioss::EntityType::SURFACE
-      // case Ioss::EntityType::SURFACE: return std::string("SURFACE");
-    case Ioss::EntityType::COMMSET: return std::string("COMMSET");
-    case Ioss::EntityType::SIDEBLOCK: return std::string("SIDEBLOCK");
-    case Ioss::EntityType::REGION: return std::string("REGION");
-    case Ioss::EntityType::SUPERELEMENT: return std::string("SUPERELEMENT");
-    case Ioss::EntityType::STRUCTUREDBLOCK: return std::string("STRUCTUREDBLOCK");
-    case Ioss::EntityType::INVALID_TYPE: return std::string("INVALID_TYPE");
-    default: return std::string("INVALID_TYPE");
-    };
-  }
+  std::string to_string(const Ioss::EntityType &t) { return Ioss::Utils::entity_type_to_string(t); }
 
   std::string get_entity_name(const kelpie::Key &k, const std::string &target)
   {

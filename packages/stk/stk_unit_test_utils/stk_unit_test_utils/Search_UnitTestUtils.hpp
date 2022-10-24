@@ -62,6 +62,9 @@ typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef std::pair<FloatBox, Ident> FloatBoxWithId;
 typedef std::vector<FloatBoxWithId> FloatBoxVector;
 
+namespace stk {
+namespace unit_test_util {
+
 template<class VolumeType>
 VolumeType generateBoundingVolume(double x, double y, double z, double radius);
 
@@ -187,5 +190,69 @@ inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 
     }
 }
+
+namespace simple_fields {
+
+template<class VolumeType>
+VolumeType generateBoundingVolume(double x, double y, double z, double radius);
+
+template<>
+inline
+Point generateBoundingVolume<Point>(double x, double y, double z, double /*radius*/)
+{
+  return Point(x,y,z);
+}
+
+template<>
+inline
+Sphere generateBoundingVolume<Sphere>(double x, double y, double z, double radius)
+{
+  return Sphere(Point(x,y,z),radius);
+}
+
+//       ------------
+//      |            |
+//      |      radius|
+//      |      ------|
+//      |            |
+//      |            |
+//       ------------
+// width = 2*radius
+template<>
+inline
+StkBox generateBoundingVolume< StkBox >(double x, double y, double z, double radius)
+{
+  Point min_corner(x-radius,y-radius,z-radius);
+  Point max_corner(x+radius,y+radius,z+radius);
+  return StkBox(min_corner,max_corner);
+}
+
+template <typename VolumeType>
+std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
+{
+  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
+}
+
+//======================
+
+inline size_t getGoldValueForTest()
+{
+  return stk::unit_test_util::getGoldValueForTest();
+}
+
+inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResults)
+{
+  stk::unit_test_util::gatherResultstoProcZero(comm, boxIdPairResults);
+}
+
+inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
+{
+  stk::unit_test_util::printPeformanceStats(elapsedTime, comm);
+}
+
+} // namespace simple_fields
+
+} // namespace unit_test_util
+} // namespace stk
 
 #endif

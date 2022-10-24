@@ -91,7 +91,7 @@ class SharedSidesCommunication
 {
 public:
     SharedSidesCommunication(stk::mesh::BulkData& bulkData,
-                             const impl::ElemSideToProcAndFaceId & elementSidesToSend)
+                             const impl::ElemSideProcVector & elementSidesToSend)
     : m_bulkData(bulkData),
       m_elementSidesToSend(elementSidesToSend)
     {
@@ -105,7 +105,7 @@ private:
     void unpack_side_data(stk::CommSparse &comm);
 private:
     stk::mesh::BulkData& m_bulkData;
-    const impl::ElemSideToProcAndFaceId & m_elementSidesToSend;
+    const impl::ElemSideProcVector & m_elementSidesToSend;
     SideNodeToReceivedElementDataMap m_elementSidesReceived;
 };
 
@@ -223,13 +223,13 @@ public:
 
 protected:
     void fill_graph();
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId & elementSidesToSend, SideNodeToReceivedElementDataMap & elementSidesReceived);
+    void fill_parallel_graph(impl::ElemSideProcVector & elementSidesToSend, SideNodeToReceivedElementDataMap & elementSidesReceived);
     void create_parallel_graph_edge(const impl::ParallelElementData &elementData,
                                     const stk::mesh::impl::ParallelElementData &remoteElementData,
-                                    impl::ElemSideToProcAndFaceId & elementSidesToSend,
+                                    impl::ElemSideProcVector & elementSidesToSend,
                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideToProcAndFaceId& elementSidesToSend);
+    SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 
@@ -325,7 +325,7 @@ private:
     void add_new_local_edges_to_graph(GraphType &graph, const std::vector<stk::mesh::GraphEdge> &newGraphEdges);
 
     void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
-    stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
+    std::pair<stk::mesh::EntityVector,stk::mesh::EntityVector> filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     stk::mesh::impl::DeletedElementInfoVector filter_delete_elements_argument(const stk::mesh::impl::DeletedElementInfoVector& elements_to_delete_argument) const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
@@ -380,11 +380,9 @@ stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::me
                                             static_cast<stk::mesh::Permutation>(perm));
 }
 
-impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData);
+impl::ElemSideProcVector gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData);
 
-void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate);
-
-stk::mesh::EntityVector gather_shells_connected_to_solid_element_on_given_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side);
+stk::mesh::EntityVector gather_solid_elements_connected_to_shell(const stk::mesh::BulkData& bulkData, stk::mesh::Entity shellElement);
 
 } // end impl
 

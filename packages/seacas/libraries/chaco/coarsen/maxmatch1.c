@@ -15,20 +15,20 @@
 
 int maxmatch1(struct vtx_data **graph,      /* array of vtx data for graph */
               int               nvtxs,      /* number of vertices in graph */
-              int *             mflag,      /* flag indicating vtx selected or not */
+              int              *mflag,      /* flag indicating vtx selected or not */
               int               using_ewgts /* are edge weights being used? */
 )
 {
   extern int HEAVY_MATCH; /* choose heavy edges in matching? */
   float      ewgt_max;    /* largest edge weight seen so far */
-  int *      jptr;        /* loops through integer arrays */
+  int       *jptr;        /* loops through integer arrays */
   int        vtx;         /* vertex to process next */
   int        neighbor;    /* neighbor of a vertex */
   int        nmerged;     /* number of edges in matching */
   int        matched;     /* is a vertex matched yet? */
   int        jsave;       /* best matching edge found so far */
   int        i, j;        /* loop counters */
-  double     drandom();
+  double     drandom(void);
 
   /* Initialize mflag array. */
   jptr = mflag;

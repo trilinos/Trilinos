@@ -52,6 +52,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
 // #include <stk_rebalance/Rebalance.hpp>
@@ -330,18 +331,16 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=edgeBlocks_.begin();itr!=edgeBlocks_.end();++itr)
-            if(!stk::io::is_part_edge_block_io_part(*itr->second)) {
+            if(!stk::io::is_part_edge_block_io_part(*itr->second))
                stk::io::put_edge_block_io_part_attribute(*itr->second); // this can only be called once per part
-            }
       }
 
       // add face blocks
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=faceBlocks_.begin();itr!=faceBlocks_.end();++itr)
-            if(!stk::io::is_part_face_block_io_part(*itr->second)) {
+            if(!stk::io::is_part_face_block_io_part(*itr->second))
                stk::io::put_face_block_io_part_attribute(*itr->second); // this can only be called once per part
-            }
       }
 
       // add side sets
@@ -425,7 +424,8 @@ void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
 
-   bulkData_ = rcp(new stk::mesh::BulkData(*metaData_, *mpiComm_->getRawMpiComm()));
+   std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(*mpiComm_->getRawMpiComm()).create(Teuchos::get_shared_ptr(metaData_));
+   bulkData_ = rcp(bulkUPtr.release());
 }
 
 void STK_Interface::beginModification()
@@ -535,10 +535,12 @@ void STK_Interface::addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Par
 }
 void STK_Interface::addEntitiesToEdgeBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * edgeblock)
 {
-   std::vector<stk::mesh::Part*> edgeblockV;
-   edgeblockV.push_back(edgeblock);
+   if (entities.size() > 0) {
+      std::vector<stk::mesh::Part*> edgeblockV;
+      edgeblockV.push_back(edgeblock);
 
-   bulkData_->change_entity_parts(entities,edgeblockV);
+      bulkData_->change_entity_parts(entities,edgeblockV);
+   }
 }
 
 void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Part * faceblock)
@@ -550,10 +552,12 @@ void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Par
 }
 void STK_Interface::addEntitiesToFaceBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * faceblock)
 {
-   std::vector<stk::mesh::Part*> faceblockV;
-   faceblockV.push_back(faceblock);
+   if (entities.size() > 0) {
+      std::vector<stk::mesh::Part*> faceblockV;
+      faceblockV.push_back(faceblock);
 
-   bulkData_->change_entity_parts(entities,faceblockV);
+      bulkData_->change_entity_parts(entities,faceblockV);
+   }
 }
 
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
@@ -688,7 +692,7 @@ setupExodusFile(const std::string& filename,
 
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
-  meshData_->set_bulk_data(bulkData_);
+  meshData_->set_bulk_data(Teuchos::get_shared_ptr(bulkData_));
   Ioss::PropertyManager props;
   props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
   if (append) {
@@ -1195,8 +1199,7 @@ void STK_Interface::getMyEdges(std::vector<stk::mesh::Entity> & edges) const
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
 
    // grab elements
-   stk::mesh::EntityRank edgeRank = getEdgeRank();
-   stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(edgeRank),edges);
+   stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(getEdgeRank()),edges);
 }
 
 void STK_Interface::getMyEdges(const std::string & edgeBlockName,std::vector<stk::mesh::Entity> & edges) const
@@ -1636,22 +1639,36 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getEdgesOrder
    return orderedEdgeVector_.getConst();
 }
 
-void STK_Interface::addEdgeBlock(const std::string & name,const CellTopologyData * ctData)
+void STK_Interface::addEdgeBlock(const std::string & elemBlockName,
+                                 const std::string & edgeBlockName,
+                                 const stk::topology & topology)
 {
    TEUCHOS_ASSERT(not initialized_);
 
-   stk::mesh::Part * block = metaData_->get_part(name);
-   if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
+   stk::mesh::Part * edge_block = metaData_->get_part(edgeBlockName);
+   if(edge_block==0) {
+      edge_block = &metaData_->declare_part_with_topology(edgeBlockName, topology);
    }
 
-   // construct cell topology object for this block
-   Teuchos::RCP<shards::CellTopology> ct
-         = Teuchos::rcp(new shards::CellTopology(ctData));
+   /* There is only one edge block for each edge topology, so declare it
+    * as a subset of the element block even if it wasn't just created.
+    */
+   stk::mesh::Part * elem_block = metaData_->get_part(elemBlockName);
+   metaData_->declare_part_subset(*elem_block, *edge_block);
 
    // add edge block part
-   edgeBlocks_.insert(std::make_pair(name,block));
-   edgeBlockCT_.insert(std::make_pair(name,ct));
+   edgeBlocks_.insert(std::make_pair(edgeBlockName,edge_block));
+}
+
+void STK_Interface::addEdgeBlock(const std::string & elemBlockName,
+                                 const std::string & edgeBlockName,
+                                 const CellTopologyData * ctData)
+{
+   TEUCHOS_ASSERT(not initialized_);
+
+   addEdgeBlock(elemBlockName,
+                edgeBlockName,
+                stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
 }
 
 Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getFacesOrderedByLID() const
@@ -1667,22 +1684,36 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getFacesOrder
    return orderedFaceVector_.getConst();
 }
 
-void STK_Interface::addFaceBlock(const std::string & name,const CellTopologyData * ctData)
+void STK_Interface::addFaceBlock(const std::string & elemBlockName,
+                                 const std::string & faceBlockName,
+                                 const stk::topology & topology)
 {
    TEUCHOS_ASSERT(not initialized_);
 
-   stk::mesh::Part * block = metaData_->get_part(name);
-   if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
+   stk::mesh::Part * face_block = metaData_->get_part(faceBlockName);
+   if(face_block==0) {
+      face_block = &metaData_->declare_part_with_topology(faceBlockName, topology);
    }
 
-   // construct cell topology object for this block
-   Teuchos::RCP<shards::CellTopology> ct
-         = Teuchos::rcp(new shards::CellTopology(ctData));
+   /* There is only one face block for each edge topology, so declare it
+    * as a subset of the element block even if it wasn't just created.
+    */
+   stk::mesh::Part * elem_block = metaData_->get_part(elemBlockName);
+   metaData_->declare_part_subset(*elem_block, *face_block);
 
    // add face block part
-   faceBlocks_.insert(std::make_pair(name,block));
-   faceBlockCT_.insert(std::make_pair(name,ct));
+   faceBlocks_.insert(std::make_pair(faceBlockName,face_block));
+}
+
+void STK_Interface::addFaceBlock(const std::string & elemBlockName,
+                                 const std::string & faceBlockName,
+                                 const CellTopologyData * ctData)
+{
+   TEUCHOS_ASSERT(not initialized_);
+
+   addFaceBlock(elemBlockName,
+                faceBlockName,
+                stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
 }
 
 void STK_Interface::initializeFromMetaData()
@@ -1841,10 +1872,11 @@ STK_Interface::getPeriodicNodePairing() const
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > vec;
    Teuchos::RCP<std::vector<unsigned int > > type_vec = rcp(new std::vector<unsigned int>);
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & matchers = getPeriodicBCVector();
+   const bool & useBBoxSearch = useBoundingBoxSearch();
+   std::vector<std::vector<std::string> > matchedSides(3); // (coord,edge,face)
 
    // build up the vectors by looping over the matched pair
    for(std::size_t m=0;m<matchers.size();m++){
-      vec = matchers[m]->getMatchedPair(*this,vec);
       unsigned int type;
       if(matchers[m]->getType() == "coord")
         type = 0;
@@ -1854,7 +1886,21 @@ STK_Interface::getPeriodicNodePairing() const
         type = 2;
       else
         TEUCHOS_ASSERT(false);
+#ifdef PANZER_HAVE_STKSEARCH
+
+      if (useBBoxSearch) {
+         vec = matchers[m]->getMatchedPair(*this,matchedSides[type],vec);
+      } else {
+         vec = matchers[m]->getMatchedPair(*this,vec);
+      }
+#else 
+      TEUCHOS_TEST_FOR_EXCEPTION(useBBoxSearch,std::logic_error,
+          "panzer::STK_Interface::getPeriodicNodePairing(): Requested bounding box search, but "
+          "did not compile with STK_SEARCH enabled.");
+      vec = matchers[m]->getMatchedPair(*this,vec);
+#endif
       type_vec->insert(type_vec->begin(),vec->size()-type_vec->size(),type);
+      matchedSides[type].push_back(matchers[m]->getLeftSidesetName());
    }
 
    return std::make_pair(vec,type_vec);

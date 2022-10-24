@@ -37,11 +37,8 @@
 
 #include "Kokkos_Macros.hpp"
 
-#if defined(KOKKOS_ENABLE_CUDA_UVM)
 #define SACADO_TEST_DFAD 1
-#else
-#define SACADO_TEST_DFAD 0
-#endif
+
 #include "Fad_KokkosAtomicTests.hpp"
 
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,32> LeftContiguous32;
@@ -59,8 +56,8 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::InitArguments init_args;
-  init_args.device_id = 0;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_device_id(0);
   Kokkos::initialize( init_args );
   Kokkos::print_configuration(std::cout);
 

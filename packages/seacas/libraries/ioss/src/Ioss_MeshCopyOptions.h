@@ -1,7 +1,6 @@
-#ifndef IOSS_MESHCOPYOPTIONS_H
-#define IOSS_MESHCOPYOPTIONS_H
+#pragma once
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,6 +22,7 @@ namespace Ioss {
     bool memory_statistics{false};
     bool debug{false};
     bool verbose{false};
+    bool output_summary{false};
     bool ints_64_bit{false};
     bool delete_timesteps{false};
     bool reverse{false};          // Used for testing CGNS
@@ -39,4 +39,3 @@ namespace Ioss {
     bool ignore_qa_info{false}; // In compare mode, ignore qa and info records.
   };
 } // namespace Ioss
-#endif

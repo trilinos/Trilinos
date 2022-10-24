@@ -17,7 +17,7 @@ namespace stk
 namespace coupling
 {
 
-const SplitComms& get_split_comms_singleton();
+SplitComms& get_split_comms_singleton();
 
 void set_split_comms_singleton(const SplitComms& splitComms);
 

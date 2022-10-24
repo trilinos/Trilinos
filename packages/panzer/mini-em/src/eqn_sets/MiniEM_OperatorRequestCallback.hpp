@@ -24,8 +24,6 @@ public:
 
    void preRequest(const Teko::RequestMesg & rm);
 
-   void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op) const;
-
 private:
    Teuchos::RCP<const panzer::GlobalEvaluationDataContainer> gedc_;
 

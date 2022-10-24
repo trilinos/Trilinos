@@ -138,12 +138,12 @@ public:
     return G_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return G_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return G_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return G_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return G_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {
@@ -154,8 +154,8 @@ public:
     return G_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return G_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return G_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {
@@ -170,8 +170,8 @@ public:
     return G_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return G_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return G_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {
@@ -190,16 +190,6 @@ public:
     return G_->isFillComplete ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getGlobalRowCopy (GO gblRow,
-                    const Teuchos::ArrayView<GO>& gblColInds,
-                    size_t& numColInds) const override
-  {
-    G_->getGlobalRowCopy (gblRow, gblColInds, numColInds);
-  }
-#endif
-
   void
   getGlobalRowCopy (GO gblRow,
                     typename base_type::nonconst_global_inds_host_view_type & gblColInds,
@@ -207,16 +197,6 @@ public:
   {
     G_->getGlobalRowCopy (gblRow, gblColInds,numColInds);
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getLocalRowCopy (LO lclRow,
-                   const Teuchos::ArrayView<LO>& lclColInds,
-                   size_t& numColInds) const override
-  {
-    G_->getLocalRowCopy (lclRow, lclColInds, numColInds);
-  }
-#endif
 
   void
   getLocalRowCopy (LO lclRow,
@@ -323,12 +303,12 @@ public:
     return A_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return A_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return A_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return A_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return A_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {
@@ -339,8 +319,8 @@ public:
     return A_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return A_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return A_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {
@@ -355,8 +335,8 @@ public:
     return A_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return A_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return A_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {
@@ -388,16 +368,6 @@ public:
   {
     A_->getGlobalRowCopy (gblRow, gblColInds, values, numColInds);
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getGlobalRowCopy (GO gblRow,
-                    const Teuchos::ArrayView<GO>& gblColInds,
-                    const Teuchos::ArrayView<SC>& values,
-                    size_t& numColInds) const override
-  {
-    A_->getGlobalRowCopy (gblRow, gblColInds, values, numColInds);
-  }
-#endif
 
   void
   getLocalRowCopy (LO lclRow,
@@ -408,27 +378,6 @@ public:
     A_->getLocalRowCopy (lclRow, lclColInds, values, numColInds);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getLocalRowCopy (LO lclRow,
-                   const Teuchos::ArrayView<LO>& lclColInds,
-                   const Teuchos::ArrayView<SC>& values,
-                   size_t& numColInds) const override
-  {
-    A_->getLocalRowCopy (lclRow, lclColInds, values, numColInds);
-  }
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getGlobalRowView (const GO gblRow,
-                    Teuchos::ArrayView<const GO> & gblColInds,
-                    Teuchos::ArrayView<const SC> & values) const override
-  {
-    A_->getGlobalRowView (gblRow, gblColInds, values);
-  }
-#endif
-
   void
   getGlobalRowView (const GO gblRow,
                     typename base_type::global_inds_host_view_type & gblColInds,
@@ -436,16 +385,6 @@ public:
   {
     A_->getGlobalRowView (gblRow, gblColInds, values);
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getLocalRowView (const LO lclRow,
-                   Teuchos::ArrayView<const LO> & lclColInds,
-                   Teuchos::ArrayView<const SC> &values) const override
-  {
-    A_->getLocalRowView (lclRow, lclColInds, values);
-  }
-#endif
 
   void
   getLocalRowView (const LO lclRow,
@@ -594,7 +533,7 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   }
 
   const auto& rowMap = * (A.getRowMap ());
-  const LO lclNumRows = A.getNodeNumRows ();
+  const LO lclNumRows = A.getLocalNumRows ();
 
   values_view A_vals;
   values_view B_vals;

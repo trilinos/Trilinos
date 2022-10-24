@@ -1435,7 +1435,7 @@ int main(int argc, char *argv[]) {
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
   std::cout << "numBCNodes = " << numBCNodes << std::endl;
-  std::cout << "globalMapG #elts = " << globalMapG->getNodeNumElements() << std::endl;
+  std::cout << "globalMapG #elts = " << globalMapG->getLocalNumElements() << std::endl;
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,*rhsVector_aux,*rhsVector_aux,v);
 
   tm = Teuchos::null;
@@ -2143,7 +2143,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // compute difference between exact solution and ML one //
   // ==================================================== //
   double d = 0.0, d_tot = 0.0 , s =0.0, s_tot=0.0;
-  for( size_t i=0 ; i<lhs->getMap()->getNodeNumElements() ; ++i ) {
+  for( size_t i=0 ; i<lhs->getMap()->getLocalNumElements() ; ++i ) {
     d += (lhsdata[i] - xexactdata[i]) * (lhsdata[i] - xexactdata[i]);
     s +=  xexactdata[i]* xexactdata[i];
   }
@@ -2876,7 +2876,7 @@ void CreateLinearSystem(int numWorksets,
   vector_type laplDiagOwned(rowMap, true);
   typename crs_matrix_type::local_inds_host_view_type indices;
   typename crs_matrix_type::values_host_view_type values;
-  size_t numOwnedRows = rowMap->getNodeNumElements();
+  size_t numOwnedRows = rowMap->getLocalNumElements();
   for (size_t row=0; row<numOwnedRows; row++) {
     StiffMatrix.getLocalRowView(row, indices, values);
     size_t numIndices = indices.size();

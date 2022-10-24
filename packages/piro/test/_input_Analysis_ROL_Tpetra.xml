@@ -41,20 +41,8 @@
             <ParameterList name="NOX Stratimikos Options">
             </ParameterList>
             <ParameterList name="Stratimikos">
-              <Parameter name="Linear Solver Type" type="string" value="AztecOO" />
+              <Parameter name="Linear Solver Type" type="string" value="Belos" />
               <ParameterList name="Linear Solver Types">
-                <ParameterList name="AztecOO">
-                  <ParameterList name="Forward Solve">
-                    <ParameterList name="AztecOO Settings">
-                      <Parameter name="Aztec Solver" type="string" value="GMRES" />
-                      <Parameter name="Convergence Test" type="string" value="r0" />
-                      <Parameter name="Size of Krylov Subspace" type="int" value="200" />
-                      <Parameter name="Output Frequency" type="int" value="10" />
-                    </ParameterList>
-                    <Parameter name="Max Iterations" type="int" value="200" />
-                    <Parameter name="Tolerance" type="double" value="1e-5" />
-                  </ParameterList>
-                </ParameterList>
                 <ParameterList name="Belos">
                   <Parameter name="Solver Type" type="string" value="Block GMRES" />
                   <ParameterList name="Solver Types">
@@ -68,6 +56,9 @@
                       <Parameter name="Num Blocks" type="int" value="20" />
                       <Parameter name="Flexible Gmres" type="bool" value="0" />
                     </ParameterList>
+                  </ParameterList>
+                  <ParameterList name="VerboseObject">
+                    <Parameter name="Verbosity Level" type="string" value="low" />
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
@@ -155,7 +146,6 @@
         <Parameter name="Error File" type="string" value="dak.err" />
       </ParameterList>
       <ParameterList name="ROL">
-      
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index" type="int" value="0" />
         <Parameter name="Print Output" type="bool" value="true" />

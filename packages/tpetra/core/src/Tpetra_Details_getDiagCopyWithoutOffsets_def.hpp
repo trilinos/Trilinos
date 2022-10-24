@@ -77,7 +77,6 @@ public:
 
   typedef typename vec_type::impl_scalar_type IST;
   // The output Vector determines the execution space.
-  typedef typename vec_type::device_type device_type;
 
 private:
   typedef typename vec_type::dual_view_type::t_host::execution_space host_execution_space;
@@ -121,11 +120,11 @@ public:
     const LO lclNumRows = static_cast<LO> (diag.getLocalLength ());
     {
       const LO matLclNumRows =
-        static_cast<LO> (lclRowMap_.getNodeNumElements ());
+        static_cast<LO> (lclRowMap_.getLocalNumElements ());
       TEUCHOS_TEST_FOR_EXCEPTION
         (lclNumRows != matLclNumRows, std::invalid_argument,
          "diag.getLocalLength() = " << lclNumRows << " != "
-         "A.getRowMap()->getNodeNumElements() = " << matLclNumRows << ".");
+         "A.getRowMap()->getLocalNumElements() = " << matLclNumRows << ".");
     }
 
     // Side effects start below this point.

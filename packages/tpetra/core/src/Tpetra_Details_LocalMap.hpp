@@ -124,7 +124,7 @@ public:
   {}
 
   //! The number of indices that live on the calling process.
-  KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
+  KOKKOS_INLINE_FUNCTION LocalOrdinal getLocalNumElements () const {
     return numLocalElements_;
   }
 

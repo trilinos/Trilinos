@@ -10,7 +10,7 @@ void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn, 
   auto entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesIn);
   auto invPerm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), invPermIn);
   lno_t numVerts = rowmap.extent(0) - 1;
-  decltype(invPerm) perm(Kokkos::ViewAllocateWithoutInitializing("Perm"), numVerts);
+  decltype(invPerm) perm(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Perm"), numVerts);
   for(lno_t i = 0; i < numVerts; i++)
     perm(invPerm(i)) = i;
   std::vector<lno_t> neighbors;
@@ -42,7 +42,7 @@ void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn, 
 }
 
 
-int main(int argc, char* argv[])
+int main()
 {
   Kokkos::initialize();
   {

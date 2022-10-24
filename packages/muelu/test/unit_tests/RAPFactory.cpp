@@ -308,7 +308,7 @@ namespace MueLuTests {
     Teuchos::Array<SC> valout(1);
     RCP<Matrix> diagMat = MatrixFactory::Build(rowMap, 1);
     RCP<Matrix> zdiagMat = MatrixFactory::Build(rowMap, 1);
-    for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+    for (size_t r = 0; r < rowMap->getLocalNumElements(); r++) {
       GO grid = rowMap->getGlobalElement(r);
       indout[0] = grid;
       (r == 0) ?  valout[0] = TST::zero() : valout[0] = TST::one();
@@ -407,7 +407,7 @@ namespace MueLuTests {
     Teuchos::Array<SC> valout(1);
     RCP<Matrix> diagMat = MatrixFactory::Build(rowMap, 1);
     RCP<Matrix> zdiagMat = MatrixFactory::Build(rowMap, 1);
-    for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+    for (size_t r = 0; r < rowMap->getLocalNumElements(); r++) {
       GO grid = rowMap->getGlobalElement(r);
       indout[0] = grid;
       (r == 0) ?  valout[0] = TST::zero() : valout[0] = TST::one();

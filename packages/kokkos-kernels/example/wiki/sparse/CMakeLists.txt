@@ -3,6 +3,13 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../test_common)
 
+if (KOKKOSKERNELS_ENABLE_EXPERIMENTAL)
+  KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+          wiki_bsrmatrix
+          SOURCES KokkosSparse_wiki_bsrmatrix.cpp
+  )
+endif()
+
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_crsmatrix
   SOURCES KokkosSparse_wiki_crsmatrix.cpp

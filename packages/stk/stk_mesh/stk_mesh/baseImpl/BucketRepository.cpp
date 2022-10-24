@@ -42,6 +42,7 @@
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank, etc
@@ -275,6 +276,52 @@ Partition* BucketRepository::create_partition(
   m_partitions[arg_entity_rank].insert( ik , partition );
 
   return partition;
+}
+
+void BucketRepository::internal_modification_end()
+{
+    sync_from_partitions();
+
+    for(EntityRank from_rank = stk::topology::NODE_RANK; from_rank < stk::topology::NUM_RANKS; ++from_rank)
+    {
+        const BucketVector &buckets = this->buckets(from_rank);
+        unsigned num_buckets = buckets.size();
+        for(unsigned j = 0; j < num_buckets; ++j)
+        {
+            ThrowAssert(buckets[j] != NULL);
+            Bucket &bucket = *buckets[j];
+
+            // Update the hop-saving connectivity data on this bucket.
+            //
+            for(EntityRank to_rank = stk::topology::NODE_RANK; to_rank < stk::topology::NUM_RANKS; ++to_rank)
+            {
+                if (from_rank == to_rank) {
+                    continue;
+                }
+
+                switch(to_rank)
+                {
+                    case stk::topology::NODE_RANK:
+                        bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::EDGE_RANK:
+                        bucket.m_dynamic_edge_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::FACE_RANK:
+                        bucket.m_dynamic_face_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::ELEMENT_RANK:
+                        bucket.m_dynamic_element_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                    case stk::topology::INVALID_RANK:
+                        break;
+                    default:
+                        bucket.m_dynamic_other_connectivity.end_modification(&bucket.m_mesh);
+                        break;
+                }
+            }
+        }
+    }
 }
 
 void BucketRepository::sync_from_partitions()

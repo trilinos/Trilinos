@@ -128,7 +128,6 @@ IF(Trilinos_ENABLE_MueLu)
   )
 ENDIF()
 
-
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_sphynx_tests
   SOURCE_FILES

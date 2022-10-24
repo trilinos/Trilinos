@@ -39,10 +39,10 @@
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
-namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
@@ -67,165 +67,75 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
   return oss.str();
 }
 
+} //unamed namespace
+
 // Check for compatibility:
 // 1) Scalar type must match
 // 2) Number of states must match
 // 3) Dimension must be different by at most one rank,
 //    where the tags match for the smaller rank.
-void verify_field_type( const FieldBase                   & arg_field ,
-                        const DataTraits                  & arg_traits ,
-                        unsigned                            arg_rank ,
-                        const shards::ArrayDimTag * const * arg_dim_tags ,
-                        unsigned                    arg_num_states )
+void
+FieldRepository::verify_field_type(const FieldBase                   & arg_field,
+                                   const DataTraits                  & arg_traits,
+                                   unsigned                            arg_rank,
+                                   const shards::ArrayDimTag * const * arg_dim_tags,
+                                   unsigned                            arg_num_states) const
 {
 
-  const bool ok_traits = arg_traits.is_void
-                      || & arg_traits == & arg_field.data_traits();
+  const bool ok_traits = arg_traits.is_void || &arg_traits == &arg_field.data_traits();
 
-  const bool ok_number_states =
-    ! arg_num_states || arg_num_states == arg_field.number_of_states();
+  const bool ok_number_states = not arg_num_states || arg_num_states == arg_field.number_of_states();
 
-  bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
-                                    arg_rank + 1 == arg_field.field_array_rank() ||
-                                    arg_rank - 1 == arg_field.field_array_rank() ;
+  if (m_meta.is_using_simple_fields()) {
+    const bool has_extra_template_parameters = (arg_field.m_field_rank > 0);
 
-  const unsigned check_rank = arg_rank < arg_field.field_array_rank() ?
-                              arg_rank : arg_field.field_array_rank() ;
-
-  for ( unsigned i = 0 ; i < check_rank && ok_dimension ; ++i ) {
-    ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i] ;
-  }
-
-  ThrowErrorMsgIf( ! ok_traits || ! ok_number_states || ! ok_dimension,
-                   " verify_field_type FAILED: Existing field = " <<
-                   print_field_type( arg_field.data_traits() ,
-                                     arg_field.field_array_rank() ,
-                                     arg_field.dimension_tags() ) <<
-                   "[ name = \"" << arg_field.name() <<
-                   "\" , #states = " << arg_field.number_of_states() << " ]" <<
-                   " Expected field info = " <<
-                   print_field_type( arg_traits , arg_rank , arg_dim_tags ) <<
-                   "[ #states = " << arg_num_states << " ]");
-}
-
-} //unamed namespace
-
-//----------------------------------------------------------------------
-FieldBase * FieldRepository::get_field(
-  stk::topology::rank_t               arg_entity_rank ,
-  const std::string                 & arg_name ,
-  const DataTraits                  & arg_traits ,
-  unsigned                            arg_array_rank ,
-  const shards::ArrayDimTag * const * arg_dim_tags ,
-  unsigned                            arg_num_states ) const
-{
-  for ( std::vector<FieldBase*>::const_iterator
-        j =  m_rankedFields[arg_entity_rank].begin();
-        j != m_rankedFields[arg_entity_rank].end(); ++j ) {
-    if ( equal_case( (*j)->name() , arg_name ) ) {
-
-      FieldBase* f = *j ;
-
-      verify_field_type( *f , arg_traits , arg_array_rank , arg_dim_tags , arg_num_states );
-
-      return f;
-    }
-  }
-  return NULL;
-}
-
-FieldBase * FieldRepository::declare_field(
-  const std::string                 & arg_name ,
-  stk::topology::rank_t               arg_entity_rank ,
-  const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank ,
-  const shards::ArrayDimTag * const * arg_dim_tags ,
-  unsigned                            arg_num_states ,
-  MetaData                          * arg_meta_data )
-{
-  static const char* reserved_state_suffix[6] = {
-    "_STKFS_OLD",
-    "_STKFS_N",
-    "_STKFS_NM1",
-    "_STKFS_NM2",
-    "_STKFS_NM3",
-    "_STKFS_NM4"
-  };
-
-  // Check that the name does not have a reserved suffix
-
-  for ( unsigned i = 0 ; i < 6 ; ++i ) {
-    const int len_name   = arg_name.size();
-    const int len_suffix = std::strlen( reserved_state_suffix[i] );
-    const int offset     = len_name - len_suffix ;
-    if ( 0 <= offset ) {
-      const char * const name_suffix = arg_name.c_str() + offset ;
-      ThrowErrorMsgIf( equal_case( name_suffix , reserved_state_suffix[i] ),
-                       "For name = \"" << name_suffix <<
-                       "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
-                       reserved_state_suffix[i] << "\"" );
-    }
-  }
-
-  // Check that the field of this name has not already been declared
-
-  FieldBase * f[ MaximumFieldStates ] = {nullptr};
-
-  f[0] = get_field(
-                arg_entity_rank ,
-                arg_name ,
-                arg_traits ,
-                arg_rank ,
-                arg_dim_tags ,
-                arg_num_states
-                );
-
-  if ( NULL != f[0] ) {
-    for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-      f[i] = f[0]->field_state(static_cast<FieldState>(i));
-    }
+    ThrowErrorMsgIf(not ok_traits || not ok_number_states || has_extra_template_parameters,
+                    " verify_field_type FAILED: Existing field = " <<
+                    print_field_type(arg_field.data_traits(), arg_field.m_field_rank, arg_field.m_dim_tags) <<
+                    "[ name = \"" << arg_field.name() <<
+                    "\" , #states = " << arg_field.number_of_states() << " ]" <<
+                    " Expected field info = " <<
+                    print_field_type(arg_traits, arg_rank, arg_dim_tags) <<
+                    "[ #states = " << arg_num_states << " ]");
   }
   else {
-    // Field does not exist then create it
+    bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
+                                      arg_rank + 1 == arg_field.field_array_rank() ||
+                                      arg_rank - 1 == arg_field.field_array_rank() ;
 
-    std::string field_names[ MaximumFieldStates ];
+    const unsigned check_rank = (arg_rank < arg_field.field_array_rank()) ? arg_rank : arg_field.field_array_rank();
 
-    field_names[0] = arg_name ;
-
-    if ( 2 == arg_num_states ) {
-      field_names[1] = arg_name ;
-      field_names[1].append( reserved_state_suffix[0] );
-    }
-    else {
-      for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-        field_names[i] = arg_name ;
-        field_names[i].append( reserved_state_suffix[i] );
-      }
+    for (unsigned i = 0; i < check_rank && ok_dimension; ++i) {
+      ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i];
     }
 
-    for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
+    ThrowErrorMsgIf(not ok_traits || not ok_number_states || not ok_dimension,
+                    " verify_field_type FAILED: Existing field = " <<
+                    print_field_type(arg_field.data_traits(), arg_field.field_array_rank(), arg_field.dimension_tags()) <<
+                    "[ name = \"" << arg_field.name() <<
+                    "\" , #states = " << arg_field.number_of_states() << " ]" <<
+                    " Expected field info = " <<
+                    print_field_type(arg_traits, arg_rank, arg_dim_tags) <<
+                    "[ #states = " << arg_num_states << " ]");
+  }
+}
 
-      f[i] = new FieldBase(
-          arg_meta_data ,
-          arg_entity_rank,
-          m_fields.size() ,
-          field_names[i] ,
-          arg_traits ,
-          arg_rank,
-          arg_dim_tags,
-          arg_num_states ,
-          static_cast<FieldState>(i)
-          );
-
-      add_field( f[i] );
-    }
-
-    for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
-      f[i]->set_field_states( f );
+//----------------------------------------------------------------------
+FieldBase * FieldRepository::get_field(stk::topology::rank_t               arg_entity_rank,
+                                       const std::string                 & arg_name,
+                                       const DataTraits                  & arg_traits,
+                                       unsigned                            arg_array_rank,
+                                       const shards::ArrayDimTag * const * arg_dim_tags,
+                                       unsigned                            arg_num_states) const
+{
+  for (FieldBase * field : m_rankedFields[arg_entity_rank]) {
+    if (equal_case(field->name(), arg_name)) {
+      verify_field_type(*field, arg_traits, arg_array_rank, arg_dim_tags, arg_num_states);
+      return field;
     }
   }
 
-  return f[0] ;
+  return nullptr;
 }
 
 void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)

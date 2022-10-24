@@ -175,7 +175,7 @@ namespace {
       return false;
     }
     TEST_EQUALITY( mvec->getNumVectors(), numVecs );
-    TEST_EQUALITY( mvec->getLocalLength(), map->getNodeNumElements() );
+    TEST_EQUALITY( mvec->getLocalLength(), map->getLocalNumElements() );
     TEST_EQUALITY( mvec->getGlobalLength(), map->getGlobalNumElements() );
     
     out << "Test that all norms are zero" << endl;

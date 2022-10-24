@@ -29,7 +29,7 @@ C     LASTER   Error return code
 
 C************************************************************************
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
 
 C     The basic strategy is to look for an array in the dictionary
 C     which is immediately preceded by a void.  If found, a shift
@@ -52,7 +52,7 @@ C              Perform data shift and update void table.
                VOID(IVOID,2,1) = DPOINT(IDICT,2,1) + DPOINT(IDICT,2,2)
                CALL VTABLE (0, 0, VOID(1,2,1), LVOID, NVOIDS(2),
      *            CHRCOL, LASTER)
-               IF (LASTER .NE. SUCESS) RETURN
+               IF (LASTER .NE. SUCCESS) RETURN
                GO TO 110
 
             END IF

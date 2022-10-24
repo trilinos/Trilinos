@@ -150,7 +150,7 @@ namespace Thyra {
         const EOpTransp real_M_trans = real_trans(M_trans);
 
         if (this->bIsEpetra_) {
-            const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
+            const RCP<const VectorSpaceBase<SC> > XY_domain = X_in.domain();
 
             RCP<const Map<LO,GO,NO> > DomainM = this->xpetraOperator_->getDomainMap();
             RCP<const EpetraMapT<GO,NO> > eDomainM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(DomainM);

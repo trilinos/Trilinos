@@ -85,9 +85,6 @@ void print_connectivity_of_rank(const BulkData& M, Entity entity,
                                 EntityRank connectedRank,
                                 std::ostream & out);
 
-void print_upward_connectivity(const BulkData& bulk, Entity entity,
-                               std::ostream& out);
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk

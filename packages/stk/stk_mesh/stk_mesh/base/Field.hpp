@@ -39,6 +39,8 @@
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldTraits.hpp>
+#include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
 
 //----------------------------------------------------------------------
 
@@ -54,25 +56,22 @@ namespace mesh {
  * problem being solved.
  *
  * A field specification has three components
- *   - Field type: Defines the type of this field's data. This can be scalar or multidimensional.
- *     If multidimensional (dimensions >= 1), a specification of each dimension will need
- *     to be provided in the form of a shards::ArrayDimTag. Many common ArrayDimTags are defined
- *     in stk_mesh/base/CoordinateSystems.hpp, but apps are free to define their own as well.
+ *   - Field datatype: Defines the type of this field's data.
  *     - Examples:
- *       - A scalar double field-type:
+ *       - A double field-type:
  *           stk::mesh::Field<double>
- *       - A vector field type using the Cartesian array-dim-tag from CoordinateSystems:
- *           stk::mesh::Field<double, stk::mesh::Cartesian>
+ *       - An integer field-type:
+ *           stk::mesh::Field<int>
  *
  *   - Field declaration: Defines/creates a specific field of a specified type. The API for
- *     declaring fields is in MetaData. Declaration of a field requires a field-type,
+ *     declaring fields is in MetaData. Declaration of a field requires a field datatype,
  *     field name, and number of states. The number of states defines the "memory" of the Field;
  *     if number-of-states is N, the last N values of the field are stored, and the user
  *     can advance/rotate the states by calling BulkData::update_field_data_states(). FieldState.hpp
  *     contains an enum that clients should use to refer to the various states.
- *     - Examples:
- *       typedef stk::mesh::Field<double, stk::mesh::Cartesian>  CoordFieldType;
- *       CoordFieldType& coord_field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
+ *     - Example:
+ *       using CoordFieldType stk::mesh::Field<double> CoordFieldType;
+ *       CoordFieldType& coord_field = meta.declare_field<double>("<name>", <num_states>);
  *
  *   - Field restrictions: Defines the set of entities that have a field and the dimensions of the
  *     field (maximum of 7 dimensions).  FieldRestrictions are applied to Parts and entities pick
@@ -86,26 +85,39 @@ namespace mesh {
  *     specify special nodal fields for different element types.
  *
  *     The public API for declaring field restrictions is in MetaData.hpp;
- *     we strongly recommend using the put_field free functions to create your field restrictions. A
+ *     we strongly recommend using the put_field_on_mesh free functions to create your field restrictions. A
  *     field may have many restrictions, but the restrictions have to be compatible with each other;
  *     restrictions can overlap if an entity is a member of two parts A,B and you declare restrictions
  *     for a field for both A and B. If such a situation arises, the dimensionality of both restrictions
  *     must be identical.
+ *
+ *     If you care about field component subscripting for output to a file, then call
+ *     stk::io::set_field_output_type() from IossBridge.hpp.  This will give you output subscripts of, say,
+ *     [_x, _y, _z] for the "Vector_3D" type instead of the default [_1, _2, _3].
+ *
  *     - Examples:
  *       - Put a scalar field on all nodes in a part
- *           typedef stk::mesh::Field<double>  ScalarFieldType;
- *           ScalarFieldType& field = meta.declare_field<ScalarFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>);
+ *           using ScalarFieldType = stk::mesh::Field<double>;
+ *           ScalarFieldType& field = meta.declare_field<double>("<name>", <num_states>);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, <initialValue>);
  *
- *       - Put a 1d (of size 3) field of doubles on all nodes in a part
- *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d>  CoordFieldType;
- *           CoordFieldType& field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size);
+ *       - Put a vector (of size 3) of doubles on all nodes in a part
+ *           using CoordFieldType = stk::mesh::Field<double>;
+ *           CoordFieldType& field = meta.declare_field<double>("<name>", <num_states>);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, 3, <initialValues>);
+ *           stk::io::set_field_output_type(field, "Vector_3D");
  *
- *       - Put a 2d (of sizes 3 and 3) field of doubles on all nodes in a part
- *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d, stk::mesh::Cartesian3d> MultiDimFieldType;
- *           MultiFieldType& field = meta.declare_field<MultiFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
+ *       - Put 2 copies of a vector (of size 3) of doubles on all nodes in a part
+ *           using CoordFieldType = stk::mesh::Field<double>;
+ *           CoordFieldType& field = meta.declare_field<double>("<name>", <num_states>);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, 3, 2, <initialValues>);
+ *           stk::io::set_field_output_type(field, "Vector_3D");
+ *
+ *       - Put a tensor (of size 3x3) of doubles on all nodes in a part
+ *           using TensorFieldType = stk::mesh::Field<double>;
+ *           TensorFieldType& field = meta.declare_field<double>("<name>", <num_states>);
+ *           stk::mesh::put_field_on_mesh(field, stk::topology::NODE_RANK, <part>, 9, <initialValues>);
+ *           stk::io::set_field_output_type(field, "Full_Tensor_36");
  *
  * Items of interest
  *   - Accessing field data: see FieldData.hpp
@@ -139,6 +151,7 @@ template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
 class Field : public FieldBase {
 public:
+  using value_type = Scalar;
 
   Field(
        MetaData                   * arg_mesh_meta_data ,
@@ -174,7 +187,7 @@ public:
 
   virtual ~Field(){}
 
-  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const
+  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
   {
     const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
     Scalar* casted_data = reinterpret_cast<Scalar*>(data);
@@ -186,6 +199,66 @@ public:
     out << "}";
 
     return out;
+  }
+
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const override
+  {
+    FieldBase * f[MaximumFieldStates] {nullptr};
+
+    static const char* reserved_state_suffix[6] = {
+      "_STKFS_OLD",
+      "_STKFS_N",
+      "_STKFS_NM1",
+      "_STKFS_NM2",
+      "_STKFS_NM3",
+      "_STKFS_NM4"
+    };
+
+    for (unsigned i = 0 ; i < 6 ; ++i) {
+      const int len_name   = name().size();
+      const int len_suffix = std::strlen(reserved_state_suffix[i]);
+      const int offset     = len_name - len_suffix ;
+      if ( 0 <= offset ) {
+        const char * const name_suffix = name().c_str() + offset;
+        ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
+                        "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+                        reserved_state_suffix[i] << "\"");
+      }
+    }
+
+    std::string fieldNames[MaximumFieldStates];
+
+    fieldNames[0] = name();
+
+    if (number_of_states() == 2) {
+      fieldNames[1] = name();
+      fieldNames[1].append(reserved_state_suffix[0]);
+    }
+    else {
+      for (unsigned i = 1; i < number_of_states(); ++i) {
+        fieldNames[i] = name();
+        fieldNames[i].append(reserved_state_suffix[i]);
+      }
+    }
+
+    for (unsigned i = 0; i < number_of_states(); ++i) {
+      f[i] = new Field(&fieldRepo.mesh_meta_data(),
+                       entity_rank(),
+                       fieldRepo.get_fields().size(),
+                       fieldNames[i],
+                       data_traits(),
+                       m_field_rank,
+                       m_dim_tags,
+                       number_of_states(),
+                       static_cast<FieldState>(i));
+      fieldRepo.add_field(f[i]);
+    }
+
+    for (unsigned i = 0 ; i < number_of_states() ; ++i) {
+      f[i]->set_field_states(f);
+    }
+
+    return f[0];
   }
 
 private:

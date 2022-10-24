@@ -63,12 +63,39 @@
 namespace Kokkos {
 namespace Impl {
 
-//------------------------------------------------------------------------------
+//==============================================================================
+// <editor-fold desc="AnalyzePolicyBaseTraits"> {{{1
 
-using execution_policy_trait_specifications =
-    type_list<ExecutionSpaceTrait, GraphKernelTrait, IndexTypeTrait,
-              IterationPatternTrait, LaunchBoundsTrait, OccupancyControlTrait,
-              ScheduleTrait, WorkItemPropertyTrait, WorkTagTrait>;
+// Mix in the defaults (base_traits) for the traits that aren't yet handled
+
+//------------------------------------------------------------------------------
+// <editor-fold desc="MSVC EBO failure workaround"> {{{2
+
+template <class TraitSpecList>
+struct KOKKOS_IMPL_ENFORCE_EMPTY_BASE_OPTIMIZATION AnalyzeExecPolicyBaseTraits;
+template <class... TraitSpecifications>
+struct KOKKOS_IMPL_ENFORCE_EMPTY_BASE_OPTIMIZATION
+    AnalyzeExecPolicyBaseTraits<type_list<TraitSpecifications...>>
+    : TraitSpecifications::base_traits... {};
+
+// </editor-fold> end AnalyzePolicyBaseTraits }}}1
+//==============================================================================
+
+//==============================================================================
+// <editor-fold desc="AnalyzeExecPolicy specializations"> {{{1
+
+//------------------------------------------------------------------------------
+// Note: unspecialized, so that the default pathway is to fall back to using
+// the PolicyTraitMatcher. See AnalyzeExecPolicyUseMatcher below
+template <class Enable, class... Traits>
+struct AnalyzeExecPolicy
+    : AnalyzeExecPolicyUseMatcher<void, execution_policy_trait_specifications,
+                                  Traits...> {
+  using base_t =
+      AnalyzeExecPolicyUseMatcher<void, execution_policy_trait_specifications,
+                                  Traits...>;
+  using base_t::base_t;
+};
 
 //------------------------------------------------------------------------------
 // Ignore void for backwards compatibility purposes, though hopefully no one is
@@ -81,15 +108,6 @@ struct AnalyzeExecPolicy<void, void, Traits...>
 };
 
 //------------------------------------------------------------------------------
-// Mix in the defaults (base_traits) for the traits that aren't yet handled
-
-template <class TraitSpecList>
-struct KOKKOS_IMPL_ENFORCE_EMPTY_BASE_OPTIMIZATION AnalyzeExecPolicyBaseTraits;
-template <class... TraitSpecifications>
-struct KOKKOS_IMPL_ENFORCE_EMPTY_BASE_OPTIMIZATION
-    AnalyzeExecPolicyBaseTraits<type_list<TraitSpecifications...>>
-    : TraitSpecifications::base_traits... {};
-
 template <>
 struct AnalyzeExecPolicy<void>
     : AnalyzeExecPolicyBaseTraits<execution_policy_trait_specifications> {
@@ -108,6 +126,68 @@ struct AnalyzeExecPolicy<void>
   }
 };
 
+// </editor-fold> end AnalyzeExecPolicy specializations }}}1
+//==============================================================================
+
+//==============================================================================
+// <editor-fold desc="AnalyzeExecPolicyUseMatcher"> {{{1
+
+// We can avoid having to have policies specialize AnalyzeExecPolicy themselves
+// by piggy-backing off of the PolicyTraitMatcher that we need to have for
+// things like require() anyway. We mixin the effects of the trait using
+// the `mixin_matching_trait` nested alias template in the trait specification
+
+// General PolicyTraitMatcher version
+
+// Matching case
+template <class TraitSpec, class... TraitSpecs, class Trait, class... Traits>
+struct AnalyzeExecPolicyUseMatcher<
+    std::enable_if_t<PolicyTraitMatcher<TraitSpec, Trait>::value>,
+    type_list<TraitSpec, TraitSpecs...>, Trait, Traits...>
+    : TraitSpec::template mixin_matching_trait<
+          Trait, AnalyzeExecPolicy<void, Traits...>> {
+  using base_t = typename TraitSpec::template mixin_matching_trait<
+      Trait, AnalyzeExecPolicy<void, Traits...>>;
+  using base_t::base_t;
+};
+
+// Non-matching case
+template <class TraitSpec, class... TraitSpecs, class Trait, class... Traits>
+struct AnalyzeExecPolicyUseMatcher<
+    std::enable_if_t<!PolicyTraitMatcher<TraitSpec, Trait>::value>,
+    type_list<TraitSpec, TraitSpecs...>, Trait, Traits...>
+    : AnalyzeExecPolicyUseMatcher<void, type_list<TraitSpecs...>, Trait,
+                                  Traits...> {
+  using base_t = AnalyzeExecPolicyUseMatcher<void, type_list<TraitSpecs...>,
+                                             Trait, Traits...>;
+  using base_t::base_t;
+};
+
+// No match found case:
+template <class>
+struct show_name_of_invalid_execution_policy_trait;
+template <class Trait, class... Traits>
+struct AnalyzeExecPolicyUseMatcher<void, type_list<>, Trait, Traits...> {
+  static constexpr auto trigger_error_message =
+      show_name_of_invalid_execution_policy_trait<Trait>{};
+  static_assert(
+      /* always false: */ std::is_void<Trait>::value,
+      "Unknown execution policy trait. Search compiler output for "
+      "'show_name_of_invalid_execution_policy_trait' to see the type of the "
+      "invalid trait.");
+};
+
+// All traits matched case:
+template <>
+struct AnalyzeExecPolicyUseMatcher<void, type_list<>>
+    : AnalyzeExecPolicy<void> {
+  using base_t = AnalyzeExecPolicy<void>;
+  using base_t::base_t;
+};
+
+// </editor-fold> end AnalyzeExecPolicyUseMatcher }}}1
+//==============================================================================
+
 //------------------------------------------------------------------------------
 // Used for defaults that depend on other analysis results
 template <class AnalysisResults>
@@ -125,13 +205,28 @@ struct ExecPolicyTraitsWithDefaults : AnalysisResults {
 };
 
 //------------------------------------------------------------------------------
+
+constexpr bool warn_if_deprecated(std::false_type) { return true; }
+KOKKOS_DEPRECATED_WITH_COMMENT(
+    "Invalid WorkTag template argument in execution policy!!")
+constexpr bool warn_if_deprecated(std::true_type) { return true; }
+#define KOKKOS_IMPL_STATIC_WARNING(...) \
+  static_assert(                        \
+      warn_if_deprecated(std::integral_constant<bool, __VA_ARGS__>()), "")
+
 template <typename... Traits>
 struct PolicyTraits
     : ExecPolicyTraitsWithDefaults<AnalyzeExecPolicy<void, Traits...>> {
   using base_t =
       ExecPolicyTraitsWithDefaults<AnalyzeExecPolicy<void, Traits...>>;
   using base_t::base_t;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
+  KOKKOS_IMPL_STATIC_WARNING(!std::is_empty<typename base_t::work_tag>::value &&
+                             !std::is_void<typename base_t::work_tag>::value);
+#endif
 };
+
+#undef KOKKOS_IMPL_STATIC_WARNING
 
 }  // namespace Impl
 }  // namespace Kokkos

@@ -90,7 +90,7 @@ namespace Intrepid2 {
         const ordinal_type P = _output.extent(1);
         const ordinal_type N = _workset.extent(1);
 
-        double buf[10]; Kokkos::View<double*,Kokkos::Impl::ActiveExecutionMemorySpace> val(&buf[0], N); // N
+        double buf[10]; Kokkos::View<double*,Kokkos::AnonymousSpace> val(&buf[0], N); // N
         auto nodes = Kokkos::subview(_workset, cl, Kokkos::ALL(), Kokkos::ALL()); // N,D
 
         for (ordinal_type i=0;i<P;++i) {
@@ -152,15 +152,8 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
-
       typedef typename ExecSpaceType::array_layout DeviceArrayLayout;
         
-
-      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-      
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -185,8 +178,8 @@ namespace Intrepid2 {
 
           const ordinal_type C = 3, P = 5, N = 4, D = 2;
           
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> pts_on_ref_host("pts_on_ref_host", P, D);
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> workset_host("workset_host", C, N, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,Kokkos::HostSpace> pts_on_ref_host("pts_on_ref_host", P, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,Kokkos::HostSpace> workset_host("workset_host", C, N, D);
            
           pts_on_ref_host(0, 0) =  0.0;           pts_on_ref_host(0, 1) =  0.0; 
           pts_on_ref_host(1, 0) =  0.3;           pts_on_ref_host(1, 1) =  0.2; 
@@ -243,7 +236,7 @@ namespace Intrepid2 {
               ::mapToPhysicalFrame(a_pts_on_phy, pts_on_ref, workset, 
                                    shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
           }
-          auto a_pts_on_phy_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), a_pts_on_phy);
+          auto a_pts_on_phy_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_pts_on_phy);
           Kokkos::deep_copy(a_pts_on_phy_host, a_pts_on_phy);
           
           // ** compute via impl interface
@@ -258,7 +251,7 @@ namespace Intrepid2 {
           }
           // I love lambda...
           // Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type cl) {
-          //     double buf[N]; Kokkos::View<double*,Kokkos::Impl::ActiveExecutionMemorySpace> val(&buf[0], N); // N
+          //     double buf[N]; Kokkos::View<double*,Kokkos::AnonymousSpace> val(&buf[0], N); // N
           //     auto nodes = Kokkos::subview(workset, cl, Kokkos::ALL(), Kokkos::ALL()); // N,D
           //     for (ordinal_type i=0;i<P;++i) {
           //       auto pt_on_ref = Kokkos::subview(  pts_on_ref,     i, Kokkos::ALL()); // D
@@ -267,7 +260,7 @@ namespace Intrepid2 {
           //       Impl::CellTools::Serial::mapToPhysicalFrame(pt_on_phy, val, nodes);
           //     }
           //   });
-          auto b_pts_on_phy_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), b_pts_on_phy);
+          auto b_pts_on_phy_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), b_pts_on_phy);
           Kokkos::deep_copy(b_pts_on_phy_host, b_pts_on_phy);
 
           // ** compare
@@ -297,7 +290,7 @@ namespace Intrepid2 {
               ::mapToReferenceFrame(a_pts_on_ref, pts_on_phy, workset, 
                                    shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
           }
-          auto a_pts_on_ref_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), a_pts_on_ref);
+          auto a_pts_on_ref_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_pts_on_ref);
           Kokkos::deep_copy(a_pts_on_ref_host, a_pts_on_ref);
 
           // ** compare
@@ -334,7 +327,7 @@ namespace Intrepid2 {
           //         ::mapToReferenceFrame<Impl::Basis_HGRAD_QUAD_C1_FEM>(pt_on_ref, pt_on_phy, nodes);
           //     }
           //   });
-          auto b_pts_on_ref_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), b_pts_on_ref);
+          auto b_pts_on_ref_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), b_pts_on_ref);
           Kokkos::deep_copy(b_pts_on_ref_host, b_pts_on_ref);
 
           // ** compare          
@@ -360,7 +353,7 @@ namespace Intrepid2 {
             << "===============================================================================\n\n";
 
 
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> workset3d_host("workset3d_host", C, N, D+1);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,Kokkos::HostSpace> workset3d_host("workset3d_host", C, N, D+1);
 
           //set x,y components
           for(size_t i=0; i<workset_host.extent(0);++i)
@@ -416,7 +409,7 @@ namespace Intrepid2 {
             Kokkos::parallel_for(policy, FunctorType(b_pts3d_on_ref, b_pts3d_on_phy, workset3d));
           }
 
-          auto b_pts3d_on_ref_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), b_pts3d_on_ref);
+          auto b_pts3d_on_ref_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), b_pts3d_on_ref);
           Kokkos::deep_copy(b_pts3d_on_ref_host, b_pts3d_on_ref);
 
           // ** compare

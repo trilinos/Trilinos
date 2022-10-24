@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,7 +15,7 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
               int               nvtxs,       /* number of vertices in graph */
               int               nedges,      /* number of edges in graph */
               int               using_ewgts, /* are edge weights being used? */
-              double *          vwsqrt,      /* sqrt of vertex weights (length nvtxs+1) */
+              double           *vwsqrt,      /* sqrt of vertex weights (length nvtxs+1) */
               int               solver_flag, /* which eigensolver should I use? */
               int               rqi_flag,    /* use multilevel eigensolver? */
               int               vmax,        /* if so, how many vtxs to coarsen down to? */
@@ -28,18 +28,18 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   extern double     sequence_time;            /* time spent sequencing */
   struct vtx_data **subgraph  = NULL;         /* subgraph data structure */
   struct edgeslist *edge_list = NULL;         /* edges added for connectivity */
-  double *          yvecs[MAXDIMS + 1];       /* space for pointing to eigenvectors */
+  double           *yvecs[MAXDIMS + 1];       /* space for pointing to eigenvectors */
   double            evals[MAXDIMS + 1];       /* corresponding eigenvalues */
-  double *          subvwsqrt = NULL;         /* vwsqrt vector for subgraphs */
-  double *          subvals   = NULL;         /* values for one connected component */
+  double           *subvwsqrt = NULL;         /* vwsqrt vector for subgraphs */
+  double           *subvals   = NULL;         /* values for one connected component */
   double            goal[2];                  /* needed for eigen convergence mode = 1 */
   double            total_vwgt;               /* sum of all vertex weights */
-  float *           term_wgts[2];             /* dummy vector for terminal weights */
-  int *             setsize  = NULL;          /* size of each connected component */
-  int *             glob2loc = NULL;          /* maps graph vtxs to subgraph vtxs */
-  int *             loc2glob = NULL;          /* maps subgraph vtxs to graph vtxs */
-  int *             subperm  = NULL;          /* partial permutation */
-  int *             degree   = NULL;          /* degrees of vertices in subgraph */
+  float            *term_wgts[2];             /* dummy vector for terminal weights */
+  int              *setsize  = NULL;          /* size of each connected component */
+  int              *glob2loc = NULL;          /* maps graph vtxs to subgraph vtxs */
+  int              *loc2glob = NULL;          /* maps subgraph vtxs to graph vtxs */
+  int              *subperm  = NULL;          /* partial permutation */
+  int              *degree   = NULL;          /* degrees of vertices in subgraph */
   double            maxdeg;                   /* maximum weighted degree of a vertex */
   int               subnvtxs;                 /* number of vertices in subgraph */
   int               subnedges;                /* number of edges in subgraph */
@@ -50,20 +50,20 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   int               old_rqi_conv_mode;        /* value of RQI_CONVERGENCE_MODE */
   int               old_lan_conv_mode;        /* value of LANCZOS_CONVERGENCE_MODE */
   int               i;                        /* loop counters */
-  FILE *            orderfile = NULL;
+  FILE             *orderfile = NULL;
   void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
   void              eigensolve(), free_edgeslist(), y2x();
   void              make_subvector(), make_subgraph(), remake_graph();
   void              make_maps2();
-  double            find_maxdeg(), seconds();
+  double            find_maxdeg(), seconds(void);
   int               find_edges();
 
   double time        = seconds();
   int    using_vwgts = (vwsqrt != NULL);
 
   /* Sort each connected component separately. */
-  int *   compnum     = smalloc((nvtxs + 1) * sizeof(int));
-  int *   permutation = smalloc(nvtxs * sizeof(int));
+  int    *compnum     = smalloc((nvtxs + 1) * sizeof(int));
+  int    *permutation = smalloc(nvtxs * sizeof(int));
   double *values      = smalloc((nvtxs + 1) * sizeof(double));
 
   int *space  = smalloc(nvtxs * sizeof(int));

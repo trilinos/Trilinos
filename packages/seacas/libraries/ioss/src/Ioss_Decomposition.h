@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef IOSS_DECOMPOSITON_H
-#define IOSS_DECOMPOSITON_H
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Map.h>
@@ -93,7 +92,7 @@ namespace Ioss {
 
     ~SetDecompositionData()
     {
-      if (setComm_ != MPI_COMM_NULL) {
+      if (setComm_ != Ioss::ParallelUtils::comm_null()) {
         MPI_Comm_free(&setComm_);
       }
     }
@@ -125,14 +124,14 @@ namespace Ioss {
     size_t distributionFactorCount{0};
     double distributionFactorValue{
         0.0}; // If distributionFactorConstant == true, the constant value
-    MPI_Comm setComm_{MPI_COMM_NULL};
-    bool     distributionFactorConstant{false}; // T if all distribution factors the same value.
+    Ioss_MPI_Comm setComm_{Ioss::ParallelUtils::comm_null()};
+    bool distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
 
   template <typename INT> class Decomposition
   {
   public:
-    Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
+    Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
 
     size_t global_node_count() const { return m_globalNodeCount; }
     size_t global_elem_count() const { return m_globalElementCount; }
@@ -257,6 +256,18 @@ namespace Ioss {
     void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(m_importPreLocalElemIndex == 0);
+        assert(exportElementMap.size() == 0);
+        assert(importElementMap.size() == 0);
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = localElementMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       // Transfer the file-decomposition based data in 'file_data' to
       // the ioss-decomposition based data in 'ioss_data'
       std::vector<T> export_data(exportElementMap.size() * comp_count);
@@ -355,14 +366,15 @@ namespace Ioss {
       if (size == 0)
         return;
 
-      if (set.setComm_ != MPI_COMM_NULL) {
+      if (set.setComm_ != Ioss::ParallelUtils::comm_null()) {
         recv_data.resize(size);
         if (m_processor == set.root_) {
           std::copy(file_data, file_data + size, recv_data.begin());
         }
         // NOTE: This broadcast uses a split communicator, so possibly
         // not all processors participating.
-        MPI_Bcast(recv_data.data(), size, Ioss::mpi_type(T(0)), 0, set.setComm_);
+        Ioss::ParallelUtils pu(set.setComm_);
+        pu.broadcast(recv_data);
       }
       if (comp_count == 1) {
         if (set.root_ == m_processor) {
@@ -405,6 +417,18 @@ namespace Ioss {
                                 size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(block.localIossOffset == 0);
+        assert(block.exportMap.size() == 0);
+        assert(block.importMap.size() == 0);
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = block.localMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       std::vector<U> exports;
       exports.reserve(comp_count * block.exportMap.size());
       std::vector<U> imports(comp_count * block.importMap.size());
@@ -549,7 +573,7 @@ namespace Ioss {
       }
     }
 
-    MPI_Comm            m_comm;
+    Ioss_MPI_Comm       m_comm;
     Ioss::ParallelUtils m_pu;
     int                 m_processor{};
     int                 m_processorCount{};
@@ -668,4 +692,3 @@ namespace Ioss {
 #endif
   };
 } // namespace Ioss
-#endif

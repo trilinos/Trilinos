@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   LocalA.apply(lx,ly);
 
   // Apply w/ GetRow
-  size_t max_nz_per_row=LocalA.getNodeMaxNumRowEntries();
+  size_t max_nz_per_row=LocalA.getLocalMaxNumRowEntries();
   using lids_type = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconst_local_inds_host_view_type;
   using vals_type = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconst_values_host_view_type;
   lids_type Indices("Indices",max_nz_per_row);

@@ -120,7 +120,7 @@ int main( int argc, char* argv[] )
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
   typedef Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t> row_matrix_type;
   RCP<tcrsMatrix_t> TpetraCrsMatrix(new tcrsMatrix_t (map, 0));
-  const zlno_t numMyElements = map->getNodeNumElements ();
+  const zlno_t numMyElements = map->getLocalNumElements ();
   const zgno_t myBegin = map->getGlobalElement (0);
 
   //std::vector<zgno_t> tmp_indices(max_num_elements);

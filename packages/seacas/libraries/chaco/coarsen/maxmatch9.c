@@ -16,14 +16,14 @@
 
 int maxmatch9(struct vtx_data **graph,      /* array of vtx data for graph */
               int               nvtxs,      /* number of vertices in graph */
-              int *             mflag,      /* flag indicating vtx selected or not */
+              int              *mflag,      /* flag indicating vtx selected or not */
               int               using_ewgts /* are edge weights being used? */
 )
 {
   extern int HEAVY_MATCH;         /* use heavy-edge matching? */
-  int *      order;               /* random ordering of vertices */
-  int *      neighbors;           /* scatter array for neighbor list */
-  int *      iptr, *jptr;         /* loops through integer arrays */
+  int       *order;               /* random ordering of vertices */
+  int       *neighbors;           /* scatter array for neighbor list */
+  int       *iptr, *jptr;         /* loops through integer arrays */
   float      ewgt;                /* edge weight */
   int        save;                /* neighbor vertex if only one active */
   int        vtx;                 /* vertex to process next */
@@ -34,7 +34,7 @@ int maxmatch9(struct vtx_data **graph,      /* array of vtx data for graph */
   int        nmerged;             /* number of edges in matching */
   int        i, j, k;             /* loop counters */
 
-  void randomize();
+  void randomize(int *array, int n);
 
   /* First, randomly permute the vertices. */
   neighbors = smalloc((nvtxs + 1) * sizeof(int));

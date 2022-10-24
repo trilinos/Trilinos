@@ -17,8 +17,8 @@ namespace balance {
 namespace internal {
 
 NodeBalancer::NodeBalancer(stk::mesh::BulkData& bulk)
-  :  m_bulkData(bulk),
-     m_metaData(bulk.mesh_meta_data())
+  : m_bulkData(bulk),
+    m_metaData(bulk.mesh_meta_data())
 {}
 
 bool

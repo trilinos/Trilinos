@@ -56,6 +56,7 @@
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -66,33 +67,29 @@ template<typename EvalT,typename Traits>
 panzer::ProjectToFaces<EvalT, Traits>::
 ProjectToFaces(const Teuchos::ParameterList& p)
 { 
-  dof_name = (p.get< std::string >("DOF Name"));
+  dof_name_ = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
-    basis = p.get< Teuchos::RCP<PureBasis> >("Basis");
+    basis_ = p.get< Teuchos::RCP<PureBasis> >("Basis");
   else
-    basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
+    basis_ = p.get< Teuchos::RCP<const PureBasis> >("Basis");
 
-  Teuchos::RCP<PHX::DataLayout> basis_layout  = basis->functional;
-  Teuchos::RCP<PHX::DataLayout> vector_layout  = basis->functional_grad;
+  Teuchos::RCP<PHX::DataLayout> basis_layout  = basis_->functional;
+  Teuchos::RCP<PHX::DataLayout> vector_layout  = basis_->functional_grad;
 
   // some sanity checks
-  TEUCHOS_ASSERT(basis->isVectorBasis());
+  TEUCHOS_ASSERT(basis_->isVectorBasis());
 
-  result = PHX::MDField<ScalarT,Cell,BASIS>(dof_name,basis_layout);
-  this->addEvaluatedField(result);
+  result_ = PHX::MDField<ScalarT,Cell,BASIS>(dof_name_,basis_layout);
+  this->addEvaluatedField(result_);
 
-  normals = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Normals",vector_layout);
-  this->addDependentField(normals);
+  normals_ = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name_+"_Normals",vector_layout);
+  this->addDependentField(normals_);
 
-  vector_values.resize(1);
-  vector_values[0] = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
-  this->addDependentField(vector_values[0]);
+  vector_values_ = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name_+"_Vector",vector_layout);
+  this->addDependentField(vector_values_);
   
   this->setName("Project To Faces");
-
-  num_faces  = result.extent(1);
-  num_dim  = vector_values[0].extent(2);
 }
 
 // **********************************************************************
@@ -101,11 +98,11 @@ void panzer::ProjectToFaces<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& /* fm */)
 {
-  num_faces  = result.extent(1);
-  num_dim  = vector_values[0].extent(2);
+  num_faces_  = result_.extent(1);
+  num_dim_  = vector_values_.extent(2);
 
-  TEUCHOS_ASSERT(result.extent(1) == normals.extent(1));
-  TEUCHOS_ASSERT(vector_values[0].extent(2) == normals.extent(2));
+  TEUCHOS_ASSERT(result_.extent(1) == normals_.extent(1));
+  TEUCHOS_ASSERT(vector_values_.extent(2) == normals_.extent(2));
 }
 
 // **********************************************************************
@@ -120,17 +117,24 @@ evaluateFields(typename Traits::EvalData workset)
   // HVol is constant
 
   //TODO: make this work w/ high order basis
-  const int intDegree = basis->order();
+  const int intDegree = basis_->order();
   TEUCHOS_ASSERT(intDegree == 1);
+
+  auto result = result_.get_static_view();
+  auto vector_values = vector_values_.get_static_view();
+  auto normals = normals_.get_static_view();
+  auto num_faces = num_faces_;
+  auto num_dim = num_dim_;
     
-  // TODO: parallel for.
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int p = 0; p < num_faces; ++p) {
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
+  Kokkos::parallel_for("panzer::ProjectToFaces",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) {
+    const auto cell = team.league_rank();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_faces),[&] (const int p) {
       result(cell,p) = ScalarT(0.0);
       for (int dim = 0; dim < num_dim; ++dim)
-        result(cell,p) += vector_values[0](cell,p,dim) * normals(cell,p,dim);
-    }
-  }
+        result(cell,p) += vector_values(cell,p,dim) * normals(cell,p,dim);
+    });
+  });
 }
 
 

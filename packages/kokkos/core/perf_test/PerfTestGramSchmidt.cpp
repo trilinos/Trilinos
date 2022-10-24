@@ -69,7 +69,7 @@ struct InvNorm2 : public Kokkos::DotSingle<VectorView> {
 
   KOKKOS_INLINE_FUNCTION
   void final(value_type& result) const {
-    result = Kokkos::Experimental::sqrt(result);
+    result = Kokkos::sqrt(result);
     Rjj()  = result;
     inv()  = (0 < result) ? 1.0 / result : 0;
   }
@@ -231,7 +231,7 @@ void run_test_gramschmidt(int exp_beg, int exp_end, int num_trials,
 
     std::cout << label_gramschmidt << " , " << parallel_work_length << " , "
               << min_seconds << " , " << (min_seconds / parallel_work_length)
-              << std::endl;
+              << ", " << avg_seconds << std::endl;
   }
 }
 

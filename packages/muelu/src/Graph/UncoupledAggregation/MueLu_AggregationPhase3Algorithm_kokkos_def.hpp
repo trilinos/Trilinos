@@ -106,6 +106,8 @@ namespace MueLu {
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     Kokkos::View<LO, device_type> numAggregates("numAggregates");
     Kokkos::deep_copy(numAggregates, aggregates.GetNumAggregates());
 
@@ -123,7 +125,7 @@ namespace MueLu {
                                  (aggStatOld(nodeIdx) == IGNORED) ){ return; }
 
                              // Grab node neighbors
-                             auto neighbors = graph.getNeighborVertices(nodeIdx);
+                             auto neighbors = lclLWGraph.getNeighborVertices(nodeIdx);
                              LO neighIdx;
 
                              // We don't want a singleton.
@@ -133,7 +135,7 @@ namespace MueLu {
                                neighIdx = neighbors(neigh);
 
                                if((neighIdx != nodeIdx) &&
-                                  graph.isLocalNeighborVertex(neighIdx) &&
+                                  lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                   (aggStatOld(neighIdx) == READY)) {
                                  isNewAggregate = true;
                                  break;
@@ -153,7 +155,7 @@ namespace MueLu {
                                for(int neigh = 0; neigh < neighbors.length; ++neigh) {
                                  neighIdx = neighbors(neigh);
                                  if((neighIdx != nodeIdx) &&
-                                    graph.isLocalNeighborVertex(neighIdx) &&
+                                    lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                     (aggStatOld(neighIdx) == READY)) {
                                    aggStat(neighIdx)         = AGGREGATED;
                                    procWinner(neighIdx, 0)   = myRank;
@@ -168,7 +170,7 @@ namespace MueLu {
                              // Let us try to aggregate into a neighboring aggregate
                              for(int neigh = 0; neigh < neighbors.length; ++neigh) {
                                neighIdx = neighbors(neigh);
-                               if (graph.isLocalNeighborVertex(neighIdx) &&
+                               if (lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                    (aggStatOld(neighIdx) == AGGREGATED)) {
                                  aggStat(nodeIdx)         = AGGREGATED;
                                  procWinner(nodeIdx, 0)   = myRank;

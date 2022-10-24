@@ -48,7 +48,7 @@
 #include <limits>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
@@ -119,7 +119,7 @@ result_struct cg_solve(
     Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
   int print = 0)
 {
-  Kokkos::Impl::Timer total_timer;
+  Kokkos::Timer total_timer;
 
   typedef typename CrsMatrix::scalar_type ScalarType;
   typedef Kokkos::Details::ArithTraits<ScalarType> KAT;
@@ -147,7 +147,7 @@ result_struct cg_solve(
   double addtime = 0;
   double matvectime = 0;
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   p->update(1.0,*x,0.0,*x,0.0);
   addtime += timer.seconds(); timer.reset();
 

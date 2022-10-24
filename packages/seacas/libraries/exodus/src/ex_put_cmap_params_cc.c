@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -159,7 +159,7 @@ file ID %d",
   } /* "if (num_n_comm_maps > 0)" */
 
   /* Check to see if there are elemental communications maps in the file */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &e_dimid[0])) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &e_dimid[0]) != NC_NOERR) {
     num_e_comm_maps = 0;
   }
   else {

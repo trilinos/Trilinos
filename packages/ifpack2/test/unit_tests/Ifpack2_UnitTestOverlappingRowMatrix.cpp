@@ -222,19 +222,18 @@ void reducedMatvec(const OverlappedMatrixClass & A,
 
   // Assumes that X & Y are sufficiently overlapped for this to work
   RCP<const crs_matrix_type> undA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getUnderlyingMatrix());
-  RCP<const crs_matrix_type> extA = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A.getExtMatrix());
-  Teuchos::ArrayView<const size_t> hstarts = A.getExtHaloStarts();
+  auto hstarts = A.getExtHaloStartsHost();
 
   if(overlapLevel >= (int) hstarts.size()) 
     throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
   auto undA_lcl = undA->getLocalMatrixDevice ();
-  auto extA_lcl = extA->getLocalMatrixDevice ();
+  auto extA_lcl = A.getExtMatrix()->getLocalMatrixDevice();
   auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
   // Do the "Local part"
-  auto numLocalRows = undA->getNodeNumRows();
+  auto numLocalRows = undA->getLocalNumRows();
   localReducedMatvec(undA_lcl,X_lcl,numLocalRows,Y_lcl);
 
   
@@ -243,7 +242,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
     int yrange = hstarts[overlapLevel];
     auto Y_ext = Kokkos::subview(Y_lcl,std::make_pair(numLocalRows,numLocalRows+yrange),Kokkos::ALL());
     
-    int xlimit = ( (overlapLevel == hstarts.size()-1) ? X_lcl.extent(0) : numLocalRows+hstarts[overlapLevel+1] );
+    int xlimit = ( (overlapLevel == (int) hstarts.size()-1) ? X_lcl.extent(0) : numLocalRows+hstarts[overlapLevel+1] );
     auto X_ext = Kokkos::subview(X_lcl,std::make_pair(0,xlimit),Kokkos::ALL());
     
     localReducedMatvec(extA_lcl,X_ext,yrange,Y_ext);
@@ -283,8 +282,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   Teuchos::CommandLineProcessor clp;
   Xpetra::Parameters xpetraParameters (clp);
   Teuchos::ParameterList GaleriList;
-  int nx = 100;
-  //    int nx = 6;
+  int nx = 447;  // ~200K unknowns per MPI rank
   size_t numElementsPerProc = nx*nx;
   GaleriList.set("nx", static_cast<GO> (nx));
   GaleriList.set("ny", static_cast<GO> (nx * numProcs));
@@ -322,7 +320,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   VectorType X (A->getRowMap ());
   VectorType Y (A->getRowMap ());
   VectorType Z (A->getRowMap ());
-  ArrayRCP<ArrayRCP<Scalar> > x_ptr = X.get2dViewNonConst ();
 
   const int OverlapLevel = 5;
 
@@ -341,7 +338,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   }
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR( "Ifpack2::OverlappingRowMatrix constructor" );
 
-  Teuchos::ArrayView<const size_t> halo = B->getExtHaloStarts();
+  auto halo = B->getExtHaloStartsHost();
 #if 0
   printf("Halo Starts:");
   for(size_t i=0; i< (size_t)halo.size(); i++)
@@ -352,8 +349,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();
 
-  for (LO i = 0 ; i < static_cast<LO> (A->getNodeNumRows ()); ++i) {
+  {
+  ArrayRCP<ArrayRCP<Scalar> > x_ptr = X.get2dViewNonConst ();
+  for (LO i = 0 ; i < static_cast<LO> (A->getLocalNumRows ()); ++i) {
     x_ptr[0][i] = 1.0 * A->getRowMap ()->getGlobalElement (i);
+  }
   }
   Y.putScalar (0.0);
 
@@ -396,10 +396,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   // getDomainMap () and getRangeMap (), as desired, and see the overlap
   // pattern.
   {
-    const auto n = B->getRowMap ()->getNodeNumElements ();
-    TEST_EQUALITY( B->getColMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getRangeMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getDomainMap ()->getNodeNumElements (), n );
+    const auto n = B->getRowMap ()->getLocalNumElements ();
+    TEST_EQUALITY( B->getColMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getRangeMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getDomainMap ()->getLocalNumElements (), n );
   }
 
   try {
@@ -588,7 +588,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
   int overlapLevel = 2;
   Ifpack2::OverlappingRowMatrix<row_matrix_type> ovA(A, overlapLevel);
 
-  RCP<const row_matrix_type> ExtMatrix = ovA.getExtMatrix();
+  //RCP<const row_matrix_type> ExtMatrix = ovA.getExtMatrix();
+  auto ExtMatrix = ovA.getExtMatrix();
   SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
 
   // Vectors in the non-overlapping space
@@ -610,7 +611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
     RCP<const map_type> ovColmap = ovA.getColMap();
     MV ovX(ovRowmap,numVecs), ovY(ovRowmap,numVecs), temp1(ovRowmap,numVecs), temp2(ovRowmap,numVecs);
     ovX.putScalar(zero);
-    Teuchos::ArrayView<const size_t> hstarts = ovA.getExtHaloStarts();
+    auto hstarts = ovA.getExtHaloStartsHost();
     ovA.importMultiVector(x,ovX);
 #if 0
     printf("Halo Starts:");
@@ -618,9 +619,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
       printf("%d ",(int) hstarts[i]);
     printf("\n");
 #endif
-    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getNodeNumRows(),(int)A->getNodeNumCols(),
-    //           (int)x.getMap()->getNodeNumElements(),(int)ovX.getMap()->getNodeNumElements());
-    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getNodeNumRows(),(int)ovA.getUnderlyingMatrix()->getNodeNumCols());
+    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getLocalNumRows(),(int)A->getLocalNumCols(),
+    //           (int)x.getMap()->getLocalNumElements(),(int)ovX.getMap()->getLocalNumElements());
+    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getLocalNumRows(),(int)ovA.getUnderlyingMatrix()->getLocalNumCols());
 
     reducedMatvec(ovA,ovX,2,temp1);
     reducedMatvec(ovA,temp1,1,temp2);
@@ -644,11 +645,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, Test0, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, getLocalDiag, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2OverlappingRowMatrix, reducedMatvec, Scalar, LO, GO ) 
-
-// mfh 26 Aug 2015: Ifpack2::OverlappingRowMatrix was only getting
-// tested for Scalar = double, LocalOrdinal = int, GlobalOrdinal =
-// int, and the default Node type.  As part of the fix for Bug 6358,
-// I'm removing the assumption that GlobalOrdinal = int exists.
 
 typedef Tpetra::MultiVector<>::scalar_type default_scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;

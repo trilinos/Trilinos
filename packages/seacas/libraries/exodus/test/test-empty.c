@@ -9,7 +9,7 @@
 #include <exodusII.h>
 #include <stdio.h>
 
-int main()
+int main(int argc, char **argv)
 {
   float version = 0.0;
 
@@ -39,7 +39,7 @@ int main()
     char title[MAX_LINE_LENGTH + 1];
     int  num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
     int  error = ex_get_init(exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk,
-                            &num_node_sets, &num_side_sets);
+                             &num_node_sets, &num_side_sets);
     printf("after ex_get_init, error = %3d\n", error);
     if (error) {
       exit(-1);

@@ -66,12 +66,12 @@ class STK_Interface;
  *
  * \param[in] meshStr Filename containing the mesh string, or the mesh string itself.
  * \param[in] parallelMach Descriptor for machine to build this mesh on.
- * \param[in] isExodus Set to true for Exodus mesh, set to false for Pamgen mesh.
  *
  * \returns Integer indicating the spatial dimension of the mesh.
  */
-  int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach,
-                       const bool isExodus = true);
+  int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach, const std::string & typeStr = "Exodus");
+
+  std::string fileTypeToIOSSType(const std::string & fileType);
 
 /** Concrete mesh factory instantiation. This reads
   * a mesh from an exodus file and builds a STK_Interface object.
@@ -93,9 +93,8 @@ public:
    *
    * \param[in] fileName Name of the input file.
    * \param[in] restartIndex Index used for restarts.
-   * \param[in] isExodus If true, the input file is in exodus format. If false, it assumes Pamgen format.
    */
-  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0, const bool isExodus = true);
+  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0);
 
    /** Construct a STK_Inteface object described
      * by this factory.
@@ -132,17 +131,34 @@ protected:
    void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
    void registerSidesets(STK_Interface & mesh) const;
    void registerNodesets(STK_Interface & mesh) const;
-   void registerEdgeBlocks(STK_Interface & mesh) const;
-   void registerFaceBlocks(STK_Interface & mesh) const;
+   void registerEdgeBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
+   void registerFaceBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
 
    void addEdgeBlocks(STK_Interface & mesh) const;
    void addFaceBlocks(STK_Interface & mesh) const;
 
+   std::string mkBlockName(std::string base, std::string topo_name) const;
+   void createUniqueEdgeTopologyMap(STK_Interface & mesh, const stk::mesh::Part *elemBlockPart) const;
+   void createUniqueFaceTopologyMap(STK_Interface & mesh, const stk::mesh::Part *elemBlockPart) const;
+
    void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
 
+   bool doPerceptRefinement() const;
+
    std::string fileName_;
+   std::string fileType_;
    int restartIndex_;
-   bool isExodus_;
+
+   /* The ExodusReaderFactory creates one edge/face block for each
+    * unique edge/face topology in the mesh.  There are a few
+    * situations where it's desirable to have a list of unique
+    * topologies for each element block.  Instead of creating it
+    * on the fly, they are created and saved when the element
+    * blocks are added to the STK_Interface in
+    * registerElementBlocks().
+    */
+   mutable std::map<std::string,std::vector<stk::topology>> elemBlockUniqueEdgeTopologies_;
+   mutable std::map<std::string,std::vector<stk::topology>> elemBlockUniqueFaceTopologies_;
 
 private:
 
@@ -169,6 +185,8 @@ private:
 
   //! Did the user request to create missing face blocks
   bool createFaceBlocks_;
+
+  std::string geometryName_;
 };
 
 }

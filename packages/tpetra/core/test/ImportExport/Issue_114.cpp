@@ -183,7 +183,7 @@ main (int argc, char *argv[])
   int gblSuccess = 1;
 
   std::ostringstream lclErrStrm;
-  for (size_t i = 0; i < FromMap->getNodeNumElements (); ++i) {
+  for (size_t i = 0; i < FromMap->getLocalNumElements (); ++i) {
     if (f_view[i] != who_owns[FromMap->getGlobalElement(i)]) {
       lclErrStrm << "[" << myRank << "] ERROR: Ownership of GID "
                  << FromMap->getGlobalElement(i) << " is incorrect!" << endl;

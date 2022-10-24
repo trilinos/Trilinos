@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
     if (norm > 1e-5) exit(EXIT_FAILURE);
   }
 
+  delete R;
   delete C;
   ML_Operator_Destroy(&P_ML);
   ML_Operator_Destroy(&R_ML);

@@ -109,7 +109,7 @@ void createContinuousCoarseLevelMaps(const RCP<const Xpetra::Map<LocalOrdinal, G
   // Create row map with continuous GIDs
   contRowMap = MapFactory::Build(rowMap->lib(),
                                  rowMap->getGlobalNumElements(),
-                                 rowMap->getNodeNumElements(),
+                                 rowMap->getLocalNumElements(),
                                  rowMap->getIndexBase(),
                                  rowMap->getComm());
 
@@ -163,11 +163,11 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
     RCP<const Map> regRowMapFine         = regMatFine->getRowMap();
 
     // Extracting some basic information about local mesh in composite/region format
-    const size_t numFineRegionNodes    = regProlong->getNodeNumRows();
+    const size_t numFineRegionNodes    = regProlong->getLocalNumRows();
     const size_t numFineCompositeNodes = compositeToRegionLIDs.size();
     const size_t numFineDuplicateNodes = numFineRegionNodes - numFineCompositeNodes;
 
-    const size_t numCoarseRegionNodes  = regProlong->getColMap()->getNodeNumElements();
+    const size_t numCoarseRegionNodes  = regProlong->getColMap()->getLocalNumElements();
 
     // Find the regionLIDs associated with local duplicated nodes
     // This will allow us to later loop only on duplicated nodes
@@ -281,7 +281,7 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
     // Create the coarseQuasiregRowMap, it will be based on the coarseRegRowMap
     LO countCoarseComposites = 0;
     coarseCompositeToRegionLIDs.resize(numCoarseRegionNodes);
-    Array<GO> coarseQuasiregRowMapData = regProlong->getColMap()->getNodeElementList();
+    Array<GO> coarseQuasiregRowMapData = regProlong->getColMap()->getLocalElementList();
     Array<GO> coarseCompRowMapData(numCoarseRegionNodes, -1);
     for(size_t regionIdx = 0; regionIdx < numCoarseRegionNodes; ++regionIdx) {
       const GO initialValue = coarseQuasiregRowMapData[regionIdx];
@@ -354,7 +354,7 @@ void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdin
   using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
   coarseCompOp = MatrixFactory::Build(compRowMap,
                                        // This estimate is very conservative and probably costs us lots of memory...
-                                      8*regMatrix->getCrsGraph()->getNodeMaxNumRowEntries());
+                                      8*regMatrix->getCrsGraph()->getLocalMaxNumRowEntries());
   regionalToComposite(regMatrix,
                       quasiRegRowMap,
                       quasiRegColMap,
@@ -367,7 +367,7 @@ void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdin
 
   // Create coarse composite coordinates for repartitioning
   if(makeCompCoords) {
-    const int check       = regMatrix->getRowMap()->getNodeNumElements() % regCoarseCoordinates->getMap()->getNodeNumElements();
+    const int check       = regMatrix->getRowMap()->getLocalNumElements() % regCoarseCoordinates->getMap()->getLocalNumElements();
     TEUCHOS_ASSERT(check == 0);
 
     RCP<const Map> compCoordMap;
@@ -377,8 +377,8 @@ void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdin
       regCoordImporter = regRowImporter;
     } else {
       using size_type = typename Teuchos::Array<GlobalOrdinal>::size_type;
-      Array<GlobalOrdinal> compCoordMapData(compRowMap->getNodeNumElements() / dofsPerNode);
-      ArrayView<const GlobalOrdinal> compRowMapData = compRowMap->getNodeElementList();
+      Array<GlobalOrdinal> compCoordMapData(compRowMap->getLocalNumElements() / dofsPerNode);
+      ArrayView<const GlobalOrdinal> compRowMapData = compRowMap->getLocalElementList();
       for(size_type nodeIdx = 0; nodeIdx < compCoordMapData.size(); ++nodeIdx) {
         compCoordMapData[nodeIdx] = compRowMapData[nodeIdx*dofsPerNode] / dofsPerNode;
       }
@@ -389,8 +389,8 @@ void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdin
                                        compRowMap->getComm());
 
       RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > quasiRegCoordMap;
-        Array<GlobalOrdinal> quasiRegCoordMapData(quasiRegRowMap->getNodeNumElements() / dofsPerNode);
-        ArrayView<const GlobalOrdinal> quasiRegRowMapData = quasiRegRowMap->getNodeElementList();
+        Array<GlobalOrdinal> quasiRegCoordMapData(quasiRegRowMap->getLocalNumElements() / dofsPerNode);
+        ArrayView<const GlobalOrdinal> quasiRegRowMapData = quasiRegRowMap->getLocalElementList();
         for(size_type nodeIdx = 0; nodeIdx < quasiRegCoordMapData.size(); ++nodeIdx) {
           quasiRegCoordMapData[nodeIdx] = quasiRegRowMapData[nodeIdx*dofsPerNode] / dofsPerNode;
         }
@@ -547,7 +547,7 @@ void RebalanceCoarseCompositeOperator(const int rebalanceNumPartitions,
     RCP<const Map> origMap   = compCoarseCoordinates->getMap();
     GO             indexBase = origMap->getIndexBase();
 
-    ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
+    ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getLocalElementList();
     LO                  numEntries = OEntries.size()/blkSize;
     ArrayRCP<GO> Entries(numEntries);
     for (LO i = 0; i < numEntries; i++)

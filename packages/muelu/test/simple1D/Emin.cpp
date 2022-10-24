@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
       Op->replaceLocalValues(0, indices, newValues);
     }
     if (myRank == nCpus-1) { // JG TODO: can we use rowMap->isNodeLocalElement(lastRow) instead for more genericity?
-      LO lastRow = Op->getNodeNumRows()-1;
+      LO lastRow = Op->getLocalNumRows()-1;
       newValues[0] = -1.0; newValues[1] = 1.0;
       Op->getLocalRowView(lastRow, indices, values);
       Op->replaceLocalValues(lastRow, indices, newValues);

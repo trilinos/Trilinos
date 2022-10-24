@@ -160,6 +160,19 @@ namespace Ifpack2 {
                                  typename ViewType::execution_space::scratch_memory_space,
                                  MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
 
+    /// 
+    /// tpetra little block index
+    ///
+    template<typename LayoutType> struct TpetraLittleBlock;
+    template<> struct TpetraLittleBlock<Kokkos::LayoutLeft> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i+j*blksize; }
+    };
+    template<> struct TpetraLittleBlock<Kokkos::LayoutRight> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i*blksize+j; }
+    };
+
     ///
     /// block tridiag scalar type
     ///
@@ -254,15 +267,6 @@ namespace Ifpack2 {
     static
     KOKKOS_INLINE_FUNCTION
     void
-    operator+=(volatile ArrayValueType<T,N> &a,
-               volatile const ArrayValueType<T,N> &b) {
-      for (int i=0;i<N;++i)
-        a.v[i] += b.v[i];
-    }
-    template<typename T, int N>
-    static
-    KOKKOS_INLINE_FUNCTION
-    void
     operator+=(ArrayValueType<T,N> &a,
                const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i)
@@ -283,12 +287,7 @@ namespace Ifpack2 {
       SumReducer(value_type &val) : value(&val) {}
 
       KOKKOS_INLINE_FUNCTION
-      void join(value_type &dst, value_type &src) const {
-        for (int i=0;i<N;++i)
-          dst.v[i] += src.v[i];
-      }
-      KOKKOS_INLINE_FUNCTION
-      void join(volatile value_type &dst, const volatile value_type &src) const {
+      void join(value_type &dst, value_type const &src) const {
         for (int i=0;i<N;++i)
           dst.v[i] += src.v[i];
       }
@@ -315,10 +314,10 @@ namespace Ifpack2 {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN \
-    CUDA_SAFE_CALL(cudaProfilerStart());
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
 
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END \
-    { CUDA_SAFE_CALL( cudaProfilerStop() ); }
+    { KOKKOS_IMPL_CUDA_SAFE_CALL( cudaProfilerStop() ); }
 #else
     /// later put vtune profiler region
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN
@@ -676,7 +675,7 @@ namespace Ifpack2 {
           exec_instances.clear();
           exec_instances.resize(num_streams);
           for (local_ordinal_type i=0;i<num_streams;++i) {
-            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
             ExecutionSpaceFactory<execution_space>::createInstance(stream[i], exec_instances[i]);
           }
         }
@@ -688,7 +687,7 @@ namespace Ifpack2 {
         {
           const local_ordinal_type num_streams = stream.size();
           for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
+            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
         }
         stream.clear();
         exec_instances.clear();
@@ -1061,7 +1060,7 @@ namespace Ifpack2 {
 
       std::vector<global_ordinal_type> gids;
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
-      for (size_t i=0;i<column_map->getNodeNumElements();++i) {
+      for (size_t i=0;i<column_map->getLocalNumElements();++i) {
         const global_ordinal_type gid = column_map->getGlobalElement(i);
         if (!domain_map->isNodeGlobalElement(gid)) {
           found_first = true;
@@ -1092,9 +1091,9 @@ namespace Ifpack2 {
           // make the importer only if needed.
           local_ordinal_type_1d_view dm2cm;
           if (need_owned_permutation) {
-            dm2cm = local_ordinal_type_1d_view(do_not_initialize_tag("dm2cm"), domain_map->getNodeNumElements());
+            dm2cm = local_ordinal_type_1d_view(do_not_initialize_tag("dm2cm"), domain_map->getLocalNumElements());
             const auto dm2cm_host = Kokkos::create_mirror_view(dm2cm);
-            for (size_t i=0;i<domain_map->getNodeNumElements();++i)
+            for (size_t i=0;i<domain_map->getLocalNumElements();++i)
               dm2cm_host(i) = domain_map->getLocalElement(column_map->getGlobalElement(i));
             Kokkos::deep_copy(dm2cm, dm2cm_host);
           }
@@ -1174,7 +1173,7 @@ namespace Ifpack2 {
       PartInterface<MatrixType> interf;
 
       const bool jacobi = partitions.size() == 0;
-      const local_ordinal_type A_n_lclrows = A->getNodeNumRows();
+      const local_ordinal_type A_n_lclrows = A->getLocalNumRows();
       const local_ordinal_type nparts = jacobi ? A_n_lclrows : partitions.size();
 
 #if defined(BLOCKTRIDICONTAINER_DEBUG)
@@ -1186,7 +1185,7 @@ namespace Ifpack2 {
 
       TEUCHOS_TEST_FOR_EXCEPT_MSG
         (nrows != A_n_lclrows, get_msg_prefix(comm) << "The #rows implied by the local partition is not "
-         << "the same as getNodeNumRows: " << nrows << " vs " << A_n_lclrows);
+         << "the same as getLocalNumRows: " << nrows << " vs " << A_n_lclrows);
 #endif
 
       // permutation vector
@@ -1567,7 +1566,7 @@ namespace Ifpack2 {
       IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::SymbolicPhase");
 
       using impl_type = ImplType<MatrixType>;
-      using node_memory_space = typename impl_type::node_memory_space;
+      // using node_memory_space = typename impl_type::node_memory_space;
       using host_execution_space = typename impl_type::host_execution_space;
 
       using local_ordinal_type = typename impl_type::local_ordinal_type;
@@ -1594,7 +1593,7 @@ namespace Ifpack2 {
       const local_ordinal_type nrows = partptr(partptr.extent(0) - 1);
 
       // find column to row map on host
-      Kokkos::View<local_ordinal_type*,host_execution_space> col2row("col2row", A->getNodeNumCols());
+      Kokkos::View<local_ordinal_type*,host_execution_space> col2row("col2row", A->getLocalNumCols());
       Kokkos::deep_copy(col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
       {
         const auto rowmap = g.getRowMap();
@@ -1658,7 +1657,7 @@ namespace Ifpack2 {
                 const local_ordinal_type lc2r = col2row[lc];
                 bool incr_R = false;
                 do { // breakable
-                  if (lc2r == Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                  if (lc2r == (local_ordinal_type) -1) {
                     incr_R = true;
                     break;
                   }
@@ -1719,7 +1718,7 @@ namespace Ifpack2 {
                   for (size_type j=j0;j<local_graph_rowptr(lr0+1);++j) {
                     const local_ordinal_type lc = local_graph_colidx(j);
                     const local_ordinal_type lc2r = col2row[lc];
-                    if (lc2r == Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) continue;
+                    if (lc2r == (local_ordinal_type) -1) continue;
                     const local_ordinal_type ri = lclrow2idx[lc2r];
                     const local_ordinal_type pi = rowidx2part(ri);
                     if (pi != pi0) continue;
@@ -1770,7 +1769,7 @@ namespace Ifpack2 {
                 for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
                   const local_ordinal_type lc = local_graph_colidx(j);
                   const local_ordinal_type lc2r = col2row[lc];
-                  if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                  if (lc2r != (local_ordinal_type) -1) {
                     const local_ordinal_type ri = lclrow2idx[lc2r];
                     const local_ordinal_type pi = rowidx2part(ri);
                     if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1) {
@@ -1817,7 +1816,7 @@ namespace Ifpack2 {
                     for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
                       const local_ordinal_type lc = local_graph_colidx(j);
                       const local_ordinal_type lc2r = col2row[lc];
-                      if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                      if (lc2r != (local_ordinal_type) -1) {
                         const local_ordinal_type ri = lclrow2idx[lc2r];
                         const local_ordinal_type pi = rowidx2part(ri);
                         if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1)
@@ -2040,6 +2039,7 @@ namespace Ifpack2 {
       void
       extract(local_ordinal_type partidx,
               local_ordinal_type npacks) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         const size_type kps = pack_td_ptr(partidx);
         local_ordinal_type kfs[vector_length] = {};
         local_ordinal_type ri0[vector_length] = {};
@@ -2061,7 +2061,8 @@ namespace Ifpack2 {
             ++j;
             for (local_ordinal_type ii=0;ii<blocksize;++ii) {
               for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = ii*blocksize + jj;
+                //const auto idx = ii*blocksize + jj;
+                const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
                 auto& v = internal_vector_values(pi, ii, jj, 0);
                 for (local_ordinal_type vi=0;vi<npacks;++vi)
                   v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
@@ -2086,6 +2087,7 @@ namespace Ifpack2 {
               const local_ordinal_type &partidxbeg,
               const local_ordinal_type &npacks,
               const local_ordinal_type &vbeg) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         local_ordinal_type kfs_vals[internal_vector_length] = {};
         local_ordinal_type ri0_vals[internal_vector_length] = {};
         local_ordinal_type nrows_vals[internal_vector_length] = {};
@@ -2114,8 +2116,8 @@ namespace Ifpack2 {
                 Kokkos::parallel_for
                   (Kokkos::TeamThreadRange(member,blocksize),
                    [&](const local_ordinal_type &ii) {
-                    for (local_ordinal_type jj=0;jj<blocksize;++jj)
-                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[ii*blocksize + jj]);
+                    for (local_ordinal_type jj=0;jj<blocksize;++jj) 
+                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
                   });
               }
             }
@@ -2133,10 +2135,12 @@ namespace Ifpack2 {
                 const local_ordinal_type &v,
                 const AAViewType &AA,
                 const WWViewType &WW) const {
+
         typedef ExtractAndFactorizeTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::algo_type default_algo_type;
 
         // constant
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
@@ -2696,10 +2700,12 @@ namespace Ifpack2 {
                         const local_ordinal_type &nrows,
                         const local_ordinal_type &v,
                         const WWViewType &WW) const {
+
         typedef SolveTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::single_vector_algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::single_vector_algo_type default_algo_type;
 
         // base pointers
         auto A = D_internal_vector_values.data();
@@ -2824,10 +2830,12 @@ namespace Ifpack2 {
                        const local_ordinal_type &nrows,
                        const local_ordinal_type &v,
                        const WWViewType &WW) const {
+
         typedef SolveTridiagsDefaultModeAndAlgo
-          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-        typedef default_mode_and_algo_type::mode_type default_mode_type;
-        typedef default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
+          <typename execution_space::memory_space> default_mode_and_algo_type;
+
+        typedef typename default_mode_and_algo_type::mode_type default_mode_type;
+        typedef typename default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
 
         // constant
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
@@ -3136,9 +3144,9 @@ namespace Ifpack2 {
                  const impl_scalar_type * const KOKKOS_RESTRICT AA,
                  const impl_scalar_type * const KOKKOS_RESTRICT xx,
                  /* */ impl_scalar_type * KOKKOS_RESTRICT yy) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         for (local_ordinal_type k0=0;k0<blocksize;++k0) {
           impl_scalar_type val = 0;
-          const local_ordinal_type offset = k0*blocksize;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #   pragma ivdep
 #endif
@@ -3146,7 +3154,7 @@ namespace Ifpack2 {
 #   pragma unroll
 #endif
           for (local_ordinal_type k1=0;k1<blocksize;++k1)
-            val += AA[offset+k1]*xx[k1];
+            val += AA[tlb::getFlatIndex(k0,k1,blocksize)]*xx[k1];
           yy[k0] -= val;
         }
       }

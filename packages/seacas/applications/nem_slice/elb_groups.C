@@ -20,8 +20,7 @@
 #include <cstdlib> // for free, malloc
 #include <cstring> // for strchr, strlen
 #include <fmt/format.h>
-#include <sys/types.h> // for ssize_t
-#include <vector>      // for vector
+#include <vector> // for vector
 
 /*****************************************************************************/
 namespace {
@@ -44,8 +43,8 @@ extern int ilog2i(size_t n);
  *
  * the group designator prob->groups follows these rules:
  *  - Blocks are grouped using the slash "/" character.
- *  - Ids are separated with white space, comma, or by the hyphen "-" character. *  - Any blocks not
- *included in the list, are added to a separate group.
+ *  - Ids are separated with white space, comma, or by the hyphen "-" character.
+ *  - Any blocks not included in the list, are added to a separate group.
  *  - Duplicates in the list are permitted, but the last group to which a
  *    block is placed is where the block will go.
  *  - Block IDs not in the exodus file are quietly ignored.
@@ -84,7 +83,7 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
       /* fill in the group identifier for each block */
     }
   }
-  char * id = prob->groups;
+  char  *id = prob->groups;
   size_t i  = 0;
   do {
     if (*id == '/') {
@@ -268,21 +267,15 @@ namespace {
     /* reads the descriptor up to the next "/" character. interprets the
        descriptor. The ranges specified in the descriptor are then stored
        in the grp array. */
+    int i;
+    int last = 0; /* last integer read */
+    int stop;     /* stop value in a string range */
+    int qn;       /* number of bytes read */
+    int c;        /* integer index when spanning a range */
 
     const char *p = d;
-    ssize_t     i;        /* integer read from string */
-    int         last = 0; /* last integer read */
-    int         stop;     /* stop value in a string range */
-    int         q;        /* number of ints read */
-    int         qn;       /* number of bytes read */
-    int         c;        /* integer index when spanning a range */
-
     while (*p != '/' && *p != 0) {
-#ifdef _MSC_VER
-      q = sscanf(p, "%lld%n", &i, &qn);
-#else
-      q = sscanf(p, "%ld%n", &i, &qn);
-#endif
+      int q = sscanf(p, "%d%n", &i, &qn);
       if (q == 0 || i < 0) {
         if (p[qn - 1] == '/') {
           return;

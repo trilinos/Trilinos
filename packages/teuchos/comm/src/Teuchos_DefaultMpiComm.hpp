@@ -1069,6 +1069,8 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::reduceAll(...)" );
   int err = MPI_SUCCESS;
 
+  if (bytes == 0) return;
+
   Details::MpiReductionOp<Ordinal> opWrap (reductOp);
   MPI_Op op = Details::setMpiReductionOp (opWrap);
 

@@ -270,7 +270,10 @@ namespace panzer
        *  \brief The fields to which we'll contribute, or in which we'll store,
        *         the result of computing this integral.
        */
-      PHX::View<PHX::MDField<ScalarT, Cell, BASIS>*> fields_;
+      std::vector<PHX::MDField<ScalarT,Cell,BASIS>> fields_host_;
+      using InnerView = PHX::UnmanagedView<ScalarT**>;
+      using OuterView = PHX::View<InnerView*>;
+      OuterView fields_;
 
       /**
        *  \brief A field representing the scalar function we're integrating
@@ -295,7 +298,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      PHX::View<PHX::View<const ScalarT**>*> kokkosFieldMults_;
+      PHX::View<PHX::UnmanagedView<const ScalarT**>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of dimensions associated with the gradient.

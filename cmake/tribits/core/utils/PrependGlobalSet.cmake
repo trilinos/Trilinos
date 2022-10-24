@@ -40,7 +40,7 @@
 include(GlobalSet)
 include(AssertDefined)
 
-#
+
 # @MACRO: prepend_global_set()
 #
 # Utility macro that prepends arguments to a global variable (reduces

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ public:
 
   std::string File_Name(const char * /*fname*/);
   virtual std::string
-              Open_File(const char * /*fname*/ = nullptr); // Default opens current file name.
+              Open_File(const char             */*fname*/ = nullptr); // Default opens current file name.
   std::string Close_File();
   std::string File_Name() const { return file_name; }
   int         Open() const { return (file_id >= 0); }
@@ -106,10 +106,10 @@ public:
   // Number maps:
   std::string Load_Node_Map();
   std::string Free_Node_Map();
-  const INT * Get_Node_Map() { return node_map; }
+  const INT  *Get_Node_Map() { return node_map; }
   std::string Load_Element_Map();
   std::string Free_Element_Map();
-  const INT * Get_Element_Map() { return elmt_map; }
+  const INT  *Get_Element_Map() { return elmt_map; }
   inline INT  Node_Map(size_t node_num) const;      // numbers are global, 1-offset
   inline INT  Element_Map(size_t elmt_num) const;   // numbers are global, 1-offset
   inline INT  Element_Order(size_t elmt_num) const; // numbers are global, 1-offset
@@ -184,13 +184,13 @@ public:
   std::pair<int, size_t> Global_to_Block_Local(size_t global_elmt_num) const;
 
 protected:
-  std::string file_name;
+  std::string file_name{};
   int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
   // GENESIS info:
 
-  std::string              title;
-  std::vector<std::string> coord_names;
+  std::string              title{};
+  std::vector<std::string> coord_names{};
   size_t                   num_nodes{0};
   int                      dimension{0};
   size_t                   num_elmts{0};
@@ -205,9 +205,9 @@ protected:
   float                    api_version{0.0};
   int                      io_word_size{0}; // Note: The "compute word size" is always 8.
 
-  Exo_Block<INT> * eblocks{nullptr};     // Array.
-  Node_Set<INT> *  nsets{nullptr};       // Array.
-  Side_Set<INT> *  ssets{nullptr};       // Array.
+  Exo_Block<INT>  *eblocks{nullptr};     // Array.
+  Node_Set<INT>   *nsets{nullptr};       // Array.
+  Side_Set<INT>   *ssets{nullptr};       // Array.
   Edge_Block<INT> *edge_blocks{nullptr}; // Array.
   Face_Block<INT> *face_blocks{nullptr}; // Array.
 
@@ -220,14 +220,14 @@ protected:
 
   // RESULTS info:
 
-  std::vector<std::string> global_vars;
-  std::vector<std::string> nodal_vars;
-  std::vector<std::string> elmt_vars;
-  std::vector<std::string> elmt_atts;
-  std::vector<std::string> ns_vars;
-  std::vector<std::string> ss_vars;
-  std::vector<std::string> eb_vars;
-  std::vector<std::string> fb_vars;
+  std::vector<std::string> global_vars{};
+  std::vector<std::string> nodal_vars{};
+  std::vector<std::string> elmt_vars{};
+  std::vector<std::string> elmt_atts{};
+  std::vector<std::string> ns_vars{};
+  std::vector<std::string> ss_vars{};
+  std::vector<std::string> eb_vars{};
+  std::vector<std::string> fb_vars{};
 
   int     num_times{0};
   double *times{nullptr};

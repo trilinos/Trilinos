@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -161,6 +161,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
     fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
+	       "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#conjoin\n"
                "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
@@ -278,7 +279,7 @@ void Excn::SystemInterface::show_version()
 {
   fmt::print(
       "{}\n"
-      "\t(A code for sequentially appending Exodus II databases. Supersedes conex and conex2.)\n"
+      "\t(A code for sequentially appending Exodus databases. Supersedes conex and conex2.)\n"
       "\t(Version: {}) Modified: {}\n",
       qainfo[0], qainfo[1], qainfo[2]);
 }

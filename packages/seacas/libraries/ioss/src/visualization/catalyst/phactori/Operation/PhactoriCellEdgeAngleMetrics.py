@@ -86,10 +86,10 @@ class PhactoriCellEdgeAngleMetrics(PhactoriOperationSpecifics):
       self.OffsetIndex = 0
 
     keyval10 = "output angle cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.OutputAngleCellVariableName = inJson[keyval10]
     keyval10 = "output height cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.OutputHeightCellVariableName = inJson[keyval10]
 
     keyval11 = "do operation in createparaview method"

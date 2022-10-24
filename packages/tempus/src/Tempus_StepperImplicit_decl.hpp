@@ -78,7 +78,6 @@ class ImplicitODEParameters
  *  with multiple variables, we can write
  *  \f[
  *    \left[
- *
  *    \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
  *    \frac{\partial}{\partial \dot{x}_n}
  *    \left(
@@ -90,7 +89,6 @@ class ImplicitODEParameters
  *    \left(
  *      \mathcal{F}(\dot{x}_n,x_n,t_n)
  *    \right)
- *
  *    \right] \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
  *  \f]
  *  Defining the iteration matrix, \f$W\f$, we have
@@ -264,16 +262,14 @@ public:
     /// Return beta  = d(x)/dx.
     virtual Scalar getBeta (const Scalar dt) const = 0;
 
-    /// Solve problem using x in-place.  (Needs to be deprecated!)
-    const Thyra::SolveStatus<Scalar> solveImplicitODE(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
-
     /// Solve implicit ODE, f(x, xDot, t, p) = 0.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
       const Scalar time,
-      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p );
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+      const int index = 0     /* index and y are for IMEX_RK_Partition */ );
 
     /// Evaluate implicit ODE residual, f(x, xDot, t, p).
     void evaluateImplicitODE(

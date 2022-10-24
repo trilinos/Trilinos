@@ -16,6 +16,13 @@
 
 namespace Tempus {
 
+enum class SensitivityStepMode {
+  Forward,
+  Sensitivity,
+  Combined,
+  Adjoint
+};
+
 /** \brief A stepper implementing staggered forward sensitivity analysis.
  */
 /**
@@ -75,13 +82,20 @@ public:
    */
   StepperStaggeredForwardSensitivity(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model,
     const Teuchos::RCP<Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<Teuchos::ParameterList>& sens_pList = Teuchos::null);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+      { setModel(appModel, appModel, appModel); }
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& sens_solve_model);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
 
     virtual void setSolver(
@@ -166,6 +180,9 @@ public:
   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
   { return stepperPL_; }
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const { return stepMode_; }
+
 private:
 
   void setParams(const Teuchos::RCP<Teuchos::ParameterList> & pl,
@@ -183,6 +200,7 @@ protected:
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
+  SensitivityStepMode stepMode_;
 
 };
 

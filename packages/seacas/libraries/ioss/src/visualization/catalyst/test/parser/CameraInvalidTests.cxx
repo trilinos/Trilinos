@@ -7,10 +7,10 @@
 #include "CatalystTestFixture.h"
 #include "catch.hpp"
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidMultipleLookAt", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidMultipleLookAt", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at absolute point = 0 0 0
@@ -19,13 +19,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidLookAtInvalidElement", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidLookAtInvalidElement", "[cameraInvalid]")
+{
 
-    std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at element = -1
@@ -33,13 +33,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidLookAtInvalidNode", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidLookAtInvalidNode", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at node = -1
@@ -47,13 +47,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidLookDirectionZeros", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidLookDirectionZeros", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look direction = 0 0 0
@@ -61,13 +61,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidMultipleLookDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidMultipleLookDistance", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at relative distance = 1
@@ -76,13 +76,14 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidLookAtInvalidRelativeDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidLookAtInvalidRelativeDistance",
+                 "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at relative distance = -1
@@ -90,13 +91,14 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidLookAtInvalidAbsoluteDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidLookAtInvalidAbsoluteDistance",
+                 "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          look at absolute distance = 0
@@ -104,13 +106,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidMultipleCameraPosition", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidMultipleCameraPosition", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          camera at absolute point = 0 0 0
@@ -119,13 +121,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidAtInvalidNode", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidAtInvalidNode", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          camera at node = -1
@@ -133,13 +135,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidUpVectorZeros", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidUpVectorZeros", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          up vector = 0 0 0
@@ -147,13 +149,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidUpVectorColinear", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidUpVectorColinear", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          up vector = 1 0 0
@@ -163,13 +165,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidInvalidFOV", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidInvalidFOV", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          camera fov = 0
@@ -177,13 +179,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidInvalidFOV2", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidInvalidFOV2", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          camera fov = 180.1
@@ -191,13 +193,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "CameraInvalidInvalidImageName", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "CameraInvalidInvalidImageName", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin camera MyCamera
          image name addon = "$/%foo"
@@ -205,13 +207,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidMultipleLookAt", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidMultipleLookAt", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at absolute point = 0 0 0
@@ -220,13 +222,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidLookAtInvalidElement", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidLookAtInvalidElement", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at element = -1
@@ -234,13 +236,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidLookAtInvalidNode", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidLookAtInvalidNode", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at node = -1
@@ -248,13 +250,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidMultipleLookDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidMultipleLookDistance", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at relative distance = 1
@@ -263,13 +265,14 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidLookAtInvalidRelativeDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidLookAtInvalidRelativeDistance",
+                 "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at relative distance = -1
@@ -277,13 +280,14 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidLookAtInvalidAbsoluteDistance", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidLookAtInvalidAbsoluteDistance",
+                 "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          look at absolute distance = 0
@@ -291,13 +295,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidUpVectorZeros", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidUpVectorZeros", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          up vector = 0 0 0
@@ -305,13 +309,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidInvalidFOV", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidInvalidFOV", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          camera fov = 0
@@ -319,13 +323,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidInvalidFOV2", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidInvalidFOV2", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          camera fov = 180.1
@@ -333,13 +337,13 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }
 
-TEST_CASE_METHOD(CatalystTestFixture,
-    "MultiCamera8InvalidInvalidImageName", "[cameraInvalid]") {
+TEST_CASE_METHOD(CatalystTestFixture, "MultiCamera8InvalidInvalidImageName", "[cameraInvalid]")
+{
 
-     std::string ps = R"(
+  std::string ps = R"(
      begin catalyst
        begin multicamera8 MyCamera
          image name addon = "$/%foo"
@@ -347,5 +351,5 @@ TEST_CASE_METHOD(CatalystTestFixture,
      end
      )";
 
-    checkPhactoriStringInvalidParse(ps);
+  checkPhactoriStringInvalidParse(ps);
 }

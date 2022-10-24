@@ -7,12 +7,11 @@
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 
-class BoundingBoxSearch : public stk::unit_test_util::MeshFixture
+class BoundingBoxSearch : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   void make_4_unit_quad_shell_connected_mesh()
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -46,12 +45,12 @@ protected:
       0,1,0, 1,1,0, 2,1,0, 3,1,0, 4,1,0
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_4_unit_quad_shell_single_gap_mesh(double gapSize)
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -85,12 +84,12 @@ protected:
       0,1,0, 1,1,0, 2,1,0, 2+gapSize,1,0, 3+gapSize,1,0, 4+gapSize,1,0
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_4_unit_quad_shell_all_gap_mesh(double gapSize)
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -124,12 +123,12 @@ protected:
       0,1,0, 1,1,0, 1+gapSize,1,0, 2+gapSize,1,0, 2+2*gapSize,1,0, 3+2*gapSize,1,0, 3+3*gapSize,1,0, 4+3*gapSize,1,0
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_6_unit_tri_shell_connected_mesh()
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -171,12 +170,12 @@ protected:
       0,1,0, 1,1,0, 2,1,0, 3,1,0
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_6_unit_tri_shell_single_gap_mesh(double gapSize)
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -219,12 +218,12 @@ protected:
       0,1,0, 1,1,0, 1+gapSize,1,0, 2+gapSize,1,0, 3+gapSize,1,0
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_4_unit_hex_single_gap_mesh(double gapSize)
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -262,12 +261,12 @@ protected:
       4+gapSize,0,0, 4+gapSize,1,0, 4+gapSize,1,1, 4+gapSize,0,1
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_two_particle_mesh()
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -281,12 +280,12 @@ protected:
     }
     std::vector<double> coordinates = { 0,0,0, 2,0,0 };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_particle_unit_quad_shell_mesh()
   {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     const int numProcs = get_parallel_size();
 
     std::string meshDesc;
@@ -300,7 +299,8 @@ protected:
     }
     std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 2,0,0 };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   bool check_edges(const std::vector<stk::balance::GraphEdge> & graphEdges,
@@ -350,8 +350,9 @@ TEST_F(BoundingBoxSearch, fourUnitQuadShell_connected)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.7);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_4_unit_quad_shell_connected_mesh();
@@ -375,8 +376,9 @@ TEST_F(BoundingBoxSearch, fourUnitQuadShell_tooLargeTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(1.1);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_4_unit_quad_shell_connected_mesh();
@@ -400,8 +402,9 @@ TEST_F(BoundingBoxSearch, fourUnitQuadShell_smallGap)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.7);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 0.1;
@@ -426,8 +429,9 @@ TEST_F(BoundingBoxSearch, fourUnitQuadShell_largeGap)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.6);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 1.0;
@@ -452,8 +456,9 @@ TEST_F(BoundingBoxSearch, fourUnitQuadShell_allGaps)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.7);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 0.1;
@@ -478,8 +483,9 @@ TEST_F(BoundingBoxSearch, sixUnitTriShell_connected)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.7);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_6_unit_tri_shell_connected_mesh();
@@ -503,8 +509,9 @@ TEST_F(BoundingBoxSearch, sixUnitTriShell_smallGap)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.09);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 0.1;
@@ -529,8 +536,9 @@ TEST_F(BoundingBoxSearch, sixUnitTriShell_largeGap)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.1);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 1.0;
@@ -567,8 +575,9 @@ TEST_F(BoundingBoxSearch, fourUnitHex_smallGap)
 //
   if (stk::parallel_machine_size(get_comm()) > 4) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.7);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   const double gapSize = 0.1;
@@ -593,8 +602,9 @@ TEST_F(BoundingBoxSearch, particleParticle_smallTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForParticleSearch(2.1);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_two_particle_mesh();
@@ -618,8 +628,9 @@ TEST_F(BoundingBoxSearch, particleParticle_largeTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForParticleSearch(4.1);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_two_particle_mesh();
@@ -643,9 +654,10 @@ TEST_F(BoundingBoxSearch, particleQuadShell_smallTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.6);
   balanceSettings.setToleranceForParticleSearch(1.2);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_particle_unit_quad_shell_mesh();
@@ -669,9 +681,10 @@ TEST_F(BoundingBoxSearch, particleQuadShell_smallParticleTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(1.1);
   balanceSettings.setToleranceForParticleSearch(1.2);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_particle_unit_quad_shell_mesh();
@@ -695,9 +708,10 @@ TEST_F(BoundingBoxSearch, particleQuadShell_smallFaceTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(0.6);
   balanceSettings.setToleranceForParticleSearch(2.2);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_particle_unit_quad_shell_mesh();
@@ -721,9 +735,10 @@ TEST_F(BoundingBoxSearch, particleQuadShell_largeTolerance)
 //
   if (stk::parallel_machine_size(get_comm()) > 2) return;
 
-  stk::unit_test_util::StkBalanceUnitTestSettings balanceSettings;
+  stk::unit_test_util::simple_fields::StkBalanceUnitTestSettings balanceSettings;
   balanceSettings.setToleranceForFaceSearch(1.1);
   balanceSettings.setToleranceForParticleSearch(2.2);
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
 
   make_particle_unit_quad_shell_mesh();

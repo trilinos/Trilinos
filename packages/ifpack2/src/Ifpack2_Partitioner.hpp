@@ -155,7 +155,7 @@ void example (Tpetra::CrsMatrix<double, int>& A) {
 
   // For nonoverlapping partitions only, operator()(i)
   // returns the partition index for each local row.
-  const size_t numLocalRows = A.getNodeNumRows ();
+  const size_t numLocalRows = A.getLocalNumRows ();
   for (size_t i = 0; i < numLocalRows; ++i) {
     cout << "Partition[" << i <<"] = " << partitioner(i) << endl;
   }

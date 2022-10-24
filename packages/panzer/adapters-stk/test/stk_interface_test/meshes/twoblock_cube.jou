@@ -1,0 +1,42 @@
+reset
+
+brick x 1 y 1 z 1
+brick x 1 y 1 z 1
+move volume 2 x 1 include_merged
+
+merge all
+
+volume 1 size 0.5
+volume 2 size 0.5
+set default element tet
+mesh volume 1
+set default element hex
+mesh volume 2
+
+block 1 add volume 1
+block 1 name "eblock_1"
+block 2 add volume 2
+block 2 name "eblock_2"
+
+
+sideset 1 add surface 4
+sideset 1 name "left"
+
+sideset 3 add surface 6
+sideset 3 name "right"
+
+sideset 4 add surface 5
+sideset 4 name "top"
+
+sideset 5 add surface 3
+sideset 5 name "bottom"
+
+sideset 6 add surface 2
+sideset 6 name "front"
+
+sideset 7 add surface 1
+sideset 7 name "back"
+
+set large exodus file off
+export mesh "twoblock_cube.g" dimension 3 overwrite 
+

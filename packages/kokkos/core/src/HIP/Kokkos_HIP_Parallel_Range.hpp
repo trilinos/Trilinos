@@ -76,16 +76,14 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   ParallelFor& operator=(const ParallelFor&) = delete;
 
   template <class TagType>
-  inline __device__
-      typename std::enable_if<std::is_same<TagType, void>::value>::type
-      exec_range(const Member i) const {
+  inline __device__ std::enable_if_t<std::is_void<TagType>::value> exec_range(
+      const Member i) const {
     m_functor(i);
   }
 
   template <class TagType>
-  inline __device__
-      typename std::enable_if<!std::is_same<TagType, void>::value>::type
-      exec_range(const Member i) const {
+  inline __device__ std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+      const Member i) const {
     m_functor(TagType(), i);
   }
 
@@ -108,16 +106,21 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   inline void execute() const {
     const typename Policy::index_type nwork = m_policy.end() - m_policy.begin();
 
+    using DriverType =
+        ParallelFor<FunctorType, Policy, Kokkos::Experimental::HIP>;
     const int block_size =
-        LaunchBounds::maxTperB
-            ? LaunchBounds::maxTperB
-            : ::Kokkos::Experimental::Impl::HIPTraits::
-                  MaxThreadsPerBlock;  // FIXME_HIP Choose block_size better
+        Kokkos::Experimental::Impl::hip_get_preferred_blocksize<DriverType,
+                                                                LaunchBounds>();
     const dim3 block(1, block_size, 1);
     const dim3 grid(
         typename Policy::index_type((nwork + block.y - 1) / block.y), 1, 1);
 
-    Kokkos::Experimental::Impl::HIPParallelLaunch<ParallelFor, LaunchBounds>(
+    if (block_size == 0) {
+      Kokkos::Impl::throw_runtime_exception(
+          std::string("Kokkos::Impl::ParallelFor< HIP > could not find a "
+                      "valid execution configuration."));
+    }
+    Kokkos::Experimental::Impl::hip_parallel_launch<DriverType, LaunchBounds>(
         *this, grid, block, 0, m_policy.space().impl_internal_space_instance(),
         false);
   }
@@ -149,15 +152,14 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
       typename Kokkos::Impl::if_c<std::is_same<InvalidType, ReducerType>::value,
                                   WorkTag, void>::type;
 
-  using ValueTraits =
-      Kokkos::Impl::FunctorValueTraits<ReducerTypeFwd, WorkTagFwd>;
-  using ValueInit = Kokkos::Impl::FunctorValueInit<ReducerTypeFwd, WorkTagFwd>;
-  using ValueJoin = Kokkos::Impl::FunctorValueJoin<ReducerTypeFwd, WorkTagFwd>;
+  using Analysis =
+      Kokkos::Impl::FunctorAnalysis<FunctorPatternInterface::REDUCE, Policy,
+                                    ReducerTypeFwd>;
 
  public:
-  using pointer_type   = typename ValueTraits::pointer_type;
-  using value_type     = typename ValueTraits::value_type;
-  using reference_type = typename ValueTraits::reference_type;
+  using pointer_type   = typename Analysis::pointer_type;
+  using value_type     = typename Analysis::value_type;
+  using reference_type = typename Analysis::reference_type;
   using functor_type   = FunctorType;
   using size_type      = Kokkos::Experimental::HIP::size_type;
   using index_type     = typename Policy::index_type;
@@ -173,15 +175,12 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
   const bool m_result_ptr_host_accessible;
   size_type* m_scratch_space = nullptr;
   size_type* m_scratch_flags = nullptr;
+  // Only let one ParallelReduce/Scan modify the shared memory. The
+  // constructor acquires the mutex which is released in the destructor.
+  std::lock_guard<std::mutex> m_shared_memory_lock;
 
-#if HIP_VERSION < 401
   static bool constexpr UseShflReduction =
-      ((sizeof(value_type) > 2 * sizeof(double)) &&
-       static_cast<bool>(ValueTraits::StaticValueSize));
-#else
-  static bool constexpr UseShflReduction =
-      static_cast<bool>(ValueTraits::StaticValueSize);
-#endif
+      static_cast<bool>(Analysis::StaticValueSize);
 
  private:
   struct ShflReductionTag {};
@@ -189,39 +188,37 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
 
   // Make the exec_range calls call to Reduce::DeviceIterateTile
   template <class TagType>
-  __device__ inline
-      typename std::enable_if<std::is_same<TagType, void>::value>::type
-      exec_range(const Member& i, reference_type update) const {
+  __device__ inline std::enable_if_t<std::is_void<TagType>::value> exec_range(
+      const Member& i, reference_type update) const {
     m_functor(i, update);
   }
 
   template <class TagType>
-  __device__ inline
-      typename std::enable_if<!std::is_same<TagType, void>::value>::type
-      exec_range(const Member& i, reference_type update) const {
+  __device__ inline std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+      const Member& i, reference_type update) const {
     m_functor(TagType(), i, update);
   }
 
  public:
   __device__ inline void operator()() const {
-    using ReductionTag =
-        typename std::conditional<UseShflReduction, ShflReductionTag,
-                                  SHMEMReductionTag>::type;
+    using ReductionTag = std::conditional_t<UseShflReduction, ShflReductionTag,
+                                            SHMEMReductionTag>;
     run(ReductionTag{});
   }
 
   __device__ inline void run(SHMEMReductionTag) const {
-    const integral_nonzero_constant<size_type, ValueTraits::StaticValueSize /
+    const integral_nonzero_constant<size_type, Analysis::StaticValueSize /
                                                    sizeof(size_type)>
-        word_count(ValueTraits::value_size(
+        word_count(Analysis::value_size(
                        ReducerConditional::select(m_functor, m_reducer)) /
                    sizeof(size_type));
 
+    typename Analysis::Reducer final_reducer(
+        &ReducerConditional::select(m_functor, m_reducer));
     {
-      reference_type value = ValueInit::init(
-          ReducerConditional::select(m_functor, m_reducer),
+      reference_type value = final_reducer.init(reinterpret_cast<pointer_type>(
           ::Kokkos::Experimental::kokkos_impl_hip_shared_memory<size_type>() +
-              threadIdx.y * word_count.value);
+          threadIdx.y * word_count.value));
 
       // Number of blocks is bounded so that the reduction can be limited to two
       // passes. Each thread block is given an approximately equal amount of
@@ -241,10 +238,8 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
     // Shortcut for length zero reduction
     bool do_final_reduction = m_policy.begin() == m_policy.end();
     if (!do_final_reduction)
-      do_final_reduction = hip_single_inter_block_reduce_scan<
-          false, ReducerTypeFwd, WorkTagFwd>(
-          ReducerConditional::select(m_functor, m_reducer), blockIdx.x,
-          gridDim.x,
+      do_final_reduction = hip_single_inter_block_reduce_scan<false>(
+          final_reducer, blockIdx.x, gridDim.x,
           ::Kokkos::Experimental::kokkos_impl_hip_shared_memory<size_type>(),
           m_scratch_space, m_scratch_flags);
     if (do_final_reduction) {
@@ -259,8 +254,7 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
                                     : m_scratch_space;
 
       if (threadIdx.y == 0) {
-        Kokkos::Impl::FunctorFinal<ReducerTypeFwd, WorkTagFwd>::final(
-            ReducerConditional::select(m_functor, m_reducer), shared);
+        final_reducer.final(reinterpret_cast<value_type*>(shared));
       }
 
       if (::Kokkos::Experimental::Impl::HIPTraits::WarpSize <
@@ -275,8 +269,11 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
   }
 
   __device__ inline void run(ShflReductionTag) const {
+    typename Analysis::Reducer final_reducer(
+        &ReducerConditional::select(m_functor, m_reducer));
+
     value_type value;
-    ValueInit::init(ReducerConditional::select(m_functor, m_reducer), &value);
+    final_reducer.init(&value);
     // Number of blocks is bounded so that the reduction can be limited to two
     // passes. Each thread block is given an approximately equal amount of work
     // to perform. Accumulate the values for this block. The accumulation
@@ -300,25 +297,18 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
         (max_active_thread == 0) ? blockDim.y : max_active_thread;
 
     value_type init;
-    ValueInit::init(ReducerConditional::select(m_functor, m_reducer), &init);
+    final_reducer.init(&init);
     if (m_policy.begin() == m_policy.end()) {
-      Kokkos::Impl::FunctorFinal<ReducerTypeFwd, WorkTagFwd>::final(
-          ReducerConditional::select(m_functor, m_reducer),
-          reinterpret_cast<void*>(&value));
+      final_reducer.final(&value);
       pointer_type const final_result =
           m_result_ptr_device_accessible ? m_result_ptr : result;
       *final_result = value;
-    } else if (Impl::hip_inter_block_shuffle_reduction<ReducerTypeFwd,
-                                                       ValueJoin, WorkTagFwd>(
-                   value, init,
-                   ValueJoin(ReducerConditional::select(m_functor, m_reducer)),
-                   m_scratch_space, result, m_scratch_flags,
-                   max_active_thread)) {
+    } else if (Impl::hip_inter_block_shuffle_reduction<>(
+                   value, init, final_reducer, m_scratch_space, result,
+                   m_scratch_flags, max_active_thread)) {
       unsigned int const id = threadIdx.y * blockDim.x + threadIdx.x;
       if (id == 0) {
-        Kokkos::Impl::FunctorFinal<ReducerTypeFwd, WorkTagFwd>::final(
-            ReducerConditional::select(m_functor, m_reducer),
-            reinterpret_cast<void*>(&value));
+        final_reducer.final(&value);
         pointer_type const final_result =
             m_result_ptr_device_accessible ? m_result_ptr : result;
         *final_result = value;
@@ -328,50 +318,43 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
 
   // Determine block size constrained by shared memory:
   inline unsigned local_block_size(const FunctorType& f) {
-    unsigned int n =
-        ::Kokkos::Experimental::Impl::HIPTraits::MaxThreadsPerBlock;
-    int shmem_size =
-        hip_single_inter_block_reduce_scan_shmem<false, FunctorType, WorkTag>(
-            f, n);
-    using closure_type = Impl::ParallelReduce<FunctorType, Policy, ReducerType>;
-    hipFuncAttributes attr = ::Kokkos::Experimental::Impl::HIPParallelLaunch<
-        closure_type, LaunchBounds>::get_hip_func_attributes();
-    while (
-        (n &&
-         (m_policy.space().impl_internal_space_instance()->m_maxShmemPerBlock <
-          shmem_size)) ||
-        (n >
-         static_cast<unsigned int>(
-             ::Kokkos::Experimental::Impl::hip_get_max_block_size<FunctorType,
-                                                                  LaunchBounds>(
-                 m_policy.space().impl_internal_space_instance(), attr, f, 1,
-                 shmem_size, 0)))) {
-      n >>= 1;
-      shmem_size =
-          hip_single_inter_block_reduce_scan_shmem<false, FunctorType, WorkTag>(
-              f, n);
-    }
-    return n;
+    const auto& instance = m_policy.space().impl_internal_space_instance();
+    auto shmem_functor   = [&f](unsigned n) {
+      return hip_single_inter_block_reduce_scan_shmem<false, FunctorType,
+                                                      WorkTag>(f, n);
+    };
+    using DriverType = ParallelReduce<FunctorType, Policy, ReducerType,
+                                      Kokkos::Experimental::HIP>;
+    return Kokkos::Experimental::Impl::hip_get_preferred_blocksize<
+        DriverType, LaunchBounds>(instance, shmem_functor);
   }
 
   inline void execute() {
+    typename Analysis::Reducer final_reducer(
+        &ReducerConditional::select(m_functor, m_reducer));
+
     const index_type nwork     = m_policy.end() - m_policy.begin();
-    const bool need_device_set = ReduceFunctorHasInit<FunctorType>::value ||
-                                 ReduceFunctorHasFinal<FunctorType>::value ||
+    const bool need_device_set = Analysis::has_init_member_function ||
+                                 Analysis::has_final_member_function ||
                                  !m_result_ptr_host_accessible ||
                                  !std::is_same<ReducerType, InvalidType>::value;
     if ((nwork > 0) || need_device_set) {
       const int block_size = local_block_size(m_functor);
-      KOKKOS_ASSERT(block_size > 0);
+      if (block_size == 0) {
+        Kokkos::Impl::throw_runtime_exception(
+            std::string("Kokkos::Impl::ParallelReduce< HIP > could not find a "
+                        "valid execution configuration."));
+      }
 
       m_scratch_space =
           ::Kokkos::Experimental::Impl::hip_internal_scratch_space(
-              ValueTraits::value_size(
+              m_policy.space(),
+              Analysis::value_size(
                   ReducerConditional::select(m_functor, m_reducer)) *
-              block_size /* block_size == max block_count */);
+                  block_size /* block_size == max block_count */);
       m_scratch_flags =
           ::Kokkos::Experimental::Impl::hip_internal_scratch_flags(
-              sizeof(size_type));
+              m_policy.space(), sizeof(size_type));
 
       // REQUIRED ( 1 , N , 1 )
       dim3 block(1, block_size, 1);
@@ -391,35 +374,32 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
                                                          WorkTag>(m_functor,
                                                                   block.y);
 
-      Kokkos::Experimental::Impl::HIPParallelLaunch<ParallelReduce,
-                                                    LaunchBounds>(
+      using DriverType = ParallelReduce<FunctorType, Policy, ReducerType,
+                                        Kokkos::Experimental::HIP>;
+      Kokkos::Experimental::Impl::hip_parallel_launch<DriverType, LaunchBounds>(
           *this, grid, block, shmem,
           m_policy.space().impl_internal_space_instance(),
           false);  // copy to device and execute
 
-      if (!m_result_ptr_device_accessible) {
-        m_policy.space().impl_internal_space_instance()->fence();
-
-        if (m_result_ptr) {
-          const int size = ValueTraits::value_size(
-              ReducerConditional::select(m_functor, m_reducer));
-          DeepCopy<HostSpace, ::Kokkos::Experimental::HIPSpace>(
-              m_result_ptr, m_scratch_space, size);
-        }
+      if (!m_result_ptr_device_accessible && m_result_ptr) {
+        const int size = Analysis::value_size(
+            ReducerConditional::select(m_functor, m_reducer));
+        DeepCopy<HostSpace, ::Kokkos::Experimental::HIPSpace,
+                 ::Kokkos::Experimental::HIP>(m_policy.space(), m_result_ptr,
+                                              m_scratch_space, size);
       }
     } else {
       if (m_result_ptr) {
-        ValueInit::init(ReducerConditional::select(m_functor, m_reducer),
-                        m_result_ptr);
+        final_reducer.init(m_result_ptr);
       }
     }
   }
 
   template <class ViewType>
-  ParallelReduce(const FunctorType& arg_functor, const Policy& arg_policy,
-                 const ViewType& arg_result,
-                 typename std::enable_if<Kokkos::is_view<ViewType>::value,
-                                         void*>::type = nullptr)
+  ParallelReduce(
+      const FunctorType& arg_functor, const Policy& arg_policy,
+      const ViewType& arg_result,
+      std::enable_if_t<Kokkos::is_view<ViewType>::value, void*> = nullptr)
       : m_functor(arg_functor),
         m_policy(arg_policy),
         m_reducer(InvalidType()),
@@ -429,7 +409,10 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
                               typename ViewType::memory_space>::accessible),
         m_result_ptr_host_accessible(
             MemorySpaceAccess<Kokkos::HostSpace,
-                              typename ViewType::memory_space>::accessible) {}
+                              typename ViewType::memory_space>::accessible),
+        m_shared_memory_lock(m_policy.space()
+                                 .impl_internal_space_instance()
+                                 ->m_mutexSharedMemory) {}
 
   ParallelReduce(const FunctorType& arg_functor, const Policy& arg_policy,
                  const ReducerType& reducer)
@@ -444,7 +427,10 @@ class ParallelReduce<FunctorType, Kokkos::RangePolicy<Traits...>, ReducerType,
         m_result_ptr_host_accessible(
             MemorySpaceAccess<Kokkos::HostSpace,
                               typename ReducerType::result_view_type::
-                                  memory_space>::accessible) {}
+                                  memory_space>::accessible),
+        m_shared_memory_lock(m_policy.space()
+                                 .impl_internal_space_instance()
+                                 ->m_mutexSharedMemory) {}
 };
 
 template <class FunctorType, class... Traits>
@@ -458,13 +444,12 @@ class ParallelScanHIPBase {
   using WorkRange    = typename Policy::WorkRange;
   using LaunchBounds = typename Policy::launch_bounds;
 
-  using ValueTraits = Kokkos::Impl::FunctorValueTraits<FunctorType, WorkTag>;
-  using ValueInit   = Kokkos::Impl::FunctorValueInit<FunctorType, WorkTag>;
-  using ValueOps    = Kokkos::Impl::FunctorValueOps<FunctorType, WorkTag>;
+  using Analysis = Kokkos::Impl::FunctorAnalysis<FunctorPatternInterface::SCAN,
+                                                 Policy, FunctorType>;
 
  public:
-  using pointer_type   = typename ValueTraits::pointer_type;
-  using reference_type = typename ValueTraits::reference_type;
+  using pointer_type   = typename Analysis::pointer_type;
+  using reference_type = typename Analysis::reference_type;
   using functor_type   = FunctorType;
   using size_type      = Kokkos::Experimental::HIP::size_type;
   using index_type     = typename Policy::index_type;
@@ -482,36 +467,37 @@ class ParallelScanHIPBase {
   size_type* m_scratch_flags = nullptr;
   size_type m_final          = false;
   int m_grid_x               = 0;
+  // Only let one ParallelReduce/Scan modify the shared memory. The
+  // constructor acquires the mutex which is released in the destructor.
+  std::lock_guard<std::mutex> m_shared_memory_lock;
 
  private:
   template <class TagType>
-  __device__ inline
-      typename std::enable_if<std::is_same<TagType, void>::value>::type
-      exec_range(const Member& i, reference_type update,
-                 const bool final_result) const {
+  __device__ inline std::enable_if_t<std::is_void<TagType>::value> exec_range(
+      const Member& i, reference_type update, const bool final_result) const {
     m_functor(i, update, final_result);
   }
 
   template <class TagType>
-  __device__ inline
-      typename std::enable_if<!std::is_same<TagType, void>::value>::type
-      exec_range(const Member& i, reference_type update,
-                 const bool final_result) const {
+  __device__ inline std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+      const Member& i, reference_type update, const bool final_result) const {
     m_functor(TagType(), i, update, final_result);
   }
 
   //----------------------------------------
 
   __device__ inline void initial() const {
-    const integral_nonzero_constant<size_type, ValueTraits::StaticValueSize /
+    typename Analysis::Reducer final_reducer(&m_functor);
+
+    const integral_nonzero_constant<size_type, Analysis::StaticValueSize /
                                                    sizeof(size_type)>
-        word_count(ValueTraits::value_size(m_functor) / sizeof(size_type));
+        word_count(Analysis::value_size(m_functor) / sizeof(size_type));
 
-    size_type* const shared_value =
+    pointer_type const shared_value = reinterpret_cast<pointer_type>(
         Kokkos::Experimental::kokkos_impl_hip_shared_memory<size_type>() +
-        word_count.value * threadIdx.y;
+        word_count.value * threadIdx.y);
 
-    ValueInit::init(m_functor, shared_value);
+    final_reducer.init(shared_value);
 
     // Number of blocks is bounded so that the reduction can be limited to two
     // passes. Each thread block is given an approximately equal amount of work
@@ -523,15 +509,15 @@ class ParallelScanHIPBase {
     for (Member iwork = range.begin() + threadIdx.y, iwork_end = range.end();
          iwork < iwork_end; iwork += blockDim.y) {
       this->template exec_range<WorkTag>(
-          iwork, ValueOps::reference(shared_value), false);
+          iwork, final_reducer.reference(shared_value), false);
     }
 
     // Reduce and scan, writing out scan of blocks' totals and block-groups'
     // totals. Blocks' scan values are written to 'blockIdx.x' location.
     // Block-groups' scan values are at: i = ( j * blockDim.y - 1 ) for i <
     // gridDim.x
-    hip_single_inter_block_reduce_scan<true, FunctorType, WorkTag>(
-        m_functor, blockIdx.x, gridDim.x,
+    hip_single_inter_block_reduce_scan<true>(
+        final_reducer, blockIdx.x, gridDim.x,
         Kokkos::Experimental::kokkos_impl_hip_shared_memory<size_type>(),
         m_scratch_space, m_scratch_flags);
   }
@@ -539,9 +525,11 @@ class ParallelScanHIPBase {
   //----------------------------------------
 
   __device__ inline void final() const {
-    const integral_nonzero_constant<size_type, ValueTraits::StaticValueSize /
+    typename Analysis::Reducer final_reducer(&m_functor);
+
+    const integral_nonzero_constant<size_type, Analysis::StaticValueSize /
                                                    sizeof(size_type)>
-        word_count(ValueTraits::value_size(m_functor) / sizeof(size_type));
+        word_count(Analysis::value_size(m_functor) / sizeof(size_type));
 
     // Use shared memory as an exclusive scan: { 0 , value[0] , value[1] ,
     // value[2] , ... }
@@ -560,7 +548,7 @@ class ParallelScanHIPBase {
         shared_accum[i] = block_total[i];
       }
     } else if (0 == threadIdx.y) {
-      ValueInit::init(m_functor, shared_accum);
+      final_reducer.init(reinterpret_cast<pointer_type>(shared_accum));
     }
 
     const WorkRange range(m_policy, blockIdx.x, gridDim.x);
@@ -572,7 +560,8 @@ class ParallelScanHIPBase {
       __syncthreads();  // Don't overwrite previous iteration values until they
                         // are used
 
-      ValueInit::init(m_functor, shared_prefix + word_count.value);
+      final_reducer.init(
+          reinterpret_cast<pointer_type>(shared_prefix + word_count.value));
 
       // Copy previous block's accumulation total into thread[0] prefix and
       // inclusive scan value of this block
@@ -587,14 +576,16 @@ class ParallelScanHIPBase {
       const bool doWork = (iwork < range.end());
       if (doWork) {
         this->template exec_range<WorkTag>(
-            iwork, ValueOps::reference(shared_prefix + word_count.value),
+            iwork,
+            final_reducer.reference(reinterpret_cast<pointer_type>(
+                shared_prefix + word_count.value)),
             false);
       }
 
       // Scan block values into locations shared_data[1..blockDim.y]
-      hip_intra_block_reduce_scan<true, FunctorType, WorkTag>(
-          m_functor,
-          typename ValueTraits::pointer_type(shared_data + word_count.value));
+      hip_intra_block_reduce_scan<true>(
+          final_reducer,
+          typename Analysis::pointer_type(shared_data + word_count.value));
 
       {
         size_type* const block_total =
@@ -607,7 +598,10 @@ class ParallelScanHIPBase {
       // Call functor with exclusive scan value
       if (doWork) {
         this->template exec_range<WorkTag>(
-            iwork, ValueOps::reference(shared_prefix), true);
+            iwork,
+            final_reducer.reference(
+                reinterpret_cast<pointer_type>(shared_prefix)),
+            true);
       }
     }
   }
@@ -624,22 +618,7 @@ class ParallelScanHIPBase {
   }
 
   // Determine block size constrained by shared memory:
-  inline unsigned local_block_size(const FunctorType& f) {
-    // blockDim.y must be power of two = 128 (2 warps) or 256 (4 warps) or
-    // 512 (8 warps) gridDim.x <= blockDim.y * blockDim.y
-    //
-    // TODO check best option
-
-    unsigned n = Experimental::Impl::HIPTraits::WarpSize * 4;
-    while (n && static_cast<unsigned>(m_policy.space()
-                                          .impl_internal_space_instance()
-                                          ->m_maxShmemPerBlock) <
-                    hip_single_inter_block_reduce_scan_shmem<false, FunctorType,
-                                                             WorkTag>(f, n)) {
-      n >>= 1;
-    }
-    return n;
-  }
+  virtual inline unsigned local_block_size(const FunctorType& f) = 0;
 
   inline void impl_execute() {
     const index_type nwork = m_policy.end() - m_policy.begin();
@@ -649,7 +628,11 @@ class ParallelScanHIPBase {
       const int gridMaxComputeCapability_2x = 0x01fff;
 
       const int block_size = static_cast<int>(local_block_size(m_functor));
-      KOKKOS_ASSERT(block_size > 0);
+      if (block_size == 0) {
+        Kokkos::Impl::throw_runtime_exception(
+            std::string("Kokkos::Impl::ParallelScan< HIP > could not find a "
+                        "valid execution configuration."));
+      }
 
       const int grid_max =
           std::min(block_size * block_size, gridMaxComputeCapability_2x);
@@ -665,24 +648,25 @@ class ParallelScanHIPBase {
       m_grid_x = (nwork + work_per_block - 1) / work_per_block;
 
       m_scratch_space = Kokkos::Experimental::Impl::hip_internal_scratch_space(
-          ValueTraits::value_size(m_functor) * m_grid_x);
+          m_policy.space(), Analysis::value_size(m_functor) * m_grid_x);
       m_scratch_flags = Kokkos::Experimental::Impl::hip_internal_scratch_flags(
-          sizeof(size_type) * 1);
+          m_policy.space(), sizeof(size_type) * 1);
 
       dim3 grid(m_grid_x, 1, 1);
       dim3 block(1, block_size, 1);  // REQUIRED DIMENSIONS ( 1 , N , 1 )
-      const int shmem = ValueTraits::value_size(m_functor) * (block_size + 2);
+      const int shmem = Analysis::value_size(m_functor) * (block_size + 2);
 
       m_final = false;
-      Kokkos::Experimental::Impl::HIPParallelLaunch<ParallelScanHIPBase,
-                                                    LaunchBounds>(
+      // these ones are OK to be just the base because the specializations
+      // do not modify the kernel at all
+      using DriverType = ParallelScanHIPBase<FunctorType, Traits...>;
+      Kokkos::Experimental::Impl::hip_parallel_launch<DriverType, LaunchBounds>(
           *this, grid, block, shmem,
           m_policy.space().impl_internal_space_instance(),
           false);  // copy to device and execute
 
       m_final = true;
-      Kokkos::Experimental::Impl::HIPParallelLaunch<ParallelScanHIPBase,
-                                                    LaunchBounds>(
+      Kokkos::Experimental::Impl::hip_parallel_launch<DriverType, LaunchBounds>(
           *this, grid, block, shmem,
           m_policy.space().impl_internal_space_instance(),
           false);  // copy to device and execute
@@ -690,13 +674,17 @@ class ParallelScanHIPBase {
   }
 
   ParallelScanHIPBase(const FunctorType& arg_functor, const Policy& arg_policy)
-      : m_functor(arg_functor), m_policy(arg_policy) {}
+      : m_functor(arg_functor),
+        m_policy(arg_policy),
+        m_shared_memory_lock(m_policy.space()
+                                 .impl_internal_space_instance()
+                                 ->m_mutexSharedMemory) {}
 };
 
 template <class FunctorType, class... Traits>
 class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
                    Kokkos::Experimental::HIP>
-    : private ParallelScanHIPBase<FunctorType, Traits...> {
+    : public ParallelScanHIPBase<FunctorType, Traits...> {
  public:
   using Base = ParallelScanHIPBase<FunctorType, Traits...>;
   using Base::operator();
@@ -706,6 +694,23 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
   ParallelScan(const FunctorType& arg_functor,
                const typename Base::Policy& arg_policy)
       : Base(arg_functor, arg_policy) {}
+
+  inline unsigned local_block_size(const FunctorType& f) {
+    // blockDim.y must be power of two = 128 (2 warps) or 256 (4 warps) or
+    // 512 (8 warps) gridDim.x <= blockDim.y * blockDim.y
+
+    const auto& instance =
+        Base::m_policy.space().impl_internal_space_instance();
+    auto shmem_functor = [&f](unsigned n) {
+      return hip_single_inter_block_reduce_scan_shmem<true, FunctorType,
+                                                      typename Base::WorkTag>(
+          f, n);
+    };
+    using DriverType = ParallelScan<FunctorType, typename Base::Policy,
+                                    Kokkos::Experimental::HIP>;
+    return Kokkos::Experimental::Impl::hip_get_preferred_blocksize<
+        DriverType, typename Base::LaunchBounds>(instance, shmem_functor);
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -713,7 +718,7 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
 template <class FunctorType, class ReturnType, class... Traits>
 class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
                             ReturnType, Kokkos::Experimental::HIP>
-    : private ParallelScanHIPBase<FunctorType, Traits...> {
+    : public ParallelScanHIPBase<FunctorType, Traits...> {
  public:
   using Base = ParallelScanHIPBase<FunctorType, Traits...>;
   using Base::operator();
@@ -725,9 +730,10 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
 
     const auto nwork = Base::m_policy.end() - Base::m_policy.begin();
     if (nwork) {
-      const int size = Base::ValueTraits::value_size(Base::m_functor);
-      DeepCopy<HostSpace, Kokkos::Experimental::HIPSpace>(
-          &m_returnvalue,
+      const int size = Base::Analysis::value_size(Base::m_functor);
+      DeepCopy<HostSpace, Kokkos::Experimental::HIPSpace,
+               Kokkos::Experimental::HIP>(
+          Base::m_policy.space(), &m_returnvalue,
           Base::m_scratch_space + (Base::m_grid_x - 1) * size / sizeof(int),
           size);
     }
@@ -737,6 +743,24 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
                         const typename Base::Policy& arg_policy,
                         ReturnType& arg_returnvalue)
       : Base(arg_functor, arg_policy), m_returnvalue(arg_returnvalue) {}
+
+  inline unsigned local_block_size(const FunctorType& f) {
+    // blockDim.y must be power of two = 128 (2 warps) or 256 (4 warps) or
+    // 512 (8 warps) gridDim.x <= blockDim.y * blockDim.y
+
+    const auto& instance =
+        Base::m_policy.space().impl_internal_space_instance();
+    auto shmem_functor = [&f](unsigned n) {
+      return hip_single_inter_block_reduce_scan_shmem<true, FunctorType,
+                                                      typename Base::WorkTag>(
+          f, n);
+    };
+    using DriverType =
+        ParallelScanWithTotal<FunctorType, typename Base::Policy, ReturnType,
+                              Kokkos::Experimental::HIP>;
+    return Kokkos::Experimental::Impl::hip_get_preferred_blocksize<
+        DriverType, typename Base::LaunchBounds>(instance, shmem_functor);
+  }
 };
 
 }  // namespace Impl

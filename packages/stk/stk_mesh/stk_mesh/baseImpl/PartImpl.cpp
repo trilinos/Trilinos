@@ -30,14 +30,16 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
+#include <iostream>                // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Part.hpp>  // for insert
 #include <stk_mesh/baseImpl/PartImpl.hpp>
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/Part.hpp>       // for insert
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
-#include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
-#include "stk_topology/topology.hpp"    // for topology::rank
+
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/Types.hpp"    // for EntityRank, etc
+#include "stk_topology/topology.hpp"  // for topology::rank
 
 namespace stk { namespace mesh { class MetaData; } }
 
@@ -86,9 +88,14 @@ void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 
 //const bool has_subsets = m_subsets.size() > 0;
 //ThrowErrorMsgIf( has_subsets, " Error: Part '" << m_name  << "' has subsets");
-
   if ( entity_rank == InvalidEntityRank ) return;
-  ThrowErrorMsgIf( rank_already_set, " Error: Different entity rank has already been set on Part");
+  if (rank_already_set) {
+    std::stringstream str;
+    str << "A part with name '" << m_name << "' "
+        << "is defined in two different contexts " << m_mesh_meta_data->entity_rank_name(entity_rank) << " and "
+        << m_mesh_meta_data->entity_rank_name(m_entity_rank) << ".";
+    ThrowErrorMsg(str.str());
+  }
 
   m_entity_rank = entity_rank;
 }

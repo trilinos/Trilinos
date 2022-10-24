@@ -112,7 +112,7 @@ int ex_get_coord(int exoid, void *x_coor, void *y_coor, void *z_coor)
     }
 
     for (size_t i = 0; i < num_dim; i++) {
-      char * which = NULL;
+      char  *which = NULL;
       size_t start[2];
       size_t count[2];
       start[0] = i;

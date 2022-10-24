@@ -306,7 +306,7 @@ ParallelTimer::dump(Writer &dout) const {
 #pragma warning(push)
 #pragma warning(disable: 444)
 #endif
-class finder : public std::unary_function<ParallelTimer, bool>
+class finder
 {
 public:
   finder(const std::string &name)

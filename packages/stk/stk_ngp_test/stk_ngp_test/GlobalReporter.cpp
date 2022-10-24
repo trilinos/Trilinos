@@ -23,7 +23,11 @@ ReporterBase*& getDeviceReporterOnHost()
 
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  static ReporterBase* deviceReporterOnDevice = nullptr;
+  #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU
+    __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
+  #else
+    static ReporterBase* deviceReporterOnDevice = nullptr;
+  #endif
   return deviceReporterOnDevice;
 }
 
@@ -35,17 +39,8 @@ ReporterBase*& getDeviceReporterAddress()
 }
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-using DeviceReporter = Reporter<Kokkos::CudaHostPinnedSpace>;
-#else
 using DeviceReporter = Reporter<Kokkos::DefaultExecutionSpace::device_type>;
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMP
-using HostReporter = Reporter<Kokkos::OpenMP::device_type>;
-#else
-using HostReporter = Reporter<Kokkos::Serial::device_type>;
-#endif
+using HostReporter = Reporter<Kokkos::DefaultHostExecutionSpace::device_type>;
 
 inline
 void copy_to_device(const DeviceReporter& reporter,

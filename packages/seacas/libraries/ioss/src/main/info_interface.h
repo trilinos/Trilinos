@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef info_SystemInterface_h
-#define info_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <iosfwd>            // for ostream
@@ -40,6 +39,7 @@ namespace Info {
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
     std::string groupname() const { return groupname_; }
+    std::string custom_field() const { return customField_; }
 
     //! Dumps representation of data in this class to cerr
 
@@ -51,6 +51,7 @@ namespace Info {
     std::string         filename_{};
     std::string         groupname_{};
     std::string         decompMethod_{};
+    std::string         customField_{};
 
     bool checkNodeStatus_{false};
     bool computeVolume_{false};
@@ -65,7 +66,6 @@ namespace Info {
 
     char fieldSuffixSeparator_{'_'};
 
-    int surfaceSplitScheme_{1};
+    int surfaceSplitScheme_{-1};
   };
 } // namespace Info
-#endif

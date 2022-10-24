@@ -38,6 +38,7 @@ INCLUDE_DIRECTORIES(${DIR}/Interface)
 INCLUDE_DIRECTORIES(${DIR}/Interface/FacadeClasses)
 INCLUDE_DIRECTORIES(${DIR}/Misc)
 INCLUDE_DIRECTORIES(${DIR}/MueCentral)
+INCLUDE_DIRECTORIES(${DIR}/Operators)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
@@ -50,6 +51,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Matrix-Free)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
@@ -288,7 +290,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
 
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
-    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    string(REPLACE "CLASS_FILE_NAME" "ETI_${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
 
     # the following generates one cpp file for all instantiations and
     # enabled configurations
@@ -352,10 +354,10 @@ APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
 
-SET(HEADERS_INTERFACE "")
-APPEND_GLOB(HEADERS_INTERFACE Interface/*.hpp)
-APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
-LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
+# SET(HEADERS_INTERFACE "")
+# APPEND_GLOB(HEADERS_INTERFACE Interface/*.hpp)
+# APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
+# LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
@@ -385,6 +387,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface/FacadeClasses NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Misc NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/MueCentral NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Operators NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Rebalancing NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers/BlockedSmoothers NOSIERRABJAM)
@@ -397,6 +400,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOS
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/GeneralGeometric NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Geometric-Interpolation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Matrix-Free NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Petrov-Galerkin-SA NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
@@ -419,19 +423,29 @@ ENDIF()
 INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
-# Remove everything in the interface directory and add it to a list for muelu-interface instead
-SET(SOURCES_INTERFACE "")
-APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
-ENDIF()
-LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
+# # Remove everything in the interface directory and add it to a list for muelu-interface instead
+# SET(SOURCES_INTERFACE "")
+# APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
+# IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassFactory.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassBase.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FacadeSimple.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FacadeBGS2x2.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
+#   APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/ETI_MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassFactory.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassBase.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FacadeSimple.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FacadeBGS2x2.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
+#   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/ETI_MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+# ENDIF()
+# LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
@@ -454,6 +468,11 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

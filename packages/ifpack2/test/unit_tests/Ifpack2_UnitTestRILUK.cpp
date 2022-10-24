@@ -105,7 +105,7 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   RCP<crs_matrix_type > A = Teuchos::rcp(new crs_matrix_type(map, 3));
   Teuchos::Array<GlobalOrdinal> col(3);
   Teuchos::Array<Scalar>        val(3);
-  size_t numLocalElts = map->getNodeNumElements();
+  size_t numLocalElts = map->getLocalNumElements();
   for(LocalOrdinal l_row = 0; (size_t) l_row < numLocalElts; l_row++) {
     GlobalOrdinal g_row = map->getGlobalElement(l_row);
     size_t i=0;

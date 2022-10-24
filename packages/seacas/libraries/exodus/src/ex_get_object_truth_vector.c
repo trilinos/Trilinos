@@ -59,42 +59,42 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
     break;
   case EX_ELEM_BLOCK:
     status   = ex__get_dimension(exoid, DIM_NUM_ELE_VAR, "element variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_ELEM_TAB, &tabid);
     var_name = "vals_elem_var";
     ent_type = "eb";
     break;
   case EX_NODE_SET:
     status   = ex__get_dimension(exoid, DIM_NUM_NSET_VAR, "nodeset variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_NSET_TAB, &tabid);
     var_name = "vals_nset_var";
     ent_type = "ns";
     break;
   case EX_EDGE_SET:
     status   = ex__get_dimension(exoid, DIM_NUM_ESET_VAR, "edgeset variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_ESET_TAB, &tabid);
     var_name = "vals_eset_var";
     ent_type = "es";
     break;
   case EX_FACE_SET:
     status   = ex__get_dimension(exoid, DIM_NUM_FSET_VAR, "faceset variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_FSET_TAB, &tabid);
     var_name = "vals_fset_var";
     ent_type = "fs";
     break;
   case EX_SIDE_SET:
     status   = ex__get_dimension(exoid, DIM_NUM_SSET_VAR, "sideset variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_SSET_TAB, &tabid);
     var_name = "vals_sset_var";
     ent_type = "ss";
     break;
   case EX_ELEM_SET:
     status   = ex__get_dimension(exoid, DIM_NUM_ELSET_VAR, "elemset variables", &num_var_db, &varid,
-                               __func__);
+                                 __func__);
     statust  = nc_inq_varid(exoid, VAR_ELSET_TAB, &tabid);
     var_name = "vals_elset_var";
     ent_type = "es";

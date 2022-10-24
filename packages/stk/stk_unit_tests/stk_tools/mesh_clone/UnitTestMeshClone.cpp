@@ -43,9 +43,11 @@
 #include <stk_tools/mesh_clone/MeshCloneUtils.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace
 {
+using stk::unit_test_util::build_mesh;
 
 class NoDeleteAttribute {
 public:
@@ -175,23 +177,26 @@ void expect_equal_fields(stk::mesh::MetaData &newMeta, stk::mesh::FieldBase &old
   EXPECT_EQ(oldField.mesh_meta_data_ordinal(), newField.mesh_meta_data_ordinal());
   EXPECT_EQ(oldField.name(), newField.name());
   EXPECT_EQ(oldField.entity_rank(), newField.entity_rank());
-  EXPECT_EQ(oldField.field_array_rank(), newField.field_array_rank());
   EXPECT_EQ(oldField.number_of_states(), newField.number_of_states());
   EXPECT_EQ(oldField.state(), newField.state());
   EXPECT_EQ(oldField.type_is<int>(), newField.type_is<int>());
   EXPECT_EQ(oldField.type_is<double>(), newField.type_is<double>());
+
   if(oldField.attribute<Ioss::Field::RoleType>() != nullptr)
   {
     EXPECT_EQ(*oldField.attribute<Ioss::Field::RoleType>(), *newField.attribute<Ioss::Field::RoleType>());
   }
-  for(unsigned i = 0; i < oldField.field_array_rank(); ++i)
-  {
-    EXPECT_EQ(oldField.dimension_tags()[i]->name(), newField.dimension_tags()[i]->name());
-  }
+
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<oldField.entity_rank(); rank++)
   {
     EXPECT_EQ(oldField.max_size(rank), newField.max_size(rank));
   }
+
+  ASSERT_EQ(stk::io::has_field_output_type(oldField), stk::io::has_field_output_type(newField));
+  if (stk::io::has_field_output_type(oldField)) {
+    EXPECT_EQ(stk::io::get_field_output_type(oldField)->name(), stk::io::get_field_output_type(newField)->name());
+  }
+
   expect_equal_data_traits(oldField.data_traits(), newField.data_traits());
   expect_equal_field_initial_values(oldField, newField);
   expect_equal_field_restrictions(newMeta, oldField, newField);
@@ -260,7 +265,7 @@ void expect_equal_entity_counts(stk::mesh::BulkData& oldBulk, stk::mesh::BulkDat
   EXPECT_EQ(oldCount, newCount);
 }
 
-class MeshClone : public stk::unit_test_util::MeshFixture
+class MeshClone : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   MeshClone()
@@ -274,12 +279,20 @@ protected:
 
   void initialize_mesh_with_parts_and_fields()
   {
+    setup_empty_mesh(get_aura_option());
     setup_parts();
     setup_fields();
-    setup_mesh(get_mesh_spec(), get_aura_option());
+    stk::io::fill_mesh(get_mesh_spec(), get_bulk());
     get_meta().set_coordinate_field(m_coordsField);
     add_distribution_factor();
     add_part_attributes({"block_1", "surface_1"});
+  }
+
+  void initialize_multiproc_multiblock_mesh()
+  {
+    const std::string meshSpec = "textmesh:0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                                 "1,2,HEX_8,5,6,7,8,9,10,11,12,block_2\n";
+    setup_mesh(meshSpec, stk::mesh::BulkData::AUTO_AURA);
   }
 
   void add_part_attributes(const std::vector<std::string> & partNames)
@@ -308,17 +321,17 @@ protected:
 
   void setup_fields()
   {
-    m_coordsField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(stk::topology::NODE_RANK,
-                                                                                                "Coordinates", 1);
-    m_surfaceField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(stk::topology::NODE_RANK,
-                                                                                                 "surfaceField", 2);
-    m_distFactField = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "dist_fact", 1);
+    m_coordsField = &get_meta().declare_field<double>(stk::topology::NODE_RANK, "Coordinates", 1);
+    m_surfaceField = &get_meta().declare_field<double>(stk::topology::NODE_RANK, "surfaceField", 2);
+    m_distFactField = &get_meta().declare_field<double>(stk::topology::NODE_RANK, "dist_fact", 1);
 
     const double vectInitValue[] = {13, 14, 15};
     const double scalarInitValue = 3;
     stk::mesh::put_field_on_mesh(*m_coordsField, *m_block1Part, 3, vectInitValue);
     stk::mesh::put_field_on_mesh(*m_surfaceField, *m_surface1Part, 3, vectInitValue);
     stk::mesh::put_field_on_mesh(*m_distFactField, *m_block1Part, 1, &scalarInitValue);
+    stk::io::set_field_output_type(*m_coordsField, "Vector_3D");
+    stk::io::set_field_output_type(*m_surfaceField, "Vector_3D");
   }
 
   void add_orphan_nodes(const unsigned numOrphansPerProc)
@@ -339,8 +352,8 @@ protected:
   stk::mesh::Part* m_subPart;
   stk::mesh::Part* m_block1Part;
   stk::mesh::Part* m_surface1Part;
-  stk::mesh::Field<double, stk::mesh::Cartesian3d>* m_coordsField;
-  stk::mesh::Field<double, stk::mesh::Cartesian3d>* m_surfaceField;
+  stk::mesh::Field<double>* m_coordsField;
+  stk::mesh::Field<double>* m_surfaceField;
   stk::mesh::Field<double>* m_distFactField;
   NoDeleteAttribute m_noDeleteAttribute;
 };
@@ -356,6 +369,7 @@ TEST_F(MeshClone, copyOnlyMeta)
   initialize_mesh_with_parts_and_fields();
 
   stk::mesh::MetaData newMeta;
+  newMeta.use_simple_fields();
   stk::tools::copy_meta_with_io_attributes(get_meta(), newMeta);
 
   expect_equal_meta_datas(get_meta(), newMeta);
@@ -365,8 +379,9 @@ TEST_F(MeshClone, copyMetaAndBulk)
 {
   initialize_mesh_with_parts_and_fields();
 
-  stk::mesh::MetaData newMeta;
-  stk::mesh::BulkData newBulk(newMeta, get_bulk().parallel());
+  std::shared_ptr<stk::mesh::BulkData> newBulkPtr = build_mesh(get_comm());
+  stk::mesh::BulkData& newBulk = *newBulkPtr;
+  stk::mesh::MetaData& newMeta = newBulk.mesh_meta_data();
 
   stk::tools::copy_mesh(get_bulk(), get_meta().universal_part(), newBulk);
 
@@ -374,26 +389,69 @@ TEST_F(MeshClone, copyMetaAndBulk)
   expect_equal_entity_counts(get_bulk(), newBulk);
 }
 
-TEST_F(MeshClone, copyMeshWithOrphanNodes)
+TEST_F(MeshClone, copyMeshWithPreExistingOrphanNodes)
 {
   initialize_mesh_with_parts_and_fields();
 
   unsigned numOrphansPerProc = 5;
   add_orphan_nodes(numOrphansPerProc);
 
-  stk::mesh::MetaData newMeta;
-  stk::mesh::BulkData newBulk(newMeta, get_bulk().parallel());
-
+  std::shared_ptr<stk::mesh::BulkData> newBulkPtr = build_mesh(get_comm());
+  stk::mesh::BulkData& newBulk = *newBulkPtr;
+  stk::mesh::MetaData& newMeta = newBulk.mesh_meta_data();
   stk::tools::copy_mesh(get_bulk(), get_meta().universal_part(), newBulk);
 
   expect_equal_meta_datas(get_meta(), newMeta);
   expect_equal_entity_counts(get_bulk(), newBulk);
 }
 
+TEST_F(MeshClone, copyMeshWithOrphanNodesOnSharedSide)
+{
+  if (get_parallel_size() != 2) return;
+
+  initialize_multiproc_multiblock_mesh();
+
+  std::shared_ptr<stk::mesh::BulkData> newBulkPtr = build_mesh(get_comm());
+  stk::mesh::BulkData& newBulk = *newBulkPtr;
+
+  stk::tools::copy_mesh(get_bulk(), *get_meta().get_part("block_1"), newBulk);
+
+  std::vector<size_t> count;
+  stk::mesh::count_entities(get_meta().locally_owned_part() | get_meta().globally_shared_part(), newBulk, count);
+  if (get_parallel_rank() == 0) {
+    EXPECT_EQ(count[stk::topology::NODE_RANK], 8u);
+  }
+  else {
+    EXPECT_EQ(count[stk::topology::NODE_RANK], 0u);
+  }
+}
+
+TEST_F(MeshClone, copyMeshWithOrphanNodesOnOwnedSide)
+{
+  if (get_parallel_size() != 2) return;
+
+  initialize_multiproc_multiblock_mesh();
+
+  std::shared_ptr<stk::mesh::BulkData> newBulkPtr = build_mesh(get_comm());
+  stk::mesh::BulkData& newBulk = *newBulkPtr;
+
+  stk::tools::copy_mesh(get_bulk(), *get_meta().get_part("block_2"), newBulk);
+
+  std::vector<size_t> count;
+  stk::mesh::count_entities(get_meta().locally_owned_part() | get_meta().globally_shared_part(), newBulk, count);
+  if (get_parallel_rank() == 0) {
+    EXPECT_EQ(count[stk::topology::NODE_RANK], 0u);
+  }
+  else {
+    EXPECT_EQ(count[stk::topology::NODE_RANK], 8u);
+  }
+}
+
 #if defined(__GNUC__) && (__GNUC__ > 4) && !defined(__INTEL_COMPILER)
 TEST(MetaDataSize, sizeChanges_needToUpdateCopyMesh)
 {
   stk::mesh::MetaData meta;
+  meta.use_simple_fields();
   EXPECT_GE(552u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
 }
 #endif

@@ -96,7 +96,7 @@ namespace MueLu {
 #if 0
     ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal(*A);
 #else
-    ArrayRCP<const SC> D(A->getNodeNumRows(), one);
+    ArrayRCP<const SC> D(A->getLocalNumRows(), one);
 #endif
 
     Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);

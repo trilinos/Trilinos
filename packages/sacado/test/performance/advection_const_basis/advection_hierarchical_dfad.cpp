@@ -34,7 +34,7 @@
 #include "advection_hierarchical_dfad.hpp"
 #include "common.hpp"
 
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 template<typename FluxView, typename WgbView, typename SrcView,
          typename WbsView, typename ResidualView>
@@ -161,7 +161,7 @@ double time_dfad_hierarchical_team(int ncells, int num_basis, int num_points,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_dfad_hierarchical_team(flux, wgb, src, wbs, residual);
   Kokkos::fence();
@@ -202,7 +202,7 @@ double time_dfad_hierarchical_team_scratch(
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_dfad_hierarchical_team_scratch(flux, wgb, src, wbs, residual);
   Kokkos::fence();

@@ -204,7 +204,7 @@ namespace MueLu {
           if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
         }
 
-        size_t numLocalRows = A_->getNodeNumRows();
+        size_t numLocalRows = A_->getLocalNumRows();
         TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
 
         if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
@@ -251,7 +251,7 @@ namespace MueLu {
       ParameterList precList = this->GetParameterList();
       if(precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
          !precList.isParameter("partitioner: local parts")) {
-        precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+        precList.set("partitioner: local parts", (int)A_->getLocalNumRows() / A_->GetFixedBlockSize());
       }
       
       

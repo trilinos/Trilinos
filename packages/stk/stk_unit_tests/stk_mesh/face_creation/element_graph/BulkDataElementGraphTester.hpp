@@ -70,6 +70,7 @@
 #include "SetupKeyholeMesh.hpp"
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
 
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
@@ -79,95 +80,95 @@
 class BulkDataElementGraphTester : public stk::mesh::BulkData
 {
 public:
-    BulkDataElementGraphTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
-    : stk::mesh::BulkData(mesh_meta_data, comm)
+  BulkDataElementGraphTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm)
+  {
+  }
+
+  BulkDataElementGraphTester(stk::mesh::MetaData &meta, MPI_Comm comm, enum AutomaticAuraOption autoAuraOption)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&meta, [](auto pointerWeWontDelete){}), comm, autoAuraOption)
+  {
+  }
+
+  ~BulkDataElementGraphTester()
+  {
+  }
+
+  bool my_internal_modification_end_for_skin_mesh(stk::mesh::EntityRank entity_rank, stk::mesh::ModEndOptimizationFlag opt, stk::mesh::Selector selectedToSkin,
+                                                  const stk::mesh::Selector * only_consider_second_element_from_this_selector = 0)
+  {
+    return this->internal_modification_end_for_skin_mesh(entity_rank, opt, selectedToSkin, only_consider_second_element_from_this_selector);
+  }
+
+  bool my_modification_end_for_entity_creation(const std::vector<stk::mesh::sharing_info>& shared_modified, stk::mesh::ModEndOptimizationFlag opt = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT)
+  {
+    if ( this->in_synchronized_state() ) { return false ; }
+
+    ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+    if (parallel_size() > 1)
     {
-    }
+      stk::mesh::OrdinalVector shared_part, owned_part, empty, scratch1, scratch2;
+      shared_part.push_back(mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
+      owned_part.push_back(mesh_meta_data().locally_owned_part().mesh_meta_data_ordinal());
 
-    BulkDataElementGraphTester(stk::mesh::MetaData &meta, MPI_Comm comm, enum AutomaticAuraOption autoAuraOption)
-    : stk::mesh::BulkData(meta, comm, autoAuraOption)
-    {
-    }
-
-    ~BulkDataElementGraphTester()
-    {
-    }
-
-    bool my_internal_modification_end_for_skin_mesh(stk::mesh::EntityRank entity_rank, stk::mesh::ModEndOptimizationFlag opt, stk::mesh::Selector selectedToSkin,
-            const stk::mesh::Selector * only_consider_second_element_from_this_selector = 0)
-    {
-        return this->internal_modification_end_for_skin_mesh(entity_rank, opt, selectedToSkin, only_consider_second_element_from_this_selector);
-    }
-
-    bool my_modification_end_for_entity_creation(const std::vector<stk::mesh::sharing_info>& shared_modified, stk::mesh::ModEndOptimizationFlag opt = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT)
-    {
-        if ( this->in_synchronized_state() ) { return false ; }
-
-        ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
-
-        if (parallel_size() > 1)
+      stk::mesh::EntityVector modified_entities(shared_modified.size());
+      for(size_t i = 0; i < shared_modified.size(); ++i)
+      {
+        stk::mesh::Entity entity = shared_modified[i].m_entity;
+        int sharing_proc = shared_modified[i].m_sharing_proc;
+        entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
+        int old_owner = parallel_owner_rank(entity);
+        int owning_proc = shared_modified[i].m_owner;
+        if (old_owner != owning_proc)
         {
-            stk::mesh::OrdinalVector shared_part, owned_part, empty, scratch1, scratch2;
-            shared_part.push_back(m_mesh_meta_data.globally_shared_part().mesh_meta_data_ordinal());
-            owned_part.push_back(m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal());
-
-            stk::mesh::EntityVector modified_entities(shared_modified.size());
-            for(size_t i = 0; i < shared_modified.size(); ++i)
-            {
-                stk::mesh::Entity entity = shared_modified[i].m_entity;
-                int sharing_proc = shared_modified[i].m_sharing_proc;
-                entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
-                int old_owner = parallel_owner_rank(entity);
-                int owning_proc = shared_modified[i].m_owner;
-                if (old_owner != owning_proc)
-                {
-                    internal_set_owner(entity, owning_proc);
-                    this->internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratch1, scratch2);
-                }
-                else
-                {
-                    this->internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/, scratch1, scratch2);
-                }
-                modified_entities[i] = entity;
-            }
-
-            std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
-            stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
-            modified_entities.resize(iter-modified_entities.begin());
-
-            add_comm_list_entries_for_entities( modified_entities );
-
-            stk::mesh::EntityVector entitiesNoLongerShared;
-            internal_resolve_shared_membership(entitiesNoLongerShared);
-
-            if ( is_automatic_aura_on() )
-            {
-                bool connectFacesToPreexistingGhosts = true;
-                resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
-            }
-
-            check_mesh_consistency();
+          internal_set_owner(entity, owning_proc);
+          this->internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratch1, scratch2);
         }
         else
         {
-            std::vector<stk::mesh::Entity> modified_entities ;
-            internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(mesh_meta_data().side_rank(), modified_entities);
+          this->internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/, scratch1, scratch2);
         }
+        modified_entities[i] = entity;
+      }
 
-        this->internal_finish_modification_end(opt);
+      std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
+      stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
+      modified_entities.resize(iter-modified_entities.begin());
 
-        return true ;
+      add_comm_list_entries_for_entities( modified_entities );
+
+      stk::mesh::EntityVector entitiesNoLongerShared;
+      internal_resolve_shared_membership(entitiesNoLongerShared);
+
+      if ( is_automatic_aura_on() )
+      {
+        bool connectFacesToPreexistingGhosts = true;
+        resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
+      }
+
+      check_mesh_consistency();
     }
-
-    size_t num_entity_keys() const
+    else
     {
-        return m_entity_keys.size();
+      std::vector<stk::mesh::Entity> modified_entities ;
+      internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(mesh_meta_data().side_rank(), modified_entities);
     }
 
-    std::vector<uint64_t> my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::rank_t rank) const
-    {
-        return internal_get_ids_in_use(rank);
-    }
+    this->internal_finish_modification_end(opt);
+
+    return true ;
+  }
+
+  size_t num_entity_keys() const
+  {
+    return m_entity_keys.size();
+  }
+
+  std::vector<uint64_t> my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::rank_t rank) const
+  {
+    return internal_get_ids_in_use(rank);
+  }
 };
 
 #endif

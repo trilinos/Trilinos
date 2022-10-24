@@ -53,116 +53,116 @@ class LastStepFieldWriter
 {
 public:
 
-    LastStepFieldWriter(stk::mesh::BulkData& bulk, const std::string& inputFilename)
+  LastStepFieldWriter(stk::mesh::BulkData& bulk, const std::string& inputFilename)
     : LastStepFieldWriter(bulk)
+  {
+    fill_mesh_and_time_data(inputFilename);
+  }
+
+  ~LastStepFieldWriter() {}
+
+  void write_mesh(const std::string& filename,
+                  stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
+  {
+    size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
+    write_mesh_with_fields(fh);
+  }
+
+  void write_mesh_with_additional_fields(const std::string& filename,
+                                         const stk::mesh::FieldVector& fieldsCreatedDuringRuntime,
+                                         stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
+  {
+    if(fieldsCreatedDuringRuntime.size()>0)
     {
-        fill_mesh_and_time_data(inputFilename);
+      mHaveFields = true;
     }
 
-    ~LastStepFieldWriter() {}
+    size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
 
-    void write_mesh(const std::string& filename,
-                    stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
-    {
-        size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
-        write_mesh_with_fields(fh);
-    }
+    for(stk::mesh::FieldBase * out_field : fieldsCreatedDuringRuntime)
+      stkIo.add_field(fh, *out_field);
 
-    void write_mesh_with_additional_fields(const std::string& filename,
-                                           const stk::mesh::FieldVector& fieldsCreatedDuringRuntime,
-                                           stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
-    {
-        if(fieldsCreatedDuringRuntime.size()>0)
-        {
-            mHaveFields = true;
-        }
-
-        size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
-
-        for(stk::mesh::FieldBase * out_field : fieldsCreatedDuringRuntime)
-          stkIo.add_field(fh, *out_field);
-
-        write_mesh_with_fields(fh);
-    }
+    write_mesh_with_fields(fh);
+  }
 
 
-    void set_output_time(double outputTime)
-    {
-        maxTime = outputTime;
-        numSteps = 1;
-    }
+  void set_output_time(double outputTime)
+  {
+    maxTime = outputTime;
+    numSteps = 1;
+  }
 
-    double get_max_time() const { return maxTime; }
+  double get_max_time() const { return maxTime; }
 
 protected:
-    LastStepFieldWriter(stk::mesh::BulkData& bulk) : bulkData(bulk), numSteps(-1), maxTime(0.0) {}
+  LastStepFieldWriter(stk::mesh::BulkData& bulk) : bulkData(bulk), numSteps(-1), maxTime(0.0) {}
 
-    void write_mesh_with_fields(size_t fileHandle)
+  void write_mesh_with_fields(size_t fileHandle)
+  {
+    if(has_field_data())
     {
-        if(has_field_data())
-        {
-            const stk::mesh::FieldVector& fieldsFromInputFile = stkIo.meta_data().get_fields();
-            add_transient_fields(fileHandle, fieldsFromInputFile);
+      const stk::mesh::FieldVector& fieldsFromInputFile = stkIo.meta_data().get_fields();
+      add_transient_fields(fileHandle, fieldsFromInputFile);
 
-            stkIo.begin_output_step(fileHandle, maxTime);
-            stkIo.write_defined_output_fields(fileHandle);
-            stkIo.end_output_step(fileHandle);
-        }
-        else
-        {
-            stkIo.write_output_mesh(fileHandle);
-        }
+      stkIo.begin_output_step(fileHandle, maxTime);
+      stkIo.write_defined_output_fields(fileHandle);
+      stkIo.end_output_step(fileHandle);
     }
-
-    bool has_field_data() const
+    else
     {
-        return numSteps>0 || mHaveFields;
+      stkIo.write_output_mesh(fileHandle);
     }
+  }
 
-    void fill_time_data()
+  bool has_field_data() const
+  {
+    return numSteps>0 || mHaveFields;
+  }
+
+  void fill_time_data()
+  {
+    numSteps = stkIo.get_num_time_steps();
+    if(numSteps>0)
     {
-        numSteps = stkIo.get_num_time_steps();
-        if(numSteps>0)
-        {
-            stkIo.read_defined_input_fields(numSteps);
-            maxTime = stkIo.get_max_time();
-        }
+      stkIo.read_defined_input_fields(numSteps);
+      maxTime = stkIo.get_max_time();
     }
+  }
 
-    void add_transient_fields(size_t fileHandle, const stk::mesh::FieldVector& out_fields)
+  void add_transient_fields(size_t fileHandle, const stk::mesh::FieldVector& out_fields)
+  {
+    for(size_t i=0;i<out_fields.size();++i)
     {
-        for(size_t i=0;i<out_fields.size();++i)
-        {
-            const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*out_fields[i]);
-            if(fieldRole != nullptr && *fieldRole == Ioss::Field::TRANSIENT)
-            {
-                stkIo.add_field(fileHandle, *out_fields[i]);
-            }
-        }
+      const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*out_fields[i]);
+      if(fieldRole != nullptr && *fieldRole == Ioss::Field::TRANSIENT)
+      {
+        stkIo.add_field(fileHandle, *out_fields[i]);
+      }
     }
+  }
 
-    void fill_mesh_and_time_data(const std::string& inputFilename)
-    {
-        stk::io::fill_mesh_preexisting(stkIo, inputFilename, bulkData);
-        fill_time_data();
-    }
+  void fill_mesh_and_time_data(const std::string& inputFilename)
+  {
+    stk::io::fill_mesh_preexisting(stkIo, inputFilename, bulkData);
+    fill_time_data();
+  }
 
-    stk::mesh::BulkData& bulkData;
-    int numSteps;
-    double maxTime;
-    stk::io::StkMeshIoBroker stkIo;
-    bool mHaveFields = false;
+  stk::mesh::BulkData& bulkData;
+  int numSteps;
+  double maxTime;
+  stk::io::StkMeshIoBroker stkIo;
+  bool mHaveFields = false;
 };
 
 class AllStepFieldWriterAutoDecomp : public LastStepFieldWriter
 {
 public:
-    AllStepFieldWriterAutoDecomp(stk::mesh::BulkData& bulk, const std::string& inputFilename)
+  AllStepFieldWriterAutoDecomp(stk::mesh::BulkData& bulk, const std::string& inputFilename)
     : LastStepFieldWriter(bulk)
-    {
-        stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
-        fill_mesh_and_time_data(inputFilename);
-    }
+  {
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+    fill_mesh_and_time_data(inputFilename);
+  }
 };
 
 }}}

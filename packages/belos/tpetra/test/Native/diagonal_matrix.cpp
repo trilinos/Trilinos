@@ -67,7 +67,7 @@ public:
 
     const LO lclNumRows = map_.is_null () ?
       static_cast<LO> (0) :
-      static_cast<LO> (map_->getNodeNumElements ());
+      static_cast<LO> (map_->getLocalNumElements ());
     dev_view_type diag_d ("diag", lclNumRows);
     host_view_type diag_h = Kokkos::create_mirror_view (diag_d);
 
@@ -109,9 +109,9 @@ public:
       auto X_j = X.getVector (j);
       auto Y_j = Y.getVectorNonConst (j);
 
-      auto X_j_lcl_2d = X_j->template getLocalView<device_type> (Tpetra::Access::ReadOnly);
+      auto X_j_lcl_2d = X_j->getLocalViewDevice (Tpetra::Access::ReadOnly);
       auto X_j_lcl = Kokkos::subview (X_j_lcl_2d, Kokkos::ALL (), 0);
-      auto Y_j_lcl_2d = Y_j->template getLocalView<device_type> (Tpetra::Access::ReadWrite);
+      auto Y_j_lcl_2d = Y_j->getLocalViewDevice (Tpetra::Access::ReadWrite);
       auto Y_j_lcl = Kokkos::subview (Y_j_lcl_2d, Kokkos::ALL (), 0);
 
       KokkosBlas::mult (static_cast<ISC> (beta), Y_j_lcl,

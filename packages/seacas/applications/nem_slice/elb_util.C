@@ -335,7 +335,7 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
   *last  = -1;
 
   /* See if value is in the vector */
-  ssize_t i = bin_search2(val, vecsize, vector);
+  int64_t i = bin_search2(val, vecsize, vector);
   *first    = i; /* Save this location */
 
   if (i != -1) {
@@ -368,7 +368,7 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
  *              array with a second value
  *****************************************************************************/
 template <typename INT>
-ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1, INT *vector2)
+int64_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1, INT *vector2)
 {
   for (size_t i = start; i <= stop; i++) {
     if ((vector1[i] == value1) && (vector2[i] == value2)) {
@@ -387,10 +387,10 @@ ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1
  * found in the vector then it's index in that vector is returned, otherwise
  * the function returns -1;
  *****************************************************************************/
-template ssize_t in_list(int value, size_t count, const int *vector);
-template ssize_t in_list(int64_t value, size_t count, const int64_t *vector);
+template int64_t in_list(int value, size_t count, const int *vector);
+template int64_t in_list(int64_t value, size_t count, const int64_t *vector);
 
-template <typename INT> ssize_t in_list(INT value, size_t count, const INT *vector)
+template <typename INT> int64_t in_list(INT value, size_t count, const INT *vector)
 {
   for (size_t i = 0; i < count; i++) {
     if (vector[i] == value) {
@@ -400,10 +400,10 @@ template <typename INT> ssize_t in_list(INT value, size_t count, const INT *vect
   return -1;
 }
 
-template ssize_t in_list(int value, const std::vector<int> &vector);
-template ssize_t in_list(int64_t value, const std::vector<int64_t> &vector);
+template int64_t in_list(int value, const std::vector<int> &vector);
+template int64_t in_list(int64_t value, const std::vector<int64_t> &vector);
 
-template <typename INT> ssize_t in_list(INT value, const std::vector<INT> &vector)
+template <typename INT> int64_t in_list(INT value, const std::vector<INT> &vector)
 {
   size_t count = vector.size();
   for (size_t i = 0; i < count; i++) {
@@ -806,15 +806,15 @@ template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
 #endif
 }
 
-template void                sort3(ssize_t count, int ra[], int rb[], int rc[]);
-template void                sort3(ssize_t count, int64_t ra[], int64_t rb[], int64_t rc[]);
-template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[])
+template void                sort3(int64_t count, int ra[], int rb[], int rc[]);
+template void                sort3(int64_t count, int64_t ra[], int64_t rb[], int64_t rc[]);
+template <typename INT> void sort3(int64_t count, INT ra[], INT rb[], INT rc[])
 {
   if (count <= 1) {
     return;
   }
   /* heapify */
-  for (ssize_t start = (count - 2) / 2; start >= 0; start--) {
+  for (int64_t start = (count - 2) / 2; start >= 0; start--) {
     siftDowniii(ra, rb, rc, start, count);
   }
 
@@ -826,9 +826,9 @@ template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[])
   }
 }
 
-template ssize_t                bin_search2(int value, size_t num, int List[]);
-template ssize_t                bin_search2(int64_t value, size_t num, int64_t List[]);
-template <typename INT> ssize_t bin_search2(INT value, size_t num, INT List[])
+template int64_t                bin_search2(int value, size_t num, int List[]);
+template int64_t                bin_search2(int64_t value, size_t num, int64_t List[]);
+template <typename INT> int64_t bin_search2(INT value, size_t num, INT List[])
 {
 
   /*

@@ -109,7 +109,7 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumElements() const = 0;
 
     //! The number of elements belonging to the calling process.
-    virtual size_t getNodeNumElements() const = 0;
+    virtual size_t getLocalNumElements() const = 0;
 
     //! The index base for this Map.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -148,7 +148,7 @@ namespace Xpetra {
                                             const Teuchos::ArrayView< int > &nodeIDList) const = 0;
 
     //! Return a view of the global indices owned by this process.
-    virtual Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const = 0;
+    virtual Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const = 0;
 
     //@}
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -49,6 +49,7 @@ namespace {
   const std::string asym_tensor_01() { return std::string("asym_tensor_01"); }
   const std::string matrix_22() { return std::string("matrix_22"); }
   const std::string matrix_33() { return std::string("matrix_33"); }
+  const std::string testonly() { return std::string("testonly"); }
 } // namespace
 
 Ioss::StorageInitializer::StorageInitializer()
@@ -77,6 +78,7 @@ Ioss::StorageInitializer::StorageInitializer()
   Ioss::Asym_Tensor_01::factory();
   Ioss::Matrix_22::factory();
   Ioss::Matrix_33::factory();
+  Ioss::TestOnly::factory();
 }
 
 // ------------------------------------------------------------------------
@@ -88,7 +90,8 @@ std::string Ioss::Invalid_Storage::label(int /*which*/, const char /*suffix_sep*
 }
 
 std::string Ioss::Invalid_Storage::label_name(const std::string &base, int /*which*/,
-                                              const char /*suffix_sep*/) const
+                                              const char /*suffix_sep*/,
+                                              bool /*suffices_uppercase*/) const
 {
   return base;
 }
@@ -114,7 +117,7 @@ std::string Ioss::Scalar::label(int which, const char /*suffix_sep*/) const
 }
 
 std::string Ioss::Scalar::label_name(const std::string &base, int /*which*/,
-                                     const char /*suffix_sep*/) const
+                                     const char /*suffix_sep*/, bool /*suffices_uppercase*/) const
 {
   return base;
 }
@@ -440,6 +443,20 @@ std::string Ioss::Matrix_33::label(int which, const char /*suffix_sep*/) const
   }
 }
 
+Ioss::TestOnly::TestOnly() : Ioss::VariableType(testonly(), 4) {}
+
+std::string Ioss::TestOnly::label(int which, const char /*suffix_sep*/) const
+{
+  assert(which > 0 && which <= component_count());
+  switch (which) {
+  case 1: return "H";
+  case 2: return "H2";
+  case 3: return "H2O";
+  case 4: return "O2";
+  default: return "";
+  }
+}
+
 // Define all factories here:
 void Ioss::Invalid_Storage::factory() { static Ioss::Invalid_Storage registerThis; }
 
@@ -484,3 +501,5 @@ void Ioss::Asym_Tensor_01::factory() { static Ioss::Asym_Tensor_01 registerThis;
 void Ioss::Matrix_22::factory() { static Ioss::Matrix_22 registerThis; }
 
 void Ioss::Matrix_33::factory() { static Ioss::Matrix_33 registerThis; }
+
+void Ioss::TestOnly::factory() { static Ioss::TestOnly registerThis; }

@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iohb_Layout_h
-#define IOSS_Iohb_Layout_h
+#pragma once
 
 #include <iomanip> // for operator<<, setw, etc
 #include <iostream>
@@ -18,7 +17,7 @@ namespace Iohb {
   {
   public:
     Layout(bool show_labels, int precision, std::string separator, int field_width);
-    Layout(const Layout &) = delete;
+    Layout(const Layout &)            = delete;
     Layout &operator=(const Layout &) = delete;
 
     ~Layout();
@@ -114,5 +113,3 @@ namespace Iohb {
   }
 
 } // namespace Iohb
-
-#endif // IOSS_Iohb_Layout_h

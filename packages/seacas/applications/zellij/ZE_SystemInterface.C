@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -14,12 +14,17 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <iosfwd> // for ostream
+#include <tokenize.h>
 
 //! \file
 
 SystemInterface::SystemInterface(int my_rank) : myRank_(my_rank) { enroll_options(); }
 
 SystemInterface::~SystemInterface() = default;
+
+namespace {
+  void parse_offset(const char *tokens, vector3d &offset, int myRank);
+}
 
 void SystemInterface::enroll_options()
 {
@@ -74,6 +79,11 @@ void SystemInterface::enroll_options()
   options_.enroll("subcycle", Ioss::GetLongOption::NoValue,
                   "Process cells in groups of '-rank_count'.  Helps minimize open files,\n"
                   "\t\tbut is faster than only having a single file open.",
+                  nullptr);
+
+  options_.enroll("offset", Ioss::GetLongOption::MandatoryValue,
+                  "Comma-separated x,y,z offset for coordinates of the output mesh.\n"
+                  "\t\tThe output coordinates will be xyz_out = xyz * scale + offset_xyz",
                   nullptr);
 
   options_.enroll("scale", Ioss::GetLongOption::MandatoryValue,
@@ -170,8 +180,8 @@ void SystemInterface::enroll_options()
 
   options_.enroll("debug", Ioss::GetLongOption::MandatoryValue,
                   "debug level (values are or'd)\n"
-                  "\t\t   1 = Time stamp information.\n"
-                  "\t\t   2 = Memory information.\n"
+                  "\t\t   1 = Exodus Verbose mode.\n"
+                  "\t\t   2 = Memory and time stamp information.\n"
                   "\t\t   4 = Verbose Unit Cell information.\n"
                   "\t\t   8 = Verbose output of Grid finalization calculations.\n"
                   "\t\t  16 = Put exodus library into verbose mode.\n"
@@ -195,6 +205,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (myRank_ == 0) {
       options_.usage();
       fmt::print("\n\tCan also set options via ZELLIJ_OPTIONS environment variable.\n"
+                 "\n\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#zellij\n"
                  "\n\t->->-> Send email to gdsjaar@sandia.gov for zellij support.<-<-<-\n");
     }
     exit(EXIT_SUCCESS);
@@ -249,6 +261,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
       else if (mode == "none") {
         minimizeOpenFiles_ = Minimize::NONE;
       }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("offset");
+    if (temp != nullptr) {
+      parse_offset(temp, offset_, myRank_);
     }
   }
 
@@ -326,7 +345,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   repeat_ = options_.get_option_value("repeat", repeat_);
 
   // Adjust start_rank and rank_count if running in parallel...
-  Ioss::ParallelUtils pu{MPI_COMM_WORLD};
+  Ioss::ParallelUtils pu{};
   if (pu.parallel_size() > 1) {
     if (subcycle_) {
       if (myRank_ == 0) {
@@ -373,3 +392,43 @@ void SystemInterface::show_version()
              "\t(Version: {}) Modified: {}\n",
              qainfo[2], qainfo[1]);
 }
+
+namespace {
+  void parse_offset(const char *tokens, vector3d &offset, int myRank)
+  {
+    // Break into tokens separated by ","
+    if (tokens != nullptr) {
+      std::string token_string(tokens);
+      auto        var_list = Ioss::tokenize(token_string, ",");
+
+      // At this point, var_list should contain 1,2,or 3 strings
+      // corresponding to the x, y, and z coordinate offsets.
+      offset[0] = offset[1] = offset[2] = 0.0;
+
+      std::string offx = var_list[0];
+      double      x    = std::stod(offx);
+      offset[0]        = x;
+
+      if (var_list.size() >= 2) {
+        std::string offy = var_list[1];
+        double      y    = std::stod(offy);
+        offset[1]        = y;
+      }
+
+      if (var_list.size() == 3) {
+        std::string offz = var_list[2];
+        double      z    = std::stod(offz);
+        offset[2]        = z;
+      }
+
+      if (var_list.size() > 3) {
+        if (myRank == 0) {
+          fmt::print(stderr, fmt::fg(fmt::color::red),
+                     "ERROR: Incorrect number of offset components ({}) specified -- max is 3; "
+                     "ignoring extras.\n\n",
+                     var_list.size());
+        }
+      }
+    }
+  }
+} // namespace

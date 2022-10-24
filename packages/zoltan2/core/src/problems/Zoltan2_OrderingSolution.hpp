@@ -184,7 +184,7 @@ public:
       for(size_t i=0; i<perm_size_; i++) {
         invperm_[perm_[i]] = i;
       }
-      havePerm_ = true;
+      haveInverse_ = true;
     }
     else {
       // TODO: throw exception

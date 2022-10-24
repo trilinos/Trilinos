@@ -36,7 +36,6 @@
 #include <sys/resource.h>  // for rusage, getrusage, RUSAGE_SELF
 #include <sys/time.h>      // for timeval
 
-
 namespace stk {
 
 double

@@ -111,9 +111,9 @@ int main(int argc, char *argv[])
   // Construct the blocked map in Thyra mode
   RCP<const tpetra_map_type> primalNodeMap = Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(globalPrimalNumNodes, comm);
   const GO indexBase = primalNodeMap->getIndexBase();
-  ArrayView<const GO> myPrimalNodes = primalNodeMap->getNodeElementList();
+  ArrayView<const GO> myPrimalNodes = primalNodeMap->getLocalElementList();
 
-  const size_t numMyPrimalNodes = primalNodeMap->getNodeNumElements();
+  const size_t numMyPrimalNodes = primalNodeMap->getLocalNumElements();
   const size_t numMyPrimalDofs = numMyPrimalNodes * nPrimalDofsPerNode;
 
   Array<GO> myPrimalDofs(numMyPrimalDofs);

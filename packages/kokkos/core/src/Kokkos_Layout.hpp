@@ -45,12 +45,20 @@
 /// \file Kokkos_Layout.hpp
 /// \brief Declaration of various \c MemoryLayout options.
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_LAYOUT_HPP
 #define KOKKOS_LAYOUT_HPP
 
 #include <cstddef>
 #include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Tags.hpp>
 
 namespace Kokkos {
 
@@ -85,10 +93,25 @@ struct LayoutLeft {
   LayoutLeft& operator=(LayoutLeft&&) = default;
 
   KOKKOS_INLINE_FUNCTION
-  explicit constexpr LayoutLeft(size_t N0 = 0, size_t N1 = 0, size_t N2 = 0,
-                                size_t N3 = 0, size_t N4 = 0, size_t N5 = 0,
-                                size_t N6 = 0, size_t N7 = 0)
+  explicit constexpr LayoutLeft(size_t N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                size_t N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
       : dimension{N0, N1, N2, N3, N4, N5, N6, N7} {}
+
+  friend bool operator==(const LayoutLeft& left, const LayoutLeft& right) {
+    for (unsigned int rank = 0; rank < ARRAY_LAYOUT_MAX_RANK; ++rank)
+      if (left.dimension[rank] != right.dimension[rank]) return false;
+    return true;
+  }
+
+  friend bool operator!=(const LayoutLeft& left, const LayoutLeft& right) {
+    return !(left == right);
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -119,10 +142,25 @@ struct LayoutRight {
   LayoutRight& operator=(LayoutRight&&) = default;
 
   KOKKOS_INLINE_FUNCTION
-  explicit constexpr LayoutRight(size_t N0 = 0, size_t N1 = 0, size_t N2 = 0,
-                                 size_t N3 = 0, size_t N4 = 0, size_t N5 = 0,
-                                 size_t N6 = 0, size_t N7 = 0)
+  explicit constexpr LayoutRight(size_t N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                                 size_t N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
       : dimension{N0, N1, N2, N3, N4, N5, N6, N7} {}
+
+  friend bool operator==(const LayoutRight& left, const LayoutRight& right) {
+    for (unsigned int rank = 0; rank < ARRAY_LAYOUT_MAX_RANK; ++rank)
+      if (left.dimension[rank] != right.dimension[rank]) return false;
+    return true;
+  }
+
+  friend bool operator!=(const LayoutRight& left, const LayoutRight& right) {
+    return !(left == right);
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -158,7 +196,7 @@ struct LayoutStride {
     // Verify valid rank order:
     int check_input = ARRAY_LAYOUT_MAX_RANK < rank ? 0 : int(1 << rank) - 1;
     for (int r = 0; r < ARRAY_LAYOUT_MAX_RANK; ++r) {
-      tmp.dimension[r] = 0;
+      tmp.dimension[r] = KOKKOS_IMPL_CTOR_DEFAULT_ARG;
       tmp.stride[r]    = 0;
     }
     for (int r = 0; r < rank; ++r) {
@@ -176,14 +214,29 @@ struct LayoutStride {
   }
 
   KOKKOS_INLINE_FUNCTION
-  explicit constexpr LayoutStride(size_t N0 = 0, size_t S0 = 0, size_t N1 = 0,
-                                  size_t S1 = 0, size_t N2 = 0, size_t S2 = 0,
-                                  size_t N3 = 0, size_t S3 = 0, size_t N4 = 0,
-                                  size_t S4 = 0, size_t N5 = 0, size_t S5 = 0,
-                                  size_t N6 = 0, size_t S6 = 0, size_t N7 = 0,
-                                  size_t S7 = 0)
+  explicit constexpr LayoutStride(
+      size_t N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S0 = 0,
+      size_t N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S1 = 0,
+      size_t N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S2 = 0,
+      size_t N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S3 = 0,
+      size_t N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S4 = 0,
+      size_t N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S5 = 0,
+      size_t N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S6 = 0,
+      size_t N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG, size_t S7 = 0)
       : dimension{N0, N1, N2, N3, N4, N5, N6, N7}, stride{S0, S1, S2, S3,
                                                           S4, S5, S6, S7} {}
+
+  friend bool operator==(const LayoutStride& left, const LayoutStride& right) {
+    for (unsigned int rank = 0; rank < ARRAY_LAYOUT_MAX_RANK; ++rank)
+      if (left.dimension[rank] != right.dimension[rank] ||
+          left.stride[rank] != right.stride[rank])
+        return false;
+    return true;
+  }
+
+  friend bool operator!=(const LayoutStride& left, const LayoutStride& right) {
+    return !(left == right);
+  }
 };
 
 // ===================================================================================
@@ -203,9 +256,8 @@ template <typename LayoutTiledCheck, class Enable = void>
 struct is_layouttiled : std::false_type {};
 
 template <typename LayoutTiledCheck>
-struct is_layouttiled<
-    LayoutTiledCheck,
-    typename std::enable_if<LayoutTiledCheck::is_array_layout_tiled>::type>
+struct is_layouttiled<LayoutTiledCheck,
+                      std::enable_if_t<LayoutTiledCheck::is_array_layout_tiled>>
     : std::true_type {};
 
 namespace Experimental {
@@ -228,18 +280,6 @@ template <
 struct LayoutTiled {
   static_assert(IsPowerOfTwo,
                 "LayoutTiled must be given power-of-two tile dimensions");
-
-#if 0
-  static_assert( (Impl::is_integral_power_of_two(ArgN0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN1) ) &&
-                 (Impl::is_integral_power_of_two(ArgN2) || (ArgN2 == 0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN3) || (ArgN3 == 0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN4) || (ArgN4 == 0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN5) || (ArgN5 == 0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN6) || (ArgN6 == 0) ) &&
-                 (Impl::is_integral_power_of_two(ArgN7) || (ArgN7 == 0) )
-               , "LayoutTiled must be given power-of-two tile dimensions" );
-#endif
 
   using array_layout = LayoutTiled<OuterP, InnerP, ArgN0, ArgN1, ArgN2, ArgN3,
                                    ArgN4, ArgN5, ArgN6, ArgN7, IsPowerOfTwo>;
@@ -270,6 +310,16 @@ struct LayoutTiled {
                                  size_t argN4 = 0, size_t argN5 = 0,
                                  size_t argN6 = 0, size_t argN7 = 0)
       : dimension{argN0, argN1, argN2, argN3, argN4, argN5, argN6, argN7} {}
+
+  friend bool operator==(const LayoutTiled& left, const LayoutTiled& right) {
+    for (unsigned int rank = 0; rank < ARRAY_LAYOUT_MAX_RANK; ++rank)
+      if (left.dimension[rank] != right.dimension[rank]) return false;
+    return true;
+  }
+
+  friend bool operator!=(const LayoutTiled& left, const LayoutTiled& right) {
+    return !(left == right);
+  }
 };
 
 }  // namespace Experimental
@@ -307,7 +357,7 @@ template <unsigned ArgN0, unsigned ArgN1, unsigned ArgN2, unsigned ArgN3,
           unsigned ArgN4, unsigned ArgN5, unsigned ArgN6, unsigned ArgN7>
 struct layout_iterate_type_selector<Kokkos::Experimental::LayoutTiled<
     Kokkos::Iterate::Left, Kokkos::Iterate::Left, ArgN0, ArgN1, ArgN2, ArgN3,
-    ArgN4, ArgN5, ArgN6, ArgN7, true> > {
+    ArgN4, ArgN5, ArgN6, ArgN7, true>> {
   static const Kokkos::Iterate outer_iteration_pattern = Kokkos::Iterate::Left;
   static const Kokkos::Iterate inner_iteration_pattern = Kokkos::Iterate::Left;
 };
@@ -316,7 +366,7 @@ template <unsigned ArgN0, unsigned ArgN1, unsigned ArgN2, unsigned ArgN3,
           unsigned ArgN4, unsigned ArgN5, unsigned ArgN6, unsigned ArgN7>
 struct layout_iterate_type_selector<Kokkos::Experimental::LayoutTiled<
     Kokkos::Iterate::Right, Kokkos::Iterate::Left, ArgN0, ArgN1, ArgN2, ArgN3,
-    ArgN4, ArgN5, ArgN6, ArgN7, true> > {
+    ArgN4, ArgN5, ArgN6, ArgN7, true>> {
   static const Kokkos::Iterate outer_iteration_pattern = Kokkos::Iterate::Right;
   static const Kokkos::Iterate inner_iteration_pattern = Kokkos::Iterate::Left;
 };
@@ -325,7 +375,7 @@ template <unsigned ArgN0, unsigned ArgN1, unsigned ArgN2, unsigned ArgN3,
           unsigned ArgN4, unsigned ArgN5, unsigned ArgN6, unsigned ArgN7>
 struct layout_iterate_type_selector<Kokkos::Experimental::LayoutTiled<
     Kokkos::Iterate::Left, Kokkos::Iterate::Right, ArgN0, ArgN1, ArgN2, ArgN3,
-    ArgN4, ArgN5, ArgN6, ArgN7, true> > {
+    ArgN4, ArgN5, ArgN6, ArgN7, true>> {
   static const Kokkos::Iterate outer_iteration_pattern = Kokkos::Iterate::Left;
   static const Kokkos::Iterate inner_iteration_pattern = Kokkos::Iterate::Right;
 };
@@ -334,7 +384,7 @@ template <unsigned ArgN0, unsigned ArgN1, unsigned ArgN2, unsigned ArgN3,
           unsigned ArgN4, unsigned ArgN5, unsigned ArgN6, unsigned ArgN7>
 struct layout_iterate_type_selector<Kokkos::Experimental::LayoutTiled<
     Kokkos::Iterate::Right, Kokkos::Iterate::Right, ArgN0, ArgN1, ArgN2, ArgN3,
-    ArgN4, ArgN5, ArgN6, ArgN7, true> > {
+    ArgN4, ArgN5, ArgN6, ArgN7, true>> {
   static const Kokkos::Iterate outer_iteration_pattern = Kokkos::Iterate::Right;
   static const Kokkos::Iterate inner_iteration_pattern = Kokkos::Iterate::Right;
 };

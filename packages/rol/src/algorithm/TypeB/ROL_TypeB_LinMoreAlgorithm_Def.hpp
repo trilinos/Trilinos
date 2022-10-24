@@ -67,6 +67,9 @@ LinMoreAlgorithm<Real>::LinMoreAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
+  // Nonmonotone Parameters
+  storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
+  useNM_     = (storageNM_ <= 0 ? false : true);
   // Krylov Parameters
   maxit_ = list.sublist("General").sublist("Krylov").get("Iteration Limit",    20);
   tol1_  = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
@@ -159,7 +162,7 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
   const Real zero(0);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), snorm(0);
-  Real ftrial(0), pRed(0), rho(1), q(0);
+  Real ftrial(0), pRed(0), rho(1), q(0), delta(0);
   int flagCG(0), iterCG(0), maxit(0);
   // Initialize trust-region data
   initialize(x,g,obj,bnd,outStream);
@@ -167,6 +170,11 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
   Ptr<Vector<Real>> gmod = g.clone(), gfree = g.clone();
   Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone(), dwa3 = g.clone();
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -181,6 +189,8 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
                     state_->gradientVec->dual(),state_->searchSize,
                     *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
     x.plus(*state_->stepVec);                       // Set x = x[0] + alpha*g
+    state_->snorm = snorm;
+    delta = state_->searchSize - snorm;
     pRed = -q;
 
     // Model gradient at s = x[1] - x[0]
@@ -212,9 +222,9 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
       gfnormf = zero;
       tol     = std::min(tol1_,tol2_*std::pow(gfnorm,spexp_));
       stol    = tol; //zero;
-      if (gfnorm > zero) {
+      if (gfnorm > zero && delta > zero) {
         snorm = dtrpcg(*s,flagCG,iterCG,*gfree,x,
-                       state_->searchSize,*model_,bnd,tol,stol,maxit,
+                       delta,*model_,bnd,tol,stol,maxit,
                        *pwa1,*dwa1,*pwa2,*dwa2,*pwa3,*dwa3,outStream);
         maxit   -= iterCG;
         SPiter_ += iterCG;
@@ -234,6 +244,8 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
 
         // Model gradient at s = (x[i+1]-x[i]) - (x[i]-x[0])
         state_->stepVec->plus(*s);
+        state_->snorm = state_->stepVec->norm();
+        delta = state_->searchSize - state_->snorm;
         gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
         gfree->set(*gmod);
         //bnd.pruneActive(*gfree,x,zero);
@@ -266,7 +278,8 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
         SPflag_ = 2;
         break;
       }
-      else if (flagCG == 3) {
+      else if (delta <= zero) {
+      //else if (flagCG == 3 || delta <= zero) {
         SPflag_ = 3;
         break;
       }
@@ -274,7 +287,6 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
       // Update free gradient norm
       gfnorm = gfnormf;
     }
-    state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
     obj.update(x,UpdateType::Trial);
@@ -284,6 +296,11 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
     // Compute ratio of acutal and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
 
     // Update algorithm state
     state_->iter++;
@@ -305,6 +322,15 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == storageNM_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate

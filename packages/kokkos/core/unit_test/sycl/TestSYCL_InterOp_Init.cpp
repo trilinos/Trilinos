@@ -52,13 +52,15 @@ namespace Test {
 // Test whether allocations survive Kokkos initialize/finalize if done via Raw
 // SYCL.
 TEST(sycl, raw_sycl_interop) {
+  Kokkos::initialize();
+
+  Kokkos::Experimental::SYCL default_space;
+  sycl::context default_context = default_space.sycl_queue().get_context();
+
   sycl::default_selector device_selector;
-  sycl::queue queue(device_selector);
+  sycl::queue queue(default_context, device_selector);
   constexpr int n = 100;
   int* p          = sycl::malloc_device<int>(n, queue);
-
-  Kokkos::InitArguments arguments{-1, -1, -1, false};
-  Kokkos::initialize(arguments);
   {
     TEST_EXECSPACE space(queue);
     Kokkos::View<int*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> v(p, n);

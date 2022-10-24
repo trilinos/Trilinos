@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2OverlapGraph, OverlapGraphTest0, LO, GO
   }
   IFPACK2OVERLAPGRAPH_REPORT_GLOBAL_ERR( "Tpetra::CrsGraph creation" );
 
-  TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc )
+  TEST_EQUALITY( crsgraph->getMap()->getLocalNumElements(), num_rows_per_proc )
 
   const LO overlap_levels = 2;
   RCP<overlap_graph_type> overlapgraph;
@@ -148,11 +148,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2OverlapGraph, OverlapGraphTest0, LO, GO
 
   if (numProcs == 1) {
     // This works fine, because Process 0 is doing the check in this case.
-    TEST_EQUALITY(overlapgraph->getOverlapGraph().getMap()->getNodeNumElements(), num_rows_per_proc)
+    TEST_EQUALITY(overlapgraph->getOverlapGraph().getMap()->getLocalNumElements(), num_rows_per_proc)
   }
   else { // numProcs > 1
     const size_t actualOverlap =
-      overlapgraph->getOverlapGraph ().getMap ()->getNodeNumElements ();
+      overlapgraph->getOverlapGraph ().getMap ()->getLocalNumElements ();
     size_t expectedOverlap = 0;
     if (myRank == 0 || myRank == numProcs - 1) {
       expectedOverlap = num_rows_per_proc + overlap_levels;

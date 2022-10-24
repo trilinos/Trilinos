@@ -35,7 +35,6 @@
           <Parameter name="Verbosity" type="int" value="41"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Output Style" type="int" value="1"/>
-          <Parameter name="Filename LHS" type="string" value="X"/>
         </ParameterList>
 
       </ParameterList>
@@ -91,6 +90,7 @@
       <!-- ===========  AGGREGATION  =========== -->
       <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
       <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+      <Parameter        name="aggregation: deterministic"           type="bool"     value="true"/>
       <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
            for anisotropic problems.  The exact value is problem dependent. -->
       <!--

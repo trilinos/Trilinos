@@ -17,7 +17,7 @@ sys.dont_write_bytecode = True
 
 from . import sysinfo
 from LoadEnv.load_env import LoadEnv
-from LoadEnv import setenvironment
+import setenvironment
 
 
 

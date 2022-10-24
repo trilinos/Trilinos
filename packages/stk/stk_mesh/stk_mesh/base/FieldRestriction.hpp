@@ -107,11 +107,7 @@ class FieldRestriction {
     return this->m_selector != rhs.m_selector;
   }
 
-  void print(
-      std::ostream & os,
-      const Selector & selector,
-      FieldArrayRank field_rank
-      ) const;
+  void print(std::ostream & os, const Selector & selector) const;
 
   private:
   Selector m_selector;
@@ -121,11 +117,7 @@ class FieldRestriction {
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;
 
-std::string print_restriction(
-    const FieldRestriction & restr,
-    const Selector& selector,
-    FieldArrayRank field_rank
-    );
+std::string print_restriction(const FieldRestriction & restr, const Selector& selector);
 
 } // namespace mesh
 } // namespace stk

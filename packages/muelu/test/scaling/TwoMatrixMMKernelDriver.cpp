@@ -161,10 +161,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     const KCRS & B1mat = B1u->getLocalMatrix();
     const KCRS & B2mat = B2u->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, B1rowptr = B1mat.graph.row_map, B2rowptr = B2mat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
+    lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, B1colind = B1mat.graph.entries, B2colind = B2mat.graph.entries;
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
@@ -218,9 +218,9 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     copy_view(Acolind,AcolindMKL);
 
     if(std::is_same<Scalar,double>::value) {
-      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
-      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
+      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getLocalNumRows(), Au->getLocalNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
+      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
+      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -280,7 +280,7 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     size_t cnnz = rows_end[c_rows-1];
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-    if(c_rows != A.getNodeNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    if(c_rows != A.getLocalNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
@@ -337,7 +337,7 @@ void MM2_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>           import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
     typedef typename KCRS::device_type device_t;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -393,18 +393,18 @@ void MM2_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A
     local_map_type Ccolmap_local = Ccolmap_t->getLocalMap();
 
     // Bcol2Ccol
-    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.origMatrix->getColMap()->getNodeNumElements());
-    lo_view_t Icol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Icol2Ccol"),Bview.importMatrix->getColMap()->getNodeNumElements());
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_getGlobalElement",range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.origMatrix->getColMap()->getLocalNumElements());
+    lo_view_t Icol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Icol2Ccol"),Bview.importMatrix->getColMap()->getLocalNumElements());
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_getGlobalElement",range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
       });
 
     // Acol2Brow
-    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-    lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+    lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -579,7 +579,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     
     // Do some surgery to generate B1 and B2
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-    size_t brows = Browmap->getNodeNumElements();
+    size_t brows = Browmap->getLocalNumElements();
     size_t b2rows = std::max((size_t)0,std::min((size_t)(brows * percent_rows_to_remove/100.0),brows));
     size_t b1rows = brows - b2rows;
     {

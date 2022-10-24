@@ -75,6 +75,16 @@ TEST(hip, space_access) {
           Kokkos::HostSpace, Kokkos::Experimental::HIPSpace>::accessible,
       "");
 
+  static_assert(
+      !Kokkos::Impl::MemorySpaceAccess<
+          Kokkos::HostSpace, Kokkos::Experimental::HIPManagedSpace>::assignable,
+      "");
+
+  static_assert(
+      Kokkos::Impl::MemorySpaceAccess<
+          Kokkos::HostSpace, Kokkos::Experimental::HIPManagedSpace>::accessible,
+      "");
+
   //--------------------------------------
 
   static_assert(Kokkos::Impl::MemorySpaceAccess<
@@ -98,6 +108,16 @@ TEST(hip, space_access) {
 
   static_assert(!Kokkos::Impl::MemorySpaceAccess<Kokkos::Experimental::HIPSpace,
                                                  Kokkos::HostSpace>::accessible,
+                "");
+
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPSpace,
+                    Kokkos::Experimental::HIPManagedSpace>::assignable,
+                "");
+
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPSpace,
+                    Kokkos::Experimental::HIPManagedSpace>::accessible,
                 "");
 
   //--------------------------------------
@@ -127,32 +147,88 @@ TEST(hip, space_access) {
                     Kokkos::Experimental::HIPSpace>::accessible,
                 "");
 
+  static_assert(!Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPHostPinnedSpace,
+                    Kokkos::Experimental::HIPManagedSpace>::assignable,
+                "");
+
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPHostPinnedSpace,
+                    Kokkos::Experimental::HIPManagedSpace>::accessible,
+                "");
+
   //--------------------------------------
 
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPManagedSpace,
+                    Kokkos::Experimental::HIPManagedSpace>::assignable,
+                "");
+
   static_assert(
-      !Kokkos::Impl::SpaceAccessibility<Kokkos::Experimental::HIP,
-                                        Kokkos::HostSpace>::accessible,
+      !Kokkos::Impl::MemorySpaceAccess<Kokkos::Experimental::HIPManagedSpace,
+                                       Kokkos::HostSpace>::assignable,
       "");
 
-  static_assert(Kokkos::Impl::SpaceAccessibility<
-                    Kokkos::Experimental::HIP,
+  static_assert(
+      !Kokkos::Impl::MemorySpaceAccess<Kokkos::Experimental::HIPManagedSpace,
+                                       Kokkos::HostSpace>::accessible,
+      "");
+
+  static_assert(!Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPManagedSpace,
+                    Kokkos::Experimental::HIPSpace>::assignable,
+                "");
+
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPManagedSpace,
                     Kokkos::Experimental::HIPSpace>::accessible,
                 "");
 
-  static_assert(Kokkos::Impl::SpaceAccessibility<
+  static_assert(!Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPManagedSpace,
+                    Kokkos::Experimental::HIPHostPinnedSpace>::assignable,
+                "");
+
+  static_assert(Kokkos::Impl::MemorySpaceAccess<
+                    Kokkos::Experimental::HIPManagedSpace,
+                    Kokkos::Experimental::HIPHostPinnedSpace>::accessible,
+                "");
+
+  //--------------------------------------
+
+  static_assert(!Kokkos::SpaceAccessibility<Kokkos::Experimental::HIP,
+                                            Kokkos::HostSpace>::accessible,
+                "");
+
+  static_assert(
+      Kokkos::SpaceAccessibility<Kokkos::Experimental::HIP,
+                                 Kokkos::Experimental::HIPSpace>::accessible,
+      "");
+
+  static_assert(Kokkos::SpaceAccessibility<
                     Kokkos::Experimental::HIP,
                     Kokkos::Experimental::HIPHostPinnedSpace>::accessible,
                 "");
 
+  static_assert(Kokkos::SpaceAccessibility<
+                    Kokkos::Experimental::HIP,
+                    Kokkos::Experimental::HIPManagedSpace>::accessible,
+                "");
+
   static_assert(
-      !Kokkos::Impl::SpaceAccessibility<
-          Kokkos::HostSpace, Kokkos::Experimental::HIPSpace>::accessible,
+      !Kokkos::SpaceAccessibility<Kokkos::HostSpace,
+                                  Kokkos::Experimental::HIPSpace>::accessible,
       "");
 
-  static_assert(Kokkos::Impl::SpaceAccessibility<
+  static_assert(Kokkos::SpaceAccessibility<
                     Kokkos::HostSpace,
                     Kokkos::Experimental::HIPHostPinnedSpace>::accessible,
                 "");
+
+  static_assert(
+      Kokkos::SpaceAccessibility<
+          Kokkos::HostSpace, Kokkos::Experimental::HIPManagedSpace>::accessible,
+      "");
 
   static_assert(
       std::is_same<
@@ -166,20 +242,34 @@ TEST(hip, space_access) {
                    Kokkos::Experimental::HIPHostPinnedSpace>::value,
       "");
 
-  static_assert(Kokkos::Impl::SpaceAccessibility<
+  static_assert(
+      std::is_same<
+          Kokkos::Impl::HostMirror<
+              Kokkos::Experimental::HIPManagedSpace>::Space,
+          Kokkos::Device<Kokkos::HostSpace::execution_space,
+                         Kokkos::Experimental::HIPManagedSpace>>::value,
+      "");
+
+  static_assert(Kokkos::SpaceAccessibility<
                     Kokkos::Impl::HostMirror<Kokkos::Experimental::HIP>::Space,
                     Kokkos::HostSpace>::accessible,
                 "");
 
   static_assert(
-      Kokkos::Impl::SpaceAccessibility<
+      Kokkos::SpaceAccessibility<
           Kokkos::Impl::HostMirror<Kokkos::Experimental::HIPSpace>::Space,
           Kokkos::HostSpace>::accessible,
       "");
 
-  static_assert(Kokkos::Impl::SpaceAccessibility<
+  static_assert(Kokkos::SpaceAccessibility<
                     Kokkos::Impl::HostMirror<
                         Kokkos::Experimental::HIPHostPinnedSpace>::Space,
+                    Kokkos::HostSpace>::accessible,
+                "");
+
+  static_assert(Kokkos::SpaceAccessibility<
+                    Kokkos::Impl::HostMirror<
+                        Kokkos::Experimental::HIPManagedSpace>::Space,
                     Kokkos::HostSpace>::accessible,
                 "");
 }
@@ -228,6 +318,11 @@ TEST(hip, impl_view_accessible) {
                         Kokkos::Experimental::HIP>::run();
   TestViewHIPAccessible<Kokkos::Experimental::HIPHostPinnedSpace,
                         Kokkos::HostSpace::execution_space>::run();
+
+  TestViewHIPAccessible<Kokkos::Experimental::HIPManagedSpace,
+                        Kokkos::HostSpace::execution_space>::run();
+  TestViewHIPAccessible<Kokkos::Experimental::HIPManagedSpace,
+                        Kokkos::Experimental::HIP>::run();
 }
 
 }  // namespace Test

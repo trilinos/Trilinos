@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Hex9_h
-#define IOSS_Ioss_Hex9_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
@@ -20,12 +19,13 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    ~Hex9() override;
+    ~Hex9() override = default;
 
     ElementShape shape() const override { return ElementShape::HEX; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -50,9 +50,6 @@ namespace Ioss {
     Hex9();
 
   private:
-    static Hex9 instance_;
-
     Hex9(const Hex9 &) = delete;
   };
 } // namespace Ioss
-#endif

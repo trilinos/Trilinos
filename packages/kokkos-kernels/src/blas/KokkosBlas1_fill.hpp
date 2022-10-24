@@ -45,7 +45,7 @@
 #ifndef KOKKOSBLAS1_FILL_HPP_
 #define KOKKOSBLAS1_FILL_HPP_
 
-#include<Kokkos_Core.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace KokkosBlas {
 
@@ -55,14 +55,13 @@ namespace KokkosBlas {
 ///
 /// \param X [out] Output View (1-D or 2-D).
 /// \param val [in] Value with which to fill the entries of X.
-template<class XMV>
-void fill (const XMV& X, const typename XMV::non_const_value_type& val) {
+template <class XMV>
+void fill(const XMV& X, const typename XMV::non_const_value_type& val) {
   Kokkos::Profiling::pushRegion("KokkosBlas::fill");
-  Kokkos::deep_copy(X,val);
+  Kokkos::deep_copy(X, val);
   Kokkos::Profiling::popRegion();
 }
 
-}
+}  // namespace KokkosBlas
 
-#endif // KOKKOSBLAS1_ABS_HPP_
-
+#endif  // KOKKOSBLAS1_ABS_HPP_

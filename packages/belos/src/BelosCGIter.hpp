@@ -497,9 +497,11 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       alpha[0] = rHz[0] / pAp[0];
       
       // Check that alpha is a positive number!
-      if(assertPositiveDefiniteness_)
-        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha[0]) <= zero, CGIterateFailure,
+      if(assertPositiveDefiniteness_) {
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha[0]) <= zero, CGPositiveDefiniteFailure,
                                     "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      }
+
       //
       // Update the solution vector x := x + alpha * P_
       //

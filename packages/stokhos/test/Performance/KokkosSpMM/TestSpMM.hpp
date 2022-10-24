@@ -46,7 +46,7 @@
 
 
 // Utilities
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 template< typename IntType >
 inline
@@ -161,7 +161,7 @@ test_spmm(const OrdinalType ensemble_length,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type e=0; e<ensemble_length; ++e) {
         KokkosSparse::spmv( "N", value_type(1.0), matrix, x[e] , value_type(0.0) , y[e]);
@@ -190,7 +190,7 @@ test_spmm(const OrdinalType ensemble_length,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xl , value_type(0.0) , yl);
     }
@@ -218,7 +218,7 @@ test_spmm(const OrdinalType ensemble_length,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv( "N", value_type(1.0), matrix, xr , value_type(0.0) , yr);
     }

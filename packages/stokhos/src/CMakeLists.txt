@@ -514,7 +514,7 @@ IF(Kokkos_ENABLE_SERIAL)
     kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_PTHREAD)
+IF(Kokkos_ENABLE_THREADS)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
@@ -665,6 +665,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Sacado_MP_Vector_SFS_unary_func_tmpl.hpp
       sacado/kokkos/vector/Sacado_MP_Vector_SFS_binary_op_tmpl.hpp
       sacado/kokkos/vector/Sacado_MP_Vector_SFS_binary_func_tmpl.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector_Fwd.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
       sacado/kokkos/vector/KokkosExp_View_MP_Vector_Contiguous.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
@@ -709,6 +710,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/Sacado_UQ_PCE_Imp.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE_Traits.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE_ScalarTraitsImp.hpp
+      sacado/kokkos/pce/Kokkos_View_UQ_PCE_Fwd.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE.hpp
       sacado/kokkos/pce/KokkosExp_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
@@ -1105,6 +1107,8 @@ IF (Stokhos_ENABLE_Sacado)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
         LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
+        LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RefMaxwell)
+        LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::Maxwell_Utils)
       ENDIF()
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)

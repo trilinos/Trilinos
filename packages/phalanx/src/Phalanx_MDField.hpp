@@ -50,7 +50,6 @@
 #include <type_traits>
 #include "Phalanx_any.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -321,7 +320,7 @@ namespace PHX {
 
     const PHX::FieldTag& fieldTag() const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
       return *m_tag;
@@ -329,7 +328,7 @@ namespace PHX {
 
     Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
       return m_tag;
@@ -355,7 +354,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     operator()(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view(indices...);
@@ -366,7 +365,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     access(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view.access(indices...);
@@ -450,7 +449,7 @@ namespace PHX {
     template<typename iType>
     void dimensions(std::vector<iType>& dims)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
@@ -484,7 +483,7 @@ namespace PHX {
     void deep_copy(const PHX::MDField<SrcScalar,SrcProps...>& source)
     {Kokkos::deep_copy(m_view, source.get_static_view());}
 
-    void deep_copy(const Scalar source)
+    void deep_copy(const Scalar& source)
     {Kokkos::deep_copy(m_view, source);}
 
     PHX::any get_static_view_as_any()
@@ -505,7 +504,7 @@ namespace PHX {
 
     template<int R> void setFieldData(ViewSpecialization<R>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
@@ -530,7 +529,7 @@ namespace PHX {
 
     void setFieldData(ViewSpecialization<0>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif

@@ -10,33 +10,9 @@
 #include <Akri_ParentsToChildMapper.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_FieldRef.hpp>
-#include <Akri_MasterElement.hpp>
-#include <Akri_Phase_Support.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <Akri_MasterElementDeterminer.hpp>
 
 namespace krino {
-
-static bool determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
-{
-  // Assume we can check master element on one bucket and get the right answer
-
-  for ( auto && bucket_ptr : mesh.get_buckets(stk::topology::ELEMENT_RANK, phaseSupport.get_all_decomposed_blocks_selector()) )
-  {
-    if (bucket_ptr->topology() != bucket_ptr->topology().base())
-    {
-      for (int ls_index = 0; ls_index < cdfemSupport.num_ls_fields(); ++ls_index)
-      {
-        stk::topology fieldTopology = MasterElementDeterminer::get_field_topology(*bucket_ptr, cdfemSupport.ls_field(ls_index).isovar);
-        if (fieldTopology != fieldTopology.base())
-          return true;
-      }
-    }
-  }
-  return false;
-}
 
 void fill_edge_nodes(
     const stk::mesh::BulkData & mesh,
@@ -124,21 +100,36 @@ void fill_linear_edge_nodes_and_positions(stk::mesh::Entity node0, stk::mesh::En
   fill_edge_nodes_and_positions(0.0, node0, 1.0, node1, edgeNodes, edgeNodePositions);
 }
 
+bool ParentsToChildMapper::need_to_update_map(const stk::mesh::BulkData & mesh, const bool addHigherOrderMidSideNodes) const
+{
+  return myMeshSyncCount != mesh.synchronized_count() || myHaveHigherOrderMidSideNodes != addHigherOrderMidSideNodes;
+}
+
+void ParentsToChildMapper::mark_map_as_up_to_date(const stk::mesh::BulkData & mesh, const bool addHigherOrderMidSideNodes)
+{
+  myMeshSyncCount = mesh.synchronized_count();
+  myHaveHigherOrderMidSideNodes = addHigherOrderMidSideNodes;
+}
 
 void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
+    const bool addHigherOrderMidSideNodes)
 {
-  const bool addHigherOrderMidsideNodes = stk::is_true_on_any_proc(mesh.parallel(), determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(mesh, cdfemSupport, phaseSupport));
+  if (!need_to_update_map(mesh, addHigherOrderMidSideNodes))
+    return;
 
   stk::mesh::Selector elementSelectorForParentChildMapper = activePart & mesh.mesh_meta_data().locally_owned_part();
 
-  build_map(mesh, cdfemSupport.get_parent_node_ids_field(), elementSelectorForParentChildMapper, addHigherOrderMidsideNodes);
+  build_map(mesh, cdfemSupport.get_parent_node_ids_field(), elementSelectorForParentChildMapper, addHigherOrderMidSideNodes);
 }
 
-void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh, const FieldRef & parent_ids_field, const stk::mesh::Selector & elementSelector, bool add_higher_order_midside_nodes)
+void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh, const FieldRef & parent_ids_field, const stk::mesh::Selector & elementSelector, const bool addHigherOrderMidSideNodes)
 {
+  if (!need_to_update_map(mesh, addHigherOrderMidSideNodes))
+    return;
+  mark_map_as_up_to_date(mesh, addHigherOrderMidSideNodes);
+
   my_parents_to_child_map.clear();
 
   if (parent_ids_field.valid())
@@ -159,7 +150,7 @@ void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh, const Fie
     }
   }
 
-  if (add_higher_order_midside_nodes)
+  if (addHigherOrderMidSideNodes)
   {
     // Add higher order edge "children"
     for(auto && b_ptr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector))

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -101,10 +101,10 @@ void *array_alloc(const char *file, int lineno, int numdim, ...)
     size_t off;   /* offset from beginning of array     */
   } dim[3];       /* Info about each dimension          */
   size_t  total;  /* Total size of the array            */
-  void *  dfield; /* ptr to avoid lint complaints               */
-  char *  field;  /* The multi-dimensional array                */
-  char ** ptr;    /* Pointer offset                     */
-  char *  data;   /* Data offset                                */
+  void   *dfield; /* ptr to avoid lint complaints               */
+  char   *field;  /* The multi-dimensional array                */
+  char  **ptr;    /* Pointer offset                     */
+  char   *data;   /* Data offset                                */
   va_list va;     /* Current pointer in the argument list       */
 
   va_start(va, numdim);
@@ -193,8 +193,8 @@ static void *smalloc(size_t n, char *filename, int lineno)
   if (pntr == nullptr && n != 0) {
     fmt::print(stderr,
                "{} (from {},{}) Out of space - number of bytes "
-               "requested = {:L}\n",
-               __func__, filename, lineno, n);
+               "requested = {}\n",
+               __func__, filename, lineno, fmt::group_digits(n));
     exit(0);
   }
 

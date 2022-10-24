@@ -501,13 +501,6 @@ namespace Belos {
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
-// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
-#if defined(_WIN32) && defined(__clang__)
-    static constexpr std::ostream * outputStream_default_ =
-       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
-#else
-    static constexpr std::ostream * outputStream_default_ = &std::cout;
-#endif
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_, achievedTol_;
@@ -531,7 +524,7 @@ namespace Belos {
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
   taggedTests_(Teuchos::null),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -563,7 +556,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::
 PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                         const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
   taggedTests_(Teuchos::null),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -1053,7 +1046,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Deflation Quorum", static_cast<int>(defQuorum_default_),
       "The number of linear systems that need to converge before\n"
       "they are deflated.  This number should be <= block size.");
-    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
+    pl->set("Output Stream", Teuchos::rcpFromRef(std::cout),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
     pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),

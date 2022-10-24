@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
         MVP hv_ptr    = ROL::makePtr<MV>(map,1,true);
         MVP ihhv_ptr  = ROL::makePtr<MV>(map,1,true);
  
-        int numElem = map->getNodeNumElements();
+        int numElem = map->getLocalNumElements();
          
         for( LO lclRow = 0; lclRow < static_cast<LO> (numElem); ++lclRow) {
             const GO gblRow = map->getGlobalElement(lclRow);

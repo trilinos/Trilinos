@@ -6,8 +6,12 @@ packages/ForTrilinos
 package/optika
 packages/mesquite
 packages/xSDKTrilinos
+packages/framework/GenConfig
+packages/framework/son-ini-files
+packages/framework/srn-ini-files
 TriBITS
 TriBITS/TriBITSDoc
+run_trilinos_pr_builds
 kokkos
 kokkos-kernels
 seacas

@@ -4,6 +4,7 @@
 #include "unittests/test_NeighborLists.hpp"
 #include "unittests/test_PointCloudSearch.hpp"
 #include "unittests/test_LinearAlgebra.hpp"
+#include "unittests/test_Targets.hpp"
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
 #endif
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
 
     // execute all tests
     ::testing::GTEST_FLAG(filter) = "-Kokkos*";
-    sig &= RUN_ALL_TESTS();
+    sig += RUN_ALL_TESTS();
 
     // finalize Kokkos and MPI (if available)
     kp.finalize();

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,7 +20,8 @@
 #include <string>
 #include <vector>
 
-#if defined(_MSC_VER)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <io.h>
 #define isatty _isatty
 #endif
@@ -59,7 +60,7 @@ namespace SEAMS {
   struct file_rec
   {
     std::string name{"STDIN"};
-    int         lineno{0};
+    int         lineno{1};
     int         loop_count{0};
     bool        tmp_file{false};
 
@@ -90,6 +91,8 @@ namespace SEAMS {
     /// construct a new parser aprepro context
     Aprepro();
     ~Aprepro();
+    Aprepro(const Aprepro &)            = delete;
+    Aprepro &operator=(const Aprepro &) = delete;
 
     enum class SYMBOL_TYPE {
       VARIABLE                  = 1,
@@ -212,6 +215,7 @@ namespace SEAMS {
 
     array *make_array(int r, int c);
     array *make_array(const array &from);
+    void   redefine_array(array *data);
 
   private:
     std::unique_ptr<Symtable> sym_table;

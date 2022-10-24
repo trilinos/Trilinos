@@ -73,7 +73,7 @@ namespace MueLuTests {
     int rank = comm->getRank();
     int numproc = comm->getSize();
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
     std::vector<unsigned> aggStat(numRows, MueLu::READY);
@@ -153,7 +153,7 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -232,7 +232,7 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -258,9 +258,9 @@ namespace MueLuTests {
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
-    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
+    NAF->BuildIntermediateProlongator(A->getLocalNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
-                                      v2a.view(0, A->getNodeNumRows()),
+                                      v2a.view(0, A->getLocalNumRows()),
                                       intermediateP);
 
   } // IntermediateProlongator2D
@@ -289,7 +289,7 @@ namespace MueLuTests {
     mp.set("d", -1.0); mp.set("e", -1.0);
     mp.set("z1", 0.0); mp.set("z2", 0.0);  mp.set("z3", 0.0);  mp.set("z4", 0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -315,9 +315,9 @@ namespace MueLuTests {
 
     typename Matrix::local_matrix_type coarseA = A->getLocalMatrixDevice();
     NAF->BuildOnRankLocalMatrix(A->getLocalMatrixDevice(), coarseA);
-    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
+    NAF->BuildIntermediateProlongator(A->getLocalNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
-                                      v2a.view(0, A->getNodeNumRows()),
+                                      v2a.view(0, A->getLocalNumRows()),
                                       intermediateP);
     NAF->BuildCoarseLocalMatrix(intermediateP, coarseA);
 

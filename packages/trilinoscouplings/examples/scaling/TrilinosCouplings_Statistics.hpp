@@ -144,7 +144,7 @@ class MachineLearningStatistics_Hex3D {
     int node3 = edgeToNode(edge, 0);
     int node4 = edgeToNode(edge, 1);
 
-    int numElems = elemToEdge.dimension(0);
+    int numElems = elemToNode.dimension(0);
     for(int i=0; i<numElems; i++) {
       // Set up hex nodes
       int hexnode0 = elemToNode(i, 0);
@@ -337,7 +337,7 @@ class MachineLearningStatistics_Hex3D {
     Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = gl_StiffGraph->getRowMap();
     Teuchos::RCP<vector_type > laplDiagOwned = vector_factory::Build(rowMap, true);
     Teuchos::ArrayView<const LO> indices;
-    size_t numOwnedRows = rowMap->getNodeNumElements();
+    size_t numOwnedRows = rowMap->getLocalNumElements();
     for (size_t row=0; row<numOwnedRows; row++) {
       gl_StiffGraph->getLocalRowView(row, indices);
       size_t numIndices = indices.size();

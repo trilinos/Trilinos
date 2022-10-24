@@ -53,173 +53,261 @@
 namespace
 {
 
+std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
+                                                stk::ParallelMachine comm,
+                                                stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA)
+{
+  stk::mesh::MeshBuilder builder(comm);
+  builder.set_spatial_dimension(spatialDim);
+  builder.set_aura_option(auraOption);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+  bulk->mesh_meta_data().use_simple_fields();
+  return bulk;
+}
+
 TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
 {
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::mesh::BulkData bulkData(metaData, communicator);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    std::string generatedMeshSpec = "generated:1x1x4";
-    stk::io::fill_mesh(generatedMeshSpec, bulkData);
+  std::string generatedMeshSpec = "generated:1x1x4";
+  stk::io::fill_mesh(generatedMeshSpec, bulkData);
 
-    stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, 1);
 
-    stk::mesh::PartVector addParts;
-    stk::mesh::PartVector removeParts;
+  stk::mesh::PartVector addParts;
+  stk::mesh::PartVector removeParts;
 
-    addParts.push_back(&metaData.locally_owned_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.push_back(&metaData.locally_owned_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    addParts.clear();
-    addParts.push_back(&metaData.globally_shared_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.clear();
+  addParts.push_back(&metaData.globally_shared_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    addParts.clear();
-    removeParts.push_back(&metaData.locally_owned_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.clear();
+  removeParts.push_back(&metaData.locally_owned_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    removeParts.clear();
-    removeParts.push_back(&metaData.globally_shared_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  removeParts.clear();
+  removeParts.push_back(&metaData.globally_shared_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 }
 
 TEST(UnitTestChangeParts, test_batch_part_change)
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    const int p_size = stk::parallel_machine_size( pm );
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
 
-    if (p_size != 1) {
-      return;
-    }
+  if (p_size != 1) {
+    return;
+  }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    stk::mesh::BulkData bulkData(metaData, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
-    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
 
-    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
-    EXPECT_TRUE(bulkData.is_valid(elem1));
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(elem1));
 
-    stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
-    EXPECT_EQ(8u, nodes.size());
+  stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
+  EXPECT_EQ(8u, nodes.size());
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_FALSE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(part));
+  }
 
-    stk::mesh::PartVector add_parts(1, &part);
-    bulkData.batch_change_entity_parts(nodes, add_parts, {});
+  stk::mesh::PartVector add_parts(1, &part);
+  bulkData.batch_change_entity_parts(nodes, add_parts, {});
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_TRUE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_TRUE(bulkData.bucket(node).member(part));
+  }
 
-    stk::mesh::PartVector remove_parts(1, &part);
-    bulkData.batch_change_entity_parts(nodes, {}, remove_parts);
+  stk::mesh::PartVector remove_parts(1, &part);
+  bulkData.batch_change_entity_parts(nodes, {}, remove_parts);
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_FALSE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(part));
+  }
 }
 
 TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    const int p_size = stk::parallel_machine_size( pm );
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
 
-    if (p_size != 1) {
-      return;
-    }
+  if (p_size != 1) {
+    return;
+  }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    stk::mesh::BulkData bulkData(metaData, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    stk::mesh::Part& supersetPart = metaData.declare_part_with_topology("parent", stk::topology::NODE);
-    stk::mesh::Part& subsetPart1  = metaData.declare_part_with_topology("child 1", stk::topology::NODE);
-    stk::mesh::Part& subsetPart2  = metaData.declare_part_with_topology("child 2", stk::topology::NODE);
+  stk::mesh::Part& supersetPart = metaData.declare_part_with_topology("parent", stk::topology::NODE);
+  stk::mesh::Part& subsetPart1  = metaData.declare_part_with_topology("child 1", stk::topology::NODE);
+  stk::mesh::Part& subsetPart2  = metaData.declare_part_with_topology("child 2", stk::topology::NODE);
 
-    metaData.declare_part_subset(supersetPart, subsetPart1);
-    metaData.declare_part_subset(supersetPart, subsetPart2);
+  metaData.declare_part_subset(supersetPart, subsetPart1);
+  metaData.declare_part_subset(supersetPart, subsetPart2);
 
-    stk::mesh::FieldBase &field = metaData.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "sam");
-    stk::mesh::put_field_on_mesh(field, supersetPart, (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+  stk::mesh::FieldBase &field = metaData.declare_field<double>(stk::topology::NODE_RANK, "sam");
+  stk::mesh::put_field_on_mesh(field, supersetPart, nullptr);
 
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
 
-    stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
-    EXPECT_TRUE(bulkData.is_valid(node1));
+  stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(node1));
 
-    stk::mesh::Entity node2 = bulkData.get_entity(stk::topology::NODE_RANK, 2u);
-    EXPECT_TRUE(bulkData.is_valid(node2));
+  stk::mesh::Entity node2 = bulkData.get_entity(stk::topology::NODE_RANK, 2u);
+  EXPECT_TRUE(bulkData.is_valid(node2));
 
-    EXPECT_FALSE(bulkData.bucket(node1).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
+  EXPECT_FALSE(bulkData.bucket(node1).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
 
-    EXPECT_FALSE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_FALSE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
 
-    bulkData.modification_begin();
-    stk::mesh::PartVector add_parts(1, &subsetPart1);
-    bulkData.change_entity_parts(node1, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  stk::mesh::PartVector add_parts(1, &subsetPart1);
+  bulkData.change_entity_parts(node1, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node1).member(supersetPart));
-    EXPECT_TRUE(bulkData.bucket(node1).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node1).member(supersetPart));
+  EXPECT_TRUE(bulkData.bucket(node1).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
 
-    bulkData.modification_begin();
-    add_parts[0] = &supersetPart;
-    bulkData.change_entity_parts(node2, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  add_parts[0] = &supersetPart;
+  bulkData.change_entity_parts(node2, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
 
-    stk::mesh::PartVector partVector{&subsetPart1, &subsetPart2};
-    stk::mesh::Selector selector = supersetPart & !stk::mesh::selectUnion(partVector);
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_selected_entities(selector, bulkData.buckets(stk::topology::NODE_RANK), nodes);
+  stk::mesh::PartVector partVector{&subsetPart1, &subsetPart2};
+  stk::mesh::Selector selector = supersetPart & !stk::mesh::selectUnion(partVector);
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_selected_entities(selector, bulkData.buckets(stk::topology::NODE_RANK), nodes);
 
-    EXPECT_EQ(1u, nodes.size());
-    EXPECT_EQ(2u, bulkData.identifier(nodes[0]));
+  EXPECT_EQ(1u, nodes.size());
+  EXPECT_EQ(2u, bulkData.identifier(nodes[0]));
 
-    bulkData.modification_begin();
-    add_parts[0] = &subsetPart2;
-    bulkData.change_entity_parts(node2, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  add_parts[0] = &subsetPart2;
+  bulkData.change_entity_parts(node2, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
 
-    double* node1Data = (double*) stk::mesh::field_data(field, node1);
-    double* node2Data = (double*) stk::mesh::field_data(field, node1);
+  double* node1Data = (double*) stk::mesh::field_data(field, node1);
+  double* node2Data = (double*) stk::mesh::field_data(field, node1);
 
-    EXPECT_TRUE(node1Data != nullptr);
-    EXPECT_TRUE(node2Data != nullptr);
+  EXPECT_TRUE(node1Data != nullptr);
+  EXPECT_TRUE(node2Data != nullptr);
 
 
-    for(unsigned i=3; i<8u; ++i) {
-        stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
-        EXPECT_TRUE(bulkData.is_valid(node));
-        double* nodeData = (double*) stk::mesh::field_data(field, node);
-        EXPECT_TRUE(nodeData == nullptr);
-    }
+  for(unsigned i=3; i<8u; ++i) {
+    stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
+    EXPECT_TRUE(bulkData.is_valid(node));
+    double* nodeData = (double*) stk::mesh::field_data(field, node);
+    EXPECT_TRUE(nodeData == nullptr);
+  }
 }
 
-class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
+TEST(ChangeElemParts, DontMarkSharedNodesModifiedUnnecessarily)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs > 2) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& myPart = meta.declare_part("myPart");
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  bulk.modification_begin();
+  stk::mesh::Part& block1 = *meta.get_part("block_1");
+  stk::mesh::PartVector parts = {&block1, &myPart};
+  stk::mesh::EntityId elemId = bulk.parallel_rank() + 1;
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+  bulk.change_entity_parts(elem, parts);
+  bulk.modification_end();
+
+  //elem should be "modified" because it was not already in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  //node 5 should not be "modified" because it was already in block_1 and
+  //shouldn't be induced into myPart
+  stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_FALSE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Unchanged, bulk.state(node5));
+}
+
+TEST(ChangeElemParts, addThenRemoveElemPart_checkSharedNode)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs > 2) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& myPart = meta.declare_part_with_topology("myPart", stk::topology::HEX_8);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  stk::mesh::Part& block1 = *meta.get_part("block_1");
+  stk::mesh::PartVector parts = {&block1, &myPart}, empty;
+  stk::mesh::EntityId elemId = bulk.parallel_rank() + 1;
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+
+  bulk.modification_begin();
+  bulk.change_entity_parts(elem, parts, empty);
+  bulk.modification_end();
+
+  //elem should be "modified" because it was not already in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  EXPECT_TRUE(bulk.bucket(elem).member(myPart));
+  //node 5 should be "modified" because it was also added to myPart
+  stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_TRUE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
+
+  bulk.modification_begin();
+  bulk.change_entity_parts(elem, empty, parts);
+  bulk.modification_end();
+
+  //elem should be "modified" because it is no longer in myPart
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(elem));
+  EXPECT_FALSE(bulk.bucket(elem).member(myPart));
+  //node 5 should be "modified" because it is no longer in myPart
+  EXPECT_FALSE(bulk.bucket(node5).member(myPart));
+  EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
+}
+
+class TestChangePartsWithSelector : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
-  TestChangePartsWithSelector() : stk::unit_test_util::MeshFixture(3)
+  TestChangePartsWithSelector()
+    : stk::unit_test_util::simple_fields::MeshFixture(3)
   {
     setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
@@ -279,9 +367,17 @@ public:
     clear_mod_part_vectors();
   }
 
-  void change_entity_parts_with_selector(stk::mesh::Selector selector, stk::mesh::EntityRank rank)
+  void batch_change_entity_parts_with_selector(stk::mesh::Selector selector, stk::mesh::EntityRank rank)
   {
     EXPECT_NO_THROW(get_bulk().batch_change_entity_parts(selector, rank, addParts, removeParts));
+    clear_mod_part_vectors();
+  }
+
+  void change_entity_parts_with_selector(stk::mesh::Selector selector, stk::mesh::EntityRank rank)
+  {
+    EXPECT_NO_THROW(get_bulk().modification_begin());
+    EXPECT_NO_THROW(get_bulk().change_entity_parts(selector, rank, addParts, removeParts));
+    EXPECT_NO_THROW(get_bulk().modification_end());
     clear_mod_part_vectors();
   }
 
@@ -338,7 +434,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_initial_part)
   stk::mesh::Part* block1Part = parts[0];
 
   insert_into_remove_part(block1Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
@@ -358,7 +454,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part)
 
   insert_into_add_part(block2Part);
   insert_into_remove_part(block1Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
@@ -368,6 +464,29 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part)
 }
 
 TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part_in_two_procs)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part_in_two_procs_non_batch)
 {
   if(get_bulk().parallel_size() != 2) { return; }
 
@@ -404,6 +523,29 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_ranked_part_in
 
   insert_into_add_part(block2Part);
   insert_into_remove_part(block1Part);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_ranked_part_in_two_procs_non_batch)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
   change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
@@ -426,7 +568,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_unranked_part
   stk::mesh::Part* block2Part = parts[1];
 
   insert_into_add_part(block2Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
@@ -462,7 +604,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_unranked_part)
   }
 
   insert_into_remove_part(block2Part);
-  change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
@@ -472,6 +614,29 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_unranked_part)
 }
 
 TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_ranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_ranked_part_non_batch)
 {
   if(get_bulk().parallel_size() > 1) { return; }
 
@@ -509,7 +674,7 @@ TEST_F(TestChangePartsWithSelector, element_in_with_faces_ranked_part_add_new_ra
   insert_into_add_part(block2Part);
   insert_into_remove_part(block1Part);
 
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::FACE_RANK, 0);
@@ -547,7 +712,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_ranked_part)
   }
 
   insert_into_remove_part(block1Part);
-  change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
@@ -590,7 +755,7 @@ TEST_F(TestChangePartsWithSelector, elements_in_different_ranked_parts_but_share
 
   insert_into_add_part(block2Part);
   insert_into_remove_part(block1Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
@@ -629,7 +794,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_to_ranked_par
   }
 
   insert_into_add_part(block2Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_bucket_count(stk::topology::ELEM_RANK, 2u);
 
@@ -671,7 +836,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_move_to_unranked_part
 
   insert_into_add_part(block2Part);
   insert_into_remove_part(block1Part);
-  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+  batch_change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
 
   test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
   test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);

@@ -98,7 +98,7 @@ public:
     std::vector<GlobalOrdinal> gids;
     for(size_t tt = 0; tt<subMaps.size(); ++tt) {
       Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
-      Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getNodeElementList();
+      Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getLocalElementList();
       gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
     }
 
@@ -129,7 +129,7 @@ public:
   shrinkMapGIDs(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
                 const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getLocalNumElements() > input.getLocalNumElements(), 
                                Xpetra::Exceptions::Incompatible, 
                                "Xpetra::MatrixUtils::shrinkMapGIDs: the non-overlapping map must not have more local ids than the overlapping map.")
 
@@ -146,14 +146,14 @@ public:
     // calculate offset for new global Ids
     std::vector<int> myGIDs(comm->getSize(),0);
     std::vector<int> numGIDs(comm->getSize(),0);
-    myGIDs[comm->getRank()] = nonOvlInput.getNodeNumElements();
+    myGIDs[comm->getRank()] = nonOvlInput.getLocalNumElements();
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&myGIDs[0],&numGIDs[0]);
     size_t gidOffset = 0;
     for(int p = 0; p < comm->getRank(); p++) gidOffset += numGIDs[p];
 
     // we use nonOvlInput to assign the globally unique shrinked GIDs and communicate them to input.
     std::map<const GlobalOrdinal, GlobalOrdinal> origGID2newGID;
-    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) 
+    for(size_t i = 0; i < nonOvlInput.getLocalNumElements(); i++) 
     {
       origGID2newGID[nonOvlInput.getGlobalElement(i)] = Teuchos::as<GlobalOrdinal>(i) + Teuchos::as<GlobalOrdinal>(gidOffset);
     }
@@ -161,7 +161,7 @@ public:
     Teuchos::Array<GlobalOrdinal> ovlUnknownStatusGids;
     Teuchos::Array<GlobalOrdinal> ovlFoundStatusGids;
     // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
-    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
       if( nonOvlInput.isNodeGlobalElement(gcid) == false) {
         ovlUnknownStatusGids.push_back(gcid);
@@ -203,7 +203,7 @@ public:
       origGID2newGID[ovlUnknownStatusGids[k]] = gTranslatedDofGIDs[k+cntUnknownOffset];
     }
     Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
-    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
       ovlDomainMapArray.push_back(origGID2newGID[gcid]);
     }
@@ -233,15 +233,15 @@ public:
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput,
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlReferenceInput) {
-    //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the non-overlapping map must not have more local ids than the overlapping map.");
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() != nonOvlReferenceInput.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Xpetra reference GIDs and local Thyra GIDs of the non-overlapping maps must be the same!");
+    //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getLocalNumElements() > input.getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the non-overlapping map must not have more local ids than the overlapping map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getLocalNumElements() != nonOvlReferenceInput.getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Xpetra reference GIDs and local Thyra GIDs of the non-overlapping maps must be the same!");
     //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same. nonOvlInput.getMaxAllGlobalIndex() = " << nonOvlInput.getMaxAllGlobalIndex() << " ovlInput.getMaxAllGlobalIndex() = " << input.getMaxAllGlobalIndex());
 
     RCP< const Teuchos::Comm<int> > comm = input.getComm();
 
     // fill translation map as far as possible
     std::map<const GlobalOrdinal, GlobalOrdinal> thyra2xpetraGID;
-    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) {
+    for(size_t i = 0; i < nonOvlInput.getLocalNumElements(); i++) {
       thyra2xpetraGID[nonOvlInput.getGlobalElement(i)] =
           nonOvlReferenceInput.getGlobalElement(i);
     }
@@ -249,7 +249,7 @@ public:
     // find all GIDs of the overlapping Thyra map which are not owned by this proc
     Teuchos::Array<GlobalOrdinal> ovlUnknownStatusGids;
     // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
-    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
       if( nonOvlInput.isNodeGlobalElement(gcid) == false) {
         ovlUnknownStatusGids.push_back(gcid);
@@ -291,7 +291,7 @@ public:
       thyra2xpetraGID[ovlUnknownStatusGids[k]] = gTranslatedDofGIDs[k+cntUnknownOffset];
     }
     Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
-    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
       ovlDomainMapArray.push_back(thyra2xpetraGID[gcid]);
     }
@@ -299,7 +299,7 @@ public:
         Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build
         (nonOvlInput.lib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),ovlDomainMapArray(),0,comm);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(input.getNodeNumElements() != ovlDomainMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Thyra reference GIDs (overlapping) and local Xpetra GIDs (overlapping) must be the same!");
+    TEUCHOS_TEST_FOR_EXCEPTION(input.getLocalNumElements() != ovlDomainMap->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Thyra reference GIDs (overlapping) and local Xpetra GIDs (overlapping) must be the same!");
     //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlReferenceInput.getMaxAllGlobalIndex() != ovlDomainMap->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping Xpetra maps must be the same.");
 
     return ovlDomainMap;
@@ -325,7 +325,7 @@ public:
 
       // create a new map with Xpetra GIDs (may start not from GID = 0)
       std::vector<GlobalOrdinal> gids;
-      for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(rcpInput->getNodeNumElements()); ++l) {
+      for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(rcpInput->getLocalNumElements()); ++l) {
         GlobalOrdinal gid = rcpInput->getGlobalElement(l) + offset;
         gids.push_back(gid);
       }

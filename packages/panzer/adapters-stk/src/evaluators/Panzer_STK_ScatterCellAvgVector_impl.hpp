@@ -142,7 +142,7 @@ evaluateFields(
       {
          average(i,0) = 0.0;
          for(int j = 0; j < numPoints; j++)  // loop over IPs
-            average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j,dim));
+            average(i,0) += Sacado::scalarValue(field(i,j,dim));
 
          average(i,0) /= numPoints;
       }

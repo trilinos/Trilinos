@@ -93,6 +93,12 @@ namespace MueLu {
       else                       my_name = "\"smoother: " + PreOrPost + " type\"";
       mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"RELAXATION\"/>" << std::endl;
 
+    } else if ( valuestr == "hiptmair" ) {
+      std::string my_name;
+      if ( PreOrPost == "both" ) my_name = "\"" + pname + "\"";
+      else                       my_name = "\"smoother: " + PreOrPost + " type\"";
+      mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"HIPTMAIR\"/>" << std::endl;
+
     } else if ( valuestr == "ifpack" ) {
       std::string my_name = "\"" + pname + "\"";
       if ( paramList.isParameter("smoother: ifpack type") ) {
@@ -180,6 +186,68 @@ namespace MueLu {
       else { mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"cg\"/>" << std::endl; }
     }
 
+    if ( valuestr == "hiptmair" ) {
+      std::string subSmootherType = "Chebyshev";
+      if (paramList.isParameter("subsmoother: type"))
+        subSmootherType = paramList.get<std::string>("subsmoother: type");
+      std::string subSmootherIfpackType;
+      if (subSmootherType == "Chebyshev")
+        subSmootherIfpackType = "CHEBYSHEV";
+      else if (subSmootherType == "Jacobi" || subSmootherType == "Gauss-Seidel" || subSmootherType == "symmetric Gauss-Seidel") {
+        if (subSmootherType == "symmetric Gauss-Seidel") subSmootherType = "Symmetric Gauss-Seidel"; // FIXME
+        subSmootherIfpackType = "RELAXATION";
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListTranslator: unknown smoother type. '" << subSmootherType << "' not supported by MueLu.");
+
+      mueluss << "<Parameter name=\"hiptmair: smoother type 1\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
+      mueluss << "<Parameter name=\"hiptmair: smoother type 2\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
+
+      mueluss << "<ParameterList name=\"hiptmair: smoother list 1\">" << std::endl;
+      if (subSmootherType == "Chebyshev") {
+        if (paramList.isParameter("subsmoother: edge sweeps")) {
+          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: edge sweeps") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: edge sweeps", false);
+        }
+        if (paramList.isParameter("subsmoother: Chebyshev alpha")) {
+          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: Chebyshev alpha") << "\"/>" << std::endl;
+        }
+      } else {
+        if (paramList.isParameter("subsmoother: edge sweeps")) {
+          mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
+          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: edge sweeps") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: edge sweeps", false);
+        }
+        if (paramList.isParameter("subsmoother: SGS damping factor")) {
+          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: SGS damping factor") << "\"/>" << std::endl;
+        }
+      }
+      mueluss << "</ParameterList>" << std::endl;
+
+      mueluss << "<ParameterList name=\"hiptmair: smoother list 2\">" << std::endl;
+      if (subSmootherType == "Chebyshev") {
+        if (paramList.isParameter("subsmoother: node sweeps")) {
+          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: node sweeps") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: node sweeps", false);
+        }
+        if (paramList.isParameter("subsmoother: Chebyshev alpha")) {
+          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: Chebyshev alpha") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: Chebyshev alpha", false);
+        }
+      } else {
+        if (paramList.isParameter("subsmoother: node sweeps")) {
+          mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
+          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: node sweeps") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: node sweeps", false);
+        }
+        if (paramList.isParameter("subsmoother: SGS damping factor")) {
+          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: SGS damping factor") << "\"/>" << std::endl;
+          adaptingParamList.remove("subsmoother: SGS damping factor", false);
+        }
+      }
+      mueluss << "</ParameterList>" << std::endl;
+
+    }
+
     // parameters for ILU based preconditioners
     if ( valuestr == "ifpack") {
 
@@ -210,8 +278,8 @@ namespace MueLu {
     // TODO alternative with standard parameterlist from ML user guide?
 
     if (defaultVals != "") {
-      TEUCHOS_TEST_FOR_EXCEPTION(defaultVals!="SA" && defaultVals!="NSSA" && defaultVals!="refmaxwell", Exceptions::RuntimeError,
-                                   "MueLu::MLParameterListInterpreter: only \"SA\", \"NSSA\", and \"refmaxwell\" allowed as options for ML default parameters.");
+      TEUCHOS_TEST_FOR_EXCEPTION(defaultVals!="SA" && defaultVals!="NSSA" && defaultVals!="refmaxwell" && defaultVals!="Maxwell", Exceptions::RuntimeError,
+                                   "MueLu::MLParameterListInterpreter: only \"SA\", \"NSSA\", \"refmaxwell\" and \"Maxwell\" allowed as options for ML default parameters.");
       Teuchos::ParameterList ML_defaultlist;
       if (defaultVals == "refmaxwell")
         ML_Epetra::SetDefaultsRefMaxwell(ML_defaultlist);

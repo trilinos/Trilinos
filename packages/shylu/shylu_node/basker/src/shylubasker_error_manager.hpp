@@ -12,7 +12,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif

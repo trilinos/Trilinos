@@ -113,7 +113,8 @@ namespace MueLu {
   public:
     using TST                   = Teuchos::ScalarTraits<SC>;
     using Magnitude             = typename TST::magnitudeType;
-    using RealValuedMultiVector = Xpetra::MultiVector<Magnitude,LO,GO,NO>;
+    using CoordinateType        = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -249,11 +250,11 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
+    static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero(), const bool count_twos_as_dirichlet=false);
 
 
     /*! @brief Find non-zero values in an ArrayRCP
-      Compares the value to 2 * machine epsilon 
+      Compares the value to 2 * machine epsilon
 
       @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
       @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero
@@ -354,7 +355,8 @@ namespace MueLu {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
+    using CoordinateType        = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LocalOrdinal,GlobalOrdinal,Node>;
 
   private:
 #undef MUELU_UTILITIES_KOKKOS_SHORT
@@ -412,11 +414,10 @@ namespace MueLu {
 
       return diag;
     }
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
-      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
-    }
-    static RCP<Vector> GetLumpedMatrixDiagonal(Matrix const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero);
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false);
+
+    static RCP<Vector> GetLumpedMatrixDiagonal(Matrix const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false, const bool useAverageAbsDiagVal = false) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero, useAverageAbsDiagVal);
     }
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixOverlappedDiagonal(A);
@@ -511,7 +512,7 @@ namespace MueLu {
         const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
         const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap  = tpOp.getRangeMap();
 
-        size_t maxRowSize = tpOp.getNodeMaxNumRowEntries();
+        size_t maxRowSize = tpOp.getLocalMaxNumRowEntries();
         if (maxRowSize == Teuchos::as<size_t>(-1)) // hasn't been determined yet
           maxRowSize = 20;
 
@@ -523,7 +524,7 @@ namespace MueLu {
 	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
 	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
-          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
             tpOp.getLocalRowView(i, cols, vals);
             size_t nnz = tpOp.getNumEntriesInLocalRow(i);
             if (nnz > maxRowSize) {
@@ -544,7 +545,7 @@ namespace MueLu {
           typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type cols;
           typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
-          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
             GO gid = rowMap->getGlobalElement(i);
             tpOp.getGlobalRowView(gid, cols, vals);
             size_t nnz = tpOp.getNumEntriesInGlobalRow(gid);

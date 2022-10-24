@@ -253,13 +253,13 @@ public:
   global_size_t getGlobalNumCols() const;
 
   //! Returns the number of matrix rows owned on the calling node.
-  size_t getNodeNumRows() const;
+  size_t getLocalNumRows() const;
 
   //! Returns the global number of entries in this matrix.
   global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  size_t getNodeNumEntries() const;
+  size_t getLocalNumEntries() const;
 
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
@@ -277,7 +277,7 @@ public:
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  size_t getNodeMaxNumRowEntries() const;
+  size_t getLocalMaxNumRowEntries() const;
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   bool isLocallyIndexed() const;
@@ -461,10 +461,6 @@ public:
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual local_matrix_type getLocalMatrix () const;
-#endif
-
   virtual local_matrix_type getLocalMatrixDevice () const;
   virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 #else
@@ -484,11 +480,17 @@ public:
   RCP<CrsMatrix> getCrsMatrix() const;
 
 
+  //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+  LocalOrdinal GetStorageBlockSize() const;
+
   //! Compute a residual R = B - (*this) * X
   void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                 MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
   
+
+  //! Expert only
+  void replaceCrsMatrix(RCP<CrsMatrix> & M);
 
   //@}
 private:

@@ -71,30 +71,30 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
 
 template <typename INT>
 int get_side_id_hex_tet(const E_Type etype,       /* The element type */
-                        const INT *  conn,        /* The element connectivity */
+                        const INT   *conn,        /* The element connectivity */
                         const int    nsnodes,     /* The number of side nodes */
                         const INT    side_nodes[] /* The list of side node IDs */
 );
 
 template <typename INT>
 int ss_to_node_list(const E_Type etype,         /* The element type */
-                    const INT *  connect,       /* The element connectivity */
+                    const INT   *connect,       /* The element connectivity */
                     int          side_num,      /* The element side number */
                     INT          ss_node_list[] /* The list of side node IDs */
 );
 
 template <typename INT>
 int get_ss_mirror(const E_Type etype,             /* The element type */
-                  const INT *  ss_node_list,      /* The list of side node IDs */
+                  const INT   *ss_node_list,      /* The list of side node IDs */
                   int          side_num,          /* The element side number */
                   INT          mirror_node_list[] /* The list of the mirror side node IDs */
 );
 
 /* Define element info requests */
-#define NNODES 0
-#define NDIM 2
+#define NNODES      0
+#define NDIM        2
 #define NSIDE_NODES 4
-#define NSIDES 5
+#define NSIDES      5
 
 /* Define for the maximum number of nodes on an element side/face */
 #define MAX_SIDE_NODES 9

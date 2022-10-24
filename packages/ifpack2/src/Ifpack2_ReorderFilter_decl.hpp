@@ -150,10 +150,10 @@ public:
   virtual global_size_t getGlobalNumCols() const;
 
   //! Returns the number of rows owned on the calling node.
-  virtual size_t getNodeNumRows() const;
+  virtual size_t getLocalNumRows() const;
 
   //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
-  virtual size_t getNodeNumCols() const;
+  virtual size_t getLocalNumCols() const;
 
   //! Returns the index base for global indices for this matrix.
   virtual global_ordinal_type getIndexBase() const;
@@ -162,7 +162,7 @@ public:
   virtual global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  virtual size_t getNodeNumEntries() const;
+  virtual size_t getLocalNumEntries() const;
 
   /// \brief The current number of entries in this matrix, stored on
   ///   the calling process, in the row whose global index is \c globalRow.
@@ -184,7 +184,7 @@ public:
   virtual size_t getGlobalMaxNumRowEntries() const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
-  virtual size_t getNodeMaxNumRowEntries() const;
+  virtual size_t getLocalMaxNumRowEntries() const;
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
@@ -222,12 +222,7 @@ public:
                    nonconst_global_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void getGlobalRowCopy(global_ordinal_type GlobalRow,
-                                const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                                const Teuchos::ArrayView<scalar_type> &Values,
-                                size_t &NumEntries) const;
-#endif
+
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param LocalRow   - (In) Local row number for which indices are desired.
@@ -244,12 +239,6 @@ public:
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void getLocalRowCopy(local_ordinal_type DropRow,
-                               const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                               const Teuchos::ArrayView<scalar_type> &Values,
-                               size_t &NumEntries) const ;
-#endif
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -264,11 +253,7 @@ public:
   getGlobalRowView (global_ordinal_type GlobalRow,
                     global_inds_host_view_type &indices,
                     values_host_view_type &values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void getGlobalRowView(global_ordinal_type GlobalRow,
-                                Teuchos::ArrayView<const global_ordinal_type> &indices,
-                                Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
+
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -283,12 +268,7 @@ public:
   getLocalRowView (local_ordinal_type LocalRow,
                    local_inds_host_view_type & indices,
                    values_host_view_type & values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
-  virtual void getLocalRowView(local_ordinal_type LocalRow,
-                               Teuchos::ArrayView<const local_ordinal_type> &indices,
-                               Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */

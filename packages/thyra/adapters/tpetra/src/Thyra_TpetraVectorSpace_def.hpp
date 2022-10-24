@@ -256,7 +256,7 @@ bool TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasInCoreView(
   const Ordinal l_localOffset = this->localOffset();
 
   const Ordinal myLocalSubDim = tpetraMap_.is_null () ?
-    static_cast<Ordinal> (0) : tpetraMap_->getNodeNumElements ();
+    static_cast<Ordinal> (0) : tpetraMap_->getLocalNumElements ();
 
   return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+myLocalSubDim );
 }
@@ -291,7 +291,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Ordinal TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::localSubDim() const
 {
   return tpetraMap_.is_null () ? static_cast<Ordinal> (0) :
-    static_cast<Ordinal> (tpetraMap_->getNodeNumElements ());
+    static_cast<Ordinal> (tpetraMap_->getLocalNumElements ());
 }
 
 // private

@@ -39,18 +39,26 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk {
-  namespace mesh {
-    class MetaData;
-    class BulkData;
+namespace mesh {
+class MetaData;
+class BulkData;
 
-    namespace fixtures {
+namespace fixtures {
+typedef mesh::Field<double, mesh::Cartesian> VectorFieldType;
 
-      typedef mesh::Field<double,mesh::Cartesian> VectorFieldType ;
+void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorFieldType & node_coord);
 
-      void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorFieldType & node_coord);
+void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
 
-      void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
-    }
-  }
+namespace simple_fields {
+typedef mesh::Field<double> VectorFieldType;
+
+void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorFieldType & node_coord);
+
+void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
+} // namespace simple_fields
+
+}
+}
 }
 #endif

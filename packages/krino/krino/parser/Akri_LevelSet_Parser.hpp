@@ -9,12 +9,17 @@
 #ifndef Akri_LevelSet_Parser_h
 #define Akri_LevelSet_Parser_h
 
-namespace YAML { class Node; }
-namespace krino { class RegionInterface; }
+namespace krino { namespace Parser { class Node; } }
+namespace stk { namespace diag { class Timer; } }
+namespace stk { namespace mesh { class MetaData; } }
 
 namespace krino {
 namespace LevelSet_Parser {
- void parse(const YAML::Node & node, RegionInterface & region);
+  void parse(const Parser::Node & region_node, stk::mesh::MetaData & meta, const stk::diag::Timer & parentTimer);
+}
+
+namespace BoundingSurface_Parser {
+  void parse(const Parser::Node & region_node, stk::mesh::MetaData & meta, const stk::diag::Timer & parentTimer);
 }
 }
 

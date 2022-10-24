@@ -1,3 +1,5 @@
+#include "Kokkos_View_MP_Vector_Fwd.hpp"
+#include "Kokkos_View_UQ_PCE_Fwd.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos.hpp"

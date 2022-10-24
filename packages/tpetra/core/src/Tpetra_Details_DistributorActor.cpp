@@ -42,14 +42,17 @@
 namespace Tpetra {
 namespace Details {
 
-  DistributorActor::DistributorActor() {
+  DistributorActor::DistributorActor()
+    : mpiTag_(DEFAULT_MPI_TAG)
+  {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers();
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   }
 
   DistributorActor::DistributorActor(const DistributorActor& otherActor)
-    : requests_(otherActor.requests_)
+    : mpiTag_(otherActor.mpiTag_),
+      requests_(otherActor.requests_)
   {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     makeTimers();
@@ -68,6 +71,14 @@ namespace Details {
       // outstanding nonblocking communication requests.
       requests_.resize(0);
     }
+  }
+
+  bool DistributorActor::isReady() const {
+    bool result = true;
+    for (auto& request : requests_) {
+      result &= request->isReady();
+    }
+    return result;
   }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS

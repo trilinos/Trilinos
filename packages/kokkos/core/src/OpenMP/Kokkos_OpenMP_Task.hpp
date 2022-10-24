@@ -75,7 +75,7 @@ class HostThreadTeamDataSingleton : private HostThreadTeamData {
 // TODO @tasking @cleanup DSH Make this the general class template and make the
 // old code the partial specialization
 template <class QueueType>
-class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::OpenMP, QueueType> > {
+class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::OpenMP, QueueType>> {
  public:
   using execution_space = Kokkos::OpenMP;
   using scheduler_type  = SimpleTaskScheduler<Kokkos::OpenMP, QueueType>;
@@ -96,10 +96,8 @@ class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::OpenMP, QueueType> > {
     // HostThreadTeamData& team_data_single =
     // HostThreadTeamDataSingleton::singleton();
 
-    // TODO @tasking @generalization DSH use
-    // scheduler.get_execution_space().impl() (or something like that) instead
-    // of the thread-local variable
-    Impl::OpenMPExec* instance = t_openmp_instance;
+    Impl::OpenMPInternal* instance =
+        execution_space().impl_internal_space_instance();
     const int pool_size = get_max_team_count(scheduler.get_execution_space());
 
     // TODO @tasking @new_feature DSH allow team sizes other than 1
@@ -198,8 +196,8 @@ class TaskQueueSpecialization<SimpleTaskScheduler<Kokkos::OpenMP, QueueType> > {
 template <class Scheduler>
 class TaskQueueSpecializationConstrained<
     Scheduler,
-    typename std::enable_if<std::is_same<typename Scheduler::execution_space,
-                                         Kokkos::OpenMP>::value>::type> {
+    std::enable_if_t<std::is_same<typename Scheduler::execution_space,
+                                  Kokkos::OpenMP>::value>> {
  public:
   using execution_space = Kokkos::OpenMP;
   using scheduler_type  = Scheduler;
@@ -258,8 +256,9 @@ class TaskQueueSpecializationConstrained<
     HostThreadTeamData& team_data_single =
         HostThreadTeamDataSingleton::singleton();
 
-    Impl::OpenMPExec* instance = t_openmp_instance;
-    const int pool_size        = OpenMP::impl_thread_pool_size();
+    Impl::OpenMPInternal* instance =
+        execution_space().impl_internal_space_instance();
+    const int pool_size = OpenMP::impl_thread_pool_size();
 
     const int team_size = 1;       // Threads per core
     instance->resize_thread_data(0 /* global reduce buffer */
@@ -324,11 +323,6 @@ class TaskQueueSpecializationConstrained<
                 // count of 0 also. Otherwise, returns a task from another queue
                 // or `end` if one couldn't be popped
                 task = team_queue.attempt_to_steal_task();
-#if 0
-                if(task != no_more_tasks_sentinel && task != end) {
-                  std::printf("task stolen on rank %d\n", team_exec.league_rank());
-                }
-#endif
               }
 
               // If still tasks are still executing

@@ -39,8 +39,6 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
 namespace stk { namespace mesh { class Part; } }
 
-
-
 namespace {
 
 TEST( UnitTestFieldRestriction, defaultConstruct )
@@ -55,6 +53,7 @@ TEST( UnitTestFieldRestriction, defaultConstruct )
 TEST( UnitTestFieldRestriction, construct )
 {
   stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
   stk::mesh::Part& part_a = meta.declare_part("a");
 
   stk::mesh::FieldRestriction fr(part_a);
@@ -72,6 +71,7 @@ TEST( UnitTestFieldRestriction, construct )
 TEST( UnitTestFieldRestriction, copyConstruct )
 {
   stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
   stk::mesh::Part& part_a = meta.declare_part("a");
 
   stk::mesh::FieldRestriction fr(part_a);
@@ -90,6 +90,7 @@ TEST( UnitTestFieldRestriction, copyConstruct )
 TEST( UnitTestFieldRestriction, operatorEqual )
 {
   stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
   stk::mesh::Part& part_a = meta.declare_part("a");
   stk::mesh::Part& part_b = meta.declare_part("b");
 
@@ -112,6 +113,7 @@ TEST( UnitTestFieldRestriction, operatorEqual )
 TEST( UnitTestFieldRestriction, operatorLess )
 {
   stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
   stk::mesh::Part& part_a = meta.declare_part("a");
   stk::mesh::Part& part_b = meta.declare_part("b");
 
@@ -142,6 +144,7 @@ TEST( UnitTestFieldRestriction, operatorLessInvalid )
 TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
 {
   stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
   stk::mesh::Part& part_a = meta.declare_part("a");
   stk::mesh::Part& part_b = meta.declare_part("b");
 

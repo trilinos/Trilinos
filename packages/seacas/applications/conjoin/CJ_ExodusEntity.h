@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -118,8 +118,8 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print("NodeSet {}, Name: '{}', {:L} nodes, {:L} df,\torder = {}\n", id, name_, nodeCount,
-                 dfCount, position_);
+      fmt::print("NodeSet {}, Name: '{}', {} nodes, {} df,\torder = {}\n", id, name_,
+                 fmt::group_digits(nodeCount), fmt::group_digits(dfCount), position_);
     }
 
     void dump_order() const
@@ -157,8 +157,8 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print("SideSet {}, Name: '{}', {:L} sides, {:L} df\toffset = {}, order = {}\n", id,
-                 name_, sideCount, dfCount, offset_, position_);
+      fmt::print("SideSet {}, Name: '{}', {} sides, {} df\toffset = {}, order = {}\n", id, name_,
+                 fmt::group_digits(sideCount), fmt::group_digits(dfCount), offset_, position_);
     }
   };
 

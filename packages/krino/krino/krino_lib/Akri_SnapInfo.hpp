@@ -46,6 +46,7 @@ public:
     const GlobalId &get_unique_id() const { return mUniqueId; }
     size_t get_node_global_id() const { return mUniqueId[0]; }
     size_t get_intersection_point_index() const { return mUniqueId[1]; }
+    void set_intersection_point_index(const size_t intPtIndex) { mUniqueId[1] = intPtIndex; }
     int get_owner() const { return mOwner; }
     const std::vector<int> &get_procs_that_need_to_know_about_this_info() const { return mProcsThatNeedToKnowAboutThisInfo; }
     double get_post_worst_quality() const { return mPostWorstQuality; }
@@ -70,14 +71,14 @@ public:
     };
 
 private:
-    const GlobalId mUniqueId;
-    const int mOwner{0u};
-    const std::vector<int> mProcsThatNeedToKnowAboutThisInfo;
-    const std::vector<size_t> mGlobalIdsOfSnapNodeElems;
-    const double mPostWorstQuality{0.0};
-    const stk::math::Vector3d mNodeLocation{};
-    const stk::math::Vector3d mSnapLocation{};
-    const int mSnapRank;
+    GlobalId mUniqueId;
+    int mOwner{0u};
+    std::vector<int> mProcsThatNeedToKnowAboutThisInfo;
+    std::vector<size_t> mGlobalIdsOfSnapNodeElems;
+    double mPostWorstQuality{0.0};
+    stk::math::Vector3d mNodeLocation{};
+    stk::math::Vector3d mSnapLocation{};
+    int mSnapRank;
 };
 
 std::ostream & operator<<(std::ostream & os, const SnapInfo& snapInfo);

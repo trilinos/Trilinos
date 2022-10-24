@@ -188,6 +188,18 @@ namespace panzer
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+
+    // Allocate temporary
+    if (Sacado::IsADType<ScalarT>::value) {
+      const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+      tmp_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0),fadSize);
+      if (fieldMults_.size() > 1)
+	tmp2_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0),fadSize);
+    } else {
+      tmp_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0));
+      if (fieldMults_.size() > 1)
+	tmp2_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0));
+    }
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -214,7 +226,6 @@ namespace panzer
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    ScalarT tmp;
     if (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points, scale the integrand by the
@@ -222,9 +233,9 @@ namespace panzer
       // bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-        tmp = multiplier_ * scalar_(cell, qp);
+        tmp_(cell) = multiplier_ * scalar_(cell, qp);
         for (int basis(0); basis < numBases; ++basis)
-          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp_(cell);
       } // end loop over the quadrature points
     }
     else if (NUM_FIELD_MULT == 1)
@@ -234,9 +245,9 @@ namespace panzer
       // integration, looping over the bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-        tmp = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
+        tmp_(cell) = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
         for (int basis(0); basis < numBases; ++basis)
-          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp_(cell);
       } // end loop over the quadrature points
     }
     else
@@ -248,12 +259,12 @@ namespace panzer
       const int numFieldMults(kokkosFieldMults_.extent(0));
       for (int qp(0); qp < numQP; ++qp)
       {
-        ScalarT fieldMultsTotal(1);
+	tmp2_(cell) = 1.0;
         for (int fm(0); fm < numFieldMults; ++fm)
-          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
-        tmp = multiplier_ * scalar_(cell, qp) * fieldMultsTotal;
+          tmp2_(cell) *= kokkosFieldMults_(fm)(cell, qp);
+        tmp_(cell) = multiplier_ * scalar_(cell, qp) * tmp2_(cell);
         for (int basis(0); basis < numBases; ++basis)
-          field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+          field_(cell, basis) += basis_(cell, basis, qp) * tmp_(cell);
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)
   } // end of operator()()

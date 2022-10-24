@@ -50,9 +50,21 @@
 #include <ostream>
 
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
+
 extern "C" {
+#if defined(HAVE_STOKHOS_MKL)
+    #include "mkl_version.h"
+    #if __INTEL_MKL__ >= 2021
+        #define MKL_NO_EXCEPT noexcept
+    #else
+    	#define MKL_NO_EXCEPT
+    #endif
+#else 
+    #define MKL_NO_EXCEPT
+#endif
+
 void DGEQP3_F77(const int*, const int*, double*, const int*, int*,
-                double*, double*, const int*, int*);
+            double*, double*, const int*, int*) MKL_NO_EXCEPT;
 }
 
 #include "Stokhos_ConfigDefs.h"

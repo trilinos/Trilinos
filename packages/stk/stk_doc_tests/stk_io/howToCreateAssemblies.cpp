@@ -40,6 +40,7 @@
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/WriteMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <string>                       // for string
 #include "stk_util/parallel/Parallel.hpp"
@@ -48,6 +49,7 @@ TEST(Assemblies, createAssemblyWithElementBlocks)
 {
   const unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
+  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& block2Part = meta.declare_part_with_topology("block_2", stk::topology::TRI_3_2D);
@@ -77,6 +79,7 @@ TEST(Assemblies, createAssemblyWithElementBlocksAndSurfaces)
 {
   const unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
+  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   stk::mesh::Part& block2Part = meta.declare_part_with_topology("block_2", stk::topology::WEDGE_6);
@@ -135,8 +138,11 @@ TEST(Assemblies, createAssemblyWithElementBlocksAndSurfaces)
 
 TEST(Assemblies, cannotCreateAssemblyWithMixedRanks)
 {
-  const unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(3);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  meta.use_simple_fields();
 
   stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   stk::mesh::Part& surface1Part = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
@@ -152,9 +158,8 @@ TEST(Assemblies, cannotCreateAssemblyWithMixedRanks)
   meta.declare_part_subset(assemblyPart, block1Part);
   meta.declare_part_subset(assemblyPart, surface1Part);
 
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::io::fill_mesh("generated:2x2x2|sideset:x", bulk);
+  stk::io::fill_mesh("generated:2x2x2|sideset:x", *bulk);
 
-  EXPECT_THROW(stk::io::write_mesh("outputFile.g", bulk), std::runtime_error);
+  EXPECT_THROW(stk::io::write_mesh("outputFile.g", *bulk), std::runtime_error);
 }
 

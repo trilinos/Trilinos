@@ -31,6 +31,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <percept/FieldTypes.hpp>
 #include <percept/PerceptUtils.hpp>
 
@@ -51,16 +52,21 @@
 
     PyramidFixture::PyramidFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, entity_rank_names_and_family_tree())
-      , m_bulkData(m_metaData , comm )
+      , m_bulkDataPtr(stk::mesh::MeshBuilder(comm).set_spatial_dimension(m_spatial_dimension)
+                                                  .set_entity_rank_names(entity_rank_names_and_family_tree())
+                                                  .create())
+      , m_bulkData(*m_bulkDataPtr)
+      , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_pyramid(    m_metaData.declare_part_with_topology( "block_4", stk::topology::PYRAMID_5 ))
       , m_sideset_quad(0), m_sideset_quad_subset(0)
       , m_sideset_tri(0), m_sideset_tri_subset(0)
-      , m_coordinates_field( m_metaData.declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" ))
-      , m_centroid_field(    m_metaData.declare_field< CoordinatesFieldType >( stk::topology::ELEMENT_RANK, "centroid" ))
-      , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( stk::topology::NODE_RANK, "temperature" ))
-      , m_volume_field( m_metaData.declare_field< ScalarFieldType >( stk::topology::ELEMENT_RANK, "volume" ))
     {      
+      m_metaData.use_simple_fields();
+      m_coordinates_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
+      m_centroid_field    = &m_metaData.declare_field<double>( stk::topology::ELEMENT_RANK, "centroid" );
+      m_temperature_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "temperature" );
+      m_volume_field      = &m_metaData.declare_field<double>( stk::topology::ELEMENT_RANK, "volume" );
+
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
@@ -80,14 +86,12 @@
           stk::io::put_io_part_attribute(*m_sideset_tri);
           m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
         }
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_c = nullptr; // gcc 4.8 hack
-      stk::mesh::FieldTraits<ScalarFieldType>::data_type* init_s = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, init_c);
-      put_field_on_mesh( m_centroid_field , universal, init_c);
-      put_field_on_mesh( m_temperature_field, universal, init_s);
+      put_field_on_mesh( *m_coordinates_field , universal, m_metaData.spatial_dimension(), nullptr);
+      put_field_on_mesh( *m_centroid_field , universal, m_metaData.spatial_dimension(), nullptr);
+      put_field_on_mesh( *m_temperature_field, universal, nullptr);
 
-      put_field_on_mesh( m_volume_field, m_block_pyramid, init_s);
+      put_field_on_mesh( *m_volume_field, m_block_pyramid, nullptr);
 
       stk::io::put_io_part_attribute(  m_block_pyramid );
 
@@ -151,7 +155,7 @@
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
             stk::mesh::Entity const node = m_bulkData.get_entity( stk::topology::NODE_RANK , i + 1 );
-            double * const coord = stk::mesh::field_data( m_coordinates_field , node );
+            double * const coord = stk::mesh::field_data( *m_coordinates_field , node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;
             coord[2] = node_coord_data[i][2] ;

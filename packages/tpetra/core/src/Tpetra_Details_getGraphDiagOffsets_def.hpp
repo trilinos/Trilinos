@@ -91,7 +91,7 @@ GetGraphDiagOffsets (const diag_offsets_type& diagOffsets,
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
-  const LO lclNumRows = lclRowMap.getNodeNumElements ();
+  const LO lclNumRows = lclRowMap.getLocalNumElements ();
   policy_type range (0, lclNumRows);
   Kokkos::parallel_for (range, *this);
 }

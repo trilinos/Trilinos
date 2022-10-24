@@ -789,14 +789,14 @@ namespace phalanx_test {
 
     // CrsMatrix requires LayoutLeft!
     local_graph_type g(col_ids,row_offsets);
-    local_matrix_type J("Jacobian",g);
+    local_matrix_type J("Jacobian",g,10);
 
     TEST_EQUALITY(J.numRows(),10);
     TEST_EQUALITY(J.numCols(),10);
     TEST_EQUALITY(J.nnz(),21);
 
     Kokkos::deep_copy(J.values,0.0);
-    Kokkos::parallel_for(J.numRows(),FillJacobian(J),"Fill Jacobian");
+    Kokkos::parallel_for("Fill Jacobian",J.numRows(),FillJacobian(J));
     Kokkos::fence();
 
     int check_matrix_entries = 0; // nonzero value means failure

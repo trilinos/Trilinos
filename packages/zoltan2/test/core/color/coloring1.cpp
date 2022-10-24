@@ -94,7 +94,7 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   typename tcrsMatrix_t::values_host_view_type values;
   // Count conflicts in the graph.
   // Loop over local rows, treat local column indices as edges.
-  zlno_t n = A->getNodeNumRows();
+  zlno_t n = A->getLocalNumRows();
   for (zlno_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
     for (zlno_t j=0; j<static_cast<zlno_t>(indices.extent(0)); j++) {
@@ -116,7 +116,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   RCP<const SparseMatrix::map_type> colMap = A->getColMap();
   Vector R = Vector(rowMap);
   //put colors in the scalar entries of R
-  for(size_t i = 0; i < A->getNodeNumRows(); i++){
+  for(size_t i = 0; i < A->getLocalNumRows(); i++){
     R.replaceLocalValue(i, color[i]);
   }
 
@@ -129,7 +129,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
 
   //count conflicts in the graph
   //loop over local rows, treat local column indices as edges
-  size_t n = A->getNodeNumRows();
+  size_t n = A->getLocalNumRows();
   auto colorData = C.getData();
   for(size_t i = 0; i < n; i++){
     A->getLocalRowView(i, indices, values);

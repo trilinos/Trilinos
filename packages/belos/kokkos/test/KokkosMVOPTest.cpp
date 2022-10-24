@@ -48,6 +48,7 @@
 #include "BelosKokkosMVOPTester.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosKokkosAdapter.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #ifdef HAVE_MPI
@@ -166,7 +167,7 @@ try {
     //*****************************************************************************************************************************
     // Read in a matrix Market file and use it to test the Kokkos Operator (double precision).
     KokkosSparse::CrsMatrix<ScalarType, int, EXSP> crsMat = 
-            KokkosKernels::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ScalarType, int, EXSP>>("bcsstk13.mtx"); 
+            KokkosSparse::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ScalarType, int, EXSP>>("bcsstk13.mtx"); 
     Teuchos::RCP<Belos::KokkosCrsOperator<ScalarType, int, EXSP>> myOp = 
             Teuchos::rcp(new Belos::KokkosCrsOperator<ScalarType,int,EXSP>(crsMat));
     
@@ -182,7 +183,7 @@ try {
     }
     // Read in a matrix Market file and use it to test the Kokkos Operator (single precision).
     KokkosSparse::CrsMatrix<ScalarType2, int, EXSP> crsMat2 = 
-            KokkosKernels::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ScalarType2, int, EXSP>>("bcsstk13.mtx"); 
+            KokkosSparse::Impl::read_kokkos_crst_matrix<KokkosSparse::CrsMatrix<ScalarType2, int, EXSP>>("bcsstk13.mtx"); 
     Teuchos::RCP<Belos::KokkosCrsOperator<ScalarType2, int, EXSP>> myOp2 = 
             Teuchos::rcp(new Belos::KokkosCrsOperator<ScalarType2,int,EXSP>(crsMat2));
     

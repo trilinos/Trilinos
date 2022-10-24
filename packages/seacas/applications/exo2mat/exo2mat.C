@@ -42,7 +42,6 @@
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
-#include <cstdio>  // for fprintf, printf, sprintf, etc
 #include <cstdlib> // for free, calloc, exit
 #include <ctime>
 #if MATIO_VERSION < 151
@@ -52,7 +51,7 @@
 #define EXT ".mat"
 static int textfile = 0;
 
-static FILE * m_file   = nullptr; /* file for m file output */
+static FILE  *m_file   = nullptr; /* file for m file output */
 static mat_t *mat_file = nullptr; /* file for binary .mat output */
 static bool   debug    = false;
 
@@ -541,7 +540,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       PutInt(str, num_attr);
       if (num_attr > 0) {
         std::string attr_names;
-        char **     names = get_exodus_names(num_attr, max_name_length + 1);
+        char      **names = get_exodus_names(num_attr, max_name_length + 1);
         ex_get_attr_names(exo_file, EX_ELEM_BLOCK, ids[i], names);
         for (int j = 0; j < num_attr; j++) {
           attr_names += names[j];
@@ -999,7 +998,7 @@ int main(int argc, char *argv[])
   }
 
   /* QA Info */
-  printf("%s: %s, %s\n", qainfo[0], qainfo[2], qainfo[1]);
+  fmt::print("{}: {}, {}\n", qainfo[0], qainfo[2], qainfo[1]);
 
   /* usage message*/
   if (argc != 2) {

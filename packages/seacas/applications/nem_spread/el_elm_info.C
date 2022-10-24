@@ -12,7 +12,7 @@
 #include <cstring>
 #include <fmt/ostream.h>
 
-#define LINEAR 1
+#define LINEAR    1
 #define QUADRATIC 2
 
 /*************** R O U T I N E S   I N   T H I S   F I L E ********************

@@ -27,7 +27,7 @@
 #define EXIT_FAILURE 1
 #endif
 
-#define NOT_NETCDF 2
+#define NOT_NETCDF   2
 #define NOT_EXODUSII 3
 
 char *progname;

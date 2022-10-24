@@ -69,13 +69,13 @@ struct BlockPair {
   bool operator!=(const BlockPair& rhs) const
   {
     return first->mesh_meta_data_ordinal() != rhs.first->mesh_meta_data_ordinal() ||
-           second->mesh_meta_data_ordinal() != rhs.second->mesh_meta_data_ordinal();
+        second->mesh_meta_data_ordinal() != rhs.second->mesh_meta_data_ordinal();
   }
 
   bool operator==(const BlockPair& rhs) const
   {
     return first->mesh_meta_data_ordinal() == rhs.first->mesh_meta_data_ordinal() &&
-           second->mesh_meta_data_ordinal() == rhs.second->mesh_meta_data_ordinal();
+        second->mesh_meta_data_ordinal() == rhs.second->mesh_meta_data_ordinal();
   }
 
   bool operator<(const BlockPair& rhs) const

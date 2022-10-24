@@ -191,7 +191,7 @@ system(mystring);
     // with each line ID (e.g. g corresponds to the 13th line). Then, when dropping (in a 2nd pass) we 
     // use lineId and umap to find where dropped entries should be summed (e.g., b corresponds to the 
     // 13th line and umap[13] points at location for g).
-    using TST = typename Teuchos::ScalarTraits<SC>;
+    // using TST = typename Teuchos::ScalarTraits<SC>;
 
     bool sumDropped = false;           
 
@@ -213,7 +213,7 @@ system(mystring);
     TEUCHOS_TEST_FOR_EXCEPTION( (LayerId == NULL) || (VertLineId == NULL), Exceptions::RuntimeError, "MueLu::StratimikosSmoother:: no line information found on this level. Cannot use recurMgOnFilteredA on this level.");
 
     Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    for (size_t i = 0; i < A_->getRowMap()->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < A_->getRowMap()->getLocalNumElements(); i++) {
       A_->getLocalRowView(i, inds, valsA);
       size_t nnz = inds.size();
       ArrayView<const Scalar> vals1;

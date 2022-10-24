@@ -117,8 +117,8 @@ Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > SplitMap(const Xpe
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Amap.getComm();
 
   GlobalOrdinal count=0;
-  Teuchos::Array<GlobalOrdinal> myaugids(Amap.getNodeNumElements());
-  for (size_t i=0; i<Amap.getNodeNumElements(); ++i) {
+  Teuchos::Array<GlobalOrdinal> myaugids(Amap.getLocalNumElements());
+  for (size_t i=0; i<Amap.getLocalNumElements(); ++i) {
     const GlobalOrdinal gid = Amap.getGlobalElement(i);
     if (Agiven.isNodeGlobalElement(gid)) continue;
     myaugids[Teuchos::as<GlobalOrdinal>(count)] = gid;
@@ -451,7 +451,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
   {
     Teuchos::ArrayRCP<const Scalar> vData  = bvec->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bvec->getMultiVector(0)->getData(1);
-    for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
+    for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getLocalNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), Teuchos::as<GO>(bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i) );
@@ -473,7 +473,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     Teuchos::RCP<const BlockedMultiVector> bbvecit = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bvecit);
     Teuchos::ArrayRCP<const Scalar> vData  = bbvecit->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bbvecit->getMultiVector(0)->getData(1);
-    for(size_t i=0; i< bbvecit->getMultiVector(0)->getMap()->getNodeNumElements(); i++) {
+    for(size_t i=0; i< bbvecit->getMultiVector(0)->getMap()->getLocalNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + 10 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(0,false)->getGlobalElement(i), map2->getGlobalElement(i) );
@@ -481,7 +481,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     }
     vData  = bbvecit->getMultiVector(1)->getData(0);
     vData2 = bbvecit->getMultiVector(1)->getData(1);
-    for(size_t i=0; i< bbvecit->getMultiVector(1)->getMap()->getNodeNumElements(); i++) {
+    for(size_t i=0; i< bbvecit->getMultiVector(1)->getMap()->getLocalNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + 25 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(1,false)->getGlobalElement(i), map3->getGlobalElement(i) + 15 );
@@ -690,7 +690,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedVectorDeepCop
   {
     Teuchos::ArrayRCP<const Scalar> vData  = bvec->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bvec->getMultiVector(0)->getData(1);
-    for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
+    for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getLocalNumElements(); i++) {
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
       TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), Teuchos::as<GO>(bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i) );

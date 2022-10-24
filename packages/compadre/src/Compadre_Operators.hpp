@@ -49,23 +49,27 @@ namespace Compadre {
     //! Rank of target functional output for each TargetOperation 
     //! Rank of target functional input for each TargetOperation is based on the output
     //! rank of the SamplingFunctional used on the polynomial basis
-    constexpr int TargetOutputTensorRank[] {
-        0, ///< PointEvaluation
-        1, ///< VectorPointEvaluation
-        0, ///< LaplacianOfScalarPointEvaluation
-        1, ///< VectorLaplacianPointEvaluation
-        1, ///< GradientOfScalarPointEvaluation
-        2, ///< GradientOfVectorPointEvaluation
-        0, ///< DivergenceOfVectorPointEvaluation
-        1, ///< CurlOfVectorPointEvaluation
-        1, ///< CurlCurlOfVectorPointEvaluation
-        0, ///< PartialXOfScalarPointEvaluation
-        0, ///< PartialYOfScalarPointEvaluation
-        0, ///< PartialZOfScalarPointEvaluation
-        0, ///< ChainedStaggeredLaplacianOfScalarPointEvaluation
-        0, ///< GaussianCurvaturePointEvaluation
-        0, ///< ScalarFaceAverageEvaluation
-    };
+    KOKKOS_INLINE_FUNCTION
+    int getTargetOutputTensorRank(const int& index) {
+        constexpr int TargetOutputTensorRank[] {
+            0, ///< PointEvaluation
+            1, ///< VectorPointEvaluation
+            0, ///< LaplacianOfScalarPointEvaluation
+            1, ///< VectorLaplacianPointEvaluation
+            1, ///< GradientOfScalarPointEvaluation
+            2, ///< GradientOfVectorPointEvaluation
+            0, ///< DivergenceOfVectorPointEvaluation
+            1, ///< CurlOfVectorPointEvaluation
+            1, ///< CurlCurlOfVectorPointEvaluation
+            0, ///< PartialXOfScalarPointEvaluation
+            0, ///< PartialYOfScalarPointEvaluation
+            0, ///< PartialZOfScalarPointEvaluation
+            0, ///< ChainedStaggeredLaplacianOfScalarPointEvaluation
+            0, ///< GaussianCurvaturePointEvaluation
+            0, ///< ScalarFaceAverageEvaluation
+        };
+        return TargetOutputTensorRank[index];
+    }
 
     //! Space in which to reconstruct polynomial
     enum ReconstructionSpace {
@@ -80,15 +84,22 @@ namespace Compadre {
         VectorOfScalarClonesTaylorPolynomial,
         //! Divergence-free vector polynomial basis
         DivergenceFreeVectorTaylorPolynomial,
+        //! Bernstein polynomial basis
+        BernsteinPolynomial,
     };
 
     //! Number of actual components in the ReconstructionSpace
-    constexpr int ActualReconstructionSpaceRank[] = {
-        0, ///< ScalarTaylorPolynomial
-        1, ///< VectorTaylorPolynomial
-        0, ///< VectorOfScalarClonesTaylorPolynomial
-        0, ///< DivergenceFreeVectorTaylorPolynomial
-    };
+    KOKKOS_INLINE_FUNCTION
+    int getActualReconstructionSpaceRank(const int& index) {
+        constexpr int ActualReconstructionSpaceRank[] = {
+            0, ///< ScalarTaylorPolynomial
+            1, ///< VectorTaylorPolynomial
+            0, ///< VectorOfScalarClonesTaylorPolynomial
+            0, ///< DivergenceFreeVectorTaylorPolynomial
+            0, ///< BernsteinPolynomial
+        };
+        return ActualReconstructionSpaceRank[index];
+    }
 
     //! Describes the SamplingFunction relationship to targets, neighbors
     enum SamplingTransformType {
@@ -201,6 +212,8 @@ namespace Compadre {
         Power,
         Gaussian,
         CubicSpline,
+        Cosine,
+        Sigmoid
     };
 
     //! Coordinate type for input and output format of vector data on manifold problems.

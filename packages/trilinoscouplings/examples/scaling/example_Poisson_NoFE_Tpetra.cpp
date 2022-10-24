@@ -1248,7 +1248,7 @@ int main(int argc, char *argv[]) {
     /* Zero the columns */
     typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
     typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
-    for (size_t i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
+    for (size_t i=0; i < gl_StiffMatrixT->getLocalNumRows(); i++) {
       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
       Kokkos::resize(indices, NumEntries);
       Kokkos::resize(values, NumEntries);

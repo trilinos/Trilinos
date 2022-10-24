@@ -114,7 +114,7 @@ getPidGidPairs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   LocalOrdinal ii;
   size_t  i,j,k;
   int mypid = Importer.getTargetMap()->getComm()->getRank();
-  size_t N  = Importer.getTargetMap()->getNodeNumElements();
+  size_t N  = Importer.getTargetMap()->getLocalNumElements();
 
   // Get the importer's data
   Teuchos::ArrayView<const LocalOrdinal> RemoteLIDs  = Importer.getRemoteLIDs();
@@ -152,7 +152,7 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
          bool use_minus_one_for_local)
 {
   // Resize the outgoing data structure
-  pids.resize(Importer.getTargetMap()->getNodeNumElements());
+  pids.resize(Importer.getTargetMap()->getLocalNumElements());
   Teuchos::ArrayView<int> v_pids = pids();
   getPids(Importer,v_pids,use_minus_one_for_local);
 }
@@ -169,7 +169,7 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   LocalOrdinal ii;
   size_t  i,j,k;
   int mypid = Importer.getTargetMap()->getComm()->getRank();
-  size_t N  = Importer.getTargetMap()->getNodeNumElements();
+  size_t N  = Importer.getTargetMap()->getLocalNumElements();
   if(N!=(size_t)pids.size()) throw std::runtime_error("Tpetra::Import_Util::getPids(): Incorrect size for output array");
 
   // Get the importer's data

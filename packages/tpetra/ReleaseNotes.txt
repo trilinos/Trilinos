@@ -234,7 +234,7 @@ which Node type gets enabled by default:
   3. Otherwise, if Kokkos enables the Serial execution space (if
      Kokkos_ENABLE_SERIAL is ON), Tpetra uses Serial by default.
   4. Otherwise, if Kokkos enables the Threads execution space (if
-     Kokkos_ENABLE_PTHREAD is ON), Tpetra uses Threads by default.
+     Kokkos_ENABLE_THREADS is ON), Tpetra uses Threads by default.
 
 If you wish to enable other Node types, you may set the following
 CMake options.  You do NOT need to set any of these options explicitly
@@ -244,7 +244,7 @@ if the Node type would be enabled by default anyway.
     be built with CUDA; ON by default if building with CUDA)
   - Tpetra_INST_OPENMP (Kokkos_ENABLE_OPENMP must be ON, and Trilinos
     must be built with OpenMP support)
-  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_PTHREAD must be ON)
+  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_THREADS must be ON)
   - Tpetra_INST_SERIAL (Kokkos_ENABLE_SERIAL must be ON)
 
 While it is legal to enable both the OpenMP and Pthreads back-ends in
@@ -722,7 +722,7 @@ if ETI (explicit template instantiation) is enabled:
 # Disable KokkosClassic::OpenMPNode
 -D TpetraClassic_ENABLE_OpenMP:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end.
--D Kokkos_ENABLE_PTHREAD:BOOL=OFF
+-D Kokkos_ENABLE_THREADS:BOOL=OFF
 
 * Deprecated variable-block-size classes (like VbrMatrix).
 

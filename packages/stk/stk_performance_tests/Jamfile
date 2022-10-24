@@ -129,6 +129,7 @@ exe stk_mesh_performance_tests
     /sierra/stk_balance//stk_balance_lib
     /sierra/stk_io//stk_io_util
     /sierra/stk_mesh//stk_mesh_utest
+    /sierra/stk_tools//stk_mesh_tools_lib
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
   : <tag>@sierra-exec-tag
   ;

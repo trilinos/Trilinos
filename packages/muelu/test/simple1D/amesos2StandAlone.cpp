@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
 
   int numGlobalElements = 1000;
   RCP<const Tpetra::Map<> > map = Tpetra::createUniformContigMap<LO, GO> (numGlobalElements, comm);
-  const size_t numMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  const size_t numMyElements = map->getLocalNumElements();
+  Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   RCP<MAT> A = Tpetra::createCrsMatrix<Scalar>(map,3);
 

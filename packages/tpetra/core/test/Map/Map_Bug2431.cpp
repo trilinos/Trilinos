@@ -135,7 +135,7 @@ int runTest(
     std::cout << message
               << ": Before Tpetra::createOneToOne on " << "Proc "
               << overlapMap->getComm()->getRank()
-              << "; nGids = " << overlapMap->getNodeNumElements() << "\n";
+              << "; nGids = " << overlapMap->getLocalNumElements() << "\n";
 
     auto myidx_o =  overlapMap->getMyGlobalIndices();
     outStream << "IDS ON PROC " << comm->getRank() << ": ";
@@ -151,7 +151,7 @@ int runTest(
     std::cout << message
               << ": After Tpetra::createOneToOne with TieBreak on Proc "
               << overlapMap->getComm()->getRank()
-              << "; nGids = " << nonOverlapMapTB->getNodeNumElements() << "\n";
+              << "; nGids = " << nonOverlapMapTB->getLocalNumElements() << "\n";
 
     auto myidx_notb =  nonOverlapMapTB->getMyGlobalIndices();
     outStream << "IDS ON PROC " << comm->getRank() << ": ";
@@ -167,7 +167,7 @@ int runTest(
     std::cout << message
               << ": After Tpetra::createOneToOne without TieBreak on Proc "
               << overlapMap->getComm()->getRank()
-              << "; nGids = " << nonOverlapMap->getNodeNumElements() << "\n";
+              << "; nGids = " << nonOverlapMap->getLocalNumElements() << "\n";
 
     auto myidx_no =  nonOverlapMap->getMyGlobalIndices();
     outStream << "IDS ON PROC " << comm->getRank() << ": ";

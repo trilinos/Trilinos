@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -182,8 +182,8 @@ int main(int argc, char **argv)
   /* read element order map */
   int *elem_map = (int *)calloc(num_elem, sizeof(int));
 
-  error = ex_get_map(exoid, elem_map);
-  printf("\nafter ex_get_map, error = %3d\n", error);
+  error = ex_get_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("\nafter ex_get_id_map, error = %3d\n", error);
 
   for (int i = 0; i < num_elem; i++) {
     printf("elem_map(%d) = %d \n", i, elem_map[i]);
@@ -644,15 +644,12 @@ int main(int argc, char **argv)
 
       error = ex_inquire(exoid, EX_INQ_SS_DF_LEN, &df_list_len, &fdum, cdum);
       printf("\nafter ex_inquire: EX_INQ_SS_DF_LEN = %d,  error = %d\n", df_list_len, error);
-    }
 
-    /* read concatenated side sets; this produces the same information as
-     * the above code which reads individual side sets
-     */
+      /* read concatenated side sets; this produces the same information as
+       * the above code which reads individual side sets
+       */
 
-    /* concatenated side set read */
-
-    if (num_side_sets > 0) {
+      /* concatenated side set read */
       struct ex_set_specs set_specs;
       ids              = (int *)calloc(num_side_sets, sizeof(int));
       num_elem_per_set = (int *)calloc(num_side_sets, sizeof(int));

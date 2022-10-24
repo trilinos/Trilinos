@@ -90,7 +90,7 @@ using Thyra::LinearOpTester;
 void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO> > & gids,
                                             const Tpetra::Map<LO,GO,NT> & map) const
 {
-   LO numLocal = map.getNodeNumElements();
+   LO numLocal = map.getLocalNumElements();
    LO numHalf = numLocal/2;
    numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
 

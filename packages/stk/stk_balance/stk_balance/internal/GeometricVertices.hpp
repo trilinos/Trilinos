@@ -47,18 +47,18 @@ namespace internal {
 class GeometricVertices : public stk::balance::internal::Vertices
 {
 public:
-    GeometricVertices(const stk::balance::BalanceSettings& balanceSettings,
-                      const stk::mesh::BulkData& bulkData,
-                      const stk::mesh::EntityVector& entities_to_balance,
-                      const std::vector<stk::mesh::Selector> criteria);
+  GeometricVertices(const stk::balance::BalanceSettings& balanceSettings,
+                    const stk::mesh::BulkData& bulkData,
+                    const stk::mesh::EntityVector& entities_to_balance,
+                    const std::vector<stk::mesh::Selector> criteria);
 
-    virtual ~GeometricVertices();
+  virtual ~GeometricVertices();
 
-    size_t getNumWeightsPerVertex() const;
+  size_t getNumWeightsPerVertex() const;
 
 private:
-    const stk::mesh::EntityVector& mEntitiesToBalance;
-    std::vector<stk::mesh::Selector> mSelectors;
+  const stk::mesh::EntityVector& mEntitiesToBalance;
+  std::vector<stk::mesh::Selector> mSelectors;
 };
 
 }

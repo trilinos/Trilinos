@@ -321,7 +321,9 @@ getWarpBlendLatticeLine(       Kokkos::DynRankView<pointValueType,pointPropertie
     // this should be fixed after view and dynrankview is interoperatable
     auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);
 
-    Kokkos::deep_copy(pts, z);
+    const auto common_range = range_type(0, std::min(pts.extent(0), z.extent(0)));
+    Kokkos::deep_copy(Kokkos::subview(pts, common_range), 
+                      Kokkos::subview(z,   common_range));
   }
 }
 

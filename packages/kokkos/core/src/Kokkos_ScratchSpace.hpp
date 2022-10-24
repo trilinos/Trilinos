@@ -42,6 +42,15 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_SCRATCHSPACE_HPP
 #define KOKKOS_SCRATCHSPACE_HPP
 
@@ -148,10 +157,10 @@ class ScratchMemorySpace {
                                             const IntType& size_L0,
                                             void* ptr_L1           = nullptr,
                                             const IntType& size_L1 = 0)
-      : m_iter_L0((char*)ptr_L0),
-        m_iter_L1((char*)ptr_L1),
-        m_end_L0((char*)ptr_L0 + size_L0),
-        m_end_L1((char*)ptr_L1 + size_L1),
+      : m_iter_L0(static_cast<char*>(ptr_L0)),
+        m_iter_L1(static_cast<char*>(ptr_L1)),
+        m_end_L0(static_cast<char*>(ptr_L0) + size_L0),
+        m_end_L1(static_cast<char*>(ptr_L1) + size_L1),
         m_multiplier(1),
         m_offset(0),
         m_default_level(0) {}

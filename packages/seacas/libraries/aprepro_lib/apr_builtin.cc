@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -92,6 +92,10 @@ namespace SEAMS {
     time_t timer = time(nullptr);
     return timer;
   }
+
+  double do_FtoC(double F) { return (F - 32.0) / 1.8; }
+
+  double do_CtoF(double C) { return (C * 1.8) + 32.0; }
 
   // DO_INT:  Calculate integer nearest to zero from value
   double do_int(double x)
@@ -512,7 +516,7 @@ namespace SEAMS {
 
   const char *do_get_date()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -527,7 +531,7 @@ namespace SEAMS {
 
   const char *do_get_iso_date()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -542,7 +546,7 @@ namespace SEAMS {
 
   const char *do_get_time()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -581,7 +585,7 @@ namespace SEAMS {
 
   const char *do_tostring(double x)
   {
-    char *      tmp;
+    char       *tmp;
     static char tmpstr[128];
     if (x == 0.0) {
       new_string("0", &tmp);
@@ -645,7 +649,7 @@ namespace SEAMS {
 
   double do_find_word(char *word, char *string, char *delm)
   {
-    auto &      tokens = get_tokenized_strings(string, delm);
+    auto       &tokens = get_tokenized_strings(string, delm);
     std::string sword{word};
     for (size_t i = 0; i < tokens.size(); i++) {
       if (tokens[i] == sword) {
@@ -670,7 +674,7 @@ namespace SEAMS {
 
   const char *do_file_to_string(char *filename)
   {
-    char *        ret_string = nullptr;
+    char         *ret_string = nullptr;
     std::fstream *file       = aprepro->open_file(filename, "r");
 
     if (file != nullptr) {
@@ -703,7 +707,7 @@ namespace SEAMS {
   double do_strtod(char *string)
   {
     reset_error();
-    double x = atof(string);
+    double x = strtod(string, nullptr);
     SEAMS::math_error("strtod");
     return x;
   }
@@ -796,7 +800,7 @@ namespace SEAMS {
     // Using 'intout(val)', val will be converted to a string
     // using an integer format
 
-    char *      tmp;
+    char       *tmp;
     static char tmpstr[128];
     if (intval == 0.0) {
       new_string("0", &tmp);
@@ -817,6 +821,12 @@ namespace SEAMS {
   const char *do_rescan(char *string)
   {
     aprepro->lexer->rescan(string);
+    return nullptr;
+  }
+
+  const char *do_import(char *string)
+  {
+    aprepro->lexer->import_handler(string);
     return nullptr;
   }
 
@@ -901,7 +911,7 @@ namespace SEAMS {
     }
 
     std::string tmpstr(start, 0, len);
-    char *      tmp;
+    char       *tmp;
     new_string(tmpstr, &tmp);
     return tmp;
   }

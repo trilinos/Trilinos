@@ -63,16 +63,16 @@ SingletonFilter<MatrixType>::SingletonFilter(const Teuchos::RCP<const Tpetra::Ro
 {
 
   // use this filter only on serial matrices
-  if (A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows()) {
+  if (A_->getComm()->getSize() != 1 || A_->getLocalNumRows() != A_->getGlobalNumRows()) {
     throw std::runtime_error("Ifpack2::SingeltonFilter can be used with Comm().getSize() == 1 only. This class is a tool for Ifpack2_AdditiveSchwarz, and it is not meant to be used otherwise.");
   }
 
   // Number of rows in A
-  size_t NumRowsA_ = A_->getNodeNumRows();
+  size_t NumRowsA_ = A_->getLocalNumRows();
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
+  MaxNumEntriesA_ = A_->getLocalMaxNumRowEntries();
 
   // ExtractMyRowCopy() will use these vectors
   Kokkos::resize(Indices_,MaxNumEntriesA_);
@@ -208,13 +208,13 @@ global_size_t SingletonFilter<MatrixType>::getGlobalNumCols() const
 }
 
 template<class MatrixType>
-size_t SingletonFilter<MatrixType>::getNodeNumRows() const
+size_t SingletonFilter<MatrixType>::getLocalNumRows() const
 {
   return NumRows_;
 }
 
 template<class MatrixType>
-size_t SingletonFilter<MatrixType>::getNodeNumCols() const
+size_t SingletonFilter<MatrixType>::getLocalNumCols() const
 {
   return NumRows_;
 }
@@ -232,7 +232,7 @@ global_size_t SingletonFilter<MatrixType>::getGlobalNumEntries() const
 }
 
 template<class MatrixType>
-size_t SingletonFilter<MatrixType>::getNodeNumEntries() const
+size_t SingletonFilter<MatrixType>::getLocalNumEntries() const
 {
   return NumNonzeros_;
 }
@@ -256,7 +256,7 @@ size_t SingletonFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 }
 
 template<class MatrixType>
-size_t SingletonFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t SingletonFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
@@ -295,16 +295,6 @@ getGlobalRowCopy (GlobalOrdinal /*LocalRow*/,
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowCopy.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void SingletonFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
-                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
-                                                  size_t &/* NumEntries */) const
-{
-  throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowCopy.");
-}
-#endif
 
 template<class MatrixType>
 void SingletonFilter<MatrixType>::
@@ -332,20 +322,6 @@ void SingletonFilter<MatrixType>::
 }
 
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void SingletonFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
-                                              const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                                              const Teuchos::ArrayView<Scalar> &Values,
-                                              size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
-}
-#endif
-
 template<class MatrixType>
 void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
                                                   global_inds_host_view_type &/*indices*/,
@@ -354,15 +330,6 @@ void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
-                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::SingletonFilter: does not support getGlobalRowView.");
-}
-#endif
 
 template<class MatrixType>
 void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
@@ -372,15 +339,6 @@ void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getLocalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
-                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::SingletonFilter: does not support getLocalRowView.");
-}
-#endif
 
 template<class MatrixType>
 void SingletonFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const

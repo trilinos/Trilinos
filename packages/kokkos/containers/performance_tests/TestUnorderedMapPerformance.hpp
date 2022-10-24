@@ -43,7 +43,7 @@
 #ifndef KOKKOS_TEST_UNORDERED_MAP_PERFORMANCE_HPP
 #define KOKKOS_TEST_UNORDERED_MAP_PERFORMANCE_HPP
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -147,7 +147,7 @@ struct UnorderedMapTest {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile value_type& dst, const volatile value_type& src) const {
+  void join(value_type& dst, const value_type& src) const {
     dst.failed_count += src.failed_count;
     dst.max_list = src.max_list < dst.max_list ? dst.max_list : src.max_list;
   }

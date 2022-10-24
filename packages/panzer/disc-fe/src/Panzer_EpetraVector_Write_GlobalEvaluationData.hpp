@@ -152,7 +152,7 @@ namespace panzer
         int mem);
 
       /**
-       *  \brief Clear out the ghosted vector.                                   // JMG:  Is this right?                          
+       *  \brief Clear out the ghosted vector.                                   // JMG:  Is this right?
        */
       virtual void
       initializeData();
@@ -160,7 +160,7 @@ namespace panzer
       /**
        *  \brief Determine if a Dirichlet adjustment is necessary.
        *
-       *  \returns False.                                                        // JMG:  But why?                                
+       *  \returns False.                                                        // JMG:  But why?
        */
       virtual bool
       requiresDirichletAdjustment() const

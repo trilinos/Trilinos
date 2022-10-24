@@ -9,12 +9,12 @@
 #ifndef Akri_ResultsOutput_Parser_h
 #define Akri_ResultsOutput_Parser_h
 
-namespace YAML { class Node; }
 namespace krino { class Region; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace ResultsOutput_Parser {
- void parse(const YAML::Node & node, Region & region);
+  void parse(const Parser::Node & node, Region & region);
 }
 }
 

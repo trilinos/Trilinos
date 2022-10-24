@@ -66,7 +66,7 @@ class PhactoriOperationBlock:
   Operations with multiple inputs and outputs are conceiveable, and may be
   added pending user requirements.
   The instance is presumed to contain a name unique amound the operation
-  blocks and keeps a reference to the input operation (by name), the 
+  blocks and keeps a reference to the input operation (by name), the
   ParaView/Catalyst filter which is built, and some flags determining where
   we are in the construction process.
   """
@@ -226,7 +226,7 @@ class PhactoriOperationBlock:
       myDebugPrint3("OutputElementListFromOneBlockToFile returning\n")
 
   class FindClosestNPointsToListParams:
-    """recursion structure for FindClosestNPointsToList().  Also servers to 
+    """recursion structure for FindClosestNPointsToList().  Also servers to
        store/track data for passing back answer"""
     def __init__(self, inParentOperation, inNumToFind,
                  inTargetGlobalNodeIdList, inTargetPointXyzList):
@@ -343,7 +343,7 @@ class PhactoriOperationBlock:
       #      str(self.mTargetMatchXyzs.GetValue(gndx+2)) + "\n")
 
       #now find which in the current list has the biggest distance, as it is
-      #next in line for replacement (we do this to avoid having to shift 
+      #next in line for replacement (we do this to avoid having to shift
       #elements every time
       self.mcfndx = 0
       self.mMinDistSqrd = self.mDistSqrds.GetValue(0)
@@ -414,7 +414,7 @@ class PhactoriOperationBlock:
             str(self.mTargetMatchXyzs.GetValue(gndx+2)) + "\n")
 
       #now find which in the current list has the biggest distance, as it is
-      #next in line for replacement (we do this to avoid having to shift 
+      #next in line for replacement (we do this to avoid having to shift
       #elements every time
       self.mcfndx = 0
       self.mMinDistSqrd = self.mDistSqrds.GetValue(0)
@@ -530,7 +530,7 @@ class PhactoriOperationBlock:
     self.DoMethodPerBlock(recursionItem)
     return recursionItem.mParameters.mGlobalNodeIdList, \
            recursionItem.mParameters.mPointXYZList
-   
+
   def MakeListOfAllPointsInBlock1(self, inInputCsData, inParameters):
     #if PhactoriDbg(100):
     #  myDebugPrint3("MakeListOfAllPointsInBlock1 entered\n")

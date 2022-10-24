@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on enigma: `date`"
+echo "Starting nightly Trilinos development testing on $HOSTNAME: `date`"
 echo
 
 # Undefine the next line while making/testing local driver changes.  Otherwise, the nightly
@@ -35,37 +35,39 @@ export TDD_HTTP_PROXY=$http_proxy
 export TDD_HTTPS_PROXY=$https_proxy
 
 export TDD_FORCE_CMAKE_INSTALL=0
-export CUDA_LAUNCH_BLOCKING=1
-export OMP_NUM_THREADS=2
-#export PATH="$PATH:/opt/intel/composer_xe_2015.1.133/bin/intel64"
-#export LD_LIBRARY_PATH="/opt/intel/composer_xe_2015.1.133/compiler/lib/intel64:$LD_LIBRARY_PATH"
-#export LD_LIBRARY_PATH="/usr/local/gcc/4.8.3/lib64:$LD_LIBRARY_PATH"
-#export LD_LIBRARY_PATH="/opt/mpc/1.0.1/lib:$LD_LIBRARY_PATH"
-#export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64"
-# Machine independent cron_driver:
-#
-#openmpi-1.7-cuda6
 
 . ~/.bashrc
+
+
+# Machine independent cron_driver:
+#
+
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
+export MODULEPATH=$SCRIPT_DIR:$MODULEPATH
+# Trilinos source repo
+export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
 
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
 # would first run old cron_driver.sh and only then pull
 
-# load OpenMPI 1.6.4 (standard in RHEL 7)
-#module load mpi/openmpi-x86_64
-module load sems-env
-module load sems-cmake/3.17.1
-module load sems-gcc/5.3.0
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3
-
+module load muelu-gcc
+module list
 env
 
-
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
+pushd $TRILINOS_SOURCE
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_debug_muelu_basker_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_debug_muelu_klu2_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_serial_debug_muelu_extratypes_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_serial_release_muelu_experimental_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_mpi_release_no_serial_openmp_complex_experimental_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_mpi_release_openmp_no_epetra_no_int_complex_experimental_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_mpi_release_muelu_no_int_no_serial_openmp_experimental_enigma.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_no_int_openmp_experimental_enigma.cmake
+popd
 
 echo
-echo "Ending nightly Trilinos development testing on enigma: `date`"
+echo "Ending nightly Trilinos development testing on $HOSTNAME: `date`"
 echo

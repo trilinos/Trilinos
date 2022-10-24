@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -832,8 +832,8 @@ std::pair<int, size_t> ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt
     Error("exodiff: ERROR:  File not open!");
   }
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
-    Error(fmt::format("exodiff: ERROR:  global_elmt_num = {:L} is out of bounds [1, {:L}]!",
-                      global_elmt_num, num_elmts));
+    Error(fmt::format("exodiff: ERROR:  global_elmt_num = {} is out of bounds [1, {}]!",
+                      fmt::group_digits(global_elmt_num), fmt::group_digits(num_elmts)));
   }
 
   int block_index = 0;
@@ -940,8 +940,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   SMART_ASSERT(file_id >= 0);
 
   // Determine max size of entity and variable names on the database
-  int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  ex_set_max_name_length(file_id, name_length);
+  int length_name = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  ex_set_max_name_length(file_id, length_name);
 
   ex_init_params info{};
   info.title[0] = '\0';
@@ -971,16 +971,17 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (dimension < 1 || dimension > 3) {
     Error(fmt::format("Init data appears corrupt:\n"
                       "         dimension = {}\n"
-                      "         num_nodes = {:L}\n"
-                      "         num_elmts = {:L}\n"
+                      "         num_nodes = {}\n"
+                      "         num_elmts = {}\n"
                       "         num_elmt_blocks = {}\n"
                       "         num_node_sets = {}\n"
                       "         num_side_sets = {}\n"
                       "         num_edge_blocks = {}\n"
                       "         num_face_blocks = {}\n"
                       " ... Aborting...\n",
-                      dimension, num_nodes, num_elmts, num_elmt_blocks, num_node_sets,
-                      num_edge_blocks, num_face_blocks, num_side_sets));
+                      dimension, fmt::group_digits(num_nodes), fmt::group_digits(num_elmts),
+                      num_elmt_blocks, num_node_sets, num_edge_blocks, num_face_blocks,
+                      num_side_sets));
   }
 
   int num_qa   = ex_inquire_int(file_id, EX_INQ_QA);
@@ -996,7 +997,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                   Coordinate Names...
 
-  char **coords = get_name_array(3, name_length);
+  char **coords = get_name_array(3, length_name);
   err           = ex_get_coord_names(file_id, coords);
   if (err < 0) {
     Error("Failed to get coordinate names!  Aborting...\n");
@@ -1042,10 +1043,10 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (e_count != num_elmts && !interFace.quiet_flag) {
       fmt::print(stderr,
-                 "exodiff: WARNING: Total number of elements {:L}"
+                 "exodiff: WARNING: Total number of elements {}"
                  " does not equal the sum of the number of elements "
-                 "in each block {:L}\n",
-                 num_elmts, e_count);
+                 "in each block {}\n",
+                 fmt::group_digits(num_elmts), fmt::group_digits(e_count));
     }
 
     // Gather the attribute names (even though not all attributes are on all blocks)

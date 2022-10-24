@@ -132,6 +132,9 @@ public:
                               PartOrdinal* keyPtr,
                               PartOrdinal* keyEnd);
 
+  // For use by BulkData::internal_modification_end().
+  void internal_modification_end();
+
   // Update m_buckets from the partitions.
   void sync_from_partitions();
   void sync_from_partitions(EntityRank rank);

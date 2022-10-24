@@ -220,7 +220,7 @@ namespace MueLu {
                                "Initial pairwise aggregation failed to aggregate all nodes");
     LO numLocalAggregates = aggregates->GetNumAggregates();
     GetOStream(Statistics0) << "Init   : " << numLocalAggregates << " - "
-                            << A->getNodeNumRows() / numLocalAggregates << std::endl;
+                            << A->getLocalNumRows() / numLocalAggregates << std::endl;
 
     // Temporary data storage for further aggregation steps
     local_matrix_type intermediateP;
@@ -316,7 +316,7 @@ namespace MueLu {
       // Update the aggregates
       RCP<LOMultiVector> vertex2AggIdMV = aggregates->GetVertex2AggId();
       ArrayRCP<LO>       vertex2AggId   = vertex2AggIdMV->getDataNonConst(0);
-      for(size_t vertexIdx = 0; vertexIdx < A->getNodeNumRows(); ++vertexIdx) {
+      for(size_t vertexIdx = 0; vertexIdx < A->getLocalNumRows(); ++vertexIdx) {
         LO oldAggIdx = vertex2AggId[vertexIdx];
         if(oldAggIdx != Teuchos::OrdinalTraits<LO>::invalid()) {
           vertex2AggId[vertexIdx] = localVertex2AggId[oldAggIdx];
@@ -325,7 +325,7 @@ namespace MueLu {
 
       // We could probably print some better statistics at some point
       GetOStream(Statistics0) << "Iter " << aggregationIter << ": " << numLocalAggregates << " - "
-                              << A->getNodeNumRows() / numLocalAggregates << std::endl;
+                              << A->getLocalNumRows() / numLocalAggregates << std::endl;
     }
     aggregates->SetNumAggregates(numLocalAggregates);
     aggregates->AggregatesCrossProcessors(false);
@@ -402,7 +402,7 @@ namespace MueLu {
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
-    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
 

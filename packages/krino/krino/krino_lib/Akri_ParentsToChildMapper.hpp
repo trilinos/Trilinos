@@ -20,15 +20,14 @@ namespace krino { class FieldRef; }
 namespace krino {
 
 class CDFEM_Support;
-class Phase_Support;
 
 class ParentsToChildMapper
 {
 public:
   ParentsToChildMapper() = default;
 
-  void build_map(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const CDFEM_Support & cdfemSupport, const Phase_Support & phaseSupport);
-  void build_map(const stk::mesh::BulkData & mesh, const FieldRef & parent_ids_field, const stk::mesh::Selector & elementSelector, bool add_higher_order_midside_nodes);
+  void build_map(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const CDFEM_Support & cdfemSupport, const bool addHigherOrderMidSideNodes);
+  void build_map(const stk::mesh::BulkData & mesh, const FieldRef & parent_ids_field, const stk::mesh::Selector & elementSelector, const bool add_higher_order_midside_nodes);
 
   bool get_child_id(const stk::mesh::EntityId parent0,
       const stk::mesh::EntityId parent1,
@@ -50,9 +49,13 @@ public:
   }
 
 private:
+  bool need_to_update_map(const stk::mesh::BulkData & mesh, const bool addHigherOrderMidSideNodes) const;
+  void mark_map_as_up_to_date(const stk::mesh::BulkData & mesh, const bool addHigherOrderMidSideNodes);
   typedef OrderedIdPair ParentsToChildKey;
   typedef std::map<ParentsToChildKey,stk::mesh::EntityId> ParentsToChildMap;
   ParentsToChildMap my_parents_to_child_map;
+  size_t myMeshSyncCount{0};
+  bool myHaveHigherOrderMidSideNodes{false};
 };
 
 void fill_edge_nodes(

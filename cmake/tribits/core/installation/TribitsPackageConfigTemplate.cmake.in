@@ -4,7 +4,6 @@
 #            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
-#
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
 #
@@ -46,7 +45,14 @@
 #
 ##############################################################################
 
-${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
+if(CMAKE_VERSION VERSION_LESS 3.3)
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE
+    "${PACKAGE_NAME} requires CMake 3.3 or later for 'if (... IN_LIST ...)'"
+    )
+  set(${PDOLLAR}{CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+  return()
+endif()
+cmake_minimum_required(VERSION 3.3...${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
@@ -96,19 +102,19 @@ set(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 set(${EXPORT_FILE_VAR_PREFIX}_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@")
 
 ## List of package include dirs
-set(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${FULL_INCLUDE_DIRS_SET}")
+set(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "")
 
 ## List of package library paths
-set(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "${FULL_LIBRARY_DIRS_SET}")
+set(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "")
 
 ## List of package libraries
 set(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES "${FULL_LIBRARY_SET}")
 
 ## Specification of directories for TPL headers
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}")
+set(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "")
 
 ## Specification of directories for TPL libraries
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}")
+set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "")
 
 ## List of required TPLs
 set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
@@ -137,3 +143,29 @@ set(${EXPORT_FILE_VAR_PREFIX}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIST "${ORDERED_FULL_TPL_SET}")
 
 ${PACKAGE_CONFIG_CODE}
+
+## ----------------------------------------------------------------------------
+## Create deprecated non-namespaced library targets for backwards compatibility
+## ----------------------------------------------------------------------------
+
+set(${EXPORT_FILE_VAR_PREFIX}_EXPORTED_PACKAGE_LIBS_NAMES "${EXPORTED_PACKAGE_LIBS_NAMES}")
+
+foreach(libname IN LISTS ${EXPORT_FILE_VAR_PREFIX}_EXPORTED_PACKAGE_LIBS_NAMES)
+  if (NOT TARGET ${PDOLLAR}{libname})
+    add_library(${PDOLLAR}{libname} INTERFACE IMPORTED)
+    target_link_libraries(${PDOLLAR}{libname}
+       INTERFACE ${PACKAGE_NAME}::${PDOLLAR}{libname})
+    set(deprecationMessage
+      "WARNING: The non-namespaced target '${PDOLLAR}{libname}' is deprecated!"
+      "  If always using newer versions of the project '${PROJECT_NAME}', then use the"
+      " new namespaced target '${PACKAGE_NAME}::${PDOLLAR}{libname}', or better yet,"
+      " '${PACKAGE_NAME}::all_libs' to be less sensitive to changes in the definition"
+      " of targets in the package '${PACKAGE_NAME}'.  Or, to maintain compatibility with"
+      " older or newer versions the project '${PROJECT_NAME}', instead link against the"
+      " libraries specified by the variable '${PACKAGE_NAME}_LIBRARIES'."
+      )
+    string(REPLACE ";" "" deprecationMessage "${PDOLLAR}{deprecationMessage}")
+    set_target_properties(${PDOLLAR}{libname}
+      PROPERTIES DEPRECATION "${PDOLLAR}{deprecationMessage}" )
+  endif()
+endforeach()

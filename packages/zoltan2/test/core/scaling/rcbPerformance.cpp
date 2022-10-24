@@ -379,7 +379,7 @@ int main(int narg, char *arg[])
 
   // Create an input adapter.
   const RCP<const tMap_t> &coordmap = coordinates->getMap();
-  ArrayView<const zgno_t> ids = coordmap->getNodeElementList();
+  ArrayView<const zgno_t> ids = coordmap->getLocalElementList();
   const zgno_t *globalIds = ids.getRawPtr();
   
   size_t localCount = coordinates->getLocalLength();

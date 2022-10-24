@@ -122,7 +122,7 @@ Rather than "keep between" with a min/max range you can also have "keep above" w
       if self.mVariableInfo.mVariableTypeNeedsDetection == False:
         UpdatePipelineWithCurrentTimeArgument(outOutgoingPvFilter)
 
-    
+
   def ParseParametersFromJson(self, inJson):
 
     self.mBypassFlag = getParameterFromBlock(inJson, 'bypass flag',
@@ -226,7 +226,13 @@ Rather than "keep between" with a min/max range you can also have "keep above" w
         myDebugPrint3(inInputFilter.CellData.GetArray(ii).Name + "\n")
 
     newParaViewFilter = Threshold(inInputFilter)
-    newParaViewFilter.ThresholdRange = self.mRange
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      newParaViewFilter.ThresholdRange = self.mRange
+    else:
+      newParaViewFilter.LowerThreshold = self.mRange[0]
+      newParaViewFilter.UpperThreshold = self.mRange[1]
+      newParaViewFilter.ThresholdMethod = vtk.vtkThreshold.THRESHOLD_BETWEEN
 
     self.HandleVariableNeedingDetection(inInputFilter, newParaViewFilter)
 
@@ -251,4 +257,3 @@ Rather than "keep between" with a min/max range you can also have "keep above" w
     return newParaViewFilter
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

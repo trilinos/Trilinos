@@ -64,7 +64,7 @@
 int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
-  typedef double Scalar;
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
 

@@ -352,7 +352,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
         this->wrapperModel_);
 
     wrapperModel->initializeNewmark(xDot, x, 0.0, time, beta_, gamma_);
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(xDotDot);
+    const Thyra::SolveStatus<Scalar> sStatus = (*(this->solver_)).solve(&*xDotDot);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED, std::logic_error,
@@ -482,8 +482,11 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
       StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
+    if (this->getZeroInitialGuess())
+      Thyra::assign(a_new.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
     // Solve nonlinear system with a_new as initial guess
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
+    const Thyra::SolveStatus<Scalar> sStatus = (*(this->solver_)).solve(&*a_new);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
       StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);

@@ -124,13 +124,13 @@ bool tLumping_tpetra::test_lumping(int verbosity,std::ostream & os)
    Tpetra::CrsMatrix<ST,LO,GO,NT> A(rcpFromRef(map),5);
    GO indices[5];
    ST values[5] = {1,2,3,4,5};
-   for(size_t i=0;i<A.getNodeNumRows()-5;i++) {
+   for(size_t i=0;i<A.getLocalNumRows()-5;i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(GO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(i+j);
       A.insertGlobalValues(index,Teuchos::ArrayView<GO>(indices,5),Teuchos::ArrayView<ST>(values,5));
    }
-   for(size_t i=A.getNodeNumRows()-5;i<A.getNodeNumRows();i++) {
+   for(size_t i=A.getLocalNumRows()-5;i<A.getLocalNumRows();i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(LO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(j);
@@ -141,7 +141,7 @@ bool tLumping_tpetra::test_lumping(int verbosity,std::ostream & os)
    // B matrix...already lumped
    Tpetra::CrsMatrix<ST,LO,GO,NT> B(rcpFromRef(map),1);
    ST number[1] = {15.0};
-   for(size_t i=0;i<B.getNodeNumRows();i++) {
+   for(size_t i=0;i<B.getLocalNumRows();i++) {
       GO index[1] = {B.getRowMap()->getGlobalElement(i)};
       B.insertGlobalValues(index[0],Teuchos::ArrayView<GO>(index,1),Teuchos::ArrayView<ST>(number,1));
    }
@@ -180,13 +180,13 @@ bool tLumping_tpetra::test_invLumping(int verbosity,std::ostream & os)
    Tpetra::CrsMatrix<ST,LO,GO,NT> A(rcpFromRef(map),5);
    GO indices[5];
    ST values[5] = {1,2,3,4,5};
-   for(size_t i=0;i<A.getNodeNumRows()-5;i++) {
+   for(size_t i=0;i<A.getLocalNumRows()-5;i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(GO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(i+j);
       A.insertGlobalValues(index,Teuchos::ArrayView<GO>(indices,5),Teuchos::ArrayView<ST>(values,5));
    }
-   for(size_t i=A.getNodeNumRows()-5;i<A.getNodeNumRows();i++) {
+   for(size_t i=A.getLocalNumRows()-5;i<A.getLocalNumRows();i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(LO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(j);
@@ -197,7 +197,7 @@ bool tLumping_tpetra::test_invLumping(int verbosity,std::ostream & os)
    // B matrix...already lumped
    Tpetra::CrsMatrix<ST,LO,GO,NT> B(rcpFromRef(map),1);
    ST number[1] = {1.0/15.0};
-   for(size_t i=0;i<B.getNodeNumRows();i++) {
+   for(size_t i=0;i<B.getLocalNumRows();i++) {
       GO index[1] = {B.getRowMap()->getGlobalElement(i)};
       B.insertGlobalValues(index[0],Teuchos::ArrayView<GO>(index,1),Teuchos::ArrayView<ST>(number,1));
    }

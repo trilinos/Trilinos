@@ -92,4 +92,73 @@ namespace mini_em {
     return crsMatrix;
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getIdentityMatrixTpetra (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+                           Scalar scaling)
+  {
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+
+    Teuchos::RCP<Matrix> identityMatrix = Teuchos::rcp(new Matrix(rowMap, rowMap, 1));
+    Teuchos::Array<LocalOrdinal> col(1);
+    Teuchos::Array<Scalar> val(1, scaling);
+    for (LocalOrdinal rowLID = 0; rowLID < Teuchos::as<LocalOrdinal>(rowMap->getLocalNumElements()); rowLID++) {
+      col[0] = rowLID;
+      identityMatrix->insertLocalValues(rowLID, col(), val());
+    }
+    identityMatrix->fillComplete();
+    return identityMatrix;
+  }
+
+  Teuchos::RCP<const Epetra_CrsMatrix>
+  getIdentityMatrixEpetra (const Epetra_Map& rowMap,
+                           double scaling)
+  {
+    Teuchos::RCP<Epetra_CrsMatrix> identityMatrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowMap, rowMap, 1, true));
+    Teuchos::Array<int> col(1);
+    Teuchos::Array<double> val(1, scaling);
+    for (int rowLID = 0; rowLID < rowMap.NumMyElements(); rowLID++) {
+      col[0] = rowLID;
+      identityMatrix->InsertMyValues(rowLID, 1, val.data(), col.data());
+    }
+    identityMatrix->FillComplete();
+    return identityMatrix;
+  }
+
+  Teko::LinearOp getIdentityMatrix(const Teko::LinearOp& op, double scaling)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Node = panzer::TpetraNodeType;
+
+    const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> >(op);
+    const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+    if(tOp != Teuchos::null) {
+      using Scalar = double;
+      using LocalOrdinal = int;
+      using GlobalOrdinal = panzer::GlobalOrdinal;
+      RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
+      RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator(),true);
+      auto tpMap = crsOp->getRowMap();
+      auto tpId = getIdentityMatrixTpetra(tpMap, scaling);
+      Teko::LinearOp thyId = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Teko::rangeSpace(op),
+                                                                                           Teko::domainSpace(op),
+                                                                                           tpId);
+      return thyId;
+    } else if (eOp != Teuchos::null) {
+      const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      auto epMap = crsOp->RowMap();
+      auto epId = getIdentityMatrixEpetra(epMap, scaling);
+
+      RCP<const Thyra::LinearOpBase<double> > thyConst = Thyra::epetraLinearOp(epId,
+                                                                                   Thyra::NOTRANS,
+                                                                                   Thyra::EPETRA_OP_APPLY_APPLY,
+                                                                                   Thyra::EPETRA_OP_ADJOINT_SUPPORTED,
+                                                                                   Teko::rangeSpace(op),
+                                                                                   Teko::domainSpace(op));
+      // return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(thyConst);
+      return thyConst;
+    } else
+      TEUCHOS_ASSERT(false);
+  }
 }

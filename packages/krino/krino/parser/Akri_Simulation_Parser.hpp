@@ -9,11 +9,13 @@
 #ifndef Akri_Simulation_Parser_h
 #define Akri_Simulation_Parser_h
 
-namespace YAML { class Node; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace Simulation_Parser {
- void parse(const YAML::Node & node);
+
+void parse(const Parser::Node & node);
+
 }
 }
 

@@ -53,7 +53,7 @@
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 // Examples headers:
 
@@ -315,7 +315,7 @@ Perf fenl(
 
   //------------------------------------
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
 
   Perf perf_stats = Perf() ;
 

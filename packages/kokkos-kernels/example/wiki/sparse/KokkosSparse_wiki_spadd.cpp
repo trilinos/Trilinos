@@ -10,7 +10,7 @@ using Ordinal = default_lno_t;
 using Offset  = default_size_type;
 using Layout  = default_layout;
 
-int main(int argc, char* argv[]) {
+int main() {
   Kokkos::initialize();
 
   using device_type = typename Kokkos::Device<

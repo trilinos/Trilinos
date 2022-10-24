@@ -135,7 +135,7 @@ postEvaluate(typename Traits::PostEvalData /* data */)
 
   for (std::size_t dim = 0; dim < tmpCoords_.size(); ++dim) {
     for (typename std::vector<ScalarT>::const_iterator x=tmpCoords_[dim].begin(); x != tmpCoords_[dim].end(); ++ x)
-      coords.push_back(Sacado::ScalarValue<ScalarT>::eval(*x));
+      coords.push_back(Sacado::scalarValue(*x));
   }
 
   tmpCoords_.clear();

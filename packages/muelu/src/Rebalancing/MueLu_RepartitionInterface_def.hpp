@@ -101,14 +101,14 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(nodeMap->getNodeNumElements())*stridedblocksize != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "Inconsistency between nodeMap and dofMap: we are supporting block maps only. No support for general strided maps, yet!");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(nodeMap->getLocalNumElements())*stridedblocksize != Teuchos::as<int>(rowMap->getLocalNumElements()), Exceptions::RuntimeError, "Inconsistency between nodeMap and dofMap: we are supporting block maps only. No support for general strided maps, yet!");
 
     //RCP<std::map<GO,std::vector<GO> > > nodegid2dofgids = amalgInfo->GetGlobalAmalgamationParams();
 
     // fill vector with information about partitioning
     // TODO: we assume simple block maps here
     // TODO: adapt this to usage of nodegid2dofgids
-    for(size_t i = 0; i < nodeMap->getNodeNumElements(); i++) {
+    for(size_t i = 0; i < nodeMap->getLocalNumElements(); i++) {
       // not fully sure about this. We're filling local ids in the decomposition vector with
       // the results stored in array. The decomposition vector is created using the rowMap of A
 

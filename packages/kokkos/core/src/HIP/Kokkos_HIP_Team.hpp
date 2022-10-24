@@ -69,8 +69,7 @@ struct HIPJoinFunctor {
   using value_type = Type;
 
   KOKKOS_INLINE_FUNCTION
-  static void join(volatile value_type& update,
-                   volatile const value_type& input) {
+  static void join(value_type& update, const value_type& input) {
     update += input;
   }
 };
@@ -199,19 +198,21 @@ class HIPTeamMember {
    *    ( 1 == blockDim.z )
    */
   template <typename ReducerType>
-  KOKKOS_INLINE_FUNCTION
-      typename std::enable_if<is_reducer<ReducerType>::value>::type
-      team_reduce(ReducerType const& reducer) const noexcept {
+  KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer<ReducerType>::value>
+  team_reduce(ReducerType const& reducer) const noexcept {
     team_reduce(reducer, reducer.reference());
   }
 
   template <typename ReducerType>
-  KOKKOS_INLINE_FUNCTION
-      typename std::enable_if<is_reducer<ReducerType>::value>::type
-      team_reduce(ReducerType const& reducer,
-                  typename ReducerType::value_type& value) const noexcept {
+  KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer<ReducerType>::value>
+  team_reduce(ReducerType const& reducer,
+              typename ReducerType::value_type& value) const noexcept {
 #ifdef __HIP_DEVICE_COMPILE__
-    hip_intra_block_shuffle_reduction(reducer, value, blockDim.y);
+    typename Kokkos::Impl::FunctorAnalysis<
+        FunctorPatternInterface::REDUCE, TeamPolicy<Experimental::HIP>,
+        ReducerType>::Reducer wrapped_reducer(&reducer);
+    hip_intra_block_shuffle_reduction(value, wrapped_reducer, blockDim.y);
+    reducer.reference() = value;
 #else
     (void)reducer;
     (void)value;
@@ -243,8 +244,11 @@ class HIPTeamMember {
 
     base_data[threadIdx.y + 1] = value;
 
-    Impl::hip_intra_block_reduce_scan<true, Impl::HIPJoinFunctor<Type>, void>(
-        Impl::HIPJoinFunctor<Type>(), base_data + 1);
+    Impl::HIPJoinFunctor<Type> hip_join_functor;
+    typename Kokkos::Impl::FunctorAnalysis<
+        FunctorPatternInterface::REDUCE, TeamPolicy<Experimental::HIP>,
+        Impl::HIPJoinFunctor<Type>>::Reducer reducer(&hip_join_functor);
+    Impl::hip_intra_block_reduce_scan<true>(reducer, base_data + 1);
 
     if (global_accum) {
       if (blockDim.y == threadIdx.y + 1) {
@@ -276,17 +280,15 @@ class HIPTeamMember {
   //----------------------------------------
 
   template <typename ReducerType>
-  KOKKOS_INLINE_FUNCTION static
-      typename std::enable_if<is_reducer<ReducerType>::value>::type
-      vector_reduce(ReducerType const& reducer) {
+  KOKKOS_INLINE_FUNCTION static std::enable_if_t<is_reducer<ReducerType>::value>
+  vector_reduce(ReducerType const& reducer) {
     vector_reduce(reducer, reducer.reference());
   }
 
   template <typename ReducerType>
-  KOKKOS_INLINE_FUNCTION static
-      typename std::enable_if<is_reducer<ReducerType>::value>::type
-      vector_reduce(ReducerType const& reducer,
-                    typename ReducerType::value_type& value) {
+  KOKKOS_INLINE_FUNCTION static std::enable_if_t<is_reducer<ReducerType>::value>
+  vector_reduce(ReducerType const& reducer,
+                typename ReducerType::value_type& value) {
 #ifdef __HIP_DEVICE_COMPILE__
     if (blockDim.x == 1) return;
 
@@ -316,205 +318,14 @@ class HIPTeamMember {
 #endif
   }
 
-  //--------------------------------------------------------------------------
-  /**\brief  Global reduction across all blocks
-   *
-   *  Return !0 if reducer contains the final value
-   */
-  template <typename ReducerType>
-  KOKKOS_INLINE_FUNCTION static
-      typename std::enable_if<is_reducer<ReducerType>::value, int>::type
-      global_reduce(ReducerType const& reducer, int* const global_scratch_flags,
-                    void* const global_scratch_space, void* const shmem,
-                    int const shmem_size) {
-#ifdef __HIP_DEVICE_COMPILE__
-    using value_type   = typename ReducerType::value_type;
-    using pointer_type = value_type volatile*;
-
-    // Number of shared memory entries for the reduction:
-    const int nsh = shmem_size / sizeof(value_type);
-
-    // Number of HIP threads in the block, rank within the block
-    const int nid = blockDim.x * blockDim.y * blockDim.z;
-    const int tid =
-        threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
-
-    // Reduces within block using all available shared memory
-    // Contributes if it is the root "vector lane"
-
-    // wn == number of warps in the block
-    // wx == which lane within the warp
-    // wy == which warp within the block
-
-    const int wn = (nid + Experimental::Impl::HIPTraits::WarpIndexMask) >>
-                   Experimental::Impl::HIPTraits::WarpIndexShift;
-    const int wx = tid & Experimental::Impl::HIPTraits::WarpIndexMask;
-    const int wy = tid >> Experimental::Impl::HIPTraits::WarpIndexShift;
-
-    //------------------------
-    {  // Intra warp shuffle reduction from contributing HIP threads
-
-      value_type tmp(reducer.reference());
-
-      int constexpr warp_size =
-          ::Kokkos::Experimental::Impl::HIPTraits::WarpSize;
-      for (int i = warp_size; static_cast<int>(blockDim.x) <= (i >>= 1);) {
-        Experimental::Impl::in_place_shfl_down(reducer.reference(), tmp, i,
-                                               warp_size);
-
-        // Root of each vector lane reduces "thread" contribution
-        if (0 == threadIdx.x && wx < i) {
-          reducer.join(&tmp, reducer.data());
-        }
-      }
-
-      // Reduce across warps using shared memory.
-      // Number of warps may not be power of two.
-
-      __syncthreads();  // Wait before shared data write
-
-      // Number of shared memory entries for the reduction
-      // is at most one per warp
-      const int nentry = wn < nsh ? wn : nsh;
-
-      if (0 == wx && wy < nentry) {
-        // Root thread of warp 'wy' has warp's value to contribute
-        (reinterpret_cast<value_type*>(shmem))[wy] = tmp;
-      }
-
-      __syncthreads();  // Wait for write to be visible to block
-
-      // When more warps than shared entries
-      // then warps must take turns joining their contribution
-      // to the designated shared memory entry.
-      for (int i = nentry; i < wn; i += nentry) {
-        const int k = wy - i;
-
-        if (0 == wx && i <= wy && k < nentry) {
-          // Root thread of warp 'wy' has warp's value to contribute
-          reducer.join((reinterpret_cast<value_type*>(shmem)) + k, &tmp);
-        }
-
-        __syncthreads();  // Wait for write to be visible to block
-      }
-
-      // One warp performs the inter-warp reduction:
-
-      if (0 == wy) {
-        // Start fan-in at power of two covering nentry
-
-        for (int i = (1 << (warp_size - __clz(nentry - 1))); (i >>= 1);) {
-          const int k = wx + i;
-          if (wx < i && k < nentry) {
-            reducer.join((reinterpret_cast<pointer_type>(shmem)) + wx,
-                         (reinterpret_cast<pointer_type>(shmem)) + k);
-            __threadfence_block();  // Wait for write to be visible to warp
-          }
-        }
-      }
-    }
-    //------------------------
-    {  // Write block's value to global_scratch_memory
-
-      int last_block = 0;
-
-      if (0 == wx) {
-        reducer.copy((reinterpret_cast<pointer_type>(global_scratch_space)) +
-                         blockIdx.x * reducer.length(),
-                     reducer.data());
-
-        __threadfence();  // Wait until global write is visible.
-
-        last_block = static_cast<int>(gridDim.x) ==
-                     1 + Kokkos::atomic_fetch_add(global_scratch_flags, 1);
-
-        // If last block then reset count
-        if (last_block) *global_scratch_flags = 0;
-      }
-
-      // FIXME hip does not support __syncthreads_or so we need to do it by hand
-      // last_block = __syncthreads_or(last_block);
-
-      __shared__ int last_block_shared;
-      if (last_block) last_block_shared = last_block;
-      __threadfence_block();
-
-      if (!last_block_shared) return 0;
-    }
-    //------------------------
-    // Last block reads global_scratch_memory into shared memory.
-
-    const int nentry = nid < gridDim.x ? (nid < nsh ? nid : nsh)
-                                       : (gridDim.x < nsh ? gridDim.x : nsh);
-
-    // nentry = min( nid , nsh , gridDim.x )
-
-    // whole block reads global memory into shared memory:
-
-    if (tid < nentry) {
-      const int offset = tid * reducer.length();
-
-      reducer.copy(
-          (reinterpret_cast<pointer_type>(shmem)) + offset,
-          (reinterpret_cast<pointer_type>(global_scratch_space)) + offset);
-
-      for (int i = nentry + tid; i < static_cast<int>(gridDim.x); i += nentry) {
-        reducer.join((reinterpret_cast<pointer_type>(shmem)) + offset,
-                     (reinterpret_cast<pointer_type>(global_scratch_space)) +
-                         i * reducer.length());
-      }
-    }
-
-    __syncthreads();  // Wait for writes to be visible to block
-
-    if (0 == wy) {
-      // Iterate to reduce shared memory to single warp fan-in size
-
-      int constexpr warp_size =
-          ::Kokkos::Experimental::Impl::HIPTraits::WarpSize;
-      const int nreduce = warp_size < nentry ? warp_size : nentry;
-
-      if (wx < nreduce && nreduce < nentry) {
-        for (int i = nreduce + wx; i < nentry; i += nreduce) {
-          reducer.join(((pointer_type)shmem) + wx, ((pointer_type)shmem) + i);
-        }
-        __threadfence_block();  // Wait for writes to be visible to warp
-      }
-
-      // Start fan-in at power of two covering nentry
-
-      for (int i = (1 << (warp_size - __clz(nreduce - 1))); (i >>= 1);) {
-        const int k = wx + i;
-        if (wx < i && k < nreduce) {
-          reducer.join((reinterpret_cast<pointer_type>(shmem)) + wx,
-                       (reinterpret_cast<pointer_type>(shmem)) + k);
-          __threadfence_block();  // Wait for writes to be visible to warp
-        }
-      }
-
-      if (0 == wx) {
-        reducer.copy(reducer.data(), reinterpret_cast<pointer_type>(shmem));
-        return 1;
-      }
-    }
-    return 0;
-#else
-    (void)reducer;
-    (void)global_scratch_flags;
-    (void)global_scratch_space;
-    (void)shmem;
-    (void)shmem_size;
-    return 0;
-#endif
-  }
-
   //----------------------------------------
   // Private for the driver
 
   KOKKOS_INLINE_FUNCTION
-  HIPTeamMember(void* shared, const int shared_begin, const int shared_size,
-                void* scratch_level_1_ptr, const int scratch_level_1_size,
-                const int arg_league_rank, const int arg_league_size)
+  HIPTeamMember(void* shared, const size_t shared_begin,
+                const size_t shared_size, void* scratch_level_1_ptr,
+                const size_t scratch_level_1_size, const int arg_league_rank,
+                const int arg_league_size)
       : m_team_reduce(shared),
         m_team_shared(((char*)shared) + shared_begin, shared_size,
                       scratch_level_1_ptr, scratch_level_1_size),
@@ -611,9 +422,9 @@ KOKKOS_INLINE_FUNCTION
 
 template <typename iType1, typename iType2>
 KOKKOS_INLINE_FUNCTION Impl::TeamThreadRangeBoundariesStruct<
-    typename std::common_type<iType1, iType2>::type, Impl::HIPTeamMember>
+    std::common_type_t<iType1, iType2>, Impl::HIPTeamMember>
 TeamThreadRange(const Impl::HIPTeamMember& thread, iType1 begin, iType2 end) {
-  using iType = typename std::common_type<iType1, iType2>::type;
+  using iType = std::common_type_t<iType1, iType2>;
   return Impl::TeamThreadRangeBoundariesStruct<iType, Impl::HIPTeamMember>(
       thread, iType(begin), iType(end));
 }
@@ -628,10 +439,10 @@ KOKKOS_INLINE_FUNCTION
 
 template <typename iType1, typename iType2>
 KOKKOS_INLINE_FUNCTION Impl::TeamVectorRangeBoundariesStruct<
-    typename std::common_type<iType1, iType2>::type, Impl::HIPTeamMember>
+    std::common_type_t<iType1, iType2>, Impl::HIPTeamMember>
 TeamVectorRange(const Impl::HIPTeamMember& thread, const iType1& begin,
                 const iType2& end) {
-  using iType = typename std::common_type<iType1, iType2>::type;
+  using iType = std::common_type_t<iType1, iType2>;
   return Impl::TeamVectorRangeBoundariesStruct<iType, Impl::HIPTeamMember>(
       thread, iType(begin), iType(end));
 }
@@ -646,10 +457,10 @@ KOKKOS_INLINE_FUNCTION
 
 template <typename iType1, typename iType2>
 KOKKOS_INLINE_FUNCTION Impl::ThreadVectorRangeBoundariesStruct<
-    typename std::common_type<iType1, iType2>::type, Impl::HIPTeamMember>
+    std::common_type_t<iType1, iType2>, Impl::HIPTeamMember>
 ThreadVectorRange(const Impl::HIPTeamMember& thread, iType1 arg_begin,
                   iType2 arg_end) {
-  using iType = typename std::common_type<iType1, iType2>::type;
+  using iType = std::common_type_t<iType1, iType2>;
   return Impl::ThreadVectorRangeBoundariesStruct<iType, Impl::HIPTeamMember>(
       thread, iType(arg_begin), iType(arg_end));
 }
@@ -700,11 +511,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
  *  performed and put into result.
  */
 template <typename iType, class Closure, class ReducerType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<Kokkos::is_reducer<ReducerType>::value>::type
-    parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember>& loop_boundaries,
-                    const Closure& closure, const ReducerType& reducer) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<Kokkos::is_reducer<ReducerType>::value>
+parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember>& loop_boundaries,
+                const Closure& closure, const ReducerType& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
   typename ReducerType::value_type value;
   reducer.init(value);
@@ -731,11 +541,10 @@ KOKKOS_INLINE_FUNCTION
  *  performed and put into result.
  */
 template <typename iType, class Closure, typename ValueType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<!Kokkos::is_reducer<ValueType>::value>::type
-    parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember>& loop_boundaries,
-                    const Closure& closure, ValueType& result) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer<ValueType>::value>
+parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember>& loop_boundaries,
+                const Closure& closure, ValueType& result) {
 #ifdef __HIP_DEVICE_COMPILE__
   ValueType val;
   Kokkos::Sum<ValueType> reducer(val);
@@ -818,11 +627,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
 }
 
 template <typename iType, class Closure, class ReducerType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<Kokkos::is_reducer<ReducerType>::value>::type
-    parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember>& loop_boundaries,
-                    const Closure& closure, const ReducerType& reducer) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<Kokkos::is_reducer<ReducerType>::value>
+parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember>& loop_boundaries,
+                const Closure& closure, const ReducerType& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
   typename ReducerType::value_type value;
   reducer.init(value);
@@ -842,11 +650,10 @@ KOKKOS_INLINE_FUNCTION
 }
 
 template <typename iType, class Closure, typename ValueType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<!Kokkos::is_reducer<ValueType>::value>::type
-    parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember>& loop_boundaries,
-                    const Closure& closure, ValueType& result) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer<ValueType>::value>
+parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember>& loop_boundaries,
+                const Closure& closure, ValueType& result) {
 #ifdef __HIP_DEVICE_COMPILE__
   ValueType val;
   Kokkos::Sum<ValueType> reducer(val);
@@ -906,11 +713,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
  *  constructed value.
  */
 template <typename iType, class Closure, class ReducerType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_reducer<ReducerType>::value>::type
-    parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember> const& loop_boundaries,
-                    Closure const& closure, ReducerType const& reducer) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer<ReducerType>::value>
+parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember> const& loop_boundaries,
+                Closure const& closure, ReducerType const& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
   reducer.init(reducer.reference());
 
@@ -939,11 +745,10 @@ KOKKOS_INLINE_FUNCTION
  *  constructed value.
  */
 template <typename iType, class Closure, typename ValueType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<!is_reducer<ValueType>::value>::type
-    parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
-                        iType, Impl::HIPTeamMember> const& loop_boundaries,
-                    Closure const& closure, ValueType& result) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<!is_reducer<ValueType>::value>
+parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
+                    iType, Impl::HIPTeamMember> const& loop_boundaries,
+                Closure const& closure, ValueType& result) {
 #ifdef __HIP_DEVICE_COMPILE__
   result = ValueType();
 
@@ -971,11 +776,10 @@ KOKKOS_INLINE_FUNCTION
  *  The last call to closure has final == true.
  */
 template <typename iType, class Closure, typename ReducerType>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<Kokkos::is_reducer<ReducerType>::value>::type
-    parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<
-                      iType, Impl::HIPTeamMember>& loop_boundaries,
-                  const Closure& closure, const ReducerType& reducer) {
+KOKKOS_INLINE_FUNCTION std::enable_if_t<Kokkos::is_reducer<ReducerType>::value>
+parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<
+                  iType, Impl::HIPTeamMember>& loop_boundaries,
+              const Closure& closure, const ReducerType& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
   using value_type = typename ReducerType::value_type;
   value_type accum;

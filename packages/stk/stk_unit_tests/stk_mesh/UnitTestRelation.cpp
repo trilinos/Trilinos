@@ -44,20 +44,15 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
+#include "stk_unit_test_utils/BuildMesh.hpp"
 namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
-
-
-
-
-
-
-
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
@@ -69,9 +64,10 @@ using stk::mesh::EntityId;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Ghosting;
-using stk::mesh::fixtures::BoxFixture;
-using stk::mesh::fixtures::HexFixture;
-using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::simple_fields::HexFixture;
+using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::unit_test_util::build_mesh;
 
 namespace {
 
@@ -198,9 +194,10 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create the entities and relations
@@ -241,13 +238,18 @@ TEST(UnitTestingOfRelation, testRelationExtraRank)
   const char * ext_rank_names[num_ext_ranks] = { "EXT_RANK_0" };
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   for (unsigned i = 0; i < num_ext_ranks; ++i) {
-      entity_rank_names.push_back(ext_rank_names[i]);
+    entity_rank_names.push_back(ext_rank_names[i]);
   }
 
-  MetaData meta_data(spatial_dim, entity_rank_names);
+  stk::mesh::MeshBuilder builder(pm);
+  builder.set_spatial_dimension(spatial_dim);
+  builder.set_entity_rank_names(entity_rank_names);
+  std::shared_ptr<BulkData> bulkPtr = builder.create();
+
+  MetaData& meta_data = bulkPtr->mesh_meta_data();
   Part &hex8_part = meta_data.declare_part_with_topology("Hex8_Part", stk::topology::HEX_8);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+  BulkData& mesh = *bulkPtr;
 
   std::vector<EntityRank> ext_ranks;
   for (unsigned i = 0;  i < num_ext_ranks; ++i) {
@@ -313,11 +315,12 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
   Part &quad4_part = meta_data.declare_part_with_topology("quad4_part", stk::topology::QUAD_4_2D);
   Part &line2_part = meta_data.declare_part_with_topology("LINE2_part", stk::topology::LINE_2);
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
@@ -344,13 +347,13 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // Create nodes
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(mesh.declare_node(id, empty_parts));
+    nodes.push_back(mesh.declare_node(id, empty_parts));
   }
 
   // Add relations to nodes
   unsigned rel_id = 0;
   for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
-      mesh.declare_relation( elem, *itr, rel_id );
+    mesh.declare_relation( elem, *itr, rel_id );
   }
 
   stk::mesh::EntityVector side_nodes(2);
@@ -364,7 +367,7 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   unsigned local_side_id = 2;
   if (p_rank == 1)
   {
-      local_side_id = 0;
+    local_side_id = 0;
   }
   edge = mesh.declare_element_side(elem, local_side_id, sides_parts);
 
@@ -378,7 +381,7 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   for (unsigned node_idx = starting_node_idx;
        node_idx < starting_node_idx + nodes_per_side;
        ++node_idx, ++rel_id) {
-      mesh.declare_relation( edge, nodes[node_idx], rel_id );
+    mesh.declare_relation( edge, nodes[node_idx], rel_id );
   }
   mesh.modification_end();
 

@@ -360,7 +360,7 @@ namespace MueLu {
     if (isDumpingEnabled_ && (dumpLevel_ == 0 || dumpLevel_ == -1) && coarseLevelID == 1)
       DumpCurrentGraph(0);
 
-    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> coarseFact;
     RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
 
     int nextLevelID = coarseLevelID + 1;
@@ -403,9 +403,12 @@ namespace MueLu {
       //   during request for data "      Nullspace" on level 2 by factory NullspacePresmoothFactory
       //   during request for data "      Nullspace" on level 2 by factory ProjectorSmoother
       //   during request for data "    PreSmoother" on level 2 by factory NoFactory
+      if (coarseFact.is_null())
+        coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
       level.Request(*coarseFact);
     }
 
+    GetOStream(Runtime0) << std::endl;
     PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(Runtime0 | Test));
 
     // Build coarse level hierarchy
@@ -474,6 +477,8 @@ namespace MueLu {
         // We did not expect to finish this early so we did request a smoother.
         // We need a coarse solver instead. Do the magic.
         level.Release(*smootherFact);
+        if (coarseFact.is_null())
+          coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
         level.Request(*coarseFact);
       }
 
@@ -920,8 +925,11 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
     MagnitudeType prevNorm = STM::one();
     rate_ = 1.0;
-    if (IsCalculationOfResidualRequired(startLevel, conv))
-      ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
+    if (IsCalculationOfResidualRequired(startLevel, conv)) {
+      ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
+      if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+        return convergenceStatus;
+    }
 
     SC one = STS::one(), zero = STS::zero();
     for (LO iteration = 1; iteration <= nIts; iteration++) {
@@ -1114,8 +1122,11 @@ namespace MueLu {
       zeroGuess = false;
 
 
-      if (IsCalculationOfResidualRequired(startLevel, conv))
-        ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
+      if (IsCalculationOfResidualRequired(startLevel, conv)) {
+        ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
+        if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+          return convergenceStatus;
+      }
     }
     return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
   }
@@ -1239,9 +1250,10 @@ namespace MueLu {
           break;
         }
 
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries();
+        LO storageblocksize=Am->GetStorageBlockSize();
+        Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
         nnzPerLevel     .push_back(nnz);
-        rowsPerLevel    .push_back(Am->getGlobalNumRows());
+        rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
 
@@ -1401,11 +1413,11 @@ namespace MueLu {
     RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
     RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
     if(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A) != Teuchos::null) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
       return;
     }
 
@@ -1414,7 +1426,7 @@ namespace MueLu {
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
     if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
     }
 
@@ -1428,18 +1440,19 @@ namespace MueLu {
     }
 
     GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "Hierarchy::ReplaceCoordinateMap: Storage block size does not evenly divide fixed block size");
 
-    size_t blkSize = A->GetFixedBlockSize();
+    size_t blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
     RCP<const Map> nodeMap = A->getRowMap();
     if (blkSize > 1) {
       // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
       RCP<const Map> dofMap       = A->getRowMap();
       GO             indexBase    = dofMap->getIndexBase();
-      size_t         numLocalDOFs = dofMap->getNodeNumElements();
+      size_t         numLocalDOFs = dofMap->getLocalNumElements();
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
         "Hierarchy::ReplaceCoordinateMap: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
-      ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+      ArrayView<const GO> GIDs = dofMap->getLocalElementList();
 
       Array<GO> nodeGIDs(numLocalDOFs/blkSize);
       for (size_t i = 0; i < numLocalDOFs; i += blkSize)
@@ -1452,7 +1465,7 @@ namespace MueLu {
       // Check whether the length of vectors fits to the size of A
       // If yes, make sure that the maps are matching
       // If no, throw a warning but do not touch the Coordinates
-      if(coords->getLocalLength() != A->getRowMap()->getNodeNumElements()) {
+      if(coords->getLocalLength() != A->getRowMap()->getLocalNumElements()) {
         GetOStream(Warnings) << "Coordinate vector does not match row map of matrix A!" << std::endl;
         return;
       }

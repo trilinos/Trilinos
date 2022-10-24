@@ -1,12 +1,13 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #include "EP_SystemInterface.h"
-#include "EP_Version.h"  // for qainfo
+#include "EP_Version.h" // for qainfo
+#include "FileInfo.h"
 #include "GetLongOpt.h"  // for GetLongOption, etc
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
@@ -16,12 +17,24 @@
 #include <cstdlib> // for strtol, abs, exit, strtoul, etc
 #include <cstring> // for strchr, strlen
 #include <fmt/ostream.h>
+#include <glob.h>
 #include <sstream>
 #include <stdexcept>
 #include <string> // for string, char_traits, etc
 #include <term_width.h>
+#include <unistd.h>
 #include <utility> // for pair, make_pair
 #include <vector>  // for vector
+
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define __SUP_WINDOWS__ 1
+#include <direct.h>
+#endif
+
+#if !defined(__SUP_WINDOWS__)
+#include <dirent.h>
+#endif
 
 namespace {
   bool str_equal(const std::string &s1, const std::string &s2)
@@ -31,7 +44,8 @@ namespace {
                       [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
 
-  void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
+  void        parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
+  std::string find_matching_file(const std::string &path, const std::string &basename);
 } // namespace
 
 Excn::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
@@ -98,12 +112,6 @@ void Excn::SystemInterface::enroll_options()
       "Reopen the output file right after closing it to verify that the file is valid.\n"
       "\t\tThis tries to detect file corruption immediately instead of later. Mainly useful in "
       "large subcycle runs.",
-      nullptr);
-
-  options_.enroll(
-      "add_nodal_communication_map", GetLongOption::NoValue,
-      "In subcycle mode, add the `nodal communication map` data to the output files.\n"
-      "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
       nullptr, nullptr, true);
 
   options_.enroll("map", GetLongOption::NoValue,
@@ -151,14 +159,20 @@ void Excn::SystemInterface::enroll_options()
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
 
+  options_.enroll(
+      "add_nodal_communication_map", GetLongOption::NoValue,
+      "In subcycle mode, add the `nodal communication map` data to the output files.\n"
+      "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
+      nullptr);
+
   options_.enroll("add_processor_id", GetLongOption::NoValue,
-                  "Add 'processor_id' element variable to the output file which shows the\n"
+                  "Add element variable named 'processor_id' to the output file which shows the\n"
                   "\t\tprocessor that an element was on in the decomposed mesh.\n"
                   "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
                   nullptr);
 
   options_.enroll("add_map_processor_id", GetLongOption::NoValue,
-                  "Add 'processor_id' element map to the output file which shows the\n"
+                  "Add element map named 'processor_id' to the output file which shows the\n"
                   "\t\tprocessor that an element was on in the decomposed mesh.\n"
                   "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
                   nullptr, nullptr, true);
@@ -183,17 +197,25 @@ void Excn::SystemInterface::enroll_options()
                   "Comma-separated list of sideset variables to be joined or ALL or NONE.",
                   nullptr);
 
+  options_.enroll("edblkvar", GetLongOption::MandatoryValue,
+                  "Comma-separated list of edgeblock variables to be joined or ALL or NONE.",
+                  nullptr);
+
+  options_.enroll("fablkvar", GetLongOption::MandatoryValue,
+                  "Comma-separated list of faceblock variables to be joined or ALL or NONE.",
+                  nullptr, nullptr, true);
+
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
                   "Don't transfer nodesets to output file.", nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
-                  "Don't transfer sidesets to output file.", nullptr, nullptr, true);
+                  "Don't transfer sidesets to output file.", nullptr);
 
-  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
-                  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
-                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
-                  "\t\tThe default behavior assumes that the values are equal.",
-                  nullptr);
+  options_.enroll("omit_edgeblocks", GetLongOption::NoValue,
+                  "Don't transfer edgeblocks to output file.", nullptr);
+
+  options_.enroll("omit_faceblocks", GetLongOption::NoValue,
+                  "Don't transfer faceblocks to output file.", nullptr, nullptr, true);
 
   options_.enroll("debug", GetLongOption::MandatoryValue,
                   "debug level (values are or'd)\n"
@@ -203,9 +225,18 @@ void Excn::SystemInterface::enroll_options()
                   "\t\t  8 = Check consistent nodal coordinates between processors.\n"
                   "\t\t 16 = Verbose Sideset information.\n"
                   "\t\t 32 = Verbose Nodeset information.\n"
-                  "\t\t 64 = put exodus library into verbose mode.\n"
-                  "\t\t128 = Check consistent global field values between processors.",
+                  "\t\t 64 = Verbose Edge block information.\n"
+                  "\t\t128 = Verbose Face block information.\n"
+                  "\t\t256 = put exodus library into verbose mode.\n"
+                  "\t\t512 = Check consistent global field values between processors.",
                   "0");
+
+  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
+                  "[Rare, special case] The nodal results data on all shared nodes (nodes on "
+                  "processor boundaries)\n"
+                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
+                  "\t\tThe default behavior assumes that the values are equal.",
+                  nullptr);
 
   options_.enroll(
       "output_shared_nodes", GetLongOption::NoValue,
@@ -305,6 +336,16 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
+  {
+    const char *temp = options_.retrieve("edblkvar");
+    parse_variable_names(temp, &edblkVarNames_);
+  }
+
+  {
+    const char *temp = options_.retrieve("fablkvar");
+    parse_variable_names(temp, &fablkVarNames_);
+  }
+
   addProcessorIdField_      = options_.retrieve("add_processor_id") != nullptr;
   addProcessorIdMap_        = options_.retrieve("add_map_processor_id") != nullptr;
   addNodalCommunicationMap_ = options_.retrieve("add_nodal_communication_map") != nullptr;
@@ -351,11 +392,13 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
   omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
+  omitEdgeBlocks_    = options_.retrieve("omit_edgeblocks") != nullptr;
+  omitFaceBlocks_    = options_.retrieve("omit_faceblocks") != nullptr;
   outputSharedNodes_ = options_.retrieve("output_shared_nodes") != nullptr;
 
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
-      fmt::print("{}", copyright("2010-2021"));
+      fmt::print("{}", copyright("2010-2022"));
     }
     return false;
   }
@@ -368,17 +411,62 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       // Determine Root, Proc, Extension, and Basename automatically
       // by parsing the basename_ entered by the user.  Assumed to be
       // in the form: "/directory/sub/basename.ext.#proc.34"
-      bool success = decompose_filename(basename_);
-      if (!success) {
+      FileInfo file(basename_);
+      auto     path = file.pathname();
+      if (path.empty()) {
+        path = ".";
+      }
+#if defined(__SUP_WINDOWS__)
+      rootDirectory_ = _fullpath(nullptr, path.c_str(), _MAX_PATH);
+#else
+      char *tmp = ::realpath(path.c_str(), nullptr);
+      if (tmp != nullptr) {
+        rootDirectory_ = std::string(tmp);
+        free(tmp);
+      }
+#endif
+
+      basename_ = file.tailname();
+      if (basename_.empty()) {
         std::ostringstream errmsg;
         fmt::print(
             errmsg,
             "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
-            "existing filename.\n"
-            "       The entered basename does not contain an extension or processor count.\n");
+            "existing filename or portion of a base of a filename (no rank/proc count).\n"
+            "       The entered basename ('{}') does not contain a filename.\n",
+            basename_);
         throw std::runtime_error(errmsg.str());
       }
+      bool success = decompose_filename(basename_);
+      if (!success) {
+        // See if we can find files that match the basename and take the first match as the "new"
+        // basename...
+        std::string candidate = find_matching_file(rootDirectory_, basename_);
+        if (!candidate.empty()) {
+          basename_ = candidate;
+          success   = decompose_filename(basename_);
+          if (!success) {
+            std::ostringstream errmsg;
+            fmt::print(
+                errmsg,
+                "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
+                "existing filename or a basename (no rank/proc count).\n"
+                "       The entered basename ('{}') does not contain an extension or processor "
+                "count.\n",
+                basename_);
+            throw std::runtime_error(errmsg.str());
+          }
+        }
+      }
       auto_ = true;
+      if (myRank_ == 0) {
+        fmt::print("\nThe following options were determined automatically:\n"
+                   "\t basename = '{}'\n"
+                   "\t-processor_count {}\n"
+                   "\t-extension {}\n"
+                   "\t-Root_directory {}\n\n",
+                   basename_, processorCount_, inExtension_, rootDirectory_);
+      }
     }
   }
   else {
@@ -532,27 +620,9 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
     s.erase(ind);
   }
 
-  // Remainder of 's' consists of the basename_ and the rootDirectory_
-  // If there is no '/', then it is all basename_; otherwise the
-  // basename_ is the portion following the '/' and the rootDirectory_
-  // is the portion preceding the '/'
-  ind = s.find_last_of('/', std::string::npos);
-  if (ind != std::string::npos) {
-    basename_      = s.substr(ind + 1, std::string::npos);
-    rootDirectory_ = s.substr(0, ind);
-  }
-  else {
-    basename_ = s;
-  }
-
-  if (myRank_ == 0) {
-    fmt::print("\nThe following options were determined automatically:\n"
-               "\t basename = '{}'\n"
-               "\t-processor_count {}\n"
-               "\t-extension {}\n"
-               "\t-Root_directory {}\n\n",
-               basename_, processorCount_, inExtension_, rootDirectory_);
-  }
+  // The directory path was stripped prior to entering this function,
+  // so remainder of 's' is just the new basename_
+  basename_ = s;
   return true;
 }
 
@@ -607,5 +677,27 @@ namespace {
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
+  }
+
+  std::string find_matching_file(const std::string &path, const std::string &basename)
+  {
+    glob::glob g(basename + ".*.*");
+#if !defined(__SUP_WINDOWS__)
+    struct dirent *entry = nullptr;
+    DIR           *dp    = nullptr;
+
+    dp = opendir(path.c_str());
+    if (dp != nullptr) {
+      while ((entry = readdir(dp))) {
+        std::string filename = entry->d_name;
+        if (glob::glob_match(filename, g)) {
+          closedir(dp);
+          return filename;
+        }
+      }
+    }
+    closedir(dp);
+#endif
+    return "";
   }
 } // namespace

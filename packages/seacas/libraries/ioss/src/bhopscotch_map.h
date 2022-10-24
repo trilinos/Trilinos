@@ -51,7 +51,6 @@ namespace tsl {
    * a good hash function, as an element in the bucket array is faster to retrieve
    * than in the tree).
    *
-   * @copydoc hopscotch_map
    */
   template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
             class Compare                 = std::less<Key>,
@@ -122,7 +121,7 @@ namespace tsl {
     bhopscotch_map() : bhopscotch_map(ht::DEFAULT_INIT_BUCKETS_SIZE) {}
 
     explicit bhopscotch_map(size_type bucket_count, const Hash &hash = Hash(),
-                            const KeyEqual & equal = KeyEqual(),
+                            const KeyEqual  &equal = KeyEqual(),
                             const Allocator &alloc = Allocator(), const Compare &comp = Compare())
         : m_ht(bucket_count, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR, comp)
     {
@@ -351,8 +350,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc erase(const K& key)
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup to the value if you already have the hash.
@@ -385,7 +382,6 @@ namespace tsl {
     const T &at(const Key &key) const { return m_ht.at(key); }
 
     /**
-     * @copydoc at(const Key& key, std::size_t precalculated_hash)
      */
     const T &at(const Key &key, std::size_t precalculated_hash) const
     {
@@ -406,8 +402,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc at(const K& key)
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup if you already have the hash.
@@ -421,7 +415,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc at(const K& key)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
@@ -432,7 +425,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc at(const K& key, std::size_t precalculated_hash)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
@@ -471,8 +463,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc count(const K& key) const
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup if you already have the hash.
@@ -500,7 +490,6 @@ namespace tsl {
     const_iterator find(const Key &key) const { return m_ht.find(key); }
 
     /**
-     * @copydoc find(const Key& key, std::size_t precalculated_hash)
      */
     const_iterator find(const Key &key, std::size_t precalculated_hash) const
     {
@@ -521,8 +510,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc find(const K& key)
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup if you already have the hash.
@@ -536,7 +523,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc find(const K& key)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
@@ -547,7 +533,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc find(const K& key, std::size_t precalculated_hash)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
@@ -582,8 +567,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc contains(const K& key) const
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup if you already have the hash.
@@ -613,9 +596,8 @@ namespace tsl {
     }
 
     /**
-     * @copydoc equal_range(const Key& key, std::size_t precalculated_hash)
      */
-    std::pair<const_iterator, const_iterator> equal_range(const Key & key,
+    std::pair<const_iterator, const_iterator> equal_range(const Key  &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);
@@ -635,8 +617,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc equal_range(const K& key)
-     *
      * Use the hash value 'precalculated_hash' instead of hashing the key. The
      * hash value should be the same as hash_function()(key). Useful to speed-up
      * the lookup if you already have the hash.
@@ -650,7 +630,6 @@ namespace tsl {
     }
 
     /**
-     * @copydoc equal_range(const K& key)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
@@ -661,12 +640,11 @@ namespace tsl {
     }
 
     /**
-     * @copydoc equal_range(const K& key, std::size_t precalculated_hash)
      */
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
                                       has_is_transparent<CP>::value>::type * = nullptr>
-    std::pair<const_iterator, const_iterator> equal_range(const K &   key,
+    std::pair<const_iterator, const_iterator> equal_range(const K    &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);

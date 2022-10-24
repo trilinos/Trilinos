@@ -490,13 +490,6 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
-// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
-#if defined(_WIN32) && defined(__clang__)
-    static constexpr std::ostream * outputStream_default_ =
-       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
-#else
-    static constexpr std::ostream * outputStream_default_ = &std::cout;
-#endif
 
     // Current solver values.
     MagnitudeType convTol_, orthoKappa_, achievedTol_;
@@ -592,7 +585,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP,true>::init () {
-  outputStream_ = Teuchos::rcp(outputStream_default_,false);
+  outputStream_ = Teuchos::rcpFromRef(std::cout);
   convTol_ = DefaultSolverParameters::convTol;
   orthoKappa_ = orthoKappa_default_;
   maxRestarts_ = maxRestarts_default_;
@@ -1175,7 +1168,7 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
+    pl->set("Output Stream", Teuchos::rcpFromRef(std::cout),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
     pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),

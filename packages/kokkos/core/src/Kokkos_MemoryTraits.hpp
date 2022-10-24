@@ -42,11 +42,19 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_MEMORYTRAITS_HPP
 #define KOKKOS_MEMORYTRAITS_HPP
 
 #include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Tags.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -118,6 +126,15 @@ enum : unsigned {
   MEMORY_ALIGNMENT           = KOKKOS_MEMORY_ALIGNMENT,
   MEMORY_ALIGNMENT_THRESHOLD = KOKKOS_MEMORY_ALIGNMENT_THRESHOLD
 };
+
+// ------------------------------------------------------------------ //
+//  this identifies the default memory trait
+//
+template <typename Tp>
+struct is_default_memory_trait : std::false_type {};
+
+template <>
+struct is_default_memory_trait<Kokkos::MemoryTraits<0>> : std::true_type {};
 
 }  // namespace Impl
 }  // namespace Kokkos

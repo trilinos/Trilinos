@@ -108,7 +108,7 @@ namespace {
     // column Map.  We'll use that column Map to create a new column
     // Map, and give that column Map to reindexColumns().
 
-    if (rowMap->getNodeNumElements () > 0) {
+    if (rowMap->getLocalNumElements () > 0) {
       const GO myMinGblInd = rowMap->getMinGlobalIndex ();
       const GO myMaxGblInd = rowMap->getMaxGlobalIndex ();
       const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
@@ -173,13 +173,13 @@ namespace {
     // of getColMap(), and the call to reindexColumns() will
     // invalidate the graph's current column Map.
     RCP<const map_type> curColMap = graph.getColMap ();
-    Array<GO> newGblInds (curColMap->getNodeNumElements ());
+    Array<GO> newGblInds (curColMap->getLocalNumElements ());
     if (curColMap->isContiguous ()) {
       // const GO myMinGblInd = curColMap->getMinGlobalIndex ();
       const GO myMaxGblInd = curColMap->getMaxGlobalIndex ();
 
       const size_type myNumInds =
-        static_cast<size_type> (curColMap->getNodeNumElements ());
+        static_cast<size_type> (curColMap->getLocalNumElements ());
       if (myNumInds > 0) {
         GO curGblInd = myMaxGblInd;
         for (size_type k = 0; k < myNumInds; ++k, --curGblInd) {
@@ -187,7 +187,7 @@ namespace {
         }
       }
     } else { // original column Map is not contiguous
-      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
+      ArrayView<const GO> curGblInds = curColMap->getLocalElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];
@@ -342,7 +342,7 @@ namespace {
     // indices to global in the new column Map, and then back to local
     // in the old column Map, and compare with those in the original
     // graph.
-    const LO myNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO myNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     if (myNumRows > 0) {
       for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
         os << "Proc " << myRank << ": Row: " << lclRowInd;
@@ -567,7 +567,7 @@ namespace {
     // column Map.  We'll use that column Map to create a new column
     // Map, and give that column Map to reindexColumns().
 
-    if (rowMap->getNodeNumElements () > 0) {
+    if (rowMap->getLocalNumElements () > 0) {
       const GO myMinGblInd = rowMap->getMinGlobalIndex ();
       const GO myMaxGblInd = rowMap->getMaxGlobalIndex ();
       const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
@@ -632,13 +632,13 @@ namespace {
     // of getColMap(), and the call to reindexColumns() will
     // invalidate the graph's current column Map.
     RCP<const map_type> curColMap = graph.getColMap ();
-    Array<GO> newGblInds (curColMap->getNodeNumElements ());
+    Array<GO> newGblInds (curColMap->getLocalNumElements ());
     if (curColMap->isContiguous ()) {
       // const GO myMinGblInd = curColMap->getMinGlobalIndex ();
       const GO myMaxGblInd = curColMap->getMaxGlobalIndex ();
 
       const size_type myNumInds =
-        static_cast<size_type> (curColMap->getNodeNumElements ());
+        static_cast<size_type> (curColMap->getLocalNumElements ());
       if (myNumInds > 0) {
         GO curGblInd = myMaxGblInd;
         for (size_type k = 0; k < myNumInds; ++k, --curGblInd) {
@@ -646,7 +646,7 @@ namespace {
         }
       }
     } else { // original column Map is not contiguous
-      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
+      ArrayView<const GO> curGblInds = curColMap->getLocalElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];
@@ -805,7 +805,7 @@ namespace {
     // indices to global in the new column Map, and then back to local
     // in the old column Map, and compare with those in the original
     // graph.
-    const LO myNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO myNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     if (myNumRows > 0) {
       for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
         os << "Proc " << myRank << ": Row: " << lclRowInd;

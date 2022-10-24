@@ -124,7 +124,7 @@ evaluateFields(
      // write to double field
      Kokkos::parallel_for("ScatterCellAvgQuantity",field.extent(0), KOKKOS_LAMBDA(int i) {
        for(unsigned j=0; j<field.extent(1);j++)
-	 average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
+	 average(i,0) += Sacado::scalarValue(field(i,j));
        average(i,0) /= field.extent(1);
      });
      Kokkos::fence();

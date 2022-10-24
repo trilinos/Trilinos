@@ -9,15 +9,19 @@
 
 #include "Panzer_NodeType.hpp"
 
+#include "MiniEM_Utils.hpp"
+
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 
 namespace mini_em {
 
 OperatorRequestCallback::
-OperatorRequestCallback(const Teuchos::RCP<const panzer::GlobalEvaluationDataContainer> & gedc, const bool & matrix_out)
-  : gedc_(gedc), matrix_output(matrix_out)
+OperatorRequestCallback(const Teuchos::RCP<const panzer::GlobalEvaluationDataContainer> & gedc,
+                        const bool& dump=false)
+  : gedc_(gedc), matrix_output(dump)
 {
+
 }
 
 // RequestCallback member functions
@@ -33,19 +37,19 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Mass Matrix " + name.substr(12,name.length()-12)+" Scatter Container"),true)->getGlobalLOC();
 
      if (matrix_output)
-       writeOut("MassMatrix.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+       mini_em::writeOut(name+".mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
    else if(name.substr(0,9)=="Curl Curl") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Curl Curl " + name.substr(10,name.length()-10)+" Scatter Container"),true)->getGlobalLOC();
 
      if (matrix_output)
-       writeOut("CurlCurl.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+       mini_em::writeOut("CurlCurl.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
    else if(name=="Weak Gradient") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Weak Gradient Scatter Container"),true)->getGlobalLOC();
 
      if (matrix_output)
-       writeOut("WeakGradient.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+       mini_em::writeOut("WeakGradient.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
    else {
      // bad news!
@@ -55,16 +59,6 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
    return Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th();
 }
 
-void OperatorRequestCallback::writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op) const
-{
-  using Teuchos::RCP;
-  using NT = panzer::TpetraNodeType;
-  const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> >(Teuchos::rcpFromRef(op));
-  if(tOp != Teuchos::null) {
-    const RCP<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >(tOp->getConstTpetraOperator(),true);
-    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeSparseFile(s.c_str(),crsOp);
-  }
-}
 
 bool OperatorRequestCallback::handlesRequest(const Teko::RequestMesg & rm)
 {

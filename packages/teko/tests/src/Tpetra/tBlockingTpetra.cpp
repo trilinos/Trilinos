@@ -95,7 +95,7 @@ void tBlockingTpetra::initializeTest()
 
 void buildGIDs(std::vector<std::vector<GO> > & gids,const Tpetra::Map<LO,GO,NT> & map)
 {
-   LO numLocal = map.getNodeNumElements();
+   LO numLocal = map.getLocalNumElements();
    LO numHalf = numLocal/2;
    numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
 
@@ -191,20 +191,20 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
    Blocking::MapPair map1 = Blocking::buildSubMap(gid1,*GetComm_tpetra());
    Blocking::MapPair map2 = Blocking::buildSubMap(gid2,*GetComm_tpetra());
 
-   TEST_ASSERT(map0.first->getNodeNumElements()==gid0.size() && map0.second->getNodeNumElements()==gid0.size(),
+   TEST_ASSERT(map0.first->getLocalNumElements()==gid0.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map0.first->getNodeNumElements() 
-      << ", second="<< map0.second->getNodeNumElements()
+      << " Checking map size: first=" << map0.first->getLocalNumElements() 
+      << ", second="<< map0.second->getLocalNumElements()
       << ", gid="<< gid0.size());
-   TEST_ASSERT(map1.first->getNodeNumElements()==gid1.size() && map0.second->getNodeNumElements()==gid0.size(),
+   TEST_ASSERT(map1.first->getLocalNumElements()==gid1.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map1.first->getNodeNumElements() 
-      << ", second="<< map1.second->getNodeNumElements()
+      << " Checking map size: first=" << map1.first->getLocalNumElements() 
+      << ", second="<< map1.second->getLocalNumElements()
       << ", gid="<< gid1.size());
-   TEST_ASSERT(map2.first->getNodeNumElements()==gid2.size() && map0.second->getNodeNumElements()==gid0.size(),
+   TEST_ASSERT(map2.first->getLocalNumElements()==gid2.size() && map0.second->getLocalNumElements()==gid0.size(),
          "   tBlockingTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
-      << " Checking map size: first=" << map2.first->getNodeNumElements() 
-      << ", second="<< map2.second->getNodeNumElements()
+      << " Checking map size: first=" << map2.first->getLocalNumElements() 
+      << ", second="<< map2.second->getLocalNumElements()
       << ", gid="<< gid2.size());
 
    std::vector<Teuchos::RCP<Tpetra::Map<LO,GO,NT> > > globalMaps(3);
@@ -232,7 +232,7 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
 
    // check contiguous and global maps
    test = true;
-   for(size_t i=0;i<globalMaps[0]->getNodeNumElements();i++) {
+   for(size_t i=0;i<globalMaps[0]->getLocalNumElements();i++) {
       GO gid = globalMaps[0]->getGlobalElement(i); 
       GO cid = contigMaps[0]->getGlobalElement(i); 
  
@@ -244,7 +244,7 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
       << "checked that block maps were internally consitent");
 
    test = true;
-   for(size_t i=0;i<globalMaps[1]->getNodeNumElements();i++) {
+   for(size_t i=0;i<globalMaps[1]->getLocalNumElements();i++) {
       GO gid = globalMaps[1]->getGlobalElement(i); 
       GO cid = contigMaps[1]->getGlobalElement(i); 
  
@@ -256,7 +256,7 @@ bool tBlockingTpetra::test_buildMaps(int verbosity,std::ostream & os)
       << "checked that block maps were internally consitent");
 
    test = true;
-   for(size_t i=0;i<globalMaps[2]->getNodeNumElements();i++) {
+   for(size_t i=0;i<globalMaps[2]->getLocalNumElements();i++) {
       GO gid = globalMaps[2]->getGlobalElement(i); 
       GO cid = contigMaps[2]->getGlobalElement(i); 
  

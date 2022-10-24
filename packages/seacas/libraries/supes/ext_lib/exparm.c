@@ -41,20 +41,18 @@
  */
 
 #include "fortranc.h"
-#if defined(__NO_CYGWIN_OPTION__)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__) ||                             \
+    defined(__NO_CYGWIN_OPTION__)
 #define NOMINMAX
+#include <io.h>
 #include <windows.h>
+#define isatty _isatty
 #else
 #include <sys/utsname.h>
 #include <unistd.h> /* isatty  */
 #endif
 #include <stdio.h> /* sprintf */
-
-#ifdef _MSC_VER
-#include <io.h>
-#include <sys/ioctl.h>
-#define isatty _isatty
-#endif
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -66,9 +64,9 @@ static char *copy_string(char *dest, char const *source, long int elements)
   return d;
 }
 
-#define MAXCHAR 80
-#define WORDLEN 8 /* Note that we *FORCE* the Fortran string */
-                  /* length be 8 plus 1 for trailing null for the strings hard and soft. */
+#define SUPES_MAXCHAR 80
+#define WORDLEN       8 /* Note that we *FORCE* the Fortran string */
+                        /* length be 8 plus 1 for trailing null for the strings hard and soft. */
 #if defined(ADDC_)
 void exparm_(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FTNINT *idau,
              FTNINT hlen, FTNINT slen)
@@ -80,8 +78,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(sgi)
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL);
@@ -100,8 +98,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #if defined(aix)
 
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* IBM has 32 bit words */
@@ -120,8 +118,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #if defined(hpux)
 
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* HP has 32 bit words */
@@ -140,8 +138,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #if defined(__osf__)
 
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* Chars/float */
@@ -161,8 +159,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #if defined(__NO_CYGWIN_OPTION__)
   SYSTEM_INFO   SysInfo;
   OSVERSIONINFO OSInfo;
-  char          hardname[MAXCHAR];
-  char          softname[MAXCHAR];
+  char          hardname[SUPES_MAXCHAR];
+  char          softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* See above */
@@ -190,8 +188,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #elif defined(__CYGWIN__)
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* See above */
@@ -209,8 +207,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(__APPLE__)
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* Darwin has 32 bit words */
@@ -229,8 +227,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(__linux__) || defined(interix)
   struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char           hardname[SUPES_MAXCHAR];
+  char           softname[SUPES_MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* See above */

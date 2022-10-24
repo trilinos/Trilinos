@@ -55,8 +55,8 @@
 /* Whether to enable timing */
 #cmakedefine GET_TIMING
 
-/* Whether to use Cuda Host Pinned memory for MPI */
-#cmakedefine CUDA_HOST_PINNED_MPI
+/* Whether to use Cuda/HIP Host Pinned memory for MPI */
+#cmakedefine ADELUS_HOST_PINNED_MEM_MPI
 
 /* Whether to use Kokkos::deep_copy for BLAS copy */
 #cmakedefine USE_DEEPCOPY

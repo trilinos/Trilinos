@@ -146,15 +146,15 @@ namespace MueLu {
     }
 
     // TODO add support for overlapping aggregates
-    TEUCHOS_TEST_FOR_EXCEPTION(strDomainMap->getNodeNumElements() != P->getColMap()->getNodeNumElements(), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(strDomainMap->getLocalNumElements() != P->getColMap()->getLocalNumElements(), Exceptions::RuntimeError,
                                                "CoarseningVisualization only supports non-overlapping transfers");
 
     // number of local "aggregates"
-    LocalOrdinal numLocalAggs = strDomainMap->getNodeNumElements() / columnsPerNode;
+    LocalOrdinal numLocalAggs = strDomainMap->getLocalNumElements() / columnsPerNode;
     std::vector< std::set<LocalOrdinal> > localAggs(numLocalAggs);
 
     // do loop over all local rows of prolongator and extract column information
-    for (LO row = 0; row < Teuchos::as<LO>(P->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(P->getRowMap()->getLocalNumElements()); ++row) {
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
       P->getLocalRowView(row, indices, vals);
@@ -187,7 +187,7 @@ namespace MueLu {
     // get fine level coordinate information
     Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(fineLevel, "Coordinates");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<LO>(P->getRowMap()->getNodeNumElements()) / dofsPerNode != Teuchos::as<LocalOrdinal>(coords->getLocalLength()), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<LO>(P->getRowMap()->getLocalNumElements()) / dofsPerNode != Teuchos::as<LocalOrdinal>(coords->getLocalLength()), Exceptions::RuntimeError,
                                            "Number of fine level nodes in coordinates is inconsistent with dof based information");
 
     // communicate fine level coordinates if necessary

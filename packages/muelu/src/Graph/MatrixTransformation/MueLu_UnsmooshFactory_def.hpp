@@ -104,7 +104,7 @@ namespace MueLu {
       dofStatus = Get<Teuchos::Array<char> >(fineLevel, "DofStatus");
     } else {
       // dof status is the dirichlet information of unsmooshed/unamalgamated A (fine level)
-      dofStatus = Teuchos::Array<char>(unamalgA->getRowMap()->getNodeNumElements() /*amalgP->getRowMap()->getNodeNumElements() * maxDofPerNode*/,'s');
+      dofStatus = Teuchos::Array<char>(unamalgA->getRowMap()->getLocalNumElements() /*amalgP->getRowMap()->getLocalNumElements() * maxDofPerNode*/,'s');
 
       bool bHasZeroDiagonal = false;
       Teuchos::ArrayRCP<const bool> dirOrNot = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletRowsExt(*unamalgA,bHasZeroDiagonal,STS::magnitude(0.5));
@@ -119,20 +119,20 @@ namespace MueLu {
     //TEUCHOS_TEST_FOR_EXCEPTION(amalgP->getDomainMap()->isSameAs(*amalgP->getColMap()) == false, MueLu::Exceptions::RuntimeError,"MueLu::UnsmooshFactory::Build: only support for non-overlapping aggregates. (column map of Ptent must be the same as domain map of Ptent)");
 
     // extract CRS information from amalgamated prolongation operator
-    Teuchos::ArrayRCP<const size_t> amalgRowPtr(amalgP->getNodeNumRows());
-    Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(amalgP->getNodeNumEntries());
-    Teuchos::ArrayRCP<const Scalar> amalgVals(amalgP->getNodeNumEntries());
+    Teuchos::ArrayRCP<const size_t> amalgRowPtr(amalgP->getLocalNumRows());
+    Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(amalgP->getLocalNumEntries());
+    Teuchos::ArrayRCP<const Scalar> amalgVals(amalgP->getLocalNumEntries());
     Teuchos::RCP<CrsMatrixWrap> amalgPwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(amalgP);
     Teuchos::RCP<CrsMatrix> amalgPcrs = amalgPwrap->getCrsMatrix();
     amalgPcrs->getAllValues(amalgRowPtr, amalgCols, amalgVals);
 
     // calculate number of dof rows for new prolongator
-    size_t paddedNrows = amalgP->getRowMap()->getNodeNumElements() * Teuchos::as<size_t>(maxDofPerNode);
+    size_t paddedNrows = amalgP->getRowMap()->getLocalNumElements() * Teuchos::as<size_t>(maxDofPerNode);
 
     // reserve CSR arrays for new prolongation operator
     Teuchos::ArrayRCP<size_t> newPRowPtr(paddedNrows+1);
-    Teuchos::ArrayRCP<LocalOrdinal> newPCols(amalgP->getNodeNumEntries() * maxDofPerNode);
-    Teuchos::ArrayRCP<Scalar> newPVals(amalgP->getNodeNumEntries() * maxDofPerNode);
+    Teuchos::ArrayRCP<LocalOrdinal> newPCols(amalgP->getLocalNumEntries() * maxDofPerNode);
+    Teuchos::ArrayRCP<Scalar> newPVals(amalgP->getLocalNumEntries() * maxDofPerNode);
 
     size_t rowCount = 0; // actual number of (local) in unamalgamated prolongator
     if(fineIsPadded == true || fineLevel.GetLevelID() > 0) {
@@ -201,7 +201,7 @@ namespace MueLu {
     // could be gathered easily from the unamalgamated fine level operator A.
     std::vector<size_t> stridingInfo(1, maxDofPerNode);
 
-    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getNodeNumElements() * maxDofPerNode;
+    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getLocalNumElements() * maxDofPerNode;
     GlobalOrdinal indexBase   = amalgP->getDomainMap()->getIndexBase();
     RCP<const Map> coarseDomainMap = StridedMapFactory::Build(amalgP->getDomainMap()->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -212,9 +212,9 @@ namespace MueLu {
         -1 /* stridedBlockId */,
         0  /*domainGidOffset */);
 
-    size_t nColCoarseDofs = Teuchos::as<size_t>(amalgP->getColMap()->getNodeNumElements() * maxDofPerNode);
+    size_t nColCoarseDofs = Teuchos::as<size_t>(amalgP->getColMap()->getLocalNumElements() * maxDofPerNode);
     Teuchos::Array<GlobalOrdinal> unsmooshColMapGIDs(nColCoarseDofs);
-    for(size_t c = 0; c < amalgP->getColMap()->getNodeNumElements(); ++c) {
+    for(size_t c = 0; c < amalgP->getColMap()->getLocalNumElements(); ++c) {
       GlobalOrdinal gid = (amalgP->getColMap()->getGlobalElement(c)-indexBase) * maxDofPerNode + indexBase;
 
       for(int i = 0; i < maxDofPerNode; ++i) {
@@ -230,7 +230,7 @@ namespace MueLu {
     // Assemble unamalgamated P
     Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),
                                                                   coarseColMap,
-                                                                  maxDofPerNode*amalgP->getNodeMaxNumRowEntries());
+                                                                  maxDofPerNode*amalgP->getLocalMaxNumRowEntries());
     for (size_t i = 0; i < rowCount; i++) {
       unamalgPCrs->insertLocalValues(i,
                                      newPCols.view(newPRowPtr[i], newPRowPtr[i+1] - newPRowPtr[i]),

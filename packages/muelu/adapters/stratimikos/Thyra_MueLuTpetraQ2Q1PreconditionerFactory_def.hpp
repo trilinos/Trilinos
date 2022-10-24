@@ -311,19 +311,19 @@ namespace Thyra {
     RCP<Matrix> tmp_A_12  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA12); // needs map modification
     RCP<Matrix> A_11_9Pt  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11_9Pt);
 
-    Xpetra::global_size_t numVel  =     A_11->getRowMap()->getNodeNumElements();
-    Xpetra::global_size_t numPres = tmp_A_21->getRowMap()->getNodeNumElements();
+    Xpetra::global_size_t numVel  =     A_11->getRowMap()->getLocalNumElements();
+    Xpetra::global_size_t numPres = tmp_A_21->getRowMap()->getLocalNumElements();
 
     // Create new A21 with map so that the global indices of the row map starts
     // from numVel+1 (where numVel is the number of rows in the A11 block)
     RCP<const Map>          domainMap2  = tmp_A_12->getDomainMap();
     RCP<const Map>          rangeMap2   = tmp_A_21->getRangeMap();
-    Xpetra::global_size_t   numRows2    = rangeMap2->getNodeNumElements();
-    Xpetra::global_size_t   numCols2    = domainMap2->getNodeNumElements();
-    ArrayView<const GO>     rangeElem2  = rangeMap2->getNodeElementList();
-    ArrayView<const GO>     domainElem2 = domainMap2->getNodeElementList();
-    ArrayView<const GO>     rowElem1    = tmp_A_12->getRowMap()->getNodeElementList();
-    ArrayView<const GO>     colElem1    = tmp_A_21->getColMap()->getNodeElementList();
+    Xpetra::global_size_t   numRows2    = rangeMap2->getLocalNumElements();
+    Xpetra::global_size_t   numCols2    = domainMap2->getLocalNumElements();
+    ArrayView<const GO>     rangeElem2  = rangeMap2->getLocalElementList();
+    ArrayView<const GO>     domainElem2 = domainMap2->getLocalElementList();
+    ArrayView<const GO>     rowElem1    = tmp_A_12->getRowMap()->getLocalElementList();
+    ArrayView<const GO>     colElem1    = tmp_A_21->getColMap()->getLocalElementList();
 
     Xpetra::UnderlyingLib lib = domainMap2->lib();
     GO indexBase = domainMap2->getIndexBase();
@@ -341,8 +341,8 @@ namespace Thyra {
 
     RCP<const Map> newDomainMap2 = MapFactory::Build(lib, numCols2, newColElem2, indexBase, comm);
 
-    RCP<Matrix>    A_12         = MatrixFactory::Build(tmp_A_12->getRangeMap(), newDomainMap2,            tmp_A_12->getNodeMaxNumRowEntries());
-    RCP<Matrix>    A_21         = MatrixFactory::Build(newRangeMap2,            tmp_A_21->getDomainMap(), tmp_A_21->getNodeMaxNumRowEntries());
+    RCP<Matrix>    A_12         = MatrixFactory::Build(tmp_A_12->getRangeMap(), newDomainMap2,            tmp_A_12->getLocalMaxNumRowEntries());
+    RCP<Matrix>    A_21         = MatrixFactory::Build(newRangeMap2,            tmp_A_21->getDomainMap(), tmp_A_21->getLocalMaxNumRowEntries());
 
     RCP<CrsMatrix> A_11_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_11)    ->getCrsMatrix();
     RCP<CrsMatrix> A_12_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_12)    ->getCrsMatrix();
@@ -395,7 +395,7 @@ namespace Thyra {
 
     // Create new A12 with map so that the global indices of the ColMap starts
     // from numVel+1 (where numVel is the number of rows in the A11 block)
-    for (LO row = 0; row < as<LO>(tmp_A_12->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < as<LO>(tmp_A_12->getRowMap()->getLocalNumElements()); ++row) {
       tmp_A_12->getLocalRowView(row, inds, vals);
 
       size_t nnz = inds.size();
@@ -433,8 +433,8 @@ namespace Thyra {
     int stridedBlockId = -1;
 
     Array<GO> elementList(numVel+numPres); // Not RCP ...  does this get cleared ?
-    Array<GO> velElem  = A_12_crs->getRangeMap()->getNodeElementList();
-    Array<GO> presElem = A_21_crs->getRangeMap()->getNodeElementList();
+    Array<GO> velElem  = A_12_crs->getRangeMap()->getLocalElementList();
+    Array<GO> presElem = A_21_crs->getRangeMap()->getLocalElementList();
 
     for (Xpetra::global_size_t i =    0  ; i < numVel;         i++) elementList[i] = velElem[i];
     for (Xpetra::global_size_t i = numVel; i < numVel+numPres; i++) elementList[i] = presElem[i-numVel];
@@ -587,7 +587,7 @@ namespace Thyra {
 
     // Zero out row sums by fixing the diagonal
     filteredA->resumeFill();
-    size_t numRows = filteredA->getRowMap()->getNodeNumElements();
+    size_t numRows = filteredA->getRowMap()->getLocalNumElements();
     for (size_t i = 0; i < numRows; i++) {
       ArrayView<const LO> inds;
       ArrayView<const SC> vals;

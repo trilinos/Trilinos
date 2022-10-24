@@ -282,14 +282,14 @@ initAllValues (const block_crs_matrix_type& A)
   LO NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
-  size_t MaxNumEntries = A.getNodeMaxNumRowEntries();
+  size_t MaxNumEntries = A.getLocalMaxNumRowEntries();
   LO blockMatSize = blockSize_*blockSize_;
 
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
-  Teuchos::ArrayView<const GO> rowGIDs = A.getRowMap()->getNodeElementList();
-  Teuchos::ArrayView<const GO> colGIDs = A.getColMap()->getNodeElementList();
+  Teuchos::ArrayView<const GO> rowGIDs = A.getRowMap()->getLocalElementList();
+  Teuchos::ArrayView<const GO> colGIDs = A.getColMap()->getLocalElementList();
   bool gidsAreConsistentlyOrdered=true;
   GO indexOfInconsistentGID=0;
   for (GO i=0; i<rowGIDs.size(); ++i) {
@@ -347,7 +347,7 @@ initAllValues (const block_crs_matrix_type& A)
   Kokkos::fence();
   using inds_type = typename row_matrix_type::local_inds_host_view_type;
   using vals_type = typename row_matrix_type::values_host_view_type;
-  for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
+  for (size_t myRow=0; myRow<A.getLocalNumRows(); ++myRow) {
     LO local_row = myRow;
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
@@ -390,7 +390,7 @@ initAllValues (const block_crs_matrix_type& A)
           LV[LBlockOffset+jj] = InV[blockOffset+jj];
         NumL++;
       }
-      else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
+      else if (Teuchos::as<size_t>(k) <= rowMap->getLocalNumElements()) {
         UI[NumU] = k;
         const LO UBlockOffset = NumU*blockMatSize;
         for (LO jj = 0; jj < blockMatSize; ++jj)
@@ -441,7 +441,7 @@ namespace { // (anonymous)
 // possibly unmanaged) to their managed versions.
 template<class LittleBlockType>
 struct GetManagedView {
-  static_assert (Kokkos::Impl::is_view<LittleBlockType>::value,
+  static_assert (Kokkos::is_view<LittleBlockType>::value,
                  "LittleBlockType must be a Kokkos::View.");
   typedef Kokkos::View<typename LittleBlockType::non_const_data_type,
                        typename LittleBlockType::array_layout,
@@ -514,7 +514,7 @@ void RBILUK<MatrixType>::compute ()
 
     // Get Maximum Row length
     const size_t MaxNumEntries =
-      L_block_->getNodeMaxNumRowEntries () + U_block_->getNodeMaxNumRowEntries () + 1;
+      L_block_->getLocalMaxNumRowEntries () + U_block_->getLocalMaxNumRowEntries () + 1;
 
     const LO blockMatSize = blockSize_*blockSize_;
 
@@ -530,7 +530,7 @@ void RBILUK<MatrixType>::compute ()
     Kokkos::View<IST*, Kokkos::HostSpace,
       Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize_);
 
-    size_t num_cols = U_block_->getColMap()->getNodeNumElements();
+    size_t num_cols = U_block_->getColMap()->getLocalNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
     typename GetManagedView<little_block_host_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
@@ -549,7 +549,7 @@ void RBILUK<MatrixType>::compute ()
     Teuchos::Array<LO> InI(MaxNumEntries, 0);
     Teuchos::Array<scalar_type> InV(MaxNumEntries*blockMatSize,STM::zero());
 
-    const LO numLocalRows = L_block_->getNodeNumRows ();
+    const LO numLocalRows = L_block_->getLocalNumRows ();
     for (LO local_row = 0; local_row < numLocalRows; ++local_row) {
 
       // Fill InV, InI with current row of L, D and U combined
@@ -857,7 +857,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
         for (LO imv = 0; imv < numVectors; ++imv)
         {
-          for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
+          for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
           {
             LO local_row = i;
             const_host_little_vec_type xval = 
@@ -893,7 +893,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // Solve U Y = R.
         for (LO imv = 0; imv < numVectors; ++imv)
         {
-          const LO numRows = D_block_->getNodeNumRows();
+          const LO numRows = D_block_->getLocalNumRows();
           for (LO i = 0; i < numRows; ++i)
           {
             LO local_row = (numRows-1)-i;

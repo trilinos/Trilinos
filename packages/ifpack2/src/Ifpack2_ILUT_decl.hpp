@@ -353,7 +353,7 @@ public:
   global_size_t getGlobalNumEntries() const;
 
   //! Returns the number of nonzero entries in the local graph.
-  size_t getNodeNumEntries() const;
+  size_t getLocalNumEntries() const;
 
   //@}
   //! \name Implementation of Teuchos::Describable

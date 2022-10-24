@@ -167,6 +167,7 @@ namespace BaskerNS
 
     BASKER_INLINE
     void t_reset_BTF_factor(Int kid);
+    void t_reset_BTF_factor_top(Int start, Int end);
 
     void t_reset_ND_factor(Int kid);
 
@@ -563,6 +564,7 @@ namespace BaskerNS
     (
      BASKER_MATRIX &M,
      BASKER_SYMBOLIC_TREE &ST,
+     double fill_factor,
      Int option
     );
 
@@ -570,7 +572,8 @@ namespace BaskerNS
     void L_assign_nnz
     (
      BASKER_MATRIX &M,
-     BASKER_SYMBOLIC_TREE &ST, 
+     BASKER_SYMBOLIC_TREE &ST,
+     double fill_factor,
      Int option
     );
 
@@ -712,12 +715,6 @@ namespace BaskerNS
     BASKER_INLINE
     int t_col_barrier(Int kid);
 
-    BASKER_INLINE
-    int t_col_copy_atomic(Int kid, Int team_leader, Int lvl, Int l, Int k);
-
-    BASKER_INLINE
-    int t_n_col_copy_atomic(Int kid, Int team_leader, Int lvl, Int l, Int k);
-    
     BASKER_INLINE
     int t_dense_move_offdiag_L(Int kid, 
                          Int blkcol, Int blkrow,
@@ -1049,7 +1046,7 @@ namespace BaskerNS
     void t_local_reach_short_btf(const Int, const Int, Int &);
 
     BASKER_INLINE
-    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int&);
+    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int&, Int,Int);
 
     void t_prune_btf(const Int, const BASKER_MATRIX &, const BASKER_MATRIX&, const Int, const Int);
 
@@ -1290,10 +1287,8 @@ namespace BaskerNS
     Int gn;
     Int gm;
 
-    //Note: In future, rename AV -> AU
-    MATRIX_VIEW_2DARRAY  AV;
-    MATRIX_VIEW_2DARRAY  AL;
-    MATRIX_2DARRAY       AVM; // view of views of 2D blocks; stores CCS of the BTF_A upper matrix 2D blocks; btf_tabs_offset blocks in BTF_A
+    // view of views of 2D blocks; stores CCS of the BTF_A upper matrix 2D blocks; btf_tabs_offset blocks in BTF_A
+    MATRIX_2DARRAY       AVM;
     MATRIX_2DARRAY       ALM;
 
     BASKER_MATRIX At;

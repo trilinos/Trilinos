@@ -86,7 +86,7 @@ bool run_linear_op_with_solve_tests(
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  //typedef typename ST::magnitudeType ScalarMag;
+  typedef typename ST::magnitudeType ScalarMag;
 
   out
     << "\n***"
@@ -130,7 +130,7 @@ bool run_linear_op_with_solve_tests(
   {
     RCP<ParameterList> pl = parameterList();
     pl->set("All Solve Tol", maxRelErr);
-    pl->set("All Slack Error Tol", 1e+1*maxRelErr);
+    pl->set("All Slack Error Tol", as<ScalarMag>(1e+1*maxRelErr));
     pl->set("All Slack Warning Tol", maxRelErr);
     pl->set("Show All Tests", showAllTests);
     pl->set("Dump All", dumpAll);
@@ -273,7 +273,7 @@ int main( int argc, char* argv[] )
     // Run the tests
     //
 
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !Thyra::run_linear_op_with_solve_tests<float>(
           n, as<float>(epsScale*ScalarTraits<float>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
@@ -281,12 +281,12 @@ int main( int argc, char* argv[] )
     if( !Thyra::run_linear_op_with_solve_tests<double>(
           n, as<double>(epsScale*ScalarTraits<double>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
-#if defined(HAVE_THYRA_COMPLEX) && defined(HAVE_THYRA_TEUCHOS_BLASFLOAT)
+#if defined(HAVE_TEUCHOS_INST_COMPLEX_FLOAT) && defined(HAVE_TEUCHOS_INST_FLOAT) && defined(HAVE_TEUCHOS_BLASFLOAT)
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<float> >(
           n, as<float>(epsScale*ScalarTraits<float>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
 #endif
-#if defined(HAVE_THYRA_COMPLEX)
+#ifdef HAVE_TEUCHOS_INST_COMPLEX_DOUBLE
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<double> >(
           n, as<double>(epsScale*ScalarTraits<double>::eps()), showAllTests, dumpAll, *out)
       ) success = false;

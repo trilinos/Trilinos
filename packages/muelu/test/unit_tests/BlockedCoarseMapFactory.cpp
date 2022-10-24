@@ -132,8 +132,8 @@ namespace MueLuTests {
     TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim) - 1);
     TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim));
     TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * Teuchos::as<GO>(NSdim) - 1);
-    TEST_EQUALITY(Teuchos::as<GO>(map1->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
-    TEST_EQUALITY(Teuchos::as<GO>(map2->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
+    TEST_EQUALITY(Teuchos::as<GO>(map1->getLocalNumElements()), numAggs * Teuchos::as<GO>(NSdim));
+    TEST_EQUALITY(Teuchos::as<GO>(map2->getLocalNumElements()), numAggs * Teuchos::as<GO>(NSdim));
   }
 
 #define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \

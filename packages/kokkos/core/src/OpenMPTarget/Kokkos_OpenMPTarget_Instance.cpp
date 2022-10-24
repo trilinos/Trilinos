@@ -42,6 +42,10 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#endif
+
 #include <Kokkos_Macros.hpp>
 
 #if defined(KOKKOS_ENABLE_OPENMPTARGET) && defined(_OPENMP)
@@ -53,19 +57,47 @@
 #include <Kokkos_OpenMPTarget.hpp>
 #include <OpenMPTarget/Kokkos_OpenMPTarget_UniqueToken.hpp>
 #include <OpenMPTarget/Kokkos_OpenMPTarget_Instance.hpp>
+#include <impl/Kokkos_ExecSpaceManager.hpp>
 
 #include <sstream>
 
 namespace Kokkos {
 namespace Experimental {
 namespace Impl {
-void OpenMPTargetInternal::fence() {}
+uint32_t OpenMPTargetInternal::impl_get_instance_id() const noexcept {
+  return m_instance_id;
+}
+
+void OpenMPTargetInternal::fence(openmp_fence_is_static is_static) {
+  fence(
+      "Kokkos::Experimental::Impl::OpenMPTargetInternal::fence: Unnamed "
+      "Internal Fence",
+      is_static);
+}
+void OpenMPTargetInternal::fence(const std::string& name,
+                                 openmp_fence_is_static is_static) {
+  if (is_static == openmp_fence_is_static::no) {
+    Kokkos::Tools::Experimental::Impl::profile_fence_event<
+        Kokkos::Experimental::OpenMPTarget>(
+        name,
+        Kokkos::Tools::Experimental::Impl::DirectFenceIDHandle{
+            impl_get_instance_id()},
+        [&]() {});
+  } else {
+    Kokkos::Tools::Experimental::Impl::profile_fence_event<
+        Kokkos::Experimental::OpenMPTarget>(
+        name,
+        Kokkos::Tools::Experimental::SpecialSynchronizationCases::
+            GlobalDeviceSynchronization,
+        [&]() {});
+  }
+}
 int OpenMPTargetInternal::concurrency() { return 128000; }
 const char* OpenMPTargetInternal::name() { return "OpenMPTarget"; }
-void OpenMPTargetInternal::print_configuration(std::ostream& /*stream*/,
-                                               const bool) {
+void OpenMPTargetInternal::print_configuration(std::ostream& os,
+                                               bool /*verbose*/) const {
   // FIXME_OPENMPTARGET
-  printf("Using OpenMPTarget\n");
+  os << "Using OpenMPTarget\n";
 }
 
 void OpenMPTargetInternal::impl_finalize() {
@@ -77,7 +109,18 @@ void OpenMPTargetInternal::impl_finalize() {
     Kokkos::kokkos_free<Kokkos::Experimental::OpenMPTargetSpace>(
         space.m_uniquetoken_ptr);
 }
-void OpenMPTargetInternal::impl_initialize() { m_is_initialized = true; }
+void OpenMPTargetInternal::impl_initialize() {
+  m_is_initialized = true;
+
+  // FIXME_OPENMPTARGET:  Only fix the number of teams for NVIDIA architectures
+  // from Pascal and upwards.
+#if defined(KOKKOS_ARCH_PASCAL) || defined(KOKKOS_ARCH_VOLTA) || \
+    defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+#if defined(KOKKOS_COMPILER_CLANG) && (KOKKOS_COMPILER_CLANG >= 1300)
+  omp_set_num_teams(512);
+#endif
+#endif
+}
 int OpenMPTargetInternal::impl_is_initialized() {
   return m_is_initialized ? 1 : 0;
 }
@@ -95,20 +138,38 @@ OpenMPTarget::OpenMPTarget()
 const char* OpenMPTarget::name() {
   return Impl::OpenMPTargetInternal::impl_singleton()->name();
 }
-void OpenMPTarget::print_configuration(std::ostream& stream,
-                                       const bool detail) {
-  m_space_instance->print_configuration(stream, detail);
+void OpenMPTarget::print_configuration(std::ostream& os, bool verbose) const {
+  os << "OpenMPTarget Execution Space:\n";
+  os << "  KOKKOS_ENABLE_OPENMPTARGET: yes\n";
+
+  os << "\nOpenMPTarget Runtime Configuration:\n";
+
+  m_space_instance->print_configuration(os, verbose);
+}
+
+uint32_t OpenMPTarget::impl_instance_id() const noexcept {
+  return m_space_instance->impl_get_instance_id();
 }
 
 int OpenMPTarget::concurrency() {
   return Impl::OpenMPTargetInternal::impl_singleton()->concurrency();
 }
-void OpenMPTarget::fence() {
-  Impl::OpenMPTargetInternal::impl_singleton()->fence();
+
+void OpenMPTarget::fence(const std::string& name) {
+  Impl::OpenMPTargetInternal::impl_singleton()->fence(name);
 }
 
-void OpenMPTarget::impl_initialize() { m_space_instance->impl_initialize(); }
-void OpenMPTarget::impl_finalize() { m_space_instance->impl_finalize(); }
+void OpenMPTarget::impl_static_fence(const std::string& name) {
+  Impl::OpenMPTargetInternal::impl_singleton()->fence(
+      name, Kokkos::Experimental::Impl::openmp_fence_is_static::yes);
+}
+
+void OpenMPTarget::impl_initialize(InitializationSettings const&) {
+  Impl::OpenMPTargetInternal::impl_singleton()->impl_initialize();
+}
+void OpenMPTarget::impl_finalize() {
+  Impl::OpenMPTargetInternal::impl_singleton()->impl_finalize();
+}
 int OpenMPTarget::impl_is_initialized() {
   return Impl::OpenMPTargetInternal::impl_singleton()->impl_is_initialized();
 }
@@ -116,48 +177,8 @@ int OpenMPTarget::impl_is_initialized() {
 
 namespace Impl {
 int g_openmptarget_space_factory_initialized =
-    Kokkos::Impl::initialize_space_factory<OpenMPTargetSpaceInitializer>(
+    Kokkos::Impl::initialize_space_factory<Experimental::OpenMPTarget>(
         "160_OpenMPTarget");
-
-void OpenMPTargetSpaceInitializer::initialize(const InitArguments& args) {
-  // Prevent "unused variable" warning for 'args' input struct.  If
-  // Serial::initialize() ever needs to take arguments from the input
-  // struct, you may remove this line of code.
-  (void)args;
-
-  if (std::is_same<Kokkos::Experimental::OpenMPTarget,
-                   Kokkos::DefaultExecutionSpace>::value) {
-    Kokkos::Experimental::OpenMPTarget().impl_initialize();
-    // std::cout << "Kokkos::initialize() fyi: OpenMP enabled and initialized"
-    // << std::endl ;
-  } else {
-    // std::cout << "Kokkos::initialize() fyi: OpenMP enabled but not
-    // initialized" << std::endl ;
-  }
-}
-
-void OpenMPTargetSpaceInitializer::finalize(const bool all_spaces) {
-  if (std::is_same<Kokkos::Experimental::OpenMPTarget,
-                   Kokkos::DefaultExecutionSpace>::value ||
-      all_spaces) {
-    if (Kokkos::Experimental::OpenMPTarget().impl_is_initialized())
-      Kokkos::Experimental::OpenMPTarget().impl_finalize();
-  }
-}
-
-void OpenMPTargetSpaceInitializer::fence() {
-  Kokkos::Experimental::OpenMPTarget::fence();
-}
-
-void OpenMPTargetSpaceInitializer::print_configuration(std::ostream& msg,
-                                                       const bool detail) {
-  msg << "OpenMPTarget Execution Space:" << std::endl;
-  msg << "  KOKKOS_ENABLE_OPENMPTARGET: ";
-  msg << "yes" << std::endl;
-
-  msg << "\nOpenMPTarget Runtime Configuration:" << std::endl;
-  Kokkos::Experimental::OpenMPTarget().print_configuration(msg, detail);
-}
 
 }  // namespace Impl
 }  // Namespace Kokkos

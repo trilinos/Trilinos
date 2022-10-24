@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -71,7 +71,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
 
 template void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<int> &global_node_map,
                                       std::vector<int> &local_node_map, bool fill_global);
-template void eliminate_omitted_nodes(RegionVector &        part_mesh,
+template void eliminate_omitted_nodes(RegionVector         &part_mesh,
                                       std::vector<int64_t> &global_node_map,
                                       std::vector<int64_t> &local_node_map, bool fill_global);
 
@@ -162,8 +162,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
         if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
           auto iter = std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
           if (iter == global_node_map.end()) {
-            INT n = global_node;
-            fmt::print("{:L}\n", n);
+            fmt::print("{}\n", fmt::group_digits(global_node));
             SMART_ASSERT(iter != global_node_map.end());
           }
           cur_pos = iter;
@@ -214,7 +213,7 @@ void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_el
   size_t offset = 0;
   for (auto &p : part_mesh) {
 
-    const Ioss::ElementBlockContainer &         ebs = p->get_element_blocks();
+    const Ioss::ElementBlockContainer          &ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
 
     while (i != ebs.end()) {
@@ -237,7 +236,7 @@ void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_el
 }
 
 template void build_local_element_map(RegionVector &part_mesh, std::vector<int> &local_element_map);
-template void build_local_element_map(RegionVector &        part_mesh,
+template void build_local_element_map(RegionVector         &part_mesh,
                                       std::vector<int64_t> &local_element_map);
 
 template <typename INT>
@@ -256,7 +255,7 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
   bool   has_map = false;
   size_t offset  = 0;
   for (auto &p : part_mesh) {
-    const Ioss::ElementBlockContainer &         ebs = p->get_element_blocks();
+    const Ioss::ElementBlockContainer          &ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
 
     while (i != ebs.end()) {
@@ -321,9 +320,9 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
   }
 }
 
-template void generate_element_ids(RegionVector &          part_mesh,
+template void generate_element_ids(RegionVector           &part_mesh,
                                    const std::vector<int> &local_element_map,
-                                   std::vector<int> &      global_element_map);
-template void generate_element_ids(RegionVector &              part_mesh,
+                                   std::vector<int>       &global_element_map);
+template void generate_element_ids(RegionVector               &part_mesh,
                                    const std::vector<int64_t> &local_element_map,
-                                   std::vector<int64_t> &      global_element_map);
+                                   std::vector<int64_t>       &global_element_map);

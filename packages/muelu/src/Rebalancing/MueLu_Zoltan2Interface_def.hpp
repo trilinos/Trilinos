@@ -165,18 +165,18 @@ namespace MueLu {
 
       RCP<RealValuedMultiVector> coords      = Get<RCP<RealValuedMultiVector> >(level, "Coordinates");
       RCP<const Map>    map         = coords->getMap();
-      GO                numElements = map->getNodeNumElements();
+      GO                numElements = map->getLocalNumElements();
 
       // Check that the number of local coordinates is consistent with the #rows in A
-      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getNodeNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible,
+      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getLocalNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible,
                                  "Coordinate vector length (" + toString(coords->getLocalLength()) << " is incompatible with number of block rows in A ("
-                                 + toString(rowMap->getNodeNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
+                                 + toString(rowMap->getLocalNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
 #ifdef HAVE_MUELU_DEBUG
       GO indexBase = rowMap->getIndexBase();
       GetOStream(Runtime0) << "Checking consistence of row and coordinates maps" << std::endl;
       // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
-      ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
-      ArrayView<const GO> coordsElements = map   ->getNodeElementList();
+      ArrayView<const GO> rowElements    = rowMap->getLocalElementList();
+      ArrayView<const GO> coordsElements = map   ->getLocalElementList();
       for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
         TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
                                    Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
@@ -235,7 +235,7 @@ namespace MueLu {
 
     } else {
 
-      GO numElements = rowMap->getNodeNumElements();
+      GO numElements = rowMap->getLocalNumElements();
 
       typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph>  InputAdapterType;
       typedef Zoltan2::PartitioningProblem<InputAdapterType>   ProblemType;

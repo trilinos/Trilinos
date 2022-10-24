@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 #endif
 
-  Ioss::ParallelUtils pu{MPI_COMM_WORLD};
+  Ioss::ParallelUtils pu{};
   int                 my_rank = pu.parallel_rank();
 
   try {
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
     debug_level = interFace.debug();
 
-    if ((debug_level & 8) != 0U) {
+    if (debug_level & 1) {
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
     else {
@@ -104,9 +104,9 @@ int main(int argc, char *argv[])
 template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
 {
   double              begin = Ioss::Utils::timer();
-  Ioss::ParallelUtils pu{MPI_COMM_WORLD};
+  Ioss::ParallelUtils pu{};
 
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Begin Execution\n", time_stamp(tsFormat));
   }
 
@@ -116,7 +116,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
   grid.set_coordinate_offsets();
   grid.decompose(interFace.decomp_method());
 
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Lattice Decomposed\n", time_stamp(tsFormat));
   }
 
@@ -128,7 +128,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
 
   /*************************************************************************/
   // EXIT program
-  if (debug_level & 1) {
+  if (debug_level & 2) {
     fmt::print(stderr, "{} Execution Complete\n", time_stamp(tsFormat));
   }
 
@@ -233,12 +233,14 @@ namespace {
     grid.handle_file_count();
 
     if (my_rank == 0) {
-      fmt::print("\n Lattice:\tUnit Cells: {:L},\tGrid Size:  {:L} x {:L} x {:L}\n",
-                 grid.unit_cells().size(), II, JJ, KK);
+      fmt::print("\n Lattice:\tUnit Cells: {},\tGrid Size:  {} x {} x {}\n",
+                 fmt::group_digits(grid.unit_cells().size()), fmt::group_digits(II),
+                 fmt::group_digits(JJ), fmt::group_digits(KK));
     }
     if (interFace.ranks() > 1) {
-      fmt::print("         \t[{}] Ranks: {:L}, Outputting {:L} ranks starting at rank {:L}.\n",
-                 my_rank, interFace.ranks(), interFace.rank_count(), interFace.start_rank());
+      fmt::print("         \t[{}] Ranks: {}, Outputting {} ranks starting at rank {}.\n", my_rank,
+                 fmt::group_digits(interFace.ranks()), fmt::group_digits(interFace.rank_count()),
+                 fmt::group_digits(interFace.start_rank()));
     }
 
     // Now process the lattice portion of the lattice file...
@@ -309,7 +311,7 @@ namespace {
         }
       }
     }
-    if (debug_level & 1) {
+    if (debug_level & 2) {
       fmt::print(stderr, "{} Lattice Defined\n", time_stamp(tsFormat));
     }
     return grid;

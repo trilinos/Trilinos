@@ -145,7 +145,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -167,7 +167,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -190,7 +190,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -212,7 +212,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -234,7 +234,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -257,7 +257,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -280,7 +280,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -303,7 +303,7 @@ endif() # test created
 #      LABELS
 #        "IntegrationTest;integration;kokkos;staggered"
 #      TIMEOUT
-#        10
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -326,7 +326,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -348,7 +348,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -370,7 +370,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -393,7 +393,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;vector"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -417,7 +417,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -439,7 +439,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -462,7 +462,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos"
       TIMEOUT
-        10
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -510,7 +510,7 @@ if (${testName}_CREATED)
       LABELS
         "IntegrationTest;integration;kokkos;staggered"
       TIMEOUT
-        20
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -518,31 +518,35 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
   # This test is too slow in DEBUG (3x longer than all other tests
   # combined)
 
-  # Python driven test of a C++ executable (Python changes command line
-  # arguments given to executable)
-  configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py.in
-    ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py
-    @ONLY
-    ) # end configure_file
-  set(testName GMLS_Manifold_Multiple_Evaluation_Sites)
-  TRIBITS_ADD_ADVANCED_TEST(
-    ${testName}
-    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py --porder=3 --grids=3 --in-trilinos=True
-    PASS_REGULAR_EXPRESSION "Passed."
-    COMM mpi serial
-    ADDED_TEST_NAME_OUT ${testName}_CREATED
-  )
-  if (${testName}_CREATED)
-    set_tests_properties(
-      ${${testName}_CREATED}
-      PROPERTIES
-        LABELS
-          "ConvergenceTest;convergence;manifold"
-        TIMEOUT
-          60
+  if (PYTHON_EXECUTABLE)
+    # Python driven test of a C++ executable (Python changes command line
+    # arguments given to executable)
+    configure_file(
+      ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py.in
+      ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py
+      @ONLY
+      ) # end configure_file
+    set(testName GMLS_Manifold_Multiple_Evaluation_Sites)
+    TRIBITS_ADD_ADVANCED_TEST(
+      ${testName}
+      TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold_Multiple_Evaluation_Sites.py --porder=3 --grids=3 --in-trilinos=True
+      PASS_REGULAR_EXPRESSION "Passed."
+      COMM mpi serial
+      ADDED_TEST_NAME_OUT ${testName}_CREATED
     )
-  endif() # test created
+    if (${testName}_CREATED)
+      set_tests_properties(
+        ${${testName}_CREATED}
+        PROPERTIES
+          LABELS
+            "ConvergenceTest;convergence;manifold"
+          TIMEOUT
+            60
+          REQUIRED_FILES
+            $<TARGET_FILE:Compadre_GMLS_Manifold_MultiSite_Test>
+      )
+    endif() # test created
+  endif() # PYTHON_EXECUTABLE
 
   # Divergence-free basis test for GMLS on non-manifold
   # Note: QR is needed to be used here due to the null space introduced
@@ -630,80 +634,88 @@ if (NOT(Compadre_DEBUG OR Compadre_EXTREME_DEBUG))
   #endif() # test created
 endif() # not debug
 
-# Python driven test of a C++ executable (Python changes command line
-# arguments given to executable) - calling QR solver
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py
-  @ONLY
-  ) # end configure_file
-set(testName GMLS_Manifold_Refinement_Study_QR)
-TRIBITS_ADD_ADVANCED_TEST(
-  ${testName}
-  TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=QR --in-trilinos=True
-  PASS_REGULAR_EXPRESSION "Passed."
-  COMM mpi serial
-  ADDED_TEST_NAME_OUT ${testName}_CREATED
-)
-if (${testName}_CREATED)
-  set_tests_properties(
-    ${${testName}_CREATED}
-    PROPERTIES
-      LABELS
-        "ConvergenceTest;convergence;manifold"
-      TIMEOUT
-        20
+if (PYTHON_EXECUTABLE)
+  # Python driven test of a C++ executable (Python changes command line
+  # arguments given to executable) - calling QR solver
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Manifold.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py
+    @ONLY
+    ) # end configure_file
+  set(testName GMLS_Manifold_Refinement_Study_QR)
+  TRIBITS_ADD_ADVANCED_TEST(
+    ${testName}
+    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=QR --in-trilinos=True
+    PASS_REGULAR_EXPRESSION "Passed."
+    COMM mpi serial
+    ADDED_TEST_NAME_OUT ${testName}_CREATED
   )
-endif() # test created
+  if (${testName}_CREATED)
+    set_tests_properties(
+      ${${testName}_CREATED}
+      PROPERTIES
+        LABELS
+          "ConvergenceTest;convergence;manifold"
+        TIMEOUT
+          60
+        REQUIRED_FILES
+          $<TARGET_FILE:Compadre_GMLS_Manifold_Test>
+    )
+  endif() # test created
+  
+  # Python driven test of a C++ executable (Python changes command line
+  # arguments given to executable) - calling LU solver
+  set(testName GMLS_Manifold_Refinement_Study_LU)
+  TRIBITS_ADD_ADVANCED_TEST(
+    ${testName}
+    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=LU --in-trilinos=True
+    PASS_REGULAR_EXPRESSION "Passed."
+    COMM mpi serial
+    ADDED_TEST_NAME_OUT ${testName}_CREATED
+  )
+  if (${testName}_CREATED)
+    set_tests_properties(
+      ${${testName}_CREATED}
+      PROPERTIES
+        LABELS
+          "ConvergenceTest;convergence;manifold"
+        TIMEOUT
+          60
+        REQUIRED_FILES
+          $<TARGET_FILE:Compadre_GMLS_Manifold_Test>
+    )
+  endif() # test created
 
-# Python driven test of a C++ executable (Python changes command line
-# arguments given to executable) - calling LU solver
-set(testName GMLS_Manifold_Refinement_Study_LU)
-TRIBITS_ADD_ADVANCED_TEST(
-  ${testName}
-  TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py --porder=3 --grids=4 --solver-type=LU --in-trilinos=True
-  PASS_REGULAR_EXPRESSION "Passed."
-  COMM mpi serial
-  ADDED_TEST_NAME_OUT ${testName}_CREATED
-)
-if (${testName}_CREATED)
-  set_tests_properties(
-    ${${testName}_CREATED}
-    PROPERTIES
-      LABELS
-        "ConvergenceTest;convergence;manifold"
-      TIMEOUT
-        20
+  # Python driven test of a C++ executable (Python changes command line
+  # arguments given to executable) - calling QR solver
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Staggered_Manifold.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py
+    @ONLY
+    ) # end configure_file
+  # Python driven test of a C++ executable (Python changes command line
+  # arguments given to executable)
+  set(testName GMLS_Staggered_Manifold_Refinement_Study)
+  TRIBITS_ADD_ADVANCED_TEST(
+    ${testName}
+    TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py --porder=3 --grids=4 --in-trilinos=True
+    PASS_REGULAR_EXPRESSION "Passed."
+    COMM mpi serial
+    ADDED_TEST_NAME_OUT ${testName}_CREATED
   )
-endif() # test created
-
-# Python driven test of a C++ executable (Python changes command line
-# arguments given to executable) - calling QR solver
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/GMLS_Staggered_Manifold.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py
-  @ONLY
-  ) # end configure_file
-# Python driven test of a C++ executable (Python changes command line
-# arguments given to executable)
-set(testName GMLS_Staggered_Manifold_Refinement_Study)
-TRIBITS_ADD_ADVANCED_TEST(
-  ${testName}
-  TEST_0 CMND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered_Manifold.py --porder=3 --grids=4 --in-trilinos=True
-  PASS_REGULAR_EXPRESSION "Passed."
-  COMM mpi serial
-  ADDED_TEST_NAME_OUT ${testName}_CREATED
-)
-if (${testName}_CREATED)
-  set_tests_properties(
-    ${${testName}_CREATED}
-    PROPERTIES
-      LABELS
-        "ConvergenceTest;convergence;manifold;staggered"
-      TIMEOUT
-        20
-  )
-endif() # test created
+  if (${testName}_CREATED)
+    set_tests_properties(
+      ${${testName}_CREATED}
+      PROPERTIES
+        LABELS
+          "ConvergenceTest;convergence;manifold;staggered"
+        TIMEOUT
+          60
+        REQUIRED_FILES
+          $<TARGET_FILE:Compadre_GMLS_Staggered_Manifold_Test>
+    )
+  endif() # test created
+endif() # PYTHON_EXECUTABLE
 
 # Utility test - Filter By ID
 set(testName Test_Utilities)
@@ -724,7 +736,7 @@ if (${testName}_CREATED)
       LABELS
         "UtilityTest;utility;kokkos"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -747,7 +759,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -769,7 +781,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -791,7 +803,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -814,7 +826,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -836,7 +848,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -858,7 +870,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -881,7 +893,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -903,7 +915,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -925,7 +937,7 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created
 
@@ -948,7 +960,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -970,7 +982,7 @@ if (${testName}_CREATED)
       LABELS
         "kdtree;nanoflann"
       TIMEOUT
-        5
+        60
     ) # end set_tests_properties
 endif() # test created
 
@@ -992,6 +1004,6 @@ endif() # test created
 #      LABELS
 #        "kdtree;nanoflann"
 #      TIMEOUT
-#        5
+#        60
 #    ) # end set_tests_properties
 #endif() # test created

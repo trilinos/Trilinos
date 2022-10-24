@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -110,8 +110,8 @@ namespace {
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::DatabaseIO *dbi =
-        Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD);
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
+                                                    Ioss::ParallelUtils::comm_world());
     if (dbi == nullptr || !dbi->ok(true)) {
       return false;
     }
@@ -128,14 +128,12 @@ namespace {
         std::string type = types.first;
 
         if (type == "all" || type == "global") {
-          Ioss::NameList fields;
-          region.field_describe(Ioss::Field::REDUCTION, &fields);
+          Ioss::NameList fields = region.field_describe(Ioss::Field::REDUCTION);
           output_names("Global", fields, &region);
         }
         if (type == "all" || type == "nodal") {
-          Ioss::NameList   fields;
-          Ioss::NodeBlock *nb = region.get_node_blocks()[0];
-          nb->field_describe(Ioss::Field::TRANSIENT, &fields);
+          Ioss::NodeBlock *nb     = region.get_node_blocks()[0];
+          Ioss::NameList   fields = nb->field_describe(Ioss::Field::TRANSIENT);
           output_names("Nodal", fields, nb);
         }
       }

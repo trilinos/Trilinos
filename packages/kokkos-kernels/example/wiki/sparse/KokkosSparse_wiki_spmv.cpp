@@ -26,7 +26,7 @@ struct check_spmv_functor {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main() {
   Kokkos::initialize();
 
   using device_type = typename Kokkos::Device<

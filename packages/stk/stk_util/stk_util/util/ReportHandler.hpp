@@ -392,16 +392,13 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #define ThrowInvalidArgIf(expr)
 #endif
 
-#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
 #define NGP_ThrowRequireMsg(expr, message)                  \
 do {                                                        \
   if ( !(expr) ) {                                          \
     ThrowMsgDevice(message ": " __FILE__ ":" LINE_STRING);  \
   }                                                         \
 } while(false);
-#elif defined(__HIP_DEVICE_COMPILE__)
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_ThrowRequireMsg(expr, message)
 #else
 #define NGP_ThrowRequireMsg(expr, message)              \
 do {                                                    \
@@ -411,16 +408,13 @@ do {                                                    \
 } while(false);
 #endif
 
-#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
 #define NGP_ThrowRequire(expr)                                 \
 do {                                                           \
   if ( !(expr) ) {                                             \
     ThrowMsgDevice("(" #expr "): " __FILE__ ":" LINE_STRING);  \
   }                                                            \
 } while(false);
-#elif defined(__HIP_DEVICE_COMPILE__)
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_ThrowRequire(expr)
 #else
 #define NGP_ThrowRequire(expr)              \
 do {                                        \
@@ -438,11 +432,8 @@ do {                                        \
 #  define NGP_ThrowAssertMsg(expr,message) NGP_ThrowRequireMsg(expr, message)
 #endif
 
-#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
 #define NGP_ThrowErrorMsgIf(expr, message) NGP_ThrowRequireMsg(!(expr), message);
-#elif defined(__HIP_DEVICE_COMPILE__)
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_ThrowErrorMsgIf(expr, message)
 #else
 #define NGP_ThrowErrorMsgIf(expr, message)                       \
 do {                                                             \
@@ -452,11 +443,8 @@ do {                                                             \
 } while(false);
 #endif
 
-#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
 #define NGP_ThrowErrorIf(expr) NGP_ThrowRequireMsg(!(expr), "!(" #expr ")");
-#elif defined(__HIP_DEVICE_COMPILE__)
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_ThrowErrorIf(expr)
 #else
 #define NGP_ThrowErrorIf(expr)                       \
 do {                                                 \
@@ -466,11 +454,8 @@ do {                                                 \
 } while(false);
 #endif
 
-#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
 #define NGP_ThrowErrorMsg(message) ThrowErrorMsgDevice(message ": " __FILE__ ":" LINE_STRING);
-#elif defined(__HIP_DEVICE_COMPILE__)
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_ThrowErrorMsg(message)
 #else
 #define NGP_ThrowErrorMsg(message) ThrowErrorMsgHost(message, STK_STR_TRACE);
 #endif

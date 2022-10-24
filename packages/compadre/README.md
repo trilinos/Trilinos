@@ -22,18 +22,18 @@ p^{*}& =& \underset{p \in V}{\text{arg min}}\;\frac{1}{2}\sum_{j=1}^N (\lambda_j
 --->
 
 ## Wiki Information
-Details about building and using the Compadre toolkit can be found on the [Wiki](https://github.com/SNLComputation/compadre/wiki).
+Details about building and using the Compadre toolkit can be found on the [Wiki](https://github.com/sandialabs/compadre/wiki).
 
 ## Recent Changes
-[Recent Changes](https://github.com/SNLComputation/compadre/wiki/Changelog)
+[Recent Changes](https://github.com/sandialabs/compadre/wiki/Changelog)
 
 ## Installation
-[Installation of Kokkos and KokkosKernels](https://github.com/SNLComputation/compadre/wiki/Kokkos-and-KokkosKernels) [Either automatically configured and built, or user installation location provided]
+[Installation of Kokkos and KokkosKernels](https://github.com/sandialabs/compadre/wiki/Kokkos-and-KokkosKernels) [Either automatically configured and built, or user installation location provided]
 
-[Installation of Compadre](https://github.com/SNLComputation/compadre/wiki/Building-Compadre)
+[Installation of Compadre](https://github.com/sandialabs/compadre/wiki/Building-Compadre)
 
 ## Documentation and Tutorials
-The toolkit is documented by Doxygen. <b>[Documentation is available online](https://snlcomputation.github.io/compadre/index.html)</b> or can be compiled from source.
+The toolkit is documented by Doxygen. <b>[Documentation is available online](https://sandialabs.github.io/compadre/index.html)</b> or can be compiled from source.
 To compile from source: 1.) install doxygen software on your computer, 2.) execute '>> make doc' after having installed the Compadre Toolkit. HTML and Latex documentation will be generated in the <b>doc/</b> folder, in-source. 
 
 ## Citing the Software
@@ -49,23 +49,23 @@ If you write a paper using results obtained with the help of the Compadre Toolki
   month        = jan, 
   year         = 2019,
   doi          = {10.11578/dc.20190411.1},
-  url          = {https://github.com/SNLComputation/compadre}
+  url          = {https://github.com/sandialabs/compadre}
 }
 ```
 
 If you are using a particular release of the Compadre Toolkit and would like to help others to reproduce your results, please cite that release specifically. A reference to the most recent release is:
 ```
-@software{compadre_toolkit_v1_3_0,
+@software{compadre_toolkit_v1_4_1,
   author       = {Paul Kuberry and
                   Peter Bosler and
                   Nathaniel Trask},
   title        = {Compadre Toolkit},
-  month        = feb,
+  month        = nov,
   year         = 2021,
   publisher    = {Zenodo},
-  version      = {v1.3.0},
-  doi          = {10.5281/zenodo.4499105},
-  url          = {https://doi.org/10.5281/zenodo.4499105}
+  version      = {v1.4.1},
+  doi          = {10.5281/zenodo.5187423},
+  url          = {https://doi.org/10.5281/zenodo.5187423}
 }
 ```
 

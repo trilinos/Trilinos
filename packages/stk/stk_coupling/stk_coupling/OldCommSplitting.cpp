@@ -10,7 +10,6 @@
 #include <stk_util/Version.hpp>
 #include <stk_coupling/Version.hpp>
 #include <stk_coupling/OldCommSplitting.hpp>
-#include <stk_coupling/impl_VersionUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/command_line/CommandLineParser.hpp>
@@ -23,6 +22,7 @@
 #include <limits>
 #include <cctype>
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // delete October 2022
 namespace stk
 {
 namespace coupling
@@ -112,3 +112,5 @@ std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm 
 
 }
 }
+
+#endif

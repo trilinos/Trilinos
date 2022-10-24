@@ -89,6 +89,7 @@ class Plane3 {
   Real & constant() { return m_constant; }
 
   bool intersects_segment(const std::array<Vec<REAL,3>,2> & segment_nodes, REAL & location) const;
+  bool intersects_segment(const Vec<REAL,3>& segment_node0, const Vec<REAL,3>& segment_node1, REAL & location) const;
 
 private:
   Vec<REAL,3>  m_normal;
@@ -105,7 +106,13 @@ std::ostream& operator<<( std::ostream& out, const Plane3<REAL>& plane )
 template<class REAL>
 inline bool Plane3<REAL>::intersects_segment(const std::array<Vec<REAL,3>,2> & segment_nodes, REAL & location) const
 {
-  const Real s[2] = { signed_distance(segment_nodes[0]), signed_distance(segment_nodes[1]) };
+  return intersects_segment(segment_nodes[0], segment_nodes[1], location);
+}
+
+template<class REAL>
+inline bool Plane3<REAL>::intersects_segment(const Vec<REAL,3>& segment_node0, const Vec<REAL,3>& segment_node1, REAL & location) const
+{
+  const Real s[2] = { signed_distance(segment_node0), signed_distance(segment_node1) };
   //
   // Above and below the plane
   // or One end in plane and the other above the plane

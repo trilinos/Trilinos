@@ -86,12 +86,12 @@ checkGlobalError(std::ostream& globalOutputStream,
       Details::gathervPrint(globalOutputStream, lclMsg.str(), comm);
     }
 
-#ifdef HAVE_TEUCHOS_MPI
+#ifdef HAVE_TPETRA_MPI
     (void) MPI_Abort(MPI_COMM_WORLD, -1);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION
       (true, std::runtime_error, "Tpetra reports a global error.");
-#endif // HAVE_TEUCHOS_MPI
+#endif // HAVE_TPETRA_MPI
   }
 }
 

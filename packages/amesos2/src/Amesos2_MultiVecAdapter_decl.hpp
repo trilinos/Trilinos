@@ -175,6 +175,7 @@ namespace Amesos2 {
   template <class MV>
   struct MultiVecAdapter {};
 
+
   /** \brief Factory creation method for MultiVecAdapters
    *
    * Developers should favor this method for creating Amesos2

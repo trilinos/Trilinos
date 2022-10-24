@@ -308,6 +308,7 @@ SET(HEADERS ${HEADERS}
   Kokkos_DynRankView_Fad_Contiguous.hpp
   Kokkos_LayoutContiguous.hpp
   Kokkos_LayoutNatural.hpp
+  Kokkos_View_Fad_Fwd.hpp
   KokkosExp_View_Fad.hpp
   KokkosExp_View_Fad_Contiguous.hpp
   Kokkos_ViewFactory.hpp

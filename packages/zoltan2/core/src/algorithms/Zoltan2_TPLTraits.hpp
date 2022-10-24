@@ -83,7 +83,7 @@ struct TPL_Traits {
     try {
       a = Teuchos::asSafe<first_t, second_t>(b);
     }
-    catch (std::exception &e) {
+    catch (std::exception &) {
       throw std::runtime_error(
        "TPL_Traits:  Value too large for TPL index type. "
        "Rebuild TPL with larger index type or rebuild without the TPL.");

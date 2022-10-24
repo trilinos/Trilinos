@@ -147,17 +147,17 @@ solveBlockMV(const inverse_mv_type& X,
              InverseScalar beta) const
 {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverses_[blockIndex]->getDomainMap()->getNodeNumElements() != X.getLocalLength(),
+      Inverses_[blockIndex]->getDomainMap()->getLocalNumElements() != X.getLocalLength(),
       std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
       "operator and X have incompatible dimensions (" <<
-      Inverses_[blockIndex]->getDomainMap()->getNodeNumElements() << " resp. "
+      Inverses_[blockIndex]->getDomainMap()->getLocalNumElements() << " resp. "
       << X.getLocalLength() << ").  Please report this bug to "
       "the Ifpack2 developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverses_[blockIndex]->getRangeMap()->getNodeNumElements() != Y.getLocalLength(),
+      Inverses_[blockIndex]->getRangeMap()->getLocalNumElements() != Y.getLocalLength(),
       std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
       "operator and Y have incompatible dimensions (" <<
-      Inverses_[blockIndex]->getRangeMap()->getNodeNumElements() << " resp. "
+      Inverses_[blockIndex]->getRangeMap()->getLocalNumElements() << " resp. "
       << Y.getLocalLength() << ").  Please report this bug to "
       "the Ifpack2 developers.");
     Inverses_[blockIndex]->apply(X, Y, mode, alpha, beta);
@@ -507,7 +507,7 @@ extract ()
   Teuchos::Array<InverseScalar> valuesToInsert;
   if(this->scalarsPerRow_ > 1)
   {
-    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getLocalNumCols(), INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
@@ -594,7 +594,7 @@ extract ()
   {
     //get the mapping from point-indexed matrix columns to offsets in blockRows_
     //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
-    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    Array<LO> colToBlockOffset(this->inputMatrix_->getLocalNumCols() * this->bcrsBlockSize_, INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_

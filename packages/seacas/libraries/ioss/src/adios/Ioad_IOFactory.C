@@ -29,7 +29,7 @@ namespace Ioad {
   IOFactory::IOFactory() : Ioss::IOFactory("adios") { Ioss::IOFactory::alias("adios", "adios2"); }
 
   Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                                       MPI_Comm                     communicator,
+                                       Ioss_MPI_Comm                communicator,
                                        const Ioss::PropertyManager &properties) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);

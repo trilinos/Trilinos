@@ -1,0 +1,527 @@
+<!-------- @HEADER
+ !
+ ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !
+ !  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+ !                  Copyright 2012 Sandia Corporation
+ !
+ ! Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ ! the U.S. Government retains certain rights in this software.
+ !
+ ! Redistribution and use in source and binary forms, with or without
+ ! modification, are permitted provided that the following conditions are
+ ! met:
+ !
+ ! 1. Redistributions of source code must retain the above copyright
+ ! notice, this list of conditions and the following disclaimer.
+ !
+ ! 2. Redistributions in binary form must reproduce the above copyright
+ ! notice, this list of conditions and the following disclaimer in the
+ ! documentation and/or other materials provided with the distribution.
+ !
+ ! 3. Neither the name of the Corporation nor the names of the
+ ! contributors may be used to endorse or promote products derived from
+ ! this software without specific prior written permission.
+ !
+ ! THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+ ! EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ ! IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ ! PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+ ! CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ ! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ ! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ ! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ ! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ ! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ !
+ ! Questions? Contact Karen Devine	kddevin@sandia.gov
+ !                    Erik Boman	egboman@sandia.gov
+ !
+ ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ !
+ ! @HEADER
+-------> 
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta NAME="filename" content="Zoltan.html">
+   <meta NAME="review" content="28 May, 1999">
+   <meta NAME="subject" content="Zoltan Home Page">
+   <meta NAME="sandia.approval_type" content="formal">
+   <meta NAME="sandia.approved" content="SAND99-1375">
+   <meta NAME="sandia.create_date" content="05/28/99">
+   <meta NAME="keywords" content="Zoltan, Zoltan Home Page, Zoltan dynamic load balancing library, Zoltan parallel computing">
+   <meta NAME="description" content="Zoltan:  Home Page for the Zoltan Library project at Sandia National Laboratories">
+   <meta NAME="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Zoltan</title>
+
+<!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
+<!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
+<!--------CHANGE THE NAME AFTER THE DASH-------->
+<!--------CHANGE THE FILENAME-------->
+<!--------CHANGE THE REVIEW DATE-------->
+<!--------CHANGE THE SUBJECT-------->
+<link rel="schema.sandia" href="https://www.sandia.gov/html_schema.htm">
+<!--------CHANGE THE SAND NUMBER INFO-------->
+<!--------INSERT THE DATE DOCUMENT CREATED-------->
+<!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
+<link rev="made" title="name of contact" >
+<!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
+<!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
+<!---------------END OF THIS CHANGE AREA--------------->
+</head>
+<body text="#000000">
+<!-- KDD Turned off alternative link colors in template; the >
+<!-- following line was part of the above body command. >
+<!-- link="#003366" vlink="#cc0033" alink="#000000">
+<a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
+<table BORDER=0 valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="160" BGCOLOR="#003366">
+<table BORDER=0 WIDTH="160" valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="160"><!--SANDIA LOGO AT TOP LEFT-->
+<a href="https://www.sandia.gov/Main.html"><img SRC="https://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
+<p><img ISMAP SRC="https://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
+
+<td><img SRC="https://www.sandia.gov/images/1pixel.gif" BORDER=0 height=1 width=10></td>
+</tr>
+</table>
+
+<table BORDER=0 WIDTH="160" valign="top" >
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 0th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan.html">Zoltan
+Home Page</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 1st little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="ug_html/ug.html">Zoltan
+User's Guide</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 2nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="dev_html/dev.html">Zoltan
+Developer's Guide</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 2A-nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_FAQ.html">
+Frequently Asked Questions</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 3rd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_phil.html">Zoltan
+Project Description</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 4th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_pubs.html">Papers
+and Presentations</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 4Ath little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_cite.html">How to Cite Zoltan</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 5th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="https://github.com/sandialabs/Zoltan/releases">Download
+Zoltan</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 6th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_bugreport.html">Report a Zoltan Bug</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 7th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica">
+<a href="mailto: zoltan-dev@software.sandia.gov">Contact Zoltan Developers</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 8th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica">
+<a href="https://www.sandia.gov/general/privacy-security/index.html">Sandia Privacy and Security Notice</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+</table>
+</td>
+
+<td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Parallel Partitioning, Load Balancing and Data-Management Services 
+<p>
+Frequently Asked Questions
+</font></font></b>
+<p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+
+<hr WIDTH="100%">
+<p>
+<ol>
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------  Type questions here; hyperlink to answers below. ---------->
+<!------------  Keep them in the same order!                     ---------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<li>  <a href="#ZOLTANH">How do I upgrade from the Zoltan v1 interface (in
+lbi_const.h) to the current Zoltan interface (in zoltan.h)?
+<li>  <a href="#EMPTYPART">Zoltan's hypergraph partitioner
+is returning empty parts, that is, parts that have zero
+objects in them. Is this a bug?</a>
+<li>  <a href="#MPILEAK">On some platforms, why do Zoltan partitioning 
+methods RCB and RIB use an increasing amount of memory over multiple 
+invocations?</a>
+<li> <a href=#INTELF90">Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?</a>
+<li>  <a href="#MPIRECVLIMIT">During runs (particularly on RedStorm), MPI 
+reports that it is out of resources or too many messages have been posted.
+What does this mean and what can I do?</a>
+<li><a href="#MPIRECVLIMIT2">On very large problems, 
+Zoltan communication routines fail in MPI_Alltoallv.
+Why does this happen and what can I do?</a>
+<li> <a href="#REALLOCBUG">Realloc fails when there is plenty of memory.  Is this a Zoltan bug?</a>
+<li>  <a href="#DEPFILES">What does the following message mean during 
+compilation of <i>zoltan</i>:  
+Makefile:28: mem.d: No such file or directory
+</ol>
+<p>
+<hr WIDTH="100%">
+<hr WIDTH="100%">
+<p>
+<ol>
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------  Type answers here.                         ---------------->
+<!------------  Keep them in the same order as list above! ---------------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<li>  <a NAME="ZOLTANH"></a>How do I upgrade from the Zoltan v1 interface (in
+lbi_const.h) to the current Zoltan interface (in zoltan.h)?
+<p>
+The Zoltan interface was revised in version 1.3 to include "Zoltan" in 
+function names and defined types.  Upgrading to this interface is easy.
+<ul>
+<li>  Include "zoltan.h" instead of "lbi_const.h" in your source files.
+<li>  For most Zoltan functions and constants, prefix "LB_" is replaced 
+by "Zoltan_"; for example, "LB_Set_Param" is now "Zoltan_Set_Param."  
+A few exceptions exist; for example, 
+"LB_Balance" is Zoltan_LB_Balance; "LB_Free_Data" is "Zoltan_LB_Free_Data."
+See the <a href="ug_html/ug_backward.html#Backward v1.3">Release v1.3
+backward compatibility notes</a> for a complete list of name changes.
+<li>  Fortran90 applications should define user-defined data 
+in <i>zoltan_user_data.f90</i> rather than <i>lb_user_const.f90</i>.
+</ul>
+More complete details are in the 
+<a href="ug_html/ug_backward.html#Backward v1.3">Release v1.3
+backward compatibility notes</a>.
+<hr WIDTH="100%">
+<li>  <a NAME="EMPTYPART"></a>Zoltan's hypergraph partitioner
+is returning empty parts, that is, parts that have zero
+objects in them. Is this a bug?
+<p>
+The hypergraph partitioner creates partitions with up to a specified amount
+of load imbalance; the default value is 10% imbalance allowed, but the user
+can tighten the load imbalance.  Any partition that satisfies the load
+imbalance tolerance is a valid partition.  As a secondary goal, the
+hypergraph partitioner attempts to minimize interprocessor communication.
+Having a part with zero weight almost certainly reduces total communication;
+the zero-weight part would not need to communicate with any other part.
+<p>
+So in some cases, Zoltan is generating a valid partition -- one that
+satisfies the imbalance tolerance -- that happens to have lower total
+communication if one of the parts is empty.  This is a good thing, but one
+that some applications don't like because they didn't consider having zero
+weight on a processor.
+<p>
+To try to avoid this problem, lower the imbalance tolerance so that
+the partitioner is more likely to give work to all parts.  Change the value
+of Zoltan parameter
+<a href="ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>
+to a smaller value; e.g., 1.03 to allow only 3% imbalance: <br>
+<a href="ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "IMBALANCE_TOL", "1.03");
+<p>
+As an alternative, you may try one of Zoltan geometric methods, such as 
+<a href="ug_html/ug_alg_rcb.html">RCB</a>,
+<a href="ug_html/ug_alg_rib.html">RIB</a> or
+ <a href="ug_html/ug_alg_hsfc.html">HSFC</a>, which do not have this property.
+<p>
+We may in the future add a parameter to disallow zero-weight parts, but at
+present, we do not have that option.
+
+<hr WIDTH="100%">
+<li>  <a NAME="MPILEAK"></a>On some platforms, why do Zoltan partitioning 
+methods RCB and RIB use an increasing amount of memory over multiple 
+invocations?
+<p>
+Zoltan partitioning methods RCB and RIB use MPI_Comm_dup and MPI_Comm_split 
+to recursively create communicators with subsets of processors.  
+Some implementations of 
+MPI (e.g., the default MPI on Sandia's Thunderbird cluster) do not correctly
+release memory associated with these communicators during MPI_Comm_free,
+resulting in growing memory use over multiple invocations of RCB or RIB.  
+An undocumented workaround in 
+Zoltan is to set the TFLOPS_SPECIAL parameter to 1 (e.g., 
+<a href="ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>(zz,"TFLOPS_SPECIAL","1");), which causes an 
+implementation that doesn't use MPI_Comm_split to be invoked.
+
+<hr WIDTH="100%">
+<li> <a NAME=INTELF90"></a>Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?
+<p>
+There is a bug in some versions of Intel's F90 compiler.  We know
+Zoltan's Fortran interface compiles with Intel's F90 compiler versions
+10.1.015 through 11.1.056.  We know that it does not compile with
+versions 11.1.059, 11.1.069 and 11.1.072.  We reported the problem to 
+Intel, and we are told that the compiler bug is fixed in version 11.1 update 7,
+which is scheduled for release in August 2010.  See this 
+<a href="https://software.intel.com/en-us/forums/showthread.php?t=75385">Intel 
+Forum link</a> for more details.
+
+<hr WIDTH="100%">
+<li><a NAME="MPIRECVLIMIT"></a>During runs (particularly on RedStorm), MPI 
+reports that it is out of resources or too many messages have been posted.
+What does this mean and what can I do?
+<p>          
+Some implementations of MPI (including RedStorm's implementation) limit
+the number of message receives that can be posted simultaneously.  Some
+communications in Zoltan (including hashing of IDs to processors in the
+Zoltan Distributed Data Directory) can require messages from large numbers
+of processors, triggering this error on certain platforms. 
+<p>
+To avoid this problem, Zoltan contains logic to use AllToAll communication 
+instead of point-to-point communication when a large number
+of receives are needed.  The maximum number of simultaneous receives allowed
+can be set as a compile-time option to Zoltan.
+In the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
+environment</a>, option <i>--enable-mpi-recv-limit=#</i> sets the 
+maximum number of simultaneous receives allowed.  The default value is 4.
+
+<hr WIDTH="100%">
+<li><a NAME="MPIRECVLIMIT2"></a>On very large problems, 
+Zoltan communication routines fail in MPI_Alltoallv.
+Why does this happen and what can I do?
+<p>
+For very large problems, the values in the displacement arrays needed
+by MPI_Alltoallv can exceed INT_MAX (the largest integer that can be stored
+in 32 bits).  The solution to this problem is to make Zoltan avoid using
+MPI_Alltoallv and, instead, use point-to-point sends and receives.  The 
+compile-time option 
+in the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
+environment</a> is <i>--enable-mpi-recv-limit=0</i>.
+
+
+<hr WIDTH="100%">
+<li> <a NAME="REALLOCBUG"></a>Realloc fails when there is plenty of memory.  Is this a Zoltan bug?
+<p>
+This problem has been noted on different Linux clusters running parallel
+applications using different MPI libraries and C++ libraries.  
+Realloc fails where a malloc call will succeed.  The source of the error has
+not been identified, but it is not a Zoltan bug.  The
+solution is to compile Zoltan with the flag <b>-DREALLOC_BUG</b>.  
+Zoltan will replace
+every realloc call with malloc followed by a memcpy and a free.
+
+<hr WIDTH="100%">
+<li>  <a NAME="DEPFILES"></a>What does the following message mean during
+compilation of Zoltan?<br>
+Makefile:28: mem.d: No such file or directory</blockquote>
+<p>
+In the old "manual" build system for Zoltan, dependency files were
+generated for each source file <i>filename</i>.c.  The first time Zoltan 
+was built for a given platform, the dependency files do not exist.  
+After producing this
+warning, gmake created the dependency files it needed and continued
+compilation.
+<p>
+Newer versions of Zoltan use autotools or cmake for builds and, thus, do
+not produce this warning.  
+</ol>
+
+<p>
+<hr WIDTH="100%">
+Updated:  August 2, 2010
+
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+Copyright (c) 2000-2012, Sandia National Laboratories. <br>
+<hr WIDTH="100%">
+
+<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
+</tr>
+</table>
+
+<hr width="100%">
+<table BORDER=0 WIDTH="100%" >
+<tr ALIGN=CENTER>
+<td VALIGN=TOP WIDTH="140">
+<table BORDER=0 WIDTH="140" >
+<tr>
+<td ALIGN=CENTER VALIGN=TOP WIDTH="120"></td>
+
+<td WIDTH="20"></td>
+</tr>
+</table>
+</td>
+
+<td ALIGN=CENTER VALIGN=TOP WIDTH="100%"></td>
+</tr>
+</table>
+<!--Image maps below-->
+<map NAME="shortMap">
+<area shape="rect" coords="2,2,108,14"href="https://www.sandia.gov/about/index.html"></area>
+<area shape="rect" coords="2,19,108,31"href="https://www.sandia.gov/mission/ste/index.html"></area>
+<area shape="rect" coords="2,36,108,48"href="https://www.sandia.gov/mission/index.html"></area>
+<area shape="rect" coords="2,53,108,65"href="https://www.sandia.gov/contact-us/index.html"></area>
+<area shape="rect" coords="2,70,108,82"href="https://www.sandia.gov/news/index.html"></area>
+<area shape="rect" coords="2,87,108,99"href="https://www.sandia.gov/search/index.html"></area>
+<area shape="rect" coords="2,104,108,116"href="https://www.sandia.gov/Main.html"></area>
+</map>
+<!----------------THIS IS A CHANGE AREA---------------->
+<!----NAME AND DATE OF LAST REVISION SHOULD BE HERE---->
+<!---------------END OF THIS CHANGE AREA--------------->
+</body>
+</html>

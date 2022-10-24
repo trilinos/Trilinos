@@ -62,7 +62,7 @@
 
 #include <limits>
 
-class NgpMeshTest : public stk::mesh::fixtures::TestHexFixture
+class NgpMeshTest : public stk::mesh::fixtures::simple_fields::TestHexFixture
 {
 public:
   void run_get_nodes_using_FastMeshIndex_test()
@@ -88,7 +88,7 @@ TEST_F(NgpMeshTest, get_nodes_using_FastMeshIndex)
   run_get_nodes_using_FastMeshIndex_test();
 }
 
-class NgpMeshRankLimit : public stk::mesh::fixtures::TestHexFixture {};
+class NgpMeshRankLimit : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
 
 TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
 {
@@ -105,7 +105,7 @@ TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
   }
 }
 
-class EntityIndexSpace : public stk::mesh::fixtures::TestHexFixture {};
+class EntityIndexSpace : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
 
 TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
 {

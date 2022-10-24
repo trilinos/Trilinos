@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef skinner_SystemInterface_h
-#define skinner_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <iosfwd>            // for ostream
@@ -56,4 +55,3 @@ namespace Skinner {
     bool        blocks_{false};
   };
 } // namespace Skinner
-#endif

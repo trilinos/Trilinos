@@ -121,7 +121,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
   graph_overlap.doImport(graph, imp, Tpetra::ADD);
 
 
-  face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
+  face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getLocalNumElements());
   auto face_to_elem_h = Kokkos::create_mirror_view(face_to_elem_);
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)

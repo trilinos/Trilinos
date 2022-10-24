@@ -119,15 +119,16 @@ public:
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
-    Teuchos::ArrayRCP<const size_t> rowptr;
-    Teuchos::ArrayRCP<const local_ordinal_type> colidx;
-    Teuchos::ArrayRCP<const scalar_type> val;
-    T_in.getAllValues(rowptr, colidx, val);
+    auto rowptr = T_in.getLocalRowPtrsHost();
+    auto colidx = T_in.getLocalIndicesHost();
+    auto val = T_in.getLocalValuesHost(Tpetra::Access::ReadOnly);
     Kokkos::fence();
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
-                           rowptr.getRawPtr(), colidx.getRawPtr(), val.getRawPtr(),
+                           rowptr.data(), colidx.data(), 
+                           // For std/Kokkos::complex.
+                           reinterpret_cast<const scalar_type*>(val.data()),
                            transpose_, conjugate_),
       HtsCrsMatrixDeleter());
 
@@ -419,7 +420,7 @@ initialize ()
                                          lclRowMap,
                                          lclColMap,
                                          ignoreMapsForTriStructure);
-    const LO lclNumRows = lclRowMap.getNodeNumElements ();
+    const LO lclNumRows = lclRowMap.getLocalNumElements ();
     this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
     this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
       (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
@@ -464,8 +465,8 @@ initialize ()
     {
       // Reverse row map
       auto rowMap = A_->getRowMap();
-      auto numElems = rowMap->getNodeNumElements();
-      auto rowElems = rowMap->getNodeElementList();
+      auto numElems = rowMap->getLocalNumElements();
+      auto rowElems = rowMap->getLocalElementList();
 
       Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
       for (size_t i = 0; i < numElems; i++)
@@ -476,8 +477,8 @@ initialize ()
     {
       // Reverse column map
       auto colMap = A_->getColMap();
-      auto numElems = colMap->getNodeNumElements();
-      auto colElems = colMap->getNodeElementList();
+      auto numElems = colMap->getLocalNumElements();
+      auto colElems = colMap->getLocalElementList();
 
       Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
       for (size_t i = 0; i < numElems; i++)
@@ -501,7 +502,7 @@ initialize ()
                                          newRowMap->getLocalMap (),
                                          newColMap->getLocalMap (),
                                          ignoreMapsForTriStructure);
-    const LO newLclNumRows = newRowMap->getNodeNumElements ();
+    const LO newLclNumRows = newRowMap->getLocalNumElements ();
     this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
     this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
       (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
@@ -557,6 +558,7 @@ compute ()
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
 
+  if (! isComputed_) {//Only compute if not computed before
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
 
@@ -589,6 +591,7 @@ compute ()
 
   isComputed_ = true;
   ++numCompute_;
+  }
 }
 
 template<class MatrixType>
@@ -713,7 +716,7 @@ localTriangularSolve (const MV& Y,
     (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
      "X and Y must be constant stride.");
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    ( A_crs_->getNodeNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
+    ( A_crs_->getLocalNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
       "The matrix is neither upper triangular or lower triangular.  "
       "You may only call this method if the matrix is triangular.  "
       "Remember that this is a local (per MPI process) property, and that "
@@ -886,15 +889,14 @@ description () const
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
+    os << "Matrix dimensions: ["
        << A_->getGlobalNumRows () << ", "
-       << A_->getGlobalNumCols () << "]";
+       << A_->getGlobalNumCols () << "]"
+       << ", Number of nonzeros: " << A_->getGlobalNumEntries();
   }
 
   if (Teuchos::nonnull (htsImpl_))
     os << ", HTS computed: " << (htsImpl_->isComputed () ? "true" : "false");
-
   os << "}";
   return os.str ();
 }
@@ -976,10 +978,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     // Check in serial or one-process mode if the matrix is square.
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.is_null () && A->getComm ()->getSize () == 1 &&
-       A->getNodeNumRows () != A->getNodeNumCols (),
+       A->getLocalNumRows () != A->getLocalNumCols (),
        std::runtime_error, prefix << "If A's communicator only contains one "
        "process, then A must be square.  Instead, you provided a matrix A with "
-       << A->getNodeNumRows () << " rows and " << A->getNodeNumCols ()
+       << A->getLocalNumRows () << " rows and " << A->getLocalNumCols ()
        << " columns.");
 
     // It's legal for A to be null; in that case, you may not call

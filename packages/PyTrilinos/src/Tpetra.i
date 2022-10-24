@@ -1477,7 +1477,9 @@ public:
 // Concrete scalar types for Tpetra classes //
 //////////////////////////////////////////////
 %tpetra_scalars(int       , int   )
+#ifdef HAVE_PYTRILINOS_TPETRA_INST_INT_LONG_LONG
 %tpetra_scalars(long long , long  )
+#endif
 %tpetra_scalars(double    , double)
 
 /////////////////////////////////////////////////////

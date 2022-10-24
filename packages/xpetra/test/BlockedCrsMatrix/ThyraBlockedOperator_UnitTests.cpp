@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
   const Teuchos::RCP<const MapClass> thMap = MapUtilsClass::shrinkMapGIDs(*map,*map);
 
   TEST_EQUALITY(thMap->getGlobalNumElements() , Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
-  TEST_EQUALITY(thMap->getNodeNumElements() , 10);
+  TEST_EQUALITY(thMap->getLocalNumElements() , 10);
   TEST_EQUALITY(thMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(thMap->getMaxLocalIndex(), 9);
   TEST_EQUALITY(thMap->getMinGlobalIndex(), comm->getRank() * 10);
@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
 
   TEST_EQUALITY(thMap2->getMinGlobalIndex() , std::max(0,comm->getRank() * 10 - 3));
   TEST_EQUALITY(thMap2->getMaxGlobalIndex() , comm->getRank() * 10 + 9);
-  TEST_EQUALITY(thMap2->getNodeNumElements() , (comm->getRank() > 0) ? 13 : 10 );
+  TEST_EQUALITY(thMap2->getLocalNumElements() , (comm->getRank() > 0) ? 13 : 10 );
   TEST_EQUALITY(thMap2->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(thMap2->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
   TEST_EQUALITY(thMap2->getGlobalNumElements() , Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 13 - 3));
@@ -257,8 +257,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
                Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
 
-  LO NumMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+  LO NumMyElements = map->getLocalNumElements();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList();
 
   for (LO i = 0; i < NumMyElements; ++i) {
       matrix->insertGlobalValues(MyGlobalElements[i],
@@ -273,16 +273,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
       Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(matrix);
 
   // transform Thyra operator 2 Xpetra::CrsMatrix
-  Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
+  Teuchos::RCP<const Xpetra::Matrix<Scalar, LO, GO, Node> > xMat =
       Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(thyraOp);
+  Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
+    Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> >(xMat)->getCrsMatrix();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xCrsMat));
 
   TEST_EQUALITY(xCrsMat->getFrobeniusNorm()   ,matrix->getFrobeniusNorm());
   TEST_EQUALITY(xCrsMat->getGlobalNumRows()   ,matrix->getGlobalNumRows());
   TEST_EQUALITY(xCrsMat->getGlobalNumCols()   ,matrix->getGlobalNumCols());
-  TEST_EQUALITY(xCrsMat->getNodeNumRows()     ,matrix->getNodeNumRows()  );
+  TEST_EQUALITY(xCrsMat->getLocalNumRows()     ,matrix->getLocalNumRows()  );
   TEST_EQUALITY(xCrsMat->getGlobalNumEntries(),matrix->getGlobalNumEntries());
-  TEST_EQUALITY(xCrsMat->getNodeNumEntries()  ,matrix->getNodeNumEntries());
+  TEST_EQUALITY(xCrsMat->getLocalNumEntries()  ,matrix->getLocalNumEntries());
 
 #endif
 }
@@ -310,7 +312,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraBlockedOperator2Xp
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getLocalNumElements()); i++)
   {
     // loop over all local ids in pointmap
 
@@ -418,7 +420,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getLocalNumElements()); i++)
   {
     // loop over all local ids in pointmap
 
@@ -509,9 +511,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(bOp2));
   TEST_EQUALITY(bOp2->getGlobalNumRows(),bOp->getGlobalNumRows());
   TEST_EQUALITY(bOp2->getGlobalNumCols(),bOp->getGlobalNumCols());
-  TEST_EQUALITY(bOp2->getNodeNumRows(),bOp->getNodeNumRows());
+  TEST_EQUALITY(bOp2->getLocalNumRows(),bOp->getLocalNumRows());
   TEST_EQUALITY(bOp2->getGlobalNumEntries(),bOp->getGlobalNumEntries());
-  TEST_EQUALITY(bOp2->getNodeNumEntries(),bOp->getNodeNumEntries());
+  TEST_EQUALITY(bOp2->getLocalNumEntries(),bOp->getLocalNumEntries());
   TEST_EQUALITY(bOp2->isFillComplete(),bOp->isFillComplete());
   TEST_EQUALITY(bOp2->getRangeMapExtractor()->getThyraMode(),false);
   TEST_EQUALITY(bOp2->getDomainMapExtractor()->getThyraMode(),false);
@@ -551,9 +553,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
   GO nEle = 63;
   const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-  LO NumMyElements = map->getNodeNumElements();
+  LO NumMyElements = map->getLocalNumElements();
   GO NumGlobalElements = map->getGlobalNumElements();
-  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList();
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
       Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
@@ -888,9 +890,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
   GO nEle = 63;
   const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-  LO NumMyElements = map->getNodeNumElements();
+  LO NumMyElements = map->getLocalNumElements();
   GO NumGlobalElements = map->getGlobalNumElements();
-  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList();
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
       Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
@@ -978,10 +980,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
   TEST_EQUALITY(bMat->getMatrix(1,0)->getGlobalNumEntries(),bMat2->getMatrix(1,0)->getGlobalNumEntries());
   TEST_EQUALITY(bMat->getMatrix(1,1)->getGlobalNumEntries(),bMat2->getMatrix(1,1)->getGlobalNumEntries());
 
-  TEST_EQUALITY(bMat->getMatrix(0,0)->getNodeNumEntries(),bMat2->getMatrix(0,0)->getNodeNumEntries());
-  TEST_EQUALITY(bMat->getMatrix(0,1)->getNodeNumEntries(),bMat2->getMatrix(0,1)->getNodeNumEntries());
-  TEST_EQUALITY(bMat->getMatrix(1,0)->getNodeNumEntries(),bMat2->getMatrix(1,0)->getNodeNumEntries());
-  TEST_EQUALITY(bMat->getMatrix(1,1)->getNodeNumEntries(),bMat2->getMatrix(1,1)->getNodeNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getLocalNumEntries(),bMat2->getMatrix(0,0)->getLocalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getLocalNumEntries(),bMat2->getMatrix(0,1)->getLocalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,0)->getLocalNumEntries(),bMat2->getMatrix(1,0)->getLocalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getLocalNumEntries(),bMat2->getMatrix(1,1)->getLocalNumEntries());
 
   TEST_EQUALITY(bMat->getMatrix(0,0)->getFrobeniusNorm(),bMat2->getMatrix(0,0)->getFrobeniusNorm());
   TEST_EQUALITY(bMat->getMatrix(0,1)->getFrobeniusNorm(),bMat2->getMatrix(0,1)->getFrobeniusNorm());

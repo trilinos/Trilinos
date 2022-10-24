@@ -61,17 +61,17 @@ namespace FROSch {
             // Set the LevelID in the sublist
             parameterList->sublist("IPOUHarmonicCoarseOperator").set("Level ID",this->LevelID_);
             //                FROSCH_ASSERT(false,"not implemented for block.");
-            this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",true);
+            // this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",true);
             CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"IPOUHarmonicCoarseOperator")));
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
-            this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",true);
+            // this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",true);
             CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("RGDSWCoarseOperator").set("Level ID",this->LevelID_);
-            this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",true);
+            // this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",true);
             CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         } else {
             FROSCH_ASSERT(false,"CoarseOperator Type unkown.");
@@ -163,13 +163,13 @@ namespace FROSch {
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
-                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getNodeNumElements());
+                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getLocalNumElements());
             }
-            #ifdef FindOneEntryOnlyRowsGlobal_Matrix
+#ifdef FindOneEntryOnlyRowsGlobal_Matrix
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
-            #else
+#else
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap);
-            #endif
+#endif
             for (UN i=0; i<dirichletBoundaryDofs.size(); i++) {
                 LO subNumber = -1;
                 for (UN j = dofsMapsVec.size(); j > 0 ; j--) {
@@ -206,17 +206,19 @@ namespace FROSch {
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Laplace")) {
-                nullSpaceBasisVec.resize(1);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec.resize(nmbBlocks);
+                for (UN i = 0; i < nmbBlocks; i++) {                
+                    nullSpaceBasisVec[i] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[i],dofsMapsVec[i]);
+                }
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Linear Elasticity")) {
                 nullSpaceBasisVec.resize(repeatedMapVec.size());
                 for (int i = 0; i<repeatedMapVec.size(); i++) {
-                    nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
+                    nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMap,dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
                 }
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Stokes")) {
                 nullSpaceBasisVec.resize(2);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
-                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
+                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[1],dofsMapsVec[1]);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
             } else {
@@ -324,7 +326,7 @@ namespace FROSch {
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
-                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getNodeNumElements());
+                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getLocalNumElements());
             }
 #ifdef FindOneEntryOnlyRowsGlobal_Matrix
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
@@ -368,17 +370,20 @@ namespace FROSch {
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Laplace")) {
-                nullSpaceBasisVec.resize(1);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec.resize(nmbBlocks);
+                for (UN i = 0; i < nmbBlocks; i++) {
+                    // Todo: For now we have to use repeatedMap as the map for the vectors, such that the offsets are consistent with dofsMapsVec[i]. This would not be the case for repeatedMapVec[i]. However, it would be sufficient to use repeatedMapVec[i] with an offset instead
+                    nullSpaceBasisVec[i] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[i],dofsMapsVec[i]);
+                }
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Linear Elasticity")) {
                 nullSpaceBasisVec.resize(repeatedMapVec.size());
                 for (int i = 0; i<repeatedMapVec.size(); i++) {
-                    nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
+                    nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMap,dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
                 }
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Stokes")) {
                 nullSpaceBasisVec.resize(2);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
-                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
+                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNodeVec[1],dofsMapsVec[1]);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
             } else {

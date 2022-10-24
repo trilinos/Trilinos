@@ -54,74 +54,30 @@
 
 namespace MueLu {
 
-  namespace { // anonymous
-
-    template<class LocalOrdinal, class RowType>
-    class MaxNumRowEntriesFunctor {
-    public:
-      MaxNumRowEntriesFunctor(RowType rowPointers) : rowPointers_(rowPointers) { }
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const LocalOrdinal i, size_t& maxLength) const {
-        size_t d = rowPointers_(i+1) - rowPointers_(i);
-
-        maxLength = (d > maxLength ? d : maxLength);
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void join(volatile size_t& dest, const volatile size_t& src) {
-        dest = (dest > src ? dest : src);
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void init(size_t& initValue) {
-        initValue = 0;
-      }
-
-    private:
-      RowType rowPointers_;
-    };
-
-  }
-
-  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  LWGraph_kokkos(const local_graph_type&    graph,
-                 const RCP<const map_type>& domainMap,
-                 const RCP<const map_type>& importMap,
-                 const std::string&         objectLabel)
-    : graph_(graph), domainMap_(domainMap), importMap_(importMap), objectLabel_(objectLabel)
-  {
-    minLocalIndex_ = domainMap_->getMinLocalIndex();
-    maxLocalIndex_ = domainMap_->getMaxLocalIndex();
-
-    MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
-  }
-
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
 
     if (verbLevel & Debug) {
+      auto graph = lclLWGraph_.getGraph();
       RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
       int mypid = col_map->getComm()->getRank();
 
       {
       std::ostringstream ss;
-      ss << "[pid " << mypid << "] num entries=" << graph_.entries.size();
+      ss << "[pid " << mypid << "] num entries=" << graph.entries.size();
       out << ss.str() << std::endl;
       }
 
-      const size_t numRows = graph_.numRows();
-      auto rowPtrs = graph_.row_map;
-      auto columns = graph_.entries;
+      const size_t numRows = graph.numRows();
+      auto rowPtrs = graph.row_map;
+      auto columns = graph.entries;
       for (size_t i=0; i < numRows; ++i) {
         std::ostringstream ss;
         ss << "[pid " << mypid << "] row " << domainMap_->getGlobalElement(i) << ":";
         ss << " (numEntries=" << rowPtrs(i+1)-rowPtrs(i) << ")";
 
-        auto rowView = graph_.rowConst(i);
+        auto rowView = graph.rowConst(i);
         for (LO j = 0; j < rowView.length; j++) {
           ss << " " << col_map->getGlobalElement(rowView.colidx(j));
         }

@@ -135,7 +135,7 @@ const RCP<Thyra::LinearOpBase<ST> > buildSystem(const Teuchos::RCP<const Teuchos
    GO iTemp[] = {-1,0,1}, indices[3];
    ST * vPtr;
    GO * iPtr;
-   for(size_t i=0;i<map->getNodeNumElements();i++) {
+   for(size_t i=0;i<map->getLocalNumElements();i++) {
       int count = 3;
       GO gid = map->getGlobalElement(i);
 

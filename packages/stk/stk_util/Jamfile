@@ -55,11 +55,13 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
+    <define>STK_HIDE_DEPRECATED_CODE
     <define>STK_BUILT_IN_SIERRA
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <target-os>darwin:<define>_GNU_SOURCE=1
     <include>$(stk_util-root-inc)
   : usage-requirements
+    <define>STK_HIDE_DEPRECATED_CODE
     <define>STK_BUILT_IN_SIERRA
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <include>$(stk_util-root-inc)

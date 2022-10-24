@@ -3,7 +3,7 @@ SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MixedScalarMultiplyOp_UnitTests
   SOURCES
-    MixedScalarMultiplyOp_UnitTests
+    MixedScalarMultiplyOp_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi

@@ -138,7 +138,7 @@ public:
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    */
 
@@ -171,7 +171,7 @@ public:
    *
    *  By vertex:
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    *
    *  Then by vertex neighbor:
@@ -200,16 +200,16 @@ public:
 
   // TODO:  Assuming rows == objects; 
   // TODO:  Need to add option for columns or nonzeros?
-  size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
+  size_t getLocalNumVertices() const { return graph_->getLocalNumRows(); }
 
   void getVertexIDsView(const gno_t *&ids) const 
   {
     ids = NULL;
     if (getLocalNumVertices())
-      ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
+      ids = graph_->getRowMap()->getLocalElementList().getRawPtr();
   }
 
-  size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
+  size_t getLocalNumEdges() const { return graph_->getLocalNumEntries(); }
 
   void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
@@ -305,8 +305,8 @@ template <typename User, typename UserCoord>
   Z2_FORWARD_EXCEPTIONS
 
   comm_ = graph_->getComm();
-  size_t nvtx = graph_->getNodeNumRows();
-  size_t nedges = graph_->getNodeNumEntries();
+  size_t nvtx = graph_->getLocalNumRows();
+  size_t nedges = graph_->getLocalNumEntries();
 
   // Unfortunately we have to copy the offsets and edge Ids
   // because edge Ids are not usually stored in vertex id order.

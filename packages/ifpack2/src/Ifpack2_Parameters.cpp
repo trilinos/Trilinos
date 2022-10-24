@@ -79,6 +79,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
+  params.set("chebyshev: use native spmv", false);
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
@@ -132,6 +133,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: banded container superdiagonals", -1);
   params.set("relaxation: banded container subdiagonals", -1);
   params.set("relaxation: mtgs cluster size", 1);
+  params.set("relaxation: mtgs coloring algorithm", "Default");
   params.set("relaxation: long row threshold", 0);
 
   // Ifpack2_SPARSKIT.cpp

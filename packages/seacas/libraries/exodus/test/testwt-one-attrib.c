@@ -24,7 +24,7 @@ int main(int argc, char **argv)
   float  version;
   float *attrib;
   float  x[100], y[100], z[100];
-  char * coord_names[3];
+  char  *coord_names[3];
 
   /* Coordinate Frames */
   int   cf_ids[2]        = {20, 13};

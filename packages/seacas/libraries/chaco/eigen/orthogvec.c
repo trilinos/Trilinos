@@ -12,7 +12,7 @@ void orthogvec(double *vec1,     /* vector to be orthogonalized */
 )
 {
   double alpha;
-  double dot();
+  double dot(double *vec1, int beg, int end, double *vec2);
   void   scadd();
 
   alpha = -dot(vec1, beg, end, vec2) / dot(vec2, beg, end, vec2);
@@ -25,7 +25,7 @@ void orthogvec_float(float *vec1,      /* vector to be orthogonalized */
 )
 {
   float  alpha;
-  double dot_float();
+  double dot_float(float *vec1, int beg, int end, float *vec2);
   void   scadd_float();
 
   alpha = -dot_float(vec1, beg, end, vec2) / dot_float(vec2, beg, end, vec2);

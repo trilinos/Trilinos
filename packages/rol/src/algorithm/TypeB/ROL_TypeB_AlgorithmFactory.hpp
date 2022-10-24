@@ -52,8 +52,10 @@
 #include "ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp"
 #include "ROL_TypeB_KelleySachsAlgorithm.hpp"
 #include "ROL_TypeB_SpectralGradientAlgorithm.hpp"
+#include "ROL_TypeB_LSecantBAlgorithm.hpp"
 #include "ROL_TypeB_QuasiNewtonAlgorithm.hpp"
 #include "ROL_TypeB_TrustRegionSPGAlgorithm.hpp"
+#include "ROL_TypeB_ColemanLiAlgorithm.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -143,25 +145,38 @@ inline EAlgorithmB StringToEAlgorithmB(std::string s) {
 template<typename Real>
 inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
   EAlgorithmB ealg = StringToEAlgorithmB(parlist.sublist("Step").get("Type","Trust Region"));
-  std::string desc
-    = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
-  std::string trmod
-    = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
   switch(ealg) {
     case ALGORITHM_B_LINESEARCH:
+    {
+      std::string desc
+        = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<NewtonKrylovAlgorithm<Real>>(parlist);
-      else if (desc=="Quasi-Newton Method")
-        return makePtr<QuasiNewtonAlgorithm<Real>>(parlist);
-      else
+      else if (desc=="Quasi-Newton Method") {
+        std::string method
+          = parlist.sublist("Step").sublist("Line Search").sublist("Quasi-Newton").get("Method","L-Secant-B");
+        if (method == "L-Secant-B")
+          return makePtr<LSecantBAlgorithm<Real>>(parlist);    // Similar to L-BFGS-B
+        else
+          return makePtr<QuasiNewtonAlgorithm<Real>>(parlist); // PQN
+      }
+      else {
         return makePtr<GradientAlgorithm<Real>>(parlist);
+      }
+    }
     case ALGORITHM_B_TRUSTREGION:
+    {
+      std::string trmod
+        = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
       if (trmod=="Kelley-Sachs")
         return makePtr<KelleySachsAlgorithm<Real>>(parlist);
       else if (trmod=="SPG")
         return makePtr<TrustRegionSPGAlgorithm<Real>>(parlist);
+      else if (trmod=="Coleman-Li")
+        return makePtr<ColemanLiAlgorithm<Real>>(parlist);
       else
         return makePtr<LinMoreAlgorithm<Real>>(parlist);
+    }
     case ALGORITHM_B_MOREAUYOSIDA:        return makePtr<MoreauYosidaAlgorithm<Real>>(parlist);
     case ALGORITHM_B_PRIMALDUALACTIVESET: return makePtr<PrimalDualActiveSetAlgorithm<Real>>(parlist);
     case ALGORITHM_B_INTERIORPOINT:       return makePtr<InteriorPointAlgorithm<Real>>(parlist);

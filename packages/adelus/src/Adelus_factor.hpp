@@ -54,7 +54,6 @@
 
 #include "Adelus_defines.h"
 #include "Adelus_macros.h"
-#include "Adelus_pcomm.hpp"
 #include "Adelus_mytime.hpp"
 
 #include "Kokkos_Core.hpp"
@@ -63,21 +62,7 @@
 #include "KokkosBlas1_iamax.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
-extern int myrow;
-extern int mycol;
-extern int me;	               // processor id information
-extern int nprocs_row;         // num of procs to which a row is assigned
-extern int nprocs_col;         // num of procs to which a col is assigned
-extern int nrows_matrix;       // number of rows in the matrix
-extern int ncols_matrix;       // number of cols in the matrix
-extern int my_rows;            // num of rows I own
-extern int my_cols;            // num of cols I own
-extern int my_rhs;             // num of right hand side I own
-extern int blksz;              // block size for BLAS 3 operations
-
 #define LUSTATUSINT 64
-
-extern MPI_Comm col_comm;
 
 //  Message tags
 #define LUPIVOTTYPE (1<<13)
@@ -92,23 +77,45 @@ extern MPI_Comm col_comm;
 
 namespace Adelus {
 
-template<class ZDView, class ViewType1D, class ViewType2D, class ViewIntType1D>
+template<class HandleType,
+         class ZDView,
+         class ViewType1D,
+         class ViewType2D,
+         class PViewType>
 inline
-void factor(ZDView& ZV,                    // matrix and rhs
+void factor(HandleType& ahandle,           // handle containg metadata
+            ZDView&     ZV,                // matrix and rhs
             ViewType2D& col1_view,         // col used for updating a col
             ViewType2D& row1_view,         // diagonal row
             ViewType1D& row2_view,         // pivot row
             ViewType1D& row3_view,         // temporary vector for rows
-            ViewIntType1D& pivot_vec_view) // vector storing list of pivot rows
+            PViewType&  pivot_vec_view,    // vector storing list of pivot rows
+            int         nrhs,              // total num of RHS (note: set to 0 if factoring matrix only)
+            int         my_rhs)            // num of RHS I own (note: set to 0 if factoring matrix only)
 {
-  typedef typename ZDView::value_type value_type;
+  using value_type = typename ZDView::value_type;
+  using pival_type = typename PViewType::value_type;
 #ifdef PRINT_STATUS
-  typedef typename ZDView::device_type::execution_space execution_space;
-  typedef typename ZDView::device_type::memory_space memory_space;
+  using execution_space = typename ZDView::device_type::execution_space;
+  using memory_space    = typename ZDView::device_type::memory_space;
 #endif
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View1DHostPinnType;//CudaHostPinnedSpace
+#ifdef ADELUS_HOST_PINNED_MEM_MPI
+#if defined(KOKKOS_ENABLE_CUDA)
+  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
+#elif defined(KOKKOS_ENABLE_HIP)
+  using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
+#endif
+
+  MPI_Comm comm     = ahandle.get_comm();
+  MPI_Comm col_comm = ahandle.get_col_comm();
+  int me            = ahandle.get_myrank();
+  int nprocs_row    = ahandle.get_nprocs_row();
+  int nprocs_col    = ahandle.get_nprocs_col();
+  int ncols_matrix  = ahandle.get_ncols_matrix();
+  int my_rows       = ahandle.get_my_rows();
+  int my_cols       = ahandle.get_my_cols();
+  int blksz         = ahandle.get_blksz();
   
   int j,k;               // loop counters
 
@@ -136,6 +143,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   int cur_col_i, cur_col_j, cur_row_i, cur_row_j, act_col_i, act_row_j, update_i, update_j;
   int sav_col_i, sav_col_j, sav_piv_row_i, sav_piv_row_j, act_piv_row_i, piv_row_i;
   int cur_col1_row_i, piv_col1_row_i;
+  int sav_pivot_vec_i;
 
   int ringdist,rdist;
   long type,bytes;
@@ -163,7 +171,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   double t1,t2;
   double msgtime,copytime,dgemmtime,totalfactortime;
   double iamaxtime,getlocalpivtime,localpivtime;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   double copyhostpinnedtime;
 #endif
 #endif
@@ -173,13 +181,13 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
   // Distribution for the matrix on me
 
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  MPI_Comm_size(comm,&numprocs);
   if ( (numprocs/nprocs_row) * nprocs_row != numprocs ) {
      if (me == 0) {
        printf("nprocs_row must go into numprocs perfectly!\n");
        printf("Try a different value of nprocs_row.\n");
      }
-     MPI_Barrier(MPI_COMM_WORLD);
+     MPI_Barrier(comm);
      exit(0);
   }
 
@@ -213,12 +221,14 @@ void factor(ZDView& ZV,                    // matrix and rhs
   sav_piv_row_i=0; sav_piv_row_j=0; // location for next row being saved for gemm update
   update_i=0; update_j=0;           // location of remaining local matrix
 
+  sav_pivot_vec_i = 0;              // location to store name of pivot row
+
 #ifdef GET_TIMING
   xpivmsgtime=bcastpivstime=bcastpivrtime=bcastcolstime=bcastcolrtime=bcastrowtime=sendrowtime=recvrowtime=0.0;
   copycoltime=copyrowtime=copyrow1time=copypivrowtime=copypivrow1time=pivotswaptime=0.0;
   updatetime=colupdtime=rowupdtime=scaltime=0.0;
   iamaxtime=getlocalpivtime=localpivtime=0.0;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
   copyhostpinnedtime=0.0;
 #endif
 #endif
@@ -234,7 +244,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   }
 #endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
   View1DHostPinnType h_coltmp( "h_coltmp", my_rows );
   View1DHostPinnType h_row2  ( "h_row2",   my_cols + blksz + nrhs );
   View1DHostPinnType h_row3  ( "h_row3",   my_cols + blksz + nrhs );
@@ -340,11 +350,15 @@ void factor(ZDView& ZV,                    // matrix and rhs
       xpivmsgtime += (MPI_Wtime()-t1);
 #endif
 
+      pivot_vec_view(sav_pivot_vec_i) = static_cast<pival_type>(pivot.row);
       gpivot_row = pivot.row;
       pivot_mag = abs(pivot.entry);
       if (pivot_mag == 0.0) {
-        printf("Node %d error -- zero pivot found in column %d -- exiting\n",me,j);
-        return; 
+        //printf("Node %d error -- zero pivot found in column %d -- exiting\n",me,j);
+        //return; 
+        std::ostringstream os;
+        os << "Adelus::factor: rank " << me << " error -- zero pivot found in column "<< j;
+        Kokkos::Impl::throw_runtime_exception (os.str ());
       }
 
       // divide everything including the diagonal by the pivot entry
@@ -405,13 +419,13 @@ void factor(ZDView& ZV,                    // matrix and rhs
       for (rdist = 1;rdist <= MAXDIST;rdist++){
         if (rowplus(rdist) == c_owner) break;
         bytes = sizeof(gpivot_row);
-        MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,comm);
       }
 #ifdef GET_TIMING
       bcastpivstime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
       t1 = MPI_Wtime();
 #endif
@@ -427,10 +441,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
       for (rdist = 1;rdist <= MAXDIST;rdist++) {
         if (rowplus(rdist) == c_owner) break;
         bytes=sizeof(ADELUS_DATA_TYPE)*col_len;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-        MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
-#else //CUDA-aware MPI
-        MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+        MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,comm);
+#else //GPU-aware MPI
+        MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,comm);
 #endif
       }
 #ifdef GET_TIMING
@@ -446,17 +460,18 @@ void factor(ZDView& ZV,                    // matrix and rhs
       act_row_j++;
       sav_piv_row_j++;
       cols_used++;
+      sav_pivot_vec_i++;
     }
     else {
 
       // recv column and pivot
 
       bytes=col_len*sizeof(ADELUS_DATA_TYPE);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-      MPI_Irecv(h_coltmp.data(),bytes,MPI_BYTE,MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
-#else //CUDA-aware MPI
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+      MPI_Irecv(h_coltmp.data(),bytes,MPI_BYTE,MPI_ANY_SOURCE,LUROWTYPE+j,comm,&msgrequest);
+#else //GPU-aware MPI
       MPI_Irecv(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,
-                MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
+                MPI_ANY_SOURCE,LUROWTYPE+j,comm,&msgrequest);
 #endif
 
 #ifdef GET_TIMING
@@ -465,7 +480,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       bytes = 0; type = LUPIVROWTYPE+j;
       bytes=4;
       bytes = sizeof(gpivot_row);
-      MPI_Recv(&gpivot_row,bytes,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&msgstatus);
+      MPI_Recv(&gpivot_row,bytes,MPI_BYTE,MPI_ANY_SOURCE,type,comm,&msgstatus);
 #ifdef GET_TIMING
       bcastpivrtime += (MPI_Wtime()-t1);
 #endif
@@ -479,7 +494,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
         for (rdist = 1;rdist <= MAXDIST;rdist++) {
           if (rowplus(rdist) == c_owner) break;
           bytes = sizeof(gpivot_row);
-          MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,MPI_COMM_WORLD);
+          MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,comm);
         }
 #ifdef GET_TIMING
         bcastpivstime += (MPI_Wtime()-t1);
@@ -493,7 +508,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
         bcastcolrtime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
@@ -510,10 +525,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
         for (rdist = 1;rdist <= MAXDIST;rdist++) {
           if (rowplus(rdist) == c_owner) break;
           bytes=col_len*sizeof(ADELUS_DATA_TYPE);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-          MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
-#else //CUDA-aware MPI
-          MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+          MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,comm);
+#else //GPU-aware MPI
+          MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,comm);
 #endif
         }
 #ifdef GET_TIMING
@@ -648,7 +663,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
     // broadcast pivot row
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
 #endif
@@ -662,10 +677,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
     t1 = MPI_Wtime();
 #endif
     bytes=sizeof(ADELUS_DATA_TYPE)*row_size ;
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
     MPI_Bcast(reinterpret_cast<char *>(h_row3.data()), row_size, MPI_CHAR, mesh_row(pivot_owner), col_comm);
     MPI_Barrier(col_comm);
-#else //CUDA-aware MPI -- Note: Looks like MPI_Bcast is still working well with device (cuda) pointers (and faster than using cuda host pinned memory) for 2 nodes
+#else //GPU-aware MPI -- Note: Looks like MPI_Bcast is still working well with device (cuda) pointers (and faster than using cuda host pinned memory) for 2 nodes
     MPI_Bcast(reinterpret_cast<char *>(row3_view.data()), row_size, MPI_CHAR, mesh_row(pivot_owner), col_comm);
     MPI_Barrier(col_comm);
 #endif
@@ -673,7 +688,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
     bcastrowtime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
 #endif
@@ -704,7 +719,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
     if (gpivot_row != j) {
       if (me != pivot_owner && me == r_owner) {
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
@@ -718,10 +733,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
         t1 = MPI_Wtime();
 #endif
         bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-        MPI_Send(h_row2.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,MPI_COMM_WORLD);
-#else //CUDA-aware MPI
-        MPI_Send(row2_view.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,MPI_COMM_WORLD);
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+        MPI_Send(h_row2.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,comm);
+#else //GPU-aware MPI
+        MPI_Send(row2_view.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,comm);
 #endif
 #ifdef GET_TIMING
         sendrowtime += (MPI_Wtime()-t1);
@@ -735,10 +750,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #endif
         if (me != r_owner) {
           bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-          MPI_Recv(h_row2.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,MPI_COMM_WORLD,&msgstatus);
-#else //CUDA-aware MPI
-          MPI_Recv(row2_view.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,MPI_COMM_WORLD,&msgstatus);
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+          MPI_Recv(h_row2.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,comm,&msgstatus);
+#else //GPU-aware MPI
+          MPI_Recv(row2_view.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,comm,&msgstatus);
 #endif
         }
 #ifdef GET_TIMING
@@ -746,7 +761,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #endif
 
         if (me != r_owner) {
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
           t1 = MPI_Wtime();
 #endif
@@ -824,7 +839,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       bcastcolrtime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
 #ifdef GET_TIMING
       t1 = MPI_Wtime();
 #endif
@@ -920,57 +935,57 @@ void factor(ZDView& ZV,                    // matrix and rhs
   copytime     = pivotswaptime+copycoltime+copyrowtime+copyrow1time+copypivrowtime+copypivrow1time;
   dgemmtime    = updatetime+colupdtime+rowupdtime+scaltime;
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime("Time to do iamax",&iamaxtime);
-  showtime("Time to get local pivot",&getlocalpivtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do iamax",&iamaxtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to get local pivot",&getlocalpivtime);
 #endif
-  showtime("Total finding local pivot time",&localpivtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total finding local pivot time",&localpivtime);
   double tmp = 100*localpivtime/totalfactortime;
-  showtime("Percent finding local pivot time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent finding local pivot time",&tmp);
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime("Time to xchgpivot",&xpivmsgtime);
-  showtime("Time to do send in bcast pivot",&bcastpivstime);
-  showtime("Time to do recv in bcast pivot",&bcastpivrtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to xchgpivot",&xpivmsgtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do send in bcast pivot",&bcastpivstime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do recv in bcast pivot",&bcastpivrtime);
   tmp = bcastpivrtime+bcastpivstime;
-  showtime("Time to do bcast pivot",&tmp);
-  showtime("Time to do send in bcast cur col",&bcastcolstime);
-  showtime("Time to do recv bcast cur col",&bcastcolrtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast pivot",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do send in bcast cur col",&bcastcolstime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do recv bcast cur col",&bcastcolrtime);
   tmp = bcastcolrtime+bcastcolstime;
-  showtime("Time to do bcast cur col",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast cur col",&tmp);
   tmp = bcastcolrtime+bcastcolstime+bcastpivrtime+bcastpivstime;
-  showtime("Time to do bcast cur col and pivot",&tmp);
-  showtime("Time to bcast piv row",&bcastrowtime);
-  showtime("Time to send cur row",&sendrowtime);
-  showtime("Time to recv cur row",&recvrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast cur col and pivot",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to bcast piv row",&bcastrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to send cur row",&sendrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to recv cur row",&recvrowtime);
 #endif
-  showtime("Total msg passing time",&msgtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total msg passing time",&msgtime);
   tmp = 100*msgtime/totalfactortime;
-  showtime("Percent msg passing time",&tmp);
-#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-  showtime("Total copy between host pinned mem and dev mem time",&copyhostpinnedtime); 
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent msg passing time",&tmp);
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copy between host pinned mem and dev mem time",&copyhostpinnedtime); 
   tmp = 100*copyhostpinnedtime/totalfactortime;
-  showtime("Percent copy between host pinned mem and dev mem time",&tmp);  
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copy between host pinned mem and dev mem time",&tmp);  
 #endif
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime("Time to swap pivot",&pivotswaptime);
-  showtime("Time to copy cur col",&copycoltime);
-  showtime("Time to copy cur row to sav row",&copyrowtime);
-  showtime("Time to copy piv row to sav piv",&copypivrowtime);
-  showtime("Time to copy sav row to cur row",&copyrow1time);
-  showtime("Time to copy sav piv  to piv row",&copypivrow1time);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to swap pivot",&pivotswaptime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy cur col",&copycoltime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy cur row to sav row",&copyrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy piv row to sav piv",&copypivrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy sav row to cur row",&copyrow1time);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy sav piv  to piv row",&copypivrow1time);
 #endif
-  showtime("Total copying time",&copytime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copying time",&copytime);
   tmp = 100*copytime/totalfactortime;
-  showtime("Percent copying time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copying time",&tmp);
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime("Time to scale cur col",&scaltime);
-  showtime("Time to update cur col",&colupdtime);
-  showtime("Time to update piv row",&rowupdtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to scale cur col",&scaltime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update cur col",&colupdtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update piv row",&rowupdtime);
 #endif
-  showtime("Time to update matrix",&updatetime);
-  showtime("Total update time",&dgemmtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update matrix",&updatetime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total update time",&dgemmtime);
   tmp = 100*dgemmtime/totalfactortime;
-  showtime("Percent update time",&tmp);
-  showtime("Total time in factor",&totalfactortime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent update time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total time in factor",&totalfactortime);
 #endif
 }
 

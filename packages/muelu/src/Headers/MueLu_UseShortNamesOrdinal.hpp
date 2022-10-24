@@ -89,6 +89,9 @@ typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node> LWGraph;
 #ifdef MUELU_LWGRAPH_KOKKOS_SHORT
 typedef MueLu::LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Node> LWGraph_kokkos;
 #endif
+#ifdef MUELU_LOCALLWGRAPH_KOKKOS_SHORT
+typedef MueLu::LocalLWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Node> LocalLWGraph_kokkos;
+#endif
 #ifdef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 typedef MueLu::LeftoverAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> LeftoverAggregationAlgorithm;
 #endif

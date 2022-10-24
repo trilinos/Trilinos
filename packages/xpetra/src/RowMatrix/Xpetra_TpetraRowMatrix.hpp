@@ -100,10 +100,10 @@ namespace Xpetra {
     Tpetra::global_size_t getGlobalNumCols() const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalNumCols"); return mtx_->getGlobalNumCols(); }
 
     //! Returns the number of rows owned on the calling node.
-    size_t getNodeNumRows() const { XPETRA_MONITOR("TpetraRowMatrix::getNodeNumRows"); return mtx_->getNodeNumRows(); }
+    size_t getLocalNumRows() const { XPETRA_MONITOR("TpetraRowMatrix::getLocalNumRows"); return mtx_->getLocalNumRows(); }
 
     //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
-    size_t getNodeNumCols() const { XPETRA_MONITOR("TpetraRowMatrix::getNodeNumCols"); return mtx_->getNodeNumCols(); }
+    size_t getLocalNumCols() const { XPETRA_MONITOR("TpetraRowMatrix::getLocalNumCols"); return mtx_->getLocalNumCols(); }
 
     //! Returns the global number of entries in this matrix.
     Tpetra::global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalNumEntries"); return mtx_->getGlobalNumEntries(); }
@@ -118,7 +118,7 @@ namespace Xpetra {
     size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraRowMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("TpetraRowMatrix::getNodeMaxNumRowEntries"); return mtx_->getNodeMaxNumRowEntries(); }
+    size_t getLocalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraRowMatrix::getLocalMaxNumRowEntries"); return mtx_->getLocalMaxNumRowEntries(); }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     bool isLocallyIndexed() const { XPETRA_MONITOR("TpetraRowMatrix::isLocallyIndexed"); return mtx_->isLocallyIndexed(); }

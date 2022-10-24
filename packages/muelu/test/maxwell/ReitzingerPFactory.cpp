@@ -107,7 +107,7 @@ CheckCommutingProperty(MueLu::Level & nodeLevel_coarse, MueLu::Level & edgeLevel
   RCP<Matrix> right = XMM::Multiply(*D0_f,false,*Pn,false,dummy,*out0);
   
   // We need a non-FC matrix for the add, sadly
-  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getNodeMaxNumRowEntries()+right->getNodeMaxNumRowEntries());    
+  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
   RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
   XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
   XMM::TwoMatrixAdd(*right, false, -one, *summation, one);
@@ -158,7 +158,7 @@ void read_matrix(Xpetra::UnderlyingLib & lib,RCP<const Teuchos::Comm<int> > & co
     if (comm->getSize() > 1)
       colMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(colMap_file, lib, comm);
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, colMap, node_map, edge_map);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     // *out << "Skipping D0 maps, because: " << e.what() << std::endl;
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
     node_map = D0_Matrix->getDomainMap();

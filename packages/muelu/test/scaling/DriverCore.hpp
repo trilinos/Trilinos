@@ -164,6 +164,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
                          bool profileSetup,
                          bool useAMGX,
                          bool useML,
+                         bool setNullSpace,
                          int numRebuilds,
                          Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & H,
                          Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Prec) {
@@ -211,7 +212,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
        if(!coordinates.is_null())
          userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
-       if(!nullspace.is_null())
+       if (!nullspace.is_null() && setNullSpace )
          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
        H = MueLu::CreateXpetraPreconditioner(A, mueluList);
@@ -341,17 +342,18 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
 #endif
       if(useAMGX) {
 #if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-	// Do a fixed-point iteraiton without convergence checks
-	RCP<MultiVector> R = MultiVectorFactory::Build(X->getMap(), X->getNumVectors());
-	for(int i=0; i<maxIts; i++) {
-	  Utilities::Residual(*A, *X, *B, *R);
-	  Prec->apply(*R,*X); 
- 	}
+        // Do a fixed-point iteraiton without convergence checks
+        RCP<MultiVector> R = MultiVectorFactory::Build(X->getMap(), X->getNumVectors());
+        for(int i=0; i<maxIts; i++) {
+          Utilities::Residual(*A, *X, *B, *R);
+          Prec->apply(*R,*X);
+        }
 #endif
       }
       else {
-	H->IsPreconditioner(false);
-	H->Iterate(*B, *X, maxIts);
+        H->IsPreconditioner(false);
+        std::pair<LocalOrdinal,typename STS::magnitudeType> maxItsTol(maxIts, tol);
+        H->Iterate(*B, *X, maxItsTol);
       }
 #ifdef HAVE_MUELU_CUDA
       if(profileSolve) cudaProfilerStop();
@@ -415,15 +417,15 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         using tOP = Tpetra::Operator<SC, LO, GO, NO>;
 
         Teuchos::RCP<tOP> belosPrecTpetra;
-	if(useAMGX) {
+        if(useAMGX) {
 #if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-	  RCP<Xpetra::TpetraOperator<SC,LO,GO,NO> > xto = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<SC,LO,GO,NO> >(Prec);
-	  belosPrecTpetra = xto->getOperator();
+          RCP<Xpetra::TpetraOperator<SC,LO,GO,NO> > xto = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<SC,LO,GO,NO> >(Prec);
+          belosPrecTpetra = xto->getOperator();
 #endif
-	}
-	else {
-	  belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
-	}
+        }
+        else {
+          belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+        }
 
         // Construct a Belos LinearProblem object
         RCP<Belos::LinearProblem<SC, tMV, tOP> > belosProblem = rcp(new Belos::LinearProblem<SC, tMV, tOP>(Atpetra, Xtpetra, Btpetra));

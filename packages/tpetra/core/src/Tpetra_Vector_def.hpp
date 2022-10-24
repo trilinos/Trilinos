@@ -237,7 +237,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
 
-    const size_t newNumRows = subMap->getNodeNumElements ();
+    const size_t newNumRows = subMap->getLocalNumElements ();
     const bool tooManyElts = newNumRows + offset > this->getOrigNumLocalRows ();
     if (tooManyElts) {
       const int myRank = this->getMap ()->getComm ()->getRank ();

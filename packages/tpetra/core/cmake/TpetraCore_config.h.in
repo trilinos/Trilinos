@@ -5,6 +5,9 @@
 /* Define whether Tpetra enables deprecated code at compile time. */
 #cmakedefine TPETRA_ENABLE_DEPRECATED_CODE
 
+/* BlockCrs has default layout right and it can be compile time changed with the following cmake option */
+#cmakedefine TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
+
 /* Define if want to build with epetra enabled */
 #cmakedefine HAVE_TPETRACORE_EPETRA
 #ifdef HAVE_TPETRACORE_EPETRA
@@ -39,9 +42,6 @@
 
 /* Define if want to build tpetra-print_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_WARNINGS
-
-/* Define if want to build tpetra-throw_efficiency_warnings */
-#cmakedefine HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
 
 /* Define if want to build tpetra-print_efficiency_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
@@ -112,9 +112,6 @@
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
-
-/* Define when enabling Tpetra for refactoring to new KokkosCore interface */
-#cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
 
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION

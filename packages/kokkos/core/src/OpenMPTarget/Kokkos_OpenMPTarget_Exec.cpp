@@ -42,6 +42,10 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#endif
+
 #include <stdio.h>
 #include <limits>
 #include <iostream>
@@ -77,9 +81,10 @@ namespace Kokkos {
 namespace Impl {
 
 void OpenMPTargetExec::verify_is_process(const char* const label) {
-  if (omp_in_parallel()) {
+  // Fails if the current task is in a parallel region or is not on the host.
+  if (omp_in_parallel() && (!omp_is_initial_device())) {
     std::string msg(label);
-    msg.append(" ERROR: in parallel");
+    msg.append(" ERROR: in parallel or on device");
     Kokkos::Impl::throw_runtime_exception(msg);
   }
 }
@@ -117,7 +122,8 @@ void OpenMPTargetExec::clear_lock_array() {
 void* OpenMPTargetExec::get_scratch_ptr() { return m_scratch_ptr; }
 
 void OpenMPTargetExec::resize_scratch(int64_t team_size, int64_t shmem_size_L0,
-                                      int64_t shmem_size_L1) {
+                                      int64_t shmem_size_L1,
+                                      int64_t league_size) {
   Kokkos::Experimental::OpenMPTargetSpace space;
   const int64_t shmem_size =
       shmem_size_L0 + shmem_size_L1;  // L0 + L1 scratch memory per team.
@@ -126,7 +132,7 @@ void OpenMPTargetExec::resize_scratch(int64_t team_size, int64_t shmem_size_L0,
   // on the maximum number of in-flight teams possible.
   int64_t total_size =
       (shmem_size + OpenMPTargetExecTeamMember::TEAM_REDUCE_SIZE + padding) *
-      (MAX_ACTIVE_THREADS / team_size);
+      std::min(MAX_ACTIVE_THREADS / team_size, league_size);
 
   if (total_size > m_scratch_size) {
     space.deallocate(m_scratch_ptr, m_scratch_size);

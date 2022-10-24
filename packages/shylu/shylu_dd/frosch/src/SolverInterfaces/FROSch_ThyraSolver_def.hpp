@@ -92,7 +92,7 @@ namespace FROSch {
             default: FROSCH_ASSERT(false,"FROSch::ThyraPreconditionerTpetra: mode unknown.");
         }
 
-        SolveStatus<double> status = solve<double>(*ThyraSolver_,tMode,*xThyra,YT_.ptr());
+        SolveStatus<SC> status = solve<SC>(*ThyraSolver_,tMode,*xThyra,YT_.ptr());
 
         // It seems that we have to convert the Thyra vector back to Xpetra. Is there a cheaper/more elegant way?
         // Same for ThyraPreconditioner
@@ -122,8 +122,8 @@ namespace FROSch {
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         RCP<const Thyra::LinearOpBase<SC> > thyraOp = ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp.getCrsMatrix());
 
-        DefaultLinearSolverBuilder linearSolverBuilder;
-        enableFROSch<LO,GO,NO>(linearSolverBuilder);
+        LinearSolverBuilder<SC> linearSolverBuilder;
+        enableFROSch<SC,LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(sublist(this->ParameterList_,"ThyraSolver"));
 
         LinearOpWithSolveFactoryBasePtr thyraFactory = linearSolverBuilder.createLinearSolveStrategy("");

@@ -52,6 +52,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
+#include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
@@ -68,7 +69,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy(const Teuchos::ArrayView< Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
       typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -86,7 +87,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
       typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -329,9 +330,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(mv.getLocalViewDevice());
+      return dimension_scalar(mv.getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(mv.getLocalViewHost());
+    return dimension_scalar(mv.getLocalViewHost(Tpetra::Access::ReadOnly));
   }
 
   template <class S, class L, class G, class N>
@@ -342,9 +343,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(v.getLocalViewDevice());
+      return dimension_scalar(v.getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(v.getLocalViewHost());
+    return dimension_scalar(v.getLocalViewHost(Tpetra::Access::ReadOnly));
   }
 }
 

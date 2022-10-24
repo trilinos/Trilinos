@@ -49,7 +49,6 @@
 #ifndef Intrepid2_LegendreBasis_HVOL_LINE_h
 #define Intrepid2_LegendreBasis_HVOL_LINE_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -59,6 +58,7 @@
 #include <KokkosExp_View_Fad.hpp>
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_DeviceAssert.hpp"
 #include "Intrepid2_Polynomials.hpp"
 
@@ -187,13 +187,16 @@ namespace Intrepid2
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
     using HostBasis = LegendreBasis_HVOL_LINE<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar>;
-    
-    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
-    
-    using OutputViewType = typename BasisBase::OutputViewType;
-    using PointViewType  = typename BasisBase::PointViewType ;
-    using ScalarViewType = typename BasisBase::ScalarViewType;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
+
+    using typename BasisBase::ExecutionSpace;
+
   protected:
     int polyOrder_; // the maximum order of the polynomial
     EPointType pointType_;
@@ -221,11 +224,13 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       for (int i=0; i<this->basisCardinality_; i++)
       {
         // for H(vol) line, first basis member is constant, second is first-degree, etc.
-        this->fieldOrdinalPolynomialDegree_(i,0) = i;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = i;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = i+1; // H^1 degree is one greater
       }
       
       // initialize tags
@@ -306,11 +311,10 @@ namespace Intrepid2
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
-      
-      using ExecutionSpace = typename BasisBase::ExecutionSpace;
-      
-      auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_LINE_Functor");
+
+      auto policy =
+          Kokkos::TeamPolicy<ExecutionSpace>(numPoints, teamSize, vectorSize);
+      Kokkos::parallel_for("Hierarchical_HVOL_LINE_Functor", policy , functor);
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

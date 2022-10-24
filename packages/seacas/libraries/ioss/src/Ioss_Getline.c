@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2021 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2021, 2022 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -30,7 +30,7 @@
 #define sleep(a) Sleep(a * 1000)
 #ifndef write
 #define write _write
-#define read _read
+#define read  _read
 #endif
 #else
 
@@ -48,7 +48,9 @@ struct termios new_termios, old_termios;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include "Ioss_Getline.h"
 
@@ -144,16 +146,16 @@ static void io_gl_char_cleanup(void) /* undo effects of io_gl_char_init */
 
 #if defined(MSDOS) || defined(__windows__)
 
-#define K_UP 0x48
-#define K_DOWN 0x50
-#define K_LEFT 0x4B
-#define K_RIGHT 0x4D
+#define K_UP     0x48
+#define K_DOWN   0x50
+#define K_LEFT   0x4B
+#define K_RIGHT  0x4D
 #define K_DELETE 0x53
 #define K_INSERT 0x52
-#define K_HOME 0x47
-#define K_END 0x4F
-#define K_PGUP 0x49
-#define K_PGDN 0x51
+#define K_HOME   0x47
+#define K_END    0x4F
+#define K_PGUP   0x49
+#define K_PGDN   0x51
 
 int pc_keymap(int c)
 {
@@ -265,7 +267,7 @@ static void io_gl_init(void)
   if (io_gl_init_done < 0) { /* -1 only on startup */
     const char *cp = (const char *)getenv("COLUMNS");
     if (cp != NULL) {
-      int w = atoi(cp);
+      int w = strtol(cp, NULL, 10);
       if (w > 20)
         io_gl_setwidth(w);
     }
@@ -567,13 +569,7 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
   static int  off_left;    /* true if more text left of screen */
   static char last_prompt[80] = "";
   int         left = 0, right = -1; /* bounds for redraw */
-  int         pad;                  /* how much to erase at end of line */
-  int         backup;               /* how far to backup before fixing */
-  int         new_shift;            /* value of shift based on cursor */
-  int         extra;                /* adjusts when shift (scroll) happens */
-  int         i;
-  int         new_right = -1; /* alternate right bound, using io_gl_extent */
-  int         l1, l2;
+  int         new_right = -1;       /* alternate right bound, using io_gl_extent */
 
   if (change == -2) { /* reset */
     io_gl_pos = io_gl_cnt = io_gl_shift = off_right = off_left = 0;
@@ -584,8 +580,8 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
     io_gl_width = io_gl_termw - strlen(prompt);
   }
   else if (strcmp(prompt, last_prompt) != 0) {
-    l1        = strlen(last_prompt);
-    l2        = strlen(prompt);
+    int l1    = strlen(last_prompt);
+    int l2    = strlen(prompt);
     io_gl_cnt = io_gl_cnt + l1 - l2;
     copy_string(last_prompt, prompt, 80);
     io_gl_putc('\r');
@@ -594,8 +590,9 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
     io_gl_width = io_gl_termw - l2;
     change      = 0;
   }
-  pad    = (off_right) ? io_gl_width - 1 : io_gl_cnt - io_gl_shift; /* old length */
-  backup = io_gl_pos - io_gl_shift;
+  /* how much to erase at end of line */
+  int pad    = (off_right) ? io_gl_width - 1 : io_gl_cnt - io_gl_shift; /* old length */
+  int backup = io_gl_pos - io_gl_shift; /* how far to backup before fixing */
   if (change >= 0) {
     io_gl_cnt = strlen(io_gl_buf);
     if (change > io_gl_cnt)
@@ -613,11 +610,11 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
     io_gl_beep();
     cursor = 0;
   }
-  if (off_right || (off_left && cursor < io_gl_shift + io_gl_width - io_gl_scroll / 2))
+  int extra = 0; /* adjusts when shift (scroll) happens */
+  if (off_right || (off_left && cursor < io_gl_shift + io_gl_width - io_gl_scroll / 2)) {
     extra = 2; /* shift the scrolling boundary */
-  else
-    extra = 0;
-  new_shift = cursor + extra + io_gl_scroll - io_gl_width;
+  }
+  int new_shift = cursor + extra + io_gl_scroll - io_gl_width;
   if (new_shift > 0) {
     new_shift /= io_gl_scroll;
     new_shift *= io_gl_scroll;
@@ -646,13 +643,13 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
   pad -= (off_right) ? io_gl_width - 1 : io_gl_cnt - io_gl_shift;
   pad = (pad < 0) ? 0 : pad;
   if (left <= right) { /* clean up screen */
-    for (i = 0; i < backup; i++)
+    for (int i = 0; i < backup; i++)
       io_gl_putc('\b');
     if (left == io_gl_shift && off_left) {
       io_gl_putc('$');
       left++;
     }
-    for (i = left; i < new_right; i++)
+    for (int i = left; i < new_right; i++)
       io_gl_putc(io_gl_buf[i]);
     io_gl_pos = new_right;
     if (off_right && new_right == right) {
@@ -660,19 +657,19 @@ static void io_gl_fixup(const char *prompt, int change, int cursor)
       io_gl_pos++;
     }
     else {
-      for (i = 0; i < pad; i++) /* erase remains of prev line */
+      for (int i = 0; i < pad; i++) /* erase remains of prev line */
         io_gl_putc(' ');
       io_gl_pos += pad;
     }
   }
-  i = io_gl_pos - cursor; /* move to final cursor location */
+  int i = io_gl_pos - cursor; /* move to final cursor location */
   if (i > 0) {
     while (i--)
       io_gl_putc('\b');
   }
   else {
-    for (i = io_gl_pos; i < cursor; i++)
-      io_gl_putc(io_gl_buf[i]);
+    for (int ii = io_gl_pos; ii < cursor; ii++)
+      io_gl_putc(io_gl_buf[ii]);
   }
   io_gl_pos = cursor;
 }
@@ -760,9 +757,9 @@ static char *hist_save(const char *p)
 
 /* makes a copy of the string */
 {
-  char * s   = NULL;
+  char  *s   = NULL;
   size_t len = strlen(p);
-  char * nl  = strpbrk(p, "\n\r");
+  char  *nl  = strpbrk(p, "\n\r");
 
   if (nl) {
     if ((s = (char *)malloc(len)) != NULL) {

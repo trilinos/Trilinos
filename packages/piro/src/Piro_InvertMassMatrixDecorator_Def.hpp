@@ -103,11 +103,31 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
   Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
 
+   if (stratParams->isParameter("Linear Solver Type")) {
+     const std::string lin_solver_type =  stratParams->get<std::string>("Linear Solver Type");
+     if (lin_solver_type == "Amesos") {
+       *out << "WARNING: Amesos solver does not work with Piro::InvertMassMatrix; switching to Amesos2 to avoid cast error.\n";
+       stratParams->set<std::string>("Linear Solver Type", "Amesos2");  
+     }
+     else if (lin_solver_type == "AztecOO") {
+       *out << "WARNING: AztecOO solver does not work with Piro::InvertMassMatrix; switching to Belos to avoid cast error.\n";
+       stratParams->set<std::string>("Linear Solver Type", "Belos"); 
+       if (stratParams->get<std::string>("Preconditioner Type") == "Ifpack") { 
+         stratParams->set<std::string>("Preconditioner Type", "Ifpack2");  
+         *out << "WARNING: Ifpack preconditioner does not work with Piro::InvertMassMatrix; switching to Ifpack2 to avoid cast error.\n";
+       }
+       else if (stratParams->get<std::string>("Preconditioner Type") ==  "ML") {
+         *out << "WARNING: ML preconditioner does not work with Piro::InvertMassMatrix; switching to MueLu to avoid cast error.\n";
+         stratParams->set<std::string>("Preconditioner Type", "MueLu");  
+       }
+     }
+   }
    linearSolverBuilder.setParameterList(stratParams);
 
   // Create a linear solver factory given information read from the
   // parameter list.
-  lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+  //lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+  lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
   // Setup output stream and the verbosity level
   lowsFactory->setOStream(out);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,11 +20,6 @@
 
 #include "fortranc.h"
 
-#if defined(interix)
-#include <time.h>
-void excpus_(FTNREAL *cpusec)
-#endif /* interix */
-
 #if defined(aix) || defined(__VACPP__) || defined(hpux) || defined(sgi) || defined(__osf__) ||     \
     defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 
@@ -35,14 +30,18 @@ void excpus_(FTNREAL *cpusec)
 #include <sys/resource.h>
 #include <sys/time.h>
 #endif
+#endif
+
+#if defined(interix)
+#include <time.h>
+void excpus_(FTNREAL *cpusec)
+#endif /* interix */
 
 #if defined ADDC_
     void excpus_(FTNREAL *cpusec)
 #else
-    void excpus(FTNREAL *cpusec)
+void excpus(FTNREAL *cpusec)
 #endif
-#endif
-
 {
 #if defined(interix)
   *cpusec = ((FTNREAL)clock()) / CLOCKS_PER_SEC;
@@ -78,11 +77,9 @@ void excpus_(FTNREAL *cpusec)
 #if defined(sgi) || defined(__osf__) || defined(__linux__) || defined(aix) ||                      \
     defined(__VACPP__) || defined(paragon) || defined(hpux) || defined(__APPLE__)
   struct rusage rusage;
-  int           secs, mics;
-
   getrusage(RUSAGE_SELF, &rusage);
-  secs    = rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec;
-  mics    = rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec;
-  *cpusec = (FTNREAL)secs + ((FTNREAL)mics / 1.e6);
+  long secs = rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec;
+  long mics = rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec;
+  *cpusec   = (FTNREAL)secs + ((FTNREAL)mics / 1.e6);
 #endif
 }

@@ -226,7 +226,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   constexpr ordinal_type spaceDim = 2;
 
-  this->pointType_         = pointType;
+  this->pointType_         = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
   this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
@@ -245,7 +245,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
   PointTools::getLattice( dofCoords,
       this->basisCellTopology_,
       order+spaceDim+offset, offset,
-      pointType );
+      this->pointType_ );
 
   this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -62,6 +62,10 @@ namespace SEAMS {
       {"tan", do_tan, "tan(x)", "Tangent of x, with x in radians. "},
       {"tand", do_tand, "tand(x)", "Tangent of x, with x in radians. "},
       {"tanh", do_tanh, "tanh(x)", "Hyperbolic tangent of x. "},
+      {"FtoC", do_FtoC, "FtoC(x)",
+       "Convert temperature x from degrees F to degrees C (212F -> 100C)"},
+      {"CtoF", do_CtoF, "CtoF(x)",
+       "Convert temperature x from degrees C to degrees F (100C -> 212F)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
   init_a arith_a_fncts[] = {
@@ -131,7 +135,7 @@ namespace SEAMS {
   str_init string_fncts[] = {
       {"DUMP", do_dumpsym, "DUMP()",
        "Output a list of all user-defined variables and their value."},
-      {"DUMP_JSON", do_dumpsym_json, "DUMP()",
+      {"DUMP_JSON", do_dumpsym_json, "DUMP_JSON()",
        "Output a list of all user-defined variables and their value in JSON format."},
       {"DUMP_FUNC", do_dumpfunc, "DUMP_FUNC()",
        "Output a list of all double and string functions recognized by aprepro."},
@@ -153,7 +157,7 @@ namespace SEAMS {
   str_c_init string_c_fncts[] = {
       {"DUMP", do_dumpsym1, "DUMP(str)",
        "Output a list of all defined variables and their value if name contains 'str'."},
-      {"DUMP_FUNC", do_dumpfunc1, "DUMP_FUNC()",
+      {"DUMP_FUNC", do_dumpfunc1, "DUMP_FUNC(str)",
        "Output a list of all double and string functions recognized by aprepro if name contains "
        "'str'."},
       {"DUMP_PREVAR", do_dumpvar1, "DUMP_PREVAR()",
@@ -174,6 +178,8 @@ namespace SEAMS {
        "Translates all lowercase character in svar to "
        "uppercase. It modifies svar and returns the "
        "resulting string. "},
+      {"import", do_import, "import(svar)",
+       "Include/import the file pointed to by the string variable or expression 'svar'"},
       {"getenv", do_getenv, "getenv(svar)",
        "Returns a string containing the value of the environment variable svar. If the environment "
        "\n\t\t\tvariable is not defined, an empty string is returned. "},
@@ -218,8 +224,9 @@ namespace SEAMS {
        "Handles the if statements. x can be any valid "
        "expression; nonzero is true (deprecated, use if)"},
 #if defined(EXODUS_SUPPORT)
-      {"exodus_meta", do_exodus_meta, "exodus_meta(ex_fn)",
-       "Creates several variables related to the exodus metadata in the specified file. "},
+      {"exodus_meta", do_exodus_meta, "exodus_meta(filename)",
+       "Creates several variables and arrays related to the exodus metadata in the specified "
+       "file. "},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
@@ -272,14 +279,14 @@ namespace SEAMS {
        "empty, "
        "return rest of string."},
 #if defined(EXODUS_SUPPORT)
-      {"exodus_info", do_exodus_info_range, "exodus_info(ex_fn, beg, end)",
+      {"exodus_info", do_exodus_info_range, "exodus_info(filename, beg, end)",
        "Parses the info records starting after 'beg' and ending before 'end'"},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
   str_cc_init string_cc_fncts[] = {
 #if defined(EXODUS_SUPPORT)
-      {"exodus_info", do_exodus_info, "exodus_info(ex_fn, prefix)",
+      {"exodus_info", do_exodus_info, "exodus_info(filename, prefix)",
        "Parses the info records that begin with 'prefix' extracted from the exodus file 'ex_fn'"},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};

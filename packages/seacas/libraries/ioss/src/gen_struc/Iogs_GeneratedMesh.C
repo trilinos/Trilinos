@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,9 +15,8 @@
 #include <gen_struc/Iogs_GeneratedMesh.h>
 #include <numeric>
 #include <string>
-#include <sys/types.h> // for ssize_t
-#include <tokenize.h>  // for tokenize
-#include <vector>      // for vector
+#include <tokenize.h> // for tokenize
+#include <vector>     // for vector
 
 namespace Iogs {
   GeneratedMesh::GeneratedMesh(int64_t /*num_x */, int64_t /* num_y */, int64_t /* num_z */,
@@ -284,7 +283,7 @@ namespace Iogs {
         show_parameters();
       }
       else {
-        fmt::print(Ioss::WARNING(), "Unrecognized option '{}'.  It will be ignored.\n", option[0]);
+        fmt::print(Ioss::WarnOut(), "Unrecognized option '{}'.  It will be ignored.\n", option[0]);
       }
     }
   }
@@ -298,14 +297,16 @@ namespace Iogs {
                  "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
                  "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
                  "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
-                 "\tNode Count (total) = {:12L}\n"
-                 "\tCell Count (total) = {:12L}\n"
-                 "\tBlock Count        = {:12L}\n"
-                 "\tSideSet Count      = {:12L}\n"
-                 "\tTimestep Count     = {:12L}\n\n",
+                 "\tNode Count (total) = {:12}\n"
+                 "\tCell Count (total) = {:12}\n"
+                 "\tBlock Count        = {:12}\n"
+                 "\tSideSet Count      = {:12}\n"
+                 "\tTimestep Count     = {:12}\n\n",
                  numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
-                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
-                 element_count(), structured_block_count(), sideset_count(), timestep_count());
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ,
+                 fmt::group_digits(node_count()), fmt::group_digits(element_count()),
+                 fmt::group_digits(structured_block_count()), fmt::group_digits(sideset_count()),
+                 fmt::group_digits(timestep_count()));
 
       if (doRotation) {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
@@ -838,7 +839,7 @@ namespace Iogs {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
-      fmt::print(Ioss::WARNING(),
+      fmt::print(Ioss::WarnOut(),
                  "(Iogs::GeneratedMesh::set_variable_count)\n"
                  "       Unrecognized variable type '{}'. Valid types are:\n"
                  "       global, element, node, nodal, surface, sideset.\n",

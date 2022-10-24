@@ -63,7 +63,6 @@ namespace mesh {
 class BulkData;
 class MetaData;
 class UnitTestFieldImpl;
-class DataTraits;
 class FieldBase;
 template<typename T, template <typename> class NgpDebugger> class DeviceField;
 
@@ -71,6 +70,7 @@ namespace impl {
 class FieldRepository;
 NgpFieldBase* get_ngp_field(const FieldBase & field);
 void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
+stk::CSet & get_attributes(FieldBase & field);
 }
 
 struct FieldMetaData
@@ -96,6 +96,8 @@ public:
   FieldBase() = delete;
   FieldBase(const FieldBase &) = delete;
   FieldBase & operator=(const FieldBase &) = delete;
+
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const = 0;
 
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -128,7 +130,7 @@ public:
   /** \brief  Multi-dimensional array rank of this field,
    *          which is zero for a scalar field.
    */
-  unsigned field_array_rank() const { return m_field_rank; }
+  unsigned field_array_rank() const;
 
   EntityRank entity_rank() const { return m_entity_rank; }
 
@@ -136,8 +138,7 @@ public:
    *          \ref shards::ArrayDimTag "array dimension tags"
    *          of this field.
    */
-  const shards::ArrayDimTag * const * dimension_tags() const
-  { return m_dim_tags; }
+  const shards::ArrayDimTag * const * dimension_tags() const;
 
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
@@ -234,7 +235,9 @@ public:
   bool need_sync_to_host() const;
   bool need_sync_to_device() const;
   void sync_to_host() const;
+  void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) const;
   void sync_to_device() const;
+  void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) const;
   void clear_sync_state() const;
   void clear_host_sync_state() const;
   void clear_device_sync_state() const;
@@ -254,7 +257,9 @@ public:
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
-    m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    if (m_stkFieldSyncDebugger.empty()) {
+      m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    }
   }
 
   template <typename StkDebugger>
@@ -264,7 +269,25 @@ public:
 
   void rotate_multistate_data();
 
-private:
+ private:
+  stk::ngp::ExecSpace& get_execution_space() const {
+    return m_execSpace;
+  }
+
+  void set_execution_space(const stk::ngp::ExecSpace& executionSpace) const {
+    m_execSpace = executionSpace;
+  }
+
+  void set_execution_space(stk::ngp::ExecSpace&& executionSpace) const {
+    m_execSpace = std::move(executionSpace);
+  }
+
+  void reset_execution_space() const {
+    m_execSpace = Kokkos::DefaultExecutionSpace();
+  }
+
+  CSet & get_attributes() { return m_attribute; }
+
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);
@@ -281,7 +304,7 @@ private:
     }
 
   template<typename FieldType>
-  void set_field_states( FieldType ** field_states)
+  void set_field_states(FieldType ** field_states)
   {
     for (unsigned i = 0; i < m_num_states; ++i) {
       m_field_states[i] = field_states[i];
@@ -312,6 +335,7 @@ private:
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::BulkData;
   friend class ::stk::mesh::impl::FieldRepository;
+  friend CSet & impl::get_attributes(stk::mesh::FieldBase & field);
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
@@ -321,6 +345,7 @@ private:
 
   template <typename T, template <typename> class NgpDebugger> friend class HostField;
   template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
+  template <typename Scalar, class Tag1, class Tag2, class Tag3, class Tag4, class Tag5, class Tag6, class Tag7> friend class Field;
 
 protected:
   FieldBase(MetaData                   * arg_mesh_meta_data,
@@ -348,7 +373,8 @@ protected:
       m_numSyncsToHost(0),
       m_numSyncsToDevice(0),
       m_modifiedOnHost(false),
-      m_modifiedOnDevice(false)
+      m_modifiedOnDevice(false),
+      m_execSpace(Kokkos::DefaultExecutionSpace())
   {
     FieldBase * const pzero = nullptr ;
     const shards::ArrayDimTag * const dzero = nullptr ;
@@ -383,6 +409,7 @@ private:
   mutable size_t               m_numSyncsToDevice;
   mutable bool                 m_modifiedOnHost;
   mutable bool                 m_modifiedOnDevice;
+  mutable stk::ngp::ExecSpace  m_execSpace;
   mutable Teuchos::any m_stkFieldSyncDebugger;
 };
 

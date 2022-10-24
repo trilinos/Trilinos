@@ -54,7 +54,7 @@ template<typename Real>
 class RiddersProjection : public PolyhedralProjection<Real> {
 private:
   int dim_;
-  Ptr<Vector<Real>> xnew_;
+  Ptr<Vector<Real>> xnew_, Px_;
   Real b_, mul1_, dlam1_, cdot_;
 
   Real DEFAULT_atol_, DEFAULT_rtol_, DEFAULT_ltol_;
@@ -71,6 +71,13 @@ private:
   using PolyhedralProjection<Real>::xdual_;
   using PolyhedralProjection<Real>::mul_;
   using PolyhedralProjection<Real>::res_;
+
+  void initialize(const Vector<Real>               &xprim,
+                  const Vector<Real>               &xdual,
+                  const Ptr<BoundConstraint<Real>> &bnd,
+                  const Ptr<Constraint<Real>>      &con,
+                  const Vector<Real>               &mul,
+                  const Vector<Real>               &res);
 
 public:
 

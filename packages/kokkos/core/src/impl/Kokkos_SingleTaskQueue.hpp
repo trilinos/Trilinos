@@ -58,14 +58,12 @@
 
 #include <impl/Kokkos_TaskQueueMemoryManager.hpp>
 #include <impl/Kokkos_TaskQueueCommon.hpp>
-#include <impl/Kokkos_Memory_Fence.hpp>
-#include <impl/Kokkos_Atomic_Increment.hpp>
+#include <Kokkos_Atomic.hpp>
 #include <impl/Kokkos_OptionalRef.hpp>
 #include <impl/Kokkos_LIFO.hpp>
 
 #include <string>
 #include <typeinfo>
-#include <stdexcept>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

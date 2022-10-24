@@ -50,9 +50,9 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     points.InsertNextPoint(pointList[5])
     points.InsertNextPoint(pointList[6])
     points.InsertNextPoint(pointList[7])
- 
+
     # Create a hexahedron from the points
-    hex = vtk.vtkHexahedron() 
+    hex = vtk.vtkHexahedron()
     hex.GetPointIds().SetId(0,0)
     hex.GetPointIds().SetId(1,1)
     hex.GetPointIds().SetId(2,2)
@@ -61,11 +61,11 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     hex.GetPointIds().SetId(5,5)
     hex.GetPointIds().SetId(6,6)
     hex.GetPointIds().SetId(7,7)
- 
+
     # Add the hexahedron to a cell array
     hexs = vtk.vtkCellArray()
     hexs.InsertNextCell(hex)
- 
+
     # Add the points and hexahedron to an unstructured grid
     uGrid = vtk.vtkUnstructuredGrid()
     uGrid.SetPoints(points)
@@ -111,7 +111,84 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
 
     return self.MakeOneHexahdtronGridFrom8Points1(myPtList)
 
-  def test_PhactoriFindSurfaceStatusForOneCellUsingFaceInfo_FlatCells(self):
+  def test_Parse1(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    testJson1 = {"segment length":5.0}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.SegmentLength, 5.0)
+
+  def test_Parse2(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    testJson1 = \
+      {"global x axis":[1.25, 1.5, 1.75],
+       "global x axis backup":[1.5, -1.5, 0.0]}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.localAxisXReference,
+      [0.4767312946227962, 0.5720775535473553, 0.6674238124719146])
+    self.assertEqual(pcsntc1.localAxisXReference2,
+      [0.7071067811865476, -0.7071067811865476, 0.0])
+    testJson1 = {"global x axis":[1.0, 0.5, 0.0]}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.localAxisXReference,
+      [0.8944271909999159, 0.4472135954999579, 0.0])
+    self.assertEqual(pcsntc1.localAxisXReference2, [0.0, 0.0, 1.0])
+    testJson1 = {"global x axis":[1.0, 0.0, 0.5]}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.localAxisXReference2, [0.0, 1.0, 0.0])
+    testJson1 = {"global x axis":[0.0, 1.0, 0.5]}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.localAxisXReference2, [1.0, 0.0, 0.0])
+
+  def test_Parse3(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    testJson1 = {"global x axis":[1.25, 1.5]}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+    testJson1 = \
+      {"global x axis":[1.25, 1.5, 1.75],
+       "global x axis backup":[1.5, -1.5]}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+    testJson1 = {"global x axis":"blah"}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+    testJson1 = \
+      {"global x axis":[1.25, 1.5, 1.75],
+       "global x axis backup":1.5}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+
+  def test_Parse4(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    testJson1 = {"segment direction reference point":[1.0, -2.0, 3.5]}
+    pcsntc1.ParseParametersFromJson(testJson1)
+    self.assertEqual(pcsntc1.DirectionReferencePoint, [1.0, -2.0, 3.5])
+    testJson1 = {"segment direction reference point":[-2.0, 3.5]}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+    testJson1 = {"segment direction reference point":13.5}
+    self.assertRaises(Exception, pcsntc1.ParseParametersFromJson, testJson1)
+
+
+  def test_CalculateGeometricProgressionSampleValues_linear(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    pcsntc1.SegmentLength = 9.0
+    pcsntc1.SegmentResolution = 10
+    pcsntc1.geometricSamplingMultiplier = 1.0
+    pcsntc1.segmentSampleMethod = "linear"
+    oneSeg = PcsntcSegment(5, 2, [1.0, 1.0, 1.0], [1.0, -1.0, 2.0])
+    oneSeg.segmentLength = pcsntc1.SegmentLength
+    testVals = pcsntc1.CalculateGeometricProgressionSampleValues(oneSeg)
+    self.assertEqual(testVals, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
+
+  def test_CalculateGeometricProgressionSampleValues_geometric(self):
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    pcsntc1.SegmentLength = 32767.0 * 0.125
+    pcsntc1.SegmentResolution = 16
+    pcsntc1.geometricSamplingMultiplier = 2.0
+    pcsntc1.segmentSampleMethod = "geometric"
+    oneSeg = PcsntcSegment(5, 2, [1.0, 1.0, 1.0], [1.0, -1.0, 2.0])
+    oneSeg.segmentLength = pcsntc1.SegmentLength
+    testVals = pcsntc1.CalculateGeometricProgressionSampleValues(oneSeg)
+    goldVals = [0.0, 0.125, 0.375, 0.875, 1.875, 3.875, 7.875, 15.875, 31.875, 63.875, 127.875, 255.875, 511.875, 1023.875, 2047.875, 4095.875]
+    self.assertEqual(testVals, goldVals)
+
+  def test_CreateSegmentsForAllCells(self):
     wv1 = paraview.simple.Wavelet()
     wv1.WholeExtent = [-2, 2, -2, 2, -2, 2]
     wv1.UpdatePipeline()
@@ -119,9 +196,18 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     pcsntc1 = PhactoriCreateSegmentsNormalToCells()
     pcsntc1.CreateSegmentsForAllCells(wv1)
     firstSegment = pcsntc1.RecursionResults.SegmentCollection[0]
-    self.assertEqual((1, 0.0, [-1.5, -1.5, -1.5], [1.0, 0.0, -0.0]), firstSegment)
+    #self.assertEqual((1, 0.0, [-1.5, -1.5, -1.5], [1.0, 0.0, -0.0]), firstSegment)
+    self.assertEqual(1, firstSegment.blockIndex)
+    self.assertEqual(0, firstSegment.cellIndex)
+    self.assertEqual([-1.5, -1.5, -1.5], firstSegment.ptA)
+    self.assertEqual([1.0, 0.0, -0.0], firstSegment.segDir)
+
     lastSegment = pcsntc1.RecursionResults.SegmentCollection[-1]
-    self.assertEqual((1, 63, [1.5, 1.5, 1.5], [1.0, 0.0, -0.0]), lastSegment)
+    #self.assertEqual((1, 63, [1.5, 1.5, 1.5], [1.0, 0.0, -0.0]), lastSegment)
+    self.assertEqual(1, lastSegment.blockIndex)
+    self.assertEqual(63, lastSegment.cellIndex)
+    self.assertEqual([1.5, 1.5, 1.5], lastSegment.ptA)
+    self.assertEqual([1.0, 0.0, -0.0], lastSegment.segDir)
 
     xfrm1 = Transform(Input=wv1)
     xfrm1.Transform = 'Transform'
@@ -131,9 +217,32 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     #wv1grid = wv1.GetClientSideObject().GetOutputDataObject(0)
     pcsntc1.CreateSegmentsForAllCells(xfrm1)
     firstSegment = pcsntc1.RecursionResults.SegmentCollection[0]
-    self.assertEqual((1, 0, [-1.5, -0.0075, -1.5], [0.0, 1.0, 0.0]), firstSegment)
+    #self.assertEqual((1, 0, [-1.5, -0.0075, -1.5], [0.0, 1.0, 0.0]), firstSegment)
+    self.assertEqual(1, firstSegment.blockIndex)
+    self.assertEqual(0, firstSegment.cellIndex)
+    self.assertEqual([-1.5, -0.0075, -1.5], firstSegment.ptA)
+    self.assertEqual([0.0, 1.0, 0.0], firstSegment.segDir)
     lastSegment = pcsntc1.RecursionResults.SegmentCollection[-1]
-    self.assertEqual((1, 63, [1.5, 0.0075, 1.5], [0.0, 1.0, 0.0]), lastSegment)
+    #self.assertEqual((1, 63, [1.5, 0.0075, 1.5], [0.0, 1.0, 0.0]), lastSegment)
+    self.assertEqual(1, lastSegment.blockIndex)
+    self.assertEqual(63, lastSegment.cellIndex)
+    self.assertEqual([1.5, 0.0075, 1.5], lastSegment.ptA)
+    self.assertEqual([0.0, 1.0, 0.0], lastSegment.segDir)
+
+  def test_CreateParaViewSourcesForSegments(self):
+    wv1 = paraview.simple.Wavelet()
+    wv1.WholeExtent = [-2, 2, -2, 2, -2, 2]
+    wv1.UpdatePipeline()
+    xfrm1 = Transform(Input=wv1)
+    xfrm1.Transform = 'Transform'
+    xfrm1.Transform.Scale = [1.0, 0.005, 1.0]
+    xfrm1.UpdatePipeline()
+    #wv1grid = xfrm1.GetClientSideObject().GetOutputDataObject(0)
+    #wv1grid = wv1.GetClientSideObject().GetOutputDataObject(0)
+    pcsntc1 = PhactoriCreateSegmentsNormalToCells()
+    pcsntc1.CreateSegmentsForAllCells(xfrm1)
+    pcsntc1.CreateParaViewSourcesForSegments()
+
 
 if __name__ == '__main__':
     cc = Cone()

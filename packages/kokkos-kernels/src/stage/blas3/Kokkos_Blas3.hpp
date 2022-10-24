@@ -42,179 +42,217 @@
 //@HEADER
 */
 
-
-//Do not use this it has not been tested at all!
+// Do not use this it has not been tested at all!
 #ifndef KOKKOS_BLAS3_HPP_
 #define KOKKOS_BLAS3_HPP_
 
 #include <Kokkos_Blas3_impl.hpp>
-#include <type_traits> // requires C++11
+#include <type_traits>  // requires C++11
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
 
-template<class AMat,class BMat,class CMat>
-void gemm(const char transA,const char transB,AMat::const_value_type alpha ,const AMat& a, const BMat& b,CMat::const_value_type beta, const CMat &c)
-{
-  static_assert (Kokkos::Impl::is_view<AMat>::value,
-                 "KokkosBlas::gemm: AMat must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<BMat>::value,
-                 "KokkosBlas::gemm: BMat must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<CMat>::value,
-                 "KokkosBlas::gemm: CMat must be a Kokkos::View.");
-  static_assert ( AMat::rank !=  BMat::rank && CMat::rank !=  BMat::rank,
-                 "KokkosBlas::gemm: Matrix ranks do not match.");
-  static_assert ( AMat::rank != 2 || AMat::rank != 3 ,
-                 "KokkosBlas::gemm: Matrix ranks do not match.");
+template <class AMat, class BMat, class CMat>
+void gemm(const char transA, const char transB, AMat::const_value_type alpha,
+          const AMat& a, const BMat& b, CMat::const_value_type beta,
+          const CMat& c) {
+  static_assert(Kokkos::is_view<AMat>::value,
+                "KokkosBlas::gemm: AMat must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<BMat>::value,
+                "KokkosBlas::gemm: BMat must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<CMat>::value,
+                "KokkosBlas::gemm: CMat must be a Kokkos::View.");
+  static_assert(AMat::rank != BMat::rank && CMat::rank != BMat::rank,
+                "KokkosBlas::gemm: Matrix ranks do not match.");
+  static_assert(AMat::rank != 2 || AMat::rank != 3,
+                "KokkosBlas::gemm: Matrix ranks do not match.");
   // Check compatibility of dimensions at run time.
-  if ((transA=='n'||transA=='N')&&(transB=='n'||transB=='N')) {
-if(rank==2){
-if(a.extent(0)!=c.extent(0)||a.extent(1)!=b.extent(0)||b.extent(1)!=c.extent(1)){
+  if ((transA == 'n' || transA == 'N') && (transB == 'n' || transB == 'N')) {
+    if (rank == 2) {
+      if (a.extent(0) != c.extent(0) || a.extent(1) != b.extent(0) ||
+          b.extent(1) != c.extent(1)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if (rank == 3) {
+      if (a.extent(1) != c.extent(1) || a.extent(2) != b.extent(1) ||
+          b.extent(2) != c.extent(2) || a.extent(0) != b.extent(0) ||
+          b.extent(0) != c.extent(0)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << "," << a.extent(2)
+           << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << "," << b.extent(2)
+           << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
+           << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+
+  } else if ((transA == 'n' || transA == 'N') &&
+             (transB == 't' || transB == 'T')) {
+    if (rank == 2) {
+      if (a.extent(0) != c.extent(0) || a.extent(1) != b.extent(1) ||
+          b.extent(0) != c.extent(1)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if (rank == 3) {
+      if (a.extent(1) != c.extent(1) || a.extent(2) != b.extent(2) ||
+          b.extent(1) != c.extent(2) || a.extent(0) != b.extent(0) ||
+          b.extent(0) != c.extent(0)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << "," << a.extent(2)
+           << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << "," << b.extent(2)
+           << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
+           << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+
+  } else if ((transA == 't' || transA == 'T') &&
+             (transB == 'n' || transB == 'N')) {
+    if (rank == 2) {
+      if (a.extent(1) != c.extent(0) || a.extent(0) != b.extent(0) ||
+          b.extent(1) != c.extent(1)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if (rank == 3) {
+      if (a.extent(2) != c.extent(1) || a.extent(1) != b.extent(1) ||
+          b.extent(2) != c.extent(2) || a.extent(0) != b.extent(0) ||
+          b.extent(0) != c.extent(0)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << "," << a.extent(2)
+           << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << "," << b.extent(2)
+           << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
+           << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+
+  } else if ((transA == 't' || transA == 'T') &&
+             (transB == 't' || transB == 'T')) {
+    if (rank == 2) {
+      if (a.extent(1) != c.extent(0) || a.extent(0) != b.extent(1) ||
+          b.extent(0) != c.extent(1)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if (rank == 3) {
+      if (a.extent(2) != c.extent(1) || a.extent(1) != b.extent(2) ||
+          b.extent(1) != c.extent(2) || a.extent(0) != b.extent(0) ||
+          b.extent(0) != c.extent(0)) {
+        std::ostringstream os;
+        os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for "
+              "A notrans and B notrans: "
+           << ", A: "
+           << "(" << a.extent(0) << "," << a.extent(1) << "," << a.extent(2)
+           << ")"
+           << ", B: "
+           << "(" << b.extent(0) << "," << b.extent(1) << "," << b.extent(2)
+           << ")"
+           << ", C: "
+           << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
+           << ")";
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+
+  } else {
     std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-else if(rank==3){
-if(a.extent(1)!=c.extent(1)||a.extent(2)!=b.extent(1)||b.extent(2)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
+    os << "KokkosBlas::gemm: values for transA or transB should be T t or N n "
+          "you have input: "
+       << "TransA:" << transA << " TransB:" << transB;
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
 
-}else if((transA=='n'||transA=='N')&&(transB=='t'||transB=='T')){
-if(rank==2){
-if(a.extent(0)!=c.extent(0)||a.extent(1)!=b.extent(1)||b.extent(0)!=c.extent(1)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-else if(rank==3){
-if(a.extent(1)!=c.extent(1)||a.extent(2)!=b.extent(2)||b.extent(1)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
+  typedef Kokkos::View<typename std::conditional<
+                           AMat::rank == 2, typename AMat::const_value_type**,
+                           typename AMat::const_value_type***>::type,
+                       typename AMat::array_layout, typename AMat::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       typename AMat::specialize>
+      AMat_Internal;
 
+  typedef Kokkos::View<typename std::conditional<
+                           BMat::rank == 2, typename BMat::const_value_type**,
+                           typename BMat::const_value_type***>::type,
+                       typename BMat::array_layout, typename BMat::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       typename BMat::specialize>
+      BMat_Internal;
 
-}else if ((transA=='t'||transA=='T')&&(transB=='n'||transB=='N')) {
-if(rank==2){
-if(a.extent(1)!=c.extent(0)||a.extent(0)!=b.extent(0)||b.extent(1)!=c.extent(1)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-else if(rank==3){
-if(a.extent(2)!=c.extent(1)||a.extent(1)!=b.extent(1)||b.extent(2)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-
-}else if ((transA=='t'||transA=='T')&&(transB=='t'||transB=='T')) {
-if(rank==2){
-if(a.extent(1)!=c.extent(0)||a.extent(0)!=b.extent(1)||b.extent(0)!=c.extent(1)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-else if(rank==3){
-if(a.extent(2)!=c.extent(1)||a.extent(1)!=b.extent(2)||b.extent(1)!=c.extent(2)||a.extent(0)!=b.extent(0)||b.extent(0)!=c.extent(0)){
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: Matrix Dimensions Dimensions do not match for A notrans and B notrans: "
-       << ", A: " << "("<<a.extent(0)<<","<<a.extent(1)<<","<<a.extent(2)<<")"
-       << ", B: " << "("<<b.extent(0)<<","<<b.extent(1)<<","<<b.extent(2)<<")"
-       << ", C: " << "("<<c.extent(0)<<","<<c.extent(1)<<","<<c.extent(2)<<")";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-}
-}
-
-}else{
-    std::ostringstream os;
-    os << "KokkosBlas::gemm: values for transA or transB should be T t or N n you have input: "
-    <<"TransA:"<<transA<<" TransB:"<<transB;
-    Kokkos::Impl::throw_runtime_exception (os.str ());
-
-}
-  
-
-
-  typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      AMat::rank == 2,
-      typename AMat::const_value_type**,
-      typename AMat::const_value_type*** >::type,
-    typename AMat::array_layout,
-    typename AMat::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    typename AMat::specialize> AMat_Internal;
-
-  typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      BMat::rank == 2,
-      typename BMat::const_value_type**,
-      typename BMat::const_value_type*** >::type,
-    typename BMat::array_layout,
-    typename BMat::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    typename BMat::specialize> BMat_Internal;
-
-  typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      CMat::rank == 2,
-      typename CMat::const_value_type**,
-      typename CMat::const_value_type*** >::type,
-    typename CMat::array_layout,
-    typename CMat::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    typename CMat::specialize> CMat_Internal;
-
-
+  typedef Kokkos::View<typename std::conditional<
+                           CMat::rank == 2, typename CMat::const_value_type**,
+                           typename CMat::const_value_type***>::type,
+                       typename CMat::array_layout, typename CMat::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       typename CMat::specialize>
+      CMat_Internal;
 
   AMat_Internal a_i = a;
   BMat_Internal b_i = b;
   CMat_Internal c_i = c;
 
-Impl::MultiGemm<AMat::non_const_value_type,
-                BMat::non_const_value_type,
-                CMat::non_const_value_type,
-                CMat::execution_space,
-                AMat::array_layout,
-                BMat::array_layout,
-                CMat::array_layout,
-                CMat::size_type,
-                CMat::rank>::GEMM(transA, transB, alpha, A, B, beta, C);
-
+  Impl::MultiGemm<AMat::non_const_value_type, BMat::non_const_value_type,
+                  CMat::non_const_value_type, CMat::execution_space,
+                  AMat::array_layout, BMat::array_layout, CMat::array_layout,
+                  CMat::size_type, CMat::rank>::GEMM(transA, transB, alpha, A,
+                                                     B, beta, C);
 }
 
+}  // namespace KokkosBlas
 
-
-} // namespace KokkosBlas
-
-#endif // KOKKOS_BLAS3_HPP_
+#endif  // KOKKOS_BLAS3_HPP_

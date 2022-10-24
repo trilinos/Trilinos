@@ -42,6 +42,15 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_WORKGRAPHPOLICY_HPP
 #define KOKKOS_WORKGRAPHPOLICY_HPP
 
@@ -213,7 +222,9 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
       using closure_type = Kokkos::Impl::ParallelFor<self_type, policy_type>;
       const closure_type closure(*this, policy_type(0, m_queue.size()));
       closure.execute();
-      execution_space().fence();
+      execution_space().fence(
+          "Kokkos::WorkGraphPolicy::WorkGraphPolicy: fence after executing "
+          "graph init");
     }
 
     {  // execute-after counts
@@ -221,7 +232,9 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
       using closure_type = Kokkos::Impl::ParallelFor<self_type, policy_type>;
       const closure_type closure(*this, policy_type(0, m_graph.entries.size()));
       closure.execute();
-      execution_space().fence();
+      execution_space().fence(
+          "Kokkos::WorkGraphPolicy::WorkGraphPolicy: fence after executing "
+          "graph count");
     }
 
     {  // Scheduling ready tasks
@@ -229,7 +242,9 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
       using closure_type = Kokkos::Impl::ParallelFor<self_type, policy_type>;
       const closure_type closure(*this, policy_type(0, m_graph.numRows()));
       closure.execute();
-      execution_space().fence();
+      execution_space().fence(
+          "Kokkos::WorkGraphPolicy::WorkGraphPolicy: fence after executing "
+          "readied graph");
     }
   }
 };
@@ -237,7 +252,7 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
 }  // namespace Kokkos
 
 #ifdef KOKKOS_ENABLE_SERIAL
-#include "impl/Kokkos_Serial_WorkGraphPolicy.hpp"
+#include "Serial/Kokkos_Serial_WorkGraphPolicy.hpp"
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP

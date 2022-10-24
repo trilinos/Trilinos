@@ -177,7 +177,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       sub_opt = optarg;
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
-      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      fmt::print(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
       while (sub_opt != nullptr && *sub_opt != '\0') {
@@ -373,7 +373,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       }
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
-      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      fmt::print(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
       while (sub_opt != nullptr && *sub_opt != '\0') {
@@ -479,7 +479,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       }
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
-      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      fmt::print(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
       while (sub_opt != nullptr && *sub_opt != '\0') {
@@ -576,7 +576,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       }
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
-      fprintf(stderr, "Windows build does not use getsubopt yet...\n");
+      fmt::print(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
       while (sub_opt != nullptr && *sub_opt != '\0') {

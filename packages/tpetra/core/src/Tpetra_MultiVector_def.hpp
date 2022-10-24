@@ -243,7 +243,7 @@ namespace { // (anonymous)
     // around this default execution space issue.
     //
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::SpaceAccessibility<
+      Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,
       typename ExecSpace::device_type,
@@ -513,14 +513,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     const size_t lclNumRows_view = view.extent (0);
     const size_t LDA = getDualViewStride (view_);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows_map || lclNumRows_map != lclNumRows_view,
        std::invalid_argument, "Kokkos::DualView does not match Map. "
-       "map->getNodeNumElements() = " << lclNumRows_map
+       "map->getLocalNumElements() = " << lclNumRows_map
        << ", view.extent(0) = " << lclNumRows_view
        << ", and getStride() = " << LDA << ".");
 
@@ -549,14 +549,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     const size_t lclNumRows_view = view.extent (0);
     const size_t LDA = getDualViewStride (view);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows_map || lclNumRows_map != lclNumRows_view,
        std::invalid_argument, "Kokkos::DualView does not match Map. "
-       "map->getNodeNumElements() = " << lclNumRows_map
+       "map->getLocalNumElements() = " << lclNumRows_map
        << ", view.extent(0) = " << lclNumRows_view
        << ", and getStride() = " << LDA << ".");
 
@@ -590,10 +590,10 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,d_view)");
 
     const size_t LDA = getViewStride (d_view);
-    const size_t lclNumRows = map->getNodeNumElements ();
+    const size_t lclNumRows = map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows, std::invalid_argument, "Map does not match "
-       "Kokkos::View.  map->getNodeNumElements() = " << lclNumRows
+       "Kokkos::View.  map->getLocalNumElements() = " << lclNumRows
        << ", View's column stride = " << LDA
        << ", and View's extent(0) = " << d_view.extent (0) << ".");
 
@@ -687,7 +687,7 @@ namespace Tpetra {
     }
 
     const size_t lclNumRows = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     // Check dimensions of the input DualView.  We accept that Kokkos
     // might not allow construction of a 0 x m (Dual)View with m > 0,
     // so we only require the number of rows to match if the
@@ -697,7 +697,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -771,7 +771,7 @@ namespace Tpetra {
     }
 
     const size_t lclNumRows = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     // Check dimensions of the input DualView.  We accept that Kokkos
     // might not allow construction of a 0 x m (Dual)View with m > 0,
     // so we only require the number of rows to match if the
@@ -781,7 +781,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -870,7 +870,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -935,10 +935,10 @@ namespace Tpetra {
     // There is no need for a deep copy constructor with nonconstant stride.
 
     const size_t lclNumRows =
-      map.is_null () ? size_t (0) : map->getNodeNumElements ();
+      map.is_null () ? size_t (0) : map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows, std::invalid_argument, "LDA = " << LDA << " < "
-       "map->getNodeNumElements() = " << lclNumRows << ".");
+       "map->getLocalNumElements() = " << lclNumRows << ".");
     if (numVecs != 0) {
       const size_t minNumEntries = LDA * (numVecs - 1) + lclNumRows;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -946,7 +946,7 @@ namespace Tpetra {
          std::invalid_argument, "Input Teuchos::ArrayView does not have enough "
          "entries, given the input Map and number of vectors in the MultiVector."
          "  data.size() = " << data.size () << " < (LDA*(numVecs-1)) + "
-         "map->getNodeNumElements () = " << minNumEntries << ".");
+         "map->getLocalNumElements () = " << minNumEntries << ".");
     }
 
     this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
@@ -973,7 +973,8 @@ namespace Tpetra {
     if (LDA == outStride) { // strides are the same; deep_copy once
       // This only works because MultiVector uses LayoutLeft.
       // We would need a custom copy functor otherwise.
-      Kokkos::deep_copy (X_out, X_in);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), X_out, X_in);
     }
     else { // strides differ; copy one column at a time
       typedef decltype (Kokkos::subview (X_out, Kokkos::ALL (), 0))
@@ -983,7 +984,8 @@ namespace Tpetra {
       for (size_t j = 0; j < numVecs; ++j) {
         out_col_view_type X_out_j = Kokkos::subview (X_out, Kokkos::ALL (), j);
         in_col_view_type X_in_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
-        Kokkos::deep_copy (X_out_j, X_in_j);
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), X_out_j, X_in_j);
       }
     }
   }
@@ -1002,7 +1004,7 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,Teuchos::ArrayView of ArrayView,numVecs)");
 
     const size_t lclNumRows =
-      map.is_null () ? size_t (0) : map->getNodeNumElements ();
+      map.is_null () ? size_t (0) : map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (numVecs < 1 || numVecs != static_cast<size_t> (ArrayOfPtrs.size ()),
        std::runtime_error, "Either numVecs (= " << numVecs << ") < 1, or "
@@ -1012,7 +1014,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         static_cast<size_t> (X_j_av.size ()) < lclNumRows,
         std::invalid_argument, "ArrayOfPtrs[" << j << "].size() = "
-        << X_j_av.size () << " < map->getNodeNumElements() = " << lclNumRows
+        << X_j_av.size () << " < map->getLocalNumElements() = " << lclNumRows
         << ".");
     }
 
@@ -1033,7 +1035,8 @@ namespace Tpetra {
         Teuchos::av_reinterpret_cast<const IST> (ArrayOfPtrs[j]);
       input_col_view_type X_j_in (X_j_av.getRawPtr (), lclNumRows);
       auto X_j_out = Kokkos::subview (X_out, rowRng, j);
-      Kokkos::deep_copy (X_j_out, X_j_in);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), X_j_out, X_j_in);
     }
   }
 
@@ -1051,7 +1054,7 @@ namespace Tpetra {
     if (this->getMap ().is_null ()) { // possible, due to replaceMap().
       return static_cast<size_t> (0);
     } else {
-      return this->getMap ()->getNodeNumElements ();
+      return this->getMap ()->getLocalNumElements ();
     }
   }
 
@@ -1229,6 +1232,7 @@ namespace Tpetra {
           }
           else { 
             // Copy src_j into tgt_j
+            // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
             Kokkos::deep_copy (tgt_j, src_j); 
           }
         }
@@ -1255,6 +1259,7 @@ namespace Tpetra {
           }
           else { 
             // Copy src_j into tgt_j
+            // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
             Kokkos::deep_copy (tgt_j, src_j); 
           }
         }
@@ -1977,10 +1982,12 @@ namespace Tpetra {
       whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);
       if (unpackOnHost) {
         whichVecs.modify_host ();
+        // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
         Kokkos::deep_copy (whichVecs.view_host (), whichVecsIn);
       }
       else {
         whichVecs.modify_device ();
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
       }
     }
@@ -2220,6 +2227,7 @@ namespace Tpetra {
           // output buffers, so we have to make a copy of the local
           // sum.
           typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (lclDots, dotsOut);
           const dot_type* const lclSum = lclDots.data ();
           dot_type* const gblSum = dotsOut.data ();
@@ -2543,6 +2551,7 @@ namespace Tpetra {
                    lclSums.data (), meansOut.data ());
       }
       else {
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (meansOut, lclSums);
       }
     }
@@ -2572,6 +2581,7 @@ namespace Tpetra {
                    lclSums.data (), meansOut.data ());
       }
       else {
+        // DEEP_COPY REVIEW - HOST-TO-HOST - NOT TESTED FOR MPI BUILD
         Kokkos::deep_copy (meansOut, lclSums);
       }
     }
@@ -2741,22 +2751,6 @@ namespace Tpetra {
     // was replaced with a Map with fewer processes, and finally the
     // original Map was restored on this call to replaceMap.
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    // mfh 28 Mar 2013: We can't check for compatibility across the
-    // whole communicator, unless we know that the current and new
-    // Maps are nonnull on _all_ participating processes.
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
-    //   std::invalid_argument, "Tpetra::MultiVector::project: "
-    //   "If the input Map's communicator is compatible (has the same number of "
-    //   "processes as) the current Map's communicator, then the two Maps must be "
-    //   "compatible.  The replaceMap() method is not for data redistribution; "
-    //   "use Import or Export for that purpose.");
-
-    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
-    // of the Map, in case the process counts don't match.
-#endif // HAVE_TEUCHOS_DEBUG
-
     if (this->getMap ().is_null ()) { // current Map is null
       // If this->getMap() is null, that means that this MultiVector
       // has already had replaceMap happen to it.  In that case, just
@@ -2769,7 +2763,7 @@ namespace Tpetra {
 
       // Case 3: current Map is null, new Map is nonnull.
       // Reallocate the DualView with the right dimensions.
-      const size_t newNumRows = newMap->getNodeNumElements ();
+      const size_t newNumRows = newMap->getLocalNumElements ();
       const size_t origNumRows = view_.extent (0);
       const size_t numCols = this->getNumVectors ();
 
@@ -2896,6 +2890,7 @@ namespace Tpetra {
       // Work in host memory.  This means we need to create a host
       // mirror of the input View of coefficients.
       auto alphas_h = Kokkos::create_mirror_view (alphas);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (alphas_h, alphas);
 
       auto Y_lcl = subview (this->getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
@@ -2924,6 +2919,7 @@ namespace Tpetra {
         // would be to fix scal() so that it takes a 0-D View as the
         // second argument.
         auto alphas_h = Kokkos::create_mirror_view (alphas);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (alphas_h, alphas);
 
         for (size_t k = 0; k < numVecs; ++k) {
@@ -3334,7 +3330,7 @@ namespace Tpetra {
 
     const LO lclNumRowsBefore = static_cast<LO> (X.getLocalLength ());
     const LO numCols = static_cast<LO> (X.getNumVectors ());
-    const LO newNumRows = static_cast<LO> (subMap->getNodeNumElements ());
+    const LO newNumRows = static_cast<LO> (subMap->getLocalNumElements ());
     if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": " << prefix
@@ -3351,7 +3347,7 @@ namespace Tpetra {
       newNumRows + rowOffset > static_cast<LO> (X.getOrigNumLocalRows ());
     if (tooManyElts) {
       errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
-      *errStrm << "  Proc " << myRank << ": subMap->getNodeNumElements() (="
+      *errStrm << "  Proc " << myRank << ": subMap->getLocalNumElements() (="
                << newNumRows << ") + rowOffset (=" << rowOffset
                << ") > X.getOrigNumLocalRows() (=" << X.getOrigNumLocalRows ()
                << ")." << endl;
@@ -3405,7 +3401,7 @@ namespace Tpetra {
           errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
         }
         *errStrm << "  Proc " << myRank <<
-          ": subMap.getNodeNumElements(): " << newNumRows <<
+          ": subMap.getLocalNumElements(): " << newNumRows <<
           ", subViewMV.getLocalLength(): " << lclNumRowsRet <<
           ", X.getNumVectors(): " << numCols <<
           ", subViewMV.getNumVectors(): " << numColsRet << endl;
@@ -3776,9 +3772,11 @@ namespace Tpetra {
       if (this->isConstantStride ()) {
         if (useHostView) {
           auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (A_view, srcView_host);
         } else {
           auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
+           // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (A_view, srcView_device);
         }
       }
@@ -3790,10 +3788,12 @@ namespace Tpetra {
           if (useHostView) {
             auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
             auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+             // DEEP_COPY REVIEW - NOT TESTED
             Kokkos::deep_copy (dstColView, srcColView_host);
           } else {
             auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
             auto srcColView_device = Kokkos::subview (srcView_device, rowRange, srcCol);
+             // DEEP_COPY REVIEW - NOT TESTED
             Kokkos::deep_copy (dstColView, srcColView_device);
           }
         }
@@ -4451,30 +4451,6 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clear_sync_state () {
-    view_.getOriginalDualView().clear_sync_state ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  sync_host () {
-    view_.getOriginalDualView().sync_host ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  sync_device () {
-    view_.getOriginalDualView().sync_device ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4488,38 +4464,6 @@ namespace Tpetra {
   need_sync_device () const {
     return  view_.need_sync_device ();
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  modify_device () {
-    view_.getOriginalDualView().modify_device ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  modify_host () {
-    view_.getOriginalDualView().modify_host ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice () const {
-    return view_.getDualView().view_device ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost () const {
-    return view_.getDualView().view_host ();
-  }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string

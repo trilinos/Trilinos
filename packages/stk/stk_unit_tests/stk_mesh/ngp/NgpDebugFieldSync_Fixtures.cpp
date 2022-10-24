@@ -42,17 +42,17 @@
 
 template <typename Out>
 void split_lines(const std::string &s, Out result) {
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item)) {
-        *result++ = item;
-    }
+  std::istringstream iss(s);
+  std::string item;
+  while (std::getline(iss, item)) {
+    *result++ = item;
+  }
 }
 
 std::vector<std::string> split_lines(const std::string &s) {
-    std::vector<std::string> elems;
-    split_lines(s, std::back_inserter(elems));
-    return elems;
+  std::vector<std::string> elems;
+  split_lines(s, std::back_inserter(elems));
+  return elems;
 }
 
 void extract_warning(std::string & stdoutString, int numExpectedOccurrences, const std::string & warningString)
@@ -73,8 +73,8 @@ void extract_warning(std::string & stdoutString, int numExpectedOccurrences, con
 
 #if defined(STK_USE_DEVICE_MESH)
   if (numFound != numExpectedOccurrences) {
-  std::cout << "Warning string found " << numFound << " times when expecting " << numExpectedOccurrences << " occurrences: \""
-            << warningString << "\"" << std::endl;
+    std::cout << "Warning string found " << numFound << " times when expecting " << numExpectedOccurrences << " occurrences: \""
+              << warningString << "\"" << std::endl;
     ADD_FAILURE();
   }
 #endif

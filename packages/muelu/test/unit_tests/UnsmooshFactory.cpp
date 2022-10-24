@@ -110,7 +110,7 @@ namespace MueLuTests {
 
     //->describe(out, Teuchos::VERB_EXTREME);
 
-    TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
+    TEST_EQUALITY(dofMap->getLocalNumElements(),2*nodeMap->getLocalNumElements());
 
     // TODO introduce extra factory manager objects
 
@@ -128,10 +128,10 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates",coordinates);
 
     // DofPresent for VariableDofLaplacianFactory
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getLocalNumElements(),1);
     fineLevel.Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
     // DofStatus for UnsmooshFactory
-    Teuchos::Array<char> dofStatus = Teuchos::Array<char>(A->getRangeMap()->getNodeNumElements() * maxDofPerNode,'s');
+    Teuchos::Array<char> dofStatus = Teuchos::Array<char>(A->getRangeMap()->getLocalNumElements() * maxDofPerNode,'s');
     fineLevel.Set("DofStatus", dofStatus);
 
     VariableDofLaplacianFactory lapFact;

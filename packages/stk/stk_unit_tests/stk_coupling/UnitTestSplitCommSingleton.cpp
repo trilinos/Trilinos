@@ -58,4 +58,14 @@ TEST(UnitTestSplitCommSingleton, set_split_comms_singleton)
   EXPECT_TRUE(stk::coupling::get_split_comms_singleton().is_initialized());
 }
 
+TEST(UnitTestSplitCommSingleton, split_comms_singleton_free)
+{
+  int color = 0;
+  stk::coupling::set_split_comms_singleton(stk::coupling::SplitComms(MPI_COMM_WORLD, color));
+  auto& splitComms = stk::coupling::get_split_comms_singleton();
+  splitComms.set_free_comms_in_destructor(true);
+  EXPECT_TRUE(splitComms.get_free_comms_in_destructor());
+  unset_split_comms_for_testing();  // if MPI doesn't error here, the test passes
+}
+
 }

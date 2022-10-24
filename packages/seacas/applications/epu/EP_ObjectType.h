@@ -9,8 +9,21 @@
 #define ObjectType_H
 
 namespace Excn {
-  // Note that these are used as indices into truth table for ELBK, NSET, SSET...
-  enum class ObjectType { EBLK = 0, NSET = 1, SSET = 2, NODE, ELEM, GLOBAL, ASSM, UNSET };
+  // Note that these are used as indices into truth table for ELBK, NSET, SSET, EDBLK, FABLK...
+  enum class ObjectType {
+    EBLK  = 0,
+    NSET  = 1,
+    SSET  = 2,
+    EDBLK = 3,
+    FABLK = 4,
+    NODE,
+    ELEM,
+    EDGE,
+    FACE,
+    GLOBAL,
+    ASSM,
+    UNSET
+  };
 } // namespace Excn
 
 #endif

@@ -61,6 +61,8 @@ APPEND_SET(HEADERS
   Adapters/Thyra_FROSchFactory_def.hpp
   Adapters/Thyra_FROSchLinearOp_decl.hpp
   Adapters/Thyra_FROSchLinearOp_def.hpp
+  Adapters/FROSch_TpetraPreconditioner_decl.hpp
+  Adapters/FROSch_TpetraPreconditioner_def.hpp
   CoarseSpaces/FROSch_CoarseSpace_decl.hpp
   CoarseSpaces/FROSch_CoarseSpace_def.hpp
   CoarseSpaces/FROSch_ConstantPartitionOfUnity_decl.hpp
@@ -151,6 +153,7 @@ APPEND_SET(HEADERS
   Tools/FROSch_Timers.h
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
+  Tools/FROSch_Types.h
 )
 
 # Set sources

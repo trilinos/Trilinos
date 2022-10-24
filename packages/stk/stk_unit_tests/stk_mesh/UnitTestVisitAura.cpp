@@ -47,12 +47,12 @@ namespace
 
 using EntitySet = std::set<stk::mesh::Entity>;
 
-class VisitAura : public stk::unit_test_util::MeshFixture
+class VisitAura : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   VisitAura()
-  : MeshFixture(3, {"node","edge","face","elem","constraint"}),
-    thisProc(stk::parallel_machine_rank(MPI_COMM_WORLD)) {}
+    : MeshFixture(3, {"node","edge","face","elem","constraint"}),
+      thisProc(stk::parallel_machine_rank(MPI_COMM_WORLD)) {}
 
   void check_for_expected_entities(const EntitySet& entities,
                                    stk::mesh::EntityRank rank,

@@ -112,8 +112,8 @@ struct UpdateNewton<SC, MV, false> {
     W->update (-theta.real(), *Z, one);
     if (theta.imag() != STM::zero()) {
       if (iter > 0) {
-	auto Z = V.getVectorNonConst (iter-1);
-	W->update (theta.imag()*theta.imag(), *Z, one);
+	auto Zp = V.getVectorNonConst (iter-1);
+	W->update (theta.imag()*theta.imag(), *Zp, one);
       }
     }
   }

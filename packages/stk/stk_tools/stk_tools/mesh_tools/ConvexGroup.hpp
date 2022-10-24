@@ -47,7 +47,7 @@ namespace impl {
 
 template <typename PAIR, typename ID, typename COMPARE>
 class ConvexGroup {
- public:
+public:
   ConvexGroup(COMPARE comparator, ID getId) : m_comparator(comparator), m_idGetter(getId) {}
   ConvexGroup(COMPARE comparator, ID getId, typename PAIR::UNIT block) : m_comparator(comparator), m_idGetter(getId)
   {
@@ -71,7 +71,7 @@ class ConvexGroup {
     return groupId;
   }
 
- private:
+private:
   std::vector<typename PAIR::UNIT> m_members;
   COMPARE m_comparator;
   ID m_idGetter;

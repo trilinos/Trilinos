@@ -1308,9 +1308,9 @@ namespace MueLuTests {
       }
       if(numRanks == 1) {
         TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 49, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == (interpolationOrder == 1 ? 169 : 49), true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == 49, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() == (interpolationOrder == 1 ? 169 : 49), true);
 
         ArrayView<const LO> rowIndices;
         const LO indicesConstant[49] = {0, 0, 1, 1, 1, 2, 2,
@@ -1334,7 +1334,7 @@ namespace MueLuTests {
                                         98,  102, 106, 110, 114, 118, 122,
                                         126, 130, 134, 138, 142, 146, 150,
                                         151, 155, 159, 160, 164, 168, 169};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
@@ -1352,9 +1352,9 @@ namespace MueLuTests {
         Array<size_t> nodeNumEntries = {{52, 36, 36, 24}};
 
         TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 16, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == 4, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() ==
+        TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == nodeNumRows[myRank], true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    == 4, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() ==
                       ((interpolationOrder == 0) ? nodeNumRows[myRank] : nodeNumEntries[myRank]), true);
 
         ArrayView<const LO> rowIndices;
@@ -1380,7 +1380,7 @@ namespace MueLuTests {
                                         53, 57, 58, 62, 66, 70, 74, 78, 82, 83, 87, 88,
                                         89, 93, 97, 98, 102, 106, 110, 114, 115, 119, 123, 124,
                                         125, 129, 130, 134, 138, 142, 143, 147, 148};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
@@ -1473,9 +1473,9 @@ namespace MueLuTests {
       }
       if(numRanks == 1) {
         TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 42, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == (interpolationOrder == 1 ? 141 : 42), true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == 42, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    ==  9, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() == (interpolationOrder == 1 ? 141 : 42), true);
 
         ArrayView<const LO> rowIndices;
         const LO indicesConstant[42] = {0, 0, 1, 1, 1, 2, 2,
@@ -1496,7 +1496,7 @@ namespace MueLuTests {
                                         76,   80,  84,  85,  89,  93,  94,
                                         98,  102, 106, 110, 114, 118, 122,
                                         123, 127, 131, 132, 136, 140, 141};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
@@ -1514,9 +1514,9 @@ namespace MueLuTests {
         Array<size_t> nodeNumEntries = {{36, 24, 36, 24}};
 
         TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 16, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == 4, true);
-        TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() ==
+        TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == nodeNumRows[myRank], true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    == 4, true);
+        TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() ==
                       ((interpolationOrder == 0) ? nodeNumRows[myRank] : nodeNumEntries[myRank]), true);
 
         ArrayView<const LO> rowIndices;
@@ -1540,7 +1540,7 @@ namespace MueLuTests {
                                         37, 41, 42, 46, 50, 54, 55, 59, 60,
                                         61, 65, 69, 70, 74, 78, 82, 86, 87, 91, 95, 96,
                                         97, 101, 102, 106, 110, 114, 115, 119, 120};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
 
           if(interpolationOrder == 0) {
@@ -1760,9 +1760,9 @@ namespace MueLuTests {
     TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == 49, true);
     if(numRanks == 1) {
       TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 49, true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == 49, true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == 49, true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    ==  9, true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() == 49, true);
 
       ArrayView<const LO> rowIndices;
       const LO indicesConstant[49] = {0, 0, 1, 1, 1, 2, 2,
@@ -1772,7 +1772,7 @@ namespace MueLuTests {
                                       3, 3, 4, 4, 4, 5, 5,
                                       6, 6, 7, 7, 7, 8, 8,
                                       6, 6, 7, 7, 7, 8, 8};
-      for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+      for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
         prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
         if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
       }
@@ -1782,9 +1782,9 @@ namespace MueLuTests {
       const Array<size_t> nodeNumCols    = {{ 4,  2,  2,  1}};
 
       TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 9, true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == nodeNumCols[myRank], true);
-      TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == nodeNumRows[myRank], true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumRows()    == nodeNumRows[myRank], true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumCols()    == nodeNumCols[myRank], true);
+      TEST_EQUALITY(prolongatorGraph->getLocalNumEntries() == nodeNumRows[myRank], true);
 
       ArrayView<const LO> rowIndices;
       if(myRank == 0) {
@@ -1792,7 +1792,7 @@ namespace MueLuTests {
                                         0, 0, 1, 1,
                                         2, 2, 3, 3,
                                         2, 2, 3, 3};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
           if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
         }
@@ -1801,7 +1801,7 @@ namespace MueLuTests {
                                         0, 0, 0,
                                         1, 1, 1,
                                         1, 1, 1};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
           if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
         }
@@ -1809,7 +1809,7 @@ namespace MueLuTests {
         const LO indicesConstant[12] = {0, 0, 1, 1,
                                         0, 0, 1, 1,
                                         0, 0, 1, 1};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
           if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
         }
@@ -1817,7 +1817,7 @@ namespace MueLuTests {
         const LO indicesConstant[ 9] = {0, 0, 0,
                                         0, 0, 0,
                                         0, 0, 0};
-        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getLocalNumRows(); ++rowIdx) {
           prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
           if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
         }

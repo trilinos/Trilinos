@@ -44,7 +44,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <iostream>
 #include <cstdlib>
 #include <cstdint>
@@ -79,37 +79,6 @@ struct my_complex {
   }
 
   KOKKOS_INLINE_FUNCTION
-  my_complex& operator=(const volatile my_complex& src) {
-    re    = src.re;
-    im    = src.im;
-    dummy = src.dummy;
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  volatile my_complex& operator=(const my_complex& src) volatile {
-    re    = src.re;
-    im    = src.im;
-    dummy = src.dummy;
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  volatile my_complex& operator=(const volatile my_complex& src) volatile {
-    re    = src.re;
-    im    = src.im;
-    dummy = src.dummy;
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  my_complex(const volatile my_complex& src) {
-    re    = src.re;
-    im    = src.im;
-    dummy = src.dummy;
-  }
-
-  KOKKOS_INLINE_FUNCTION
   my_complex(const double& val) {
     re    = val;
     im    = 0.0;
@@ -125,23 +94,7 @@ struct my_complex {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator+=(const volatile my_complex& src) volatile {
-    re += src.re;
-    im += src.im;
-    dummy += src.dummy;
-  }
-
-  KOKKOS_INLINE_FUNCTION
   my_complex operator+(const my_complex& src) {
-    my_complex tmp = *this;
-    tmp.re += src.re;
-    tmp.im += src.im;
-    tmp.dummy += src.dummy;
-    return tmp;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  my_complex operator+(const volatile my_complex& src) volatile {
     my_complex tmp = *this;
     tmp.re += src.re;
     tmp.im += src.im;
@@ -157,15 +110,6 @@ struct my_complex {
     im            = im_tmp;
     dummy *= src.dummy;
     return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator*=(const volatile my_complex& src) volatile {
-    double re_tmp = re * src.re - im * src.im;
-    double im_tmp = re * src.im + im * src.re;
-    re            = re_tmp;
-    im            = im_tmp;
-    dummy *= src.dummy;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -280,7 +224,7 @@ struct functor_teamvector_for {
 
         if (test != value) {
           KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-              "FAILED teamvector_parallel_for %i %i %f %f\n",
+              "FAILED teamvector_parallel_for %i %i %lf %lf\n",
               team.league_rank(), team.team_rank(), static_cast<double>(test),
               static_cast<double>(value));
           flag() = 1;
@@ -493,7 +437,12 @@ template <class ExecutionSpace>
 bool Test(int test) {
   bool passed = true;
 
+// With SYCL 33*8 exceeds the maximum work group size
+#ifdef KOKKOS_ENABLE_SYCL
+  int team_size = 31;
+#else
   int team_size = 33;
+#endif
   if (team_size > int(ExecutionSpace::concurrency()))
     team_size = int(ExecutionSpace::concurrency());
   passed = passed && test_scalar<int, ExecutionSpace>(317, team_size, test);

@@ -61,7 +61,7 @@ TRIBITS_ADD_TEST(
   NAME MatrixMarket_Tpetra_CrsMatrix_Dist_simple
   ARGS "--file=simple.mtx"
   COMM mpi
-  NUM_MPI_PROCS 10 
+  NUM_MPI_PROCS 10
   STANDARD_PASS_OUTPUT
   )
 
@@ -106,7 +106,7 @@ TRIBITS_ADD_TEST(
   NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat
   ARGS "--file=rmat_11_lap.mtx"
   COMM mpi
-  NUM_MPI_PROCS 10 
+  NUM_MPI_PROCS 10
   STANDARD_PASS_OUTPUT
   )
 
@@ -151,7 +151,7 @@ TRIBITS_ADD_TEST(
   NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
   ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
   COMM mpi
-  NUM_MPI_PROCS 10 
+  NUM_MPI_PROCS 10
   STANDARD_PASS_OUTPUT
   )
 
@@ -393,7 +393,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Bug5800
   SOURCES
-    Bug5800
+    Bug5800.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
@@ -495,4 +495,3 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
     rmat_11.mtx
     rmat_11_lap.mtx
 )
-

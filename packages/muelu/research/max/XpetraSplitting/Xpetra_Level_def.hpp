@@ -162,7 +162,7 @@ void Level<Scalar, LocalOrdinal, GlobalOrdinal, Node>::checkConsistency( ) const
       TEUCHOS_TEST_FOR_EXCEPTION( regionR_[region_idx]->getGlobalNumRows()!=regionA_[region_idx]->getGlobalNumCols(), Exceptions::RuntimeError, "level ID: "<<levelID_<<" - Region: "<<region_idx<<" , numRows(R) = "<<regionR_[region_idx]->getGlobalNumRows()<<" BUT numCols(A) = "<<regionA_[region_idx]->getGlobalNumCols()<<"\n" );
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION( regionA_[region_idx]->getRowMap()->getNodeNumElements()>0 && level_regionToAll_[region_idx].size()!=regionA_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<regionA_[region_idx]->getRowMap()->getComm()->getRank()<<" - level ID: "<<levelID_<<" - Region: "<<region_idx<<" , size(regionToAll) = "<<level_regionToAll_[region_idx].size()<<" BUT numCols(A) = "<<regionA_[region_idx]->getGlobalNumCols()<<"\n" );
+    TEUCHOS_TEST_FOR_EXCEPTION( regionA_[region_idx]->getRowMap()->getLocalNumElements()>0 && level_regionToAll_[region_idx].size()!=regionA_[region_idx]->getGlobalNumRows(), Exceptions::RuntimeError, "Process ID: "<<regionA_[region_idx]->getRowMap()->getComm()->getRank()<<" - level ID: "<<levelID_<<" - Region: "<<region_idx<<" , size(regionToAll) = "<<level_regionToAll_[region_idx].size()<<" BUT numCols(A) = "<<regionA_[region_idx]->getGlobalNumCols()<<"\n" );
 
   }
 

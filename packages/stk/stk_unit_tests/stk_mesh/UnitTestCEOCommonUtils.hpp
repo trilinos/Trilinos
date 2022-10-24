@@ -37,9 +37,9 @@ const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
 inline bool isEntityValidOnCommList(stk::unit_test_util::BulkDataTester& stkMeshBulkData, stk::mesh::Entity entity)
 {
-    EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), entityKey);
-    return iter != stkMeshBulkData.my_internal_comm_list().end() && entityKey == iter->key;
+  EntityKey entityKey = stkMeshBulkData.entity_key(entity);
+  stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), entityKey);
+  return iter != stkMeshBulkData.my_internal_comm_list().end() && entityKey == iter->key;
 }
 
 
@@ -47,18 +47,18 @@ inline bool isEntityValidOnCommList(stk::unit_test_util::BulkDataTester& stkMesh
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline void add_nodes_to_move(stk::mesh::BulkData& bulk,
-                       stk::mesh::Entity elem,
-                       int dest_proc,
-                       std::vector<stk::mesh::EntityProc>& entities_to_move)
+                              stk::mesh::Entity elem,
+                              int dest_proc,
+                              std::vector<stk::mesh::EntityProc>& entities_to_move)
 {
-    const stk::mesh::Entity* nodes = bulk.begin_nodes(elem);
-    for(unsigned i = 0; i < bulk.num_nodes(elem); ++i)
+  const stk::mesh::Entity* nodes = bulk.begin_nodes(elem);
+  for(unsigned i = 0; i < bulk.num_nodes(elem); ++i)
+  {
+    if(bulk.parallel_owner_rank(nodes[i]) == bulk.parallel_rank())
     {
-        if(bulk.parallel_owner_rank(nodes[i]) == bulk.parallel_rank())
-        {
-            entities_to_move.push_back(stk::mesh::EntityProc(nodes[i], dest_proc));
-        }
+      entities_to_move.push_back(stk::mesh::EntityProc(nodes[i], dest_proc));
     }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,12 +89,12 @@ bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
                  stk::mesh::Part *p9 = NULL, stk::mesh::Part *p10 = NULL, stk::mesh::Part *p11 = NULL);
 
 bool check_relns(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, stk::mesh::EntityRank to_rank,
-                        EntityId id0 = EntityKey::MIN_ID, EntityId id1 = EntityKey::MIN_ID,
-                        EntityId id2 = EntityKey::MIN_ID, EntityId id3 = EntityKey::MIN_ID,
-                        EntityId id4 = EntityKey::MIN_ID, EntityId id5 = EntityKey::MIN_ID,
-                        EntityId id6 = EntityKey::MIN_ID, EntityId id7 = EntityKey::MIN_ID,
-                        EntityId id8 = EntityKey::MIN_ID, EntityId id9 = EntityKey::MIN_ID,
-                        EntityId id10 = EntityKey::MIN_ID, EntityId id11 = EntityKey::MIN_ID);
+                 EntityId id0 = EntityKey::MIN_ID, EntityId id1 = EntityKey::MIN_ID,
+                 EntityId id2 = EntityKey::MIN_ID, EntityId id3 = EntityKey::MIN_ID,
+                 EntityId id4 = EntityKey::MIN_ID, EntityId id5 = EntityKey::MIN_ID,
+                 EntityId id6 = EntityKey::MIN_ID, EntityId id7 = EntityKey::MIN_ID,
+                 EntityId id8 = EntityKey::MIN_ID, EntityId id9 = EntityKey::MIN_ID,
+                 EntityId id10 = EntityKey::MIN_ID, EntityId id11 = EntityKey::MIN_ID);
 
 }
 

@@ -169,6 +169,125 @@ private:
   void populate_bulk_data(stk::mesh::BulkData& bulk);
 };
 
+namespace simple_fields {
+
+struct ConstructedElementBlock
+{
+  ConstructedElementBlock()
+    : topology(stk::topology::INVALID_TOPOLOGY),
+      name(""),
+      id(-1)
+  { }
+
+  ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_)
+    : topology(topology_),
+      name(name_),
+      id(id_)
+  { }
+
+  ConstructedElementBlock(stk::topology topology_, const std::string& name_, int id_, const std::vector< std::vector<unsigned> >& connectivityIndex_)
+    : topology(topology_),
+      name(name_),
+      id(id_),
+      connectivityIndex(connectivityIndex_)
+  { }
+
+  ConstructedElementBlock(const ConstructedElementBlock& block)
+    : topology(block.topology),
+      name(block.name),
+      id(block.id),
+      connectivityIndex(block.connectivityIndex)
+  { }
+
+  void add_connectivity(const std::vector<unsigned>& connectivity)
+  {
+    ASSERT_EQ(topology.num_nodes(), connectivity.size());
+    connectivityIndex.push_back(connectivity);
+  }
+
+  void set_connectivity(const std::vector< std::vector<unsigned> >& connectivities)
+  {
+    for(const std::vector<unsigned>& connectivity : connectivities) {
+      add_connectivity(connectivity);
+    }
+  }
+
+  stk::topology topology;
+  std::string name;
+  int id;
+  std::vector< std::vector<unsigned> > connectivityIndex;
+};
+
+class ConstructedMesh
+{
+public:
+  ConstructedMesh(unsigned spatialDimension)
+    : m_spatialDimension(spatialDimension)
+  { }
+
+  void set_x_coordinates(const std::vector< double >& xCoordinates)
+  {
+    m_xCoords = xCoordinates;
+  }
+
+  void set_y_coordinates(const std::vector< double >& yCoordinates)
+  {
+    m_yCoords = yCoordinates;
+  }
+
+  void set_z_coordinates(const std::vector< double >& zCoordinates)
+  {
+    m_zCoords = zCoordinates;
+  }
+
+  void set_node_ids(const stk::mesh::EntityIdVector& nodeIds)
+  {
+    m_nodeIds = nodeIds;
+  }
+
+  void set_elem_ids(const stk::mesh::EntityIdVector& elemIds)
+  {
+    m_elemIds = elemIds;
+  }
+
+  void set_elem_distribution(const stk::mesh::EntityIdProcVec& elemDistribution)
+  {
+    m_elemDistribution = elemDistribution;
+  }
+
+
+  void add_elem_block(const ConstructedElementBlock& block)
+  {
+    m_elemBlocks.push_back(block);
+  }
+
+  void create_mesh(stk::mesh::BulkData& bulk)
+  {
+    verify_mesh_data(bulk.mesh_meta_data());
+    populate_bulk_data(bulk);
+  }
+
+private:
+  unsigned m_spatialDimension = 0;
+  std::vector< double > m_xCoords;
+  std::vector< double > m_yCoords;
+  std::vector< double > m_zCoords;
+  stk::mesh::EntityIdVector m_nodeIds;
+  stk::mesh::EntityIdVector m_elemIds;
+  stk::mesh::EntityIdProcVec m_elemDistribution;
+  std::vector<ConstructedElementBlock> m_elemBlocks;
+
+  ConstructedMesh() {}
+
+  void create_block_elements_and_nodes(stk::mesh::BulkData& bulk, const ConstructedElementBlock& block, const unsigned elemIdOffset);
+
+  void verify_mesh_data(const stk::mesh::MetaData& meta);
+
+  void populate_bulk_data(stk::mesh::BulkData& bulk);
+};
+
+} // namespace simple_fields
+
 } // namespace unit_test_util
 } // namespace stk
 

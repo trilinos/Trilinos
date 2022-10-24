@@ -217,7 +217,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
     if(orig_stridedRgMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
-      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getNodeElementList();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getLocalElementList();
       stridedRgMap = StridedMapFactory::Build(
           originalTransferOp->getRangeMap()->lib(),
           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -233,7 +233,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
     if(orig_stridedDoMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
-      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getNodeElementList();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getLocalElementList();
       stridedDoMap = StridedMapFactory::Build(
           originalTransferOp->getDomainMap()->lib(),
           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -263,7 +263,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     // append strided row map (= range map) to list of range maps.
     Teuchos::RCP<const Map> rangeMapii = rebRii->getRowMap("stridedMaps");
     subBlockRRangeMaps.push_back(rangeMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getLocalElementList();
     // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMapii.begin(), nodeRangeMapii.end());
     if(bThyraRangeGIDs == false)
@@ -272,7 +272,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     // append strided col map (= domain map) to list of range maps.
     Teuchos::RCP<const Map> domainMapii = rebRii->getColMap("stridedMaps");
     subBlockRDomainMaps.push_back(domainMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getLocalElementList();
     // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMapii.begin(), nodeDomainMapii.end());
     if(bThyraDomainGIDs == false)

@@ -99,7 +99,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
-    SET_VALID_ENTRY("aggregation: phase2a include root");
+    SET_VALID_ENTRY("aggregation: match ML phase2a");
     SET_VALID_ENTRY("aggregation: phase2a agg factor");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
@@ -107,6 +107,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: compute aggregate qualities");
+    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
@@ -299,11 +300,9 @@ namespace MueLu {
     Set(currentLevel, "Aggregates", aggregates);
 
     if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-	RCP<Xpetra::MultiVector<double,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<double,LO,GO,Node>>>(currentLevel, "AggregateQualities");
+      RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>>>(currentLevel, "AggregateQualities");
     }
 
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

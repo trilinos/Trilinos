@@ -37,6 +37,8 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+
 include(AdvancedSet)
 include(MessageWrapper)
 
@@ -96,8 +98,9 @@ function( tribits_process_comm_args  ADD_SERIAL_FEATURE_OUT  ADD_MPI_FEATURE_OUT
 endfunction()
 
 
-function( tribits_create_name_from_current_source_directory DIRECTORY_NAME )
-    set(DIRECTORY_NAME "")
+function(tribits_create_name_from_current_source_directory  directoryNameOut)
+    set(directoryName "")
+
     #Get the unique part of the path for this test directory
     string(REGEX REPLACE ${PACKAGE_SOURCE_DIR} "" unique_dir_path
       ${CMAKE_CURRENT_SOURCE_DIR})
@@ -111,8 +114,7 @@ function( tribits_create_name_from_current_source_directory DIRECTORY_NAME )
     # compatible with windows since they use a "\" instead of a "/" for
     # directory delimiters. I'm not sure how this will react if we encounter a
     # directory name with a space in it.
-    string(REGEX REPLACE "/" "_" DIRECTORY_NAME ${unique_dir_path})
+    string(REGEX REPLACE "/" "_" directoryName "${unique_dir_path}")
 
-    #print_var(DIRECTORY_NAME)
-    set(DIRECTORY_NAME ${DIRECTORY_NAME} PARENT_SCOPE)
+    set(${directoryNameOut} "${directoryName}" PARENT_SCOPE)
 endfunction()

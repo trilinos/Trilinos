@@ -71,7 +71,7 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements(), false);
+    isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getLocalNumElements(), false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
     aggregatesIncludeGhosts_ = true;
@@ -88,7 +88,7 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(map);
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Teuchos::ArrayRCP<bool>(map->getNodeNumElements(), false);
+    isRoot_ = Teuchos::ArrayRCP<bool>(map->getLocalNumElements(), false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
     aggregatesIncludeGhosts_ = true;
@@ -191,12 +191,12 @@ namespace MueLu {
     for(LO i=0; i<numNodes; i++) {
       LO aggregate = vertex2AggId[i];
       if(aggregate !=INVALID) {
-	aggNodes[aggCurr[aggregate]] = i;
-	aggCurr[aggregate]++;
+        aggNodes[aggCurr[aggregate]] = i;
+        aggCurr[aggregate]++;
       }
       else {
-	unaggregated[currNumUnaggregated] = i;
-	currNumUnaggregated++;
+        unaggregated[currNumUnaggregated] = i;
+        currNumUnaggregated++;
       }
     }
     unaggregated.resize(currNumUnaggregated);

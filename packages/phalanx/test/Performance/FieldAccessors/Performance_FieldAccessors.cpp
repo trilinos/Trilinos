@@ -49,7 +49,6 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Kokkos_View.hpp"
 
 // From test/Utilities directory
 #include "Traits.hpp"
@@ -146,7 +145,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Compiletime Rank" << endl;
     TimeMonitor tm(*phx_ct_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::ExecSpace,phx_ct_field> (a,b,c),"MDField (Compiletime Rank)");
+      Kokkos::parallel_for("MDField (Compiletime Rank)",num_cells,ComputeA<double,PHX::ExecSpace,phx_ct_field> (a,b,c));
       typename PHX::Device().fence();
     }
   }
@@ -163,7 +162,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Runtime Rank" << endl;
     TimeMonitor tm(*phx_rt_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::ExecSpace,phx_rt_field> (a,b,c),"MDField (Runtime Rank)");
+      Kokkos::parallel_for("MDField (Runtime Rank)",num_cells,ComputeA<double,PHX::ExecSpace,phx_rt_field> (a,b,c));
       typename PHX::Device().fence();
     }
   }
@@ -180,7 +179,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "Kokkos View" << endl;
     TimeMonitor tm(*k_time_pf);
     for (size_type l=0; l < num_loops; ++l)
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field>(a,b,c),"Kokkos View");
+      Kokkos::parallel_for("Kokkos View",num_cells,ComputeA<double,PHX::Device,kokkos_field>(a,b,c));
     typename PHX::Device().fence();
   }
 
@@ -197,7 +196,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "Static Kokkos View" << endl;
     TimeMonitor tm(*k_time_pf_static);
     for (size_type l=0; l < num_loops; ++l)
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field_static>(a,b,c),"Kokkos Static View");
+      Kokkos::parallel_for("Kokkos Static View",num_cells,ComputeA<double,PHX::Device,kokkos_field_static>(a,b,c));
     typename PHX::Device().fence();
   }
 

@@ -70,7 +70,7 @@ void SideNodeConnector::declare_relations_to_nodes(stk::mesh::Entity sideEntity,
 void SideNodeConnector::connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
     stk::mesh::EntityVector sideNodes;
-    stk::mesh::impl::fill_element_side_nodes_from_topology(bulk, elemEntity, elemSide, sideNodes);
+    stk::mesh::impl::fill_element_side_nodes_from_topology(bulk.bucket(elemEntity).topology(), bulk.begin_nodes(elemEntity), elemSide, sideNodes);
     declare_relations_to_nodes(sideEntity, sideNodes);
 }
 
@@ -92,7 +92,7 @@ void SideNodeConnector::connect_side_to_other_elements_nodes(const GraphEdge &ed
     else
     {
         stk::mesh::EntityVector sideNodes;
-        stk::mesh::impl::fill_element_side_nodes_from_topology(bulk, elemEntity, elemSide, sideNodes);
+        stk::mesh::impl::fill_element_side_nodes_from_topology(bulk.bucket(elemEntity).topology(), bulk.begin_nodes(elemEntity), elemSide, sideNodes);
 
         const stk::mesh::impl::ParallelInfo &parInfo = parallelGraph.get_parallel_info_for_graph_edge(edgeWithMinId);
         stk::mesh::EntityVector permutedSideNodes = get_permuted_side_nodes(elemEntity, elemSide, sideNodes, parInfo.m_permutation);

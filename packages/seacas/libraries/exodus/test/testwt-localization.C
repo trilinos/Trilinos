@@ -18,7 +18,7 @@
 #include "exodusII_int.h"
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
     if ((error = (funcall)) != NC_NOERR) {                                                         \
@@ -199,7 +199,7 @@ int main()
 
   /* write information records; test empty and just blank-filled records */
   constexpr int num_info = 3;
-  const char *  info[3];
+  const char   *info[3];
   info[0] = "This is the first information record.";
   info[1] = "";
   info[2] = "                                     ";

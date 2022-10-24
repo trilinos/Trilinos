@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iocgns_DatabaseIO_h
-#define IOSS_Iocgns_DatabaseIO_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -55,7 +54,7 @@ namespace Iocgns {
     enum class entity_type { NODE, ELEM };
 
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -214,4 +213,3 @@ namespace Iocgns {
     mutable std::map<std::string, Ioss::FaceUnorderedSet> m_boundaryFaces;
   };
 } // namespace Iocgns
-#endif

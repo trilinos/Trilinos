@@ -9,12 +9,12 @@
 #ifndef Akri_Region_Parser_h
 #define Akri_Region_Parser_h
 
-namespace YAML { class Node; }
 namespace krino { class Simulation; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace Region_Parser {
- void parse(const YAML::Node & node, Simulation & simulation);
+ void parse(const Parser::Node & node, Simulation & simulation);
 }
 }
 

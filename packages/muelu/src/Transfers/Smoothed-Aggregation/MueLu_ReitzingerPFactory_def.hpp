@@ -76,19 +76,20 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-
-
+    SET_VALID_ENTRY("repartition: enable");
+    SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("D0",                 Teuchos::null, "Generating factory of the matrix D0");
     validParamList->set< RCP<const FactoryBase> >("NodeMatrix",         Teuchos::null, "Generating factory of the matrix NodeMatrix");
     validParamList->set< RCP<const FactoryBase> >("Pnodal",             Teuchos::null, "Generating factory of the matrix P");
+    validParamList->set< RCP<const FactoryBase> >("NodeImporter",       Teuchos::null, "Generating factory of the matrix NodeImporter");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -103,7 +104,9 @@ namespace MueLu {
     Input(fineLevel,   "A");
     Input(fineLevel,   "D0");
     Input(fineLevel,   "NodeMatrix");
+    Input(coarseLevel,   "NodeMatrix");
     Input(coarseLevel, "Pnodal");
+    //    Input(coarseLevel, "NodeImporter");
 
   }
 
@@ -120,13 +123,19 @@ namespace MueLu {
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
 
+    bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
+
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
     RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeMatrix");
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
+
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-    int MyPID = D0->getRowMap()->getComm()->getRank();
+
+    // This needs to be an Operator because if NodeMatrix gets repartitioned away, we get an Operator on the level
+    RCP<Operator> CoarseNodeMatrix = Get< RCP<Operator> >(coarseLevel, "NodeMatrix");
+    int MyPID  = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getRank();
 
     // Matrix matrix params
     RCP<ParameterList> mm_params = rcp(new ParameterList);;
@@ -138,13 +147,16 @@ namespace MueLu {
 
     // TODO: We need to look through and see which of these really need importers and which ones don't
 
-    /* Generate the Pn * D0 matrix and its transpose */
+    /* Generate the D0 * Pn matrix and its transpose */
     RCP<Matrix> D0_Pn, PnT_D0T, D0_Pn_nonghosted;
     Teuchos::Array<int> D0_Pn_col_pids;
     {
       RCP<Matrix> dummy;
       SubFactoryMonitor m2(*this, "Generate D0*Pn", coarseLevel);
       D0_Pn = XMM::Multiply(*D0,false,*Pn,false,dummy,out0,true,true,"D0*Pn",mm_params);
+
+      // We don't want this guy getting accidently used later
+      if(!mm_params.is_null()) mm_params->remove("importer",false);
 
       // Save this so we don't need to do the multiplication again later
       D0_Pn_nonghosted = D0_Pn;
@@ -155,7 +167,7 @@ namespace MueLu {
         utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
       }
       else {
-        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(),MyPID);
       }
     }
           
@@ -165,6 +177,7 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Transpose D0*Pn", coarseLevel);
       PnT_D0T = Utilities::Transpose(*D0_Pn, true);
     }
+
 
     // We really need a ghosted version of D0_Pn here.
     // The reason is that if there's only one fine edge between two coarse nodes, somebody is going
@@ -182,7 +195,7 @@ namespace MueLu {
         utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
       }
       else {
-        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(),MyPID);
       }
     }
 
@@ -191,18 +204,18 @@ namespace MueLu {
     ArrayView<const LO>     colind_E, colind_N;
     ArrayView<const SC>     values_E, values_N;
 
-    size_t Ne=EdgeMatrix->getNodeNumRows();
-    size_t Nn=NodeMatrix->getNodeNumRows();
+    size_t Ne=EdgeMatrix->getLocalNumRows();
+    size_t Nn=NodeMatrix->getLocalNumRows();
 
     // Upper bound on local number of coarse edges
-    size_t max_edges = (NodeMatrix->getNodeNumEntries() + Nn +1) / 2;      
+    size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn +1) / 2;      
     ArrayRCP<size_t>  D0_rowptr(Ne+1);
     ArrayRCP<LO>      D0_colind(max_edges);
     ArrayRCP<SC>      D0_values(max_edges);
     D0_rowptr[0] = 0;
 
     LO current = 0;
-    LO Nnc = PnT_D0T->getRowMap()->getNodeNumElements();
+    LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
     
     for(LO i=0; i<(LO)Nnc; i++) {
       //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
@@ -292,6 +305,13 @@ namespace MueLu {
     D0_colind.resize(current);
     D0_values.resize(current);
 
+    // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
+    // We check that here.
+    TEUCHOS_TEST_FOR_EXCEPTION( (num_coarse_edges > 0  && CoarseNodeMatrix.is_null()) ||
+                                (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null()) 
+                                , Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Mismatched num_coarse_edges and NodeMatrix repartition.");
+    
+
     // Count the total number of edges
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
@@ -349,8 +369,6 @@ namespace MueLu {
         
       }
 #endif
-      fflush(stdout);
-
       D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap,ownedCoarseEdgeMap);
     }
     RCP<Matrix> D0_coarse_m = rcp(new CrsMatrixWrap(D0_coarse));
@@ -366,9 +384,13 @@ namespace MueLu {
     RCP<Matrix> Pe;
     {
       SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-      RCP<Matrix> dummy;
 
+      RCP<Matrix> dummy;
       RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn,false,*D0_coarse_m,true,dummy,out0,true,true,"Pn*D0c'",mm_params);
+
+      // We don't want this guy getting accidently used later
+      if(!mm_params.is_null()) mm_params->remove("importer",false);
+
       Pe = XMM::Multiply(*D0,false,*Pn_D0cT,false,dummy,out0,true,true,"D0*(Pn*D0c')",mm_params);
 
       // TODO: Something like this *might* work.  But this specifically, doesn;'t
@@ -401,6 +423,22 @@ namespace MueLu {
 
     /* Check commuting property */
     CheckCommutingProperty(*Pe,*D0_coarse_m,*D0,*Pn);
+
+    /*  If we're repartitioning here, we need to cut down the communicators */
+    // NOTE: We need to do this *after* checking the commuting property, since
+    // that's going to need to fineLevel's communicators, not the repartitioned ones
+    if(update_communicators) {
+      //NOTE: We can only do D0 here.  We have to do Ke_coarse=(Re Ke_fine Pe) in RebalanceAcFactory
+      RCP<const Teuchos::Comm<int> > newComm;
+      if(!CoarseNodeMatrix.is_null()) newComm = CoarseNodeMatrix->getDomainMap()->getComm();
+      RCP<const Map>  newMap  = Xpetra::MapFactory<LO,GO,NO>::copyMapWithNewComm(D0_coarse_m->getRowMap(),newComm);
+      D0_coarse_m->removeEmptyProcessesInPlace(newMap);
+
+      // The "in place" still leaves a dummy matrix here.  That needs to go
+      if(newMap.is_null()) D0_coarse_m = Teuchos::null;
+
+      Set(coarseLevel,"InPlaceMap",newMap);
+    }
     
     /* Set output on the level */
     Set(coarseLevel,"P",Pe);
@@ -440,7 +478,7 @@ namespace MueLu {
      RCP<Matrix> right = XMM::Multiply(D0_f,false,Pn,false,dummy,out0);
      
      // We need a non-FC matrix for the add, sadly
-     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getNodeMaxNumRowEntries()+right->getNodeMaxNumRowEntries());    
+     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
      RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
      XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
      XMM::TwoMatrixAdd(*right, false, -one, *summation, one);

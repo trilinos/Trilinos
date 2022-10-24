@@ -96,6 +96,6 @@ C     CHECK LAST VOID
          IF (VOID(NVOIDS,1,2) .EQ. 0) NVOIDS = NVOIDS - 1
       END IF
 
-      ERR = SUCESS
+      ERR = SUCCESS
       RETURN
       END

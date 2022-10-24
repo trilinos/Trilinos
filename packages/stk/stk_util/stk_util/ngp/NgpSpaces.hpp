@@ -36,10 +36,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_ENABLE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#endif
-
 namespace stk {
 namespace ngp {
 
@@ -74,7 +70,11 @@ using MemSpace = Kokkos::HostSpace;
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA_UVM
 using UVMMemSpace = Kokkos::CudaUVMSpace;
+#else
+using UVMMemSpace = Kokkos::CudaHostPinnedSpace;
+#endif
 #elif defined(KOKKOS_ENABLE_HIP)
 using UVMMemSpace = Kokkos::Experimental::HIPHostPinnedSpace;
 #elif defined(KOKKOS_ENABLE_OPENMP)

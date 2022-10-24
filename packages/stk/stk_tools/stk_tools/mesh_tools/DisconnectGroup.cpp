@@ -45,18 +45,18 @@ namespace tools {
 namespace impl {
 
 DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk)
-: m_bulk(bulk),
-  m_parts(stk::mesh::ConstPartVector()),
-  m_entities(stk::mesh::EntityVector()),
-  m_node(stk::mesh::Entity()),
-  m_active(true) {}
+  : m_bulk(bulk),
+    m_parts(stk::mesh::ConstPartVector()),
+    m_entities(stk::mesh::EntityVector()),
+    m_node(stk::mesh::Entity()),
+    m_active(true) {}
 
 DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mesh::Part* part, stk::mesh::Entity node)
-: m_bulk(bulk),
-  m_parts(stk::mesh::ConstPartVector()),
-  m_entities(stk::mesh::EntityVector()),
-  m_node(node),
-  m_active(true)
+  : m_bulk(bulk),
+    m_parts(stk::mesh::ConstPartVector()),
+    m_entities(stk::mesh::EntityVector()),
+    m_node(node),
+    m_active(true)
 {
   ThrowRequire(m_bulk.is_valid(m_node));
 
@@ -70,13 +70,13 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mes
 }
 
 DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const BlockPair& blockPair, stk::mesh::Entity node)
-: m_bulk(bulk),
-  m_parts(stk::mesh::ConstPartVector()),
-  m_entities(stk::mesh::EntityVector()),
-  m_node(node),
-  m_active(true),
-  m_blockPair(blockPair),
-  m_hasBlockPair(true)
+  : m_bulk(bulk),
+    m_parts(stk::mesh::ConstPartVector()),
+    m_entities(stk::mesh::EntityVector()),
+    m_node(node),
+    m_active(true),
+    m_blockPair(blockPair),
+    m_hasBlockPair(true)
 {
   ThrowRequire(m_bulk.is_valid(m_node));
 
@@ -90,11 +90,11 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const BlockPai
 }
 
 DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mesh::Part* part)
-: m_bulk(bulk),
-  m_parts(stk::mesh::ConstPartVector()),
-  m_entities(stk::mesh::EntityVector()),
-  m_node(stk::mesh::Entity()),
-  m_active(true)
+  : m_bulk(bulk),
+    m_parts(stk::mesh::ConstPartVector()),
+    m_entities(stk::mesh::EntityVector()),
+    m_node(stk::mesh::Entity()),
+    m_active(true)
 {
   if(part != nullptr) {
     m_parts.push_back(part);
@@ -102,11 +102,11 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mes
 }
 
 DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mesh::ConstPartVector& parts, stk::mesh::Entity node)
-: m_bulk(bulk),
-  m_parts(parts),
-  m_entities(stk::mesh::EntityVector()),
-  m_node(node),
-  m_active(true)
+  : m_bulk(bulk),
+    m_parts(parts),
+    m_entities(stk::mesh::EntityVector()),
+    m_node(node),
+    m_active(true)
 {
   ThrowRequire(m_bulk.is_valid(m_node));
 
@@ -117,15 +117,15 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mes
 }
 
 DisconnectGroup::DisconnectGroup(const DisconnectGroup& group)
-: m_bulk(group.m_bulk),
-  m_parts(group.m_parts),
-  m_entities(group.m_entities),
-  m_node(group.m_node),
-  m_active(group.m_active),
-  m_id(group.m_id),
-  m_entityOwnerProcVec(group.m_entityOwnerProcVec),
-  m_blockPair(group.m_blockPair),
-  m_hasBlockPair(group.m_hasBlockPair)
+  : m_bulk(group.m_bulk),
+    m_parts(group.m_parts),
+    m_entities(group.m_entities),
+    m_node(group.m_node),
+    m_active(group.m_active),
+    m_id(group.m_id),
+    m_entityOwnerProcVec(group.m_entityOwnerProcVec),
+    m_blockPair(group.m_blockPair),
+    m_hasBlockPair(group.m_hasBlockPair)
 {
 }
 

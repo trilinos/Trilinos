@@ -59,11 +59,13 @@ struct EntityGhostData;
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+
+void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+
 void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, EntityRank rank,
                                                   unsigned numNodes, const Entity* nodes,
                                                   std::vector<Entity>& elementsInCommon);
-
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
 template<class Pred>
 void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
@@ -87,7 +89,9 @@ void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRa
     }
 }
 
-void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+const EntityCommListInfo& find_entity(const BulkData& mesh,
+                                      const EntityCommListInfoVector& entities,
+                                      const EntityKey& key);
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
@@ -244,11 +248,17 @@ void comm_sync_aura_send_recv(
   EntityProcMapping& entityProcMapping,
   std::vector<bool>& ghostStatus );
 
+void comm_sync_nonowned_sends(
+  const BulkData & mesh ,
+  std::vector<EntityProc> & nonOwnedSendGhosts,
+  EntityProcMapping& entityProcMapping);
+
 void insert_upward_relations(const BulkData& bulk_data,
-                             const Connectivity& entityConnectivity,
                              const EntityProcMapping& entitySharing,
-                             Entity rel_entity,
-                             const int share_proc,
+                             const Entity entity,
+                             const EntityRank entityRank,
+                             const EntityRank maxRank,
+                             const std::vector<int>& share_proc,
                              EntityProcMapping& send);
 
 void move_unowned_entities_for_owner_to_ghost(
@@ -313,7 +323,7 @@ bool is_good_rank_and_id(const MetaData& meta,
 
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
-                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);
+                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle);
 
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,

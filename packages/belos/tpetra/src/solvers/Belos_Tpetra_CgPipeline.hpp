@@ -84,7 +84,8 @@ protected:
 
     SolverOutput<SC> output {};
 
-    MV R_AR (R_in.getMap (), 2); // [R, A*R]
+    bool zeroOut = false;
+    MV R_AR (R_in.getMap (), 2, zeroOut); // [R, A*R]
     vec_type R = * (R_AR.getVectorNonConst (0));
     vec_type AR = * (R_AR.getVectorNonConst (1));
     Tpetra::deep_copy (R, R_in);
@@ -99,10 +100,10 @@ protected:
     auto RR_RAR_host = Kokkos::create_mirror_view (RR_RAR);
     vec_type P (R, Teuchos::Copy);
     vec_type AP (P.getMap ());
-    vec_type AAR(R.getMap ());
+    vec_type AAR(R.getMap (), zeroOut);
     vec_type AW (R.getMap ());
-    vec_type MR (R.getMap ());
-    vec_type U (R.getMap ());
+    vec_type MR (R.getMap (), zeroOut);
+    vec_type U (R.getMap (), zeroOut);
     vec_type Q (R.getMap ());
 
     // local vars
@@ -162,6 +163,7 @@ protected:
       Kokkos::deep_copy (RR_RAR_host, RR_RAR);
       RAR = RR_RAR_host(1);
       beta_new = STS::real (RR_RAR_host(0));
+
       r_norm = std::sqrt( beta_new );
       if (iter == 0) {
         r_norm_orig = r_norm;
@@ -205,9 +207,9 @@ protected:
 
         // alpha
         alpha = beta_new / STS::real (PAP);
-        if (outPtr != nullptr) {
-          *outPtr << ", alpha: " << alpha << endl;
-        }
+      }
+      if (outPtr != nullptr) {
+        *outPtr << ", alpha: " << alpha << endl;
       }
       // beta_old
       beta_old = beta_new;

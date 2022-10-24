@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@
  */
 
 #define NUM_THREADS 8
-#define NUM_NODES 64
+#define NUM_NODES   64
 
 typedef struct
 {
@@ -31,12 +31,11 @@ typedef struct
 
 void *output_nodal_var(void *varg)
 {
-  char   name[33];
   param *arg      = (param *)varg;
   int    num_node = ex_inquire_int(arg->exoid, EX_INQ_NODES);
-  float *data     = malloc(num_node * sizeof(float));
-  int    i;
-  for (i = 0; i < num_node; i++) {
+
+  float *data = malloc(num_node * sizeof(float));
+  for (int i = 0; i < num_node; i++) {
     data[i] = (arg->timestep - 1) * 10 + arg->threadid + 1 + (float)i / 100.0;
   }
 
@@ -49,6 +48,7 @@ void *output_nodal_var(void *varg)
     }
   }
 
+  char name[33];
   sprintf(name, "NodalVar%ld", arg->threadid + 1);
   ex_put_variable_name(arg->exoid, EX_NODAL, arg->threadid + 1, name);
 
@@ -107,27 +107,23 @@ int init_file(int num_nodal_vars)
 int main(int argc, char *argv[])
 {
   pthread_t threads[NUM_THREADS];
-  int       rc;
-  long      t;
-
-  int exoid = init_file(NUM_THREADS);
-
-  param arg[NUM_THREADS];
+  int       exoid = init_file(NUM_THREADS);
+  param     arg[NUM_THREADS];
 
   printf("Running on %d threads\n", NUM_THREADS);
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     arg[t].exoid    = exoid;
     arg[t].threadid = t;
     arg[t].timestep = 1;
 
-    rc = pthread_create(&threads[t], NULL, output_nodal_var, (void *)(arg + t));
+    int rc = pthread_create(&threads[t], NULL, output_nodal_var, (void *)(arg + t));
     if (rc) {
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
     }
   }
 
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     pthread_join(threads[t], NULL);
   }
 

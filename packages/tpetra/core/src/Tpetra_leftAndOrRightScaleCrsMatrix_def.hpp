@@ -85,7 +85,7 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     // constructed.
     auto A_lcl = A.getLocalMatrixDevice ();
     const LO lclNumRows =
-      static_cast<LO> (A.getRowMap ()->getNodeNumElements ());
+      static_cast<LO> (A.getRowMap ()->getLocalNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
       (A_lcl.numRows () != lclNumRows, std::invalid_argument,
        "leftAndOrRightScaleCrsMatrix: Local matrix is not valid.  "

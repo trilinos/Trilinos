@@ -336,7 +336,7 @@ namespace Xpetra {
   #ifdef HAVE_XPETRA_DEBUG
       // This cannot be tested by Epetra itself
       {
-        size_t localLength = map->getNodeNumElements();
+        size_t localLength = map->getLocalNumElements();
         for(int j=0; j<ArrayOfPtrs.size(); j++) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != localLength, std::runtime_error,
                                                 ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() <<
@@ -753,7 +753,7 @@ namespace Xpetra {
   #ifdef HAVE_XPETRA_DEBUG
       // This cannot be tested by Epetra itself
       {
-        size_t localLength = map->getNodeNumElements();
+        size_t localLength = map->getLocalNumElements();
         for(int j=0; j<ArrayOfPtrs.size(); j++) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != localLength, std::runtime_error,
                                                 ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() <<

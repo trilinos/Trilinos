@@ -38,10 +38,7 @@
 
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
-#include "stk_unit_test_utils/stk_mesh_fixtures/GearsFixture.hpp"  // for GearsFixture, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
-
-
 
 namespace {
 
@@ -49,13 +46,15 @@ namespace {
 
 TEST( UnitTestDebugDump, MetaData )
 {
-  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
-                                            stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
-  fixture.meta_data.commit();
+  const unsigned NX = 3;
+  const unsigned NY = 1;
+  const unsigned NZ = 1;
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  fixture.m_meta.commit();
 
   // Doesn't check anything, but at least makes sure it passes
   std::ostringstream myout;
-  fixture.meta_data.dump_all_meta_info(myout);
+  fixture.m_meta.dump_all_meta_info(myout);
 }
 
 TEST( UnitTestDebugDump, BulkData )
@@ -63,7 +62,7 @@ TEST( UnitTestDebugDump, BulkData )
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
 

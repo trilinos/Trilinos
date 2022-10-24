@@ -283,16 +283,16 @@ namespace Xpetra {
     global_size_t getGlobalNumCols() const;
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const;
+    size_t getLocalNumRows() const;
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const;
+    size_t getLocalNumCols() const;
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const;
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const;
+    size_t getLocalNumEntries() const;
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
@@ -304,7 +304,7 @@ namespace Xpetra {
     size_t getGlobalMaxNumRowEntries() const;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const;
+    size_t getLocalMaxNumRowEntries() const;
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const;
@@ -452,6 +452,9 @@ namespace Xpetra {
     }
 #endif
 #endif
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector & X,
@@ -695,16 +698,16 @@ namespace Xpetra {
     global_size_t getGlobalNumCols() const { return 0; }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const { return 0; }
+    size_t getLocalNumRows() const { return 0; }
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const { return 0; }
+    size_t getLocalNumCols() const { return 0; }
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const { return 0; }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const { return 0; }
+    size_t getLocalNumEntries() const { return 0; }
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
@@ -716,7 +719,7 @@ namespace Xpetra {
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { return 0; }
+    size_t getLocalMaxNumRowEntries() const { return 0; }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return false; }
@@ -859,6 +862,9 @@ namespace Xpetra {
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
@@ -1099,16 +1105,16 @@ namespace Xpetra {
     global_size_t getGlobalNumCols() const { return 0; }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const { return 0; }
+    size_t getLocalNumRows() const { return 0; }
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const { return 0; }
+    size_t getLocalNumCols() const { return 0; }
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const { return 0; }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const { return 0; }
+    size_t getLocalNumEntries() const { return 0; }
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
@@ -1120,7 +1126,7 @@ namespace Xpetra {
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { return 0; }
+    size_t getLocalMaxNumRowEntries() const { return 0; }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return false; }
@@ -1257,11 +1263,23 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
+    /// \brief Access the local Kokkos::CrsMatrix data
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type::HostMirror());
+    }
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrixDevice () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
+    }
+
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

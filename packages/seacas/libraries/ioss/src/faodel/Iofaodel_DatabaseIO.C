@@ -77,7 +77,7 @@ namespace Iofaodel {
   IOFactory::IOFactory() : Ioss::IOFactory("faodel") {}
 
   Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                                       MPI_Comm                     communicator,
+                                       Ioss_MPI_Comm                communicator,
                                        const Ioss::PropertyManager &properties) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
@@ -106,7 +106,7 @@ namespace Iofaodel {
    */
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), spatialDimension(3),
         nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),

@@ -317,7 +317,7 @@ TEST_F(MathFunctionWithTwoDoubleArg, Multiplysign_ScalarAndSimdMatch)
 
 // bool and double
 
-TEST_F(MathFunctionWithBoolAndDoubleArg, DISABLED_Ternary_ScalarAndSimdMatch)
+TEST_F(MathFunctionWithBoolAndDoubleArg, Ternary_ScalarAndSimdMatch)
 {
   test_simd_operator([](bool x, double y) { return x ? y : 0.0; },
                      [](stk::simd::Bool x, stk::simd::Double y) { return stk::math::if_then_else_zero(x,y); },

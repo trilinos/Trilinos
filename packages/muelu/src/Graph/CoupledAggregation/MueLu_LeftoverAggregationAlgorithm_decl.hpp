@@ -58,6 +58,8 @@
 
 #include "MueLu_CoupledAggregationCommHelper_fwd.hpp"
 
+
+
 namespace MueLu {
 
   template<class LocalOrdinal = DefaultLocalOrdinal,
@@ -66,7 +68,7 @@ namespace MueLu {
   class LeftoverAggregationAlgorithm : public BaseClass {
 #undef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
-
+    typedef DefaultScalar SC;
     typedef GO global_size_t; //TODO
     typedef LO my_size_t;     //TODO
 
@@ -305,7 +307,7 @@ namespace MueLu {
 
       //! @brief Attempt to clean up aggregates that are too small.
     int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const; //RemoveSmallAggs
+                        RCP<Xpetra::Vector<SC,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const; //RemoveSmallAggs
 
     //@}
 

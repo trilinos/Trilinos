@@ -19,4 +19,3 @@ C See packages/seacas/LICENSE for details
       end if
       return
       end
-

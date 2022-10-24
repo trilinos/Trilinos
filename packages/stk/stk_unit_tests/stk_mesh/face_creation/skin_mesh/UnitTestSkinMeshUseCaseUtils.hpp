@@ -77,42 +77,40 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/degenerate_mesh.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp"
 
-
 namespace {
 
 using namespace stk::mesh::impl;
 using namespace stk::mesh;
 
-
 inline stk::mesh::PartVector get_skin_parts(stk::mesh::MetaData &meta)
 {
-    stk::mesh::PartVector skin_parts;
-    skin_parts.push_back(meta.get_part("skin"));
-    skin_parts.push_back(meta.get_part("active"));
-    return skin_parts;
+  stk::mesh::PartVector skin_parts;
+  skin_parts.push_back(meta.get_part("skin"));
+  skin_parts.push_back(meta.get_part("active"));
+  return skin_parts;
 }
 
 inline void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
 {
-    stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
-    meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
-    stk::mesh::Part& active = meta.declare_part("active");
-    stk::io::fill_mesh("generated:1x1x2", bulkData);
+  stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
+  meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+  stk::mesh::Part& active = meta.declare_part("active");
+  stk::io::fill_mesh("generated:1x1x2", bulkData);
 
-    stk::mesh::EntityVector entitiesToMakeActive;
-    std::vector<stk::mesh::PartVector> add_parts;
-    std::vector<stk::mesh::PartVector> rm_parts;
+  stk::mesh::EntityVector entitiesToMakeActive;
+  std::vector<stk::mesh::PartVector> add_parts;
+  std::vector<stk::mesh::PartVector> rm_parts;
 
-    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-    stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
+  stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+  stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
 
-    if(bulkData.is_valid(element1) && bulkData.bucket(element1).owned())
-    {
-        entitiesToMakeActive.push_back(element1);
-        add_parts.push_back(stk::mesh::PartVector(1, &active));
-        rm_parts.push_back(stk::mesh::PartVector());
-    }
-    bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+  if(bulkData.is_valid(element1) && bulkData.bucket(element1).owned())
+  {
+    entitiesToMakeActive.push_back(element1);
+    add_parts.push_back(stk::mesh::PartVector(1, &active));
+    rm_parts.push_back(stk::mesh::PartVector());
+  }
+  bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
 }
 
 } // namespace

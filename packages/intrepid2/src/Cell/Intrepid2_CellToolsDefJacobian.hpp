@@ -461,6 +461,16 @@ namespace Intrepid2 {
 
   template<typename DeviceType>
   template<class PointScalar>
+  void CellTools<DeviceType>::setJacobianDetInv( Data<PointScalar,DeviceType> &jacobianDetInv, const Data<PointScalar,DeviceType> & jacobian )
+  {
+    setJacobianDet(jacobianDetInv, jacobian);
+    
+    auto unitData = jacobianDetInv.allocateConstantData(1.0);
+    jacobianDetInv.storeInPlaceQuotient(unitData, jacobianDetInv);
+  }
+
+  template<typename DeviceType>
+  template<class PointScalar>
   void CellTools<DeviceType>::setJacobianInv( Data<PointScalar,DeviceType> &jacobianInv, const Data<PointScalar,DeviceType> & jacobian )
   {
     auto variationTypes  = jacobian.getVariationTypes();
@@ -805,8 +815,8 @@ namespace Intrepid2 {
     // resolve the -1 default argument for endCell into the true end cell index
     int endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
     
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
                               { jacobian.extent(0), jacobian.extent(1) } );
     Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell, endCellResolved) );

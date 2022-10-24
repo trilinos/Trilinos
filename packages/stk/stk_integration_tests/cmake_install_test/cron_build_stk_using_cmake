@@ -5,8 +5,8 @@ source ~/.bashrc
 module load sierra-devel
 
 USERNAME=william
-sierra_code=/scratch/${USERNAME}/code_stk_cmake_testing
-output_dir=/scratch/${USERNAME}/stk-cmake-testing-output
+sierra_code=/scratch/${USERNAME}/code_votd
+output_dir=/scratch/${USERNAME}/stk-cmake-testing
 rm -rf ${output_dir}
 mkdir -p ${output_dir}
 

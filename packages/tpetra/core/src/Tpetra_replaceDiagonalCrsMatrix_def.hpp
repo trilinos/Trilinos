@@ -82,7 +82,7 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
 
   const map_type& rowMap = *rowMapPtr;
   const map_type& colMap = *colMapPtr;
-  const LO myNumRows = static_cast<LO>(matrix.getNodeNumRows());
+  const LO myNumRows = static_cast<LO>(matrix.getLocalNumRows());
   const bool isFillCompleteOnInput = matrix.isFillComplete();
 
   if (Tpetra::Details::Behavior::debug()) {

@@ -203,7 +203,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-    PreconditionerSetup(A,coordinates,nullspace,material,paramList,false,false,useML,0,H,Prec);
+    PreconditionerSetup(A,coordinates,nullspace,material,paramList,false,false,useML,false,0,H,Prec);
     comm->barrier();
     tm = Teuchos::null;
   }

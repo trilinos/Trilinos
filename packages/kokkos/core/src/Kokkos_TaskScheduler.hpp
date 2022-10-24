@@ -42,6 +42,15 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_TASKSCHEDULER_HPP
 #define KOKKOS_TASKSCHEDULER_HPP
 
@@ -55,7 +64,6 @@
 //----------------------------------------------------------------------------
 
 #include <Kokkos_MemoryPool.hpp>
-#include <impl/Kokkos_Tags.hpp>
 
 #include <Kokkos_Future.hpp>
 #include <impl/Kokkos_TaskQueue.hpp>
@@ -146,7 +154,7 @@ class BasicTaskScheduler : public Impl::TaskSchedulerBase {
                   typename task_base::destroy_type /*arg_destroy*/,
                   FunctorType&& arg_functor) {
     using functor_future_type =
-        future_type_for_functor<typename std::decay<FunctorType>::type>;
+        future_type_for_functor<std::decay_t<FunctorType>>;
     using task_type =
         Impl::Task<BasicTaskScheduler, typename functor_future_type::value_type,
                    FunctorType>;
@@ -302,11 +310,9 @@ class BasicTaskScheduler : public Impl::TaskSchedulerBase {
   }
 
   template <int TaskEnum, typename DepFutureType, typename FunctorType>
-  KOKKOS_FUNCTION
-      future_type_for_functor<typename std::decay<FunctorType>::type>
-      spawn(
-          Impl::TaskPolicyWithPredecessor<TaskEnum, DepFutureType>&& arg_policy,
-          FunctorType&& arg_functor) {
+  KOKKOS_FUNCTION future_type_for_functor<std::decay_t<FunctorType>> spawn(
+      Impl::TaskPolicyWithPredecessor<TaskEnum, DepFutureType>&& arg_policy,
+      FunctorType&& arg_functor) {
     using task_type = runnable_task_type<FunctorType>;
     typename task_type::function_type const ptr = task_type::apply;
     typename task_type::destroy_type const dtor = task_type::destroy;
@@ -372,7 +378,10 @@ class BasicTaskScheduler : public Impl::TaskSchedulerBase {
         task_base* const t = arg[i].m_task;
         if (nullptr != t) {
           // Increment reference count to track subsequent assignment.
-          Kokkos::atomic_increment(&(t->m_ref_count));
+          // This likely has to be SeqCst
+          Kokkos::Impl::desul_atomic_inc(&(t->m_ref_count),
+                                         Kokkos::Impl::MemoryOrderSeqCst(),
+                                         Kokkos::Impl::MemoryScopeDevice());
           if (q != static_cast<queue_type const*>(t->m_queue)) {
             Kokkos::abort(
                 "Kokkos when_all Futures must be in the same scheduler");
@@ -467,7 +476,10 @@ class BasicTaskScheduler : public Impl::TaskSchedulerBase {
           //  scheduler" );
           //}
           // Increment reference count to track subsequent assignment.
-          Kokkos::atomic_increment(&(arg_f.m_task->m_ref_count));
+          // This increment likely has to be SeqCst
+          Kokkos::Impl::desul_atomic_inc(&(arg_f.m_task->m_ref_count),
+                                         Kokkos::Impl::MemoryOrderSeqCst(),
+                                         Kokkos::Impl::MemoryScopeDevice());
           dep[i] = arg_f.m_task;
         }
       }
@@ -516,7 +528,7 @@ namespace Kokkos {
 
 template <class T, class Scheduler>
 Impl::TaskPolicyWithPredecessor<Impl::TaskType::TaskTeam,
-                                Kokkos::BasicFuture<T, Scheduler> >
+                                Kokkos::BasicFuture<T, Scheduler>>
     KOKKOS_INLINE_FUNCTION
     TaskTeam(Kokkos::BasicFuture<T, Scheduler> arg_future,
              TaskPriority arg_priority = TaskPriority::Regular) {
@@ -525,23 +537,22 @@ Impl::TaskPolicyWithPredecessor<Impl::TaskType::TaskTeam,
 
 template <class Scheduler>
 Impl::TaskPolicyWithScheduler<Impl::TaskType::TaskTeam, Scheduler>
-    KOKKOS_INLINE_FUNCTION
-    TaskTeam(Scheduler arg_scheduler,
-             typename std::enable_if<Kokkos::is_scheduler<Scheduler>::value,
-                                     TaskPriority>::type arg_priority =
-                 TaskPriority::Regular) {
+    KOKKOS_INLINE_FUNCTION TaskTeam(
+        Scheduler arg_scheduler,
+        std::enable_if_t<Kokkos::is_scheduler<Scheduler>::value, TaskPriority>
+            arg_priority = TaskPriority::Regular) {
   return {std::move(arg_scheduler), arg_priority};
 }
 
 template <class Scheduler, class PredecessorFuture>
 Impl::TaskPolicyWithScheduler<Kokkos::Impl::TaskType::TaskTeam, Scheduler,
                               PredecessorFuture>
-    KOKKOS_INLINE_FUNCTION TaskTeam(
-        Scheduler arg_scheduler, PredecessorFuture arg_future,
-        typename std::enable_if<Kokkos::is_scheduler<Scheduler>::value &&
-                                    Kokkos::is_future<PredecessorFuture>::value,
-                                TaskPriority>::type arg_priority =
-            TaskPriority::Regular) {
+    KOKKOS_INLINE_FUNCTION
+    TaskTeam(Scheduler arg_scheduler, PredecessorFuture arg_future,
+             std::enable_if_t<Kokkos::is_scheduler<Scheduler>::value &&
+                                  Kokkos::is_future<PredecessorFuture>::value,
+                              TaskPriority>
+                 arg_priority = TaskPriority::Regular) {
   static_assert(std::is_same<typename PredecessorFuture::scheduler_type,
                              Scheduler>::value,
                 "Can't create a task policy from a scheduler and a future from "
@@ -554,7 +565,7 @@ Impl::TaskPolicyWithScheduler<Kokkos::Impl::TaskType::TaskTeam, Scheduler,
 
 template <class T, class Scheduler>
 Impl::TaskPolicyWithPredecessor<Impl::TaskType::TaskSingle,
-                                Kokkos::BasicFuture<T, Scheduler> >
+                                Kokkos::BasicFuture<T, Scheduler>>
     KOKKOS_INLINE_FUNCTION
     TaskSingle(Kokkos::BasicFuture<T, Scheduler> arg_future,
                TaskPriority arg_priority = TaskPriority::Regular) {
@@ -563,23 +574,22 @@ Impl::TaskPolicyWithPredecessor<Impl::TaskType::TaskSingle,
 
 template <class Scheduler>
 Impl::TaskPolicyWithScheduler<Impl::TaskType::TaskSingle, Scheduler>
-    KOKKOS_INLINE_FUNCTION
-    TaskSingle(Scheduler arg_scheduler,
-               typename std::enable_if<Kokkos::is_scheduler<Scheduler>::value,
-                                       TaskPriority>::type arg_priority =
-                   TaskPriority::Regular) {
+    KOKKOS_INLINE_FUNCTION TaskSingle(
+        Scheduler arg_scheduler,
+        std::enable_if_t<Kokkos::is_scheduler<Scheduler>::value, TaskPriority>
+            arg_priority = TaskPriority::Regular) {
   return {std::move(arg_scheduler), arg_priority};
 }
 
 template <class Scheduler, class PredecessorFuture>
 Impl::TaskPolicyWithScheduler<Kokkos::Impl::TaskType::TaskSingle, Scheduler,
                               PredecessorFuture>
-    KOKKOS_INLINE_FUNCTION TaskSingle(
-        Scheduler arg_scheduler, PredecessorFuture arg_future,
-        typename std::enable_if<Kokkos::is_scheduler<Scheduler>::value &&
+    KOKKOS_INLINE_FUNCTION
+    TaskSingle(Scheduler arg_scheduler, PredecessorFuture arg_future,
+               std::enable_if_t<Kokkos::is_scheduler<Scheduler>::value &&
                                     Kokkos::is_future<PredecessorFuture>::value,
-                                TaskPriority>::type arg_priority =
-            TaskPriority::Regular) {
+                                TaskPriority>
+                   arg_priority = TaskPriority::Regular) {
   static_assert(std::is_same<typename PredecessorFuture::scheduler_type,
                              Scheduler>::value,
                 "Can't create a task policy from a scheduler and a future from "
@@ -598,8 +608,7 @@ Impl::TaskPolicyWithScheduler<Kokkos::Impl::TaskType::TaskSingle, Scheduler,
  */
 template <int TaskEnum, typename Scheduler, typename DepFutureType,
           typename FunctorType>
-typename Scheduler::template future_type_for_functor<
-    typename std::decay<FunctorType>::type>
+typename Scheduler::template future_type_for_functor<std::decay_t<FunctorType>>
 host_spawn(Impl::TaskPolicyWithScheduler<TaskEnum, Scheduler, DepFutureType>
                arg_policy,
            FunctorType&& arg_functor) {
@@ -630,8 +639,7 @@ host_spawn(Impl::TaskPolicyWithScheduler<TaskEnum, Scheduler, DepFutureType>
  */
 template <int TaskEnum, typename Scheduler, typename DepFutureType,
           typename FunctorType>
-typename Scheduler::template future_type_for_functor<
-    typename std::decay<FunctorType>::type>
+typename Scheduler::template future_type_for_functor<std::decay_t<FunctorType>>
     KOKKOS_INLINE_FUNCTION
     task_spawn(Impl::TaskPolicyWithScheduler<TaskEnum, Scheduler, DepFutureType>
                    arg_policy,
@@ -640,16 +648,6 @@ typename Scheduler::template future_type_for_functor<
 
   using task_type =
       typename scheduler_type::template runnable_task_type<FunctorType>;
-
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST) && \
-    defined(KOKKOS_ENABLE_CUDA)
-
-  // This doesn't work with clang cuda
-  // static_assert(
-  //    !std::is_same<Kokkos::Cuda, typename Scheduler::execution_space>::value,
-  //    "Error calling Kokkos::task_spawn for Cuda space within Host code");
-
-#endif
 
   static_assert(TaskEnum == Impl::TaskType::TaskTeam ||
                     TaskEnum == Impl::TaskType::TaskSingle,

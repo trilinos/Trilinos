@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,6 +31,7 @@ namespace {
                Ioss::Field::type_string(field.get_type()));
     IOSS_ERROR(errmsg);
   }
+
 } // namespace
 
 /** \brief Create an empty field.
@@ -101,11 +102,22 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type,
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
-Ioss::Field::Field(const Ioss::Field &from) = default;
+int Ioss::Field::get_component_count(Ioss::Field::InOut in_out) const
+{
+  auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
+  return storage->component_count();
+}
 
-Ioss::Field &Ioss::Field::operator=(const Field &from) = default;
-
-Ioss::Field::~Field() = default;
+std::string Ioss::Field::get_component_name(int component_index, InOut in_out, char suffix) const
+{
+  char suffix_separator = get_suffix_separator();
+  if (suffix_separator == 1) {
+    suffix_separator = suffix != 1 ? suffix : '_';
+  }
+  auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
+  return storage->label_name(get_name(), component_index, suffix_separator,
+                             get_suffices_uppercase());
+}
 
 /* \brief Verify that data_size is valid.
  *
@@ -237,14 +249,14 @@ bool Ioss::Field::equal_(const Ioss::Field &rhs, bool quiet) const
 
   if (this->type_ != rhs.type_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD type mismatch ({} v. {})", this->type_, rhs.type_);
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD type mismatch ({} v. {})", this->type_string(), rhs.type_string());
     }
     return false;
   }
 
   if (this->role_ != rhs.role_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD role mismatch ({} v. {})", this->role_, rhs.role_);
+      fmt::print(Ioss::OUTPUT(), "\n\tFIELD role mismatch ({} v. {})", this->role_string(), rhs.role_string());
     }
     return false;
   }
@@ -296,6 +308,25 @@ std::string Ioss::Field::type_string(Ioss::Field::BasicType type)
   case Ioss::Field::INVALID: return std::string("invalid");
   default: return std::string("internal error");
   }
+}
+
+std::string Ioss::Field::role_string() const
+{
+  return role_string(get_role());
+}
+
+std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
+{
+    switch (role) {
+    case Ioss::Field::INTERNAL: return std::string("Internal");
+    case Ioss::Field::MESH: return std::string("Mesh");
+    case Ioss::Field::ATTRIBUTE: return std::string("Attribute");
+    case Ioss::Field::COMMUNICATION: return std::string("Communication");
+    case Ioss::Field::MESH_REDUCTION: return std::string("Mesh Reduction");
+    case Ioss::Field::REDUCTION: return std::string("Reduction");
+    case Ioss::Field::TRANSIENT: return std::string("Transient");
+    default: return std::string("internal error");
+    }
 }
 
 namespace {

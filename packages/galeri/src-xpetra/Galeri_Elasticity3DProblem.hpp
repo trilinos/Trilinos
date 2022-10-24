@@ -368,7 +368,7 @@ namespace Galeri {
       Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
       Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
 
-      Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
+      Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
 
       // NOTE: coordinates vector local ordering is consistent with that of the
       // matrix map, as it is constructed by going through GIDs and translating
@@ -400,9 +400,9 @@ namespace Galeri {
       if (this->Coords_ == Teuchos::null)
         BuildCoords();
 
-      // Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
+      // Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
 
-      size_t          numDofs = this->Map_->getNodeNumElements();
+      size_t          numDofs = this->Map_->getLocalNumElements();
       Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
       Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
       Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);

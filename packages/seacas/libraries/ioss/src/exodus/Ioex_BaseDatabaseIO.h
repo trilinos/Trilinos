@@ -1,12 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 // -*- Mode: c++ -*-
-#ifndef IOSS_Ioex_BaseDatabaseIO_h
-#define IOSS_Ioex_BaseDatabaseIO_h
+#pragma once
 
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -73,8 +72,8 @@ namespace Ioex {
   {
   public:
     BaseDatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-                   MPI_Comm communicator, const Ioss::PropertyManager &props);
-    BaseDatabaseIO(const BaseDatabaseIO &from) = delete;
+                   Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
+    BaseDatabaseIO(const BaseDatabaseIO &from)            = delete;
     BaseDatabaseIO &operator=(const BaseDatabaseIO &from) = delete;
 
     ~BaseDatabaseIO() override;
@@ -123,7 +122,7 @@ namespace Ioex {
                             Ioss::Map &entity_map, void *ids, size_t num_to_get,
                             size_t offset) const;
 
-    void compute_block_membership__(Ioss::SideBlock *         efblock,
+    void compute_block_membership__(Ioss::SideBlock          *efblock,
                                     std::vector<std::string> &block_membership) const override;
 
     int  int_byte_size_db() const override;
@@ -224,34 +223,35 @@ namespace Ioex {
 
     void output_results_names(ex_entity_type type, VariableNameMap &variables,
                               bool reduction) const;
-    int  gather_names(ex_entity_type type, VariableNameMap &variables,
-                      const Ioss::GroupingEntity *ge, int index, bool reduction);
+    int  gather_names(VariableNameMap &variables, const Ioss::GroupingEntity *ge, int index,
+                      bool reduction);
 
     void get_nodeblocks();
     void get_assemblies();
     void get_blobs();
 
-    void add_attribute_fields(ex_entity_type entity_type, Ioss::GroupingEntity *block,
-                              int attribute_count, const std::string &type);
+    void update_block_omissions_from_assemblies();
+
+    void add_attribute_fields(Ioss::GroupingEntity *block, int attribute_count,
+                              const std::string &type);
 
     void common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior);
     void output_other_meta_data();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
                                         int64_t position, int64_t block_count,
-                                        Ioss::IntVector &      truth_table,
+                                        Ioss::IntVector       &truth_table,
                                         Ioex::VariableNameMap &variables);
-    int64_t add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
-                               int64_t position = 0);
-    int64_t add_reduction_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity);
-    void add_mesh_reduction_fields(ex_entity_type type, int64_t id, Ioss::GroupingEntity *entity);
+    int64_t add_results_fields(Ioss::GroupingEntity *entity, int64_t position = 0);
+    int64_t add_reduction_results_fields(Ioss::GroupingEntity *entity);
+    void    add_mesh_reduction_fields(int64_t id, Ioss::GroupingEntity *entity);
 
     void add_region_fields();
-    void store_reduction_field(ex_entity_type type, const Ioss::Field &field,
-                               const Ioss::GroupingEntity *ge, void *variables) const;
+    void store_reduction_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
+                               void *variables) const;
 
-    void get_reduction_field(ex_entity_type type, const Ioss::Field &field,
-                             const Ioss::GroupingEntity *ge, void *variables) const;
+    void get_reduction_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
+                             void *variables) const;
     void write_reduction_fields() const;
     void read_reduction_fields() const;
 
@@ -326,4 +326,3 @@ namespace Ioex {
                 // nodeConnectivityStatus has been calculated.
   };
 } // namespace Ioex
-#endif

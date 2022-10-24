@@ -358,18 +358,13 @@ namespace Sacado {
       //! Cast of expansion class to QuadExpansion
       Teuchos::RCP<quad_expansion_type> quad_expansion_;
 
-      //! Static constant expansion class for constants
-      static Teuchos::RCP<expansion_type> const_expansion_;
+      //! Constant expansion class for constants
+      Teuchos::RCP<expansion_type> const_expansion_;
 
       //! Handle to underlying OrthogPolyApprox
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type,Storage> > th_;
 
     }; // class OrthogPolyImpl
-
-    template <typename T, typename Storage>
-    Teuchos::RCP<typename OrthogPolyImpl<T, Storage>::expansion_type>
-    OrthogPolyImpl<T,Storage>::const_expansion_ =
-      Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 
     //! OrthogPolyImpl expression template specialization
     /*!

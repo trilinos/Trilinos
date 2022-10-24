@@ -51,7 +51,7 @@ class IntegratorForwardSensitivity
 {
 public:
 
-  /** \brief Full Constructor with model, and will be fully initialized. 
+  /** \brief Full Constructor with model, and will be fully initialized.
    *
    * \param[in] model               The forward physics ModelEvaluator
    * \param[in] integrator          Forward state Integrator
@@ -123,11 +123,6 @@ public:
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }
-  /// Return a copy of the Tempus ParameterList
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
-    { return integrator_->getTempusParameterList(); }
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
-    { integrator_->setTempusParameterList(pl); }
   //@}
 
   /// \name Accessor methods
@@ -208,11 +203,11 @@ public:
    * @brief Get the current solution, x, only. If looking for the solution
    * vector and the sensitivities, use `SolutionState->getX()` which will return a
    * Block MultiVector with the first block containing the current solution, x,
-   * and the remaining blocks are the forward sensitivities \f$dx/dp\f$. 
+   * and the remaining blocks are the forward sensitivities \f$dx/dp\f$.
    *
    * Use `getDxDp` to get the forward sensitivities \f$dx/dp\f$ only.
    *
-   * @return The current solution, x, without the sensitivities. 
+   * @return The current solution, x, without the sensitivities.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
 
@@ -222,7 +217,7 @@ public:
    * @brief Get current the time derivative of the solution, xdot, only.  This
    * is the first block only and not the full Block MultiVector.
    *
-   * @return Get current the time derivative of the solution, xdot. 
+   * @return Get current the time derivative of the solution, xdot.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDp() const;
@@ -232,10 +227,15 @@ public:
    *
    * Use `getDXDotDp` to get the forward sensitivities.
    *
-   * @return Get current the second time derivative of the solution, xdotdot. 
+   * @return Get current the second time derivative of the solution, xdotdot.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
+
+  /// Return response function g
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
+  /// Return forward sensitivity stored in Jacobian format
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
   /// Get current state
   virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
@@ -252,7 +252,11 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const;
+
 protected:
+
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> integrator_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> sens_model_;
@@ -278,7 +282,58 @@ template <class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
 createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList> pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_solve_model);
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorForwardSensitivity`
+ * construtor
+ *
+ * @param pList  ParameterList defining the integrator options and options
+ *               defining the sensitivity analysis
+ * @param model  ModelEvaluator for the problem
+ * @param sens_residual_model Model evaluator for sensitivity residual
+ *
+ * @return Time integrator implementing forward sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
+createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_residual_model)
+{
+  return createIntegratorForwardSensitivity(
+    pList, model, sens_residual_model, sens_residual_model);
+}
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorForwardSensitivity`
+ * construtor
+ *
+ * @param pList  ParameterList defining the integrator options and options
+ *               defining the sensitivity analysis
+ * @param model  ModelEvaluator for the problem
+ *
+ * @return Time integrator implementing forward sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
+createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model)
+{
+  return createIntegratorForwardSensitivity(pList, model, model, model);
+}
 
 /// Nonmember constructor
 /**

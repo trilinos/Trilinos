@@ -18,7 +18,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -74,7 +74,7 @@ namespace BaskerNS
     gm = A.nrow;
     BASKER_MATRIX ATEMP;
 
-    //Kokkos::Impl::Timer tza;
+    //Kokkos::Timer tza;
     int info = BASKER_SUCCESS;
     if(Options.btf == BASKER_TRUE)
     {
@@ -87,7 +87,7 @@ namespace BaskerNS
     //printf("Switch time: %f \n", tza.seconds());
 
 #ifdef BASKER_KOKKOS
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
     // --------------------------------------------------------------- //
@@ -165,6 +165,10 @@ namespace BaskerNS
         printf("Time DOMAIN: %lf \n", timer.seconds());
         timer.reset();
       }
+      #ifdef BASKER_TIMER
+      printf("Time DOMAIN: %lf \n", timer.seconds());
+      timer.reset();
+      #endif
 
 #else// else basker_kokkos
       #pragma omp parallel
@@ -185,7 +189,7 @@ namespace BaskerNS
         for(Int l=1; l <= tree.nlvls; l++)
         {
           #ifdef BASKER_TIMER
-          Kokkos::Impl::Timer timer_inner_sep;
+          Kokkos::Timer timer_inner_sep;
           #endif
           //#ifdef BASKER_OLD_BARRIER
           //Int lthreads = pow(2,l);
@@ -272,6 +276,10 @@ namespace BaskerNS
         printf("Time SEP: %lf \n", timer.seconds());
         timer.reset();
       }
+      #ifdef BASKER_TIMER
+      printf("Time SEP: %lf \n", timer.seconds());
+      timer.reset();
+      #endif
     }
 
     // ---------------------------------------------------------------------------------------- //
@@ -348,9 +356,12 @@ namespace BaskerNS
       {
         printf("Time BTF: %lf \n", timer.seconds());
       }
+      #ifdef BASKER_TIMER
+      printf("Time BTF: %lf \n", timer.seconds());
+      #endif
     }//end btf call
 
-    Kokkos::Impl::Timer tzback;
+    Kokkos::Timer tzback;
     if(Options.btf == BASKER_TRUE)
     {
       A = ATEMP;

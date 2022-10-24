@@ -201,7 +201,7 @@ int main(int narg, char** arg)
     std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
          << "NumProcs = " << comm->getSize() << std::endl
-         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
+         << "NumLocalRows (rank 0) = " << origMatrix->getLocalNumRows() << std::endl;
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
@@ -237,7 +237,7 @@ int main(int narg, char** arg)
   zscalar_t *vwgts = NULL, *ewgts = NULL;
   if (nVwgts) {
     // Test vertex weights with stride nVwgts.
-    size_t nrows = origMatrix->getNodeNumRows();
+    size_t nrows = origMatrix->getLocalNumRows();
     if (nrows) {
       vwgts = new zscalar_t[nVwgts * nrows];
       for (size_t i = 0; i < nrows; i++) {
@@ -255,10 +255,10 @@ int main(int narg, char** arg)
 
   if (nEwgts) {
     // Test edge weights with stride 1.
-    size_t nnz = origMatrix->getNodeNumEntries();
+    size_t nnz = origMatrix->getLocalNumEntries();
     if (nnz) {
-      size_t nrows = origMatrix->getNodeNumRows();
-      size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
+      size_t nrows = origMatrix->getLocalNumRows();
+      size_t maxnzrow = origMatrix->getLocalMaxNumRowEntries();
       ewgts = new zscalar_t[nEwgts * nnz];
       size_t cnt = 0;
       typename SparseMatrix::nonconst_global_inds_host_view_type  egids("egids", maxnzrow);
@@ -332,7 +332,7 @@ int main(int narg, char** arg)
   ///// Not ordinarily done in application code; just doing it for testing here.
   size_t checkNparts = comm->getSize();
   if(nParts != -1) checkNparts = size_t(nParts);
-  size_t checkLength = origMatrix->getNodeNumRows();
+  size_t checkLength = origMatrix->getLocalNumRows();
 
   const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartListView();
 

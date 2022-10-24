@@ -38,7 +38,6 @@
 # @HEADER
 
 
-#
 # @MACRO: dual_scope_set()
 #
 # Macro that sets a variable name both in the current scope and the

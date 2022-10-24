@@ -39,43 +39,43 @@
 #include <stk_util/util/ParameterList.hpp>
 
 inline void validate_parameters_equal_value(const stk::util::Parameter &parameter,
-					    const stk::util::Parameter &gold_parameter)
+                                            const stk::util::Parameter &gold_parameter)
 {
   ASSERT_EQ(parameter.type, gold_parameter.type);
   switch(parameter.type)
   {
-    case stk::util::ParameterType::INTEGER:
-      {
-          ASSERT_EQ(parameter.get_value<int>(), gold_parameter.get_value<int>());
-          break;
-      }
-    case stk::util::ParameterType::DOUBLE:
-      {
-          ASSERT_EQ(parameter.get_value<double>(), gold_parameter.get_value<double>());
-          break;
-      }
-    case stk::util::ParameterType::DOUBLEVECTOR:
-      {
-          std::vector<double> vec = parameter.get_value<std::vector<double> >();
-          std::vector<double> gvec = gold_parameter.get_value<std::vector<double> >();
-          ASSERT_EQ(vec.size(), gvec.size());
-          for (size_t j = 0; j < vec.size(); ++j) {
-              ASSERT_EQ(vec[j], gvec[j]);
-          }
-          break;
-      }
-    case stk::util::ParameterType::INTEGERVECTOR:
-      {
-          std::vector<int> vec = parameter.get_value<std::vector<int> >();
-          std::vector<int> gvec = gold_parameter.get_value<std::vector<int> >();
-          ASSERT_EQ(vec.size(), gvec.size());
-          for (size_t j = 0; j < vec.size(); ++j) {
-              ASSERT_EQ(vec[j], gvec[j]);
-          }
-          break;
-      }
-    default:
-        ASSERT_EQ(1,0) << "Invalid type found in validate_parameters_equal_value";
+  case stk::util::ParameterType::INTEGER:
+  {
+    ASSERT_EQ(parameter.get_value<int>(), gold_parameter.get_value<int>());
+    break;
+  }
+  case stk::util::ParameterType::DOUBLE:
+  {
+    ASSERT_EQ(parameter.get_value<double>(), gold_parameter.get_value<double>());
+    break;
+  }
+  case stk::util::ParameterType::DOUBLEVECTOR:
+  {
+    std::vector<double> vec = parameter.get_value<std::vector<double> >();
+    std::vector<double> gvec = gold_parameter.get_value<std::vector<double> >();
+    ASSERT_EQ(vec.size(), gvec.size());
+    for (size_t j = 0; j < vec.size(); ++j) {
+      ASSERT_EQ(vec[j], gvec[j]);
+    }
+    break;
+  }
+  case stk::util::ParameterType::INTEGERVECTOR:
+  {
+    std::vector<int> vec = parameter.get_value<std::vector<int> >();
+    std::vector<int> gvec = gold_parameter.get_value<std::vector<int> >();
+    ASSERT_EQ(vec.size(), gvec.size());
+    for (size_t j = 0; j < vec.size(); ++j) {
+      ASSERT_EQ(vec[j], gvec[j]);
+    }
+    break;
+  }
+  default:
+    ASSERT_EQ(1,0) << "Invalid type found in validate_parameters_equal_value";
   }
 }
 

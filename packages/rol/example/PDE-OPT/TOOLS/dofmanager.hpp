@@ -546,6 +546,7 @@ private:
           map2FP[f] = {0, 1};
         }
         else if (basisDeg == 2) {
+          // C2 LINE basis does *not* follow the LINE<3> topology node order
           map2IP[f] = {0, 2, 1};
           map2FP[f] = {0, 2, 1};
         }
@@ -566,19 +567,19 @@ private:
             map2IP[f][i] = i;
             map2FP[f][i] = i;
           }
-          //map2IP[f] = {0, 1, 2, 3};
-          //map2FP[f] = {0, 1, 2, 3};
+          //map2IP[f] = {0, 1, 2, 3}; // C1 QUAD
+          //map2FP[f] = {0, 1, 2, 3}; // C1 QUAD
         }
         else if (basisDeg == 2) {
-          int lim = (nv==3 ? 6 : 9);
-          map2IP[f].resize(lim);
-          map2FP[f].resize(lim);
-          for (int i = 0; i < lim; ++i) {
+          int nbfs = (nv==3 ? 6 : 9);
+          map2IP[f].resize(nbfs);
+          map2FP[f].resize(nbfs);
+          for (int i = 0; i < nbfs; ++i) {
             map2IP[f][i] = i;
             map2FP[f][i] = i;
           }
-          //map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-          //map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+          //map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8}; // C2 QUAD
+          //map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8}; // C2 QUAD
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -591,18 +592,35 @@ private:
           map2FP[f] = {0};
         }
         else if (basisDeg == 1) {
-          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
-          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
+          map2IP[f].resize(nv);
+          map2FP[f].resize(nv);
+          for (int i = 0; i < nv; ++i) {
+            map2IP[f][i] = i;
+            map2FP[f][i] = i;
+          }
+          //map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7}; // C1 HEX
+          //map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7}; // C1 HEX
         }
         else if (basisDeg == 2) {
-          map2IP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
-                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
-                       25, 24, 26, 23, 21, 22,                       // Faces
-                       20};                                          // Voids
-          map2FP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
-                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
-                       26,                                           // Voids
-                       24, 25, 23, 21, 20, 22};                      // Faces
+          if (nv == 4) { // C2 TET basis follows the TET<10> topology node order
+            int nbfs = 10;
+            map2IP[f].resize(nbfs);
+            map2FP[f].resize(nbfs);
+            for (int i = 0; i < nbfs; ++i) {
+              map2IP[f][i] = i;
+              map2FP[f][i] = i;
+            }
+          }
+          else if (nv == 8) { // C2 HEX basis does *not* follow the HEX<27> topology node order
+            map2IP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                         8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                         25, 24, 26, 23, 21, 22,                       // Faces
+                         20};                                          // Voids
+            map2FP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                         8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                         26,                                           // Voids
+                         24, 25, 23, 21, 20, 22};                      // Faces
+          }
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,

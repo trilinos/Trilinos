@@ -510,10 +510,12 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 
   // NOTE: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
   RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
-  ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
-  for(size_t i=0; i<hi_domainMap->getNodeNumElements(); i++) {
-    if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = lo_domainMap.getGlobalElement(hi_to_lo_map[i]);
-    else dvec_data[i] = go_invalid;
+  {
+    ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
+    for(size_t i=0; i<hi_domainMap->getLocalNumElements(); i++) {
+      if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = lo_domainMap.getGlobalElement(hi_to_lo_map[i]);
+      else dvec_data[i] = go_invalid;
+    }
   }
 
 
@@ -523,11 +525,13 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   // Generate the lo_columnMap
   // HOW: We can use the local hi_to_lo_map from the GID's in cvec to generate the non-contiguous colmap ids.
   Array<GO> lo_col_data(lo_columnMapLength);
-  ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
-  for(size_t i=0,idx=0; i<hi_columnMap->getNodeNumElements(); i++) {
-    if(hi_to_lo_map[i]!=lo_invalid) {
-      lo_col_data[idx] = cvec_data[i];
-      idx++;
+  {
+    ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
+    for(size_t i=0,idx=0; i<hi_columnMap->getLocalNumElements(); i++) {
+      if(hi_to_lo_map[i]!=lo_invalid) {
+        lo_col_data[idx] = cvec_data[i];
+        idx++;
+      }
     }
   }
 
@@ -632,7 +636,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
   // Slow-ish fill
   size_t Nelem=hi_elemToNode.extent(0);
-  std::vector<bool> touched(hi_map->getNodeNumElements(),false);
+  std::vector<bool> touched(hi_map->getLocalNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);
   auto hi_elemToNode_host = Kokkos::create_mirror_view(hi_elemToNode);
@@ -697,7 +701,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
   // Slow-ish fill
   size_t Nelem=hi_elemToNode.extent(0);
-  std::vector<bool> touched(hi_map->getNodeNumElements(),false);
+  std::vector<bool> touched(hi_map->getLocalNumElements(),false);
   Teuchos::Array<GO> col_gid(1);
   Teuchos::Array<SC> val(1);
   for(size_t i=0; i<Nelem; i++) {
@@ -820,9 +824,9 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<const Map> domainMap = A->getDomainMap();
     int NumProc = rowMap->getComm()->getSize();
     assert(rowMap->isSameAs(*domainMap));
-    std::vector<bool> Pn_nodeIsOwned(colMap->getNodeNumElements(),false);
+    std::vector<bool> Pn_nodeIsOwned(colMap->getLocalNumElements(),false);
     LO num_owned_rows = 0;
-    for(size_t i=0; i<rowMap->getNodeNumElements(); i++) {
+    for(size_t i=0; i<rowMap->getLocalNumElements(); i++) {
       if(rowMap->getGlobalElement(i) == colMap->getGlobalElement(i)) {
         Pn_nodeIsOwned[i] = true;
         num_owned_rows++;
@@ -849,11 +853,11 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
 #if 0
     printf("[%d] isDirichletRow = ",A->getRowMap()->getComm()->getRank());
-    for(size_t i=0;i<hi_isDirichletRow->getMap()->getNodeNumElements(); i++)
+    for(size_t i=0;i<hi_isDirichletRow->getMap()->getLocalNumElements(); i++)
       printf("%d ",hi_isDirichletRow->getData(0)[i]);
     printf("\n");
     printf("[%d] isDirichletCol = ",A->getRowMap()->getComm()->getRank());
-    for(size_t i=0;i<hi_isDirichletCol->getMap()->getNodeNumElements(); i++)
+    for(size_t i=0;i<hi_isDirichletCol->getMap()->getLocalNumElements(); i++)
       printf("%d ",hi_isDirichletCol->getData(0)[i]);
     printf("\n");
     fflush(stdout);
@@ -866,7 +870,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
       // Generate lower-order element-to-node map
       MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,hi_isDirichletCol->getData(0),*P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
-      assert(hi_to_lo_map.size() == colMap->getNodeNumElements());
+      assert(hi_to_lo_map.size() == colMap->getLocalNumElements());
    }
     else {
         // Get lo-order candidates

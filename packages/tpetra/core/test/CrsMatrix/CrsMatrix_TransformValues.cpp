@@ -83,7 +83,7 @@ namespace { // (anonymous)
     crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -113,7 +113,7 @@ namespace { // (anonymous)
 
     // Use transformLocalValues to change entries of the matrix.
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -135,7 +135,7 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -154,7 +154,7 @@ namespace { // (anonymous)
     // Again, use transformLocalValues to change entries of the
     // matrix, but use a different binary function this time.
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -169,7 +169,7 @@ namespace { // (anonymous)
     matrix.fillComplete ();
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -235,7 +235,7 @@ namespace { // (anonymous)
     crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -261,7 +261,7 @@ namespace { // (anonymous)
     Kokkos::View<GO*, HD> gblInds ("gblInds", 1);
     Kokkos::View<ST*, HD> vals ("vals", 1);
 
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -282,7 +282,7 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     out << "Before calling fillComplete, test the values" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -321,7 +321,7 @@ namespace { // (anonymous)
     Kokkos::View<LO*, HD> lclInds ("lclInds", 1);
     auto colMap = matrix.getColMap ();
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -343,7 +343,7 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);

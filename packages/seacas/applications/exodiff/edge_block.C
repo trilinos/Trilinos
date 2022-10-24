@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,11 +51,11 @@ template <typename INT> void Edge_Block<INT>::entity_load_params()
   if (num_edges_per_elmt < 0 || num_attr < 0) {
     Error(fmt::format(
         "Edge_Block<INT>::entity_load_params(): Data appears corrupt for edge block {}!\n"
-        "\tnum elmts          = {:L}\n"
+        "\tnum elmts          = {}\n"
         "\tnum edges per elmt = {}\n"
         "\tnum attributes     = {}\n"
         " ... Aborting...\n",
-        numEntity, num_edges_per_elmt, num_attr));
+        fmt::group_digits(numEntity), num_edges_per_elmt, num_attr));
   }
 }
 

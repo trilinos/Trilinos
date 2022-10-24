@@ -47,73 +47,61 @@ BroadcastArg::BroadcastArg(
   int                   argc,
   char **               argv)
 {
-    m_argc = 0;
-    m_argv = nullptr;
+  const int root_rank = 0;  
+  pack_strings_on_root(argc, argv, parallel_machine, root_rank);
+  broadcast_strings(argc, parallel_machine, root_rank);
+  split_strings();
 
-
-  int rank = stk::parallel_machine_rank(parallel_machine);
-
-  size_t buffer_length = 0;
-  char * buffer = nullptr;
-  
-// Populate m_argc, m_buffer and buffer_length on rank 0 or !STK_HAS_MPI
-  if (rank == 0) {
-    std::string s;
-    for (int i = 0; i < argc; ++i) {
-      s += argv[i];
-      s += '\0';
-    }
-    
-    buffer_length = s.size();
-    if(buffer_length > 0) {
-        buffer = new char[buffer_length];
-        std::copy(s.begin(), s.end(), buffer);
-    }
-  }
-
-// if STK_HAS_MPI, broadcast m_argc, buffer and buffer_length to processors
-#ifdef STK_HAS_MPI
-
-  int lengths_buffer[2];
-  if (rank == 0) {
-    lengths_buffer[0] = argc;
-    lengths_buffer[1] = buffer_length;
-    MPI_Bcast(lengths_buffer, 2, MPI_INT, 0, parallel_machine);
-  } else {
-    MPI_Bcast(lengths_buffer, 2, MPI_INT, 0, parallel_machine);
-  }
-  m_argc = lengths_buffer[0];
-  buffer_length = lengths_buffer[1];
-  if(buffer_length > 0) {
-      if (rank == 0) {
-          MPI_Bcast(buffer, buffer_length, MPI_BYTE, 0, parallel_machine);
-      }
-      else {
-          buffer = new char[buffer_length];
-          MPI_Bcast(buffer, buffer_length, MPI_BYTE, 0, parallel_machine); 
-      }    
-  }
-#endif
-  if(m_argc > 0) {
-      m_argv = new char *[m_argc];
-      char *c = buffer;
-      for (int i = 0; i < m_argc; ++i) {
-          m_argv[i] = c;
-          while (*c != '\0') {
-              ++c;
-          }
-          ++c;
-      }
-  }
 }
 
-
-BroadcastArg::~BroadcastArg()
+void BroadcastArg::pack_strings_on_root(int argc, char** argv, ParallelMachine parallel_machine, int root_rank)
 {
-    if(m_argc > 0) {
-        delete [] m_argv[0];
+  int rank = stk::parallel_machine_rank(parallel_machine);
+
+  if (rank == root_rank) {
+    for (int i = 0; i < argc; ++i) {
+      m_string_storage += argv[i];
+      m_string_storage += '\0';
     }
-    delete [] m_argv;
+  }  
+}
+
+void BroadcastArg::broadcast_strings(int argc, ParallelMachine parallel_machine, int root_rank)
+{
+#ifdef STK_HAS_MPI
+  int rank = stk::parallel_machine_rank(parallel_machine);
+
+  int lengths_buffer[2];
+  if (rank == root_rank) {
+    lengths_buffer[0] = argc;
+    lengths_buffer[1] = m_string_storage.size();
+  }
+  MPI_Bcast(lengths_buffer, 2, MPI_INT, root_rank, parallel_machine);
+  m_argc = lengths_buffer[0];
+  int buffer_length = lengths_buffer[1];
+
+  if (rank != root_rank) {
+    m_string_storage.resize(buffer_length);
+  }
+  MPI_Bcast(&(m_string_storage[0]), buffer_length, MPI_BYTE, root_rank, parallel_machine);
+#endif
+}
+
+void BroadcastArg::split_strings()
+{
+  if(m_argc > 0) {
+      m_argv_storage.resize(m_argc);
+      int idx = 0;
+      for (int i = 0; i < m_argc; ++i) {
+          m_argv_storage[i] = &(m_string_storage[idx]);
+          while (m_string_storage[idx] != '\0') {
+              ++idx;
+          }
+          ++idx;
+      }
+  }  
+
+  m_argv = m_argv_storage.data();
 }
 
 } // namespace stk

@@ -69,7 +69,6 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
     typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeightViewType;
-    typedef typename ExecSpace<typename cubPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
     const auto loopSize = this->getNumPoints();
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

@@ -53,16 +53,16 @@
     \class ROL::BoundConstraint
     \brief Provides the interface to apply upper and lower bound constraints.
 
-    ROL's bound constraint class is to designed to handle point wise bound 
-    constraints on optimization variables.  That is, let \f$\mathcal{X}\f$ 
-    be a Banach space of functions from \f$\Xi\f$ into \f$\mathbb{R}\f$ 
+    ROL's bound constraint class is to designed to handle point wise bound
+    constraints on optimization variables.  That is, let \f$\mathcal{X}\f$
+    be a Banach space of functions from \f$\Xi\f$ into \f$\mathbb{R}\f$
     (for example, \f$\Xi\subset\mathbb{R}^d\f$ for some positive integer \f$d\f$
-    and \f$\mathcal{X}=L^2(\Xi)\f$ or \f$\Xi = \{1,\ldots,n\}\f$ and 
-    \f$\mathcal{X}=\mathbb{R}^n\f$).  For any \f$x\in\mathcal{X}\f$, we consider 
-    bounds of the form 
+    and \f$\mathcal{X}=L^2(\Xi)\f$ or \f$\Xi = \{1,\ldots,n\}\f$ and
+    \f$\mathcal{X}=\mathbb{R}^n\f$).  For any \f$x\in\mathcal{X}\f$, we consider
+    bounds of the form
     \f[
         a(\xi) \le x(\xi) \le b(\xi) \quad \text{for almost every }\xi\in\Xi.
-    \f] 
+    \f]
     Here, \f$a(\xi)\le b(\xi)\f$ for almost every \f$\xi\in\Xi\f$ and \f$a,b\in \mathcal{X}\f$.
 */
 
@@ -93,9 +93,9 @@ public:
     }
   }
 
-  /** \brief Update bounds. 
+  /** \brief Update bounds.
 
-      The update function allows the user to update the bounds at each new iterations. 
+      The update function allows the user to update the bounds at each new iterations.
           @param[in]      x      is the optimization variable.
           @param[in]      flag   is set to true if control is changed.
           @param[in]      iter   is the outer algorithm iterations count.
@@ -113,9 +113,9 @@ public:
 
   /** \brief Project optimization variables onto the bounds.
 
-      This function implements the projection of \f$x\f$ onto the bounds, i.e., 
+      This function implements the projection of \f$x\f$ onto the bounds, i.e.,
       \f[
-         (P_{[a,b]}(x))(\xi) = \min\{b(\xi),\max\{a(\xi),x(\xi)\}\} \quad \text{for almost every }\xi\in\Xi. 
+         (P_{[a,b]}(x))(\xi) = \min\{b(\xi),\max\{a(\xi),x(\xi)\}\} \quad \text{for almost every }\xi\in\Xi.
       \f]
        @param[in,out]      x is the optimization variable.
   */
@@ -123,24 +123,20 @@ public:
     Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
-      bnd1_->project(*x1);
-      xs.set_1(*x1);
+      bnd1_->project(*(xs.get_1()));
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
-      bnd2_->project(*x2);
-      xs.set_2(*x2);
+      bnd2_->project(*(xs.get_2()));
     }
   }
 
   /** \brief Project optimization variables into the interior of the feasible set.
 
       This function implements the projection of \f$x\f$ into the interior of the
-      feasible set, i.e., 
+      feasible set, i.e.,
       \f[
          (P_{[a,b]}(x))(\xi) \in (a(\xi),b(\xi))
-             \quad \text{for almost every }\xi\in\Xi. 
+             \quad \text{for almost every }\xi\in\Xi.
       \f]
        @param[in,out]      x is the optimization variable.
   */
@@ -148,20 +144,16 @@ public:
     Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
-      bnd1_->projectInterior(*x1);
-      xs.set_1(*x1);
+      bnd1_->projectInterior(*(xs.get_1()));
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
-      bnd2_->projectInterior(*x2);
-      xs.set_2(*x2);
+      bnd2_->projectInterior(*(xs.get_2()));
     }
   }
 
   /** \brief Determine if a vector of Lagrange multipliers is nonnegative components.
-  
-      This function returns true if components of \f$l\f$ corresponding to the components of \f$x\f$ 
+
+      This function returns true if components of \f$l\f$ corresponding to the components of \f$x\f$
       that are active at the upper bound are nonpositive or the components of \f$l\f$ corresponding
       to the components of \f$x\f$ that are active at the lower bound are nonnegative.
   */
@@ -182,9 +174,9 @@ public:
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^+_\epsilon(x)\f$.  Here, 
-      the upper \f$\epsilon\f$-active set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^+_\epsilon(x)\f$.  Here,
+      the upper \f$\epsilon\f$-active set is defined as
       \f[
          \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon\,\}.
       \f]
@@ -198,23 +190,19 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneUpperActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
+      bnd1_->pruneUpperActive(*(vs.get_1()),*(xs.get_1()),eps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneUpperActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
+      bnd2_->pruneUpperActive(*(vs.get_2()),*(xs.get_2()),eps);
     }
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^+_\epsilon(x)\f$.  Here, 
-      the upper \f$\epsilon\f$-binding set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^+_\epsilon(x)\f$.  Here,
+      the upper \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon,\; 
+         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon,\;
                 g(\xi) < 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
@@ -230,21 +218,17 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneUpperActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
-      vs.set_1(*v1);
+      bnd1_->pruneUpperActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneUpperActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
-      vs.set_2(*v2);
+      bnd2_->pruneUpperActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
     }
   }
- 
+
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^-_\epsilon(x)\f$.  Here, 
-      the lower \f$\epsilon\f$-active set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^-_\epsilon(x)\f$.  Here,
+      the lower \f$\epsilon\f$-active set is defined as
       \f[
          \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon\,\}.
       \f]
@@ -258,23 +242,19 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneLowerActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
+      bnd1_->pruneLowerActive(*(vs.get_1()),*(xs.get_1()),eps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneLowerActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
+      bnd2_->pruneLowerActive(*(vs.get_2()),*(xs.get_2()),eps);
     }
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-binding set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^-_\epsilon(x)\f$.  Here, 
-      the lower \f$\epsilon\f$-binding set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^-_\epsilon(x)\f$.  Here,
+      the lower \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon,\; 
+         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon,\;
                 g(\xi) > 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
@@ -290,17 +270,13 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneLowerActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
-      vs.set_1(*v1);
+      bnd1_->pruneLowerActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneLowerActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
-      vs.set_2(*v2);
+      bnd2_->pruneLowerActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
     }
   }
- 
+
   const Ptr<const Vector<Real>> getLowerBound( void ) const {
     const Ptr<const Vector<Real>> l1 = bnd1_->getLowerBound();
     const Ptr<const Vector<Real>> l2 = bnd2_->getLowerBound();
@@ -316,9 +292,9 @@ public:
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}_\epsilon(x)\f$.  Here, 
-      the \f$\epsilon\f$-active set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}_\epsilon(x)\f$.  Here,
+      the \f$\epsilon\f$-active set is defined as
       \f[
          \mathcal{A}_\epsilon(x) = \mathcal{A}^+_\epsilon(x)\cap\mathcal{A}^-_\epsilon(x).
       \f]
@@ -332,21 +308,17 @@ public:
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
+      bnd1_->pruneActive(*(vs.get_1()),*(xs.get_1()),eps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
+      bnd2_->pruneActive(*(vs.get_2()),*(xs.get_2()),eps);
     }
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
-  
-      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}_\epsilon(x)\f$.  Here, 
-      the \f$\epsilon\f$-binding set is defined as 
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}_\epsilon(x)\f$.  Here,
+      the \f$\epsilon\f$-binding set is defined as
       \f[
          \mathcal{B}^+_\epsilon(x) = \mathcal{B}^+_\epsilon(x)\cap\mathcal{B}^-_\epsilon(x).
       \f]
@@ -360,14 +332,10 @@ public:
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
     if ( bnd1_->isActivated() ) {
-      Ptr<Vector<Real>> v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneActive(*v1,*(gs.get_1()),*(xs.get_1()),xeps,geps);
-      vs.set_1(*v1);
+      bnd1_->pruneActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
     }
     if ( bnd2_->isActivated() ) {
-      Ptr<Vector<Real>> v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(gs.get_2()),*(xs.get_2()),xeps,geps);
-      vs.set_2(*v2);
+      bnd2_->pruneActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
     }
   }
 
@@ -376,9 +344,61 @@ public:
       This function returns true if \f$v = P_{[a,b]}(v)\f$.
       @param[in]    v   is the vector to be checked.
   */
-  bool isFeasible( const Vector<Real> &v ) { 
+  bool isFeasible( const Vector<Real> &v ) {
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     return (bnd1_->isFeasible(*(vs.get_1()))) && (bnd2_->isFeasible(*(vs.get_2())));
+  }
+
+  /** \brief Apply inverse scaling function.
+
+      This function applies the inverse scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$, i.e., the output is \f$\mathrm{diag}(d(x,g)^{-1})v\f$.
+      The scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the inverse scaling function applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const{
+    Vector_SimOpt<Real> &dvs = dynamic_cast<Vector_SimOpt<Real>&>(dv);
+    const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    if ( bnd1_->isActivated() ) {
+      bnd1_->applyInverseScalingFunction(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
+    }
+    if ( bnd2_->isActivated() ) {
+      bnd2_->applyInverseScalingFunction(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
+    }
+  }
+
+  /** \brief Apply scaling function Jacobian.
+
+      This function applies the Jacobian of the scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$.  The output is \f$\mathrm{diag}(d_x(x,g)g)v\f$.  The
+      scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the scaling function Jacobian applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+    Vector_SimOpt<Real> &dvs = dynamic_cast<Vector_SimOpt<Real>&>(dv);
+    const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    if ( bnd1_->isActivated() ) {
+      bnd1_->applyScalingFunctionJacobian(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
+    }
+    if ( bnd2_->isActivated() ) {
+      bnd2_->applyScalingFunctionJacobian(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
+    }
   }
 
 }; // class BoundConstraint

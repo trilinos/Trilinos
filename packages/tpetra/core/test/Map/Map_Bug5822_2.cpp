@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   cerr << myRank << ": Querying the Map for local elements" << endl;
   {
     TEUCHOS_FUNC_TIME_MONITOR("Querying the Map for local elements");
-    Teuchos::ArrayView<const GO> myGidsFound = map->getNodeElementList ();
+    Teuchos::ArrayView<const GO> myGidsFound = map->getLocalElementList ();
     TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );
   }
 

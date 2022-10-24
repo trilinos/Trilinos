@@ -60,9 +60,8 @@ __global__ void offset(int* p) {
 // Cuda.
 TEST(cuda, raw_cuda_interop) {
   int* p;
-  CUDA_SAFE_CALL(cudaMalloc(&p, sizeof(int) * 100));
-  Kokkos::InitArguments arguments{-1, -1, -1, false};
-  Kokkos::initialize(arguments);
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&p, sizeof(int) * 100));
+  Kokkos::initialize();
 
   Kokkos::View<int*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> v(p, 100);
   Kokkos::deep_copy(v, 5);
@@ -70,11 +69,11 @@ TEST(cuda, raw_cuda_interop) {
   Kokkos::finalize();
 
   offset<<<100, 64>>>(p);
-  CUDA_SAFE_CALL(cudaDeviceSynchronize());
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
   std::array<int, 100> h_p;
   cudaMemcpy(h_p.data(), p, sizeof(int) * 100, cudaMemcpyDefault);
-  CUDA_SAFE_CALL(cudaDeviceSynchronize());
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaDeviceSynchronize());
   int64_t sum        = 0;
   int64_t sum_expect = 0;
   for (int i = 0; i < 100; i++) {
@@ -83,6 +82,6 @@ TEST(cuda, raw_cuda_interop) {
   }
 
   ASSERT_EQ(sum, sum_expect);
-  CUDA_SAFE_CALL(cudaFree(p));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(p));
 }
 }  // namespace Test

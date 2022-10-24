@@ -14,6 +14,7 @@
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_ParentsToChildMapper.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -148,10 +149,9 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
 }
 
 static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const stk::mesh::Entity node_or_elem,
-    const int ls_index )
+    const LS_Field & lsField )
 {
   for(auto && part_ptr : mesh.bucket(node_or_elem).supersets())
   {
@@ -161,7 +161,7 @@ static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
 
     const stk::mesh::Part * nonconformal_node_iopart = phaseSupport.find_nonconformal_part(*part_ptr);
 
-    if (phaseSupport.level_set_is_used_by_nonconformal_part(cdfemSupport.ls_field(ls_index).ptr, nonconformal_node_iopart))
+    if (phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, nonconformal_node_iopart))
     {
       return true;
     }
@@ -192,12 +192,11 @@ has_io_part_containing_phase(const Phase_Support & phase_support, const stk::mes
 }
 
 static bool node_touches_alive_block(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     stk::mesh::Entity node,
-    const int ls_index )
+    const LS_Field & lsField )
 {
-  const CDFEM_Inequality_Spec * death_spec = cdfemSupport.get_death_spec(ls_index);
+  const CDFEM_Inequality_Spec * death_spec = lsField.deathPtr;
   if (nullptr == death_spec) return false;
 
   const PhaseTag & alive_phase = death_spec->get_active_phase();
@@ -206,12 +205,11 @@ static bool node_touches_alive_block(const stk::mesh::BulkData & mesh,
 }
 
 static bool node_touches_dead_block(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     stk::mesh::Entity node,
-    const int ls_index )
+    const LS_Field & lsField )
 {
-  const CDFEM_Inequality_Spec * death_spec = cdfemSupport.get_death_spec(ls_index);
+  const CDFEM_Inequality_Spec * death_spec = lsField.deathPtr;
   if (nullptr == death_spec) return false;
 
   const PhaseTag & dead_phase = death_spec->get_deactivated_phase();
@@ -220,21 +218,20 @@ static bool node_touches_dead_block(const stk::mesh::BulkData & mesh,
 }
 
 static bool node_has_real_ls_value(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     stk::mesh::Entity node,
-    const int ls_index )
+    const LS_Field & lsField )
 {
-  if( node_touches_dead_block(mesh, cdfemSupport, phaseSupport, node, ls_index) &&
-      !node_touches_alive_block(mesh, cdfemSupport, phaseSupport, node, ls_index) )
+  if( node_touches_dead_block(mesh, phaseSupport, node, lsField) &&
+      !node_touches_alive_block(mesh, phaseSupport, node, lsField) )
     return false;
 
-  return in_block_decomposed_by_ls(mesh, cdfemSupport, phaseSupport, node, ls_index);
+  return in_block_decomposed_by_ls(mesh, phaseSupport, node, lsField);
 }
 
 static void debug_print_edge_info(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & lsFields,
     const std::vector<stk::mesh::Entity> & edge_nodes,
     const std::vector<std::vector<double> > & nodes_isovar)
 {
@@ -243,14 +240,14 @@ static void debug_print_edge_info(const stk::mesh::BulkData & mesh,
   {
     const auto old_precision = krinolog.getStream().precision();
     krinolog.getStream().precision(16);
-    const int num_ls = cdfemSupport.num_ls_fields();
+    const int num_ls = lsFields.size();
     krinolog << stk::diag::dendl << "CDFEM_Parent_Edge::find_crossings():" << "\n";
     for ( int n = 0; n < num_nodes; ++n )
     {
       krinolog << "  Node: " << mesh.identifier(edge_nodes[n]) << ", in_block_decomposed_by_ls = { ";
-      for ( int ls_index = 0; ls_index < num_ls; ++ls_index ) krinolog << in_block_decomposed_by_ls(mesh, cdfemSupport, phaseSupport, edge_nodes[n], ls_index) << " ";
+      for ( int ls_index = 0; ls_index < num_ls; ++ls_index ) krinolog << in_block_decomposed_by_ls(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]) << " ";
       krinolog << "}, has_real_ls_value = { ";
-      for ( int ls_index = 0; ls_index < num_ls; ++ls_index ) krinolog << node_has_real_ls_value(mesh, cdfemSupport, phaseSupport, edge_nodes[n], ls_index) << " ";
+      for ( int ls_index = 0; ls_index < num_ls; ++ls_index ) krinolog << node_has_real_ls_value(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]) << " ";
       krinolog << "}, ls = { ";
       for ( int ls_index = 0; ls_index < num_ls; ++ls_index ) krinolog << nodes_isovar[n][ls_index] << " ";
       krinolog << "}";
@@ -261,23 +258,23 @@ static void debug_print_edge_info(const stk::mesh::BulkData & mesh,
 }
 
 static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & lsFields,
     const std::vector<stk::mesh::Entity> & edge_nodes,
     std::vector<std::vector<double> >& nodes_isovar)
 {
   const unsigned num_nodes = edge_nodes.size();
-  const int num_ls = cdfemSupport.num_ls_fields();
+  const int num_ls = lsFields.size();
 
   nodes_isovar.assign(num_nodes, std::vector<double>(num_ls, -1.0));
   for (unsigned n = 0; n < num_nodes; ++n)
   {
     for (int ls_index = 0; ls_index < num_ls; ++ls_index)
     {
-      const CDFEM_Inequality_Spec * death_spec = cdfemSupport.get_death_spec(ls_index);
-      FieldRef isovar = cdfemSupport.ls_field(ls_index).isovar;
+      const CDFEM_Inequality_Spec * death_spec = lsFields[ls_index].deathPtr;
+      FieldRef isovar = lsFields[ls_index].isovar;
 
-      const bool node_has_ls = node_has_real_ls_value(mesh, cdfemSupport, phaseSupport, edge_nodes[n], ls_index);
+      const bool node_has_ls = node_has_real_ls_value(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]);
       nodes_isovar[n][ls_index] = 0.0;
       if (node_has_ls)
       {
@@ -295,7 +292,7 @@ static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
             const double * isoptr = field_data<double>(isovar, node_elem);
             if (nullptr != isoptr)
             {
-              if (*isoptr - cdfemSupport.ls_field(ls_index).isoval < 0.)
+              if (*isoptr - lsFields[ls_index].isoval < 0.)
                 have_neg_elem = true;
               else
                 have_pos_elem = true;
@@ -307,18 +304,18 @@ static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
         {
           const double * isoptr = field_data<double>(isovar, edge_nodes[n]);
           ThrowRequireMsg(nullptr != isoptr, "Isovar " << isovar.name() << " missing on node " << debug_entity(mesh, edge_nodes[n]));
-          nodes_isovar[n][ls_index] = *isoptr - cdfemSupport.ls_field(ls_index).isoval;
+          nodes_isovar[n][ls_index] = *isoptr - lsFields[ls_index].isoval;
         }
       }
-      else if (nullptr != death_spec && node_touches_dead_block(mesh, cdfemSupport, phaseSupport, edge_nodes[n], ls_index))
+      else if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]))
       {
-        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(cdfemSupport.ls_field(ls_index).identifier,+1);
+        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsFields[ls_index].identifier,+1);
         if (dead_is_positive) nodes_isovar[n][ls_index] = 1.0;
       }
 
-      if (nullptr != death_spec && node_touches_dead_block(mesh, cdfemSupport, phaseSupport, edge_nodes[n], ls_index))
+      if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]))
       {
-        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(cdfemSupport.ls_field(ls_index).identifier, +1);
+        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsFields[ls_index].identifier, +1);
         if (dead_is_positive && nodes_isovar[n][ls_index] < 0.0)
         {
           if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Setting node " << mesh.identifier(edge_nodes[n]) << " to zero to enforce irreversibility, ls = " << nodes_isovar[n][ls_index] << "\n";
@@ -358,8 +355,8 @@ build_parent_edge(const stk::mesh::BulkData & mesh, ParentEdgeMap & parentEdges,
 }
 
 static void find_parent_edge_crossings(const stk::mesh::BulkData & mesh,
-    const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & lsFields,
     ParentEdgeMap & parentEdges)
 {
   std::vector<std::vector<double>> nodes_isovar;
@@ -368,9 +365,9 @@ static void find_parent_edge_crossings(const stk::mesh::BulkData & mesh,
   {
     CDFEM_Parent_Edge & edge = map_entry.second;
     const std::vector<stk::mesh::Entity> edge_nodes = edge.get_nodes();
-    edge_ls_node_values(mesh, cdfemSupport, phaseSupport, edge_nodes, nodes_isovar);
-    debug_print_edge_info(mesh, cdfemSupport, phaseSupport, edge_nodes, nodes_isovar);
-    edge.find_crossings(nodes_isovar);
+    edge_ls_node_values(mesh, phaseSupport, lsFields, edge_nodes, nodes_isovar);
+    debug_print_edge_info(mesh, phaseSupport, lsFields, edge_nodes, nodes_isovar);
+    edge.find_crossings(phaseSupport.has_one_levelset_per_phase(), nodes_isovar);
   }
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << stk::diag::dendl;
 }
@@ -413,37 +410,27 @@ std::vector<stk::mesh::Entity> get_owned_parent_elements(const stk::mesh::BulkDa
 ParentEdgeMap
 build_parent_edges(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
-    const std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> & should_build_linear_edge,
+    const bool shouldLinearizeEdges,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
+    const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & LSFields)
 {
   std::vector<stk::mesh::Entity> elements;
   stk::mesh::get_entities( mesh, stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part(), elements, false);
 
-  return build_parent_edges_using_elements(mesh, parentsToChildMapper, should_build_linear_edge, elements, activePart, cdfemSupport, phaseSupport);
-}
-
-std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> build_no_linearized_edges_function()
-{
-  return [](stk::mesh::Entity node0, stk::mesh::Entity node1)
-      { return false; };
-}
-
-std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> build_all_linearized_edges_function()
-{
-  return [](stk::mesh::Entity node0, stk::mesh::Entity node1)
-      { return true; };
+  return build_parent_edges_using_elements(mesh, parentsToChildMapper, shouldLinearizeEdges, elements, activePart, cdfemSupport, phaseSupport, LSFields);
 }
 
 ParentEdgeMap
 build_parent_edges_using_elements(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
-    const std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> & should_build_linear_edge,
+    const bool shouldLinearizeEdges,
     const std::vector<stk::mesh::Entity> & elements,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
+    const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & LSFields)
 {
   const stk::mesh::Selector parentElementSelector = get_owned_parent_element_selector(mesh, activePart, cdfemSupport, phaseSupport);
 
@@ -463,13 +450,12 @@ build_parent_edges_using_elements(const stk::mesh::BulkData & mesh,
         stk::mesh::Entity node0 = elem_nodes[edge_node_ordinals[0]];
         stk::mesh::Entity node1 = elem_nodes[edge_node_ordinals[1]];
 
-        const bool linearizeEdge = should_build_linear_edge(node0, node1);
-        build_parent_edge(mesh, parentEdges, parentsToChildMapper, linearizeEdge, node0, node1);
+        build_parent_edge(mesh, parentEdges, parentsToChildMapper, shouldLinearizeEdges, node0, node1);
       }
     }
   }
 
-  find_parent_edge_crossings(mesh, cdfemSupport, phaseSupport, parentEdges);
+  find_parent_edge_crossings(mesh, phaseSupport, LSFields, parentEdges);
 
   return parentEdges;
 }

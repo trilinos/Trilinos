@@ -42,12 +42,22 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_3
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#else
+KOKKOS_IMPL_WARNING("Including non-public Kokkos header files is not allowed.")
+#endif
+#endif
 #ifndef KOKKOS_CORE_EXP_MD_RANGE_POLICY_HPP
 #define KOKKOS_CORE_EXP_MD_RANGE_POLICY_HPP
 
 #include <initializer_list>
 
 #include <Kokkos_Layout.hpp>
+#include <Kokkos_Rank.hpp>
 #include <Kokkos_Array.hpp>
 #include <impl/KokkosExp_Host_IterateTile.hpp>
 #include <Kokkos_ExecPolicy.hpp>
@@ -76,22 +86,6 @@ template <typename ExecSpace>
 struct default_inner_direction {
   using type                     = Iterate;
   static constexpr Iterate value = Iterate::Right;
-};
-
-// Iteration Pattern
-template <unsigned N, Iterate OuterDir = Iterate::Default,
-          Iterate InnerDir = Iterate::Default>
-struct Rank {
-  static_assert(N != 0u, "Kokkos Error: rank 0 undefined");
-  static_assert(N != 1u,
-                "Kokkos Error: rank 1 is not a multi-dimensional range");
-  static_assert(N < 7u, "Kokkos Error: Unsupported rank...");
-
-  using iteration_pattern = Rank<N, OuterDir, InnerDir>;
-
-  static constexpr int rank                = N;
-  static constexpr Iterate outer_direction = OuterDir;
-  static constexpr Iterate inner_direction = InnerDir;
 };
 
 namespace Impl {
@@ -205,7 +199,7 @@ struct MDRangePolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
   template <class... OtherProperties>
   friend struct MDRangePolicy;
 
-  static_assert(!std::is_same<typename traits::iteration_pattern, void>::value,
+  static_assert(!std::is_void<typename traits::iteration_pattern>::value,
                 "Kokkos Error: MD iteration pattern not defined");
 
   using iteration_pattern = typename traits::iteration_pattern;
@@ -397,13 +391,18 @@ struct MDRangePolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
 
 }  // namespace Kokkos
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_3
 // For backward compatibility
 namespace Kokkos {
 namespace Experimental {
-using Kokkos::Iterate;
-using Kokkos::MDRangePolicy;
-using Kokkos::Rank;
+using Iterate KOKKOS_DEPRECATED = Kokkos::Iterate;
+template <typename... Properties>
+using MDRangePolicy KOKKOS_DEPRECATED = Kokkos::MDRangePolicy<Properties...>;
+template <unsigned N, Kokkos::Iterate OuterDir = Kokkos::Iterate::Default,
+          Kokkos::Iterate InnerDir = Kokkos::Iterate::Default>
+using Rank KOKKOS_DEPRECATED = Kokkos::Rank<N, OuterDir, InnerDir>;
 }  // namespace Experimental
 }  // namespace Kokkos
+#endif
 
 #endif  // KOKKOS_CORE_EXP_MD_RANGE_POLICY_HPP

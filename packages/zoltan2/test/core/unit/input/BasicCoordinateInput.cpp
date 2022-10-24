@@ -151,7 +151,7 @@ int main(int narg, char *arg[])
   int numLocalIds = coords->getLocalLength();
   int numGlobalIds = coords->getGlobalLength();
   int coordDim = coords->getNumVectors();
-  ArrayView<const zgno_t> idList = coords->getMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = coords->getMap()->getLocalElementList();
 
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 

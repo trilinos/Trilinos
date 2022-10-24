@@ -1,7 +1,7 @@
 /* -*- Mode: c++ -*- */
 
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,9 +40,22 @@ typedef SEAMS::Parser::token_type token_type;
    void yyerror(const char *s);
  }
 
+namespace {
+  bool string_is_ascii(const char *line, size_t len)
+  {
+    for (size_t i = 0; i < len; i++) {
+      if (!(std::isspace(line[i]) || std::isprint(line[i]))) {
+	return false;
+      }
+    }
+    return true;
+  }
+} // namespace
+
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
+ SEAMS::file_rec *outer_file = nullptr;
 int loop_lvl = 0;
 std::fstream *tmp_file;
 const char  *temp_f;
@@ -121,13 +134,14 @@ integer {D}+({E})?
     BEGIN(GET_LOOP_VAR);
     if (aprepro.ap_options.debugging)
       std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-                << aprepro.ap_file_list.top().name << "\n";
+                << aprepro.ap_file_list.top().name << " at line " << aprepro.ap_file_list.top().lineno << "\n";
   }
 }
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" |
             {integer}")}".*"\n" {
+    aprepro.ap_file_list.top().lineno++;
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -139,22 +153,23 @@ integer {D}+({E})?
     else {/* Value defined and != 0. */
       temp_f = get_temp_filename();
       SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
-      aprepro.ap_file_list.push(new_file);
-
       if (aprepro.ap_options.debugging)
         std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
                   << " in file " << aprepro.ap_file_list.top().name
-                  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+                  << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
+
+      outer_file = &aprepro.ap_file_list.top();
+      aprepro.ap_file_list.push(new_file);
 
       tmp_file = new std::fstream(temp_f, std::ios::out);
       loop_lvl++;
       BEGIN(LOOP);
     }
-    aprepro.ap_file_list.top().lineno++;
     aprepro.isCollectingLoop = true;
   }
 
   .+")}".*"\n"  {
+    aprepro.ap_file_list.top().lineno++;
     /* Loop control defined by variable */
     symrec *s;
     char *pt = strchr(yytext, ')');
@@ -169,28 +184,28 @@ integer {D}+({E})?
         BEGIN(LOOP_SKIP);
       }
       else { /* Value defined and != 0. */
-        temp_f = get_temp_filename();
-        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-        aprepro.ap_file_list.push(new_file);
-
         if (aprepro.ap_options.debugging)
           std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
                     << " in file " << aprepro.ap_file_list.top().name
-                    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+                    << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
+
+        temp_f = get_temp_filename();
+        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+	outer_file = &aprepro.ap_file_list.top();
+        aprepro.ap_file_list.push(new_file);
 
         tmp_file = new std::fstream(temp_f, std::ios::out);
         loop_lvl++;
         BEGIN(LOOP);
       }
     }
-    aprepro.ap_file_list.top().lineno++;
     aprepro.isCollectingLoop = true;
   }
 }
 
 <LOOP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
     if(loop_lvl > 0)
       --loop_lvl;
 
@@ -216,7 +231,7 @@ integer {D}+({E})?
   {WS}"{"[Ll]"oop"{WS}"(".*"\n"  {
     loop_lvl++; /* Nested Loop */
     (*tmp_file) << yytext;
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
   }
 
   {WS}"{"[Aa]"bort"[Ll]"oop".*"\n" {
@@ -242,7 +257,7 @@ integer {D}+({E})?
 
   .*"\n" {
     (*tmp_file) << yytext;
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
   }
 }
 
@@ -277,8 +292,8 @@ integer {D}+({E})?
     }
   }
 
-  .*"\n" {
-    aprepro.ap_file_list.top().lineno++;
+  .*"\n" { /* Do not increment line count */
+    ;
   }
 }
 
@@ -290,7 +305,6 @@ integer {D}+({E})?
 }
 
 <INITIAL,END_CASE_SKIP>{WS}"{"{WS}"default"{WS}"}".*"\n"     {
- aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
     yyerror("default statement found outside switch statement.");
   }
@@ -494,7 +508,6 @@ integer {D}+({E})?
 }
 
 {WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
-    aprepro.ap_file_list.top().lineno++;
 
     if(YY_START == VERBATIM) {
       if(echo) ECHO;
@@ -516,6 +529,7 @@ integer {D}+({E})?
       }
       /* Ignore endif if not skipping */
     }
+    aprepro.ap_file_list.top().lineno++;
   }
 
 <INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME);
@@ -523,6 +537,7 @@ integer {D}+({E})?
 <INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = false; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* {
+  aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
   {
     symrec *s;
@@ -704,7 +719,7 @@ integer {D}+({E})?
     };
   }
 
-  void Scanner::add_include_file(const std::string &filename, bool must_exist)
+  bool Scanner::add_include_file(const std::string &filename, bool must_exist)
   {
     std::fstream *yytmp = nullptr;
     if (must_exist)
@@ -726,6 +741,7 @@ integer {D}+({E})?
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(yytmp, YY_BUF_SIZE));
       curr_index = 0;
     }
+    return yytmp != nullptr;
   }
 
   void Scanner::LexerOutput(const char *buf, int size)
@@ -759,6 +775,11 @@ integer {D}+({E})?
         return 0;
       }
 
+      if (!string_is_ascii(line, strlen(line))) {
+        yyerror("input line contains non-ASCII (probably UTF-8) characters which will most likely "
+                "be parsed incorrectly.");
+      }
+
       ap_gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
@@ -778,6 +799,10 @@ integer {D}+({E})?
         return -1;
       }
       else {
+	if (!string_is_ascii(buf, yyin->gcount())) {
+	  yyerror("input file contains non-ASCII (probably UTF-8) characters which will most likely "
+		  "be parsed incorrectly.");
+	}
         return yyin->gcount();
       }
     }
@@ -947,6 +972,41 @@ integer {D}+({E})?
 
       auto ins = new std::istringstream(new_string); // Declare an input string stream.
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
+    }
+    return (nullptr);
+  }
+
+  char *Scanner::import_handler(char *string)
+  {
+    /*
+     * NOTE: The closing } has not yet been scanned in the call to rescan();
+     *       therefore, we read it ourselves using input().
+     */
+    int i = 0;
+    while ((i = yyFlexLexer::yyinput()) != '}' && i != EOF)
+      curr_index++; /* eat up values */
+
+    add_include_file(string, true);
+    std::string info_string = std::string("Imported File: '") + string + "'";
+    aprepro.info(info_string, true);
+
+    if (!aprepro.doIncludeSubstitution) {
+      yy_push_state(VERBATIM);
+    }
+
+    /*
+     * Now we need to push back the closing } so it is the first thing read.
+     * We no longer have the initial file stream (is is pushed down on stack)
+     * so we need to add a new file stream consisting of just a single character.
+     * Wasteful, but best I can come up with at this time.
+     */
+    aprepro.ap_file_list.push(SEAMS::file_rec("_string_", 0, true, -1));
+    std::string new_string("}");
+    auto        ins = new std::istringstream(new_string); // Declare an input string stream.
+    yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
+    
+    if (aprepro.ap_options.debugging) {
+      std::cerr << "DEBUG IMPORT: " << string << "\n";
     }
     return (nullptr);
   }

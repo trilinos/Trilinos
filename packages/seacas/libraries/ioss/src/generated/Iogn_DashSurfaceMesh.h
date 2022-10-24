@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iogn_DashSurfaceMesh_h
-#define IOSS_Iogn_DashSurfaceMesh_h
+#pragma once
 
 #include <Ioss_Beam2.h>
 #include <Ioss_Hex8.h>
@@ -149,12 +148,12 @@ namespace Iogn {
     int64_t element_count_proc() const override;
     int64_t element_count_proc(int64_t block_number) const override;
 
-    int64_t block_count() const override;
+    int block_count() const override;
 
-    int64_t nodeset_count() const override;
+    int     nodeset_count() const override;
     int64_t nodeset_node_count_proc(int64_t id) const override;
 
-    int64_t sideset_count() const override;
+    int     sideset_count() const override;
     int64_t sideset_side_count_proc(int64_t id) const override;
 
     int64_t communication_node_count_proc() const override;
@@ -205,12 +204,12 @@ namespace Iogn {
     int64_t element_count_proc() const override;
     int64_t element_count_proc(int64_t blockNumber) const override;
 
-    int64_t block_count() const override;
+    int block_count() const override;
 
-    int64_t nodeset_count() const override;
+    int     nodeset_count() const override;
     int64_t nodeset_node_count_proc(int64_t id) const override;
 
-    int64_t sideset_count() const override;
+    int     sideset_count() const override;
     int64_t sideset_side_count_proc(int64_t id) const override;
 
     int64_t communication_node_count_proc() const override;
@@ -248,9 +247,7 @@ namespace Iogn {
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 
-    const ExodusData &   mExodusData;
+    const ExodusData    &mExodusData;
     std::vector<int64_t> mElementOffsetForBlock;
   };
 } // namespace Iogn
-
-#endif

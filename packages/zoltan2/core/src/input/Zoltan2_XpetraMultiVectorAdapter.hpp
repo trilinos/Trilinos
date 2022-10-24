@@ -135,7 +135,7 @@ public:
 
   void getIDsView(const gno_t *&ids) const
   {
-    ids = map_->getNodeElementList().getRawPtr();
+    ids = map_->getLocalElementList().getRawPtr();
   }
 
   void getIDsKokkosView(

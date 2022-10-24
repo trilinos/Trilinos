@@ -58,7 +58,7 @@ namespace MueLu {
 
     // loop over all local rows in matrix A and keep diagonal entries if corresponding
     // matrix rows are not contained in permRowMap
-    for (size_t row = 0; row < A->getRowMap()->getNodeNumElements(); row++) {
+    for (size_t row = 0; row < A->getRowMap()->getLocalNumElements(); row++) {
       GlobalOrdinal grow = A->getRowMap()->getGlobalElement(row);
 
       if(permRowMap->isNodeGlobalElement(grow) == true) continue;
@@ -91,7 +91,7 @@ namespace MueLu {
 
     //////////
     // handle rows that are marked to be relevant for permutations
-    for (size_t row = 0; row < permRowMap->getNodeNumElements(); row++) {
+    for (size_t row = 0; row < permRowMap->getLocalNumElements(); row++) {
       GlobalOrdinal grow = permRowMap->getGlobalElement(row);
       LocalOrdinal lArow = A->getRowMap()->getLocalElement(grow);
       size_t nnz = A->getNumEntriesInLocalRow(lArow);
@@ -152,23 +152,25 @@ namespace MueLu {
     std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> > permutedDiagCandidatesFiltered; // TODO reserve memory
     std::map<GlobalOrdinal, MT> gColId2Weight;
 
-    Teuchos::ArrayRCP< Scalar > ddata = gColVec->getDataNonConst(0);
-    for(size_t i = 0; i < permutedDiagCandidates.size(); ++i) {
-      // loop over all candidates
-      std::pair<GlobalOrdinal, GlobalOrdinal> pp = permutedDiagCandidates[permutation[i]];
-      GlobalOrdinal grow = pp.first;
-      GlobalOrdinal gcol = pp.second;
+    {
+      Teuchos::ArrayRCP< Scalar > ddata = gColVec->getDataNonConst(0);
+      for(size_t i = 0; i < permutedDiagCandidates.size(); ++i) {
+        // loop over all candidates
+        std::pair<GlobalOrdinal, GlobalOrdinal> pp = permutedDiagCandidates[permutation[i]];
+        GlobalOrdinal grow = pp.first;
+        GlobalOrdinal gcol = pp.second;
 
-      LocalOrdinal lcol = A->getColMap()->getLocalElement(gcol);
-      if(Teuchos::ScalarTraits<Scalar>::real (ddata[lcol]) > MT_ZERO){
-        continue; // skip lcol: column already handled by another row
+        LocalOrdinal lcol = A->getColMap()->getLocalElement(gcol);
+        if(Teuchos::ScalarTraits<Scalar>::real (ddata[lcol]) > MT_ZERO){
+          continue; // skip lcol: column already handled by another row
+        }
+
+        // mark column as already taken
+        ddata[lcol] += SC_ONE;
+
+        permutedDiagCandidatesFiltered.push_back(std::make_pair(grow,gcol));
+        gColId2Weight[gcol] = Weights[permutation[i]];
       }
-
-      // mark column as already taken
-      ddata[lcol] += SC_ONE;
-
-      permutedDiagCandidatesFiltered.push_back(std::make_pair(grow,gcol));
-      gColId2Weight[gcol] = Weights[permutation[i]];
     }
 
     // communicate how often each column index is requested by the different procs
@@ -354,9 +356,6 @@ namespace MueLu {
     Teuchos::RCP<Vector> Qperm  = VectorFactory::Build(A->getDomainMap()); // global variant (based on domain map)
     Teuchos::RCP<Vector> lQperm = VectorFactory::Build(A->getColMap());  // local variant (based on column map)
 
-    Teuchos::ArrayRCP< Scalar > PpermData = Pperm->getDataNonConst(0);
-    Teuchos::ArrayRCP< Scalar > QpermData = Qperm->getDataNonConst(0);
-
     Pperm->putScalar(SC_ZERO);
     Qperm->putScalar(SC_ZERO);
     lQperm->putScalar(SC_ZERO);
@@ -368,14 +367,11 @@ namespace MueLu {
     Teuchos::RCP<Vector> ColIdStatus  = VectorFactory::Build(A->getDomainMap()); // global variant (based on domain map)
     Teuchos::RCP<Vector> lColIdStatus = VectorFactory::Build(A->getColMap()); // local variant (based on column map)
     Teuchos::RCP<Vector> ColIdUsed   = VectorFactory::Build(A->getDomainMap()); // mark column ids to be already in use
-    Teuchos::ArrayRCP< Scalar > RowIdStatusArray = RowIdStatus->getDataNonConst(0);
-    Teuchos::ArrayRCP< Scalar > ColIdStatusArray = ColIdStatus->getDataNonConst(0);
-    Teuchos::ArrayRCP< Scalar > lColIdStatusArray = lColIdStatus->getDataNonConst(0);
-    Teuchos::ArrayRCP< Scalar > ColIdUsedArray   = ColIdUsed->getDataNonConst(0); // not sure about this
     RowIdStatus->putScalar(SC_ZERO);
     ColIdStatus->putScalar(SC_ZERO);
     lColIdStatus->putScalar(SC_ZERO);
     ColIdUsed->putScalar(SC_ZERO);   // no column ids are used
+
 
     // count wide-range permutations
     // a wide-range permutation is defined as a permutation of rows/columns which do not
@@ -386,111 +382,124 @@ namespace MueLu {
     GlobalOrdinal gWideRangeColPermutations = 0;
 
     // run 1: mark all "identity" permutations
-    typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = RowColPairs.begin();
-    while(p != RowColPairs.end() )
-      {
-        GlobalOrdinal ik = (*p).first;
-        GlobalOrdinal jk = (*p).second;
+    {
+      Teuchos::ArrayRCP< Scalar > RowIdStatusArray = RowIdStatus->getDataNonConst(0);
+      Teuchos::ArrayRCP< Scalar > lColIdStatusArray = lColIdStatus->getDataNonConst(0);
 
-        LocalOrdinal lik = A->getRowMap()->getLocalElement(ik);
-        LocalOrdinal ljk = A->getColMap()->getLocalElement(jk);
+      typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = RowColPairs.begin();
+      while(p != RowColPairs.end() )
+        {
+          GlobalOrdinal ik = (*p).first;
+          GlobalOrdinal jk = (*p).second;
 
+          LocalOrdinal lik = A->getRowMap()->getLocalElement(ik);
+          LocalOrdinal ljk = A->getColMap()->getLocalElement(jk);
+
+          if(RowIdStatusArray[lik] == SC_ZERO) {
+            RowIdStatusArray[lik] = SC_ONE; // use this row id
+            lColIdStatusArray[ljk] = SC_ONE; // use this column id
+            Pperm->replaceLocalValue(lik, ik);
+            lQperm->replaceLocalValue(ljk, ik); // use column map
+            ColIdUsed->replaceGlobalValue(ik,SC_ONE); // ik is now used
+            p = RowColPairs.erase(p);
+
+            // detect wide range permutations
+            if(floor(ik/nDofsPerNode) != floor(jk/nDofsPerNode)) {
+              lWideRangeColPermutations++;
+            }
+          }
+          else
+            p++;
+        }
+
+
+      // communicate column map -> domain map
+      Qperm->doExport(*lQperm, *QpermExporter, Xpetra::ABSMAX);
+      ColIdStatus->doExport(*lColIdStatus, *QpermExporter, Xpetra::ABSMAX);
+
+      // plausibility check
+      if(RowColPairs.size()>0) GetOStream(Warnings0) << "MueLu::PermutationFactory: There are Row/Col pairs left!!!" << std::endl; // TODO fix me
+
+      // close Pperm
+
+      // count, how many row permutations are missing on current proc
+      size_t cntFreeRowIdx = 0;
+      std::queue<GlobalOrdinal> qFreeGRowIdx;  // store global row ids of "free" rows
+      for (size_t lik = 0; lik < RowIdStatus->getLocalLength(); ++lik) {
+        if(RowIdStatusArray[lik] == SC_ZERO) {
+          cntFreeRowIdx++;
+          qFreeGRowIdx.push(RowIdStatus->getMap()->getGlobalElement(lik));
+        }
+      }
+
+      // fix Pperm
+      for (size_t lik = 0; lik < RowIdStatus->getLocalLength(); ++lik) {
         if(RowIdStatusArray[lik] == SC_ZERO) {
           RowIdStatusArray[lik] = SC_ONE; // use this row id
-          lColIdStatusArray[ljk] = SC_ONE; // use this column id
-          Pperm->replaceLocalValue(lik, ik);
-          lQperm->replaceLocalValue(ljk, ik); // use column map
-          ColIdUsed->replaceGlobalValue(ik,SC_ONE); // ik is now used
-          p = RowColPairs.erase(p);
-
+          Pperm->replaceLocalValue(lik, qFreeGRowIdx.front());
           // detect wide range permutations
-          if(floor(ik/nDofsPerNode) != floor(jk/nDofsPerNode)) {
-            lWideRangeColPermutations++;
+          if(floor(qFreeGRowIdx.front()/nDofsPerNode) != floor(RowIdStatus->getMap()->getGlobalElement(lik)/nDofsPerNode)) {
+            lWideRangeRowPermutations++;
           }
+          qFreeGRowIdx.pop();
         }
-        else
-          p++;
-      }
-
-    // communicate column map -> domain map
-    Qperm->doExport(*lQperm, *QpermExporter, Xpetra::ABSMAX);
-    ColIdStatus->doExport(*lColIdStatus, *QpermExporter, Xpetra::ABSMAX);
-
-    // plausibility check
-    if(RowColPairs.size()>0) GetOStream(Warnings0) << "MueLu::PermutationFactory: There are Row/Col pairs left!!!" << std::endl; // TODO fix me
-
-    // close Pperm
-
-    // count, how many row permutations are missing on current proc
-    size_t cntFreeRowIdx = 0;
-    std::queue<GlobalOrdinal> qFreeGRowIdx;  // store global row ids of "free" rows
-    for (size_t lik = 0; lik < RowIdStatus->getLocalLength(); ++lik) {
-      if(RowIdStatusArray[lik] == SC_ZERO) {
-        cntFreeRowIdx++;
-        qFreeGRowIdx.push(RowIdStatus->getMap()->getGlobalElement(lik));
-      }
-    }
-
-    // fix Pperm
-    for (size_t lik = 0; lik < RowIdStatus->getLocalLength(); ++lik) {
-      if(RowIdStatusArray[lik] == SC_ZERO) {
-        RowIdStatusArray[lik] = SC_ONE; // use this row id
-        Pperm->replaceLocalValue(lik, qFreeGRowIdx.front());
-        // detect wide range permutations
-        if(floor(qFreeGRowIdx.front()/nDofsPerNode) != floor(RowIdStatus->getMap()->getGlobalElement(lik)/nDofsPerNode)) {
-          lWideRangeRowPermutations++;
-        }
-        qFreeGRowIdx.pop();
-      }
-    }
-
-    // close Qperm (free permutation entries in Qperm)
-    size_t cntFreeColIdx = 0;
-    std::queue<GlobalOrdinal> qFreeGColIdx;  // store global column ids of "free" available columns
-    for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
-      if(ColIdStatusArray[ljk] == SC_ZERO) {
-        cntFreeColIdx++;
-        qFreeGColIdx.push(ColIdStatus->getMap()->getGlobalElement(ljk));
       }
     }
 
     size_t cntUnusedColIdx = 0;
     std::queue<GlobalOrdinal> qUnusedGColIdx;  // store global column ids of "free" available columns
-    for (size_t ljk = 0; ljk < ColIdUsed->getLocalLength(); ++ljk) {
-      if(ColIdUsedArray[ljk] == SC_ZERO) {
-        cntUnusedColIdx++;
-        qUnusedGColIdx.push(ColIdUsed->getMap()->getGlobalElement(ljk));
-      }
-    }
+    size_t cntFreeColIdx = 0;
+    std::queue<GlobalOrdinal> qFreeGColIdx;  // store global column ids of "free" available columns
+    {
+      Teuchos::ArrayRCP< Scalar > ColIdStatusArray = ColIdStatus->getDataNonConst(0);
+      Teuchos::ArrayRCP< Scalar > ColIdUsedArray   = ColIdUsed->getDataNonConst(0); // not sure about this
 
-    // fix Qperm with local entries
-    for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
-      // stop if no (local) unused column idx are left
-      if(cntUnusedColIdx == 0) break;
-
-      if(ColIdStatusArray[ljk] == SC_ZERO) {
-        ColIdStatusArray[ljk] = SC_ONE; // use this row id
-        Qperm->replaceLocalValue(ljk, qUnusedGColIdx.front()); // loop over ColIdStatus (lives on domain map)
-        ColIdUsed->replaceGlobalValue(qUnusedGColIdx.front(),SC_ONE); // ljk is now used, too
-        // detect wide range permutations
-        if(floor(qUnusedGColIdx.front()/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
-          lWideRangeColPermutations++;
+      // close Qperm (free permutation entries in Qperm)
+      for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
+        if(ColIdStatusArray[ljk] == SC_ZERO) {
+          cntFreeColIdx++;
+          qFreeGColIdx.push(ColIdStatus->getMap()->getGlobalElement(ljk));
         }
-        qUnusedGColIdx.pop();
-        cntUnusedColIdx--;
-        cntFreeColIdx--;
       }
-    }
 
-    //Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX); // no export necessary, since changes only locally
-    //ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
+      for (size_t ljk = 0; ljk < ColIdUsed->getLocalLength(); ++ljk) {
+        if(ColIdUsedArray[ljk] == SC_ZERO) {
+          cntUnusedColIdx++;
+          qUnusedGColIdx.push(ColIdUsed->getMap()->getGlobalElement(ljk));
+        }
+      }
 
-    // count, how many unused column idx are needed on current processor
-    // to complete Qperm
-    cntFreeColIdx = 0;
-    for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) { // TODO avoid this loop
-      if(ColIdStatusArray[ljk] == SC_ZERO) {
-        cntFreeColIdx++;
+
+      // fix Qperm with local entries
+      for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
+        // stop if no (local) unused column idx are left
+        if(cntUnusedColIdx == 0) break;
+
+        if(ColIdStatusArray[ljk] == SC_ZERO) {
+          ColIdStatusArray[ljk] = SC_ONE; // use this row id
+          Qperm->replaceLocalValue(ljk, qUnusedGColIdx.front()); // loop over ColIdStatus (lives on domain map)
+          ColIdUsed->replaceGlobalValue(qUnusedGColIdx.front(),SC_ONE); // ljk is now used, too
+          // detect wide range permutations
+          if(floor(qUnusedGColIdx.front()/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
+            lWideRangeColPermutations++;
+          }
+          qUnusedGColIdx.pop();
+          cntUnusedColIdx--;
+          cntFreeColIdx--;
+        }
+      }
+
+
+      //Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX); // no export necessary, since changes only locally
+      //ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
+
+      // count, how many unused column idx are needed on current processor
+      // to complete Qperm
+      cntFreeColIdx = 0;
+      for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) { // TODO avoid this loop
+        if(ColIdStatusArray[ljk] == SC_ZERO) {
+          cntFreeColIdx++;
+        }
       }
     }
 
@@ -585,19 +594,22 @@ namespace MueLu {
 #endif
 
       // 6.) fix Qperm with global entries
-      GlobalOrdinal array_iter = 0;
-      for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
+      {
+        Teuchos::ArrayRCP< Scalar > ColIdStatusArray = ColIdStatus->getDataNonConst(0);
+        GlobalOrdinal array_iter = 0;
+        for (size_t ljk = 0; ljk < ColIdStatus->getLocalLength(); ++ljk) {
 
-        if(ColIdStatusArray[ljk] == SC_ZERO) {
-          ColIdStatusArray[ljk] = SC_ONE; // use this row id
-          Qperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
-          ColIdUsed->replaceGlobalValue(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter],SC_ONE);
-          // detect wide range permutations
-          if(floor(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
-            lWideRangeColPermutations++;
+          if(ColIdStatusArray[ljk] == SC_ZERO) {
+            ColIdStatusArray[ljk] = SC_ONE; // use this row id
+            Qperm->replaceLocalValue(ljk, global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]);
+            ColIdUsed->replaceGlobalValue(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter],SC_ONE);
+            // detect wide range permutations
+            if(floor(global_UnusedColIdxVector[global_UnusedColStartIdx + array_iter]/nDofsPerNode) != floor(ColIdStatus->getMap()->getGlobalElement(ljk)/nDofsPerNode)) {
+              lWideRangeColPermutations++;
+            }
+            array_iter++;
+            //cntUnusedColIdx--; // check me
           }
-          array_iter++;
-          //cntUnusedColIdx--; // check me
         }
       }
     } // end if global_cntFreeColIdx > 0
@@ -608,15 +620,20 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
     Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
-      // FIXME (mfh 30 Oct 2015): Teuchos::as doesn't know how to
-      // convert from complex Scalar to GO, so we have to take the real
-      // part first.  I think that's the right thing to do in this case.
-      Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(PpermData[row]))); // column idx for Perm^T
-      Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(QpermData[row]))); // column idx for Qperm
-      Teuchos::ArrayRCP<Scalar> valout(1,SC_ONE);
-      permPTmatrix->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indoutP.view(0,indoutP.size()), valout.view(0,valout.size()));
-      permQTmatrix->insertGlobalValues (A->getRowMap()->getGlobalElement(row), indoutQ.view(0,indoutQ.size()), valout.view(0,valout.size()));
+    {
+      Teuchos::ArrayRCP< Scalar > PpermData = Pperm->getDataNonConst(0);
+      Teuchos::ArrayRCP< Scalar > QpermData = Qperm->getDataNonConst(0);
+
+      for(size_t row=0; row<A->getLocalNumRows(); row++) {
+        // FIXME (mfh 30 Oct 2015): Teuchos::as doesn't know how to
+        // convert from complex Scalar to GO, so we have to take the real
+        // part first.  I think that's the right thing to do in this case.
+        Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(PpermData[row]))); // column idx for Perm^T
+        Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(QpermData[row]))); // column idx for Qperm
+        Teuchos::ArrayRCP<Scalar> valout(1,SC_ONE);
+        permPTmatrix->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indoutP.view(0,indoutP.size()), valout.view(0,valout.size()));
+        permQTmatrix->insertGlobalValues (A->getRowMap()->getGlobalElement(row), indoutQ.view(0,indoutQ.size()), valout.view(0,valout.size()));
+      }
     }
 
     permPTmatrix->fillComplete();
@@ -624,7 +641,7 @@ namespace MueLu {
 
     Teuchos::RCP<Matrix> permPmatrix = Utilities::Transpose(*permPTmatrix, true);
 
-    for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
+    for(size_t row=0; row<permPTmatrix->getLocalNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
@@ -646,25 +663,25 @@ namespace MueLu {
     // build scaling matrix
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
     Teuchos::RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
-    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
-    Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
-
-    permPApermQt->getLocalDiagCopy(*diagVec);
-    for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagVecData[i] != SC_ZERO)
-        invDiagVecData[i] = SC_ONE / diagVecData[i];
-      else {
-        invDiagVecData[i] = SC_ONE;
-        GetOStream(Statistics0) << "MueLu::PermutationFactory: found zero on diagonal in row " << i << std::endl;
-      }
-    }
-
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1));
+    {
+      permPApermQt->getLocalDiagCopy(*diagVec);
+      Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+      Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
+      for(size_t i = 0; i<diagVec->getMap()->getLocalNumElements(); ++i) {
+        if(diagVecData[i] != SC_ZERO)
+          invDiagVecData[i] = SC_ONE / diagVecData[i];
+        else {
+          invDiagVecData[i] = SC_ONE;
+          GetOStream(Statistics0) << "MueLu::PermutationFactory: found zero on diagonal in row " << i << std::endl;
+        }
+      }
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
-      Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
-      Teuchos::ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
-      diagScalingOp->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
+      for(size_t row=0; row<A->getLocalNumRows(); row++) {
+        Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
+        Teuchos::ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
+        diagScalingOp->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
+      }
     }
     diagScalingOp->fillComplete();
 
@@ -680,12 +697,14 @@ namespace MueLu {
     // count zeros on diagonal in P -> number of row permutations
     Teuchos::RCP<Vector> diagPVec = VectorFactory::Build(permPmatrix->getRowMap(),true);
     permPmatrix->getLocalDiagCopy(*diagPVec);
-    Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
     LocalOrdinal lNumRowPermutations = 0;
     GlobalOrdinal gNumRowPermutations = 0;
-    for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagPVecData[i] == SC_ZERO) {
-        lNumRowPermutations++;
+    {
+      Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
+      for(size_t i = 0; i<diagPVec->getMap()->getLocalNumElements(); ++i) {
+        if(diagPVecData[i] == SC_ZERO) {
+          lNumRowPermutations++;
+        }
       }
     }
 
@@ -696,12 +715,14 @@ namespace MueLu {
     // count zeros on diagonal in Q^T -> number of column permutations
     Teuchos::RCP<Vector> diagQTVec = VectorFactory::Build(permQTmatrix->getRowMap(),true);
     permQTmatrix->getLocalDiagCopy(*diagQTVec);
-    Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
     LocalOrdinal lNumColPermutations = 0;
     GlobalOrdinal gNumColPermutations = 0;
-    for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagQTVecData[i] == SC_ZERO) {
-        lNumColPermutations++;
+    {
+      Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
+      for(size_t i = 0; i<diagQTVec->getMap()->getLocalNumElements(); ++i) {
+        if(diagQTVecData[i] == SC_ZERO) {
+          lNumColPermutations++;
+        }
       }
     }
 

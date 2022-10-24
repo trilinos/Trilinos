@@ -1366,9 +1366,8 @@ struct Tile_Loop_Type<8, IsLeft, IType, void, void> {
 // tagged versions
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    1, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<1, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1385,9 +1384,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    2, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<2, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1404,9 +1402,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    3, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<3, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1423,9 +1420,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    4, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<4, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1442,9 +1438,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    5, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<5, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1461,9 +1456,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    6, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<6, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1480,9 +1474,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    7, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<7, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1499,9 +1492,8 @@ struct Tile_Loop_Type<
 };
 
 template <bool IsLeft, typename IType, typename Tagged>
-struct Tile_Loop_Type<
-    8, IsLeft, IType, Tagged,
-    typename std::enable_if<!std::is_same<Tagged, void>::value>::type> {
+struct Tile_Loop_Type<8, IsLeft, IType, Tagged,
+                      std::enable_if_t<!std::is_void<Tagged>::value>> {
   template <typename Func, typename Offset, typename ExtentA, typename ExtentB>
   static void apply(Func const& func, bool cond, Offset const& offset,
                     ExtentA const& a, ExtentB const& b) {
@@ -1518,28 +1510,14 @@ struct Tile_Loop_Type<
 };
 // end Structs for calling loops
 
-template <typename T>
-using is_void_type = std::is_same<T, void>;
-
-template <typename T>
-struct is_type_array : std::false_type {
-  using value_type = T;
-};
-
-template <typename T>
-struct is_type_array<T[]> : std::true_type {
-  using value_type = T;
-};
-
 template <typename RP, typename Functor, typename Tag = void,
           typename ValueType = void, typename Enable = void>
 struct HostIterateTile;
 
 // For ParallelFor
 template <typename RP, typename Functor, typename Tag, typename ValueType>
-struct HostIterateTile<
-    RP, Functor, Tag, ValueType,
-    typename std::enable_if<is_void_type<ValueType>::value>::type> {
+struct HostIterateTile<RP, Functor, Tag, ValueType,
+                       std::enable_if_t<std::is_void<ValueType>::value>> {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
 
@@ -1923,34 +1901,30 @@ struct HostIterateTile<
 #endif
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(args...);
   }
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           !std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && !std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(m_tag, args...);
   }
 
   RP const& m_rp;
   Functor const& m_func;
-  typename std::conditional<std::is_same<Tag, void>::value, int, Tag>::type
-      m_tag;
+  std::conditional_t<std::is_void<Tag>::value, int, Tag> m_tag;
 };
 
 // For ParallelReduce
 // ValueType - scalar: For reductions
 template <typename RP, typename Functor, typename Tag, typename ValueType>
-struct HostIterateTile<
-    RP, Functor, Tag, ValueType,
-    typename std::enable_if<!is_void_type<ValueType>::value &&
-                            !is_type_array<ValueType>::value>::type> {
+struct HostIterateTile<RP, Functor, Tag, ValueType,
+                       std::enable_if_t<!std::is_void<ValueType>::value &&
+                                        !std::is_array<ValueType>::value>> {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
 
@@ -2344,17 +2318,15 @@ struct HostIterateTile<
 #endif
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(args..., m_v);
   }
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           !std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && !std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(m_tag, args..., m_v);
   }
@@ -2362,25 +2334,23 @@ struct HostIterateTile<
   RP const& m_rp;
   Functor const& m_func;
   value_type& m_v;
-  typename std::conditional<std::is_same<Tag, void>::value, int, Tag>::type
-      m_tag;
+  std::conditional_t<std::is_void<Tag>::value, int, Tag> m_tag;
 };
 
 // For ParallelReduce
 // Extra specialization for array reductions
 // ValueType[]: For array reductions
 template <typename RP, typename Functor, typename Tag, typename ValueType>
-struct HostIterateTile<
-    RP, Functor, Tag, ValueType,
-    typename std::enable_if<!is_void_type<ValueType>::value &&
-                            is_type_array<ValueType>::value>::type> {
+struct HostIterateTile<RP, Functor, Tag, ValueType,
+                       std::enable_if_t<!std::is_void<ValueType>::value &&
+                                        std::is_array<ValueType>::value>> {
   using index_type = typename RP::index_type;
   using point_type = typename RP::point_type;
 
   using value_type =
-      typename is_type_array<ValueType>::value_type;  // strip away the
-                                                      // 'array-ness' [], only
-                                                      // underlying type remains
+      std::remove_extent_t<ValueType>;  // strip away the
+                                        // 'array-ness' [], only
+                                        // underlying type remains
 
   inline HostIterateTile(
       RP const& rp, Functor const& func,
@@ -2767,17 +2737,15 @@ struct HostIterateTile<
 #endif
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(args..., m_v);
   }
 
   template <typename... Args>
-  typename std::enable_if<(sizeof...(Args) == RP::rank &&
-                           !std::is_same<Tag, void>::value),
-                          void>::type
+  std::enable_if_t<(sizeof...(Args) == RP::rank && !std::is_void<Tag>::value),
+                   void>
   apply(Args&&... args) const {
     m_func(m_tag, args..., m_v);
   }
@@ -2785,8 +2753,7 @@ struct HostIterateTile<
   RP const& m_rp;
   Functor const& m_func;
   value_type* m_v;
-  typename std::conditional<std::is_same<Tag, void>::value, int, Tag>::type
-      m_tag;
+  std::conditional_t<std::is_void<Tag>::value, int, Tag> m_tag;
 };
 
 // ------------------------------------------------------------------ //

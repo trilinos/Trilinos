@@ -135,12 +135,12 @@ testSubsetMapOverSubsetComm (int& gblSuccess, // output argument; 0 means false
   // another all-reduce, then check the features of the Map that may
   // require communication (and thus have collective semantics).
 
-  if (subsetMap->getNodeNumElements () != origMap->getNodeNumElements ()) {
+  if (subsetMap->getLocalNumElements () != origMap->getLocalNumElements ()) {
     lclSuccess = 0;
-    out << "subsetMap->getNodeNumElements() = "
-        << subsetMap->getNodeNumElements ()
-        << " != origMap->getNodeNumElements() = "
-        << origMap->getNodeNumElements ()
+    out << "subsetMap->getLocalNumElements() = "
+        << subsetMap->getLocalNumElements ()
+        << " != origMap->getLocalNumElements() = "
+        << origMap->getLocalNumElements ()
         << endl;
   }
   if (subsetMap->getMinLocalIndex () != origMap->getMinLocalIndex ()) {
@@ -184,8 +184,8 @@ testSubsetMapOverSubsetComm (int& gblSuccess, // output argument; 0 means false
 
   try {
     const LO lclNumInds =
-      std::min (static_cast<LO> (subsetMap->getNodeNumElements ()),
-                static_cast<LO> (origMap->getNodeNumElements ()));
+      std::min (static_cast<LO> (subsetMap->getLocalNumElements ()),
+                static_cast<LO> (origMap->getLocalNumElements ()));
     Teuchos::Array<LO> badLclInds;
     Teuchos::Array<std::pair<GO, GO> > badGblInds;
     bool foundBadInd = false;
@@ -237,7 +237,7 @@ testSubsetMapOverSubsetComm (int& gblSuccess, // output argument; 0 means false
   // Use the original Map to compute how many entries the subset Map
   // _should_ have.  This is just the sum of all the local entry
   // counts in the original Map, over the subset comm.
-  const GO lclNumEnt = static_cast<GO> (origMap->getNodeNumElements ());
+  const GO lclNumEnt = static_cast<GO> (origMap->getLocalNumElements ());
   GO gblNumEnt = 0; // output argument
   reduceAll<int, GO> (*subsetComm, REDUCE_SUM, lclNumEnt, outArg (gblNumEnt));
 

@@ -79,22 +79,16 @@ public:
           (option, description);
     }
 
+
     template <typename ValueType>
     void add_required_positional(const CommandLineOption &option)
     {
-        add_required<ValueType>(option, positionalIndex);
+        add_required_positional<ValueType>(option, positionalIndex);
         ++positionalIndex;
     }
 
     template <typename ValueType>
-    void add_optional_positional(const CommandLineOption &option, const ValueType &def)
-    {
-        add_optional<ValueType>(option, def, positionalIndex);
-        ++positionalIndex;
-    }
-
-    template <typename ValueType>
-    void add_required(const CommandLineOption &option, int position = -2)
+    void add_required_positional(const CommandLineOption &option, int position)
     {
         const bool isFlag = false;
         const bool isRequired = true;
@@ -102,38 +96,80 @@ public:
           (get_option_spec(option), isFlag, isRequired, option.description, position);
     }
 
+
     template <typename ValueType>
-    void add_optional(const CommandLineOption &option,
-                      const ValueType &defaultValue,
-                      int position = -2)
+    void add_optional_positional(const CommandLineOption &option, const ValueType &def)
     {
-        add_optional(get_option_spec(option), option.description, defaultValue, position);
+        add_optional_positional<ValueType>(option, def, positionalIndex);
+        ++positionalIndex;
     }
 
     template <typename ValueType>
-    void add_optional(const std::string &option, const std::string &description,
-                      const ValueType &defaultValue, int position = -2)
+    void add_optional_positional(const CommandLineOption &option, const ValueType &defaultValue, int position)
     {
         const bool isFlag = false;
         const bool isRequired = false;
         optionsSpec.add_options()
-          (option, description, stk::DefaultValue<ValueType>(defaultValue), isFlag, isRequired, position);
+          (get_option_spec(option), option.description, stk::DefaultValue<ValueType>(defaultValue),
+           isFlag, isRequired, position);
+    }
+
+
+    template <typename ValueType>
+    void add_required(const CommandLineOption &option)
+    {
+        const bool isFlag = false;
+        const bool isRequired = true;
+        const int defaultPosition = -2;
+        optionsSpec.add_options()
+          (get_option_spec(option), isFlag, isRequired, option.description, defaultPosition);
+    }
+
+
+    template <typename ArgValueType>
+    void add_optional(const CommandLineOption &option)
+    {
+        add_optional<ArgValueType>(get_option_spec(option), option.description);
+    }
+
+    template <typename ArgValueType>
+    void add_optional(const std::string &option, const std::string &description)
+    {
+        optionsSpec.add_options()
+          (option, description, stk::ValueType<ArgValueType>());
+    }
+
+
+    template <typename ValueType>
+    void add_optional(const CommandLineOption &option, const ValueType &defaultValue)
+    {
+        add_optional(get_option_spec(option), option.description, defaultValue);
     }
 
     template <typename ValueType>
-    void add_optional_implicit(const CommandLineOption &option,
-                               const ValueType &defaultValue)
+    void add_optional(const std::string &option, const std::string &description, const ValueType &defaultValue)
+    {
+        const bool isFlag = false;
+        const bool isRequired = false;
+        const int defaultPosition = -2;
+        optionsSpec.add_options()
+          (option, description, stk::DefaultValue<ValueType>(defaultValue), isFlag, isRequired, defaultPosition);
+    }
+
+
+    template <typename ValueType>
+    void add_optional_implicit(const CommandLineOption &option, const ValueType &defaultValue)
     {
         add_optional_implicit(get_option_spec(option), option.description, defaultValue);
     }
 
     template <typename ValueType>
-    void add_optional_implicit(const std::string &option, const std::string &description,
-                               const ValueType &defaultValue)
+    void add_optional_implicit(const std::string &option, const std::string &description, const ValueType &defaultValue)
     {
         optionsSpec.add_options()
           (option, description, stk::ImplicitValue<ValueType>(defaultValue));
     }
+
 
     std::string get_usage() const
     {

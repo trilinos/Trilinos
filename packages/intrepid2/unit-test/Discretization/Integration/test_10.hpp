@@ -92,12 +92,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
- 
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -128,7 +122,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       // open file with analytic values
-      std::string basedir = "../data";
+      std::string basedir = "./data";
       std::stringstream namestream;
       std::string filename;
       namestream <<  basedir << "/EDGE_integrals" << ".dat";

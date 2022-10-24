@@ -596,7 +596,7 @@ namespace MueLu {
     else
     {
       ArrayView<const LocalOrdinal> indices;
-      for(LocalOrdinal locRow = 0; locRow < LocalOrdinal(A->getNodeNumRows()); locRow++)
+      for(LocalOrdinal locRow = 0; locRow < LocalOrdinal(A->getLocalNumRows()); locRow++)
       {
         if(dofs == 1)
           A->getLocalRowView(locRow, indices, values);
@@ -827,7 +827,7 @@ namespace MueLu {
     fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << endl;
     indent = "          ";
     fout << indent;
-    bool localIsGlobal = GlobalOrdinal(nodeMap_->getGlobalNumElements()) == GlobalOrdinal(nodeMap_->getNodeNumElements());
+    bool localIsGlobal = GlobalOrdinal(nodeMap_->getGlobalNumElements()) == GlobalOrdinal(nodeMap_->getLocalNumElements());
     for(size_t i = 0; i < uniqueFine.size(); i++)
     {
       if(localIsGlobal)

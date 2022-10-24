@@ -58,7 +58,7 @@
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_Utils.hpp"
 #include "Intrepid2_VectorData.hpp"
 
@@ -116,24 +116,22 @@ namespace Intrepid2
     
   public:
     /** \brief  Notionally-private method that provides a common interface for multiple public-facing allocateJacobianData() methods.  (Marked as public due to compiler constraints.)
-       \param [in] points - if a valid points container, specifies the points at which the Jacobian will be evaluated.  (Invalid containers are acceptable for affine CellGeometry.)
+       \param [in] pointComponentView - typically either the first component of a TensorPoints container, or a View containing all the points, but may be empty.  Only used for scalar-type-size-matched construction of new views (important for views of Fad types with hidden dimensions).
        \param [in] pointsPerCell - the number of points at which the Jacobian will be evaluated in each cell.  If points is a valid container, pointsPerCell must match its first dimension.
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
        \return a Data object appropriately sized to accomodate the specified Jacobian values.
     */
-    Data<PointScalar,DeviceType> allocateJacobianDataPrivate(const TensorPoints<PointScalar,DeviceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
+    Data<PointScalar,DeviceType> allocateJacobianDataPrivate(const ScalarView<PointScalar,DeviceType> &pointComponentView, const int &pointsPerCell, const int startCell, const int endCell) const;
     
     /** \brief  Notionally-private method that provides a common interface for multiple public-facing setJacobianData() methods.  (Marked as public due to compiler constraints.)
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
-       \param [in] points - if a valid points container, specifies the points at which the Jacobian will be evaluated.  (Invalid containers are acceptable for affine CellGeometry.)
        \param [in] pointsPerCell - the number of points at which the Jacobian will be evaluated in each cell.  If points is a valid container, pointsPerCell must match its first dimension.
        \param [in] refData - the return from getJacobianRefData(); may be an empty container, depending on details of CellGeometry (e.g. if it is affine)
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobianDataPrivate(Data<PointScalar,DeviceType> &jacobianData, const TensorPoints<PointScalar,DeviceType> &points, const int &pointsPerCell,
-                                const Data<PointScalar,DeviceType> &refData, const int startCell, const int endCell) const;
+    void setJacobianDataPrivate(Data<PointScalar,DeviceType> &jacobianData, const int &pointsPerCell, const Data<PointScalar,DeviceType> &refData, const int startCell, const int endCell) const;
   protected:
     HypercubeNodeOrdering nodeOrdering_;
     CellGeometryType    cellGeometryType_;
@@ -171,10 +169,10 @@ namespace Intrepid2
                  SubdivisionStrategy subdivisionStrategy = NO_SUBDIVISION,
                  HypercubeNodeOrdering nodeOrdering = HYPERCUBE_NODE_ORDER_TENSOR);
     
-    /** \brief  Node-based constructor for straight-edged geometry.
+    /** \brief  Node-based constructor for straight-edged geometry. 
         \param [in] cellTopo - the cell topology for all cells.
         \param [in] cellToNodes - (C,LN) container specifying the global index of the local node.
-        \param [in] nodes - (GN,D) container specifying the coordinate weight for the global node in the specified dimension.
+        \param [in] nodes - (GN,D) container specifying the coordinate weight for the global node in the specified dimension; if cellToNodes is not allocated, this must be a (C,N,D) container
         \param [in] claimAffine - whether to assume (without checking) that the mapping from reference space is affine.  (If claimAffine is false, we check whether the cell topology is simplicial, and if so, set the affine_ member variable to true.)
         \param [in] nodeOrdering - applicable for hypercube cell topologies; specifies whether to use the order used by Shards (and lowest-order Intrepid2 bases), or the one used by higher-order Intrepid2 bases.
     */
@@ -321,8 +319,14 @@ namespace Intrepid2
     Data<PointScalar,DeviceType> allocateJacobianData(const int &numPoints, const int startCell=0, const int endCell=-1) const;
     
     /** \brief Computes reference-space data for the specified points, to be used in setJacobian().
-       \param [in] points - the points at which the Jacobian will be evaluated.
-       \return a Data object with any reference-space data required.  This may be empty, if no reference-space data is required in setJacobian().
+       \param [in] points - the points at which the Jacobian will be evaluated; shape (P,D) or (C,P,D).
+       \return a Data object with any reference-space data required.  This may be empty, if no reference-space data is required in setJacobian().  If filled, will have shape (F,P,D) or (C,F,P,D).
+    */
+    Data<PointScalar,DeviceType> getJacobianRefData(const ScalarView<PointScalar,DeviceType> &points) const;
+    
+    /** \brief Computes reference-space data for the specified points, to be used in setJacobian().
+       \param [in] points - the points at which the Jacobian will be evaluated, with shape (P,D).
+       \return a Data object with any reference-space data required.  This may be empty, if no reference-space data is required in setJacobian().  If filled, will have shape (F,P,D).
     */
     Data<PointScalar,DeviceType> getJacobianRefData(const TensorPoints<PointScalar,DeviceType> &points) const;
     

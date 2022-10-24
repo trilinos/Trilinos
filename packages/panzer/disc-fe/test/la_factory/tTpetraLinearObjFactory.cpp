@@ -453,7 +453,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
    la_factory->adjustForDirichletConditions(*ghosted_0,*ghosted_1,*ghosted_sys);
    la_factory->endFill(*ghosted_sys);
 
-   std::size_t sz = t_sys->get_A()->getNodeMaxNumRowEntries();
+   std::size_t sz = t_sys->get_A()->getLocalMaxNumRowEntries();
    std::size_t numEntries = 0;
    typename CrsMatrix::nonconst_local_inds_host_view_type indices("indices", sz);
    typename CrsMatrix::nonconst_values_host_view_type values("values", sz);
@@ -556,7 +556,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
       TEST_EQUALITY(tContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(tContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(tContainer->get_A()!=Teuchos::null);
-      TEST_EQUALITY(tContainer->get_A()->getNodeNumRows(),(std::size_t) ownedIndices.size());
+      TEST_EQUALITY(tContainer->get_A()->getLocalNumRows(),(std::size_t) ownedIndices.size());
    
       // jacobian and residual vector output
       la_factory->initializeContainer(LOC::F | LOC::Mat,*container);
@@ -661,7 +661,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
       TEST_EQUALITY(tGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(tGhostedContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(tGhostedContainer->get_A()!=Teuchos::null);
-      TEST_EQUALITY(tGhostedContainer->get_A()->getNodeNumRows(),(std::size_t) ownedAndGhostedIndices.size());
+      TEST_EQUALITY(tGhostedContainer->get_A()->getLocalNumRows(),(std::size_t) ownedAndGhostedIndices.size());
    
       // jacobian and residual vector output
       la_factory->initializeGhostedContainer(LOC::F | LOC::Mat,*ghostedContainer);

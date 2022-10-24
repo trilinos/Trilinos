@@ -66,13 +66,13 @@ DropFilter<MatrixType>::DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
 {
 
  // use this filter only on serial matrices
-  if (A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows()) {
+  if (A_->getComm()->getSize() != 1 || A_->getLocalNumRows() != A_->getGlobalNumRows()) {
     throw std::runtime_error("Ifpack2::DropFilter can be used with Comm().getSize() == 1 only. This class is a tool for Ifpack2_AdditiveSchwarz, and it is not meant to be used otherwise.");
   }
 
 
   // localized matrix has all the local rows of Matrix
-  NumRows_ = A_->getNodeNumRows();
+  NumRows_ = A_->getLocalNumRows();
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
@@ -81,8 +81,8 @@ DropFilter<MatrixType>::DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntries_  = A_->getNodeMaxNumRowEntries();
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
+  MaxNumEntries_  = A_->getLocalMaxNumRowEntries();
+  MaxNumEntriesA_ = A_->getLocalMaxNumRowEntries();
 
   // ExtractMyRowCopy() will use these vectors
   Kokkos::resize(Indices_,MaxNumEntries_);
@@ -186,7 +186,7 @@ global_size_t DropFilter<MatrixType>::getGlobalNumCols() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumRows() const
+size_t DropFilter<MatrixType>::getLocalNumRows() const
 {
   return NumRows_;
 }
@@ -194,7 +194,7 @@ size_t DropFilter<MatrixType>::getNodeNumRows() const
 //==========================================================================
 
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumCols() const
+size_t DropFilter<MatrixType>::getLocalNumCols() const
 {
   return NumRows_;
 }
@@ -215,7 +215,7 @@ global_size_t DropFilter<MatrixType>::getGlobalNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumEntries() const
+size_t DropFilter<MatrixType>::getLocalNumEntries() const
 {
   return NumNonzeros_;
 }
@@ -243,7 +243,7 @@ size_t DropFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t DropFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
@@ -288,18 +288,6 @@ getGlobalRowCopy (GlobalOrdinal /*GlobalRow*/,
 }
 
 //==========================================================================
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
-template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
-                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
-                                                  size_t &/* NumEntries */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter does not implement getGlobalRowCopy.");
-}
-#endif
-
-//==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::
   getLocalRowCopy (LocalOrdinal LocalRow,
@@ -335,21 +323,6 @@ void DropFilter<MatrixType>::
 }
 
 //==========================================================================
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
-                                              const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                                              const Teuchos::ArrayView<Scalar> &Values,
-                                              size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
-}
-#endif
-
-//==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
                                                   global_inds_host_view_type &/*indices*/,
@@ -358,15 +331,6 @@ void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
   throw std::runtime_error("Ifpack2::DropFilter: does not support getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
-                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter: does not support getGlobalRowView.");
-}
-#endif
 //==========================================================================
 template<class MatrixType>
 void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
@@ -375,16 +339,6 @@ void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::DropFilter: does not support getLocalRowView.");
 }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
-                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::DropFilter: does not support getLocalRowView.");
-}
-#endif
 
 //==========================================================================
 template<class MatrixType>

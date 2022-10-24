@@ -222,7 +222,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           }
         }
       }
-      catch(const std::exception& e) {
+      catch(const std::exception&) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
       }
 
@@ -261,7 +261,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           dofGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
         }
       }
-      catch(const std::exception& e) {
+      catch(const std::exception&) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
       }
 
@@ -294,7 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           nodalGlobals[i] = Teuchos::as<GlobalOrdinal>(data);
         }
       }
-      catch(const std::exception& e) {
+      catch(const std::exception&) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
       }
       for(GlobalOrdinal i = 0; i < nNodes; i++) {
@@ -361,7 +361,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // loop over all local nodes
         data_file >> dofGlobals[0];
       }
-      catch(const std::exception& e) {
+      catch(const std::exception&) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"Problem opening/reading file " << ss.str());
       }
       for(decltype(nDofs) i = 0; i < nDofs; i++) dofGlobals[i] = i + dofGlobals[0];

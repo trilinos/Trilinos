@@ -9,12 +9,12 @@
 #ifndef Akri_IC_Parser_h
 #define Akri_IC_Parser_h
 
-namespace YAML { class Node; }
 namespace krino { class LevelSet; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace IC_Parser {
- void parse(const YAML::Node & node, LevelSet & ls);
+  void parse(const Parser::Node & node, LevelSet & ls);
 }
 }
 
