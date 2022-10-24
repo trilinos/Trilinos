@@ -31,12 +31,7 @@ namespace Spaces {
 
 /*! \brief Priority interface for Tpetra's managed execution spaces
 
-    Two guarantees are made:
-    1) low <= medium <= high
-    2) space instances of different priorities are always distinct
-
-    Priority is best-effort. It may be the case that low priority is the same as high priority,
-    however a low-priority instance will always be a different instance than a high-priority instance.
+    Priority is best-effort. low <= medium <= high, but it may be the case that priority levels are equivalent.
 */
 enum class Priority {
     low = 0,
@@ -235,7 +230,6 @@ public:
            refer to it as long as it lives to prevent recreating
         */
         if (!instances[p][i] || !instances[p][i].is_valid_ptr()) {
-            std::cerr << __FILE__ << ":" << __LINE__ << " new instance " << p << "," << i<< std::endl;
             rcp_type r = Teuchos::RCP<const execution_space>(
                 new ExecSpace(make_instance<ExecSpace, priority>())
             );
@@ -244,7 +238,6 @@ public:
         }
 
         auto r = instances[p][i].create_strong();
-        std::cerr << __FILE__ << ":" << __LINE__ << " strong_count=" << r.strong_count() << " for instance " << p << ","<< i<< std::endl;
         return r;
     }
 
