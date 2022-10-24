@@ -3049,15 +3049,17 @@ public:
 #if (11000 > CUDA_VERSION)
       /// cuda 11.1 below
       const ordinal_type team_size_factor[2] = {32, 64}, vector_size_factor[2] = {8, 4};
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {16, 32};
 #else
       /// cuda 11.1 and higher
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
 #else
       /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
-      const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
       {
         typedef TeamFunctor_FactorizeLU<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
