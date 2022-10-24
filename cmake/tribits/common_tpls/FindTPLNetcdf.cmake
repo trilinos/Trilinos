@@ -37,72 +37,36 @@
 # ************************************************************************
 # @HEADER
 
-#
-# First, set up the variables for the (backward-compatible) TriBITS way of
-# finding Netcdf.  These are used in case find_package(NetCDF ...) is not
-# called or does not find NetCDF.  Also, these variables need to be non-null
-# in order to trigger the right behavior in the function
-# tribits_tpl_find_include_dirs_and_libraries().
-#
 if (${CMAKE_VERSION} GREATER "3.13")
      cmake_policy(SET CMP0074 NEW)
 endif()
 
 set(Netcdf_ALLOW_MODERN FALSE CACHE BOOL "Allow finding Netcdf as a modern CMake config file with exported targets (and only this way)")
 
-if (Netcdf_ALLOW_MODERN)
+if (Netcdf_ALLOW_MODERN  AND  TARGET HDF5::HDF5)
 
   set(minimum_modern_netCDF_version 4.7.4)
-  message("-- Netcdf_ALLOW_MODERN=${Netcdf_ALLOW_MODERN}")
+  print_var(Netcdf_ALLOW_MODERN)
   message("-- Using find_package(netCDF ${minimum_modern_netCDF_version} CONFIG) ...")
   find_package(netCDF ${minimum_modern_netCDF_version} CONFIG)
   if (netCDF_FOUND)
     message("-- Found netCDF_CONFIG=${netCDF_CONFIG}")
     message("-- Generating Netcdf::all_libs and NetcdfConfig.cmake")
-    # instead of using tribits_extpkg_create_imported_all_libs_target_and_config_file,
-    # we will do what it does ourselves because we need to bring in two
-    # inner find packages (netCDF and hdf5) because netCDF does not properly
-    # do find_dependency(hdf5)
-    add_library(Netcdf::all_libs  INTERFACE  IMPORTED  GLOBAL)
-    target_link_libraries(Netcdf::all_libs  INTERFACE  netCDF::netcdf)
-    set(configFileStr "")
-    string(APPEND configFileStr
-      "include(CMakeFindDependencyMacro)\n" )
-    string(APPEND configFileStr
-      "set(netCDF_DIR \"${netCDF_DIR}\")\n" )
-    string(APPEND configFileStr
-      "find_dependency(netCDF ${minimum_modern_netCDF_version} CONFIG)\n"
-      )
-    if (netCDF_HAS_HDF5)
-      find_package(hdf5 CONFIG REQUIRED)
-      string(APPEND configFileStr
-        "set(hdf5_DIR \"${hdf5_DIR}\")\n" )
-      string(APPEND configFileStr
-        "find_dependency(hdf5 CONFIG)\n"
-        )
-    endif()
-    string(APPEND configFileStr
-      "add_library(Netcdf::all_libs  INTERFACE  IMPORTED  GLOBAL)\n"
-      )
-    string(APPEND configFileStr
-      "target_link_libraries(Netcdf::all_libs  INTERFACE  netCDF::netcdf)\n")
-    set(buildDirExternalPkgsDir
-      "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
-    set(tplConfigFile
-      "${buildDirExternalPkgsDir}/Netcdf/NetcdfConfig.cmake")
-    file(WRITE "${tplConfigFile}" "${configFileStr}")
-    # the following gets set by tribits_tpl_find_include_dirs_and_libraries
-    # and it is not well-documented that you need to set it yourself if not using
-    # tribits_tpl_find_include_dirs_and_libraries
-    set(TPL_Netcdf_NOT_FOUND FALSE)
-    message("-- TPL_Netcdf_PARALLEL = netCDF_HAS_PARALLEL = ${netCDF_HAS_PARALLEL}")
-    set(TPL_Netcdf_PARALLEL ${netCDF_HAS_PARALLEL})
-    message("-- TPL_Netcdf_Enables_Netcdf4 = netCDF_HAS_NC4 = ${netCDF_HAS_NC4}")
-    set(TPL_Netcdf_Enables_Netcdf4 ${netCDF_HAS_NC4} CACHE BOOL
-      "True if netcdf enables netcdf-4")
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(
+      Netcdf
+      INNER_FIND_PACKAGE_NAME  netCDF
+      IMPORTED_TARGETS_FOR_ALL_LIBS   netCDF::netcdf)
   endif()
 
-else()
+endif()
+
+if (NOT TARGET  Netcdf::all_libs)
+
+  # First, set up the variables for the (backward-compatible) TriBITS way of
+  # finding Netcdf.  These are used in case find_package(Netcdf ...) is not
+  # called or does not find HDF5.  Also, these variables need to be non-null
+  # in order to trigger the right behavior in the function
+  # tribits_tpl_find_include_dirs_and_libraries().
 
   set(REQUIRED_HEADERS netcdf.h)
   set(REQUIRED_LIBS_NAMES netcdf)
