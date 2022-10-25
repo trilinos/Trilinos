@@ -1494,11 +1494,13 @@ public:
             team_policy_update;
 #endif
 
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf);
-
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf);
 
+        // get max vector size
+        const ordinal_type factor_vmax = policy_factor.vector_length_max();
+        const ordinal_type update_vmax = policy_update.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -1513,8 +1515,15 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm size
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],update_vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
+
+              // create policies
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],update_vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -2719,23 +2728,19 @@ public:
     {
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      // const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-      // const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
 #if defined(CUDA_VERSION)
 #if (11000 > CUDA_VERSION)
       /// cuda 11.1 below
       const ordinal_type team_size_factor[2] = {32, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {16, 32};
 #else
       /// cuda 11.1 and higher
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
 #else
       /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       {
         typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
@@ -2750,11 +2755,13 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf);
-
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _diag, _buf);
 
+        // get max vector lengths
+        const ordinal_type factor_vmax = policy_factor.vector_length_max();
+        const ordinal_type update_vmax = policy_update.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -2769,8 +2776,14 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],update_vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],update_vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -3043,23 +3056,19 @@ public:
     {
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      // const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-      // const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
 #if defined(CUDA_VERSION)
 #if (11000 > CUDA_VERSION)
       /// cuda 11.1 below
       const ordinal_type team_size_factor[2] = {32, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {16, 32};
 #else
       /// cuda 11.1 and higher
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
 #else
       /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
-      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 #endif
+      const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       {
         typedef TeamFunctor_FactorizeLU<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
@@ -3074,11 +3083,13 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
 #endif
-        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf);
-
         team_policy_factor policy_factor(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
+        functor_type functor(_info, _factorize_mode, _level_sids, _piv, _buf);
 
+        // get max vector lengths
+        const ordinal_type factor_vmax = policy_factor.vector_length_max();
+        const ordinal_type update_vmax = policy_update.vector_length_max();
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -3093,8 +3104,15 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              // get max teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],update_vmax));
+              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+
+              // create policies
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],factor_vmax));
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],update_vmax));
             }
             if (lvl < _device_level_cut) {
               // do nothing
