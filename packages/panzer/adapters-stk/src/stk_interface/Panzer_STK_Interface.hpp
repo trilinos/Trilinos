@@ -981,7 +981,7 @@ public:
    void setFaceFieldData(const std::string & fieldName,const std::string & blockId,
                          const std::vector<std::size_t> & localFaceIds,const ArrayT & faceValues,double scaleValue=1.0);
 
-   //////////// TO BE DEPRICATED
+   //////////// TO BE DEPRECATED
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -1075,7 +1075,7 @@ public:
    template <typename ArrayT>
    void getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
-   ///////////// END TO BE DEPRICATED
+   ///////////// END TO BE DEPRECATED
 
    /** Get nodes associated with a number of elements of the same geometry.
      *
@@ -1303,7 +1303,7 @@ public:
    bool getUseLowerCaseForIO() const
    { return useLowerCase_; }
 
-   ///////////////// TO BE DEPRICATED....
+   ///////////////// TO BE DEPRECATED....
 
    /** Get vertices associated with a number of elements of the same geometry, note that a coordinate field
      * will be used (if not is available an exception will be thrown).
@@ -1337,7 +1337,7 @@ public:
    template <typename ArrayT>
    void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
-   /////////////////// END TO BE DEPRICATED
+   /////////////////// END TO BE DEPRECATED
 
    /** Get nodes associated with a number of elements of the same geometry, note that a coordinate field
      * will be used (if not is available an exception will be thrown).
@@ -1735,7 +1735,7 @@ void STK_Interface::setFaceFieldData(const std::string & fieldName,const std::st
    }
 }
 
-//////// TO BE DEPRICATED...
+//////// TO BE DEPRECATED...
 
 template <typename ArrayT>
 void STK_Interface::getElementVertices(const std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
@@ -2064,7 +2064,7 @@ void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::
    }
 }
 
-//////////// END TO BE DEPRICATED
+//////////// END TO BE DEPRECATED
 
 template <typename ArrayT>
 void STK_Interface::getElementNodes(const std::vector<std::size_t> & localElementIds, ArrayT & nodes) const
