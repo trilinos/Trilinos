@@ -4916,12 +4916,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
  
-    // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
-    // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
-    // failing only for the Kokkos refactor version of Tpetra.  It's a
-    // good idea regardless to have the bypass.
-
-
     // It's possible that X is a view of Y or vice versa.  We don't
     // allow this (apply() requires that X and Y not alias one
     // another), but it's helpful to detect and work around this case.
@@ -4932,23 +4926,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
-    const bool mustImport = !importer.is_null();
-    const bool mustExport = !exporter.is_null();
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": mustImport=" << mustImport << "\n";
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": mustExport=" << mustExport << "\n";
-
 
     // If beta == 0, then the output MV will be overwritten; none of
     // its entries should be read.  (Sparse BLAS semantics say that we
     // must ignore any Inf or NaN entries in Y_in, if beta is zero.)
     // This matters if we need to do an Export operation; see below.
-    const bool yIsOverwritten = (beta == ZERO);
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": yIsOverwritten=" << yIsOverwritten << "\n";
+    const bool Y_is_overwritten = (beta == ZERO);
 
     // We treat the case of a replicated MV output specially.
-    const bool yIsReplicated =
+    const bool Y_is_replicated =
       (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": yIsReplicated=" << yIsReplicated << "\n";
 
     // This is part of the special case for replicated MV output.
     // We'll let each process do its thing, but do an all-reduce at
@@ -4956,19 +4943,15 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // but Proc 0 makes the math work out for the all-reduce.  (This
     // assumes that the replicated data is correctly replicated, so
     // that the data are the same on all processes.)
-    if (yIsReplicated && this->getComm ()->getRank () > 0) {
+    if (Y_is_replicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
     }
-
-    bool xyDefinitelyAlias;
 
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
     // ready to give to localApply(...).
     RCP<const MV> X_colMap;
-    RCP<MV> X_colMapNonConst;
-
-    if (!mustImport) {
+    if (importer.is_null ()) {
       if (! X_in.isConstantStride ()) {
         // Not all sparse mat-vec kernels can handle an input MV with
         // nonconstant stride correctly, so we have to copy it in that
@@ -4977,62 +4960,73 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // Map MV (if it hasn't already been created, else fetch the
         // cached copy).  This avoids creating a new MV each time.
         RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in -> X_colMap\n";
         Tpetra::deep_copy (*X_colMapNonConst, X_in);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
-        xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
       }
       else {
         // The domain and column Maps are the same, so do the local
         // multiply using the domain Map input MV X_in.
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMap = rcpFromRef (X_in)\n";
         X_colMap = rcpFromRef (X_in);
-        xyDefinitelyAlias = X_colMap.getRawPtr () == &Y_in;
       }
-      
-    } else { // need to Import source (multi)vector
+    }
+    else { // need to Import source (multi)vector
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply: Import");
+
       // We're doing an Import anyway, which will copy the relevant
       // elements of the domain Map MV X_in into a separate column Map
       // MV.  Thus, we don't have to worry whether X_in is constant
       // stride.
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
-      X_colMapNonConst = getColumnMapMultiVector (X_in);
-      xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
+      RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in);
+
+      // Import from the domain Map MV to the column Map MV.
+      X_colMapNonConst->doImport (X_in, *importer, INSERT);
+      X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": xyDefinitelyAlias=" << xyDefinitelyAlias << "\n";
 
-    /* Cases we can't operate directly on input Y
-    1. Must do an export
-    2. Non-constant stride multivector.
-    3. aliases with X
-
-    If Y_in does not have constant stride, or if the column Map
-    MV aliases Y_in, then we can't let the kernel write directly
-    to Y_in.  Instead, we have to use the cached row (== range)
-    Map MV as temporary storage.
-
-    FIXME: cwp Apr 14, 2022
-    The non-const stride MV may only be true for Kokkos Kernels
-    If Tpetra is maintaining its own 4-array CSR for on-rank and off-rank
-    parts, we may be able to operate directly on non-const stride Y
-
-    // FIXME
-    // cwp Apr 14, 2022
-    // mfh 05 Jun 2014
-    // partial check if X,Y alias. 
-    // if this is false, X and Y may still alias, since one may be a subview of the other
-    */
-
-
-    // set up temporary output for the cases it will be needed, null otherwise
-    // If we have a nontrivial Export object, we must perform an
-    // Export.  In that case, the local multiply result will go into
-    // the row Map multivector. 
+    // Temporary MV for doExport (if needed), or for copying a
+    // nonconstant stride output MV into a constant stride MV.  This
+    // is null if we don't need the temporary MV, that is, if the
+    // Export is trivial (null).
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
-    if (!mustExport) {
-      // Y_rowMap has some value already if mustExport, so create for the other two cases
-      if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
+    // If we have a nontrivial Export object, we must perform an
+    // Export.  In that case, the local multiply result will go into
+    // the row Map multivector.  We don't have to make a
+    // constant-stride version of Y_in in this case, because we had to
+    // make a constant stride Y_rowMap MV and do an Export anyway.
+    if (! exporter.is_null ()) {
+      this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
+      {
+        ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply: Export");
+
+        // If we're overwriting the output MV Y_in completely (beta ==
+        // 0), then make sure that it is filled with zeros before we
+        // do the Export.  Otherwise, the ADD combine mode will use
+        // data in Y_in, which is supposed to be zero.
+        if (Y_is_overwritten) {
+          Y_in.putScalar (ZERO);
+        }
+        else {
+          // Scale output MV by beta, so that doExport sums in the
+          // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
+          Y_in.scale (beta);
+        }
+        // Do the Export operation.
+        Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
+      }
+    }
+    else { // Don't do an Export: row Map and range Map are the same.
+      //
+      // If Y_in does not have constant stride, or if the column Map
+      // MV aliases Y_in, then we can't let the kernel write directly
+      // to Y_in.  Instead, we have to use the cached row (== range)
+      // Map MV as temporary storage.
+      //
+      // FIXME (mfh 05 Jun 2014) This test for aliasing only tests if
+      // the user passed in the same MultiVector for both X and Y.  It
+      // won't detect whether one MultiVector views the other.  We
+      // should also check the MultiVectors' raw data pointers.
+      if (! Y_in.isConstantStride () || X_colMap.getRawPtr () == &Y_in) {
         // Force creating the MV if it hasn't been created already.
         // This will reuse a previously created cached MV.
         Y_rowMap = getRowMapMultiVector (Y_in, true);
@@ -5040,87 +5034,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         // If beta == 0, we don't need to copy Y_in into Y_rowMap,
         // since we're overwriting it anyway.
         if (beta != ZERO) {
-          // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
-      }
-    }
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
-
-    // actually do the import if necessary
-    if (mustImport) {
-      // Import from the domain Map MV to the column Map MV.
-      ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
-      X_colMapNonConst->doImport (X_in, *importer, INSERT);
-      // X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, defaultSpace);
-      // X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, defaultSpace);
-      X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
-    } 
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
-    /* Either the import is complete and start the off-rank part,
-       or the import is complete and do the full SpMV
-    */
-    if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
-      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
-      this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG: replace with localApply\n";
-    } else {
-      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": localApply(*X_colMap, Y_in, ...)\n";
-
-      // if (getCrsGraph()->isSorted()) {
-      //   std::cerr << __FILE__ << ":" << __LINE__ << ": sorted\n";
-      //   this->localApplyOnRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
-      //   this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
-      // } else {
-        this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
-      // }
-    }
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
-    // both on-rank and off-rank apply happen in a non-default exec space
-    // to ensure that it overlaps with the default stream.
-    // make sure both are done before export
-    // if (overlap) {
-    //   defaultSpace.fence("wait(localApplyOffRank)");
-    // }
-
-    // If we have a nontrivial Export object, we must perform an
-    // Export.  In that case, the local multiply result will go into
-    // the row Map multivector.  We don't have to make a
-    // constant-stride version of Y_in in this case, because we had to
-    // make a constant stride Y_rowMap MV and do an Export anyway.
-    if (mustExport) {
-      ProfilingRegion regionExport ("Tpetra::CrsMatrix::applyNonTranspose: Export");
-
-      // If we're overwriting the output MV Y_in completely (beta ==
-      // 0), then make sure that it is filled with zeros before we
-      // do the Export.  Otherwise, the ADD combine mode will use
-      // data in Y_in, which is supposed to be zero.
-      if (yIsOverwritten) {
-        Y_in.putScalar (ZERO);
+        this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+        Tpetra::deep_copy (Y_in, *Y_rowMap);
       }
       else {
-        // Scale output MV by beta, so that doExport sums in the
-        // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
-        Y_in.scale (beta);
-      }
-      // Do the Export operation.
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.doExport(Y_rowmap, exporter, ADD_ASSIGN)\n";
-      Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
-    } else {
-      // if used the temporary MV, copy it to the input. otherwise, the input was used directly
-      if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_rowMap -> Y_in\n";
-        Tpetra::deep_copy (Y_in, *Y_rowMap);
+        this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
 
@@ -5128,8 +5048,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // contributions from each process.  We set beta = 0 on all
     // processes but Proc 0 initially, so this will handle the scaling
     // factor beta correctly.
-    if (yIsReplicated) {
-      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTranspose: Reduce Y");
+    if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply: Reduce Y");
       Y_in.reduce ();
     }
   }
