@@ -27,6 +27,7 @@ export https_proxy="https://wwwproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
 export TDD_DEBUG_VERBOSE=1
 
+. /etc/profile
 source ~/.bashrc
 
 
