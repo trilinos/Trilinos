@@ -705,6 +705,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 
     // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
     // This way we can define a virtual cell geometry without extruding the face outside of the domain
+    // TODO BWR IS THIS AN ISSUE FOR CURVED MESHES?
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Assign geometry traits",AssignGeometryTraits);
       Kokkos::parallel_for(num_virtual_cells,KOKKOS_LAMBDA (int i) {
