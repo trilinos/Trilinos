@@ -119,7 +119,7 @@ public:
 
   //! Resets the solver, sets a new status test, and sets a new initial guess.
   virtual void reset(const NOX::Abstract::Vector& initial_guess,
-             const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
+                     const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
 
   //! Do one nonlinear step in the iteration sequence and return status.
   virtual NOX::StatusTest::StatusType step() = 0;
