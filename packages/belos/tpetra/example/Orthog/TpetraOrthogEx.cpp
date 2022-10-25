@@ -69,7 +69,7 @@ using Teuchos::Array;
 
 //Function Forward Declaration:
 template <class ScalarType>
-RCP<Teuchos::SerialDenseMatrix<int, ScalarType>> orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, std::string orthogType, int blkSize);
+int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> & coeffs, std::string orthogType, int blkSize);
 
 int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
@@ -85,24 +85,24 @@ int main(int argc, char *argv[]) {
   int MyPID = Teuchos::rank(*comm);
 
   bool verbose = true;
-  bool proc_verbose = ( verbose && (MyPID==0) ); /* Only print on the zero processor */
-  int blockSize = 50; 
-  int numVecs = -1; // Use default value of number of rows in ex matrix.
-  std::string filename("orsirr_1.mtx"); // example matrix
+  int blockSize = 4; 
+  int numVecs = 10; 
+  int vecLength = 100;
   std::string orthoType("ICGS");
   bool use_stacked_timer = false;              
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("filename",&filename,"Filename for test matrix.  Matrix market format only.");
   cmdp.setOption("ortho", &orthoType, "Type of orthogonalization: ICGS, IMGS, DGKS.");
   cmdp.setOption("blkSize",&blockSize,"Number of vectors to orthogonalize at each step. "); 
-  cmdp.setOption("numVecs",&numVecs,"Total number of vectors for tester to orthogonalize. -1 indicates to use the number of rows of the input matrix.");
+  cmdp.setOption("numVecs",&numVecs,"Total number of vectors for tester to orthogonalize.");
+  cmdp.setOption("vecLength",&vecLength,"Length of vectors to be orthogonalized (num elements).");
   cmdp.setOption("stacked-timer", "no-stacked-timer", &use_stacked_timer, "Run with or without stacked timer output");
 
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+  bool proc_verbose = ( verbose && (MyPID==0) ); /* Only print on the zero processor */
 
   // Create the timer.
   RCP<std::ostream> outputStream = rcp(&std::cout,false);
@@ -123,52 +123,47 @@ int main(int argc, char *argv[]) {
   }
   Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   
-  //-----------------------------------------------------------
-  // This code sets up a random multivec to orthogonalize.
-  // ----------------------------------------------------------
-  //Read CrsMats into Tpetra::Operator
-  RCP<Tpetra::CrsMatrix<ScalarType>> A = Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<ScalarType>>::readSparseFile(filename,comm);
-  RCP<const Tpetra::Map<> > map = A->getDomainMap();
-  int N = A->getGlobalNumRows();
+  // Create map and random multivec to orthogonalize. 
+  RCP<const Tpetra::Map<> > map = rcp (new Tpetra::Map<> (vecLength,0,comm));
   
-  if(numVecs == -1){
-    numVecs = N;
-  }
-
   RCP<Tpetra::MultiVector<ScalarType>> X1 = rcp( new Tpetra::MultiVector<ScalarType>(map, numVecs) );
   X1->randomize();
   RCP<Tpetra::MultiVector<ScalarType>> XCopy = rcp(new Tpetra::MultiVector<ScalarType>(*X1, Teuchos::Copy)); //Deep copy of X1.
-  //-----------------------------------------------------------
-  // End random multivec setup.
-  //-----------------------------------------------------------
 
-  RCP<MAT> coeffMat;
+  // Orthogonalize multivec.
+  RCP<MAT> coeffMat = rcp(new MAT());
+  int rank = -1;
   { //scope guard for timer
   #ifdef BELOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor orthotimer(*timerOrtho_);
   #endif
-  coeffMat = orthogTpMVecs(*X1, orthoType, blockSize);
+  rank = orthogTpMVecs(*X1, coeffMat, orthoType, blockSize);
+  }
+  if(proc_verbose){
+    std::cout << std::endl << "We have orthogonalized " << numVecs << " vectors. Numerical rank is " << rank << "." << std::endl;
   }
 
-  /*// DEBUG: //Verify Orthogonality:
-  RCP<MAT> bigDotAns  = rcp( new MAT(N,N));
+  //Verify Orthogonality:
+  RCP<MAT> bigDotAns  = rcp( new MAT(numVecs, numVecs));
   MVT::MvTransMv(1.0, *X1, *X1, *bigDotAns);
-  std::cout << "Printed dot prod matrix for verification: " << std::endl;
-  std::cout << "Should be ones on diagonal and zeros elsewhere." << std::endl;
-  bigDotAns->print(std::cout);
-  std::cout << std::endl << std::endl;*/
+  if(proc_verbose){
+    std::cout << std::endl << "Printed dot prod matrix for verification: " << std::endl;
+    std::cout << "Should be ones on diagonal and zeros elsewhere." << std::endl;
+    bigDotAns->print(std::cout);
+    std::cout << std::endl << std::endl;
+  }
 
-  /*// DEBUG: //Verify coefficients: 
-  // [Due to a Kokkos bug, this check crashes if numVecs > 180.  
-  // See Trilinos Issue #9856. ]
+  //Verify coefficients: 
   MV coeffs_mv = makeStaticLocalMultiVector (*X1, numVecs, numVecs);
   Tpetra::deep_copy(coeffs_mv, *coeffMat);
   XCopy->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *X1, coeffs_mv, -1.0);
   std::vector<MT> norms(numVecs);
   Teuchos::ArrayView<MT> normView(norms);
   XCopy->norm2(normView);
-  std::cout << "Here are the QR-Orig norms.  Should be zero." << std::endl;
-  std::cout << normView << std::endl << std::endl;*/
+  if(proc_verbose){
+    std::cout << "Here are the QR minus OrigMatrix norms.  Should be zero." << std::endl;
+    std::cout << normView << std::endl << std::endl;
+  }
 
   if(proc_verbose){
     //Print final timing details:
@@ -192,7 +187,7 @@ int main(int argc, char *argv[]) {
 // blkSize.  It returns the corresponding upper-triangular
 // matrix of orthogonalization coefficients.
 template <class ScalarType>
-RCP<Teuchos::SerialDenseMatrix<int, ScalarType>> orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, std::string orthogType, int blkSize){
+int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> & coeffs,  std::string orthogType, int blkSize){
   typedef int                               OT;
   typedef typename Teuchos::SerialDenseMatrix<OT,ScalarType> MAT;
   typedef Tpetra::MultiVector<ScalarType>   MV;
@@ -210,7 +205,7 @@ RCP<Teuchos::SerialDenseMatrix<int, ScalarType>> orthogTpMVecs(Tpetra::MultiVect
   int numLoops = numVecs/blkSize;
   int remainder = numVecs % blkSize;
 
-  RCP<MAT> Coeffs = rcp(new MAT(numVecs,numVecs));
+  coeffs->shape(numVecs,numVecs);
   RCP<MAT> coeffDot;
   std::vector<RCP<const MV>> pastVecArray; // Stores vectors after orthogonalized
   Teuchos::ArrayView<RCP<const MV>> pastVecArrayView;  // To hold the above
@@ -223,32 +218,32 @@ RCP<Teuchos::SerialDenseMatrix<int, ScalarType>> orthogTpMVecs(Tpetra::MultiVect
   
   // Get a view of the first block and normalize: (also orthogonalizes these vecs wrt themselves)
   RCP<MV> vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(0,blkSize-1));
-  RCP<MAT> coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *Coeffs, blkSize, blkSize));
+  RCP<MAT> coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, blkSize, blkSize));
   RCP<MV> pastVecBlock;
-  orthoMgr->normalize(*vecBlock, coeffNorm);
+  int rank = orthoMgr->normalize(*vecBlock, coeffNorm);
   pastVecArray.push_back(vecBlock);
   
   // Loop over remaining blocks:
   for(int k=1; k<numLoops; k++){
     pastVecArrayView = arrayViewFromVector(pastVecArray);
     vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(k*blkSize,k*blkSize + blkSize - 1));
-    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *Coeffs, blkSize, blkSize, k*blkSize, k*blkSize)); 
-    coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *Coeffs, k*blkSize, blkSize, 0, k*blkSize));
+    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, blkSize, blkSize, k*blkSize, k*blkSize)); 
+    coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *coeffs, k*blkSize, blkSize, 0, k*blkSize));
     Array<RCP<MAT>> dotArray; //Tuechos::Array of Matrices for coeffs from dot products
     dotArray.append(coeffDot);
-    int rank = orthoMgr->projectAndNormalize(*vecBlock, dotArray, coeffNorm, pastVecArrayView);
+    rank += orthoMgr->projectAndNormalize(*vecBlock, dotArray, coeffNorm, pastVecArrayView);
     pastVecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(0,k*blkSize + blkSize - 1));
     pastVecArray.front() = pastVecBlock;
   }
   if( remainder > 0){
     pastVecArrayView = arrayViewFromVector(pastVecArray);
     vecBlock = inputVecs.subViewNonConst(Teuchos::Range1D(numVecs-remainder, numVecs-1));
-    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *Coeffs, remainder, remainder, numLoops*blkSize, numLoops*blkSize)); 
-    coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *Coeffs, numLoops*blkSize, remainder, 0, numLoops*blkSize));
+    coeffNorm = Teuchos::rcp( new MAT(Teuchos::View, *coeffs, remainder, remainder, numLoops*blkSize, numLoops*blkSize)); 
+    coeffDot = Teuchos::rcp(new MAT(Teuchos::View, *coeffs, numLoops*blkSize, remainder, 0, numLoops*blkSize));
     Array<RCP<MAT>> dotArray; //Tuechos::Array of Matrices for coeffs from dot products
     dotArray.append(coeffDot);
-    int rank = orthoMgr->projectAndNormalize(*vecBlock, dotArray, coeffNorm, pastVecArrayView);
+    rank += orthoMgr->projectAndNormalize(*vecBlock, dotArray, coeffNorm, pastVecArrayView);
   }
 
-  return Coeffs;
+  return rank;
 }
