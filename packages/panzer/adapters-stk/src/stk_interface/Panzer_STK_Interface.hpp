@@ -2234,12 +2234,12 @@ void STK_Interface::getElementNodes_FromCoords(const std::vector<stk::mesh::Enti
 
       // loop over all element nodes
       const size_t num_nodes = bulkData_->num_nodes(element);
-      auto const* nodes = bulkData_->begin_nodes(element);
+      auto const* elem_nodes = bulkData_->begin_nodes(element);
       TEUCHOS_TEST_FOR_EXCEPTION(num_nodes!=masterNodeCount,std::runtime_error,
                          "In call to STK_Interface::getElementNodes cardinality of "
                                  "element node relations must be the node count!");
       for(std::size_t node = 0; node < num_nodes; ++node) {
-        const double * coord = getNodeCoordinates(nodes[node]);
+        const double * coord = getNodeCoordinates(elem_nodes[node]);
 
         // set each dimension of the coordinate
         for(unsigned d=0;d<dim;d++)
@@ -2280,12 +2280,12 @@ void STK_Interface::getElementNodes_FromCoordsNoResize(const std::vector<stk::me
 
       // loop over all element nodes
       const size_t num_nodes = bulkData_->num_nodes(element);
-      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
       TEUCHOS_TEST_FOR_EXCEPTION(num_nodes!=masterNodeCount,std::runtime_error,
                          "In call to STK_Interface::getElementNodes cardinality of "
                                  "element node relations must be the node count!");
       for(std::size_t node=0; node<num_nodes; ++node) {
-        const double * coord = getNodeCoordinates(nodes[node]);
+        const double * coord = getNodeCoordinates(elem_nodes[node]);
 
         // set each dimension of the coordinate
         for(unsigned d=0;d<dim;d++)
@@ -2325,14 +2325,15 @@ void STK_Interface::getElementNodes_FromField(const std::vector<stk::mesh::Entit
      fields[d] = this->getSolutionField(coordField[d],eBlock);
    }
 
+   // loop over elements
    for(std::size_t cell=0;cell<elements.size();cell++) {
       stk::mesh::Entity element = elements[cell];
 
       // loop over nodes set solution values
       const size_t num_nodes = bulkData_->num_nodes(element);
-      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
       for(std::size_t i=0; i<num_nodes; ++i) {
-        stk::mesh::Entity node = nodes[i];
+        stk::mesh::Entity node = elem_nodes[i];
 
         const double * coord = getNodeCoordinates(node);
 
@@ -2341,7 +2342,7 @@ void STK_Interface::getElementNodes_FromField(const std::vector<stk::mesh::Entit
 
           // recall mesh field coordinates are stored as displacements
           // from the mesh coordinates, make sure to add them together
-	nodes_h(cell,i,d) = solnData[0]+coord[d];
+	        nodes_h(cell,i,d) = solnData[0]+coord[d];
         }
       }
    }
@@ -2371,14 +2372,15 @@ void STK_Interface::getElementNodes_FromFieldNoResize(const std::vector<stk::mes
      fields[d] = this->getSolutionField(coordField[d],eBlock);
    }
 
+   // loop over elements
    for(std::size_t cell=0;cell<elements.size();cell++) {
       stk::mesh::Entity element = elements[cell];
 
       // loop over nodes set solution values
       const size_t num_nodes = bulkData_->num_nodes(element);
-      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
       for(std::size_t i=0; i<num_nodes; ++i) {
-        stk::mesh::Entity node = nodes[i];
+        stk::mesh::Entity node = elem_nodes[i];
 
         const double * coord = getNodeCoordinates(node);
 
