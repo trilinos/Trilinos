@@ -81,13 +81,12 @@ ENDIF (Piro_ENABLE_Tempus)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
   DEST_FILES   
         input_Solve_NOX_Thyra.xml
-        input_Analysis_ROL_Tpetra.xml
-        input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml
-        input_Analysis_ROL_ReducedSpace_Tpetra.xml
-        input_Analysis_ROL_FullSpace_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml
-        input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
+        input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
         input_Tempus_BackwardEuler_SinCos.xml 
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"

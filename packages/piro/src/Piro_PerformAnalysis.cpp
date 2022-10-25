@@ -71,8 +71,10 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TypeB_AlgorithmFactory.hpp"
+#include "ROL_TypeU_AlgorithmFactory.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
@@ -347,7 +349,7 @@ Piro::PerformROLAnalysis(
 
     for(int i=0; i< num_tests; i++) {
 
-      *out << "\nROL performing vector test " << i+1 << " of " << num_tests << std::endl;
+      *out << "\nPiro Perform Analysis: ROL performing vector test " << i+1 << " of " << num_tests << std::endl;
 
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_x.ptr());
       ::Thyra::randomize<double>( -1.0, 1.0, rand_vec_y.ptr());
@@ -385,7 +387,7 @@ Piro::PerformROLAnalysis(
 
     for(int i=0; i< num_checks; i++) {
 
-      *out << "\nROL performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
+      *out << "\nPiro PerformAnalysis: ROL performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
 
       // compute direction 1
       ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec1.ptr());
@@ -428,52 +430,52 @@ Piro::PerformROLAnalysis(
       int order = 2;
 
       if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
-        *out << "Checking Reduced Gradient Accuracy" << std::endl;
+        *out << "Piro PerformAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
         reduced_obj.checkGradient(rol_p, rol_p, rol_p_direction1, print, *out);
       }
       // Check derivatives.
 
-      *out << "Checking Accuracy of Objective Gradient " << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Objective Gradient " << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Objective Gradient in x direction" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Objective Gradient in x direction" << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1_x,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Objective Gradient in p direction" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Objective Gradient in p direction" << std::endl;
       obj.checkGradient(sopt_vec,sopt_vec_direction1_p,true,*out,num_steps,order);
 
 
-      *out << "Checking Accuracy of Constraint Gradient " << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Constraint Gradient " << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1,rol_x_direction1, true,*out,num_steps,order);
-      *out << "Checking Accuracy of Constraint Gradient in x direction (Jacobian) " << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Constraint Gradient in x direction (Jacobian) " << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_x,rol_x_direction1,true,*out,num_steps,order);
-      *out << "Checking Accuracy of Constraint Gradient in p direction" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of Constraint Gradient in p direction" << std::endl;
       constr.checkApplyJacobian(sopt_vec,sopt_vec_direction1_p,rol_x_direction1,true,*out,num_steps,order);
 
       if(rolParams.get<bool>("Expensive Derivative Checks", false))
         constr.checkApplyAdjointJacobian(sopt_vec,rol_x_direction1,rol_x_direction1,sopt_vec,true,*out,num_steps);
 
-      *out << "Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
       constr.checkAdjointConsistencyJacobian(rol_x_direction1, sopt_vec_direction2, sopt_vec,true,*out);
 
       obj.update(rol_x,rol_p);
       constr.update(rol_x,rol_p);
-      *out << "Checking Symmetry of objective Hessian" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Symmetry of objective Hessian" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1, sopt_vec_direction2, true,*out);
 
-      *out << "Checking Symmetry of objective Hessian (H_xx = H_xx^T)" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Symmetry of objective Hessian (H_xx = H_xx^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_x, true,*out);
-      *out << "Checking Symmetry of objective Hessian (H_xp = H_px^T)" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Symmetry of objective Hessian (H_xp = H_px^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_x, sopt_vec_direction2_p, true,*out);
-      *out << "Checking Symmetry of objective Hessian (H_pp = H_pp^T)" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Symmetry of objective Hessian (H_pp = H_pp^T)" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1_p, sopt_vec_direction2_p, true,*out);
 
-      *out << "Checking Accuracy of objective Hessian" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of objective Hessian" << std::endl;
       obj.checkHessVec(sopt_vec,sopt_vec_direction1,true,*out,num_steps,order);
 
       if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
-        *out << "Checking Symmetry of reduced objective Hessian" << std::endl;
+        *out << "Piro PerformAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
         reduced_obj.update(rol_p);
         auto hsymCheck = reduced_obj.checkHessSym(rol_p, rol_p, rol_p_direction1, true,*out);
-        *out << "Checking Symmetry of reduced objective Hessian - output:" << std::endl;
+        *out << "Piro PerformAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
         *out << std::right
                 << std::setw(20) << "<w, H(x)v>"
                 << std::setw(20) << "<v, H(x)w>"
@@ -486,7 +488,7 @@ Piro::PerformROLAnalysis(
                 << "\n";
       }
 
-      *out << "Checking Accuracy of constraint Hessian" << std::endl;
+      *out << "Piro PerformAnalysis: Checking Accuracy of constraint Hessian" << std::endl;
       constr.checkApplyAdjointHessian(sopt_vec, rol_x_direction1, sopt_vec_direction2, sopt_vec_direction2, true,*out,num_steps,order);
 
     }
@@ -494,19 +496,9 @@ Piro::PerformROLAnalysis(
 
   bool useFullSpace = rolParams.get("Full Space",false);
 
-  *out << "\nROL options:" << std::endl;
+  *out << "\nPiro PerformAnalysis: ROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
   *out << std::endl;
-
-
-  ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(rolParams.sublist("ROL Options"));
-  ROL::Ptr<ROL::Step<double>> step;
-  if(rolParams.get<std::string>("Step Method", "Line Search") == "Line Search")
-    step = ROL::makePtr<ROL::LineSearchStep<double>>(rolParams.sublist("ROL Options"));
-  else
-    step = ROL::makePtr<ROL::TrustRegionStep<double>>(rolParams.sublist("ROL Options"));
-  ROL::Ptr<ROL::Algorithm<double> > algo;
-  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status, true);
 
   bool useHessianDotProduct = false;
   Teuchos::ParameterList hessianDotProductList;
@@ -531,10 +523,10 @@ Piro::PerformROLAnalysis(
   Teko::LinearOp H, invH;
   if (useHessianDotProduct) {
     int hessianResponseIndex = hessianDotProductList.get<int>("Response Index");
-    *out << "\nStart the computation of H_pp" << std::endl;
+    *out << "\nPiro PerformAnalysis: Start the computation of H_pp" << std::endl;
     Teko::BlockedLinearOp bH = Teko::createBlockedOp();
     obj.hessian_22(bH, rol_x, rol_p, hessianResponseIndex);
-    *out << "End of the computation of H_pp" << std::endl;
+    *out << "Piro PerformAnalysis: End of the computation of H_pp" << std::endl;
 
     int numBlocks = bH->productRange()->numBlocks();
 
@@ -590,7 +582,6 @@ Piro::PerformROLAnalysis(
   ROL::PrimalScaledThyraVector<double> rol_p_primal(p, scaling_vector_p);
 #endif
   // Run Algorithm
-  std::vector<std::string> output;
   Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
   bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
@@ -621,29 +612,41 @@ Piro::PerformROLAnalysis(
       double tol = 1e-5;
       constr.solve(*r_ptr,rol_x,rol_p,tol);
       if(boundConstrained) {
+        *out << "Piro PerformAnalysis: Solving Full Space Bound Constrained Optimization Problem" << std::endl;
         ROL::BoundConstraint<double> u_bnd(rol_x);
         ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
-        ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), bnd, ROL::makePtrFromRef(constr), r_ptr);
-        ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));
+        prob.addBoundConstraint(bnd);
+        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+        //, r_ptr);
+        bool lumpConstraints(false), printToStream(true);
+        prob.finalize(lumpConstraints, printToStream, *out);
+        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
         return_status = optSolver.getAlgorithmState()->statusFlag;
       } else {
-        ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
-        ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
+        *out << "Piro PerformAnalysis: Solving Full Space Unconstrained Optimization Problem" << std::endl;
+        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));//, ROL::makePtrFromRef(constr), r_ptr);
+        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+        bool lumpConstraints(false), printToStream(true);
+        prob.finalize(lumpConstraints, printToStream, *out);
+        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
         return_status = optSolver.getAlgorithmState()->statusFlag;
       }
     } else {
-      if(boundConstrained)
-        output = algo->run(rol_p_primal, reduced_obj, *boundConstraint, print, *out);
-      else
-        output = algo->run(rol_p_primal, reduced_obj, print, *out);
-      return_status = algo->getState()->statusFlag;
+      if(boundConstrained) {
+        *out << "Piro PerformAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
+        auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
+        algo->run(rol_p_primal, reduced_obj, *boundConstraint, *out); 
+        return_status = algo->getState()->statusFlag;
+      }  else {
+        *out << "Piro PerformAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
+        auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
+        algo->run(rol_p_primal, reduced_obj, *out);
+        return_status = algo->getState()->statusFlag;
+      }
     }
-
-  for ( unsigned i = 0; i < output.size(); i++ ) {
-    *out << output[i];
-  }
 
   return return_status;
 #else

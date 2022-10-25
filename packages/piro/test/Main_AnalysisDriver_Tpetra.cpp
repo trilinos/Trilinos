@@ -96,17 +96,16 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<7; iTest++) {
+  for (int iTest=0; iTest<6; iTest++) {
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Analysis_ROL_Tpetra.xml"; break;
-       case 1: inputFile="input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml"; break;
-       case 2: inputFile="input_Analysis_ROL_ReducedSpace_Tpetra.xml"; break;
-       case 3: inputFile="input_Analysis_ROL_FullSpace_Tpetra.xml"; break;
-       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_Tpetra.xml"; break;
-       case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
-       case 6: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
+       case 0: inputFile="input_Analysis_ROL_ReducedSpace_LineSearch.xml"; break;
+       case 1: inputFile="input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml"; break;
+       case 2: inputFile="input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml"; break;
+       case 3: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml"; break;
+       case 4: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml"; break;
+       case 5: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -115,30 +114,40 @@ int main(int argc, char *argv[]) {
       iTest = 999;
     }
 
-    if (Proc==0)
-     std::cout << "===================================================\n"
-          << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
-          << "===================================================\n"
-          << std::endl;
-
     try {
 
       std::vector<std::string> mockModels = {"MockModelEval_A_Tpetra", "MockModelEval_B_Tpetra"};
       for (auto mockModel : mockModels) {
-
-        // Create (1) a Model Evaluator and (2) a ParameterList
-        RCP<Thyra::ModelEvaluator<double>> Model;
-        if (mockModel=="MockModelEval_A_Tpetra")
-          Model = rcp(new MockModelEval_A_Tpetra(appComm));
-        if (mockModel=="MockModelEval_B_Tpetra")
-          Model = rcp(new MockModelEval_B_Tpetra(appComm));
 
         // BEGIN Builder
         const RCP<Teuchos::ParameterList> appParams = rcp(new Teuchos::ParameterList("Application Parameters"));
         Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(appParams.get()));
 
         const RCP<Teuchos::ParameterList>  piroParams = Teuchos::sublist(appParams,"Piro");
+ 
+        bool boundConstrained = piroParams->sublist("Analysis").sublist("ROL").get<bool>("Bound Constrained");
+     
+        // Create (1) a Model Evaluator and (2) a ParameterList
+        std::string modelName;
+        RCP<Thyra::ModelEvaluator<double>> Model;
+        if (mockModel=="MockModelEval_A_Tpetra") {
+          if(boundConstrained) {
+            Model = rcp(new MockModelEval_A_Tpetra(appComm));
+            modelName = "A";
+          } else   // optimization of problem A often diverges when the parameters are not constrained
+            continue;
+        }
+        else {//if (mockModel=="MockModelEval_B_Tpetra") 
+          Model = rcp(new MockModelEval_B_Tpetra(appComm));
+          modelName = "B";
+        }
 
+        if (Proc==0)
+          std::cout << "=======================================================================================================\n"
+                    << "======  Solving Problem " << modelName << " with input file "<< iTest <<": "<< inputFile <<"\n"
+                    << "=======================================================================================================\n"
+            << std::endl;
+        
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
