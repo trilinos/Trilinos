@@ -144,38 +144,7 @@ namespace Tpetra {
 
       using RowViewer = Tpetra::Details::OffRankRowViewer<local_matrix_device_type, OffsetDeviceViewType>;
 
-#if 1
       Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
-#else
-      switch(mode) {
-        case Teuchos::ETransp::TRANS: {
-          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          return;
-        }
-        case Teuchos::ETransp::NO_TRANS: {
-          if (1 == X.extent(1) && 1 == Y.extent(1)) {
-            // std::cerr << __FILE__ << ":" << __LINE__ << ": rank 1\n";
-            auto X0 = Kokkos::subview(X, Kokkos::ALL, 0);
-            auto Y0 = Kokkos::subview(Y, Kokkos::ALL, 0);
-            using Op = SpmvFunctor<OffsetDeviceViewType, RowViewer, false>;
-            Op::launch(alpha, *A_, X0, beta, Y0, offRankOffsets, execSpace);
-          } else {
-            using Op = SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false>;
-            Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          }
-          return;
-        }
-        case Teuchos::ETransp::CONJ_TRANS: {
-          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, true> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          return;
-        }
-
-        default:
-          throw std::runtime_error("unexpected Teuchos::ETransp mode in off-rank SpMV");
-      }
-#endif
     }
 
     /*! \brief
@@ -200,37 +169,7 @@ namespace Tpetra {
            const OffsetDeviceViewType &offRankOffsets) const {
       using RowViewer = Tpetra::Details::OnRankRowViewer<local_matrix_device_type, OffsetDeviceViewType>;
 
-#if 1
       Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
-#else
-      switch(mode) {
-        case Teuchos::ETransp::TRANS: {
-          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, false> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          return;
-        }
-        case Teuchos::ETransp::NO_TRANS: {
-          if (1 == X.extent(1) && 1 == Y.extent(1)) {
-            // std::cerr << __FILE__ << ":" << __LINE__ << ": rank 1\n";
-            auto X0 = Kokkos::subview(X, Kokkos::ALL, 0);
-            auto Y0 = Kokkos::subview(Y, Kokkos::ALL, 0);
-            using Op = SpmvFunctor<OffsetDeviceViewType, RowViewer, false>;
-            Op::launch(alpha, *A_, X0, beta, Y0, offRankOffsets, execSpace);
-          } else {
-            using Op = SpmvMvFunctor<OffsetDeviceViewType, RowViewer, false>;
-            Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          }
-          return;
-        }
-        case Teuchos::ETransp::CONJ_TRANS: {
-          typedef SpmvMvTransFunctor<OffsetDeviceViewType, RowViewer, true> Op;
-          Op::launch(alpha, *A_, X, beta, Y, offRankOffsets, execSpace);
-          return;
-        }
-        default:
-          throw std::runtime_error("unexpected Teuchos::ETransp mode in on-rank SpMV");
-      }
-#endif
     }
 
 
