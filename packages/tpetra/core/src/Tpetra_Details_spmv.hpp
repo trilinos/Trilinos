@@ -6,6 +6,57 @@
 namespace Tpetra {
 namespace Details {
 
+/*! \brief Construct a view of on-rank entries of a row of a matrix
+    \param A The matrix
+    \param aOff The off-rank offsets of A
+    \param i The row of a to produce a view of
+    \tparam CrsMatrix the type of A
+    \tparam RowOffsetView the type of aOff
+*/
+template<typename CrsMatrix,typename RowOffsetView>
+struct OnRankRowViewer {
+  KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<CrsMatrix> view(
+      const CrsMatrix &A,
+      const RowOffsetView &aOff,
+      const typename CrsMatrix::ordinal_type i
+  ) {
+    const typename CrsMatrix::size_type start = A.graph.row_map(i);
+    const typename CrsMatrix::ordinal_type stride = 1;
+    const typename CrsMatrix::ordinal_type length = aOff[i] - start;
+    return KokkosSparse::SparseRowViewConst<CrsMatrix> (
+      &A.values(start),
+      &A.graph.entries(start),
+      stride,
+      length
+    );
+  }
+};
+
+/*! \brief Construct a view of on-rank entries of a row of a matrix
+    \param A The matrix
+    \param aOff The off-rank offsets of A
+    \param i The row of a to produce a view of
+    \tparam CrsMatrix the type of A
+    \tparam RowOffsetView the type of aOff
+*/
+template<typename CrsMatrix, typename RowOffsetView>
+struct OffRankRowViewer {
+  KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<CrsMatrix> view(
+      const CrsMatrix &A,
+      const RowOffsetView &aOff,
+      const typename CrsMatrix::ordinal_type i
+  ) {
+    const typename CrsMatrix::size_type start = aOff[i];
+    const typename CrsMatrix::ordinal_type stride = 1;
+    const typename CrsMatrix::ordinal_type length = A.graph.row_map(i+1) - start;
+    return KokkosSparse::SparseRowViewConst<CrsMatrix> (
+      &A.values(start),
+      &A.graph.entries(start),
+      stride,
+      length
+    );
+  }
+};
 
 // KokkosKernels SPMV_Functor
 template <

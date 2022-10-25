@@ -94,48 +94,7 @@ namespace Tpetra {
     using local_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
 
   public:
-
-    // construct a view of the on-rank entries in a row
-    template<typename OffsetDeviceViewType>
-    struct OnRankRowViewer {
-      KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<local_matrix_device_type> view(
-          const local_matrix_device_type &A,
-          const OffsetDeviceViewType &aOff,
-          const local_ordinal_type i
-      ) {
-        const typename local_matrix_device_type::size_type start = A.graph.row_map(i);
-        const local_ordinal_type stride = 1;
-        const local_ordinal_type length = aOff[i] - start;
-        return KokkosSparse::SparseRowViewConst<local_matrix_device_type> (
-          &A.values(start),
-          &A.graph.entries(start),
-          stride,
-          length
-        );
-      }
-    };
-
-    // construct a view of the off-rank entries in a row
-    template<typename OffsetDeviceViewType>
-    struct OffRankRowViewer {
-      KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<local_matrix_device_type> view(
-          const local_matrix_device_type &A,
-          const OffsetDeviceViewType &aOff,
-          const local_ordinal_type i
-      ) {
-        const typename local_matrix_device_type::size_type start = aOff[i];
-        const local_ordinal_type stride = 1;
-        const local_ordinal_type length = A.graph.row_map(i+1) - start;
-        return KokkosSparse::SparseRowViewConst<local_matrix_device_type> (
-          &A.values(start),
-          &A.graph.entries(start),
-          stride,
-          length
-        );
-      }
-    };
-
-   
+  
     using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
     LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A);
@@ -183,7 +142,7 @@ namespace Tpetra {
            const mv_scalar_type beta,
            const OffsetDeviceViewType &offRankOffsets) const {
 
-      typedef OffRankRowViewer<OffsetDeviceViewType> RowViewer;
+      using RowViewer = Tpetra::Details::OffRankRowViewer<local_matrix_device_type, OffsetDeviceViewType>;
 
 #if 1
       Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
@@ -239,7 +198,7 @@ namespace Tpetra {
            const mv_scalar_type alpha,
            const mv_scalar_type beta,
            const OffsetDeviceViewType &offRankOffsets) const {
-      typedef OnRankRowViewer<OffsetDeviceViewType> RowViewer;
+      using RowViewer = Tpetra::Details::OnRankRowViewer<local_matrix_device_type, OffsetDeviceViewType>;
 
 #if 1
       Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
