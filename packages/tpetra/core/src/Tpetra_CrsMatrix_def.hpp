@@ -4851,19 +4851,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
   }
 
-  /*
-     Depending on whether communication and computation should be overlapped:
-
-     Overlapped        | Non-overlapped
-     ------------------|----------------
-     localApplyOnRank  |
-     beginImport       | doImport
-     endImport         | 
-     localApplyOffRank | localApply
-     doExport          | doExport
-
-     We start the localApplyOnRank first because it's slower than the communication
-  */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4873,26 +4860,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Scalar beta) const
   {
 
+    using Tpetra::Details::ProfilingRegion;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    using Teuchos::rcpFromRef;
+
     if (X_in.getNumVectors() != Y_in.getNumVectors()) {
       std::stringstream ss;
       ss << __FILE__ << ":" << __LINE__ << ": CrsMatrix::applyNonTranpose: x and y have different numbers of vectors!";
       throw std::runtime_error(ss.str());
     }
 
-    {
-      auto X = X_in.getLocalViewDevice(Access::ReadOnly);
-      auto Y = Y_in.getLocalViewDevice(Access::ReadOnly);
-      auto A = getLocalMultiplyOperator()->getLocalMatrixDevice();
-      // std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", applyNonTranspose before import"
-      //           << " y[" << Y.extent(0) << "] = A[" << A.numRows() <<"," << A.numCols() << "] * x[" << X.extent(0) << "]"
-      //           << " getColMap()->getLocalNumElements()=" << getColMap()->getLocalNumElements()<< "\n";
-    }
-
-    using Tpetra::Details::ProfilingRegion;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::rcp_const_cast;
-    using Teuchos::rcpFromRef;
     const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
     
@@ -4905,27 +4884,24 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       return;
     }
 
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": in applyNonTranspose\n";
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.isConstantStride()=" << Y_in.isConstantStride() << "\n";
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
-
     bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
 
-    // need sorted graph to get the off-rank offsets
+    // Graph must be sorted for the off-rank offsets to be meaningful
     if (overlap && !getCrsGraph()->isSorted()) {
       overlap = false;
     }
 
-    // the domain map may not have any local entries, 
-    // in this case X_in may sometimes be size 0, so we'd better not call on-rank SpMV on it
+    // if the domain map has no local entries, X_in may be size 0,
+    // so no point in overlapping
     if (overlap && 0 == getDomainMap()->getLocalNumElements()) {
       overlap = false;
     }
 
-    // X_in on the domain map. Local part of domain map may not match the column map
-    // ith entry of X_in may not correspond to column i of the matrix in local indices
-    // so can't always call on-rank SpMV on X_in directly
-    // the domain map is a subset of the column map
+    // X_in is on the domain map. If the local part of the domain map does not match
+    // the column map, the ith entry of X_in does not correspond to column i of the matrix
+    // in local indices.
+    // on-rank part of SpMV would be wrong.
+    // TODO: profiling region
     if ( overlap && !getColMap()->isLocallyFitted(*getDomainMap())  ) {
       overlap = false;
     }
@@ -4934,10 +4910,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       applyNonTransposeOverlapped(X_in, Y_in, alpha, beta);
       return;
     }
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: getRowMap()->isLocallyFitted(*getRangeMap())=" << getRowMap()->isLocallyFitted(*getRangeMap()) << "\n";
-
-        // && std::is_same<exec_space, Kokkos::Cuda>::value;
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": applyNonTranspose: overlap=" << overlap << "\n";
 
  
     // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
