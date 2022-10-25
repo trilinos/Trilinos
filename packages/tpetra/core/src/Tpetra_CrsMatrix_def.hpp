@@ -4724,115 +4724,61 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // must ignore any Inf or NaN entries in Y_in, if beta is zero.)
     // This matters if we need to do an Export operation; see below.
     const bool yIsOverwritten = (beta == ZERO);
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": yIsOverwritten=" << yIsOverwritten << "\n";
 
     // We treat the case of a replicated MV output specially.
+    // An all-reduce at the end will sum results, so only contribute
+    // replicated y input entries from one rank
     const bool yIsReplicated =
       (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": yIsReplicated=" << yIsReplicated << "\n";
-
-    // This is part of the special case for replicated MV output.
-    // We'll let each process do its thing, but do an all-reduce at
-    // the end to sum up the results.  Setting beta=0 on all processes
-    // but Proc 0 makes the math work out for the all-reduce.  (This
-    // assumes that the replicated data is correctly replicated, so
-    // that the data are the same on all processes.)
     if (yIsReplicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
     }
 
+    // cwp Apr 14, 2022, mfh 05 Jun 2014
+    // FIXME: x and y may still alias if this is false, we'll just incorrectly handle that case
     bool xyDefinitelyAlias;
 
-    // Temporary MV for Import operation.  After the block of code
-    // below, this will be an (Imported if necessary) column Map MV
-    // ready to give to localApply(...).
+    // Temporary MV for Import operation and off-rank SpMV
     RCP<const MV> X_colMap;
     RCP<MV> X_colMapNonConst;
 
     if (!mustImport) {
       if (! X_in.isConstantStride ()) {
-        // Not all sparse mat-vec kernels can handle an input MV with
-        // nonconstant stride correctly, so we have to copy it in that
-        // case into a constant stride MV.  To make a constant stride
-        // copy of X_in, we force creation of the column (== domain)
-        // Map MV (if it hasn't already been created, else fetch the
-        // cached copy).  This avoids creating a new MV each time.
+        // use a constant-stride version of X_in
+        // avoid reproducing if possible
         X_colMapNonConst = getColumnMapMultiVector (X_in, true);
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in -> X_colMap\n";
         Tpetra::deep_copy (*X_colMapNonConst, X_in);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       } else {
-        // The domain and column Maps are the same, so do the local
-        // multiply using the domain Map input MV X_in.
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMap = rcpFromRef (X_in)\n";
+        // no import is needed, so off-rank will operate on input as well
         X_colMap = rcpFromRef (X_in);
       }
       xyDefinitelyAlias = X_colMap.getRawPtr () == &Y_in;
     } else { // need to Import source (multi)vector
-      // We're doing an Import anyway, which will copy the relevant
-      // elements of the domain Map MV X_in into a separate column Map
-      // MV.  Thus, we don't have to worry whether X_in is constant
-      // stride.
       X_colMapNonConst = getColumnMapMultiVector (X_in);
       xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
     }
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": X_in.isConstantStride()=" << X_in.isConstantStride() << "\n";
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": xyDefinitelyAlias=" << xyDefinitelyAlias << "\n";
 
-    /* Cases we can't operate directly on input Y
-    1. Must do an export
-    2. Non-constant stride multivector.
-    3. aliases with X
-
-    If Y_in does not have constant stride, or if the column Map
-    MV aliases Y_in, then we can't let the kernel write directly
-    to Y_in.  Instead, we have to use the cached row (== range)
-    Map MV as temporary storage.
-
-    FIXME: cwp Apr 14, 2022
-    The non-const stride MV may only be true for Kokkos Kernels
-    If Tpetra is maintaining its own 4-array CSR for on-rank and off-rank
-    parts, we may be able to operate directly on non-const stride Y
-
-    // FIXME
-    // cwp Apr 14, 2022
-    // mfh 05 Jun 2014
-    // partial check if X,Y alias. 
-    // if this is false, X and Y may still alias, since one may be a subview of the other
-    */
-
-
-    // set up temporary output for the cases it will be needed, null otherwise
-    // If we have a nontrivial Export object, we must perform an
-    // Export.  In that case, the local multiply result will go into
-    // the row Map multivector. 
+    // set up temporary output, to be used:
+    // 1) if export is needed
+    // 2) if x and y alias
+    // 3) if Y_in is non-constant stride
+    // FIXME cwp Oct 25 2022: I think we can skip this if export is not needed
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
     if (!mustExport) {
-      // Y_rowMap has some value already if mustExport, so create for the other two cases
       if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
-        // Force creating the MV if it hasn't been created already.
-        // This will reuse a previously created cached MV.
         Y_rowMap = getRowMapMultiVector (Y_in, true);
 
-        // If beta == 0, we don't need to copy Y_in into Y_rowMap,
-        // since we're overwriting it anyway.
+        // If beta == 0, Y_rowmap will be overwritten anyway
         if (beta != ZERO) {
-          // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in -> Y_rowmap\n";
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
       }
     }
 
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
-    /* When overlapping comm / comp, start the on-rank part,
-      The on-rank part does not need any imported X.
-      Use the temporary Y, or the input Y as needed
-    */
-
-      // make sure other incoming tpetra operations are done before local SpMV is started
+    // Incoming tpetra operations (we may depend on!) are in the default execution space instance
+    // TODO: profiling region
     Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
     if (mustExport) {
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
@@ -4840,41 +4786,26 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
         this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOnRank(..., X_in, Y_in, ...)\n";
         this->localApplyOnRank(*onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     } 
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
 
     // actually do the import if necessary
     if (mustImport) {
       // Import from the domain Map MV to the column Map MV.
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport/endImport");
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": X_colMapNonConst->beginImport()\n";
       // make sure other incoming tpetra operations are done before import is started
       Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
-      // X_colMapNonConst->doImport(X_in, *importer, INSERT);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     } 
 
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
-
-    /* Either the import is complete and start the off-rank part,
-       or the import is complete and do the full SpMV
-    */
 
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
-
       Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
       Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_rowmap, ...)\n";
       this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       {
         ProfilingRegion regionExport ("Tpetra::CrsMatrix::applyNonTranspose: Export");
@@ -4892,7 +4823,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           Y_in.scale (beta);
         }
         // Do the Export operation.
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": Y_in.doExport(Y_rowmap, exporter, ADD_ASSIGN)\n";
         Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
       }
     } else {
@@ -4907,13 +4837,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
         Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
         Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
-        // std::cerr << __FILE__ << ":" << __LINE__ << ": localApplyOffRank(..., X_colMap, Y_in, ...)\n";
         this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       }
     }
-
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": DEBUG FENCE\n";
-    // Kokkos::fence();
 
     // If the range Map is a locally replicated Map, sum up
     // contributions from each process.  We set beta = 0 on all
@@ -4923,24 +4849,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTranspose: Reduce Y");
       Y_in.reduce ();
     }
-
-#if 0
-    {
-      auto yl = Y_in.getLocalViewDevice(Access::ReadOnly);
-      int yNans;
-      Kokkos::parallel_reduce(
-        Kokkos::RangePolicy<execution_space>(defaultSpace, 0, yl.extent(0)),
-          [&](size_t i, int &lnans) {
-            for (size_t k = 0; k < yl.extent(1); ++k) {
-              lnans += std::isnan(yl(i,k)) || std::isinf(yl(i,k));
-            }
-          }
-      ,yNans);
-      // std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ",";
-      // std::cerr << " Y_in nans=" << yNans << "\n";
-    }
-#endif
-
   }
 
   /*
