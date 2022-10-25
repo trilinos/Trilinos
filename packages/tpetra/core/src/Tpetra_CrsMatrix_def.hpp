@@ -4781,8 +4781,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // TODO: profiling region
     Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
     if (mustExport) {
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
     } else {
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
         this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
@@ -4793,7 +4795,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // actually do the import if necessary
     if (mustImport) {
       // Import from the domain Map MV to the column Map MV.
-      ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport/endImport");
+      ProfilingRegion("Tpetra::CrsMatrix::applyNonTransposeOverlapped: beginImport/endImport");
       // make sure other incoming tpetra operations are done before import is started
       Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
@@ -4803,12 +4805,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 
     if (mustExport) {
-      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
       Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
       Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
       this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       {
-        ProfilingRegion regionExport ("Tpetra::CrsMatrix::applyNonTranspose: Export");
+        ProfilingRegion regionExport ("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Export");
 
         // If we're overwriting the output MV Y_in completely (beta ==
         // 0), then make sure that it is filled with zeros before we
@@ -4828,13 +4830,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     } else {
 
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
-        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
         Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
         Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
         this->localApplyOffRank(defaultSpace, *X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
         Tpetra::deep_copy (Y_in, *Y_rowMap);
       } else {
-        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
         Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
         Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
         this->localApplyOffRank(defaultSpace, *X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
@@ -4846,7 +4848,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // processes but Proc 0 initially, so this will handle the scaling
     // factor beta correctly.
     if (yIsReplicated) {
-      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTranspose: Reduce Y");
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Reduce Y");
       Y_in.reduce ();
     }
   }
@@ -4901,9 +4903,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // the column map, the ith entry of X_in does not correspond to column i of the matrix
     // in local indices.
     // on-rank part of SpMV would be wrong.
-    // TODO: profiling region
-    if ( overlap && !getColMap()->isLocallyFitted(*getDomainMap())  ) {
-      overlap = false;
+    if (overlap) {
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: colmap->isLocallyFitted(dommap)");
+      if (!getColMap()->isLocallyFitted(*getDomainMap())) {
+        overlap = false;
+      }
     }
 
     if (overlap) {
