@@ -193,7 +193,6 @@ int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::Seri
   typedef Tpetra::MultiVector<ScalarType>   MV;
   typedef Tpetra::Operator<ScalarType>             OP;
   int numVecs = inputVecs.getNumVectors();
-  int numRows = inputVecs.getGlobalLength();
 
   //Default OutputManager is std::cout.
   Teuchos::RCP<Belos::OutputManager<ScalarType> > myOutputMgr = Teuchos::rcp( new Belos::OutputManager<ScalarType>() );
