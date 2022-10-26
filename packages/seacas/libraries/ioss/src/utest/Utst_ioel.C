@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,6 +7,7 @@
 #include <Ioss_CodeTypes.h>
 
 #include <Ioss_ConcreteVariableType.h>
+#include <Ioss_ElementPermutation.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_Initializer.h>
 #include <Ioss_NullEntity.h>
@@ -96,13 +97,17 @@ bool test_element(const std::string &type)
 
   // See if the name is an alias for another element (type != name())
   std::string name = element->name();
-  fmt::print(stderr, "({})\t\t", name);
+  fmt::print(stderr, "({})\t", name);
 
   // Check that name is alias for name...
   if (!element->is_alias(type)) {
     fmt::print(stderr, "\n\tName is not valid alias");
     result = false;
   }
+
+  // Output the 'shape'
+  auto shape = Ioss::Utils::lowercase(Ioss::Utils::shape_to_string(element->shape()));
+  fmt::print(stderr, "[{}]\t\t", shape);
 
   // Check that master element name is an alias...
   if (!element->is_alias(element->master_element_name())) {
@@ -138,6 +143,38 @@ bool test_element(const std::string &type)
   if (ncn <= 0 || ncn > nn) {
     fmt::print(stderr, "\n\tInvalid corner node count");
     result = false;
+  }
+  auto *perm = element->permutation();
+  if (perm == nullptr) {
+    fmt::print(stderr, "\n\tUnable to find permutation pointer");
+    result = false;
+  }
+  else {
+    if (element->name() != "node") {
+      if ((int)perm->num_permutation_nodes() != (int)element->number_corner_nodes()) {
+        fmt::print(stderr, "\n\tPermutation node count {} does not match corner node count {}\n.",
+                   perm->num_permutation_nodes(), element->number_corner_nodes());
+        result = false;
+      }
+      if (Ioss::Utils::lowercase(Ioss::Utils::shape_to_string(element->shape())) != perm->type()) {
+        fmt::print(stderr, "\n\tElement shape '{}' does not match permutation type '{}'.\n",
+                   Ioss::Utils::shape_to_string(element->shape()), perm->type());
+        result = false;
+      }
+      if (perm->num_permutations() > 0) {
+        const auto &permutation = perm->permutation_indices(0);
+        const auto  connect     = element->element_connectivity();
+        for (size_t i = 0; i < permutation.size(); i++) {
+          if (permutation[i] != connect[i]) {
+            fmt::print(stderr,
+                       "\n\tFirst permutation does not match element connectivity at location {} "
+                       "({} vs {})",
+                       i, permutation[i], connect[i]);
+            result = false;
+          }
+        }
+      }
+    }
   }
 
   int ne = element->number_edges();

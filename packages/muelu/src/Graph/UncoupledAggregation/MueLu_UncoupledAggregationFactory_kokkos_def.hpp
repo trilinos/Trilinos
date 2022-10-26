@@ -397,8 +397,6 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

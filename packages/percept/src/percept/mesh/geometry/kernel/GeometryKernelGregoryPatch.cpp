@@ -41,6 +41,7 @@ bool GeometryKernelGregoryPatch::read_file
  )
 {
   m_geometryMesh = new percept::PerceptMesh();
+  m_geometryMesh->use_simple_fields();
   std::string options = "";
   bool auto_decomp = get_property("auto_decomp") == "true";
   bool exo_large = get_property("exo_large") == "true";
@@ -377,11 +378,11 @@ faceNormal(percept::PerceptMesh& m_eMesh, stk::mesh::Entity face, double * norma
 {
   const percept::MyPairIterRelation face_nodes(*m_eMesh.get_bulk_data(), face, stk::topology::NODE_RANK );
 
-  double *n0 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[0].entity() );
-  double *n1 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[1].entity() );
-  double *n2 = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[2].entity() );
+  double *n0 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[0].entity() ));
+  double *n1 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[1].entity() ));
+  double *n2 = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[2].entity() ));
   // works for triangles, quads, and nonplanar quads
-  double *n3 = face_nodes.size() == 3 ? n0 : stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[3].entity() );
+  double *n3 = face_nodes.size() == 3 ? n0 : static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , face_nodes[3].entity() ));
   double a[3], b[3];
   for (unsigned jj=0; jj < 3; ++jj)
     {

@@ -96,7 +96,7 @@ allReduceView (const OutputViewType& output,
                const Teuchos::Comm<int>& comm)
 {
 
-  using execution_space = typename OutputViewType::execution_space;
+  // using execution_space = typename OutputViewType::execution_space;
   const bool viewsAlias = output.data () == input.data ();
   if (comm.getSize () == 1) {
     if (! viewsAlias) {

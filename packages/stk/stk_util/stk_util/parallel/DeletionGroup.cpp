@@ -1,14 +1,17 @@
 #include "stk_util/parallel/DeletionGroup.hpp"
+#include "stk_util/command_line/CommandLineParserUtils.hpp"
 
 namespace stk {
 namespace impl {
 
-DeletionGroup::DeletionGroup(MPI_Comm comm) :
+
+DeletionGroup::DeletionGroup(MPI_Comm comm, int barrier_tag) :
   m_comm(comm),
   m_req(MPI_REQUEST_NULL),
   m_barrierSemanticallyInProgress(false),
   m_barrierActuallyInProgress(false),
-  m_entryCount(0)
+  m_entryCount(0),
+  m_ibarrier(comm, barrier_tag)
 #ifndef NDEBUG
   , m_req_debug(MPI_REQUEST_NULL)
 #endif
@@ -34,10 +37,12 @@ void DeletionGroup::start_barrier(int entryCount)
 { 
   assert(!m_barrierSemanticallyInProgress);
 
-  MPI_Ibarrier(m_comm, &m_req);
+  m_ibarrier.startBarrier();
+
   m_barrierActuallyInProgress     = true;
   m_barrierSemanticallyInProgress = true;
   m_entryCount = entryCount;
+
 
 #ifndef NDEBUG
   MPI_Igather(&m_entryCount, 1, EntryCountIntDatatype, m_entryCounts.data(), 1,
@@ -49,7 +54,7 @@ void DeletionGroup::finish_barrier()
 {
   assert(m_barrierSemanticallyInProgress);
   if (m_barrierActuallyInProgress) {
-    MPI_Wait(&m_req, MPI_STATUS_IGNORE);
+    m_ibarrier.finishBarrier();
     m_barrierActuallyInProgress     = false;
     m_barrierSemanticallyInProgress = false;
   }
@@ -80,10 +85,7 @@ void DeletionGroup::test_barrier()
   if (!m_barrierActuallyInProgress)
     return;
 
-  int flag;
-  MPI_Test(&m_req, &flag, MPI_STATUS_IGNORE);
-  if (flag)
-    m_barrierActuallyInProgress = false;
+  m_barrierActuallyInProgress = !(m_ibarrier.progressBarrier());
 }
 
 }

@@ -239,4 +239,3 @@ C ... More debugging stats
      *  ', R= ',1pe10.3,'/',1pe10.3,' M = ',i10,'/',i10)
       RETURN
       END
-

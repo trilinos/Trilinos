@@ -123,7 +123,6 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
 void tempDebugTest(
   RCP<SparseMatrix> origMatrix, Zoltan2::LocalOrderingSolution<z2TestLO> *soln)
 {
-  typedef typename SparseMatrixAdapter::scalar_t scalar_t;
   typedef typename SparseMatrixAdapter::lno_t lno_t;
 
   lno_t * perm = soln->getPermutationView();

@@ -162,12 +162,7 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   //------------------------------------
   // Remove send-ghost entities from the comm-list that no longer need to be sent.
 
-  OrdinalVector addParts;
-  OrdinalVector removeParts(1, bulkData.m_ghost_parts[BulkData::AURA]->mesh_meta_data_ordinal());
-  OrdinalVector scratchOrdinalVec, scratchSpace;
   bool removed = false ;
-
-  std::vector<EntityProc> removedSendGhosts;
   const unsigned auraGhostingOrdinal = bulkData.aura_ghosting().ordinal();
 
   std::vector<EntityCommInfo> comm_ghost ;
@@ -188,18 +183,31 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
       // Is owner, potentially removing ghost-sends
       // Have to make a copy
 
-      const PairIterEntityComm ec = ghost_info_range(entityComm.entity_comm->comm_map, auraGhostingOrdinal);
-      comm_ghost.assign( ec.first , ec.second );
-
-      for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
-        const EntityCommInfo tmp = comm_ghost.back();
-
-        if (!sendAuraEntityProcs.find(entityComm.entity, tmp.proc) ) {
-          bulkData.entity_comm_map_erase(entityComm.key, tmp);
-          removedSendGhosts.push_back(EntityProc(entityComm.entity, tmp.proc));
+      const EntityCommInfoVector& commInfoVec = entityComm.entity_comm->comm_map;
+      comm_ghost.clear();
+      for(const EntityCommInfo& commInfo : commInfoVec) {
+        if (commInfo.ghost_id == auraGhostingOrdinal) {
+          comm_ghost.push_back(commInfo);
         }
-        else {
-          sendAuraEntityProcs.eraseEntityProc(entityComm.entity, tmp.proc);
+      }
+
+      EntityAndProcs* entityProcs = sendAuraEntityProcs.find_entity_procs(entityComm.entity);
+      if (entityProcs == nullptr) {
+        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+          const EntityCommInfo tmp = comm_ghost.back();
+          bulkData.entity_comm_map_erase(entityComm.key, tmp);
+        }
+      }
+      else {
+        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+          const EntityCommInfo tmp = comm_ghost.back();
+
+          if (!entityProcs->find_proc(tmp.proc) ) {
+            bulkData.entity_comm_map_erase(entityComm.key, tmp);
+          }
+          else {
+            entityProcs->erase_proc(tmp.proc);
+          }
         }
       }
     }
@@ -218,6 +226,8 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   }
 
   const std::vector<std::pair<EntityKey,EntityCommInfo>>& allRemovedGhosts = bulkData.m_removedGhosts;
+  std::vector<EntityProc> removedSendGhosts;
+  removedSendGhosts.reserve(allRemovedGhosts.size());
   for(const std::pair<EntityKey,EntityCommInfo>& rmGhost : allRemovedGhosts) {
     Entity rmEnt = bulkData.get_entity(rmGhost.first);
     if (bulkData.is_valid(rmEnt) &&

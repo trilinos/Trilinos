@@ -45,4 +45,3 @@ function(createPhactoriUnitTests Modules PhctrUnitTestDir)
 endfunction()
 
 generatePhactoriUnitTests()
-

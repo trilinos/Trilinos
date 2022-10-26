@@ -25,6 +25,7 @@ namespace Ioss {
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
     bool         is_element() const override { return true; }
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -49,8 +50,6 @@ namespace Ioss {
     Hex20();
 
   private:
-    static Hex20 instance_;
-
     Hex20(const Hex20 &) = delete;
   };
 } // namespace Ioss

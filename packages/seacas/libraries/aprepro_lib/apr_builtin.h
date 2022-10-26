@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,6 +13,8 @@
 namespace SEAMS {
   struct array;
 
+  double do_FtoC(double F);
+  double do_CtoF(double C);
   double do_acos(double x);
   double do_acosd(double x);
   double do_acosh(double x);
@@ -115,6 +117,7 @@ namespace SEAMS {
   const char *do_extract(char *string, char *begin, char *end);
   const char *do_print_array(const array *my_array_data);
 
+  const char *do_import(char *string);
   const char *do_execute(char *string);
   const char *do_getenv(char *env);
   const char *do_tolower(char *string);

@@ -88,7 +88,10 @@ void pack_bucket_part_list(const Bucket & bucket, CommBuffer & buf ) {
 
 }
 
-void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity )
+void pack_entity_info(const BulkData& mesh,
+                      CommBuffer& buf,
+                      const Entity entity,
+                      bool onlyPackDownwardRelations)
 {
   const EntityKey & key   = mesh.entity_key(entity);
   const unsigned    owner = mesh.parallel_owner_rank(entity);
@@ -97,14 +100,15 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
   buf.pack<unsigned>( owner );
   pack_bucket_part_list(mesh.bucket(entity), buf);
 
-  const unsigned tot_rel = mesh.count_relations(entity);
+  const bool onlyCountDownwardRelations = onlyPackDownwardRelations;
+  const unsigned tot_rel = mesh.count_relations(entity, onlyCountDownwardRelations);
   buf.pack<unsigned>( tot_rel );
 
   Bucket& bucket = mesh.bucket(entity);
   unsigned ebo   = mesh.bucket_ordinal(entity);
 
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
-  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  const EntityRank end_rank = onlyPackDownwardRelations ? mesh.entity_rank(entity) : static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {

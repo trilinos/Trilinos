@@ -31,7 +31,7 @@ public:
   Exo_Entity(int file_id, size_t id);
   Exo_Entity(int file_id, size_t id, size_t nnodes);
   virtual ~Exo_Entity();
-  Exo_Entity(const Exo_Entity &) = delete;
+  Exo_Entity(const Exo_Entity &)                  = delete;
   const Exo_Entity &operator=(const Exo_Entity &) = delete;
 
   size_t Size() const { return numEntity; }

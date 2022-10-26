@@ -53,19 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-IF (NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "\nCUBLAS: This TPL requires CUDA")
-ELSE()
-  find_library(CUDA_cublas_LIBRARY
-    cublas
-    HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib
-  )
-  IF(CUDA_cublas_LIBRARY STREQUAL "CUDA_cublas_LIBRARY-NOTFOUND") 
-    MESSAGE(FATAL_ERROR "\nCUBLAS: could not find cublas library.")
-  ENDIF()
-  SET(TPL_CUBLAS_LIBRARIES ${CUDA_cublas_LIBRARY})
-ENDIF()
-
-tribits_tpl_find_include_dirs_and_libraries(CUBLAS  REQUIRED_LIBS_NAMES  cublas)
-
-unset(TPL_CUBLAS_LIBRARIES)
+tribits_extpkg_create_imported_all_libs_target_and_config_file( CUBLAS
+  INNER_FIND_PACKAGE_NAME  CUDAToolkit
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cublas )
+# Above, the CUDA TPL should have already found CUDAToolkit so we just need to
+# grab the target from it to form the CUSPARSE::all_libs target.

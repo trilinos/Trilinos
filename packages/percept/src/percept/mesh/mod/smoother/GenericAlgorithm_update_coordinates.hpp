@@ -16,23 +16,6 @@ namespace percept {
 template<typename MeshType>
 class ReferenceMeshSmootherConjugateGradientImpl;
 
-using Array4D = viewType;
-
-template<typename MeshType>
-struct A4DMD{
-	unsigned blkIndex;
-	unsigned numNodes;
-	Kokkos::View</*typename MeshType::MTNode**/unsigned**, DataLayout, MemSpace> blockNodes;
-
-	A4DMD(){
-		blkIndex =0;
-		numNodes=0;
-	}
-
-	~A4DMD(){}
-
-};
-
   template<typename MeshType>
   struct GenericAlgorithm_update_coordinates
   {
@@ -54,12 +37,8 @@ struct A4DMD{
 
     std::vector<typename MeshType::MTNode> nodes;
 
-    std::vector< Kokkos::View<Double*,DataLayout,MemSpace> > dmax_candidates; //only safely usable on on bsg's
-    Kokkos::View<Double*,DataLayout,MemSpace> dmax_cands_this_block;
     Double dmax;
 
-    std::vector< Kokkos::View<Double*,DataLayout,MemSpace> > dmax_relative_candidates; //only safely usable on on bsg's
-    Kokkos::View<Double*,DataLayout,MemSpace> dmax_rel_cands_this_block;
     Double dmax_relative;
 
     Double /*double*/ alpha;
@@ -67,119 +46,10 @@ struct A4DMD{
 
     GenericAlgorithm_update_coordinates(RefMeshSmoother *rms, PerceptMesh *eMesh, Double alpha_in);
 
-    std::list<A4DMD<MeshType>> blockMetaDatas;
-	Kokkos::View</*typename MeshType::MTNode**/unsigned**, DataLayout, MemSpace> nodesThisBlock; //will be used to loop over a particular block's nodes.
-	Array4D cfc;
-	Array4D cfl;
-	Array4D cgsf;
-	Array4D cgelf;
-
     KOKKOS_INLINE_FUNCTION
     void operator()(const int64_t& index) const;
 
     void run(bool calc_deltas=false);
-
-  };
-
-  struct simplified_gatm_1_BSG{ //uses A4D's directly
-
-    using RefMeshSmoother =     ReferenceMeshSmootherConjugateGradientImpl<StructuredGrid>;
-	  using This = simplified_gatm_1_BSG;
-	  using Array4D = viewType;
-
-	  RefMeshSmoother * m_rms; //adding smoother pointer a member didn't effect performance
-	  PerceptMesh * m_eMesh;
-
-    StructuredGrid::MTSelector on_locally_owned_part;
-    StructuredGrid::MTSelector on_globally_shared_part;
-    int spatialDim;
-    MTSGridField * coord_field;
-	  MTSGridField * coord_field_current;
-	  MTSGridField * coord_field_lagged;
-	  MTSGridField * cg_s_field;
-
-
-	  std::vector<StructuredGrid::MTNode> nodes;
-
-	  Double alpha;
-
-	  std::list<A4DMD<StructuredGrid>> blockMetaDatas;
-	  Kokkos::View<StructuredGrid::MTNode*, DataLayout, MemSpace> nodesThisBlock;
-
-	  Array4D cfc;
-	  Array4D cfl;
-	  Array4D cgsf;
-
-
-
-	  Array4D cfcB;
-	  Array4D cflB;
-	  Array4D cgsfB;
-	  Kokkos::View< StructuredCellIndex*, DataLayout , MemSpace > nodesV;
-	  unsigned numNodes;
-	  unsigned numBlocks;
-
-	  simplified_gatm_1_BSG(RefMeshSmoother *rms, PerceptMesh *eMesh, Double alpha_in);
-
-  	KOKKOS_INLINE_FUNCTION
-  	void
-  	operator()(int64_t index) const
-  	{
-  		int i  = nodesV(index)[0];
-  		int j  = nodesV(index)[1];
-  		int k  = nodesV(index)[2];
-
-  		for (int iDim=0; iDim < spatialDim; iDim++)
-  	        {
-  			  Double dt = alpha*cgsfB(i,j,k,iDim);
-  	  	  	  cfcB(i,j,k,iDim) += dt;
-  	        }
-  	}
-
-	void run();
-  };
-
-  template<typename T>
-  struct max_scanner
-  {
-      Kokkos::View<T*,DataLayout,MemSpace> candidates;
-
-      KOKKOS_INLINE_FUNCTION
-      void
-      init(T&interimMax) const
-      {//init function still not working correctly. Need to find out how to use it properly
-          interimMax = candidates(0);
-      }
-
-      KOKKOS_INLINE_FUNCTION void
-      join (T& dst,
-      const T& src) const
-      {
-          if (dst < src) {
-              dst = src;
-          }
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void
-      operator()(const int64_t index, T&interimMax) const
-      {
-        if(interimMax<candidates(index))
-            interimMax=candidates(index);
-      }
-
-
-      max_scanner(Kokkos::View<T*,DataLayout,MemSpace> candidates_in)
-      {
-          candidates=candidates_in;
-      }
-
-      T find_max()
-      {
-          T max;
-          Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(0,candidates.size()),*this,max);
-          return max;
-      }
 
   };
 

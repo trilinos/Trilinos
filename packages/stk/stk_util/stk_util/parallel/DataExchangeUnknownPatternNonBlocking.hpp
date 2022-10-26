@@ -36,6 +36,7 @@
 #ifndef stk_util_parallel_DataExchangeUnknownPatternNonBlocking_hpp
 #define stk_util_parallel_DataExchangeUnknownPatternNonBlocking_hpp
 
+#include <stddef.h>
 #include <vector>
 #include <deque>
 #include <cassert>

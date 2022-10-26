@@ -85,6 +85,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET(Trilinos_CTEST_DO_ALL_AT_ONCE ON)
 
+  SET(Trilinos_SKIP_EXTRAREPOS_FILE TRUE)
+
   # Only turn on PyTrilinos for shared libraries
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 

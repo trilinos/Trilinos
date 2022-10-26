@@ -140,7 +140,7 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_LargerFinalProcCount)
 class NestedRebalance : public MeshFixtureRebalance
 {
 public:
-  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") override
+  void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb")
   {
     const bool useNestedDecomp = true;
     m_balanceSettings.set_is_rebalancing(true);

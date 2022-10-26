@@ -100,7 +100,7 @@ TEST_F(DefaultDecomposer, SubdomainDecomposition_LargerFinalProcCount)
 class DefaultRebalance : public MeshFixtureRebalance
 {
 public:
-  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") override
+  void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb")
   {
     m_balanceSettings.set_is_rebalancing(true);
     m_balanceSettings.set_output_filename(get_output_file_name());

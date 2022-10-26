@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -165,6 +165,7 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
     options_.usage(std::cerr);
     fmt::print(stderr,
                "\n\tCan also set options via IO_SKINNER_OPTIONS environment variable.\n\n"
+	       "\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#skinner\n\n"
                "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);

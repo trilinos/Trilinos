@@ -536,13 +536,15 @@ TransientVerifier::verify_transient_field_values(const stk::mesh::BulkData& bulk
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
                                                           const std::string &fileName,
                                                           const std::string& fieldName,
+                                                          stk::topology::rank_t fieldRank,
                                                           const std::string& globalVariableName,
                                                           const std::vector<double>& timeSteps,
                                                           const FieldValueSetter &fieldValueSetter)
 {
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
     {
-        GeneratedMeshToFileWithTransientFields gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA, fieldName, stk::topology::NODE_RANK);
+        GeneratedMeshToFileWithTransientFields gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA, fieldName,
+                                                     fieldRank);
 
         gMesh.setup_mesh(meshSizeSpec, fileName);
         gMesh.write_mesh_with_field(timeSteps, fieldValueSetter, globalVariableName);

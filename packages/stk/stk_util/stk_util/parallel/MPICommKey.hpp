@@ -8,6 +8,7 @@
 #include <deque>
 #include <memory>
 #include "Parallel.hpp"  // for MPI
+#include "MPIFinalizationCallback.hpp"
 
 // Detect if MPI has bug
 #ifdef MPICH
@@ -144,10 +145,9 @@ class MPIKeyManager
     std::set<CommKey> m_usedCommKeys;
     std::map<CommKey, std::map<CallerUID, std::vector<Callback>>> m_callbacks;
     std::map<CommKey, MPI_Comm> m_comms;
-    bool m_isFinalized = false;
+    MPIFinalizationCallback m_destructor;
 
   friend int impl::delete_mpi_comm_key(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state);
-  friend int impl::destruct_mpi_key_manager(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state);
 };
 
 }  // namespace

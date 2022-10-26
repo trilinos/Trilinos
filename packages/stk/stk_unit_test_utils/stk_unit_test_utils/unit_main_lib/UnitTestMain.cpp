@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 #else
     returnVal = RUN_ALL_TESTS();
 #ifdef STK_HAVE_KOKKOSCORE
-    Kokkos::finalize_all();
+    Kokkos::finalize();
 #endif
 #endif
   }

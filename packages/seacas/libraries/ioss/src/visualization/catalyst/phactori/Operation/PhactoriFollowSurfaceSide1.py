@@ -82,7 +82,7 @@ class PhactoriFollowSurfaceSide1(PhactoriOperationSpecifics):
       self.OffsetIndex = 0
 
     keyval10 = "output cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.ProgrammableFilterOutputCellVariableName = inJson[keyval10]
 
   def CreateParaViewFilter(self, inInputFilter):
@@ -128,7 +128,7 @@ class PhactoriFollowSurfaceSide1(PhactoriOperationSpecifics):
   #    lvly[zz] = 0
   #  lvlz = lvly[zz]
   #  lvly[zz] = lvlz + 1
-    
+
   @staticmethod
   def IncrementTouchingCellCountForAllPointsInOneCell(inInputCsData, inParameters, inCellIndex,
         cellsTouchingPointCount):
@@ -389,7 +389,7 @@ class PhactoriFollowSurfaceSide1(PhactoriOperationSpecifics):
       for ptId, cellList in cellsTouchingPoints:
         myDebugPrint(str(ptId) + " " + str(celllist) + "\n")
     return cellsTouchingPoints
-    
+
   def FollowSurfaceSideFromSeedCell(inInputCsData, seedCellIndex, surfaceStatus):
     #get a list of all surface cells
     surfaceCellMap, seedCellIndex = FindSurfaceCells(surfaceStatus)

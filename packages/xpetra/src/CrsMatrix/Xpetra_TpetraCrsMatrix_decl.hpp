@@ -1263,6 +1263,15 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
+    /// \brief Access the local Kokkos::CrsMatrix data
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type::HostMirror());
+    }
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrixDevice () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
+    }
+
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                        const typename local_matrix_type::values_type& val) {    }

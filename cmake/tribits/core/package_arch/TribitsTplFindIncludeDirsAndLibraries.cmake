@@ -741,9 +741,9 @@ endfunction()
 #   tribits_tpl_tentatively_enable(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.  But typically, it is called from an SE Package's
+# tentative enable mode.  But typically, it is called from an Package's
 # `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
-# enable a TPL`_).
+# enable an external package/TPL`_).
 #
 # This should only be used for optional TPLs.  It will not work correctly for
 # required TPLs because any enabled packages that require this TPL will not be

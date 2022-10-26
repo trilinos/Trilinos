@@ -482,7 +482,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
     }
 
     // Test Field accessor functions:
-    stk::mesh::Field<double> *myTemplatedField = stk::mesh::get_field_by_name<stk::mesh::Field<double> >(fieldName, metaData);
+    stk::mesh::Field<double> *myTemplatedField = stk::mesh::get_field_by_name<double>(fieldName, metaData);
     ASSERT_TRUE(myTemplatedField != NULL);
     EXPECT_TRUE( &nodeField == myTemplatedField);
     stk::mesh::FieldBase *myFieldBase = stk::mesh::get_field_by_name(fieldName, metaData);

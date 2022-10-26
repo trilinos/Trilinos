@@ -42,7 +42,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 # Run the ParameterListInterpreter test with a single thread to avoid non-deterministic behavior
 IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
-  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-threads=1")
+  SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD " --kokkos-num-threads=1")
 ELSE()
   SET(${PACKAGE_NAME}_PARAMETERLISTINTERPRETERTEST_SINGLETHREAD "")
 ENDIF()

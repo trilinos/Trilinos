@@ -57,7 +57,7 @@ namespace Zoltan2 {
 
 /*! \brief An identifier for the general type of model.
  */
-enum ModelType 
+enum ModelType
 {
   HypergraphModelType,
   GraphModelType,
@@ -70,14 +70,14 @@ enum ModelType
 
 /*! \brief Flags are set by a Problem to tell a Model what transformations
  *          it may need to do on the user's input.
- */ 
+ */
 enum ModelFlags{
   // General flags
   GENERATE_CONSECUTIVE_IDS, /*!< \brief algorithm requires consecutive ids */
 
   // Graph model flags
-  BUILD_LOCAL_GRAPH, /*!< \brief model represents graph within only one rank*/ 
-  SYMMETRIZE_INPUT_TRANSPOSE, /*!< \brief model must symmetrize input */ 
+  BUILD_LOCAL_GRAPH, /*!< \brief model represents graph within only one rank*/
+  SYMMETRIZE_INPUT_TRANSPOSE, /*!< \brief model must symmetrize input */
   SYMMETRIZE_INPUT_BIPARTITE, /*!< \brief model must symmetrize input */
   VERTICES_ARE_MATRIX_ROWS,   /*!< \brief use matrix rows as graph vertices */
   VERTICES_ARE_MATRIX_COLUMNS,/*!< \brief use columns as graph vertices */
@@ -95,7 +95,7 @@ typedef std::bitset<NUM_MODEL_FLAGS> modelFlag_t;
 /*! \brief The base class for all model classes.
 
   The Model is the computational model created by a Problem based on
-  the user's input data and parameters.  Graphs, hypergraph, and 
+  the user's input data and parameters.  Graphs, hypergraph, and
   collections of geometric coordinates are examples of computational
   models.
 

@@ -377,6 +377,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = IntegratedLegendreBasis_HGRAD_TRI<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar,defineVertexFunctions>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;

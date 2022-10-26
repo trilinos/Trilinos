@@ -143,25 +143,6 @@
             stk::mesh::Entity nodes[2] = {eMesh.createOrGetNode(elems[ielem][0]), eMesh.createOrGetNode(elems[ielem][1])};
             create_side_element(eMesh, use_declare_element_side, nodes, 2, newElement);
 
-            stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field(stk::topology::EDGE_RANK, "proc_rank_edge");
-            if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() != static_cast<unsigned>(m_eMesh.edge_rank()))
-              {
-                if (0)
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp newElement.entity_rank = " << m_eMesh.entity_rank(newElement)
-                            << " proc_rank_field_edge->rank() = " << proc_rank_field_edge->field_array_rank()
-                            << " m_eMesh.edge_rank() = " << m_eMesh.edge_rank() << std::endl;
-              }
-            else if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() == static_cast<unsigned>(m_eMesh.edge_rank()))
-              {
-                double *fdata =stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
-                fdata[0] = double(eMesh.owner_rank(newElement));
-                //fdata[0] = 1234.56;
-                if (0)
-                  std::cout << "P[" << m_eMesh.get_rank() << "] tmp set proc_rank_field_edge to value = " << eMesh.owner_rank(newElement)
-                            << " for side element = " << m_eMesh.identifier(newElement)
-                            << std::endl;
-              }
-
             change_entity_parts(eMesh, element, newElement);
 
             set_parent_child_relations(eMesh, element, newElement, *ft_element_pool, ielem);

@@ -25,6 +25,7 @@ namespace Ioss {
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -45,8 +46,5 @@ namespace Ioss {
 
   protected:
     Edge2D2();
-
-  private:
-    static Edge2D2 instance_;
   };
 } // namespace Ioss

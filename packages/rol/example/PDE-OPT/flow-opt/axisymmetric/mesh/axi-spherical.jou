@@ -1,0 +1,69 @@
+reset
+reset aprepro
+
+#{iRadius  = 0.6875} # inlet radius
+#{oRadius  = 0.6875} # outlet radius
+#{dRadius  = 10}     # diffuser radius
+#{numRef   = 1}      # number of refinements
+#{localRef = 1}      # local refinement near inlet/outlet
+
+create vertex 0 0 0
+create vertex 0 {-dRadius*sin(acos(oRadius/dRadius))} 0
+create vertex {oRadius} {-dRadius*sin(acos(oRadius/dRadius))} 0
+create vertex {dRadius} 0 0
+create vertex {iRadius} {dRadius*sin(acos(iRadius/dRadius))} 0
+create vertex 0 {dRadius*sin(acos(iRadius/dRadius))} 0
+
+create curve 1 2
+create curve 2 3
+create curve arc center vertex 1 3 4
+create curve arc center vertex 1 4 5
+create curve 5 6
+create curve 6 1
+create curve 1 4
+
+create surface curve 1 2 3 7
+create surface curve 4 5 6 7
+
+merge all
+imprint all
+imprint all
+merge all
+
+curve 1 interval 50                # 40, 80, 40
+curve 1 scheme bias factor 1.00    # 1.03, 1.00
+curve 1 reverse bias
+curve 3 interval 75                # 50, 110, 55
+curve 3 scheme bias factor 1.00    # 1.02, 1.00
+curve 2 interval 5                 # 20, 10, 2
+curve 7 interval 50                # 30, 80, 40
+
+mesh curve 1,2,3
+surface 1 scheme tridelaunay
+surface 1 smooth scheme condition number beta 1.16
+mesh surface 1
+
+#{If(localRef)}
+  refine curve 2 numsplit 1 radius 0.5
+#{Endif}
+smooth surface 1
+
+#{Loop(numRef)}
+  refine surface 1
+#{EndLoop}
+
+#copy mesh surface 1 onto surface 2 source vertex 5 target vertex 5 source curve 9 target curve 9 nonsmoothing
+copy mesh surface 1 onto surface 2 source curve 7 source vertex 4 target curve 7 target vertex 4 nosmoothing
+
+sideset 1 add curve 2
+sideset 2 add curve 3 4
+sideset 3 add curve 5
+sideset 4 add curve 1 6
+sideset 5 add curve 7
+
+block 1 surface all
+block 1 element type TRI3
+
+quality surface all allmetrics
+export mesh "axi-spherical.exo" overwrite
+

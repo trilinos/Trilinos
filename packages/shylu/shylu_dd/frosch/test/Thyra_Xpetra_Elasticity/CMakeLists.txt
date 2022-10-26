@@ -93,6 +93,16 @@ COMM mpi
 NUM_MPI_PROCS 4
 )
 
+IF (Trilinos_ENABLE_FLOAT)
+    TRIBITS_ADD_TEST(
+        thyra_xpetra_elasticity
+        NAME test_thyra_xpetra_elasticity_RGDSWP_DIM2_TPETRA_Half
+        ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu_Half.xml --USETPETRA"
+        COMM mpi
+        NUM_MPI_PROCS 4
+    )
+ENDIF ()
+
 ###############################
 # TwoLevelPreconditioner_GDSW #
 ###############################

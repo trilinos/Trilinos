@@ -38,6 +38,7 @@
 #include <fstream>    // for basic_istream, ifstream, istringstream, basic_ios, basic_istream::o...
 #include <string>     // for operator>>, string, operator==, getline, basic_string
 #include <vector>     // for vector
+#include <limits>
 
 #ifdef __CUDACC__
 #include <cuda.h>
@@ -117,13 +118,17 @@ void get_gpu_memory_info(size_t& used, size_t& free)
 {
   used = 0;
   free = 0;
-#ifdef __CUDACC__
   size_t total = 0;
+
+#ifdef __CUDACC__
   cudaError_t err = cudaMemGetInfo(&free, &total);
   ThrowRequireMsg(err == cudaSuccess,
                   "stk::get_gpu_memory_info: cudaMemGetInfo returned error-code: "<<err);
   used = total - free;
 #endif
+  ThrowRequireMsg(total != std::numeric_limits<size_t>::max(), "total memory size must be finite");
+  ThrowRequireMsg(free != std::numeric_limits<size_t>::max(), "free memory size must be finite");
+  ThrowRequireMsg(total >= free, "total memory size must be >= free memory size");
 }
 
 // return current resident set size in bytes

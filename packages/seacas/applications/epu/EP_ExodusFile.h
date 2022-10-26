@@ -19,7 +19,7 @@ namespace Excn {
   public:
     explicit ExodusFile(int processor);
     ~ExodusFile();
-    ExodusFile(const ExodusFile &) = delete;
+    ExodusFile(const ExodusFile &)           = delete;
     ExodusFile operator=(const ExodusFile &) = delete;
 
     static bool initialize(const SystemInterface &si, int start_part, int part_count, int cycle,

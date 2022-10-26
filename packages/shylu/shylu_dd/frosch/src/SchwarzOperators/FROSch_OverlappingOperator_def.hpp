@@ -135,15 +135,24 @@ namespace FROSch {
                 using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
                 using execution_space = typename XMap::local_map_type::execution_space;
                 Kokkos::RangePolicy<execution_space> policy (0, yMap->getLocalNumElements());
-                for (UN i=0; i<y.getNumVectors(); i++) {
-                    auto yOverlapData_i = YOverlap_->getData(i);
-                    auto xLocalData_i = XTmp_->getDataNonConst(i);
+
+                using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
+                // Xpetra wrapper for Tpetra MV
+                auto yXTpetraMVector = rcp_dynamic_cast<const xTMVector>(YOverlap_, true);
+                auto xXTpetraMVector = rcp_dynamic_cast<      xTMVector>(XTmp_, true);
+                // Tpetra MV
+                auto yTpetraMVector = yXTpetraMVector->getTpetra_MultiVector();
+                auto xTpetraMVector = xXTpetraMVector->getTpetra_MultiVector();
+                // View
+                auto yView = yTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto xView = xTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                for (UN j=0; j<y.getNumVectors(); j++) {
                     Kokkos::parallel_for(
                       "FROSch_OverlappingOperator::applyLocalRestriction", policy,
-                      KOKKOS_LAMBDA(const int j) {
-                        GO gID = yLocalMap.getGlobalElement(j);
+                      KOKKOS_LAMBDA(const int i) {
+                        GO gID = yLocalMap.getGlobalElement(i);
                         LO lID = yLocalOverlapMap.getLocalElement(gID);
-                        xLocalData_i[j] = yOverlapData_i[lID];
+                        xView(i, j) = yView(lID, j);
                       });
                 }
                 Kokkos::fence();

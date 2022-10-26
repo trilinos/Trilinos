@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -72,32 +72,32 @@ int main()
         }
 
         auto xsave = x;
-        Ioss::qsort(x); // Copy of x
+        Ioss::sort(x); // Copy of x
         assert(verify_sorted(x));
 
         x = xsave;
         std::reverse(x.begin(), x.end()); // Reversed
-        Ioss::qsort(x);
+        Ioss::sort(x);
         assert(verify_sorted(x));
 
         x = xsave;
         std::reverse(&x[0], &x[n / 2]); // Front half reversed
-        Ioss::qsort(x);
+        Ioss::sort(x);
         assert(verify_sorted(x));
 
         x = xsave;
         std::reverse(&x[n / 2], &x[n]); // Back half reversed
-        Ioss::qsort(x);
+        Ioss::sort(x);
         assert(verify_sorted(x));
 
-        Ioss::qsort(x); // Already sorted
+        Ioss::sort(x); // Already sorted
         assert(verify_sorted(x));
 
         x = xsave;
         for (size_t p = 0; p < n; p++) {
           x[p] += p % 5;
         }
-        Ioss::qsort(x); // Dithered
+        Ioss::sort(x); // Dithered
         assert(verify_sorted(x));
       }
     }

@@ -16,6 +16,7 @@
 #include <Ioss_ElementBlock.h>
 #include <Ioss_IOFactory.h>
 #include <Ioss_NodeBlock.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_Region.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
@@ -137,9 +138,9 @@ namespace {
 } // namespace
 
 Grid::Grid(SystemInterface &interFace)
-    : m_scaleFactor(interFace.scale_factor()), m_parallelSize(interFace.ranks()),
-      m_rankCount(interFace.rank_count()), m_startRank(interFace.start_rank()),
-      m_equivalenceNodes(interFace.equivalence_nodes()),
+    : m_offset(interFace.offset()), m_scaleFactor(interFace.scale_factor()),
+      m_parallelSize(interFace.ranks()), m_rankCount(interFace.rank_count()),
+      m_startRank(interFace.start_rank()), m_equivalenceNodes(interFace.equivalence_nodes()),
       m_useInternalSidesets(!interFace.ignore_internal_sidesets()),
       m_subCycle(interFace.subcycle()), m_minimizeOpenFiles(interFace.minimize_open_files()),
       m_generatedSideSets(which_sidesets(interFace.sideset_surfaces()))
@@ -242,7 +243,8 @@ void Grid::create_output_regions(SystemInterface &interFace)
   if (parallel_size() == 1) {
     properties.add(Ioss::Property("OMIT_EXODUS_NUM_MAPS", 1));
   }
-  properties.add(Ioss::Property("MINIMAL_NEMESIS_DATA", 1));
+  // Disable this for now.  Readers need to be modified and propogated to allow this.
+  //   properties.add(Ioss::Property("MINIMAL_NEMESIS_DATA", 1));
 
   if (debug_level & 2) {
     properties.add(Ioss::Property("ENABLE_TRACING", 1));
@@ -430,7 +432,7 @@ template <typename INT> void Grid::process(SystemInterface &interFace, INT /* du
     if (m_startRank + m_rankCount > m_parallelSize) {
       m_rankCount = m_parallelSize - m_startRank;
     }
-    if (debug_level & 1) {
+    if (debug_level & 2) {
       fmt::print(stderr, "{} Processing Ranks {} to {}\n", time_stamp(tsFormat), begin,
                  begin + rank_count - 1);
     }
@@ -438,12 +440,12 @@ template <typename INT> void Grid::process(SystemInterface &interFace, INT /* du
     create_output_regions(interFace);
 
     internal_process();
-    if (debug_level & 1) {
+    if (debug_level & 2) {
       fmt::print(stderr, "{} Lattice Processing Finalized\n", time_stamp(tsFormat));
     }
 
     output_model(INT(0));
-    if (debug_level & 1) {
+    if (debug_level & 2) {
       fmt::print(stderr, "{} Model Output\n", time_stamp(tsFormat));
     }
   }
@@ -543,24 +545,31 @@ void Grid::output_nodal_coordinates(const Cell &cell)
   std::vector<double> coord_y;
   std::vector<double> coord_z;
 
+  // Are we modifying the coordinates ... scale and/or offset and/or offset_unit_cell...
+  bool mod_x = cell.m_offX != 0.0 || m_scaleFactor != 1.0 || m_offset[0] != 0.0;
+  bool mod_y = cell.m_offY != 0.0 || m_scaleFactor != 1.0 || m_offset[1] != 0.0;
+  bool mod_z = m_scaleFactor != 1.0 || m_offset[2] != 0.0;
+
+  double scale = m_scaleFactor;
   nb->get_field_data("mesh_model_coordinates_x", coord_x);
+  if (mod_x) {
+    double offset = m_offset[0];
+    std::for_each(coord_x.begin(), coord_x.end(),
+                  [&cell, scale, offset](double &d) { d = (d + cell.m_offX) * scale + offset; });
+  }
+
   nb->get_field_data("mesh_model_coordinates_y", coord_y);
+  if (mod_y) {
+    double offset = m_offset[1];
+    std::for_each(coord_y.begin(), coord_y.end(),
+                  [&cell, scale, offset](double &d) { d = (d + cell.m_offY) * scale + offset; });
+  }
+
   nb->get_field_data("mesh_model_coordinates_z", coord_z);
-
-  // Apply coordinate offsets to all nodes...
-  if (cell.m_offX != 0.0) {
-    std::for_each(coord_x.begin(), coord_x.end(), [&cell](double &d) { d += cell.m_offX; });
-  }
-  if (cell.m_offY != 0.0) {
-    std::for_each(coord_y.begin(), coord_y.end(), [&cell](double &d) { d += cell.m_offY; });
-  }
-
-  // If there is a scale factor specified, apply to all nodes...
-  if (m_scaleFactor != 1.0) {
-    double scale = m_scaleFactor;
-    std::for_each(coord_x.begin(), coord_x.end(), [scale](double &d) { d *= scale; });
-    std::for_each(coord_y.begin(), coord_y.end(), [scale](double &d) { d *= scale; });
-    std::for_each(coord_z.begin(), coord_z.end(), [scale](double &d) { d *= scale; });
+  if (mod_z) {
+    double offset = m_offset[2];
+    std::for_each(coord_z.begin(), coord_z.end(),
+                  [scale, offset](double &d) { d = d * scale + offset; });
   }
 
   // Filter coordinates down to only "new nodes"...

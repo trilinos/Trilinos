@@ -470,7 +470,8 @@ namespace FROSch {
                     uniqueVector.push_back(map->getGlobalElement(i));
                 }
             }
-            return MapFactory<LO,GO,NO>::Build(map->lib(),-1,uniqueVector(),0,map->getComm()); // We need this setup for maps with offset (with MaxGID+1 not being the number of global elements), or we need an allreduce to determine the number of global elements from uniqueVector
+            const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+            return MapFactory<LO,GO,NO>::Build(map->lib(),INVALID,uniqueVector(),0,map->getComm()); // We need this setup for maps with offset (with MaxGID+1 not being the number of global elements), or we need an allreduce to determine the number of global elements from uniqueVector
             //        return MapFactory<LO,GO,NO>::Build(map->lib(),map->getMaxAllGlobalIndex()+1,uniqueVector(),0,map->getComm());
         }
     }
@@ -600,7 +601,8 @@ namespace FROSch {
             }
         }
         sortunique(repeatedIndices);
-        return MapFactory<LO,GO,NO>::Build(tmpMatrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(tmpMatrix->getRowMap()->lib(),INVALID,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -694,7 +696,8 @@ namespace FROSch {
             }
         }
         sortunique(repeatedIndices);
-        return MapFactory<LO,GO,NO>::Build(tmpGraph->getRowMap()->lib(),-1,repeatedIndices(),0,graph->getRowMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(tmpGraph->getRowMap()->lib(),INVALID,repeatedIndices(),0,graph->getRowMap()->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -719,6 +722,7 @@ namespace FROSch {
     RCP<Map<LO,GO,NO> > BuildRepeatedMapNonConst(RCP<const CrsGraph<LO,GO,NO> > graph)
     {
         FROSCH_DETAILTIMER_START(buildRepeatedMapNonConstTime,"BuildRepeatedMapNonConst");
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         RCP<const Map<LO,GO,NO> > uniqueMap = graph->getRowMap();
         RCP<const Map<LO,GO,NO> > overlappingMap;
         ExtendOverlapByOneLayer<LO,GO,NO>(graph,uniqueMap,graph,overlappingMap);
@@ -728,7 +732,7 @@ namespace FROSch {
         for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             tmpGraphUnique->insertGlobalIndices(uniqueMap->getGlobalElement(i),myPID());
         }
-        RCP<Map<LO,GO,NO> > domainMap = MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,myPID(),0,uniqueMap->getComm());
+        RCP<Map<LO,GO,NO> > domainMap = MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),INVALID,myPID(),0,uniqueMap->getComm());
         tmpGraphUnique->fillComplete(domainMap,uniqueMap);
         RCP<CrsGraph<LO,GO,NO> > tmpGraphOverlap = CrsGraphFactory<LO,GO,NO>::Build(overlappingMap);
         RCP<Import<LO,GO,NO> > importer = ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
@@ -744,7 +748,7 @@ namespace FROSch {
             }
         }
         sortunique(repeatedIndices);
-        return MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,repeatedIndices(),0,uniqueMap->getComm());
+        return MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),INVALID,repeatedIndices(),0,uniqueMap->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -778,7 +782,9 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"dofOrdering unknown.");
         }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(nodesMap->lib(),-1,globalIDs(),0,nodesMap->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return Xpetra::MapFactory<LO,GO,NO>::Build(nodesMap->lib(),INVALID,globalIDs(),0,nodesMap->getComm());
     }
 
     /*
@@ -891,7 +897,8 @@ namespace FROSch {
             }
         }
         sortunique(indicesOverlappingSubdomain);
-        outputMap = MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,indicesOverlappingSubdomain(),0,inputMap->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        outputMap = MapFactory<LO,GO,NO>::Build(inputMap->lib(),INVALID,indicesOverlappingSubdomain(),0,inputMap->getComm());
         tmpMatrix->fillComplete(inputMatrix->getDomainMap(),inputMatrix->getRangeMap());
 
         return 0;
@@ -939,7 +946,9 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(sortMapByGlobalIndexTime,"SortMapByGlobalIndex");
         Array<GO> globalIDs(inputMap->getLocalElementList());
         sort(globalIDs);
-        return MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,globalIDs(),0,inputMap->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(inputMap->lib(),INVALID,globalIDs(),0,inputMap->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -983,7 +992,9 @@ namespace FROSch {
 
             //if (mapVector[j]->getComm()->getRank() == 0) cout << endl << globalstart << endl;
         }
-        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),INVALID,assembledMapTmp(),0,mapVector[0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1027,7 +1038,9 @@ namespace FROSch {
 
             //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
         }
-        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),INVALID,assembledMapTmp(),0,mapVector[0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1054,8 +1067,10 @@ namespace FROSch {
                 }
             }
         }
+
         FROSCH_ASSERT(!dofsMaps[0].is_null(),"FROSch: dofsMaps[0].is_null()");
-        return MapFactory<LO,GO,NO>::Build(dofsMaps[0][0]->lib(),-1,mapVector(),0,dofsMaps[0][0]->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(dofsMaps[0][0]->lib(),INVALID,mapVector(),0,dofsMaps[0][0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1078,7 +1093,9 @@ namespace FROSch {
 
             elementList.insert(elementList.end(),subElementList.begin(),subElementList.end());
         }
-        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,elementList(),0,mapVector[0]->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),INVALID,elementList(),0,mapVector[0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1145,11 +1162,13 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"dofOrdering unknown.");
         }
-        nodesMap = MapFactory<LO,GO,NO>::Build(map->lib(),-1,nodes(),0,map->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        nodesMap = MapFactory<LO,GO,NO>::Build(map->lib(),INVALID,nodes(),0,map->getComm());
 
         dofMaps = ArrayRCP<RCP<const Map<LO,GO,NO> > >(dofsPerNode);
         for (unsigned j=0; j<dofsPerNode; j++) {
-            dofMaps[j] = MapFactory<LO,GO,NO>::Build(map->lib(),-1,dofs[j](),0,map->getComm());
+            dofMaps[j] = MapFactory<LO,GO,NO>::Build(map->lib(),INVALID,dofs[j](),0,map->getComm());
         }
         return 0;
     }
@@ -1184,7 +1203,9 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"dofOrdering unknown.");
         }
-        return MapFactory<LO,GO,NO>::Build(dofMaps[0]->lib(),-1,globalIDs(),0,dofMaps[0]->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(dofMaps[0]->lib(),INVALID,globalIDs(),0,dofMaps[0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1213,7 +1234,9 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"dofOrdering unknown.");
         }
-        return MapFactory<LO,GO,NO>::Build(nodesMap->lib(),-1,globalIDs(),0,nodesMap->getComm());
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        return MapFactory<LO,GO,NO>::Build(nodesMap->lib(),INVALID,globalIDs(),0,nodesMap->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -1278,6 +1301,7 @@ namespace FROSch {
 
         MapConstPtrVecPtr nodeMapsVec( nmbBlocks );
         // Build node maps for all blocks
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         for (unsigned block=0; block<nmbBlocks; block++) {
 
             if (dofOrderingVec[block] == NodeWise) {
@@ -1292,7 +1316,7 @@ namespace FROSch {
                     globalIndicesNode[i] = multiplier + rest;
 
                 }
-                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
+                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), INVALID,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
             } else { //DimensionWise
                 GO minGID = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
                 ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getLocalElementList();
@@ -1300,7 +1324,7 @@ namespace FROSch {
                 for (unsigned i=0; i<globalIndicesNode.size(); i++)
                     globalIndicesNode[i] -= minGID;
 
-                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
+                nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), INVALID,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
             }
         }
         return nodeMapsVec;
@@ -1325,8 +1349,10 @@ namespace FROSch {
             FROSCH_ASSERT(subMapNumber>-1,"Index not resolved on sub map.");
             indicesSubMaps[subMapNumber].push_back(nodeElementList[i]);
         }
+
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         for (unsigned j = 0 ; j < maxSubGIDVec.size(); j++) {
-            subMaps[j] = MapFactory<LO,GO,NO>::Build(fullMap->lib(),-1,indicesSubMaps[j](),0,fullMap->getComm());
+            subMaps[j] = MapFactory<LO,GO,NO>::Build(fullMap->lib(),INVALID,indicesSubMaps[j](),0,fullMap->getComm());
         }
         return subMaps;
     }
@@ -1610,7 +1636,9 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
-        return MapFactory<LO,int,NO>::Build(lib,-1,mapArrayView,0,comm);
+
+        const int INVALID = Teuchos::OrdinalTraits<int>::invalid();
+        return MapFactory<LO,int,NO>::Build(lib,INVALID,mapArrayView,0,comm);
     }
 
     template <class SC,class LO,class NO>
@@ -1661,7 +1689,9 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
         ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
-        return MapFactory<LO,long long,NO>::Build(lib,-1,mapArrayView,0,comm);
+
+        const long long INVALID = Teuchos::OrdinalTraits<long long>::invalid();
+        return MapFactory<LO,long long,NO>::Build(lib,INVALID,mapArrayView,0,comm);
     }
 
     template <class SC,class LO,class NO>
@@ -1875,7 +1905,8 @@ namespace FROSch {
             }
         }
         sortunique(repeatedMapEntries);
-        RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedMapEntries(),0,ReGraph->getColMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),INVALID,repeatedMapEntries(),0,ReGraph->getColMap()->getComm());
         return 0;
     }
 #endif

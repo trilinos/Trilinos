@@ -1,4 +1,5 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 keep smoother data = 1
@@ -6,6 +7,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -41,6 +43,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -51,6 +54,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -86,6 +90,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -116,6 +121,7 @@ Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Clearing old data (if any)
+
 Level 0
 Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995})
 keep smoother data = 1
@@ -123,6 +129,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Using original prolongator
@@ -145,6 +152,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Using original prolongator

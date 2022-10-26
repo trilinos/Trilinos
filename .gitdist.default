@@ -11,6 +11,7 @@ packages/framework/son-ini-files
 packages/framework/srn-ini-files
 TriBITS
 TriBITS/TriBITSDoc
+run_trilinos_pr_builds
 kokkos
 kokkos-kernels
 seacas

@@ -119,6 +119,7 @@ private:
   Ioss::ParallelUtils                        m_pu{};
   size_t                                     m_gridI{0};
   size_t                                     m_gridJ{0};
+  vector3d                                   m_offset{0.0, 0.0, 0.0};
   double                                     m_scaleFactor{1.0};
   int                                        m_parallelSize{1}; //! Number of ranks to decompose for
   int          m_rankCount{1}; //! Number of ranks to process at a time.

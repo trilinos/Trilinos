@@ -1,8 +1,8 @@
-Explicitly enabled SE packages on input (by user):  Thyra 1
-Explicitly disabled packages on input (by user or by default):  0
-Explicitly disabled SE packages on input (by user or by default):  ThyraCrazyStuff 1
-Explicitly enabled TPLs on input (by user):  Boost 1
-Explicitly disabled TPLs on input (by user or by default):  0
+Explicitly enabled packages on input (by user):  Thyra 1
+Explicitly disabled top-level packages on input (by user or by default):  0
+Explicitly disabled packages on input (by user or by default):  ThyraCrazyStuff 1
+Explicitly enabled external packages/TPLs on input (by user):  Boost 1
+Explicitly disabled external packages/TPLs on input (by user or by default):  0
 
 Enabling subpackages for hard enables of parent packages due to \
  Trilinos_ENABLE_<PARENT_PACKAGE>=ON ...
@@ -16,8 +16,8 @@ Enabling subpackages for hard enables of parent packages due to \
 -- Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=ON because parent package \
  Trilinos_ENABLE_Thyra=ON
 
-Disabling forward required SE packages and optional intra-package support that have a \
- dependency on disabled SE packages Trilinos_ENABLE_<TRIBITS_PACKAGE>=OFF ...
+Disabling forward required packages and optional intra-package support that have a \
+ dependency on disabled packages Trilinos_ENABLE_<TRIBITS_PACKAGE>=OFF ...
 
 -- Setting Thyra_ENABLE_ThyraCrazyStuff=OFF because Thyra has an optional library \
  dependence on disabled package ThyraCrazyStuff
@@ -36,7 +36,7 @@ Enabling all tests and/or examples that have not been explicitly disabled becaus
 -- Setting Thyra_ENABLE_TESTS=ON
 -- Setting Thyra_ENABLE_EXAMPLES=ON
 
-Enabling all required upstream SE packages for current set of \
+Enabling all required upstream packages for current set of \
  enabled packages (Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON) ...
 
 -- Setting Trilinos_ENABLE_EpetraExt=ON because ThyraEpetraExt has a required \
@@ -67,23 +67,23 @@ Enabling all optional package TPL support <TRIBITS_PACKAGE>_ENABLE_<DEPTPL> not 
 
 -- Setting Teuchos_ENABLE_Boost=ON since TPL_ENABLE_Boost=ON
 
-Final set of enabled packages:  Teuchos RTOp Epetra EpetraExt Thyra 5
-Final set of enabled SE packages:  Teuchos RTOp Epetra EpetraExt ThyraCoreLibs ThyraGoodStuff ThyraEpetra ThyraEpetraExt Thyra 9
-Final set of non-enabled packages:  Triutils 1
-Final set of non-enabled SE packages:  Triutils ThyraCrazyStuff 2
-Final set of enabled TPLs:  BLAS LAPACK Boost 3
-Final set of non-enabled TPLs:  MPI UMFPACK AMD PETSC 4
+Final set of enabled top-level packages:  Teuchos RTOp Epetra EpetraExt Thyra 5
+Final set of enabled packages:  Teuchos RTOp Epetra EpetraExt ThyraCoreLibs ThyraGoodStuff ThyraEpetra ThyraEpetraExt Thyra 9
+Final set of non-enabled top-level packages:  Triutils 1
+Final set of non-enabled packages:  Triutils ThyraCrazyStuff 2
+Final set of enabled external packages/TPLs:  BLAS LAPACK Boost 3
+Final set of non-enabled external packages/TPLs:  MPI UMFPACK AMD PETSC 4
 
-Getting information for all enabled TPLs ...
+Getting information for all enabled external packages/TPLs ...
 
-Processing enabled TPL: BLAS
-Processing enabled TPL: LAPACK
-Processing enabled TPL: Boost
+Processing enabled external package/TPL: BLAS
+Processing enabled external package/TPL: LAPACK
+Processing enabled external package/TPL: Boost
 
 Configuring individual enabled Trilinos packages ...
 
-Processing enabled package: Teuchos (Libs)
-Processing enabled package: RTOp (Libs)
-Processing enabled package: Epetra (Libs)
-Processing enabled package: EpetraExt (Libs)
-Processing enabled package: Thyra (CoreLibs, GoodStuff, Epetra, EpetraExt, Tests, Examples)
+Processing enabled top-level package: Teuchos (Libs)
+Processing enabled top-level package: RTOp (Libs)
+Processing enabled top-level package: Epetra (Libs)
+Processing enabled top-level package: EpetraExt (Libs)
+Processing enabled top-level package: Thyra (CoreLibs, GoodStuff, Epetra, EpetraExt, Tests, Examples)

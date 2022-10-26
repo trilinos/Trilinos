@@ -15,4 +15,3 @@ C...  create a rank array from an index array
 
       RETURN
       END
-

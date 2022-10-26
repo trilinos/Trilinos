@@ -1,8 +1,7 @@
 #ifndef __INTREPID_HGRAD_C0_FEM_DEF_HPP__
 #define __INTREPID_HGRAD_C0_FEM_DEF_HPP__
 
-// Define a piecewise constant basis function for supported
-// cell topologies ---for now, only quads.
+// Define a piecewise constant basis function for quads.
 
 namespace Intrepid{
   template<class Scalar, class ArrayScalar>
@@ -17,9 +16,9 @@ namespace Intrepid{
   }
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_C0_FEM<Scalar,ArrayScalar>::initializeTags(){
-    int tagSize = 4; // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0; // position in the tag, counting from 0, of the subcell dim
-    int posScOrd = 1; // position in the tag, counting from 0, of the subcell ordinal
+    int tagSize = 4;   // size of DoF tag, i.e., number of fields in the tag
+    int posScDim = 0;  // position in the tag, counting from 0, of the subcell dim
+    int posScOrd = 1;  // position in the tag, counting from 0, of the subcell ordinal
     int posDfOrd = 2;  // position in the tag, counting from 0, of DoF ordinal relative to the subcell
     // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
     int tags[4] = {2, 0, 0, 1};

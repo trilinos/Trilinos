@@ -75,6 +75,9 @@ TEST(NoUpwardConnectivity, basic_mesh_read_no_aura_create_edges)
                                  [](const stk::mesh::BulkData& bulkData, stk::mesh::Entity edge) {
                                    EXPECT_EQ(0u, bulkData.num_elements(edge));
                                    EXPECT_EQ(2u, bulkData.num_nodes(edge));
+                                   const bool onlyDownwardRelations = true;
+                                   EXPECT_EQ(bulkData.count_relations(edge,onlyDownwardRelations),
+                                             bulkData.count_relations(edge,!onlyDownwardRelations));
                                  });
 
   stk::mesh::for_each_entity_run(bulk, stk::topology::ELEM_RANK, meta.universal_part(),
@@ -117,6 +120,9 @@ TEST(NoUpwardConnectivity, basic_mesh_read_no_aura_create_faces)
                                  [](const stk::mesh::BulkData& bulkData, stk::mesh::Entity face) {
                                    EXPECT_EQ(0u, bulkData.num_elements(face));
                                    EXPECT_EQ(4u, bulkData.num_nodes(face));
+                                   const bool onlyDownwardRelations = true;
+                                   EXPECT_EQ(bulkData.count_relations(face,onlyDownwardRelations),
+                                             bulkData.count_relations(face,!onlyDownwardRelations));
                                  });
 
   stk::mesh::for_each_entity_run(bulk, stk::topology::ELEM_RANK, meta.universal_part(),

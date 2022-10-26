@@ -48,19 +48,21 @@
       , m_sideset_quad(0), m_sideset_quad_subset(0)
       , m_sideset_tri(0), m_sideset_tri_subset(0)
 
-      , m_coordinates_field( m_metaData.declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" ))
-      , m_centroid_field(    m_metaData.declare_field< CoordinatesFieldType >( stk::topology::ELEMENT_RANK, "centroid" ))
-      , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( stk::topology::NODE_RANK, "temperature" ))
-      , m_volume_field( m_metaData.declare_field< ScalarFieldType >( stk::topology::ELEMENT_RANK, "volume" ))
     {
+      m_metaData.use_simple_fields();
+      m_coordinates_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "coordinates" );
+      m_centroid_field    = &m_metaData.declare_field<double>( stk::topology::ELEMENT_RANK, "centroid" );
+      m_temperature_field = &m_metaData.declare_field<double>( stk::topology::NODE_RANK, "temperature" );
+      m_volume_field      = &m_metaData.declare_field<double>( stk::topology::ELEMENT_RANK, "volume" );
+
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
-      put_field_on_mesh( m_coordinates_field , universal, nullptr);
-      put_field_on_mesh( m_centroid_field , universal, nullptr);
-      put_field_on_mesh( m_temperature_field, universal, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_wedge, nullptr);
-      put_field_on_mesh( m_volume_field, m_block_tet, nullptr);
+      put_field_on_mesh( *m_coordinates_field , universal, m_spatial_dimension, nullptr);
+      put_field_on_mesh( *m_centroid_field , universal, m_spatial_dimension, nullptr);
+      put_field_on_mesh( *m_temperature_field, universal, nullptr);
+      put_field_on_mesh( *m_volume_field, m_block_wedge, nullptr);
+      put_field_on_mesh( *m_volume_field, m_block_tet, nullptr);
 
       stk::io::put_io_part_attribute(  m_block_wedge );
       stk::io::put_io_part_attribute(  m_block_tet );
@@ -182,7 +184,7 @@
             for ( unsigned jj = 0 ; jj < Wedge6::num_nodes ; ++jj ) {
               unsigned j = wedge_node_ids[i][jj] - 1;
               stk::mesh::Entity const node = m_bulkData.get_entity( stk::topology::NODE_RANK , j + 1 );
-              double * const coord = stk::mesh::field_data( m_coordinates_field , node );
+              double * const coord = stk::mesh::field_data( *m_coordinates_field , node );
               coord[0] = node_coord_data[j][0] ;
               coord[1] = node_coord_data[j][1] ;
               coord[2] = node_coord_data[j][2] ;
@@ -194,7 +196,7 @@
             for ( unsigned jj = 0 ; jj < Tet4::num_nodes ; ++jj ) {
               unsigned j = tetra_node_ids[i][jj] - 1;
               stk::mesh::Entity const node = m_bulkData.get_entity( stk::topology::NODE_RANK , j + 1 );
-              double * const coord = stk::mesh::field_data( m_coordinates_field , node );
+              double * const coord = stk::mesh::field_data( *m_coordinates_field , node );
               coord[0] = node_coord_data[j][0] ;
               coord[1] = node_coord_data[j][1] ;
               coord[2] = node_coord_data[j][2] ;

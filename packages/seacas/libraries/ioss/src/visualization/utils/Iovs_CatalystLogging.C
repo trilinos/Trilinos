@@ -62,7 +62,7 @@ namespace Iovs {
     std::vector<std::string> headers;
     if (properties) {
       Ioss::NameList names = properties->describe();
-      for (auto name : names) {
+      for (auto &name : names) {
         if (isCatalystLoggingProp(name)) {
           if (isSupportedPropType(name) && !isReservedPropName(name)) {
             headers.push_back(getHeaderNameFromPropName(name));
@@ -178,7 +178,7 @@ namespace Iovs {
   {
     std::vector<std::string> logOutput;
     if (properties) {
-      for (auto header : headers) {
+      for (auto &header : headers) {
         std::string    propName = getPropNameFromHeaderName(header);
         Ioss::Property prop     = properties->get(propName);
         switch (prop.get_type()) {

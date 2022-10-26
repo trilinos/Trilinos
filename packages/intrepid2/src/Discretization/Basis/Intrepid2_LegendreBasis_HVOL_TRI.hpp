@@ -189,6 +189,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = LegendreBasis_HVOL_TRI<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
@@ -224,7 +225,8 @@ namespace Intrepid2
       this->functionSpace_     = FUNCTION_SPACE_HVOL;
       
       const int degreeLength = 1;
-      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Legendre H(grad) line polynomial degree lookup",  this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** face functions **** //
@@ -234,7 +236,8 @@ namespace Intrepid2
         for (int i=0; i<=ij_sum; i++)
         {
           const int j = ij_sum - i;
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
+          this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = i+j;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = i+j+1;  // H^1 degree is one greater
           fieldOrdinalOffset++;
         }
       }

@@ -4085,14 +4085,14 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                         if(elementBlock != nullptr && is_part_io_part(*elementBlock))
                             parentElementBlock = elementBlock;
                     }
-                } else {
-                    parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
                 }
             }
-            else {
-                parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
-            }
         }
+
+        if(parentElementBlock == nullptr) {
+          parentElementBlock = get_parent_element_block_by_adjacency(bulk, name, parentElementBlock);
+        }
+
         return parentElementBlock;
     }
 

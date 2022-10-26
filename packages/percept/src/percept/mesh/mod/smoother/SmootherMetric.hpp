@@ -16,8 +16,6 @@
 #include <percept/MeshType.hpp>
 #include <percept/mesh/mod/smoother/JacobianUtil.hpp>
 #include <percept/math/DenseMatrix.hpp>
-#include <percept/structured/BlockStructuredGrid.hpp>
-#include "SGridJacobianUtil.hpp"
 #include <percept/mesh/mod/smoother/sgrid_metric_helpers.hpp>
 
   namespace percept {
@@ -93,20 +91,6 @@
       }
     };
 
-    template<>
-    class SmootherMetricImpl<StructuredGrid> : public SmootherMetricBase<StructuredGrid>
-    {
-    public:
-      SmootherMetricImpl(PerceptMesh *eMesh) : SmootherMetricBase<StructuredGrid>(eMesh)
-      {
-        std::shared_ptr<BlockStructuredGrid> bsg = eMesh->get_block_structured_grid();
-        m_coord_field_current                      = bsg->m_fields["coordinates"].get();
-        m_coord_field_original                     = bsg->m_fields["coordinates_NM1"].get();
-
-        VERIFY_OP_ON(m_coord_field_current, !=, 0, "m_coord_field_current");
-        VERIFY_OP_ON(m_coord_field_original, !=, 0, "m_coord_field_original");
-      }
-    };
     using SmootherMetric = SmootherMetricImpl<STKMesh>;
 
     class SmootherMetricFunction : public SmootherMetric {
@@ -275,8 +259,8 @@
           {
             stk::mesh::Entity node = nodes[inode];
             double *coords = m_eMesh->field_data(m_eMesh->get_coordinates_field(), node);
-            double Lambda = (m_cg_lambda_field? *stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_cg_lambda_field) , node ) : 0.0);
-            //double *norm = (m_cg_normal_field? *stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_cg_normal_field) , node ) : 0.0);
+            double Lambda = (m_cg_lambda_field? *static_cast<double*>(stk::mesh::field_data( *m_cg_lambda_field, node )) : 0.0);
+            //double *norm = (m_cg_normal_field? *static_cast<double*>(stk::mesh::field_data( *m_cg_normal_field, node )) : 0.0);
 
             coordsAll[inode] = coords;
             for (unsigned jc=0; jc < m_ndim; ++jc)
@@ -317,7 +301,7 @@
           {
             stk::mesh::Entity node = nodes[inode];
             double *coords = m_eMesh->field_data(m_eMesh->get_coordinates_field(), node);
-            double Lambda = (m_cg_lambda_field? *stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_cg_lambda_field) , node ) : 0.0);
+            double Lambda = (m_cg_lambda_field? *static_cast<double*>(stk::mesh::field_data( *m_cg_lambda_field , node )) : 0.0);
             coordsAll[inode] = coords;
             for (int jc=0; jc < spatialDim; ++jc)
               {
@@ -608,7 +592,7 @@ public:
     bool m_use_ref_mesh;
     bool m_untangling;
 
-    HexMeshSmootherMetric(PerceptMesh * eMesh/*only here to prevent build breaking. HMSM is used by SGridGenericAlgorithm_total_element_metric which can be templated on another metric that requires a  mesh as an argument*/) :
+    HexMeshSmootherMetric(PerceptMesh * eMesh) :
             m_BETA_MULT(0.05),  m_use_ref_mesh(true), m_untangling(true) {}
                                 //boolean memebrs will get altered by smoother
 //private:
@@ -975,10 +959,6 @@ public:
     {
     protected:
       double m_beta_mult;
-
-      // HACK bcarnes to have these arrays for structured
-      StructuredGrid::MTField::Array4D m_coords_current;
-      StructuredGrid::MTField::Array4D m_coords_original;
 
     public:
 

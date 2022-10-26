@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -228,7 +228,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   }
 
   /* Get the number of elemental communications maps in the file */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid)) == NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) == NC_NOERR) {
     /* check if I need to get the dimension of the nodal comm map */
     if (cmap_info_idx[1] == -1) {
       if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {

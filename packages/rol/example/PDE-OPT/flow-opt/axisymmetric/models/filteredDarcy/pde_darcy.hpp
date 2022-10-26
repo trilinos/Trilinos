@@ -54,6 +54,8 @@
 #include "permeability.hpp"
 
 #include "../../../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_HGRAD_TRI_C0_FEM.hpp"
+#include "../../../../TOOLS/Intrepid_CubatureNodal.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
@@ -123,26 +125,30 @@ public:
   PDE_Darcy(Teuchos::ParameterList &parlist) : Patm_(101.325 /* kg/mm-s^2 */) {
     // Finite element fields.
     int cubDegree     = parlist.sublist("Problem").get("Cubature Degree",4);
-    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
+    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",4);
     int basisDegPres  = parlist.sublist("Problem").get("Pressure Basis Degree",1);
     int basisDegCtrl  = parlist.sublist("Problem").get("Filter Basis Degree",1);
     std::string elemType = parlist.sublist("Problem").get("Element Type","QUAD");
     if (elemType == "TRI") {
       if (basisDegPres == 2)
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      else 
+      else
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      if (basisDegCtrl == 1)
+      if (basisDegCtrl == 2)
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
-        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     else {
       if (basisDegPres == 2)
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      else 
+      else
         basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      if (basisDegCtrl == 1)
+      if (basisDegCtrl == 2)
+        basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      else if (basisDegCtrl == 1)
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
       else
         basisPtrCtrl_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
@@ -152,10 +158,19 @@ public:
     // Quadrature rules.
     shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                           // create cubature factory
-    cellCub_ = cubFactory.create(cellType, cubDegree);                           // create default cubature
-
+    if (cubDegree == -1) {  // nodal cubature
+      cellCub_ = ROL::makePtr<Intrepid::CubatureNodal<Real, Intrepid::FieldContainer<Real>, Intrepid::FieldContainer<Real>>>(cellType);
+    }
+    else {                  // default cubature
+      cellCub_ = cubFactory.create(cellType, cubDegree);
+    }
     shards::CellTopology bdryCellType = cellType.getCellTopologyData(1, 0);
-    bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
+    if (cubDegree == -1) {  // nodal cubature
+      bdryCub_ = ROL::makePtr<Intrepid::CubatureNodal<Real, Intrepid::FieldContainer<Real>, Intrepid::FieldContainer<Real>>>(bdryCellType);
+    }
+    else {                  // default cubature
+      bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
+    }
 
     // Other problem parameters.
     dynvisco_     = parlist.sublist("Problem").get("Dynamic Viscosity", 0.84e-8); // kg/mm-s

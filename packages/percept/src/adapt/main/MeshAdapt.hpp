@@ -28,7 +28,6 @@
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
 #endif
-#include <Kokkos_Core.hpp>
 
 #include <percept/PerceptMesh.hpp>
 #include <percept/Util.hpp>
@@ -168,7 +167,7 @@ namespace percept {
       bool operator()(stk::mesh::Entity e_from, stk::mesh::Entity e_to)
       {
         VERIFY_OP_ON(m_eMesh.m_unprojected_coordinates, !=, 0, "bad m_unprojected_coordinates");
-        double *c_from = stk::mesh::field_data( *m_eMesh.get_coordinates_field() , e_from );
+        double *c_from = static_cast<double*>(stk::mesh::field_data( *m_eMesh.get_coordinates_field() , e_from ));
         double *uc_to = stk::mesh::field_data( *m_eMesh.m_unprojected_coordinates , e_to );
         if (std::fabs(uc_to[3]) < 1.e-6)
           {

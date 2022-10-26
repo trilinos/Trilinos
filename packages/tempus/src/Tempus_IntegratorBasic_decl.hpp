@@ -118,6 +118,9 @@ public:
       Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
     /// Initializes the Integrator after set* function calls
     virtual void initialize();
+    /// Return true if IntegratorBasic is initialized.
+    bool isInitialized() { return isInitialized_; }
+
     //TODO: finish this
     /// Returns the IntegratorTimer_ for this Integrator
     virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override

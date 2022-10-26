@@ -136,7 +136,7 @@ include(TribitsSortListAccordingToMasterList)
 #
 # NOTE: These repositories must be listed in the order of package
 # dependencies.  That is, all of the packages listed in repository ``i`` must
-# have upstream TPL and SE package dependencies listed before this package in
+# have upstream TPL and package dependencies listed before this package in
 # this repository or in upstream repositories ``i-1``, ``i-2``, etc.
 #
 # NOTE: This module just sets the local variable::

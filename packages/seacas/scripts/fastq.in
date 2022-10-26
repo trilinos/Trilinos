@@ -1,5 +1,5 @@
 #!/bin/bash -f
-# Copyright(C) 1999-2021 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -197,7 +197,7 @@ fi
 # Run the code, --
 if ${ACCESS_BIN}/${codename}${sep}${device} -basename ${filename}
 then
-  echo "${txtgrn}BLOT Successful Execution${txtrst}"
+  echo "${txtgrn}FASTQ Successful Execution${txtrst}"
 fi
 
 if [ ! -z ${filename} ] && [ "${device}" != "dual" ] && [ "${device}" != "xcps" ]
@@ -211,4 +211,3 @@ fi
 if [ "${aprepro}" == "file" ] ; then
     rm -f ${FOR001}
 fi
-

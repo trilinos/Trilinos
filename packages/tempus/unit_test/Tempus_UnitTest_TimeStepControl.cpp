@@ -233,9 +233,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, createTimeStepControl)
   auto tsc = Tempus::createTimeStepControl<double>(pl);
   TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
 
-  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
-  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //tsc->describe(*my_out, Teuchos::VERB_EXTREME);
+  tsc->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE          ( tsc->getStepType()           , ==, "Constant"      );
   TEST_FLOATING_EQUALITY( tsc->getInitTime()               , 1.0    , 1.0e-14);

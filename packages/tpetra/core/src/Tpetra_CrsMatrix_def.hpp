@@ -8916,9 +8916,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
-                CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
+  template class CrsMatrix< SCALAR , LO , GO , NODE >;
 
 #define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
   \

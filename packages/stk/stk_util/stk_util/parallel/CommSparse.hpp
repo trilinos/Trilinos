@@ -39,6 +39,7 @@
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, parallel_machine_null
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
+#include <stddef.h>
 #include <cstddef>                             // for size_t
 #include <vector>                              // for vector
 
@@ -54,14 +55,14 @@ namespace stk {
  * Output vectors for send-procs and recv-procs will have
  * length num-send-procs and num-recv-procs respectively.
  */
-#ifndef STK_HIDE_DEPRECATED_CODE // delete coupling version 5 is deprecated
-STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
+// delete coupling version 5 is deprecated
+void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
                      const unsigned * const send_size,
                      unsigned * const recv_size,
                      std::vector<int>& output_send_procs,
                      std::vector<int>& output_recv_procs);
 
-STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
+void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
                                    const std::vector<CommBuffer>& send_bufs ,
                                          std::vector<CommBuffer>& recv_bufs,
                                    std::vector<int>& send_procs,
@@ -72,18 +73,17 @@ STK_DEPRECATED void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
  * set recv sizes (recv_size array has length number-of-MPI-processor-ranks).
  */
 
-STK_DEPRECATED void comm_recv_msg_sizes(ParallelMachine comm ,
+void comm_recv_msg_sizes(ParallelMachine comm ,
                      const unsigned * const send_size ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      unsigned * const recv_size);
 
-STK_DEPRECATED void comm_recv_msg_sizes(ParallelMachine comm ,
+void comm_recv_msg_sizes(ParallelMachine comm ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      const std::vector<CommBuffer>& send_bufs,
                      std::vector<CommBuffer>& recv_bufs);
-#endif
 
 class CommSparse {
 public:
@@ -249,8 +249,8 @@ private:
   std::vector<unsigned char> m_null_comm_storage;
 };
 
-template<typename COMM, typename PACK_ALGORITHM>
-bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
+template<typename PACK_ALGORITHM>
+bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorithm)
 {
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
@@ -277,8 +277,8 @@ bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
   }
 }
 
-template<typename COMM, typename UNPACK_ALGORITHM>
-void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
+template<typename UNPACK_ALGORITHM>
+void unpack_communications(stk::CommSparse & comm, const UNPACK_ALGORITHM & algorithm)
 {
     for(int proc_id=0; proc_id<comm.parallel_size(); ++proc_id)
     {

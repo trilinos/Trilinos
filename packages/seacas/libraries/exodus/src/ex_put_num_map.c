@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -92,6 +92,12 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
+  /* If the `map_id` is negative, then that specifies a specific location for that map */
+  bool id_is_index = map_id < 0;
+  if (id_is_index) {
+    map_id = -map_id;
+  }
+
   /* Check for duplicate map id entry */
   status = ex__id_lkup(exoid, map_type, map_id);
   if (status != -EX_LOOKUPFAIL) { /* found the map id */
@@ -127,6 +133,10 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   /*   NOTE: ex__inc_file_item  is used to find the number of maps
        for a specific file and returns that value incremented. */
   cur_num_maps = ex__inc_file_item(exoid, ex__get_counter_list(map_type));
+
+  if (id_is_index) {
+    cur_num_maps = map_id - 1;
+  }
 
   /* write out information to previously defined variable */
 
@@ -164,7 +174,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   }
 
   /* locate variable array in which to store the map */
-  if ((status = nc_inq_varid(exoid, vmap, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, vmap, &varid) != NC_NOERR) {
     int dims[2];
 
     /* determine number of entries */
@@ -196,7 +206,9 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     ex__compress_variable(exoid, varid, 1);
 
     if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) { /* exit define mode */
-      varid = -1;                                               /* force early exit */
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+      ex_err_fn(exoid, __func__, errmsg, status);
+      varid = -1; /* force early exit */
     }
 
     if (varid == -1) { /* we couldn't define variable and have prepared error message. */

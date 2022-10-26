@@ -141,10 +141,13 @@ int SplitCommsImpl::compute_other_root_rank(const std::vector<int>& globalRanks)
   return otherRootRankCandidate;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after November 2022
+STK_DEPRECATED
 bool SplitCommsImpl::is_coupling_version_deprecated() const
 {
   return stk::util::is_local_stk_coupling_deprecated();
 }
+#endif
 
 bool SplitCommsImpl::is_initialized() const
 {

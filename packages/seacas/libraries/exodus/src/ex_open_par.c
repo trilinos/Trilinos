@@ -340,39 +340,48 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
-
-    /* If this is a parallel execution and we are appending, then we
-     * need to set the parallel access method for all transient variables to NC_COLLECTIVE since
-     * they will be being extended.
-     */
-    int ndims;    /* number of dimensions */
-    int nvars;    /* number of variables */
-    int ngatts;   /* number of global attributes */
-    int recdimid; /* id of unlimited dimension */
-
-    int varid;
-
-    /* Determine number of variables on the database... */
-    nc_inq(exoid, &ndims, &nvars, &ngatts, &recdimid);
-
-    for (varid = 0; varid < nvars; varid++) {
-      struct ncvar var;
-      nc_inq_var(exoid, varid, var.name, &var.type, &var.ndims, var.dims, &var.natts);
-
-      if ((strcmp(var.name, VAR_GLO_VAR) == 0) || (strncmp(var.name, "vals_elset_var", 14) == 0) ||
-          (strncmp(var.name, "vals_sset_var", 13) == 0) ||
-          (strncmp(var.name, "vals_fset_var", 13) == 0) ||
-          (strncmp(var.name, "vals_eset_var", 13) == 0) ||
-          (strncmp(var.name, "vals_nset_var", 13) == 0) ||
-          (strncmp(var.name, "vals_nod_var", 12) == 0) ||
-          (strncmp(var.name, "vals_edge_var", 13) == 0) ||
-          (strncmp(var.name, "vals_face_var", 13) == 0) ||
-          (strncmp(var.name, "vals_elem_var", 13) == 0) ||
-          (strcmp(var.name, VAR_WHOLE_TIME) == 0)) {
-        nc_var_par_access(exoid, varid, NC_COLLECTIVE);
-      }
-    }
   } /* End of (mode & EX_WRITE) */
+
+  /* If this is a `pnetcdf` file (non HDF5), then we can't set the
+   * collective vs independent setting on a per-variable basis -- it
+   * is set for the entire file.  Several apps rely on being able to
+   * access some set or other data in an independent mode, so we can't
+   * set any vars to collective or it sets the file to collective and
+   * we potentially hang...
+   */
+  if (!is_pnetcdf) {
+
+  /* If this is a parallel execution and we are appending, then we
+   * need to set the parallel access method for all transient variables to NC_COLLECTIVE since
+   * they will be being extended.
+   */
+  int ndims;    /* number of dimensions */
+  int nvars;    /* number of variables */
+  int ngatts;   /* number of global attributes */
+  int recdimid; /* id of unlimited dimension */
+
+  int varid;
+
+  /* Determine number of variables on the database... */
+  nc_inq(exoid, &ndims, &nvars, &ngatts, &recdimid);
+
+  for (varid = 0; varid < nvars; varid++) {
+    struct ncvar var;
+    nc_inq_var(exoid, varid, var.name, &var.type, &var.ndims, var.dims, &var.natts);
+    
+    if (((strncmp(var.name, "vals_", 5) == 0) && (strncmp(var.name, "vals_red_", 9) != 0)) ||
+	(strcmp(var.name, VAR_WHOLE_TIME) == 0) ||
+	(strncmp(var.name, "coord", 5) == 0) ||
+	(strcmp(var.name, "connect") == 0) ||
+	(strcmp(var.name, "edgconn") == 0) ||
+	(strcmp(var.name, "ebconn") == 0) ||
+	(strcmp(var.name, "facconn") == 0) ||
+	(strcmp(var.name, "fbconn") == 0) ||
+	(strcmp(var.name, "attrib") == 0)) {
+      nc_var_par_access(exoid, varid, NC_COLLECTIVE);
+    }
+  }
+  }
 
   /* determine version of EXODUS file, and the word size of
    * floating point and integer values stored in the file
