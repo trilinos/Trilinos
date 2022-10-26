@@ -1,6 +1,7 @@
 #ifndef stk_util_parallel_CommManagerData
 #define stk_util_parallel_CommManagerData
 
+#include <stddef.h>
 #include <map>
 #include <vector>
 #include <memory>

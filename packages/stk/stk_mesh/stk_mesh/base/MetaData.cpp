@@ -674,19 +674,14 @@ public:
 
   void verify()
   {
-    const bool isRoot = (m_pRank == 0);
+    const int rootRank = 0;
 
-    CommBroadcast comm(m_parallelMachine, 0);
-
-    if (isRoot) {
+    CommBroadcast comm(m_parallelMachine, rootRank);
+    stk::pack_and_communicate(comm, [&](){
+      if (m_pRank == rootRank) {
         pack(comm.send_buffer());
-    }
-    comm.allocate_buffer();
-
-    if (isRoot) {
-        pack(comm.send_buffer());
-    }
-    comm.communicate();
+      }
+    });
 
     int ok = unpack_verify(comm.recv_buffer());
     stk::all_reduce(m_parallelMachine, ReduceMin<1>(&ok));
