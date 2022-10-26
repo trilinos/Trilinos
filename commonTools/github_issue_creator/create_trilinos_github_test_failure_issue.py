@@ -52,6 +52,7 @@ def main():
 #
 def getTrilinosGithubIssueBodyMarkdown(
     itd,  # issueTrackerData (type IssueTrackerData)
+    uniqueGenConfigBuildNamesList,
   ):
   issueTrackerText = \
 r"""
@@ -77,15 +78,18 @@ As shown in [this query]("""+itd.nonpassingTestsUrl+r""") (click "Shown Matching
 
 """ + CITFCQ.getMarkdownListStr(itd.testnameList, '`') + \
 r"""
-in the builds:
+in the unique GenConfig builds:
 
-""" + CITFCQ.getMarkdownListStr(itd.buildnameList, '`') + \
+""" + CITFCQ.getMarkdownListStr(uniqueGenConfigBuildNamesList, '`') + \
 r"""
 started failing on testing day """+itd.testingDayStartNonpassingDate+r""".
 
-<Add details about what is failing and what the failures look like.\>
+The specific set of CDash builds impacted where:
 
-<If possible, point commits that likely triggered the failure and point to Updates.txt notes file on CDash showing these commits.\>
+""" + CITFCQ.getMarkdownListStr(itd.buildnameList, '`') + \
+r"""
+
+<Add details about what is failing and what the failures look like.  Make sure to include strings that are easy to match with GitHub Issue searches.\>
 
 
 ## Current Status on CDash
@@ -125,7 +129,37 @@ class TrilinosIssueTrackerFormatter:
 
 
   def createFormattedIssueTracker(self, issueTrackerData):
-    return getTrilinosGithubIssueBodyMarkdown(issueTrackerData)
+    uniqueGenConfigBuildNamesList = getUniqueGenConfigBuildNamesList(
+      issueTrackerData.buildnameList)
+    return getTrilinosGithubIssueBodyMarkdown(issueTrackerData,
+      uniqueGenConfigBuildNamesList )
+
+
+def getUniqueGenConfigBuildNamesList(buildnameList):
+  # Get sorted list of GenConfig build names stripping of prefix and suffix
+  allGenConfigBuildNamesList = []
+  for buildname in buildnameList:
+    allGenConfigBuildNamesList.append(stripGentConfigBuildName(buildname))
+  allGenConfigBuildNamesList.sort()
+  # Get unique list of GenConfig build names
+  uniqueGenConfigBuildNamesList = []
+  lastGenconfigBuild = None
+  for genconfigbuild in allGenConfigBuildNamesList:
+    if genconfigbuild != lastGenconfigBuild:
+      uniqueGenConfigBuildNamesList.append(genconfigbuild)
+      lastGenconfigBuild = genconfigbuild
+  #
+  return uniqueGenConfigBuildNamesList
+
+
+def stripGentConfigBuildName(buildname):
+  #print("buildname = '"+buildname+"'")
+  #print("len(buildname) = '"+str(len(buildname))+"'")
+  beginIdx = buildname.find("-test-", 0)+6
+  #print("beginIdx = '"+str(beginIdx)+"'")
+  endIdx = buildname.rfind("-", 0)
+  #print("endIdx = '"+str(endIdx)+"'")
+  return buildname[beginIdx:endIdx]
 
 
 #
