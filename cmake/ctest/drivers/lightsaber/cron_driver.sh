@@ -93,6 +93,7 @@ module unload sems-gcc
 # OneAPI family
 export CTEST_CONFIGURATION="default"
 module purge
+module load sems-cmake/3.21.1
 module load sems-gcc/10.1.0
 module load oneapi
 export I_MPI_CXX=dpcpp
@@ -112,6 +113,7 @@ ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_sycl_cpu_lightsaber.cm
 
 module unload oneapi
 module unload sems-gcc
+module load sems-cmake/3.21.1
 # ===========================================================================
 
 
