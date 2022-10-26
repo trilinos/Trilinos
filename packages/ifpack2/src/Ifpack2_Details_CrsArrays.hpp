@@ -74,7 +74,7 @@ struct CrsArrayReader
   typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
   typedef Kokkos::View<ImplScalar*, execution_space> ScalarArray;
-  typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> OrdinalArrayHost;
+  typedef typename OrdinalArray::HostMirror  OrdinalArrayHost;
   //! The execution space to used to run the row access functors.
   typedef Kokkos::Serial functor_space;
   typedef Kokkos::RangePolicy<functor_space, int> RangePol;
@@ -190,14 +190,8 @@ struct CrsArrayReader
     Kokkos::deep_copy(rowptrs_, rowptrs);
     Kokkos::deep_copy(colinds_, colinds);
     // deep-copy to host
-    rowptrsHost_ = OrdinalArrayHost("RowPtrs", numRows + 1);
-#if 0
-    Kokkos::deep_copy(rowptrsHost_, rowptrs);
-#else
-    auto rowptrsMirror = Kokkos::create_mirror(rowptrs);
-    Kokkos::deep_copy(rowptrsMirror, rowptrs);
-    Kokkos::deep_copy(rowptrsHost_, rowptrsMirror);
-#endif
+    rowptrsHost_ = Kokkos::create_mirror(rowptrs_);
+    Kokkos::deep_copy(rowptrsHost_, rowptrs_);
   }
 };
 
