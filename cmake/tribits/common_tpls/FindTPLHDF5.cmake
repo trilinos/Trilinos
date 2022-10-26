@@ -2,7 +2,7 @@
 # See associated tribits/Copyright.txt file for copyright and license! #
 ########################################################################
 
-set(INTERNAL_IS_MODERN FALSE)
+set(HDF5_INTERNAL_IS_MODERN FALSE)
 
 if (Netcdf_ALLOW_MODERN)
 
@@ -18,12 +18,12 @@ if (Netcdf_ALLOW_MODERN)
       HDF5
       INNER_FIND_PACKAGE_NAME  HDF5
       IMPORTED_TARGETS_FOR_ALL_LIBS   ${HDF5_EXPORT_LIBRARIES})
-    set(INTERNAL_IS_MODERN TRUE)
+    set(HDF5_INTERNAL_IS_MODERN TRUE)
   endif()
 
 endif()
 
-set(HDF5_FOUND_MODERN_CONFIG_FILE ${INTERNAL_IS_MODERN} CACHE BOOL "True if HDF5 was found by the modern method" FORCE)
+set(HDF5_FOUND_MODERN_CONFIG_FILE ${HDF5_INTERNAL_IS_MODERN} CACHE INTERNAL "True if HDF5 was found by the modern method")
 
 if (NOT TARGET HDF5::all_libs)
 
