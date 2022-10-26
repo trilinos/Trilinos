@@ -3909,7 +3909,6 @@ public:
 
     
 
-    //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
     void
     applyNonTransposeOverlapped (const MV& X_in,
                        MV& Y_in,
@@ -3920,6 +3919,13 @@ public:
     void
     applyNonTranspose (const MV& X_in,
                        MV& Y_in,
+                       Scalar alpha,
+                       Scalar beta) const;
+
+    void
+    applyTransposeOverlapped (const MV& X_in,
+                       MV& Y_in,
+                       const Teuchos::ETransp &mode,
                        Scalar alpha,
                        Scalar beta) const;
 

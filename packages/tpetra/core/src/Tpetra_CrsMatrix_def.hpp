@@ -4743,6 +4743,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<MV> X_colMapNonConst;
 
     if (!mustImport) {
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: X");
       if (! X_in.isConstantStride ()) {
         // use a constant-stride version of X_in
         // avoid reproducing if possible
@@ -4755,6 +4756,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       xyDefinitelyAlias = X_colMap.getRawPtr () == &Y_in;
     } else { // need to Import source (multi)vector
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: X");
       X_colMapNonConst = getColumnMapMultiVector (X_in);
       xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
     }
@@ -4767,6 +4769,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
     if (!mustExport) {
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Y");
       if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
         Y_rowMap = getRowMapMultiVector (Y_in, true);
 
@@ -4778,8 +4781,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Incoming tpetra operations (we may depend on!) are in the default execution space instance
-    // TODO: profiling region
-    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
+    // Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace); // isLocallyFitted syncs defaultSpace
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
@@ -4797,7 +4799,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Import from the domain Map MV to the column Map MV.
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTransposeOverlapped: beginImport/endImport");
       // make sure other incoming tpetra operations are done before import is started
-      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
+      // Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace); // isLocallyFitted syncs defaultSpace
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
@@ -4899,23 +4901,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       overlap = false;
     }
 
-    // X_in is on the domain map. If the local part of the domain map does not match
-    // the column map, the ith entry of X_in does not correspond to column i of the matrix
-    // in local indices.
-    // on-rank part of SpMV would be wrong.
-    if (overlap) {
-      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: colmap->isLocallyFitted(dommap)");
-      if (!getColMap()->isLocallyFitted(*getDomainMap())) {
-        overlap = false;
-      }
-    }
-
-    if (overlap) {
-      applyNonTransposeOverlapped(X_in, Y_in, alpha, beta);
-      return;
-    }
-
- 
     // It's possible that X is a view of Y or vice versa.  We don't
     // allow this (apply() requires that X and Y not alias one
     // another), but it's helpful to detect and work around this case.
@@ -4926,6 +4911,37 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
+
+    // X_in is on the domain map. If the local part of the domain map does not match
+    // the column map, the ith entry of X_in does not correspond to column i of the matrix
+    // in local indices.
+    // on-rank part of SpMV would be wrong.
+    if (overlap) {
+#if 0 
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: colmap->isLocallyFitted(dommap)");
+      if (!getColMap()->isLocallyFitted(*getDomainMap())) {
+        overlap = false;
+      }
+#else
+      // importer's source map is domain map and target is column map
+      // this just checks if the number of same IDs in the column and domain map
+      // is the same of the smaller of the two maps
+      //TODO: we actually want to know if the local part of the domain map is not
+      // a subset of the colum map, are these the same things?
+      ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: importer->isLocallyFitted");
+      if (!importer.is_null() && !importer->isLocallyFitted()) {
+        overlap = false;
+      }
+#endif
+    }
+
+    if (overlap) {
+      applyNonTransposeOverlapped(X_in, Y_in, alpha, beta);
+      return;
+    }
+
+ 
+
 
     // If beta == 0, then the output MV will be overwritten; none of
     // its entries should be read.  (Sparse BLAS semantics say that we
@@ -5054,7 +5070,140 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
   }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  applyTransposeOverlapped (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & X_in,
+                     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Y_in,
+                     const Teuchos::ETransp &mode,
+                     Scalar alpha,
+                     Scalar beta) const {
+#if 0
+    using Tpetra::Details::ProfilingRegion;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    using Teuchos::rcpFromRef;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
+    typedef typename Node::execution_space exec_space;
 
+    exec_space defaultSpace;
+    Teuchos::RCP<const exec_space> onRankSpace = 
+      space_instance<exec_space, Tpetra::Details::Spaces::Priority::low>();
+    Teuchos::RCP<const exec_space> offRankSpace = 
+      space_instance<exec_space, Tpetra::Details::Spaces::Priority::high>();
+
+    RCP<const import_type> importer = this->getGraph ()->getImporter ();
+    RCP<const export_type> exporter = this->getGraph ()->getExporter ();
+    const bool mustImport = !importer.is_null();
+    const bool mustExport = !exporter.is_null();
+
+    // If beta == 0, then the output MV will be overwritten; none of
+    // its entries should be read.  (Sparse BLAS semantics say that we
+    // must ignore any Inf or NaN entries in Y_in, if beta is zero.)
+    // This matters if we need to do an Export operation; see below.
+    const bool yIsOverwritten = (beta == ZERO);
+
+    // We treat the case of a replicated MV output specially.
+    // An all-reduce at the end will sum results, so only contribute
+    // replicated y input entries from one rank
+    const bool yIsReplicated =
+      (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
+    if (yIsReplicated && this->getComm ()->getRank () > 0) {
+      beta = ZERO;
+    }
+
+    // access X indirectly, in case we need to create temporary storage
+    RCP<const MV> X;
+
+    // The kernels do not allow input or output with nonconstant stride.
+    if (! X_in.isConstantStride () && ! mustImport) {
+      X = rcp (new MV (X_in, Teuchos::Copy)); // Constant-stride copy of X_in
+    } else {
+      X = rcpFromRef (X_in); // Reference to X_in
+    }
+
+    // Set up temporary multivectors for Import and/or Export.
+    if (mustImport) {
+      if (importMV_ != Teuchos::null && importMV_->getNumVectors() != numVectors) {
+        importMV_ = null;
+      }
+      if (importMV_ == null) {
+        importMV_ = rcp (new MV (this->getColMap (), numVectors));
+      }
+    }
+    if (mustExport) {
+      if (exportMV_ != Teuchos::null && exportMV_->getNumVectors() != numVectors) {
+        exportMV_ = null;
+      }
+      if (exportMV_ == null) {
+        exportMV_ = rcp (new MV (this->getRowMap (), numVectors));
+      }
+    }
+
+    if (mustImport) {
+      this->localApplyOnRank(*onRankSpace, X_in, *importMV_, mode, alpha, ZERO);
+    }
+
+    // If we have a non-trivial exporter, we must import elements that
+    // are permuted or are on other processors.
+    if (mustExport) {
+      ProfilingRegion regionImport ("Tpetra::CrsMatrix::apply (transpose): Import");
+      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
+      exportMV_->beginImport (X_in, *exporter, INSERT, false/*restrictedMode*/, *offRankSpace);
+      exportMV_->endImport (X_in, *exporter, INSERT, false/*restrictedMode*/, *offRankSpace);
+      X = exportMV_; // multiply out of exportMV_
+    }
+
+    // If we have a non-trivial importer, we must export elements that
+    // are permuted or belong to other processors.  We will compute
+    // solution into the to-be-exported MV; get a view.
+    if (mustImport) {
+      ProfilingRegion regionExport ("Tpetra::CrsMatrix::apply (transpose): Export");
+
+      // importMV_->putScalar (ZERO);
+      // Do the local computation.
+      Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
+      Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
+      this->localApplyOffRank (defaultSpace, *X, *importMV_, mode, alpha, ZERO);
+
+      if (Y_is_overwritten) {
+        Y_in.putScalar (ZERO);
+      } else {
+        Y_in.scale (beta);
+      }
+      Y_in.doExport (*importMV_, *importer, ADD_ASSIGN);
+    }
+    // otherwise, multiply into Y
+    else {
+      // can't multiply in-situ; can't multiply into non-strided multivector
+      //
+      // FIXME (mfh 05 Jun 2014) This test for aliasing only tests if
+      // the user passed in the same MultiVector for both X and Y.  It
+      // won't detect whether one MultiVector views the other.  We
+      // should also check the MultiVectors' raw data pointers.
+      Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
+      Details::Spaces::exec_space_wait(*offRankSpace, defaultSpace); // wait for import
+      if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
+        // Make a deep copy of Y_in, into which to write the multiply result.
+        MV Y (Y_in, Teuchos::Copy);
+        this->localApplyOffRank (defaultSpace, *X, Y, mode, alpha, beta);
+        Tpetra::deep_copy (Y_in, Y);
+      } else {
+        this->localApplyOffRank (defaultSpace, *X, Y_in, mode, alpha, beta);
+      }
+    }
+
+    // If the range Map is a locally replicated map, sum the
+    // contributions from each process.  (That's why we set beta=0
+    // above for all processes but Proc 0.)
+    if (Y_is_replicated) {
+      ProfilingRegion regionReduce ("Tpetra::CrsMatrix::apply (transpose): Reduce Y");
+      Y_in.reduce ();
+    }
+  #endif
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
