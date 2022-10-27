@@ -43,6 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
-// MacOs 'ar' utility doesn't work on empty library.
+// If no adapters are enabled, this file will be archived so that the library
+// is not empty.
 
-void libmuelu_adapters() {}
+void muelu_trivial_adapter() {}
