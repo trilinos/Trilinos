@@ -83,13 +83,15 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(applyTime,"OverlappingOperator::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::OverlappingOperator: OverlappingOperator has to be computed before calling apply()");
-        if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        if (XTmp_.is_null() || XTmp_->getNumVectors() != x.getNumVectors()) {
+            XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+        }
         *XTmp_ = x;
         if (!usePreconditionerOnly && mode == NO_TRANS) {
             this->K_->apply(x,*XTmp_,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
         }
         // AH 11/28/2018: For Epetra, XOverlap_ will only have a view to the values of XOverlapTmp_. Therefore, xOverlapTmp should not be deleted before XOverlap_ is used.
-        if (YOverlap_.is_null()) {
+        if (YOverlap_.is_null() || YOverlap_->getNumVectors() != x.getNumVectors()) {
             YOverlap_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
         } else {
             YOverlap_->replaceMap(OverlappingMatrix_->getDomainMap());
@@ -97,7 +99,9 @@ namespace FROSch {
         // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
         if (XTmp_->getMap()->lib() == UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-            if (XOverlapTmp_.is_null()) XOverlapTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+            if (XOverlapTmp_.is_null() || XOverlap_->getNumVectors() != x.getNumVectors()) {
+                XOverlapTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+            }
             XOverlapTmp_->doImport(*XTmp_,*Scatter_,INSERT);
             const RCP<const EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = rcp_dynamic_cast<const EpetraMultiVectorT<GO,NO> >(XOverlapTmp_);
             RCP<Epetra_MultiVector> epetraMultiVectorXOverlapTmp = xEpetraMultiVectorXOverlapTmp->getEpetra_MultiVector();

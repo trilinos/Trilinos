@@ -91,7 +91,9 @@ namespace FROSch {
         FROSCH_ASSERT(xTpetraMultiVectorX,"FROSch::Amesos2SolverTpetra: dynamic_cast failed.");
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
 
-        if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),x.getNumVectors());
+        if (Y_.is_null() || Y_->getNumVectors() != x.getNumVectors()) {
+            Y_ = XMultiVectorFactory::Build(y.getMap(),x.getNumVectors());
+        }
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorY = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(Y_.get());
         FROSCH_ASSERT(xTpetraMultiVectorY,"FROSch::Amesos2SolverTpetra: dynamic_cast failed.");
         TMultiVectorPtr tpetraMultiVectorY = xTpetraMultiVectorY->getTpetra_MultiVector();

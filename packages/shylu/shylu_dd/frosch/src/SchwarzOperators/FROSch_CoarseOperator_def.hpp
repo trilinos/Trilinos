@@ -133,14 +133,21 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(applyTime,"CoarseOperator::apply");
         static int i = 0;
         if (!Phi_.is_null() && this->IsComputed_) {
-            if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+            if (XTmp_.is_null() || XTmp_->getNumVectors() != x.getNumVectors()) {
+                XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
+            }
             *XTmp_ = x;
             if (!usePreconditionerOnly && mode == NO_TRANS) {
                 this->K_->apply(x,*XTmp_,mode,ScalarTraits<SC>::one(),ScalarTraits<SC>::zero());
             }
-            if (XCoarseSolve_.is_null()) XCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
-            else XCoarseSolve_->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]); // The map is replaced in applyCoarseSolve(). If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
-            if (YCoarseSolve_.is_null()) YCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],y.getNumVectors());
+            if (XCoarseSolve_.is_null() || XCoarseSolve_->getNumVectors() != x.getNumVectors()) {
+                XCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
+            } else {
+                XCoarseSolve_->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]); // The map is replaced in applyCoarseSolve(). If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
+            }
+            if (YCoarseSolve_.is_null() || YCoarseSolve_->getNumVectors() != y.getNumVectors()) {
+                YCoarseSolve_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],y.getNumVectors());
+            }
             applyPhiT(*XTmp_,*XCoarseSolve_);
             applyCoarseSolve(*XCoarseSolve_,*YCoarseSolve_,mode);
             applyPhi(*YCoarseSolve_,*XTmp_);
@@ -192,12 +199,18 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START_LEVELID(applyCoarseSolveTime,"CoarseOperator::applyCoarseSolve");
         if (OnCoarseSolveComm_) {
             x.replaceMap(CoarseSolveMap_);
-            if (YTmp_.is_null()) YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
-            else YTmp_->replaceMap(CoarseSolveMap_); // The map is replaced later in this function. If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
+            if (YTmp_.is_null() || YTmp_->getNumVectors() != x.getNumVectors()) {
+                YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
+            } else {
+                YTmp_->replaceMap(CoarseSolveMap_); // The map is replaced later in this function. If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
+            }
             CoarseSolver_->apply(x,*YTmp_,mode);
         } else {
-            if (YTmp_.is_null()) YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
-            else YTmp_->replaceMap(CoarseSolveMap_); // The map is replaced later in this function. If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
+            if (YTmp_.is_null() || YTmp_->getNumVectors() != x.getNumVectors()) {
+                YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
+            } else {
+                YTmp_->replaceMap(CoarseSolveMap_); // The map is replaced later in this function. If we do not build it from scratch, we should at least replace the map here. This may be important since the maps live on different communicators.
+            }
         }
         YTmp_->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]);
         y = *YTmp_;
