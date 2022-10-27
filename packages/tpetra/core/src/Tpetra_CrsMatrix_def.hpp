@@ -4781,7 +4781,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Incoming tpetra operations (we may depend on!) are in the default execution space instance
-    // Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace); // isLocallyFitted syncs defaultSpace
+    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace); // isLocallyFitted syncs defaultSpace
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
@@ -4799,7 +4799,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Import from the domain Map MV to the column Map MV.
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTransposeOverlapped: beginImport/endImport");
       // make sure other incoming tpetra operations are done before import is started
-      // Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace); // isLocallyFitted syncs defaultSpace
+      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace); // isLocallyFitted syncs defaultSpace
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
