@@ -204,6 +204,7 @@ namespace FROSch {
         bool coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
         XMatrixPtr coarseSubdomainMatrix_;
         XMatrixPtr coarseLocalSubdomainMatrix_;
+        XImportPtr coarseScatter_;
 
         // Temp Vectors for apply()
         mutable XMultiVectorPtr XTmp_;

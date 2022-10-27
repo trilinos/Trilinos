@@ -72,6 +72,12 @@ namespace FROSch {
     void ExtractLocalSubdomainMatrix_Compute(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > repeatedMatrix);
+
+    template <class SC,class LO,class GO,class NO>
+    void ExtractLocalSubdomainMatrix_Compute(RCP<      Import<LO,GO,NO> >    scatter,
+                                             RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > repeatedMatrix);
     // ----------------------------------------------------------- //
 
     template <class SC,class LO,class GO,class NO>
