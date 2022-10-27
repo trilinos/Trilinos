@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 ## Bug Report
-@trilinos/\<PackageName\>
+@trilinos/package_name
 
 ### Description
 What went wrong?  What should have happened?  Do you have an idea what might
