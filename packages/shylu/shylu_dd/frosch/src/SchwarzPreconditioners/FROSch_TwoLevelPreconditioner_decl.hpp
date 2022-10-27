@@ -83,6 +83,7 @@ namespace FROSch {
         using GOVecPtr                          = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr;
 
     public:
+        using OneLevelPreconditioner<SC,LO,GO,NO>::initialize;
 
         TwoLevelPreconditioner(ConstXMatrixPtr k,
                                ParameterListPtr parameterList);

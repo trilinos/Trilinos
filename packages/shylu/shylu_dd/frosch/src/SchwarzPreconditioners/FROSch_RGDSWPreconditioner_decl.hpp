@@ -81,6 +81,7 @@ namespace FROSch {
         using GOVecPtr                  = typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr;
 
     public:
+        using AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize;
 
         RGDSWPreconditioner(ConstXMatrixPtr k,
                             ParameterListPtr parameterList);
