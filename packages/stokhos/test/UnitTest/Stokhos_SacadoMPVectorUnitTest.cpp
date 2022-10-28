@@ -48,7 +48,6 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_Complex.hpp"
 
 //

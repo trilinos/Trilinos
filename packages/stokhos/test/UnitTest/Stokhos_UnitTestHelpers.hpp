@@ -42,7 +42,6 @@
 #ifndef STOKHOS_UNIT_TEST_HELPERS_HPP
 #define STOKHOS_UNIT_TEST_HELPERS_HPP
 
-#include "Kokkos_ArithTraits.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
@@ -131,7 +130,6 @@ namespace Stokhos {
     using value_t_1 = typename VectorType1::value_type;
     using value_t_2 = typename VectorType2::value_type;
     static_assert(std::is_same<value_t_1,value_t_2>::value,"Inconsistent types.");
-    using KAT = typename Kokkos::ArithTraits<value_t_1>;
 
     bool success = true;
 
@@ -148,10 +146,10 @@ namespace Stokhos {
 
     // Compare elements
     for( int i = 0; i < n; ++i ) {
-      ValueType err = KAT::abs(a1.coeff(i) - a2.coeff(i));
+      ValueType err = abs(a1.coeff(i) - a2.coeff(i));
       ValueType tol =
-        abs_tol + rel_tol*std::max(KAT::abs(a1.fastAccessCoeff(i)),
-                                   KAT::abs(a2.fastAccessCoeff(i)));
+        abs_tol + rel_tol*std::max(abs(a1.fastAccessCoeff(i)),
+                                   abs(a2.fastAccessCoeff(i)));
       if (err  > tol) {
         out
           <<"\nError, relErr("<<a1_name<<"["<<i<<"],"
