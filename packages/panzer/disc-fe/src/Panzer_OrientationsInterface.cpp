@@ -98,7 +98,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
     topology = elementBlockTopologies.at(0);
   }
-  const int num_nodes_per_cell = topology.getVertexCount();
+  const int num_nodes_per_cell = topology.getNodeCount();
 
   // Create Tpetra multivectors for storing global node ids
   auto owned_nodes_vector = Teuchos::rcp(new MVector(owned_cell_map,num_nodes_per_cell));
