@@ -99,7 +99,7 @@ namespace panzer {
 
     /** \brief Evaluate basis values.
 
-        @param vertex_coordinates [in] Cell vertex coordinates, not
+        @param node_coordinates [in] Cell node coordinates, not
         basis coordinates.
         @param num_cells [in] (optional) number of cells in the
         workset. This can be less than the workset size. If set to
@@ -108,7 +108,7 @@ namespace panzer {
         @param face_connectivity [in] (optional) connectivity used to
         enforce quadrature alignment for surface integration.
      */
-    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
                         const int num_cells = -1,
                         const Teuchos::RCP<const SubcellConnectivity> & face_connectivity = Teuchos::null,
                         const int num_virtual_cells = -1);
@@ -127,7 +127,7 @@ namespace panzer {
         zero, extent(0) of the evaluated array is used which equates
         to the workset size.
     */
-    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
                         const PHX::MDField<Scalar,Cell,IP,Dim> & other_ip_coordinates,
                         const int num_cells = -1);
 
