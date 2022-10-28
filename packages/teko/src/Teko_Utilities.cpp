@@ -2044,9 +2044,11 @@ const LinearOp explicitTranspose(const LinearOp & op)
      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
 
      Tpetra::RowMatrixTransposer<ST,LO,GO,NT> transposer(tCrsOp);
-     RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > transOp = transposer.createTranspose();
+     RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > transOp = transposer.createTranspose();
 
-     return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getDomainMap()),transOp);
+     return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getRangeMap()),
+                                               Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getDomainMap()),
+                                               transOp);
 
    } else {
 

@@ -17,7 +17,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
-  solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml solverGMRES.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
   solverMueLuMaxwellHO.xml solverMueLuMaxwellHOCuda.xml
@@ -56,46 +55,6 @@ INSTALL(FILES ${${PACKAGE_NAME}_InputFiles}
        )
 INSTALL(TARGETS "${PACKAGE_NAME}_BlockPrec"
         COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PACKAGE_NAME}_INSTALL_PREFIX})
-
-#################################################
-# Augmentation solver
-
-TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "MiniEM-BlockPrec_Augmentation"
-   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Tpetra"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
-TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "MiniEM-BlockPrec_Augmentation"
-   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Tpetra"
-   COMM mpi
-   NUM_MPI_PROCS 4
-   )
-
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
- # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "MiniEM-BlockPrec_Augmentation_Epetra"
-   ARGS "--solver=Augmentation --numTimeSteps=1 --linAlgebra=Epetra"
-   COMM mpi
-   NUM_MPI_PROCS 4
-   )
-
-ENDIF()
 
 
 #################################################
@@ -214,7 +173,7 @@ ENDIF()
 #              The specialization of 2nd order basis functions in
 #              Intrepid2 is missing some functionality and will be
 #              removed. These tests will work once 2nd order has been
-#              replace by p=th order with p=2.
+#              replace by p-th order with p=2.
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_MueLu_highOrder"
@@ -222,6 +181,9 @@ TRIBITS_ADD_TEST(
    # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
    "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3"
    # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule=\"2,1\""
+   # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2 --matrixFree"
+   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --matrixFree"
+   # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule=\"2,1\" --matrixFree"
    COMM serial mpi
    NUM_MPI_PROCS 4
    )

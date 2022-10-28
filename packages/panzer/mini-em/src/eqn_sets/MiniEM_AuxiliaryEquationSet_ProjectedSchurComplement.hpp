@@ -1,5 +1,5 @@
-#ifndef _MiniEM_AuxiliaryEquationSet_CurlCurl_hpp_
-#define _MiniEM_AuxiliaryEquationSet_CurlCurl_hpp_
+#ifndef _MiniEM_AuxiliaryEquationSet_ProjectedSchurComplement_hpp_
+#define _MiniEM_AuxiliaryEquationSet_ProjectedSchurComplement_hpp_
 
 #include <vector>
 #include <string>
@@ -12,11 +12,11 @@
 namespace mini_em {
 
   template <typename EvalT>
-  class AuxiliaryEquationSet_CurlCurl : public panzer::EquationSet_DefaultImpl<EvalT> {
+  class AuxiliaryEquationSet_ProjectedSchurComplement : public panzer::EquationSet_DefaultImpl<EvalT> {
 
   public:
 
-    AuxiliaryEquationSet_CurlCurl(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
+    AuxiliaryEquationSet_ProjectedSchurComplement(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
                              const Teuchos::RCP<Teuchos::ParameterList>& params,
 			     const int& default_integration_order,
 			     const panzer::CellData& cell_data,
@@ -34,14 +34,13 @@ namespace mini_em {
 
   protected:
     std::string dof_name;
-    double multiplier;
-    Teuchos::RCP<const std::vector<std::string> > fieldMultipliers;
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> m_gedc;
     Teuchos::RCP<std::vector<std::string> > m_dof_names;
+    std::string permittivity_, conductivity_, inversePermeability_;
   };
 
 template < >
-void AuxiliaryEquationSet_CurlCurl<panzer::Traits::Jacobian>::
+void AuxiliaryEquationSet_ProjectedSchurComplement<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,

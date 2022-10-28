@@ -1,5 +1,5 @@
-#ifndef _MiniEM_AuxiliaryEquationSet_MassMatrix_hpp_
-#define _MiniEM_AuxiliaryEquationSet_MassMatrix_hpp_
+#ifndef _MiniEM_AuxiliaryEquationSet_SchurComplement_hpp_
+#define _MiniEM_AuxiliaryEquationSet_SchurComplement_hpp_
 
 #include <vector>
 #include <string>
@@ -12,17 +12,17 @@
 namespace mini_em {
 
   template <typename EvalT>
-  class AuxiliaryEquationSet_MassMatrix : public panzer::EquationSet_DefaultImpl<EvalT> {
+  class AuxiliaryEquationSet_SchurComplement : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-  public:    
+  public:
 
-    AuxiliaryEquationSet_MassMatrix(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
+    AuxiliaryEquationSet_SchurComplement(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
                              const Teuchos::RCP<Teuchos::ParameterList>& params,
 			     const int& default_integration_order,
 			     const panzer::CellData& cell_data,
 		             const Teuchos::RCP<panzer::GlobalData>& global_data,
 		             const bool build_transient_support);
-    
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const panzer::FieldLibrary& /* field_library */,
                                                const Teuchos::ParameterList& /* user_data */) const;
@@ -34,15 +34,13 @@ namespace mini_em {
 
   protected:
     std::string dof_name;
-    double multiplier;
-    Teuchos::RCP<const std::vector<std::string> > fieldMultipliers;
-    std::string opLabel;
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> m_gedc;
     Teuchos::RCP<std::vector<std::string> > m_dof_names;
+    std::string permittivity_, conductivity_, inversePermeability_;
   };
 
 template < >
-void AuxiliaryEquationSet_MassMatrix<panzer::Traits::Jacobian>::
+void AuxiliaryEquationSet_SchurComplement<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,

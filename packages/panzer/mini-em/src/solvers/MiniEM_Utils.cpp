@@ -1,4 +1,9 @@
+#ifndef _MiniEM_Utils_cpp_
+#define _MiniEM_Utils_cpp_
+
 #include "MiniEM_Utils.hpp"
+#include "Thyra_DiagonalLinearOpBase.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
 
 namespace mini_em {
 
@@ -11,12 +16,23 @@ namespace mini_em {
     const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Teuchos::rcpFromRef(op));
     if(tOp != Teuchos::null) {
       *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
-      const RCP<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >(tOp->getConstTpetraOperator(),true);
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("rowmap_"+s).c_str(),*(crsOp->getRowMap()));
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("colmap_"+s).c_str(),*(crsOp->getColMap()));
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("domainmap_"+s).c_str(),*(crsOp->getDomainMap()));
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("rangemap_"+s).c_str(),*(crsOp->getRangeMap()));
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeSparseFile(s.c_str(),crsOp);
+      const RCP<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >(tOp->getConstTpetraOperator());
+      if (crsOp != Teuchos::null) {
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("rowmap_"+s).c_str(),*(crsOp->getRowMap()));
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("colmap_"+s).c_str(),*(crsOp->getColMap()));
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("domainmap_"+s).c_str(),*(crsOp->getDomainMap()));
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeMapFile(("rangemap_"+s).c_str(),*(crsOp->getRangeMap()));
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeSparseFile(s.c_str(),crsOp);
+      } else {
+        auto tO = tOp->getConstTpetraOperator();
+        if (tO->hasDiagonal()) {
+          typedef Tpetra::Vector<double,int,panzer::GlobalOrdinal,NT> tV;
+          RCP<tV> diag = rcp(new tV(tO->getRangeMap()));
+          tO->getLocalDiagCopy(*diag);
+          Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::GlobalOrdinal,NT> >::writeDenseFile(("diag_"+s).c_str(),*diag);
+        }
+        *Teko::getOutputStream() << "Cannot dump operator \'" << s << "\'" << std::endl;
+      }
     } else if (eOp != Teuchos::null) {
       *Teko::getOutputStream() << "Dumping matrix \'" << s << "\'" << std::endl;
       const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
@@ -49,6 +65,12 @@ namespace mini_em {
       } else
         TEUCHOS_ASSERT(false);
     }
+  }
+
+  void describeAndWriteMatrix(const std::string & s, const Thyra::LinearOpBase<double> & op, Teuchos::RCP<Teuchos::FancyOStream> out, const bool doWrite) {
+    describeMatrix(s, op, out);
+    if (doWrite)
+      writeOut(s+".mm", op);
   }
 
 
@@ -161,4 +183,35 @@ namespace mini_em {
     } else
       TEUCHOS_ASSERT(false);
   }
+
+  bool isMatrixFreeOperator(const Teko::LinearOp& op) {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Node = panzer::TpetraNodeType;
+
+    const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,Node> >(op);
+    if(tOp != Teuchos::null) {
+      using Scalar = double;
+      using LocalOrdinal = int;
+      using GlobalOrdinal = panzer::GlobalOrdinal;
+      RCP<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp2 = Teuchos::rcp_const_cast<Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(tOp);
+      RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp2->getTpetraOperator());
+      return crsOp.is_null();
+    } else
+      return false;
+  }
+
+  Teko::LinearOp getLumpedInverseDiagonal(const Teko::LinearOp& op) {
+    using Teuchos::RCP;
+    using Scalar = double;
+    RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(op->domain());
+    RCP<Thyra::VectorBase<Scalar> > diagonal = Thyra::createMember(op->range());
+    Thyra::assign(ones.ptr(),1.0);
+    // compute lumped diagonal
+    Thyra::apply(*op,Thyra::NOTRANS,*ones,diagonal.ptr());
+    Thyra::reciprocal(*diagonal,diagonal.ptr());
+    return Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<Scalar>(diagonal));
+  }
 }
+
+#endif
