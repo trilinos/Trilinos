@@ -229,7 +229,7 @@ public:
            will be destructed when all strong references to it are gone, but we can still
            refer to it as long as it lives to prevent recreating
         */
-        if (!instances[p][i] || !instances[p][i].is_valid_ptr()) {
+        if (!instances[p][i].is_valid_ptr() || !instances[p][i]) {
             rcp_type r = Teuchos::RCP<const execution_space>(
                 new ExecSpace(make_instance<ExecSpace, priority>())
             );
