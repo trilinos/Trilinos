@@ -151,17 +151,17 @@ int main(int argc, char* argv[])
 
     if(verbose) *out << "\nCreating a Stratimikos::DefaultLinearSolverBuilder object ...\n";
 
-    RCP<Thyra::LinearSolverBuilderBase<double> >
-      linearSolverBuilder = rcp(new Stratimikos::DefaultLinearSolverBuilder);
+    // This is the Stratimikos main class (= factory of solver factory).
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
 
     // Register Belos+Tpetra as preconditioner:
-    Stratimikos::enableBelosPrecTpetra<Tpetra::CrsMatrix<Scalar,LO,GO,NO>>(*linearSolverBuilder);
+    Stratimikos::enableBelosPrecTpetra<Tpetra::CrsMatrix<Scalar,LO,GO,NO>>(linearSolverBuilder);
 
-    linearSolverBuilder->setParameterList(solverBuilderSL);
+    linearSolverBuilder.setParameterList(solverBuilderSL);
 
     if(verbose) *out << "\nCreating the LinearOpWithSolveFactoryBase object lowsFactory ...\n";
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = createLinearSolveStrategy(*linearSolverBuilder);
+      lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     if(verbose) *out << "\nChecking the LOWSB interface ...\n";
     RCP<Thyra::LinearOpWithSolveBase<Scalar> >
