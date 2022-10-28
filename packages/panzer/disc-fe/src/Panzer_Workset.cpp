@@ -264,7 +264,7 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description,
   if(lazy_version){
     iv = Teuchos::rcp(new IntegrationValues2<double>());
 
-    iv->setup(ir,getCellVertices(),numCells());
+    iv->setup(ir,getCellNodes(),numCells());
 
     // Surface integration schemes need to properly "permute" their entries to line up the surface points between cells
     if(description.getType() == panzer::IntegrationDescriptor::SURFACE)
@@ -274,7 +274,7 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description,
 
     iv = Teuchos::rcp(new IntegrationValues2<double>("",true));
     iv->setupArrays(ir);
-    iv->evaluateValues(getCellVertices(), numCells(), face_connectivity_, numVirtualCells());
+    iv->evaluateValues(getCellNodes(), numCells(), face_connectivity_, numVirtualCells());
 
     // This is an advanced feature that requires changes to the workset construction
     // Basically there needs to be a way to grab the side assembly for both "details" belonging to the same workset, which requires a refactor
@@ -389,7 +389,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
                             iv.jac,
                             iv.jac_det,
                             iv.jac_inv,
-                            getCellVertices(),
+                            getCellNodes(),
                             true,
                             numCells());
     } else {
@@ -403,7 +403,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
                             iv.jac_det,
                             iv.jac_inv,
                             iv.weighted_measure,
-                            getCellVertices(),
+                            getCellNodes(),
                             true,
                             numCells());
 
@@ -414,7 +414,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
                             iv.jac_det,
                             iv.jac_inv,
                             iv.weighted_measure,
-                            getCellVertices(),
+                            getCellNodes(),
                             true,
                             numCells());
       }
@@ -457,7 +457,7 @@ getPointValues(const panzer::PointDescriptor & description) const
   // Point values are not necessarily set at the workset level, but can be set by evaluators
   if(description.hasGenerator())
     if(description.getGenerator().hasPoints(*cell_topology_))
-      pv->evaluateValues(getCellVertices(), description.getGenerator().getPoints(*cell_topology_),false, numCells());
+      pv->evaluateValues(getCellNodes(), description.getGenerator().getPoints(*cell_topology_),false, numCells());
 
   point_values_map_[description.getKey()] = pv;
 
@@ -523,7 +523,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
                         numCells());
 
     // TODO: We call this separately due to how BasisValues2 is structured - needs to be streamlined
-    bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
+    bpv->evaluateBasisCoordinates(getCellNodes(),numCells());
 
     applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
 
