@@ -367,7 +367,6 @@ namespace mini_em {
 
         auto owner_d = owner_d_;
 
-        // ToDo: Make this a functor.
         Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop2",
                              range_type(elemIter, std::min(elemIter+numCells,
                                                            elementIds_d.extent(0))),
@@ -573,7 +572,6 @@ namespace mini_em {
         auto owner_d = owner_d_;
 
 
-        // ToDo: Make this a functor
         Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
                              range_type(elemIter, std::min(elemIter+numCells,
                                                            elementIds_d.extent(0))),
