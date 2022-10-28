@@ -246,7 +246,7 @@ public:
     ~InstanceLifetimeManager() {
         for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
             for (const rcp_type &rcp : instances[i]) {
-                if (rcp && rcp.is_valid_ptr() ) {
+                if (rcp.is_valid_ptr() && rcp) {
                     // avoid throwing in dtor
                     std::cerr << __FILE__ << ":" << __LINE__ << " execution space instance survived to ~InstanceLifetimeManager. strong_count() = " << rcp.strong_count() << ". Did a Tpetra object live too long?" << std::endl;
                 }
