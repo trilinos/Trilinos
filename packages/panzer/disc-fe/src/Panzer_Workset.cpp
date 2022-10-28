@@ -373,7 +373,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     biv->setOrientations(workset_orientations, numOwnedCells()+numGhostCells());
     biv->setWeightedMeasure(iv.getWeightedMeasure(false));
-    biv->setCellVertexCoordinates(cell_vertex_coordinates);
+    biv->setCellNodeCoordinates(cell_node_coordinates);
 
   } else {
 
@@ -508,7 +508,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
     buildLocalOrientations(numOwnedCells()+numGhostCells(),getLocalCellIDs(),options_.orientations_, workset_orientations);
 
     bpv->setOrientations(workset_orientations, numOwnedCells()+numGhostCells());
-    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
+    bpv->setCellNodeCoordinates(cell_node_coordinates);
 
   } else {
 
