@@ -59,15 +59,15 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<std::string> element_blocks;
 
   std::vector<std::size_t> local_cell_ids;
-  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
+  Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates;
 
-  getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
+  getIdsAndNodes(mesh, eBlock, local_cell_ids, cell_node_coordinates);
 
   // only build workset if there are elements to worry about
   // this may be processor dependent, so an element block
   // may not have elements and thus no contribution
   // on this processor
-  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_vertex_coordinates);
+  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_node_coordinates);
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  

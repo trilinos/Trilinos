@@ -161,32 +161,32 @@ setup(const panzer::LocalMeshPartition & partition,
     }
   }
 
-  // Allocate and fill the cell vertices
+  // Allocate and fill the cell nodes
   {
     // Double check this
-    TEUCHOS_ASSERT(partition.cell_vertices.Rank == 3);
+    TEUCHOS_ASSERT(partition.cell_nodes.Rank == 3);
 
-    // Grab the size of the cell vertices array
-    const int num_partition_cells = partition.cell_vertices.extent(0);
-    const int num_vertices_per_cell = partition.cell_vertices.extent(1);
-    const int num_dims_per_vertex = partition.cell_vertices.extent(2);
+    // Grab the size of the cell node array
+    const int num_partition_cells = partition.cell_nodes.extent(0);
+    const int num_nodes_per_cell = partition.cell_nodes.extent(1);
+    const int num_dims_per_node = partition.cell_nodes.extent(2);
 
     // Make sure there isn't some strange problem going on
     TEUCHOS_ASSERT(num_partition_cells == num_cells);
-    TEUCHOS_ASSERT(num_vertices_per_cell > 0);
-    TEUCHOS_ASSERT(num_dims_per_vertex > 0);
+    TEUCHOS_ASSERT(num_nodes_per_cell > 0);
+    TEUCHOS_ASSERT(num_dims_per_node > 0);
 
-    // Allocate the worksets copy of the cell vertices
+    // Allocate the worksets copy of the cell nodes 
     MDFieldArrayFactory af("",true);
-    cell_vertex_coordinates = af.buildStaticArray<double, Cell, NODE, Dim>("cell vertices", num_partition_cells, num_vertices_per_cell, num_dims_per_vertex);
+    cell_node_coordinates = af.buildStaticArray<double, Cell, NODE, Dim>("cell nodes", num_partition_cells, num_nodes_per_cell, num_dims_per_node);
 
-    // Copy vertices over
-    const auto partition_vertices = partition.cell_vertices;
-    auto cvc = cell_vertex_coordinates.get_view();
+    // Copy nodes over
+    const auto partition_nodes = partition.cell_nodes;
+    auto cnc = cell_node_coordinates.get_view();
     Kokkos::parallel_for(num_cells, KOKKOS_LAMBDA (int i) {
-      for(int j=0;j<num_vertices_per_cell;++j)
-        for(int k=0;k<num_dims_per_vertex;++k)
-          cvc(i,j,k) = partition_vertices(i,j,k);
+      for(int j=0;j<num_nodes_per_cell;++j)
+        for(int k=0;k<num_dims_per_node;++k)
+          cnc(i,j,k) = partition_nodes(i,j,k);
       });
     Kokkos::fence();
   }
