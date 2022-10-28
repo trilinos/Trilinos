@@ -229,7 +229,7 @@ public:
            will be destructed when all strong references to it are gone, but we can still
            refer to it as long as it lives to prevent recreating
         */
-        if (!instances[p][i].is_valid_ptr() || !instances[p][i]) {
+        if (instances[p][i].is_null() || !instances[p][i].is_valid_ptr()) {
             rcp_type r = Teuchos::RCP<const execution_space>(
                 new ExecSpace(make_instance<ExecSpace, priority>())
             );
@@ -246,7 +246,7 @@ public:
     ~InstanceLifetimeManager() {
         for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
             for (const rcp_type &rcp : instances[i]) {
-                if (rcp.is_valid_ptr() && rcp) {
+                if (rcp.is_valid_ptr() && !rcp.is_null()) {
                     // avoid throwing in dtor
                     std::cerr << __FILE__ << ":" << __LINE__ << " execution space instance survived to ~InstanceLifetimeManager. strong_count() = " << rcp.strong_count() << ". Did a Tpetra object live too long?" << std::endl;
                 }
