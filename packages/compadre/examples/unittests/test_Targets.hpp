@@ -197,7 +197,7 @@ TEST_F (TargetTest, EvalBernsteinBasis1D) {
     // 1 batch, keep coefficients, don't clear cache
     gmls.generateAlphas(1, true, false);
 
-    auto gmls_basis_data = createGMLSBasisData(gmls);
+    auto gmls_basis_data = gmls.extractBasisData();
 
     int local_index = 0;
     scratch_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 
@@ -306,7 +306,7 @@ TEST_F (TargetTest, EvalBernsteinBasis2D) {
     // 1 batch, keep coefficients, don't clear cache
     gmls.generateAlphas(1, true, false);
 
-    auto gmls_basis_data = createGMLSBasisData(gmls);
+    auto gmls_basis_data = gmls.extractBasisData();
 
     int local_index = 0;
     scratch_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 

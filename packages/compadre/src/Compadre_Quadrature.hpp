@@ -3201,10 +3201,11 @@ public:
 
     Quadrature(const int order, const int dimension = 0, std::string quadrature_type = "LINE") {
         _number_of_quadrature_points = 0;
-        _order_of_quadrature_points = 0;
-        _dimension_of_quadrature_points = 0;
+        _order_of_quadrature_points = order;
+        _dimension_of_quadrature_points = dimension;
         _qt = this->parseQuadratureType(quadrature_type);
         if (dimension > 0) {
+            // populates _number_of_quadrature_points
             this->generateQuadrature(order, dimension);
             _is_initialized = true;
         } else {
@@ -3256,7 +3257,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION 
     int getDimensionOfQuadraturePoints() const {
-        return _order_of_quadrature_points;
+        return _dimension_of_quadrature_points;
     }
 
     KOKKOS_INLINE_FUNCTION 
