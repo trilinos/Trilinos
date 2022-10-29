@@ -28,13 +28,11 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-IF (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ne_ctest_wrap
-    NAME ne_ctest_wrap
-    SOURCES ne_ctest_wrap.c
-    NUM_MPI_PROCS 1
-  )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ne_ctest_wrap
+  NAME ne_ctest_wrap
+  SOURCES ne_ctest_wrap.c
+  NUM_MPI_PROCS 1
+)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
