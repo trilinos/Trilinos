@@ -890,12 +890,12 @@ static void launch(const Alpha &alpha,
     const OffsetDeviceViewType &offRankOffsets,
     const execution_space &space) {
 
-    if (A.numRows() <= static_cast<ordinal_type>(0)) {
-      return;
-    }
-
     if (1 != beta) {
       KokkosBlas::scal(Y, beta, Y);
+    }
+
+    if (A.numRows() <= static_cast<ordinal_type>(0)) {
+      return;
     }
 
     if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
