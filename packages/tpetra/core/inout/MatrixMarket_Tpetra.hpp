@@ -8545,7 +8545,9 @@ namespace Tpetra {
           }
         }
 
+        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
         const std::string header = writeOperatorImpl(out, A, params);
+        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
 
         if (myRank==0) {
           if (precisionChanged)
@@ -8786,6 +8788,7 @@ namespace Tpetra {
           }
           //TODO Do the views eiData need to be released prior to the matvec?
 
+          eiData = Teuchos::null; // drop host views before device might use them
           // probe
           A.apply(*ei,*colsA);
 
@@ -8794,6 +8797,16 @@ namespace Tpetra {
           if (myRank==0)
             globalNnz += writeColumns(os,*colsOnPid0, numMVs, importedGidsData(),
                                       globalColsArray, offsetToUseInPrinting);
+
+          // reconstruct dropped eiData
+          for (int j=0; j<rem; ++j ) {
+            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+            }
+          }
 
           //zero out the ei's
           for (size_t j=0; j<numMVs; ++j ) {
@@ -8821,6 +8834,7 @@ namespace Tpetra {
           }
           //TODO Do the views eiData need to be released prior to the matvec?
 
+          eiData = Teuchos::null; // drop host views before device might use them
           // probe
           A.apply(*ei,*colsA);
 
@@ -8828,6 +8842,16 @@ namespace Tpetra {
           if (myRank==0)
             globalNnz += writeColumns(os,*colsOnPid0, rem, importedGidsData(),
                                       globalColsArray, offsetToUseInPrinting);
+
+          // reconstruct dropped eiData
+          for (int j=0; j<rem; ++j ) {
+            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+            }
+          }
 
           //zero out the ei's
           for (int j=0; j<rem; ++j ) {
