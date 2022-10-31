@@ -8608,7 +8608,7 @@ namespace Tpetra {
       /// </ul>
       static void
       writeOperator (std::ostream& out,
-                     operator_type& A,
+                     const operator_type& A,
                      const Teuchos::ParameterList& params)
       {
         const int myRank = A.getDomainMap ()->getComm ()->getRank ();
@@ -8674,7 +8674,7 @@ namespace Tpetra {
       /// options specify otherwise).
       static std::string
       writeOperatorImpl (std::ostream& os,
-                         operator_type& A,
+                         const operator_type& A,
                          const Teuchos::ParameterList& params)
       {
         using Teuchos::RCP;
