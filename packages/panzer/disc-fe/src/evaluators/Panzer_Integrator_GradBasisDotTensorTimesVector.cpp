@@ -1,9 +1,9 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,14 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
-//
 // @HEADER
-// MacOs 'ar' utility doesn't work on empty library.
 
-void libmuelu_adapters() {}
+#include "PanzerDiscFE_config.hpp"
+
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
+
+#include "Panzer_Integrator_GradBasisDotTensorTimesVector_decl.hpp"
+#include "Panzer_Integrator_GradBasisDotTensorTimesVector_impl.hpp"
+
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Integrator_GradBasisDotTensorTimesVector)
+
+#endif

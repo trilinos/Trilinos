@@ -265,7 +265,7 @@ main (int argc, char* argv[])
     // matrix
     Teuchos::ParameterList plist;
     plist.set("matrixType","Laplace1D");    
-    plist.set("nx",172);
+    plist.set("nx",(GO)172);
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
 
     //rhs 

@@ -2083,6 +2083,13 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
   }
 };
 
+namespace Impl {
+  template <typename Storage>
+  struct promote<Sacado::MP::Vector<Storage>,false> {
+    using type = typename Sacado::MP::Vector<Storage>;
+  };
+}
+
 }
 
 #endif // HAVE_STOKHOS_SACADO

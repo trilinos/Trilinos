@@ -83,8 +83,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory_Augmentation::buildPreconditione
    Teko::LinearOp S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
-     S_E = Teko::explicitAdd(Q_E, CurlCurl);
+     S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
    }
 
    /////////////////////////////////////////////////

@@ -39,6 +39,9 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef STRATIMIKOS_LINEARSOLVERBUILDER_DEF_HPP
+#define STRATIMIKOS_LINEARSOLVERBUILDER_DEF_HPP
+
 //#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
 
 #include "Stratimikos_InternalConfig.h"
@@ -625,3 +628,5 @@ void LinearSolverBuilder<Scalar>::justInTimeInitialize() const
 
 
 } // namespace Stratimikos
+
+#endif // STRATIMIKOS_LINEARSOLVERBUILDER_DEF_HPP
