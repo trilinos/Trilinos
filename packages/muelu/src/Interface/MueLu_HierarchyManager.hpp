@@ -439,7 +439,6 @@ namespace MueLu {
 	    // Try generating factory
             RCP<T> M = L->template Get< RCP<T> >(name,&*levelManagers_[data[i]]->GetFactory(name));
             if (!M.is_null()) {
-              std::cout<<"Writing "<<name<<" of type "<<L->GetTypeName(name)<<std::endl;
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
           }
@@ -447,7 +446,6 @@ namespace MueLu {
       	    // Try nofactory
             RCP<T> M = L->template Get< RCP<T> >(name);
             if (!M.is_null()) {
-              std::cout<<"Writing "<<name<<" of type "<<L->GetTypeName(name)<<std::endl;
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
           }
