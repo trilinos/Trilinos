@@ -39,7 +39,7 @@ Next one has to choose a xml file with the multigrid parameters. Choose option 2
 .. image:: pics/tut1_2.png
   :width: 10cm
 
-The s1_easy.cml file has the following content
+The s1_easy.xml file has the following content
 
 .. literalinclude:: ../../../test/tutorial/s1_easy.xml
   :language: xml
@@ -50,7 +50,7 @@ Next, choose option 0 and run the example. That is, the linear system is created
 .. image:: pics/tut1_3.png
   :width: 10cm
 
-Note that the line **mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...** is the command that is executed in the background. Per default are 2 processors used.
+Note that the line **mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...** is the command that is executed in the background. The default is 2 processors used.
 After pressing a key we are ready for a first analysis as it is stated by the green letters **Results up to date!**
 
 .. image:: pics/tut1_4.png
@@ -70,13 +70,13 @@ To check the output select option 1. This should produce the following output on
 
   Depending on the number of lines in your terminal you may have to scroll up to the top of the file
 
-These lines give you some information about the setup process with some details on the aggregation process and the transfer operators. Note that for this example three levels are build (Level 0) for the finest level, level 1 as inter-medium level and level 2 for the coarsest level). Then an overview of the different multigrid levels is given by
+These lines give you some information about the setup process with some details on the aggregation process and the transfer operators. Note that for this example three levels are built: Level 0 for the finest level, level 1 as intermediate level and level 2 for the coarsest level. Then an overview of the different multigrid levels is given by
 
 .. warning:
 
   Insert screen output
 
-One can see that a three level multigrid method is used with a direct solver on the coarsest level and Jacobi level smoothers on the fine and inter-medium level. Furthermore some basic information is printed such as the operator complexity.
+One can see that a three level multigrid method is used with a direct solver on the coarsest level and Jacobi level smoothers on the fine and intermediate level. Furthermore some basic information is printed such as the operator complexity.
 
 In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver from the AztecOO package in Trilinos. The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
 
@@ -156,7 +156,7 @@ Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml
 
   What happens if you allow only for a 1 level method (i.e., no multigrid)? How does this affect the preconditioned CG method?
 
-The option sa for **smoothed aggregation** in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
+The option sa for **smoothed aggregation** in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite (SPD) problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
 
 .. warning:
 

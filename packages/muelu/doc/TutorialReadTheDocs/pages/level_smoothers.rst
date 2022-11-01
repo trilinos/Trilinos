@@ -9,9 +9,13 @@ From the last tutorial we have learned that the used multigrid algorithm may hav
 Background on multigrid methods
 ===============================
 
-Obviously there are cases where some highly oscillatory error modes are left and overlaying some low frequency modes. In other cases there are only low frequency error modes left. Theses are basically the two typical cases one might find in practice.
+Obviously there are cases where some highly oscillatory error modes are left and overlaying some low frequency modes. In other cases there are only low frequency error modes left. Theses are two typical cases one might find in practice.
 
 Multigrid methods are based on the fact, that (cheap) level smoothing method often are able to smooth out high oscillatory error components whereas they cannot reduce low frequency error components very well. These low frequency error components then are transferred to a coarse level where they can be seen as high frequency error component for a level smoother on the coarse level.
+
+.. warning:
+
+  Display an image of a sine wave  appearing oscillatory on a coarse grid
 
 One should not forget that for an efficient multigrid method both the so-called coarse level correction method and the level smoothers have to work together. That is, one has to choose the right multigrid method (e.g., **unsmoothed** or **sa**) in combination with an appropriate level smoothing strategy.
 
