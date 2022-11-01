@@ -102,7 +102,8 @@ setPartitionParameters (Teuchos::ParameterList& List)
         this->Parts_[ii].resize(gparts[ii].size());
         for (int jj = 0; jj < (int)  gparts[ii].size(); jj++) {
           local_ordinal_type itmp =  (int) OverlapMap->getLocalElement( gparts[ii][jj] );
-          TEUCHOS_TEST_FOR_EXCEPTION(itmp == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(), std::runtime_error,  " \"partitioner: global ID parts\" requires that all global IDs within a block reside on the MPI rank owning the block. This can be done using overlapping Schwarz with a BLOCK_RELAXATION subdomain solver making sure that \"schwarz: overlap level\" is sufficient.");
+          if (itmp == Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) printf("global id %d (%d,%d) not found\n",(int) gparts[ii][jj],(int) ii, (int) jj);
+          TEUCHOS_TEST_FOR_EXCEPTION(itmp == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(), std::runtime_error,  " \"partitioner: global ID parts\" requires that all global IDs within a block reside on the MPI rank owning the block. This can be done using overlapping Schwarz with a BLOCK_RELAXATION subdomain solver making sure that \"schwarz: overlap level\" is sufficient. Note: zeroed out Dirichlet columns will never be included in overlap parts of domains.");
           this->Parts_[ii][jj] = itmp;
         }
       }
