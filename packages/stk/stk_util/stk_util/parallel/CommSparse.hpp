@@ -39,6 +39,7 @@
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, parallel_machine_null
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
+#include <stddef.h>
 #include <cstddef>                             // for size_t
 #include <vector>                              // for vector
 
@@ -248,8 +249,8 @@ private:
   std::vector<unsigned char> m_null_comm_storage;
 };
 
-template<typename COMM, typename PACK_ALGORITHM>
-bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
+template<typename PACK_ALGORITHM>
+bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorithm)
 {
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
@@ -276,8 +277,8 @@ bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
   }
 }
 
-template<typename COMM, typename UNPACK_ALGORITHM>
-void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
+template<typename UNPACK_ALGORITHM>
+void unpack_communications(stk::CommSparse & comm, const UNPACK_ALGORITHM & algorithm)
 {
     for(int proc_id=0; proc_id<comm.parallel_size(); ++proc_id)
     {

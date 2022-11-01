@@ -191,7 +191,7 @@ system(mystring);
     // with each line ID (e.g. g corresponds to the 13th line). Then, when dropping (in a 2nd pass) we 
     // use lineId and umap to find where dropped entries should be summed (e.g., b corresponds to the 
     // 13th line and umap[13] points at location for g).
-    using TST = typename Teuchos::ScalarTraits<SC>;
+    // using TST = typename Teuchos::ScalarTraits<SC>;
 
     bool sumDropped = false;           
 

@@ -12,3 +12,19 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES RelaxationWithEquilibration.cpp
 )
 ENDIF()
+
+
+TRIBITS_ADD_EXECUTABLE(
+  BlockTriDiagonalSolver
+  SOURCES BlockTriDi.cpp
+)
+
+
+ TRIBITS_ADD_TEST(
+    BlockTriDiagonalSolver
+    NAME BlockTriDiExample
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )

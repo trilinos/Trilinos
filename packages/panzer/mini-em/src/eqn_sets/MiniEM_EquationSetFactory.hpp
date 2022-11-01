@@ -8,7 +8,8 @@
 #include "MiniEM_EquationSet_Maxwell.hpp"
 
 #include "MiniEM_AuxiliaryEquationSet_MassMatrix.hpp"
-#include "MiniEM_AuxiliaryEquationSet_CurlCurl.hpp"
+#include "MiniEM_AuxiliaryEquationSet_SchurComplement.hpp"
+#include "MiniEM_AuxiliaryEquationSet_ProjectedSchurComplement.hpp"
 #include "MiniEM_AuxiliaryEquationSet_WeakGradient.hpp"
 #include "MiniEM_AuxiliaryEquationSet_MACROS.hpp"
 
@@ -18,7 +19,9 @@ namespace mini_em {
 
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_MassMatrix, AuxiliaryEquationSet_MassMatrix)
 
-  AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_CurlCurl, AuxiliaryEquationSet_CurlCurl)
+  AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_SchurComplement, AuxiliaryEquationSet_SchurComplement)
+
+  AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_ProjectedSchurComplement, AuxiliaryEquationSet_ProjectedSchurComplement)
 
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_WeakGradient, AuxiliaryEquationSet_WeakGradient)
 
@@ -45,7 +48,9 @@ namespace mini_em {
 
       AUX_BUILD_EQSET_OBJECTS("Auxiliary Mass Matrix",   AuxiliaryEquationSet_MassMatrix)
 
-      AUX_BUILD_EQSET_OBJECTS("Auxiliary Curl Curl",   AuxiliaryEquationSet_CurlCurl)
+      AUX_BUILD_EQSET_OBJECTS("Auxiliary SchurComplement",   AuxiliaryEquationSet_SchurComplement)
+
+      AUX_BUILD_EQSET_OBJECTS("Auxiliary ProjectedSchurComplement",   AuxiliaryEquationSet_ProjectedSchurComplement)
 
       AUX_BUILD_EQSET_OBJECTS("Auxiliary Weak Gradient", AuxiliaryEquationSet_WeakGradient)
 

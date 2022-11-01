@@ -70,7 +70,7 @@ namespace FROSch {
     public:
 
         TpetraPreconditioner();
-        TpetraPreconditioner(Teuchos::RCP<SchwarzPreconditioner<SC,LO,GO,NO> > preconditioner);
+        TpetraPreconditioner(Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > preconditioner);
 
         ~TpetraPreconditioner();
 
@@ -102,11 +102,11 @@ namespace FROSch {
                       const TMultiVector & B,
                             TMultiVector& R) const;
 
-        Teuchos::RCP<SchwarzPreconditioner<SC,LO,GO,NO> >
+        Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >
         getSchwarzPreconditioner();
 
     protected:
-        Teuchos::RCP<SchwarzPreconditioner<SC,LO,GO,NO> > preconditioner_;
+        Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > preconditioner_;
     };
 
 }

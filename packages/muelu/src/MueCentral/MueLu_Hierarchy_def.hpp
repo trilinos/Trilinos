@@ -360,7 +360,7 @@ namespace MueLu {
     if (isDumpingEnabled_ && (dumpLevel_ == 0 || dumpLevel_ == -1) && coarseLevelID == 1)
       DumpCurrentGraph(0);
 
-    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> coarseFact;
     RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
 
     int nextLevelID = coarseLevelID + 1;
@@ -403,9 +403,12 @@ namespace MueLu {
       //   during request for data "      Nullspace" on level 2 by factory NullspacePresmoothFactory
       //   during request for data "      Nullspace" on level 2 by factory ProjectorSmoother
       //   during request for data "    PreSmoother" on level 2 by factory NoFactory
+      if (coarseFact.is_null())
+        coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
       level.Request(*coarseFact);
     }
 
+    GetOStream(Runtime0) << std::endl;
     PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(Runtime0 | Test));
 
     // Build coarse level hierarchy
@@ -474,6 +477,8 @@ namespace MueLu {
         // We did not expect to finish this early so we did request a smoother.
         // We need a coarse solver instead. Do the magic.
         level.Release(*smootherFact);
+        if (coarseFact.is_null())
+          coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
         level.Request(*coarseFact);
       }
 
@@ -1408,11 +1413,11 @@ namespace MueLu {
     RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
     RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
     if(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A) != Teuchos::null) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
       return;
     }
 
@@ -1421,7 +1426,7 @@ namespace MueLu {
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
     if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
     }
 

@@ -113,7 +113,8 @@ namespace MueLu {
   public:
     using TST                   = Teuchos::ScalarTraits<SC>;
     using Magnitude             = typename TST::magnitudeType;
-    using RealValuedMultiVector = Xpetra::MultiVector<Magnitude,LO,GO,NO>;
+    using CoordinateType        = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -354,7 +355,8 @@ namespace MueLu {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
+    using CoordinateType        = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LocalOrdinal,GlobalOrdinal,Node>;
 
   private:
 #undef MUELU_UTILITIES_KOKKOS_SHORT

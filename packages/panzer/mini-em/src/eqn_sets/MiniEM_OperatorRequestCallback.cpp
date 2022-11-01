@@ -39,11 +39,17 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
      if (matrix_output)
        mini_em::writeOut(name+".mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
-   else if(name.substr(0,9)=="Curl Curl") {
-     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Curl Curl " + name.substr(10,name.length()-10)+" Scatter Container"),true)->getGlobalLOC();
+   else if(name.substr(0,15)=="SchurComplement") {
+     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("SchurComplement " + name.substr(16,name.length()-16)+" Scatter Container"),true)->getGlobalLOC();
 
      if (matrix_output)
-       mini_em::writeOut("CurlCurl.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+       mini_em::writeOut("SchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+   }
+   else if(name.substr(0,24)=="ProjectedSchurComplement") {
+     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("ProjectedSchurComplement " + name.substr(25,name.length()-25)+" Scatter Container"),true)->getGlobalLOC();
+
+     if (matrix_output)
+       mini_em::writeOut("ProjectedSchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
    else if(name=="Weak Gradient") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Weak Gradient Scatter Container"),true)->getGlobalLOC();
@@ -68,8 +74,12 @@ bool OperatorRequestCallback::handlesRequest(const Teko::RequestMesg & rm)
      if(gedc_->containsDataObject("Mass Matrix " + name.substr(12,name.length()-12)+" Scatter Container"))
        return true;
    }
-   else if(name.substr(0,9)=="Curl Curl") {
-     if(gedc_->containsDataObject("Curl Curl " + name.substr(10,name.length()-10)+" Scatter Container"))
+   else if(name.substr(0,15)=="SchurComplement") {
+     if(gedc_->containsDataObject("SchurComplement " + name.substr(16,name.length()-16)+" Scatter Container"))
+       return true;
+   }
+   else if(name.substr(0,24)=="ProjectedSchurComplement") {
+     if(gedc_->containsDataObject("ProjectedSchurComplement " + name.substr(25,name.length()-25)+" Scatter Container"))
        return true;
    }
    else if(name=="Weak Gradient") {

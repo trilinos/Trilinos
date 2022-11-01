@@ -1,6 +1,9 @@
 TRIBITS_PACKAGE(TrilinosFrameworkTests)
 
 
+add_subdirectory(github_issue_creator)
+
+
 TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1

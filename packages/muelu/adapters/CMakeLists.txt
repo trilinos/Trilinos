@@ -62,6 +62,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
      tpetra/MueLu_CreateTpetraPreconditioner.hpp
      tpetra/MueLu_TpetraOperator_decl.hpp
      tpetra/MueLu_TpetraOperator_def.hpp
+     tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
    )
 
    IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
@@ -82,22 +83,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    #### TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 ENDIF()
-
-#
-# Xpetra
-#
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
-APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_CreateXpetraPreconditioner.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_def.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell1_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell1_def.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell_Utils_decl.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_Maxwell_Utils_def.hpp
-
-)
 
 #
 # Stratimikos
@@ -126,6 +111,7 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
+    ${DIR}/Xpetra_ThyraLinearOp.hpp
     )
 
   # Tpetra specific extensions
@@ -183,19 +169,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
   GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
-  IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
-    APPEND_SET(MUELUADAPTERS_ETI_CLASSES
-      MueLu::Maxwell_Utils
-      MueLu::RefMaxwell
-      MueLu::Maxwell1
-      )
-    IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-      APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
-        Thyra::MueLuRefMaxwellPreconditionerFactory
-        Thyra::MueLuMaxwell1PreconditionerFactory
-      )
-    ENDIF()
-  ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
@@ -237,11 +210,16 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
+IF ("${SOURCES}" STREQUAL "")
+  # always include at least one file in the adapters library.
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  APPEND_GLOB(SOURCES ${DIR}/muelu-trivial-adapter.cpp)
+ENDIF()
 TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu muelu-interface
+  DEPLIBS muelu
   ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
   )
 

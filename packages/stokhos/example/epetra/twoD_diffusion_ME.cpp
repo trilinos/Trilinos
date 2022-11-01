@@ -52,7 +52,7 @@ namespace {
   struct KL_Diffusion_Func {
     double mean;
     mutable Teuchos::Array<double> point;
-    Teuchos::RCP< Stokhos::KL::ExponentialRandomField<double> > rf;
+    Teuchos::RCP< Stokhos::KL::ExponentialRandomField<double, Kokkos::DefaultHostExecutionSpace> > rf;
 
     KL_Diffusion_Func(double xyLeft, double xyRight,
                       double mean_, double std_dev,
@@ -75,7 +75,7 @@ namespace {
       rfParams.set("Correlation Lengths", correlation_length);
 
       rf =
-        Teuchos::rcp(new Stokhos::KL::ExponentialRandomField<double>(rfParams));
+        Teuchos::rcp(new Stokhos::KL::ExponentialRandomField<double, Kokkos::DefaultHostExecutionSpace>(rfParams));
     }
 
     ~KL_Diffusion_Func() {

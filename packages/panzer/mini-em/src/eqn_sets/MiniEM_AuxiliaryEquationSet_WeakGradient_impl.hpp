@@ -14,7 +14,6 @@
 
 // include evaluators here
 #include "Panzer_Integrator_BasisTimesVector.hpp"
-#include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"

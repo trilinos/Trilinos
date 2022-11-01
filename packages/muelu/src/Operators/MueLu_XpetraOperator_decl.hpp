@@ -78,20 +78,10 @@ namespace MueLu {
     //@}
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
-      typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
-
-      RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
-      return A->getDomainMap();
-    }
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
-      typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
-
-      RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
-      return A->getRangeMap();
-    }
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
     /*!
@@ -102,30 +92,7 @@ namespace MueLu {
                                          Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                                          Scalar /* alpha */ = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar /* beta */  = Teuchos::ScalarTraits<Scalar>::one()) const{
-      TEUCHOS_TEST_FOR_EXCEPTION(mode!=Teuchos::NO_TRANS,std::logic_error,"MueLu::XpetraOperator does not support applying the adjoint operator");
-      try {
-#ifdef HAVE_MUELU_DEBUG
-        typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
-        RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
-
-        // X is supposed to live in the range map of the operator (const rhs = B)
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xop =
-            Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRangeMap(),X.getNumVectors());
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Yop =
-            Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getDomainMap(),Y.getNumVectors());
-        TEUCHOS_TEST_FOR_EXCEPTION(A->getRangeMap()->isSameAs(*(Xop->getMap())) == false, std::logic_error,
-                                   "MueLu::XpetraOperator::apply: map of X is incompatible with range map of A");
-        TEUCHOS_TEST_FOR_EXCEPTION(A->getDomainMap()->isSameAs(*(Yop->getMap())) == false, std::logic_error,
-                                   "MueLu::XpetraOperator::apply: map of Y is incompatible with domain map of A");
-#endif
-        Hierarchy_->Iterate(X, Y, 1, true);
-      } catch (std::exception& e) {
-        //FIXME add message and rethrow
-        std::cerr << "Caught an exception in MueLu::XpetraOperator::apply():" << std::endl
-            << e.what() << std::endl;
-      }
-    }
+                                         Scalar /* beta */  = Teuchos::ScalarTraits<Scalar>::one()) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const { return false; }
@@ -133,11 +100,7 @@ namespace MueLu {
     //! Compute a residual R = B - (*this) * X
     void residual(const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                   const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
-                  Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const {
-      using STS = Teuchos::ScalarTraits<Scalar>;
-      R.update(STS::one(),B,STS::zero());
-      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
-    }      
+                  Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
     
     //! @name MueLu specific
     //@{

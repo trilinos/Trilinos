@@ -2474,6 +2474,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
+  solver = Teuchos::null; // Delete solver to eliminate live device views of x
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
   typename ST::magnitudeType tol = 1e-9;
   auto x_view = x->getLocalViewHost(Tpetra::Access::ReadOnly);

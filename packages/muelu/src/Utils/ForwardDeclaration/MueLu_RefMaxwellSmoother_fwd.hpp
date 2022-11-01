@@ -43,6 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-// MacOs 'ar' utility doesn't work on empty library.
+#ifndef MUELU_REFMAXWELLSMOOTHER_FWD_HPP
+#define MUELU_REFMAXWELLSMOOTHER_FWD_HPP
 
-void libmuelu_adapters() {}
+
+
+
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class RefMaxwellSmoother;
+}
+
+#ifndef MUELU_REFMAXWELLSMOOTHER_SHORT
+#define MUELU_REFMAXWELLSMOOTHER_SHORT
+#endif
+
+
+
+#endif // MUELU_REFMAXWELLSMOOTHER_FWD_HPP

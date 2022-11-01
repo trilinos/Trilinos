@@ -146,7 +146,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    using STS = Teuchos::ScalarTraits<SC>;
+    // using STS = Teuchos::ScalarTraits<SC>;
 
     // We start by assuming that someone did a reasonable strength of connection
     // algorithm before we start to get our Graph, DofsPerNode and UnAmalgamationInfo

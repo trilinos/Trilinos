@@ -1108,7 +1108,6 @@ namespace MueLu {
 
             // Construct Distance Laplacian diagonal
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
-            ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
             Teuchos::Array<Teuchos::ArrayRCP<const real_type>> coordData;
             if (threshold != STS::zero()) {
@@ -1121,6 +1120,7 @@ namespace MueLu {
             }
             {
             SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
+            ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             for (LO row = 0; row < numRows; row++) {
               ArrayView<const LO> indices;
 
@@ -1888,7 +1888,6 @@ namespace MueLu {
 
  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
  void  CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalizeGraph(const RCP<GraphBase> & inputGraph, const RCP<LocalOrdinalVector> & ghostedBlockNumber, RCP<GraphBase> & outputGraph, RCP<const Import> & importer) const {
-   typedef Teuchos::ScalarTraits<SC> STS;
 
    TEUCHOS_TEST_FOR_EXCEPTION(ghostedBlockNumber.is_null(), Exceptions::RuntimeError, "BlockDiagonalizeGraph(): ghostedBlockNumber is null.");
    const ParameterList  & pL = GetParameterList();

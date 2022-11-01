@@ -1,8 +1,10 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
+
 Level 1
 Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
 Build (MueLu::TentativePFactory)
@@ -33,6 +35,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
+
 Level 2
 Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
 Build (MueLu::TentativePFactory)

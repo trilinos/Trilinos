@@ -349,7 +349,6 @@ namespace FROSch {
         switch (dimension) {
             case 1:
                 return null;
-                break;
             case 2:
                 rotationsPerEntity = 1;
                 break;
@@ -358,7 +357,6 @@ namespace FROSch {
                 break;
             default:
                 FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator: The dimension is neither 2 nor 3!");
-                break;
         }
 
         XMultiVectorPtrVecPtr rotations(rotationsPerEntity);
@@ -475,7 +473,6 @@ namespace FROSch {
                     break;
                 default:
                     FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator: The dimension is neither 1 nor 2 nor 3!");
-                    break;
             }
             // If necessary, discard additional rotations
             UN rotationsToDiscard = discardRotations - numZeroRotations;
@@ -1025,7 +1022,8 @@ namespace FROSch {
             }
         }
 
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > graphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > graphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),INVALID,1,0,this->K_->getMap()->getComm());
 
         //UN maxNumElements = -1;
         //get the maximum number of neighbors for a subdomain

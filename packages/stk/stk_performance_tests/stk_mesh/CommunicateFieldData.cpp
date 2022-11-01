@@ -45,6 +45,7 @@
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
@@ -198,8 +199,57 @@ void set_modify_on_device(std::vector<stk::mesh::NgpField<T>*> ngpFields)
   }
 }
 
-void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num_iters)
+void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
 {
+    const int numProcs = bulk.parallel_size();
+    const int myProc = bulk.parallel_rank();
+    stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+    std::vector<stk::mesh::EntityProc> entities_to_ghost;
+    stk::mesh::Selector surface_selector = *meta.get_part(partName) & meta.locally_owned_part();
+    stk::mesh::EntityVector surface_nodes;
+    stk::mesh::get_selected_entities(surface_selector,bulk.buckets(stk::topology::NODE_RANK), surface_nodes);
+    const int next_proc = (myProc+1)%numProcs;
+    for (size_t i=0 ; i<surface_nodes.size() ; ++i) {
+        entities_to_ghost.push_back(stk::mesh::EntityProc(surface_nodes[i],next_proc));
+    }
+    bulk.change_ghosting( ghost, entities_to_ghost );
+}
+
+void test_communicate_field_data_all_ghosting(stk::ParallelMachine communicator, int num_iters)
+{
+    stk::performance_tests::BatchTimer batchTimer(communicator);
+    batchTimer.initialize_batch_timer();
+
+    stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
+
+    std::string genMeshSpec = "generated:60x60x48|sideset:xXyY";
+    const unsigned numBlocks = 1;
+    const unsigned numFields = 8;
+    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
+    stk::mesh::BulkData &mesh = exodusFileReader.bulk_data();
+
+    mesh.modification_begin();
+    stk::mesh::Ghosting & ghosting_1 = mesh.create_ghosting( "CUSTOM_1" );
+    stk::mesh::Ghosting & ghosting_2 = mesh.create_ghosting( "CUSTOM_2" );
+    stk::mesh::Ghosting & ghosting_3 = mesh.create_ghosting( "CUSTOM_3" );
+    stk::mesh::Ghosting & ghosting_4 = mesh.create_ghosting( "CUSTOM_4" );
+
+    addPartToGhosting(mesh, "surface_1", ghosting_1);
+    addPartToGhosting(mesh, "surface_2", ghosting_2);
+    addPartToGhosting(mesh, "surface_3", ghosting_3);
+    addPartToGhosting(mesh, "surface_4", ghosting_4);
+    mesh.modification_end();
+
+    size_t num_ghostings = mesh.ghostings().size();
+    std::ostringstream oss;
+    for (size_t ghost_i = 0 ; ghost_i < num_ghostings ; ++ghost_i) {
+        size_t num_nodes = stk::mesh::count_selected_entities(mesh.ghosting_part(*mesh.ghostings()[ghost_i]),mesh.buckets(stk::topology::NODE_RANK));
+        oss <<"proc "<<mesh.parallel_rank()<<", Number of " << mesh.ghostings()[ghost_i]->name() << " nodes: " << num_nodes << std::endl;
+    }
+
+    std::cerr << oss.str() << std::endl;
+
     const int my_proc = mesh.parallel_rank();
     if (my_proc == 0) {
         std::cerr << "Calling communicate_field_data " << num_iters << " times"<<std::endl;
@@ -215,8 +265,6 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
     stk::parallel_machine_barrier(mesh.parallel());
 
     const unsigned NUM_RUNS = 5;
-    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
-    batchTimer.initialize_batch_timer();
   
     for (unsigned j = 0; j < NUM_RUNS; j++) {
       batchTimer.start_batch_timer();
@@ -274,6 +322,9 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
         std::cerr << "Calling communicate_field_data " << num_iters << " times"<<std::endl;
     }
 
+    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
+    batchTimer.initialize_batch_timer();
+    createNgpFields(mesh);
     const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
     const stk::mesh::FieldVector& fields = meta.get_fields();
     std::vector<stk::mesh::NgpField<double>*> ngpFields;
@@ -284,8 +335,6 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
     stk::parallel_machine_barrier(mesh.parallel());
 
     const unsigned NUM_RUNS = 5;
-    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
-    batchTimer.initialize_batch_timer();
   
     for (unsigned j = 0; j < NUM_RUNS; j++) {
       batchTimer.start_batch_timer();
@@ -302,22 +351,6 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
     batchTimer.print_batch_timing(num_iters);
 }
 
-void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
-{
-    const int numProcs = bulk.parallel_size();
-    const int myProc = bulk.parallel_rank();
-    stk::mesh::MetaData &meta = bulk.mesh_meta_data();
-    std::vector<stk::mesh::EntityProc> entities_to_ghost;
-    stk::mesh::Selector surface_selector = *meta.get_part(partName) & meta.locally_owned_part();
-    stk::mesh::EntityVector surface_nodes;
-    stk::mesh::get_selected_entities(surface_selector,bulk.buckets(stk::topology::NODE_RANK), surface_nodes);
-    const int next_proc = (myProc+1)%numProcs;
-    for (size_t i=0 ; i<surface_nodes.size() ; ++i) {
-        entities_to_ghost.push_back(stk::mesh::EntityProc(surface_nodes[i],next_proc));
-    }
-    bulk.change_ghosting( ghost, entities_to_ghost );
-}
-
 TEST(CommunicateFieldData, copy_to_all)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
@@ -326,38 +359,7 @@ TEST(CommunicateFieldData, copy_to_all)
       return;
     }
 
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
-
-    std::string genMeshSpec = "generated:60x60x48|sideset:xXyY";
-    const unsigned numBlocks = 1;
-    const unsigned numFields = 8;
-    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
-    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-
-    stkMeshBulkData.modification_begin();
-    stk::mesh::Ghosting & ghosting_1 = stkMeshBulkData.create_ghosting( "CUSTOM_1" );
-    stk::mesh::Ghosting & ghosting_2 = stkMeshBulkData.create_ghosting( "CUSTOM_2" );
-    stk::mesh::Ghosting & ghosting_3 = stkMeshBulkData.create_ghosting( "CUSTOM_3" );
-    stk::mesh::Ghosting & ghosting_4 = stkMeshBulkData.create_ghosting( "CUSTOM_4" );
-
-    addPartToGhosting(stkMeshBulkData, "surface_1", ghosting_1);
-    addPartToGhosting(stkMeshBulkData, "surface_2", ghosting_2);
-    addPartToGhosting(stkMeshBulkData, "surface_3", ghosting_3);
-    addPartToGhosting(stkMeshBulkData, "surface_4", ghosting_4);
-    stkMeshBulkData.modification_end();
-
-
-    size_t num_ghostings = stkMeshBulkData.ghostings().size();
-    std::ostringstream oss;
-    for (size_t ghost_i = 0 ; ghost_i < num_ghostings ; ++ghost_i) {
-        size_t num_nodes = stk::mesh::count_selected_entities(stkMeshBulkData.ghosting_part(*stkMeshBulkData.ghostings()[ghost_i]),stkMeshBulkData.buckets(stk::topology::NODE_RANK));
-        oss <<"proc "<<stkMeshBulkData.parallel_rank()<<", Number of " << stkMeshBulkData.ghostings()[ghost_i]->name() << " nodes: " << num_nodes << std::endl;
-    }
-
-    std::cerr << oss.str() << std::endl;
-
-    test_communicate_field_data_all_ghosting(stkMeshBulkData, 300);
+    test_communicate_field_data_all_ghosting(communicator, 300);
 }
 
 
@@ -421,7 +423,6 @@ TEST(CommunicateFieldData, NgpGhosting)
   createMetaAndBulkData(exodusFileReader, meshSpec, numBlocks, numFields);
 
   stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-  createNgpFields(stkMeshBulkData);
 
   const stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
   test_communicate_field_data_ngp_ghosting(stkMeshBulkData, aura_ghosting, iter, syncToHostEveryIter);

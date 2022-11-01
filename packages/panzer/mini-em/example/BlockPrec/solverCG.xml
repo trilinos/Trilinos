@@ -43,7 +43,7 @@
               <ParameterList name="Pseudo Block CG">
                 <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
                 <Parameter name="Orthogonalization" type="string" value="ICGS"/>
-                <Parameter name="Maximum Iterations" type="int" value="100"/>
+                <Parameter name="Maximum Iterations" type="int" value="2000"/>
                 <Parameter name="Timer Label" type="string" value="CG Q_B"/>
                 <Parameter name="Output Frequency" type="int" value="10"/>
                 <Parameter name="Output Style" type="int" value="1"/>

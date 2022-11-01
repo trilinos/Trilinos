@@ -63,11 +63,6 @@
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 #endif
 
-// Stratimikos
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#endif
-
 
 namespace MueLu {
 
@@ -124,13 +119,6 @@ namespace MueLu {
   
     //! Sets matvec params on a matrix
     static void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams);
-  
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-    // Sets up a stratimikos preconditioner
-    static RCP<Thyra::PreconditionerBase<Scalar> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                  RCP<ParameterList> params);
- #endif
-
 
   };
 
@@ -138,5 +126,5 @@ namespace MueLu {
 
 } // namespace
 
-#define MUELU_REFMAXWELL_SHORT
-#endif // MUELU_REFMAXWELL_DECL_HPP
+#define MUELU_MAXWELL_UTILS_SHORT
+#endif // MUELU_MAXWELL_UTILS_DECL_HPP

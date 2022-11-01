@@ -1,3 +1,7 @@
+#ifndef _MiniEM_Interpolation_hpp_
+#define _MiniEM_Interpolation_hpp_
+
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
@@ -5,6 +9,8 @@
 #include "Intrepid2_LagrangianInterpolation.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "MiniEM_Utils.hpp"
+#include "MiniEM_MatrixFreeInterpolationOp.hpp"
+#include "MiniEM_MatrixFreeInterpolationOp.cpp"
 
 
 Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
@@ -252,10 +258,9 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
       for (int cellNo = 0; cellNo < numCells; cellNo++) {
         if (elemIter+cellNo >= elementIds.size())
           continue;
-        for(int i = 0; i < numElemVertices; i++) {
-          const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[elemIter+cellNo]);
+        const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[elemIter+cellNo]);
+        for(int i = 0; i < numElemVertices; i++)
           elemNodes_h(cellNo, i) = node_ids[i];
-        }
       }
       Kokkos::deep_copy(elemNodes_d, elemNodes_h);
 
@@ -334,8 +339,61 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   } //end element block loop
 
 
-  if (tblof != Teuchos::null)
+  if (tblof != Teuchos::null) {
     tp_interp_matrix->fillComplete(tp_domainmap, tp_rangemap);
+
+#if 0
+    // compare the sparse matrix version and the matrix-free apply
+    auto mfOp = rcp(new mini_em::MatrixFreeInterpolationOp<Scalar,LocalOrdinal,GlobalOrdinal>("test", linObjFactory, lo_basis_name, ho_basis_name, op, worksetSize));
+    auto thyra_mfOp = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getRangeMap()),
+                                                                                                              Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getDomainMap()),
+                                                                                                              mfOp);
+    {
+      auto testX  = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap, 1));
+      auto testY1 = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap, 1));
+      auto testY2 = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap, 1));
+      testX->randomize();
+      testY1->putScalar(1.);
+      testY2->putScalar(1.);
+
+      tp_interp_matrix->apply(*testX, *testY1, Teuchos::NO_TRANS, 3.0, 2.0);
+      mfOp->apply(*testX, *testY2, Teuchos::NO_TRANS, 3.0, 2.0);
+      testY1->update(-1.0,*testY2,1.0);
+      std::cout << "norm difference for 3 * M * X + 2 Y: " << testY1->getVector(0)->norm2() << std::endl;
+
+      tp_interp_matrix->apply(*testX, *testY1);
+      mfOp->apply(*testX, *testY2);
+      testY1->update(-1.0,*testY2,1.0);
+      std::cout << "norm difference for M * X: " << testY1->getVector(0)->norm2() << std::endl;
+
+      testX  = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap, 1));
+      testY1 = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap, 1));
+      testY2 = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap, 1));
+      testX->randomize();
+      testY1->putScalar(1.);
+      testY2->putScalar(1.);
+
+      tp_interp_matrix->apply(*testX, *testY1, Teuchos::TRANS, 3.0, 2.0);
+      mfOp->apply(*testX, *testY2, Teuchos::TRANS, 3.0, 2.0);
+      testY1->update(-1.0,*testY2,1.0);
+      std::cout << "norm difference for 3 * M^T * X + 2 Y: " << testY1->getVector(0)->norm2() << std::endl;
+
+      tp_interp_matrix->apply(*testX, *testY1, Teuchos::TRANS);
+      mfOp->apply(*testX, *testY2, Teuchos::TRANS);
+
+      static int counter = 0;
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >::writeDenseFile("X_" + std::to_string(counter)+".mm", *testX);
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >::writeDenseFile("Y1_" + std::to_string(counter)+".mm", *testY1);
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> >::writeDenseFile("Y2_" + std::to_string(counter)+".mm", *testY2);
+      ++counter;
+
+      testY1->update(-1.0,*testY2,1.0);
+      std::cout << "norm difference for M^T * X: " << testY1->getVector(0)->norm2() << std::endl;
+    }
+
+#endif
+
+  }
   else
     ep_interp_matrix->FillComplete(*ep_domainmap, *ep_rangemap);
 
@@ -354,6 +412,7 @@ private:
   const bool dump_;
   Teko::LinearOp interp_;
   const size_t worksetSize_;
+  const bool matrixFree_;
 
 public:
 
@@ -364,21 +423,37 @@ public:
                                Intrepid2::EOperator op=Intrepid2::OPERATOR_VALUE,
                                const bool waitForRequest=true,
                                const bool dump=false,
-                               const size_t worksetSize=1000)
-  : name_(name), linObjFactory_(linObjFactory), lo_basis_name_(lo_basis_name), ho_basis_name_(ho_basis_name), op_(op), dump_(dump), worksetSize_(worksetSize)
+                               const size_t worksetSize=1000,
+                               const bool matrixFree=false)
+  : name_(name), linObjFactory_(linObjFactory), lo_basis_name_(lo_basis_name), ho_basis_name_(ho_basis_name), op_(op), dump_(dump), worksetSize_(worksetSize), matrixFree_(matrixFree)
   {
-    if (!waitForRequest) {
-      {
-        Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: assemble ") + name_));
-        interp_ = buildInterpolation(linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_);
-      }
-      if (dump_) {
-        std::string filename = name + ".mm";
-
-        mini_em::writeOut(filename, *interp_);
-      }
-    }
+    if (!waitForRequest)
+      build();
   };
+
+  void build()
+  {
+    if (!matrixFree_) {
+      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: assemble ") + name_));
+      interp_ = buildInterpolation(linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_);
+    } else {
+      typedef double Scalar;
+      typedef int LocalOrdinal;
+      typedef panzer::GlobalOrdinal GlobalOrdinal;
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
+
+      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free setup ") + name_));
+      auto mfOp = rcp(new mini_em::MatrixFreeInterpolationOp<Scalar,LocalOrdinal,GlobalOrdinal>(name_, linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_));
+      interp_ = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getRangeMap()),
+                                                                                                       Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(mfOp->getDomainMap()),
+                                                                                                       mfOp);
+    }
+    if (dump_ && !matrixFree_) {
+      std::string filename = name_ + ".mm";
+
+      mini_em::writeOut(filename, *interp_);
+    }
+  }
 
   bool handlesRequest(const Teko::RequestMesg & rm)
   {
@@ -394,15 +469,7 @@ public:
 
     if(name==name_) {
       if (interp_.is_null()) {
-        {
-          Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: assemble ") + name_));
-          interp_ = buildInterpolation(linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_);
-        }
-        if (dump_) {
-          std::string filename = name + ".mm";
-
-          mini_em::writeOut(filename, *interp_);
-        }
+        build();
       }
       return interp_;
     } else
@@ -428,8 +495,11 @@ void addInterpolationToRequestHandler(
                                       Intrepid2::EOperator op=Intrepid2::OPERATOR_VALUE,
                                       const bool waitForRequest=true,
                                       const bool dump=false,
-                                      const size_t worksetSize=1000) {
+                                      const size_t worksetSize=1000,
+                                      const bool matrixFree=false) {
 
   // add interpolation callback to request handler
-  reqHandler->addRequestCallback(Teuchos::rcp(new InterpolationRequestCallback(name, linObjFactory, lo_basis_name, ho_basis_name, op, waitForRequest, dump, worksetSize)));
+  reqHandler->addRequestCallback(Teuchos::rcp(new InterpolationRequestCallback(name, linObjFactory, lo_basis_name, ho_basis_name, op, waitForRequest, dump, worksetSize, matrixFree)));
 }
+
+#endif
