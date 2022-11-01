@@ -381,7 +381,7 @@ namespace MueLu {
     Teuchos::Array<int> aggregatesToPrint_;
     Teuchos::Array<int> elementToNodeMapsToPrint_;
 
-    // Data we'll need to save, not neccesarily print
+    // Data we'll need to save, not necessarily print
     Teuchos::Array<std::string> dataToSave_;   
 
     // Matrices we'll need to print
