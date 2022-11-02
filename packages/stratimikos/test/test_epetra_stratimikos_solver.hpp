@@ -55,7 +55,7 @@ namespace Thyra {
  *
  * \ingroup stratimikos_testing_grp
  */
-bool test_single_epetra_stratimikos_solver(
+bool test_epetra_stratimikos_solver(
   Teuchos::ParameterList                  *paramList
   ,const bool                             dumpAll
   ,Teuchos::FancyOStream                  *out

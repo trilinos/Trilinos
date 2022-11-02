@@ -160,8 +160,6 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = thyraTpetraFwdOp->getConstTpetraOperator();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
-  std::cout << "Retrieved wrapped Tpetra op... line 167" << std::endl;
-
   // Belos-specific typedefs:
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>     TpetraMV; 
   typedef Belos::TpetraOperator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOp;
@@ -205,26 +203,18 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
       solverTypeUpper[k] = ::toupper(solverTypeUpper[k]);
     }
   }
-   std::cout << "Processed parameter list... line 208" << std::endl;
-  // Create the initial preconditioner
 
+  // Create the initial preconditioner
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
     *out << "\nCreating a new BelosTpetra::Preconditioner object...\n";
   }
   Teuchos::RCP<LinearOpBase<scalar_type> > thyraPrecOp;
-
-  std::cout << "just set operator in belosLin Prob line 220." << std::endl; 
-  
-  //typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> Ifpack2Prec;
-  //Teuchos::RCP<Ifpack2Prec> concretePrecOp;
-  std::cout << "Made thyraPrecOp line 229" << std::endl;
 
   if (useHalfPrecision) {
 #ifdef THYRA_BELOS_PREC_ENABLE_HALF_PRECISION
     if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
       Teuchos::OSTab(out).o() << "> Creating half precision preconditioner\n";
     }
-    std::cout << "Creating half precision prec" << std::endl;
     const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdMatrix));
     auto tpetraFwdMatrixHalf = tpetraFwdMatrix->template convert<half_scalar_type>();
@@ -242,17 +232,12 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   } else {
-    //concretePrecOp->setParameters(*packageParamList);
-
     // Wrap concrete preconditioner
-    //thyraPrecOp = Thyra::createLinearOp(Teuchos::RCP<TpetraLinOp>(concretePrecOp));
     Teuchos::RCP<BelosTpLinProb> belosLinProb = Teuchos::RCP<BelosTpLinProb>(new BelosTpLinProb());
     belosLinProb->setOperator(tpetraFwdOp);
     Teuchos::RCP<TpetraLinOp> belosOpRCP = Teuchos::RCP<TpetraLinOp>(new BelosTpOp(belosLinProb, nonconstPackageParamList, solverType, true));
     thyraPrecOp = Thyra::createLinearOp(belosOpRCP);
-    //TODO Update Belos TpetraOperator notes to make it clearer why this is true, not default false. 
   }
-  std::cout << "Ready to init default Prec line 280." << std::endl;
   defaultPrec->initializeUnspecified(thyraPrecOp);
 
   totalTimer.stop();

@@ -57,7 +57,6 @@ namespace Stratimikos {
   template <typename MatrixType>
   void enableBelosPrecTpetra(LinearSolverBuilder<typename MatrixType::scalar_type>& builder, const std::string& stratName = "BelosPrecTpetra")
   {
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
@@ -68,7 +67,6 @@ namespace Stratimikos {
     typedef Thyra::BelosTpetraPreconditionerFactory<MatrixType> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
-#endif
   }
 
 } // namespace Stratimikos

@@ -1,79 +1,51 @@
 <ParameterList>
+  <Parameter name="Matrix File" type="string" value="bcsstk12.mtx"/> 
+  <ParameterList name="Linear Solver Builder">
 
-  <!-- ================================================== -->
   <!-- ================================================== -->
   <!-- KRYLOV SOLVER CONFIGURATION                        -->
   <!-- ================================================== -->
-  <!-- ================================================== -->
 
-  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
-  <ParameterList name="Linear Solver Types">
-    <ParameterList name="Belos">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
 
-      <!-- ========================================= -->
-      <!-- Select which Krylov solver should be used -->
+        <ParameterList name="Solver Types">
+          <ParameterList name="Pseudo Block GMRES">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-06"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Num Blocks" type="int" value="50"/>
+            <Parameter name="Output Frequency" type="int" value="20"/>
+            <Parameter name="Output Style" type="int" value="1"/>
+            <Parameter name="Verbosity" type="int" value="33"/>
+          </ParameterList>
+        </ParameterList>
 
-      <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
 
-
-      <!-- ================================== -->
-      <!-- Parameters for the Krylov solvers  -->
-
-      <ParameterList name="Solver Types">
-
-        <ParameterList name="Pseudo Block GMRES">
-          <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
-          <Parameter name="Maximum Iterations" type="int" value="200"/>
-          <!-- Verbosity
-              Errors = 0,
-              Warnings = 0x1,
-              IterationDetails = 0x2,
-              OrthoDetails = 0x4,
-              FinalSummary = 0x8,
-              TimingDetails = 0x10 = 16,
-              StatusTestDetails = 0x20 = 32,
-              Debug = 0x40 = 64                -->
-          <Parameter name="Verbosity" type="int" value="57"/>
-          <Parameter name="Output Frequency" type="int" value="1"/>
-          <Parameter name="Output Style" type="int" value="1"/>
-          <Parameter name="Num Blocks" type="int" value="40"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
 
       </ParameterList>
-
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
-      </ParameterList>
-
     </ParameterList>
-  </ParameterList>
 
-
-  <!-- ================================================== -->
   <!-- ================================================== -->
   <!-- PRECONDITIONER CONFIGURATION                       -->
   <!-- ================================================== -->
-  <!-- ================================================== -->
+    <Parameter name="Preconditioner Type" type="string" value="BelosPrecTpetra"/>
+    <ParameterList name="Preconditioner Types">
 
-
-  <!-- ========================================== -->
-  <!-- Select which preconditioner should be used -->
-
-  <Parameter name="Preconditioner Type" type="string" value="BelosPrecTpetra"/>
-
-  <!-- ========================================== -->
-  <!-- Parameters for the preconditioners         -->
-
-  <ParameterList name="Preconditioner Types">
-    <ParameterList name="BelosPrecTpetra">
+      <ParameterList name="BelosPrecTpetra">
       <Parameter name="half precision" type="bool" value="true"/>
-      <Parameter name="BelosPrec Solver Type" type="string" value="GmresPoly"/>
-      <ParameterList name="BelosPrec Solver Params">
-        <Parameter name="Maximum Degree" type="int" value="8"/>
-        <Parameter name="Verbosity" type="int" value="57"/>
+        <Parameter name="BelosPrec Solver Type" type="string" value="GmresPoly"/>
+        <ParameterList name="BelosPrec Solver Params">
+          <Parameter name="Maximum Degree" type="int" value="8"/>
+        </ParameterList>
       </ParameterList>
+
     </ParameterList>
 
-
+  <!-- ================================================== -->
   </ParameterList>
 </ParameterList>
