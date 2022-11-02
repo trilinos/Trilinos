@@ -1025,7 +1025,17 @@
       <type>string</type>
       <default>"{}"</default>
       <description>Keep a subset of the hierarchy data after the
-      hierarchy is constructed.  Use comma-seperated array in braces</description>
+      hierarchy is constructed.  Use comma-separated array in braces</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>save data</name>
+      <type>string</type>
+      <default>"{}"</default>
+      <description>Data to dump to disk after the
+      hierarchy is constructed.  Use comma-separated array in braces</description>
       <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
