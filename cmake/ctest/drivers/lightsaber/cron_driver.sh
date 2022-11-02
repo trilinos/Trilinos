@@ -90,49 +90,6 @@ module unload sems-openmpi
 module unload sems-gcc
 # ===========================================================================
 
-# ===========================================================================
-# OneAPI family
-echo "GREP: *** OneAPI Family Tests ***"
-export CTEST_CONFIGURATION="default"
-module purge
-module load sems-cmake/3.21.1
-module load sems-gcc/10.1.0
-module load oneapi
-module load sems-cmake/3.21.1
-module load sems-superlu/4.3
-module load sems-zlib/1.2.11
-module load sems-boost/1.74.0
-module load sems-netcdf-c/4.7.3
-
-export I_MPI_CXX=dpcpp
-
-# We should really get these from the environment
-export LMOD_FAMILY_MPI=ONEAPI
-export LMOD_FAMILY_MPI_VERSION=2022.3.0
-
-echo "Configuration = $CTEST_CONFIGURATION"
-module list
-env
-
-export OMP_NUM_THREADS=1
-
-# Set variables to work aroun TriBITS problems
-#setenv TDD_FORCE_CMAKE_INSTALL 0
-export TRIBITS_TDD_USE_SYSTEM_CTEST=1
-
-# Actually run stuff
-ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_sycl_cpu_lightsaber.cmake
-
-module load sems-netcdf-c
-module load sems-boost
-module load sems-zlib
-module unload sems-superlu
-module unload oneapi
-module unload sems-gcc
-module load sems-cmake/3.21.1
-# ===========================================================================
-
-
 
 echo
 echo "Ending nightly Trilinos development testing on lightsaber: `date`"
