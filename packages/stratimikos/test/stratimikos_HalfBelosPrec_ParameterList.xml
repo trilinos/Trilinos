@@ -42,6 +42,9 @@
         <ParameterList name="BelosPrec Solver Params">
           <Parameter name="Maximum Degree" type="int" value="8"/>
         </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
       </ParameterList>
 
     </ParameterList>
