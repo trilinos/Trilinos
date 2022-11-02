@@ -58,8 +58,8 @@ ELSE()
   SET(TPETRA_ENABLE_GPU OFF)
 ENDIF()
 
-# If we have CUDA, and we have CUDA-aware MPI, also test idot
-# with CUDA-aware MPI explicitly turned off at runtime.
+# If we have GPUs, and we have GPU-aware MPI, also test idot
+# with GPU-aware MPI explicitly turned off at runtime.
 # This exercises a different code path in idot.
 IF (TPETRA_ENABLE_GPU AND TPETRA_ASSUME_GPU_AWARE_MPI)
   TRIBITS_ADD_TEST(
@@ -81,19 +81,19 @@ IF (TPETRA_ENABLE_GPU AND TPETRA_ASSUME_GPU_AWARE_MPI)
   )
 ENDIF ()
 
-ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 ASSERT_DEFINED (Tpetra_INST_CUDA)
 ASSERT_DEFINED (Tpetra_INST_HIP)
+ASSERT_DEFINED (Tpetra_INST_SYCL)
 
-# mfh 21 Aug 2017: The "CUDA-aware MPI" test still builds and runs if
+# mfh 21 Aug 2017: The "GPU-aware MPI" test still builds and runs if
 # TPETRA_ASSUME_GPU_AWARE_MPI is OFF, but it is a trivial run (doing
 # nothing and passing) unless the TPETRA_ASSUME_GPU_AWARE_MPI
 # environment variable is set (to some "true" value, like "1", "ON",
 # "YES", or "TRUE").  This makes the test useful for cross-compilation
-# and other situations where the MPI implementation's CUDA-awareness
+# and other situations where the MPI implementation's GPU-awareness
 # cannot be known until run time.
 
-IF (TPETRA_ENABLE_GPU)
+IF (TPETRA_INST_CUDA OR TPETRA_INST_HIP OR TPETRA_INST_SYCL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     gpuAwareMpi
     SOURCES
