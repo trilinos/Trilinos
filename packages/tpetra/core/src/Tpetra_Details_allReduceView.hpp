@@ -68,7 +68,6 @@ allReduceRawContiguous (const OutputViewType& output,
   using ValueType = typename InputViewType::non_const_value_type;
   size_t count = input.span();
   TEUCHOS_ASSERT( count <= size_t (INT_MAX) );
-
   if(isInterComm(comm) && input.data() == output.data())
   {
     //Can't do in-place collective on an intercomm,
@@ -79,23 +78,12 @@ allReduceRawContiguous (const OutputViewType& output,
     // DEEP_COPY REVIEW - This could be either DEVICE-TO-DEVICE or HOST-TO-HOST
     // Either way, MPI is called right afterwards, meaning we'd need a sync on device
     Kokkos::deep_copy(tempInput, input);
-
-    // Make sure tempInput is up to date
-    if(Tpetra::Details::Behavior::assumeMpiIsGPUAware())
-      Kokkos::fence();
-
     reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
         tempInput.data(), output.data());
   }
-  else {
-
-    // Make sure input is up to date
-    if(Tpetra::Details::Behavior::assumeMpiIsGPUAware())
-      Kokkos::fence();
-      
+  else
     reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
         input.data(), output.data());
-  }
 }
 
 /// \brief All-reduce from input Kokkos::View to output Kokkos::View.
@@ -121,13 +109,13 @@ allReduceView (const OutputViewType& output,
   }
 
   // we must ensure MPI can handle the pointers we pass it
-  // if GPU-Aware, we are done
+  // if CudaAware, we are done
   // otherwise, if the views use Cuda, then we should copy them
   using Layout = typename TempView::UnifiedContiguousLayout<InputViewType, OutputViewType>::type;
   //if one or both is already in the correct layout, toLayout returns the same view
   auto inputContig = TempView::toLayout<InputViewType, Layout>(input);
   auto outputContig = TempView::toLayout<InputViewType, Layout>(output);
-  if(Tpetra::Details::Behavior::assumeMpiIsGPUAware())
+  if(Tpetra::Details::Behavior::assumeMpiIsCudaAware())
   {
     allReduceRawContiguous(outputContig, inputContig, comm);
 
