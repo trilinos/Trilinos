@@ -77,13 +77,7 @@ struct EntityComm
 
 class EntityCommDatabase
 {
-  typedef std::pair<EntityKey const, EntityComm> map_value;
-  typedef std::equal_to<EntityKey> map_predicate;
-  typedef std::unordered_map<  EntityKey
-                               , EntityComm
-                               , stk::mesh::HashValueForEntityKey
-                               , map_predicate
-                              > map_type;
+  typedef std::unordered_map<EntityKey, EntityComm, stk::mesh::HashValueForEntityKey> map_type;
 
 public:
   EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()), m_comm_map_change_listener(nullptr) {}
@@ -103,6 +97,9 @@ public:
 
   void setCommMapChangeListener(CommMapChangeListener* listener)
   { m_comm_map_change_listener = listener; }
+
+  size_t num_comm_keys() const { return m_comm_map.size(); }
+  size_t bucket_count() const { return m_comm_map.bucket_count(); }
 
 private:
   bool cached_find(const EntityKey& key) const;

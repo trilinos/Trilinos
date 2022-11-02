@@ -1,4 +1,5 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
@@ -6,6 +7,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -47,6 +49,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 [empty list]
 [empty list]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
 Build (MueLu::RebalanceTransferFactory)
@@ -59,6 +62,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -100,6 +104,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 [empty list]
 [empty list]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
 Build (MueLu::RebalanceTransferFactory)
@@ -112,6 +117,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+
 Level 3
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -153,6 +159,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 [empty list]
 [empty list]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
 Build (MueLu::RebalanceTransferFactory)
@@ -165,6 +172,7 @@ smoother ->
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+
 Level 4
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -206,6 +214,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 [empty list]
 [empty list]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
 Build (MueLu::RebalanceTransferFactory)

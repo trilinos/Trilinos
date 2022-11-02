@@ -1,3 +1,6 @@
+#ifndef _MiniEM_DiscreteGradient_hpp_
+#define _MiniEM_DiscreteGradient_hpp_
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
@@ -264,3 +267,5 @@ void addDiscreteGradientToRequestHandler(
     TEUCHOS_ASSERT(false);
   
 }
+
+#endif

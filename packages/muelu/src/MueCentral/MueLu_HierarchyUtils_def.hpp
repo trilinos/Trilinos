@@ -94,6 +94,7 @@ namespace MueLu {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
+                                     name != "Pnodal" && name != "NodeMatrix" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
@@ -131,24 +132,39 @@ namespace MueLu {
                                                       //      However, A is accessible through NoFactory anyway, so it should
                                                       //      be fine here.
           }
-          else if(name == "P" || name == "R" || name == "K" || name == "M" || name == "D0" ) {
-            RCP<Matrix> mat;
-            if (levelListEntry->second.isType<std::string>())
-              // We might also want to read maps here.
-              mat = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
-            else
-              mat = Teuchos::getValue<RCP<Matrix > > (levelListEntry->second);
+          else if(name == "P" || name == "R" || name == "K" || name == "M" ) {
+            if (levelListEntry->second.isType<RCP<Operator> >()) {
+              RCP<Operator> mat;
+              mat = Teuchos::getValue<RCP<Operator> > (levelListEntry->second);
 
-            RCP<const FactoryBase> fact = M->GetFactory(name);
-            level->AddKeepFlag(name,fact.get(),MueLu::UserData);
-            level->Set(name, mat, fact.get());
+              RCP<const FactoryBase> fact = M->GetFactory(name);
+              level->AddKeepFlag(name,fact.get(),MueLu::UserData);
+              level->Set(name, mat, fact.get());
 
-            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, mat, NoFactory::get());
+              level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+              level->Set(name, mat, NoFactory::get());
+            } else {
+              RCP<Matrix> mat;
+              if (levelListEntry->second.isType<std::string>())
+                // We might also want to read maps here.
+                mat = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
+              else
+                mat = Teuchos::getValue<RCP<Matrix > > (levelListEntry->second);
+
+              RCP<const FactoryBase> fact = M->GetFactory(name);
+              level->AddKeepFlag(name,fact.get(),MueLu::UserData);
+              level->Set(name, mat, fact.get());
+
+              level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+              level->Set(name, mat, NoFactory::get());
+            }
           }
-          else if (name == "M1" || name == "Ms" || name == "M0inv") {
+          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Matrix> >     (levelListEntry->second), NoFactory::get());
+            if (levelListEntry->second.isType<RCP<Operator> >())
+              level->Set(name, Teuchos::getValue<RCP<Operator> >   (levelListEntry->second), NoFactory::get());
+            else
+              level->Set(name, Teuchos::getValue<RCP<Matrix> >     (levelListEntry->second), NoFactory::get());
           }
           else if (name == "Mdiag")
           {

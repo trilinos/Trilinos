@@ -282,8 +282,6 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  stk::CommBroadcast all(bulk_data.parallel(), 0);
-
   std::vector< Entity> entities;
   std::vector< Entity> entities_closure;
 
@@ -311,21 +309,13 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // Proc 0 will broadcast the global ids of the nodes it passed to
   // find_closure
 
-  // pack entities for sizing
-  for (std::vector<Entity>::const_iterator
-       ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
-  }
+  stk::CommBroadcast all(bulk_data.parallel(), 0);
 
-  all.allocate_buffer();
-
-  // pack for real
-  for (std::vector<Entity>::const_iterator
-       ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
-  }
-
-  all.communicate();
+  stk::pack_and_communicate(all, [&](){
+    for (Entity entity : entities) {
+      all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(entity));
+    }
+  });
 
   // clear-out entities and put the nodes that correspond to the keys
   // broadcast by proc 0 into entities.

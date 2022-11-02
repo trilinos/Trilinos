@@ -25,22 +25,17 @@
 
 namespace Iotm {
   using Topology       = TopologyMapEntry;
-  using TextMeshData   = text_mesh::TextMeshData<int64_t, TopologyMapEntry>;
-  using ElementData    = text_mesh::ElementData<int64_t, TopologyMapEntry>;
-  using SidesetData    = text_mesh::SidesetData<int64_t, TopologyMapEntry>;
+  using TextMeshData   = text_mesh::TextMeshData<int64_t, Topology>;
+  using ElementData    = text_mesh::ElementData<int64_t, Topology>;
+  using SidesetData    = text_mesh::SidesetData<int64_t, Topology>;
   using NodesetData    = text_mesh::NodesetData<int64_t>;
-  using AssemblyData   = text_mesh::AssemblyData<int64_t>;
+  using AssemblyData   = text_mesh::AssemblyData;
   using Coordinates    = text_mesh::Coordinates<int64_t>;
   using TextMeshParser = text_mesh::TextMeshParser<int64_t, IossTopologyMapping>;
   using ErrorHandler   = text_mesh::ErrorHandler;
   using SideBlockInfo  = text_mesh::SideBlockInfo;
   using SplitType      = text_mesh::SplitType;
   using AssemblyType   = text_mesh::AssemblyType;
-
-  inline std::ostream &operator<<(std::ostream &out, const TopologyMapEntry &t)
-  {
-    return out << t.name();
-  }
 
   struct BlockPartition
   {
@@ -62,7 +57,7 @@ namespace Iotm {
     explicit TextMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
     TextMesh(int proc_count = 1, int my_proc = 0);
     TextMesh();
-    TextMesh(const TextMesh &) = delete;
+    TextMesh(const TextMesh &)            = delete;
     TextMesh &operator=(const TextMesh &) = delete;
 
     virtual ~TextMesh() = default;
@@ -261,17 +256,21 @@ namespace Iotm {
                  : 0;
     }
 
+    // Element block query
     std::vector<std::string> get_part_names() const;
     int64_t                  get_part_id(const std::string &name) const;
 
+    // Nodeset query
     std::vector<std::string> get_nodeset_names() const;
     std::string              get_nodeset_name(int64_t id) const;
     int64_t                  get_nodeset_id(const std::string &name) const;
 
+    // Sideset query
     std::vector<std::string> get_sideset_names() const;
     std::string              get_sideset_name(int64_t id) const;
     int64_t                  get_sideset_id(const std::string &name) const;
 
+    // Assembly query
     std::vector<std::string> get_assembly_names() const;
     std::string              get_assembly_name(int64_t id) const;
     int64_t                  get_assembly_id(const std::string &name) const;

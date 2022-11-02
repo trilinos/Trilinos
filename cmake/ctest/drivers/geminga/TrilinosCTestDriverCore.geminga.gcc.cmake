@@ -80,6 +80,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
   SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
   SET(Trilinos_CTEST_DO_ALL_AT_ONCE ON)
+  SET(Trilinos_SKIP_EXTRAREPOS_FILE TRUE)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
@@ -89,6 +90,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_CXX_STANDARD=17"
 
     "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+    # Avoid build error with Tacho tests
+    "-DTacho_ENABLE_TESTS:BOOL=OFF"
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
@@ -113,7 +116,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Options for valgrind, if needed
   SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-      "--trace-children=yes --leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+      "--max-stackframe=3835488 --trace-children=yes --leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
   SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions.txt")
 
 

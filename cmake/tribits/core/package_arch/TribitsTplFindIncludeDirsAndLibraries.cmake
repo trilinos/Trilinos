@@ -676,8 +676,11 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
       advanced_set(TPL_${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_INCLUDE_DIRS}
         CACHE PATH "User provided include dirs in the absence of include files.")
     else()
-      # Library has no header files, no user override, so just set them to null
-      global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      if ("${TPL_${TPL_NAME}_INCLUDE_DIRS}" STREQUAL "")
+        # Library has no header files, no user override, so just set them to
+        # null (unless the user has already set this).
+        global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      endif()
     endif()
 
   endif()

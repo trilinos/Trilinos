@@ -153,7 +153,7 @@ void NOX::Multiphysics::Solver::Manager::deprecated(const std::string& oldName, 
        << std::endl;
 }
 
-NOX::StatusTest::StatusType NOX::Multiphysics::Solver::Manager::getStatus()
+NOX::StatusTest::StatusType NOX::Multiphysics::Solver::Manager::getStatus() const
 {
   checkNullPtr("getStatus");
   return cplPtr->getStatus();

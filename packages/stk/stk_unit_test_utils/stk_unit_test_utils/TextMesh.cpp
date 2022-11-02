@@ -76,11 +76,16 @@ private:
 
      std::string nodesetDistFieldName = "distribution_factors_" + nodesetData.name;
 
-     stk::mesh::Field<double>& distributionFactorsFieldPerNodeset =
-         m_meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, nodesetDistFieldName);
+     stk::mesh::Field<double> * distributionFactorsFieldPerNodeset = nullptr;
+     if (m_meta.is_using_simple_fields()) {
+       distributionFactorsFieldPerNodeset = &m_meta.declare_field<double>(stk::topology::NODE_RANK, nodesetDistFieldName);
+     }
+     else {
+       distributionFactorsFieldPerNodeset = &m_meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, nodesetDistFieldName);
+     }
 
-     stk::io::set_field_role(distributionFactorsFieldPerNodeset, Ioss::Field::MESH);
-     stk::mesh::put_field_on_mesh(distributionFactorsFieldPerNodeset, *part, nullptr);
+     stk::io::set_field_role(*distributionFactorsFieldPerNodeset, Ioss::Field::MESH);
+     stk::mesh::put_field_on_mesh(*distributionFactorsFieldPerNodeset, *part, nullptr);
    }
  }
 

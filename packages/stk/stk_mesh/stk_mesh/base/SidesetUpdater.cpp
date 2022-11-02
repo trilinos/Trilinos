@@ -219,7 +219,6 @@ void ReconstructionSidesetUpdater::reconstruct_noninternal_sidesets(const std::v
       if (!isInternal)
       {
         std::vector<const Part *> touching_parts = m_metaData.get_blocks_touching_surface(surfacePart);
-
         Selector elementSelector = selectUnion(touching_parts);
         if(touching_parts.size() == 0) {
           elementSelector = m_metaData.universal_part();
@@ -374,7 +373,7 @@ const Selector& IncrementalSidesetUpdater::get_cached_sideset_selector(const Par
 
   if(iter == m_cachedSidesetSelectors.end()) {
     std::vector<const Part *> touchingBlocks = m_metaData.get_blocks_touching_surface(part);
-    Selector selector = selectUnion(touchingBlocks); // & m_activeSelector;
+    Selector selector = ((touchingBlocks.size() > 0) ? selectUnion(touchingBlocks) : m_metaData.universal_part()); // & m_activeSelector;
     const auto entry = m_cachedSidesetSelectors.insert({part, selector});
     return entry.first->second;
   }
@@ -411,6 +410,98 @@ const ConstPartVector& IncrementalSidesetUpdater::get_cached_surfaces_touching_b
   }
 
   return lowerBound->surfaces;
+}
+
+void IncrementalSidesetUpdater::accumulate_element_block_part_changes(Entity entity, const OrdinalVector& partOrdinals)
+{
+  if(m_bulkData.entity_rank(entity) != stk::topology::ELEM_RANK || !m_bulkData.is_valid(entity)) return;
+
+  PartChangeAccumulatorVector::iterator lowerBound = std::lower_bound(m_accumulatedElementPartChanges.begin(),
+                                                                      m_accumulatedElementPartChanges.end(), entity);
+
+  if(lowerBound == m_accumulatedElementPartChanges.end() || *lowerBound != entity) {
+    PartChangeAccumulator accumulator(entity);
+    lowerBound = m_accumulatedElementPartChanges.insert(lowerBound, accumulator);
+  }
+
+  for(auto partOrdinal : partOrdinals) {
+    Part& part = m_metaData.get_part(partOrdinal);
+    if(part.primary_entity_rank() == stk::topology::ELEM_RANK && part.id() != Part::INVALID_ID) {
+      stk::util::insert_keep_sorted_and_unique(partOrdinal, lowerBound->partOrdinals);
+    }
+  }
+}
+
+void IncrementalSidesetUpdater::fill_info_for_element_affected_by_block_part_change(Entity entity,
+                                                                                   SideSetSelectorVector& sidesetsAndSelectors,
+                                                                                   std::vector<std::pair<Entity, unsigned>>& sideAndPartOrdinalVec)
+{
+  sideAndPartOrdinalVec.clear();
+
+  if(m_bulkData.bucket_ptr(entity) == nullptr) { return; }
+
+  const unsigned numSides = m_bulkData.num_sides(entity);
+
+  if(sidesetsAndSelectors.size() > 0 && m_bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && numSides > 0) {
+    const stk::mesh::Entity* sides = m_bulkData.begin(entity, m_metaData.side_rank());
+
+    for(unsigned i=0; i<numSides; i++) {
+     for(SideSetSelector& sidesetSelector : sidesetsAndSelectors) {
+       const Part& sidesetPart = sidesetSelector.part();
+       unsigned sidesetPartOrdinal = sidesetPart.mesh_meta_data_ordinal();
+
+       if(m_bulkData.bucket(sides[i]).member(sidesetPart)) {
+         sideAndPartOrdinalVec.push_back(std::make_pair(sides[i], sidesetPartOrdinal));
+       }
+     }
+    }
+  }
+}
+
+void IncrementalSidesetUpdater::resolve_faces_affected_by_connected_element_part_change()
+{
+  SideSetSelectorVector sidesetsAndSelectors;
+  std::vector<std::pair<Entity, unsigned>> sideAndPartOrdinals;
+
+  for(const PartChangeAccumulator& accumulator : m_accumulatedElementPartChanges) {
+    Entity element = accumulator.entity;
+    const OrdinalVector& parts = accumulator.partOrdinals;
+
+    fill_sidesets_and_selectors_from_blocks_touching_surfaces(parts, sidesetsAndSelectors);
+    fill_info_for_element_affected_by_block_part_change(element, sidesetsAndSelectors, sideAndPartOrdinals);
+
+    for(const auto& sideAndPartOrdinal : sideAndPartOrdinals) {
+      Entity side = sideAndPartOrdinal.first;
+      unsigned surfaceOrdinal = sideAndPartOrdinal.second;
+
+      unsigned numElements = m_bulkData.num_elements(side);
+      const stk::mesh::Entity* elements = m_bulkData.begin_elements(side);
+      const ConnectivityOrdinal* ordinals = m_bulkData.begin_element_ordinals(side);
+
+      const stk::mesh::Part& part = m_metaData.get_part(surfaceOrdinal);
+
+      ThrowAssert(part.primary_entity_rank() == m_metaData.side_rank());
+
+      const stk::mesh::Part &parentPart = get_sideset_parent(part);
+      bool sidesetExists = m_bulkData.does_sideset_exist(parentPart);
+
+      if(sidesetExists) {
+        SideSet& sideset = m_bulkData.get_sideset(parentPart);
+
+        const Selector& elementSelector  = get_cached_sideset_selector(&part);
+
+        for(unsigned i=0;i<numElements;++i) {
+          bool isOwned = m_bulkData.bucket(elements[i]).owned();
+          bool isSelected = elementSelector(m_bulkData.bucket(elements[i]));
+
+          if(!isOwned || !isSelected) {
+            SideSetEntry entry(elements[i], ordinals[i]);
+            m_helper.remove_side_entry_from_sideset(&sideset, entry);
+          }
+        }
+      }
+    }
+  }
 }
 
 void IncrementalSidesetUpdater::resolve_relation_updates()
@@ -457,6 +548,7 @@ void IncrementalSidesetUpdater::modification_begin_notification()
 void IncrementalSidesetUpdater::finished_modification_end_notification()
 {
   resolve_relation_updates();
+  resolve_faces_affected_by_connected_element_part_change();
 
   m_helper.warn_internal_sideset_detection();
 
@@ -465,6 +557,7 @@ void IncrementalSidesetUpdater::finished_modification_end_notification()
   m_relationUpdates.clear();
   m_surfacesTouchingBlocks.clear();
   m_cachedBlockToSurfaceMapping.clear();
+  m_accumulatedElementPartChanges.clear();
 
   std::vector<SideSet*> sidesets = m_bulkData.get_sidesets();
 
@@ -558,6 +651,13 @@ void IncrementalSidesetUpdater::add_sidesets_and_selectors_from_part(const Part&
 
   if(m_metaData.count_blocks_touching_surface(&part) > 1) {
     sideset->set_accept_all_internal_non_coincident_entries(true);
+
+    for(const Part* subset : part.subsets()) {
+      if(m_bulkData.does_sideset_exist(*subset)) {
+        SideSet& subsetSideSet = m_bulkData.get_sideset(*subset);
+        subsetSideSet.set_accept_all_internal_non_coincident_entries(true);
+      }
+    }
   }
 }
 
@@ -660,6 +760,10 @@ void IncrementalSidesetUpdater::entity_parts_removed(Entity entity, const Ordina
   }
 
   if (m_bulkData.entity_rank(entity) == stk::topology::ELEM_RANK) {
+    if (m_bulkData.bucket_ptr(entity) != nullptr && m_bulkData.num_sides(entity) > 0) {
+      accumulate_element_block_part_changes(entity, parts);
+    }
+
     m_elemChangedRankedParts = m_elemChangedRankedParts || contains_ranked_part(m_metaData, parts);
   }
 }

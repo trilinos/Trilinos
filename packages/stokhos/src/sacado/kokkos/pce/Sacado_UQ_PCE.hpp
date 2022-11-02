@@ -1335,6 +1335,13 @@ struct reduction_identity< Sacado::UQ::PCE<Storage> > {
   }
 };
 
+namespace Impl {
+  template <typename Storage>
+  struct promote<Sacado::UQ::PCE<Storage>,false> {
+    using type = typename Sacado::UQ::PCE<Storage>;
+  };
+}
+
 }
 
 #endif // HAVE_STOKHOS_SACADO

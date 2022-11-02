@@ -232,7 +232,6 @@ namespace FROSch {
 
                 default:
                     FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
-                    break;
             }
             if (verbosity==All) {
                 FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
@@ -283,7 +282,6 @@ namespace FROSch {
 
                 default:
                     FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
-                    break;
             }
         }
 

@@ -71,7 +71,7 @@ public:
 	//! Memory is allocated for \c count objects of type \c T but objects are not constructed.
 	/*! This function may raise an appropriate exception. The result is a random access iterator.
 	*/
-	pointer allocate( size_type count, std::allocator<void>::const_pointer /*hint*/ = 0 ) const
+	pointer allocate( size_type count, typename std::allocator_traits<T>::const_void_pointer /*hint*/ = 0 ) const
 	{
 		if( count == 1 && m_pool )
 		{

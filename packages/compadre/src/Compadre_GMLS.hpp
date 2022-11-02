@@ -32,8 +32,6 @@ struct GMLSSolutionData;
 class GMLS {
 
 friend class Evaluator;
-friend const GMLSBasisData createGMLSBasisData(const GMLS& gmls);
-friend const GMLSSolutionData createGMLSSolutionData(const GMLS& gmls);
 
 public:
 
@@ -546,7 +544,7 @@ public:
             // (1 - |r/h|^n)^p
             // p=0,n=1 -> Uniform, boxcar
             // p=1,n=1 -> triangular
-            // p=0,n=2 -> Epanechnikov, parabolic
+            // p=1,n=2 -> Epanechnikov, parabolic
             // p=2,n=2 -> Quartic, biweight
             // p=3,n=2 -> Triweight
             // p=3,n=3 -> Tricube
@@ -808,6 +806,12 @@ public:
 
     //! Check if GMLS solution set contains valid alpha values (has generateAlphas been called)
     bool containsValidAlphas() const { return this->_d_ss._contains_valid_alphas; }
+
+    //! Get GMLS solution data
+    const GMLSSolutionData extractSolutionData() const;
+
+    //! Get GMLS basis data
+    const GMLSBasisData extractBasisData() const;
 
 ///@}
 

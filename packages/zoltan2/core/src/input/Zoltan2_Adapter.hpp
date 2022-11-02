@@ -105,7 +105,7 @@ public:
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::node_t node_t;
-  typedef typename InputTraits<User>::part_t part_t;  
+  typedef typename InputTraits<User>::part_t part_t;
   typedef typename InputTraits<User>::offset_t offset_t;
 
   /*! \brief Returns the type of adapter.
@@ -117,7 +117,7 @@ public:
   virtual ~BaseAdapter() {};
 
   /*! \brief Provide a pointer to this process' identifiers.
-      \param ids will on return point to the list of the global Ids for 
+      \param ids will on return point to the list of the global Ids for
         this process.
    */
   virtual void getIDsView(const gno_t *&ids) const {
@@ -130,7 +130,7 @@ public:
   }
 
   /*! \brief Provide a Kokkos view to this process' identifiers.
-      \param ids will on return point to the list of the global Ids for 
+      \param ids will on return point to the list of the global Ids for
         this process.
    */
   virtual void getIDsKokkosView(Kokkos::View<const gno_t *,
@@ -140,9 +140,11 @@ public:
     // Allows forward and backwards compatibility.
     const gno_t * ptr_ids;
     getIDsView(ptr_ids);
+
     typedef Kokkos::View<gno_t *, typename node_t::device_type> view_t;
     view_t non_const_ids = view_t("ptr_ids", getLocalNumIDs());
-    typename view_t::HostMirror host_ids = Kokkos::create_mirror_view(non_const_ids);
+
+    auto host_ids = Kokkos::create_mirror_view(non_const_ids);
     for(size_t i = 0; i < this->getLocalNumIDs(); ++i) {
        host_ids(i) = ptr_ids[i];
     }
@@ -158,7 +160,7 @@ public:
   // *   This function or getWeightsKokkosView must be implemented in
   // *   derived adapter if getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
-  // */ 
+  // */
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const {
     // If adapter does not define getWeightsView, getWeightsKokkosView is called.
@@ -198,15 +200,15 @@ public:
     Kokkos::deep_copy(wgt, host_wgt);
   }
 
-  /*! \brief Provide pointer to an array containing the input part 
+  /*! \brief Provide pointer to an array containing the input part
    *         assignment for each ID.
    *         The input part information may be used for re-partitioning
    *         to reduce data movement, or for mapping parts to processes.
    *         Adapters may return NULL for this pointer (the default
    *         behavior); if NULL is returned, algorithms will assume
-   *         the rank 
+   *         the rank
    *    \param inputPart on return a pointer to input part numbers
-   */ 
+   */
   void getPartsView(const part_t *&inputPart) const {
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
@@ -243,9 +245,30 @@ protected:
   // This function does not write edge info to the graph file, as the
   // BaseAdapter does not know about edge info; it writes
   // only the Chaco header and vertex weights (if applicable).
-  void generateWeightFileOnly(const char* fileprefix, 
+  void generateWeightFileOnly(const char* fileprefix,
                               const Teuchos::Comm<int> &comm) const;
 
+};
+
+template <typename User>
+class AdapterWithCoords : public BaseAdapter<User>
+{
+public:
+  virtual void getCoordinatesView(const typename BaseAdapter<User>::scalar_t *&coords, int &stride, int coordDim) const = 0;
+  virtual void getCoordinatesKokkosView(
+    Kokkos::View<typename BaseAdapter<User>::scalar_t **, Kokkos::LayoutLeft, typename BaseAdapter<User>::node_t::device_type> &elements) const = 0;
+};
+
+// Forward declare
+template <typename User>
+class VectorAdapter;
+
+template <typename User, typename UserCoord=User>
+class AdapterWithCoordsWrapper : public BaseAdapter<User>
+{
+public:
+  virtual void setCoordinateInput(VectorAdapter<UserCoord> *coordData) = 0;
+  virtual VectorAdapter<UserCoord> *getCoordinateInput() const = 0;
 };
 
 template <typename User>
@@ -285,7 +308,7 @@ void BaseAdapter<User>::generateWeightFileOnly(
           fp.open(filename, std::ios::out);
           // write Chaco header info
           // this function assumes no edges
-          fp << nGlobalIDs << " " << 0 << " " 
+          fp << nGlobalIDs << " " << 0 << " "
              << (nWgts ? "010" : "000") << " "
              << (nWgts > 1 ? std::to_string(nWgts) : " ") << std::endl;
         }
@@ -301,21 +324,21 @@ void BaseAdapter<User>::generateWeightFileOnly(
           int *strides = new int[nWgts];
           for (int n = 0; n < nWgts; n++)
             getWeightsView(wgts[n], strides[n], n);
-  
+
           // write weights to file
           for (size_t i = 0; i < nLocalIDs; i++) {
             for (int n = 0; n < nWgts; n++)
               fp << wgts[n][i*strides[n]] << " ";
             fp << "\n";
           }
-  
+
           delete [] strides;
           delete [] wgts;
         }
-  
+
         fp.close();
       }
-  
+
       comm.barrier();
     }
   }
@@ -330,9 +353,9 @@ void BaseAdapter<User>::generateWeightFileOnly(
 
       // Is it this processor's turn to write to files?
       if (me == p) {
-  
+
         std::ofstream fp;
-  
+
         if (me == 0) {
           // open file for writing
           fp.open(filename, std::ios::out);
@@ -341,21 +364,21 @@ void BaseAdapter<User>::generateWeightFileOnly(
           // open file for appending
           fp.open(filename, std::ios::app);
         }
-  
+
         const part_t *parts;
         this->getPartsView(parts);
-       
+
         for (size_t i = 0; i < nLocalIDs; i++) {
           fp << (parts != NULL ? parts[i] : me) << "\n";
         }
         fp.close();
       }
-  
+
       comm.barrier();
     }
   }
 }
 
 }  //namespace Zoltan2
-  
+
 #endif

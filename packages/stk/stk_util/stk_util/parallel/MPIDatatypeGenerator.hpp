@@ -1,6 +1,7 @@
 #ifndef MPIDATATYPEGENERATOR_H
 #define MPIDATATYPEGENERATOR_H
 
+#include <stddef.h>
 #include <map>
 #include <vector>
 

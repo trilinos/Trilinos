@@ -1000,8 +1000,8 @@ namespace MueLu {
     //    const size_t numFinePointRows = rangeMap->getLocalNumElements();
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType Magnitude;
+    // typedef Teuchos::ScalarTraits<SC> STS;
+    // typedef typename STS::magnitudeType Magnitude;
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
@@ -1133,7 +1133,7 @@ namespace MueLu {
     typedef typename Xpetra::Matrix<SC,LO,GO,NO>::local_matrix_type    local_matrix_type;
     typedef typename local_matrix_type::row_map_type::non_const_type   rows_type;
     typedef typename local_matrix_type::index_type::non_const_type     cols_type;
-    typedef typename local_matrix_type::values_type::non_const_type    vals_type;
+    // typedef typename local_matrix_type::values_type::non_const_type    vals_type;
 
 
     // Device View for status (error messages...)

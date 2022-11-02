@@ -90,7 +90,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Array of LocalOrdinal on device
     typedef Kokkos::View<LocalOrdinal *, execution_space> OrdinalArray;
     //! Array of LocalOrdinal on host
-    typedef Kokkos::View<LocalOrdinal *, Kokkos::HostSpace> OrdinalArrayHost;
+    typedef typename Kokkos::View<LocalOrdinal *, execution_space>::HostMirror OrdinalArrayHost;
     //! Array of Scalar on device
     typedef Kokkos::View<  ImplScalar *, execution_space>  ImplScalarArray;
     typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;

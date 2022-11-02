@@ -55,7 +55,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    TpetraPreconditioner<SC,LO,GO,NO>::TpetraPreconditioner(Teuchos::RCP<SchwarzPreconditioner<SC,LO,GO,NO> > preconditioner) :
+    TpetraPreconditioner<SC,LO,GO,NO>::TpetraPreconditioner(Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > preconditioner) :
     preconditioner_(preconditioner)
     {
     }
@@ -148,7 +148,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<SchwarzPreconditioner<SC,LO,GO,NO> >
+    Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >
     TpetraPreconditioner<SC,LO,GO,NO>::getSchwarzPreconditioner()
     {
       return preconditioner_;

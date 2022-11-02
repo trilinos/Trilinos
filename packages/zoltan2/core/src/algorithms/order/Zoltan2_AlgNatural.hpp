@@ -62,9 +62,10 @@ class AlgNatural : public Algorithm<Adapter>
 {
   private:
 
-  const RCP<IdentifierModel<Adapter> > model;
+  const RCP<const typename Adapter::base_adapter_t> adapter;
   const RCP<Teuchos::ParameterList> pl;
   const RCP<const Teuchos::Comm<int> > comm;
+  const RCP<const Environment> env;
 
   public:
 
@@ -72,10 +73,11 @@ class AlgNatural : public Algorithm<Adapter>
   typedef typename Adapter::gno_t gno_t;
 
   AlgNatural(
-    const RCP<IdentifierModel<Adapter> > &model__, 
+    const RCP<const typename Adapter::base_adapter_t> &adapter__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<const Teuchos::Comm<int> > &comm__
-  ) : model(model__), pl(pl__), comm(comm__)
+    const RCP<const Teuchos::Comm<int> > &comm__,
+    const RCP<const Environment> &env__
+  ) : adapter(adapter__), pl(pl__), comm(comm__), env(env__)
   {
   }
 
@@ -93,6 +95,8 @@ class AlgNatural : public Algorithm<Adapter>
     // Local permutation only for now.
 
     // Set identity permutation.
+    modelFlag_t modelFlags;
+    const auto model = rcp(new IdentifierModel<Adapter>(adapter, env, comm, modelFlags));
     const size_t n = model->getLocalNumIdentifiers();
     lno_t *perm = solution->getPermutationView();
     if (perm){

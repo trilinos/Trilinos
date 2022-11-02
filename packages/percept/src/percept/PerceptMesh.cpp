@@ -5974,7 +5974,7 @@
           m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
           if (!m_weights_field)
             {
-              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
               stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }
