@@ -37,7 +37,7 @@
       stk::mesh::BulkData& bulkData = *m_bulk;
 
       // FIXME consider caching the coords_field
-      CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      CoordinatesFieldType *coords_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
       PerceptMesh meshUtil(&metaData, &bulkData);
 

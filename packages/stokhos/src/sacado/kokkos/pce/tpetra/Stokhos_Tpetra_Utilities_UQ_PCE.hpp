@@ -57,7 +57,7 @@ namespace Stokhos {
             typename CijkType>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
-  create_cijk_crs_graph(const CijkType& cijk,
+  create_cijk_crs_graph(const CijkType& cijk_dev,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
@@ -66,6 +66,11 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
+
+    // Code below accesses cijk entries on the host, so make sure it is
+    // accessible there
+    auto cijk = create_mirror_view(cijk_dev);
+    deep_copy(cijk, cijk_dev);
 
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
@@ -177,6 +182,7 @@ namespace Stokhos {
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 
       // Get outer columns for this outer row
+      Kokkos::fence();
       graph.getLocalRowView(outer_row, outer_cols);
       const LocalOrdinal num_outer_cols = outer_cols.size();
 
@@ -187,6 +193,7 @@ namespace Stokhos {
         const LocalOrdinal flat_row = outer_row*block_size + inner_row;
 
         // Get inner columns for this inner row
+        Kokkos::fence();
         cijk_graph->getLocalRowView(inner_row, inner_cols);
         const LocalOrdinal num_inner_cols = inner_cols.size();
 
@@ -434,7 +441,7 @@ namespace Stokhos {
                             LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& mat,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_graph,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
-    const CijkType& cijk) {
+    const CijkType& cijk_dev) {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -445,6 +452,11 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatMatrix;
+
+    // Code below accesses cijk entries on the host, so make sure it is
+    // accessible there
+    auto cijk = create_mirror_view(cijk_dev);
+    deep_copy(cijk, cijk_dev);
 
     const LocalOrdinal block_size = cijk.dimension();
     const LocalOrdinal matrix_pce_size =

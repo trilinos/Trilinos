@@ -1,6 +1,7 @@
 #ifndef stk_util_parallel_CommBuffer_hpp
 #define stk_util_parallel_CommBuffer_hpp
 
+#include <stddef.h>
 #include <string>
 #include <map>
 #include <vector>

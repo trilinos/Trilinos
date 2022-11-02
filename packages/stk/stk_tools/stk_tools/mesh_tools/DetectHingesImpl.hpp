@@ -132,6 +132,8 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
 
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk);
 
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect);
+
 void fill_hinge_edges_for_hinge_node(const stk::mesh::BulkData& bulk, const HingeNodeVector& hingeNodes, const HingeNode& hingeNode, HingeEdgeVector& hingeEdges);
 
 HingeEdgeVector get_hinge_edges(const stk::mesh::BulkData& bulk, const HingeNodeVector& hingeNodes);
@@ -147,6 +149,10 @@ void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNo
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges);
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes);
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges);
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes);
 
 bool hinge_node_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeNode& node);
 

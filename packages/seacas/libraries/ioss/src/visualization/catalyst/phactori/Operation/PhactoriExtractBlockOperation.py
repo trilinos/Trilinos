@@ -356,7 +356,7 @@ As mentioned previously, you can specify "exclude blocks" instead of
     flatIndexCounter = [0]
     self.FigureBlockIndicesFromBlockListRecurse1(csdata, None,
         flatIndexCounter, 0)
-    
+
     if PhactoriDbg(100):
       myDebugPrint3("number of times existing block names found:\n")
       for blknm, count in gDuplicateNameCounter.items():
@@ -382,7 +382,7 @@ As mentioned previously, you can specify "exclude blocks" instead of
       numArrays = inInputFilter.PointData.GetNumberOfArrays()
       for ii in range (0, numArrays):
         myDebugPrint3("  " + str(ii) + ":  " + inInputFilter.PointData.GetArray(ii).GetName() + "\n")
-  
+
     if PhactoriDbg():
       myDebugPrint3("  extractblock inInputFilter cell data arrays:\n")
       numArrays = inInputFilter.CellData.GetNumberOfArrays()
@@ -408,7 +408,7 @@ As mentioned previously, you can specify "exclude blocks" instead of
       numArrays = newParaViewFilter.PointData.GetNumberOfArrays()
       for ii in range (0, numArrays):
         myDebugPrint3("  " + str(ii) + ":  " + newParaViewFilter.PointData.GetArray(ii).GetName() + "\n")
-  
+
     if PhactoriDbg():
       myDebugPrint3("  extractblock newParaViewFilter cell data arrays:\n")
       numArrays = newParaViewFilter.CellData.GetNumberOfArrays()

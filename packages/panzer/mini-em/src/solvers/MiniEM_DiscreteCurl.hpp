@@ -1,3 +1,6 @@
+#ifndef _MiniEM_DiscreteCurl_hpp_
+#define _MiniEM_DiscreteCurl_hpp_
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
@@ -509,3 +512,5 @@ void addDiscreteCurlToRequestHandler(
   } else
     TEUCHOS_ASSERT(false);
 }
+
+#endif

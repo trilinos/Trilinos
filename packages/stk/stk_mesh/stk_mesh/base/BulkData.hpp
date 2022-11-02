@@ -106,7 +106,6 @@ void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh, std::fun
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
 
-
 namespace stk {
 namespace mesh {
 struct PartStorage;
@@ -680,7 +679,7 @@ public:
 
   inline bool in_index_range(Entity entity) const;
   inline bool is_valid(Entity entity) const;
-  size_t count_relations(Entity entity) const;
+  size_t count_relations(Entity entity, bool onlyDownwardRelations = false) const;
   bool has_no_relations(Entity entity) const;
 
   inline const MeshIndex& mesh_index(Entity entity) const;
@@ -2328,7 +2327,6 @@ inline void
 BulkData::set_state(Entity entity, EntityState entity_state)
 {
   ThrowAssert(entity.local_offset() > 0);
-
   m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
 }
@@ -2344,7 +2342,7 @@ BulkData::set_local_id(Entity entity, unsigned id)
 inline void
 BulkData::log_created_parallel_copy(Entity entity)
 {
-  if (state(entity) == Created) {
+  if (state(entity) == Unchanged) {
     set_state(entity, Modified);
   }
 }

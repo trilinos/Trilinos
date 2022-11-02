@@ -419,4 +419,3 @@ void track_location(YYLTYPE *loc, char *txt)
 [ \t\v\f\n]+                                                         { }
 
 %%
-

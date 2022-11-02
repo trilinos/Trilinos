@@ -97,13 +97,13 @@ macro(tribits_extpkg_define_dependencies
   tribits_check_for_unparsed_arguments(PARSE)
   tribits_assert_parse_arg_one_or_more_values(PARSE  DEPENDENCIES)
 
-  set(${tplName}_LIB_ALL_DEPENDENCIES  ${PARSE_DEPENDENCIES}  CACHE STRING
+  set(${tplName}_LIB_DEFINED_DEPENDENCIES  ${PARSE_DEPENDENCIES}  CACHE STRING
     "List of all potential dependencies for external package/TPL '${tplName}'")
-  mark_as_advanced(${tplName}_LIB_ALL_DEPENDENCIES)
+  mark_as_advanced(${tplName}_LIB_DEFINED_DEPENDENCIES)
 
 endmacro()
 #
-# NOTE: Above, we use a cache var for ${tplName}_LIB_ALL_DEPENDENCIES to allow
+# NOTE: Above, we use a cache var for ${tplName}_LIB_DEFINED_DEPENDENCIES to allow
 # the user to override what dependencies a TPL can depend on.  Since this does
 # not depend on what actual TPLs are enabled, it is okay to set this as a
 # cache var.  As with any genetic change to a CMakeLists.txt file, you always
@@ -120,10 +120,10 @@ endmacro()
 #
 # Macro that sets up the list of enabled external package/TPL dependencies
 #
-# Takes the list ``<externalPkgName>_LIB_ALL_DEPENDENCIES`` and sets the
+# Takes the list ``<externalPkgName>_LIB_DEFINED_DEPENDENCIES`` and sets the
 # default entries of the non-cache var
 # ``<externalPkgName>_LIB_ENABLED_DEPENDENCIES``.  However, if
-# ``${<externalPkgName>_LIB_ALL_DEPENDENCIES}`` is non-empty when this macro
+# ``${<externalPkgName>_LIB_DEFINED_DEPENDENCIES}`` is non-empty when this macro
 # is called, then it will not be changed.  That allows the user to override
 # the list of enabled TPL dependencies in the cache.  This also sets the
 # non-cache vars ``<externalPkgName>_ENABLE_<upstsreamPkgName>=ON`` for each
@@ -137,7 +137,7 @@ macro(tribits_extpkg_setup_enabled_dependencies  externalPkgName)
   set(libEnabledDependencies "")
 
   if (TPL_ENABLE_${externalPkgName})
-    foreach(upstreamPkgEntry  IN  LISTS ${externalPkgName}_LIB_ALL_DEPENDENCIES)
+    foreach(upstreamPkgEntry  IN  LISTS ${externalPkgName}_LIB_DEFINED_DEPENDENCIES)
       tribits_extpkg_get_dep_name_and_vis(${upstreamPkgEntry}
         upstreamPkgName  upstreamPkgVis)
       if (TPL_ENABLE_${upstreamPkgName})

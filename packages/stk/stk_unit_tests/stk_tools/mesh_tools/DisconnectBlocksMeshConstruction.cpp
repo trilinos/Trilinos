@@ -1694,6 +1694,17 @@ void setup_mesh_3block_4quad_base(stk::mesh::BulkData& bulk, stk::mesh::PartVect
                  "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
                  "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
                  "0,4,QUAD_4_2D,5,6,9,8,block_3";
+//
+//                4
+//  1*------------*------------*5
+//   |   E1,B1    |   E3,B1    |
+//   |    P2      |    P1      |
+//  2*-----------5*------------*8
+//   |   E2,B2    |   E4,B3    |
+//   |    P0      |    P0      |
+//  3*------------*------------*9
+//                6
+//
     }
     else if (decompPattern == 3) {
       meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"

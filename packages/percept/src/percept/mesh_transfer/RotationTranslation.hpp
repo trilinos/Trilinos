@@ -10,7 +10,7 @@
 #ifndef RotationTranslation_h
 #define RotationTranslation_h
 
-void applyRotation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorField, 
+void applyRotation(stk::mesh::FieldBase *vectorField,
 		   double&xrot, double&yrot, double&zrot) // angles in degrees
 {
   stk::mesh::BulkData& bulkdata = vectorField->get_mesh();
@@ -65,7 +65,7 @@ void applyRotation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorField,
 
     stk::mesh::Bucket & b = **ib ;
 
-    double * v = stk::mesh::field_data(*vectorField, b);
+    double * v = static_cast<double*>(stk::mesh::field_data(*vectorField, b));
     double tmp[3];
 
     const stk::mesh::Bucket::size_type length = b.size();
@@ -83,7 +83,7 @@ void applyRotation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorField,
   }
 }
 
-void applyTranslation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorField, 
+void applyTranslation(stk::mesh::FieldBase *vectorField,
 		      double&xtrans, double&ytrans, double&ztrans)
 {
   stk::mesh::BulkData& bulkdata = vectorField->get_mesh();
@@ -105,7 +105,7 @@ void applyTranslation(stk::mesh::Field<double, stk::mesh::Cartesian> *vectorFiel
 
     stk::mesh::Bucket & b = **ib ;
 
-    double * v = stk::mesh::field_data(*vectorField, b);
+    double * v = static_cast<double*>(stk::mesh::field_data(*vectorField, b));
 
     const stk::mesh::Bucket::size_type length = b.size();
     for (unsigned ie=0; ie<length; ie++) {

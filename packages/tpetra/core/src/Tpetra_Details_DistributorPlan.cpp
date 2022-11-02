@@ -139,7 +139,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // However, if they do not provide an efficient pattern, we will
   // warn them if one of the following compile-time options has been
   // set:
-  //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   //
   // If the data are contiguous, then we can post the sends in situ
@@ -201,13 +200,13 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     }
   }
 
-#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+#if defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
   {
     int global_needSendBuff;
     reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
         outArg (global_needSendBuff));
     TPETRA_EFFICIENCY_WARNING(
-        global_needSendBuff != 0, std::runtime_error,
+        global_needSendBuff != 0,
         "::createFromSends: Grouping export IDs together by process rank often "
         "improves performance.");
   }

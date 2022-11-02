@@ -43,17 +43,17 @@
 //
 // @HEADER
 
-/*! CommGraphModel creates a graph representing the communication topology of 
+/*! CommGraphModel creates a graph representing the communication topology of
 the MPI ranks for a given XpetraCrsGraphAdapter object. If there are n MPI ranks
 in the given communicator, then this model contains n vertices so that each vertex
-represents an MPI rank. If rank i sends a message to rank j (during the mat-vec on 
-the matrix corresponding to the given adapter), then there is a directed edge 
-from vertex i to vertex j in the graph. The size of the edge is the number of 
+represents an MPI rank. If rank i sends a message to rank j (during the mat-vec on
+the matrix corresponding to the given adapter), then there is a directed edge
+from vertex i to vertex j in the graph. The size of the edge is the number of
 nonzeros that cause that message. The weight of vertex i is the number of nonzeros
-currently residing at rank i. 
-    
-Since the above mentioned graph is too small, we migrate it into a subset of ranks, 
-which we call activeRanks. nActiveRanks_ denotes the number of active ranks and 
+currently residing at rank i.
+
+Since the above mentioned graph is too small, we migrate it into a subset of ranks,
+which we call activeRanks. nActiveRanks_ denotes the number of active ranks and
 is computed as n/threshold_.
 */
 
@@ -111,33 +111,39 @@ public:
    *  \param  inputAdapter  a pointer to the user's data
    *  \param  env           object containing the parameters
    *  \param  comm          communicator for the problem
+   *  \param  modelflags    a bit map of Zoltan2::GraphModelFlags
    *
    *  All processes in the communicator must call the constructor.
    */
 
-  CommGraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
-		 const RCP<const Environment> &env, const RCP<const Comm<int> > &comm)
+  CommGraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &/* ia */,
+		 const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */,
+     const modelFlag_t &modelflags = modelFlag_t())
   {
     throw std::runtime_error("CommGraphModel is not implemented for MatrixAdapter yet.");
   }
 
   CommGraphModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
-		 const RCP<const Environment> &env, const RCP<const Comm<int> > &comm);
+		 const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+     const modelFlag_t &modelflags = modelFlag_t());
 
-  CommGraphModel(const RCP<const MeshAdapter<user_t> > &ia,
-		 const RCP<const Environment> &env, const RCP<const Comm<int> > &comm)
+  CommGraphModel(const RCP<const MeshAdapter<user_t> > &/* ia */,
+		 const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */,
+     const modelFlag_t &modelflags = modelFlag_t())
   {
     throw std::runtime_error("CommGraphModel is not implemented for MeshAdapter yet.");
   }
 
   CommGraphModel(const RCP<const VectorAdapter<userCoord_t> > &/* ia */,
-		 const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */)
+		 const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */,
+     const modelFlag_t &modelflags = modelFlag_t())
   {
     throw std::runtime_error("cannot build CommGraphModel from VectorAdapter");
   }
 
-  CommGraphModel(const RCP<const IdentifierAdapter<user_t> > &ia,
-		 const RCP<const Environment> &env, const RCP<const Comm<int> > &comm)
+  CommGraphModel(const RCP<const IdentifierAdapter<user_t> > &/* ia */,
+		 const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */,
+     const modelFlag_t &modelflags = modelFlag_t())
   {
     throw std::runtime_error("cannot build GraphModel from IdentifierAdapter");
   }
@@ -203,7 +209,7 @@ public:
     return nLocalEdges_;
   }
 
-  /*! \brief Return the vtxDist array 
+  /*! \brief Return the vtxDist array
    *  Array of size comm->getSize() + 1
    *  Array[n+1] - Array[n] is number of vertices on rank n
    */
@@ -244,10 +250,10 @@ private:
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
-  int threshold_;        // threshold on #vertices each rank stores post-migration 
+  int threshold_;        // threshold on #vertices each rank stores post-migration
   int nActiveRanks_ ;    // # ranks for the small graph to be partitioned on
   int destRank_, startRank_, endRank_;
-                       
+
 
   size_t nLocalVertices_;                // # local vertices in built graph
   size_t nGlobalVertices_;               // # global vertices in built graph
@@ -257,7 +263,7 @@ private:
 
   int nWeightsPerVertex_;
   ArrayRCP<input_t> vWeights_;
- 
+
   // Note: in some cases, size of these arrays
   // may be larger than nLocalEdges_.  So do not use .size().
   // Use nLocalEdges_, nGlobalEdges_
@@ -266,7 +272,7 @@ private:
   size_t nGlobalEdges_;                 // # global edges in built graph
   ArrayRCP<gno_t> eGids_;                 // edges of graph built in model
   ArrayRCP<offset_t> eOffsets_;           // edge offsets build in model
-                                          // May be same as adapter's input 
+                                          // May be same as adapter's input
                                           // or may differ
                                           // due to renumbering, self-edge
                                           // removal, or local graph.
@@ -290,7 +296,8 @@ template <typename Adapter>
 CommGraphModel<Adapter>::CommGraphModel(
   const RCP<const GraphAdapter<user_t,userCoord_t> > &bia,
   const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &comm):
+  const RCP<const Comm<int> > &comm,
+  const modelFlag_t &/* modelflags */):
         env_(env),
         comm_(comm),
         nLocalVertices_(0),
@@ -308,10 +315,10 @@ CommGraphModel<Adapter>::CommGraphModel(
 {
   int commSize = comm_->getSize();
 
-  // Get XpetraCrsGraphAdapter from GraphAdapter 
-  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> ia; 
+  // Get XpetraCrsGraphAdapter from GraphAdapter
+  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> ia;
   try{
-    RCP<GraphAdapter<user_t, userCoord_t>> tmp = 
+    RCP<GraphAdapter<user_t, userCoord_t>> tmp =
        rcp_const_cast<GraphAdapter<user_t, userCoord_t>>(bia);
     ia = rcp_dynamic_cast<XpetraCrsGraphAdapter<user_t, userCoord_t>>(tmp);
   }
@@ -336,7 +343,7 @@ CommGraphModel<Adapter>::CommGraphModel(
   }
 
   // Set sizes
-  // There is only one vertex in each rank 
+  // There is only one vertex in each rank
   nLocalVertices_ = 1;
   nLocalEdges_ = exportpidmap.size();
 
@@ -344,14 +351,14 @@ CommGraphModel<Adapter>::CommGraphModel(
   vGids_ = arcp(new gno_t[nLocalVertices_],
 		0, nLocalVertices_, true);
   eGids_ = arcp(new gno_t[nLocalEdges_],
-		0, nLocalEdges_, true);  
+		0, nLocalEdges_, true);
   eOffsets_ = arcp(new offset_t[nLocalVertices_+1],
 		   0, nLocalVertices_+1, true);
   scalar_t *wgts2 = new scalar_t [nLocalEdges_];
 
   // Form the vertices
   vGids_[0] = comm->getRank();
-  
+
   // Form the edges
   size_t ptr = 0;
   eOffsets_[0] = ptr;
@@ -361,7 +368,7 @@ CommGraphModel<Adapter>::CommGraphModel(
     wgts2[ptr++] = it->second;
   }
   eOffsets_[nLocalVertices_] = ptr;
-    
+
   // Edge weights
   nWeightsPerEdge_ = 1;
   input_t *wgts = new input_t [nWeightsPerEdge_];
@@ -407,9 +414,9 @@ void CommGraphModel<Adapter>::migrateGraph()
 {
 
   // Set default threshold for migration
-  threshold_ = 1024;  
+  threshold_ = 1024;
 
-  // Check if the user set the threshold value 
+  // Check if the user set the threshold value
   const ParameterList &pl = env_->getParameters();
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("quotient_threshold");
   if (pe)
@@ -423,7 +430,7 @@ void CommGraphModel<Adapter>::migrateGraph()
   int me = comm_->getRank();
   int commSize = comm_->getSize();
 
-  // Save the original pointers 
+  // Save the original pointers
   ArrayRCP<offset_t> old_eOffsets_ = eOffsets_;
   ArrayRCP<gno_t> old_eGids_ = eGids_;
   size_t old_nLocalEdges_ = nLocalEdges_;
@@ -434,16 +441,16 @@ void CommGraphModel<Adapter>::migrateGraph()
   destRank_ = me / (int) avgVertexShare;
   if(destRank_ >= nActiveRanks_)
     destRank_ = nActiveRanks_ - 1;
-  
-  // Start with sending the size of the edge list 
+
+  // Start with sending the size of the edge list
   RCP<CommRequest<int>> *requests;
   if(me < nActiveRanks_) {
 
     // Determine the range of ranks to receive edges from
-    // Needs to be updated when chunks are introduced 
+    // Needs to be updated when chunks are introduced
     startRank_ = me * static_cast<int>(avgVertexShare);
     endRank_ = (me+1) * static_cast<int>(avgVertexShare);
-    if(me == nActiveRanks_ - 1 ) // Last rank gets the surplus 
+    if(me == nActiveRanks_ - 1 ) // Last rank gets the surplus
       endRank_ = static_cast<int>(nGlobalVertices_);
     myVertexShare = endRank_ - startRank_;
 
@@ -453,17 +460,17 @@ void CommGraphModel<Adapter>::migrateGraph()
     // Receive the sizes of their edge list
     requests = new RCP<CommRequest<int>>[myVertexShare];
     for(int i = startRank_; i < endRank_; i++) {
-      requests[i-startRank_] = Teuchos::ireceive<int, offset_t>(*comm_, 
-							   arcp(&eOffsets_[i-startRank_+1], 0, 1, false), 
+      requests[i-startRank_] = Teuchos::ireceive<int, offset_t>(*comm_,
+							   arcp(&eOffsets_[i-startRank_+1], 0, 1, false),
 							   i);
-    } 
+    }
 
     // Send adjacency size  even though this rank will remain active
     Teuchos::send<int, offset_t>(*comm_, 1, &old_eOffsets_[nLocalVertices_], destRank_);
-     
-    // Wait 
-    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare)); 
-    
+
+    // Wait
+    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));
+
     // Prefix sum over the offsets
     for(size_t i = 1; i <= myVertexShare; i++)
       eOffsets_[i] += eOffsets_[i-1];
@@ -474,36 +481,36 @@ void CommGraphModel<Adapter>::migrateGraph()
     // Reallocate the adjacency array
     eGids_ = arcp(new gno_t[nLocalEdges_], 0, nLocalEdges_, true);
 
-    
+
     // Receive the adjacency lists
     for(int i = startRank_; i < endRank_; i++) {
       offset_t adjStartRank_ = eOffsets_[i-startRank_];
       offset_t adjSize = eOffsets_[i-startRank_+1] - adjStartRank_;
-      requests[i-startRank_] = Teuchos::ireceive<int, gno_t>(*comm_, 
-							arcp(&eGids_[adjStartRank_], 0, adjSize, false), 
+      requests[i-startRank_] = Teuchos::ireceive<int, gno_t>(*comm_,
+							arcp(&eGids_[adjStartRank_], 0, adjSize, false),
 							i);
-    } 
-   
+    }
+
     // Send adjacency even though this rank will remain active
     Teuchos::send<int, gno_t>(*comm_, old_nLocalEdges_, &old_eGids_[0], destRank_);
-    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare)); 
+    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));
 
-    
+
     // Migrate vertex weights arrays
     scalar_t *wgts = new scalar_t [myVertexShare];
     for(int i = startRank_; i < endRank_; i++) {
-      requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_, 
-							   arcp(&wgts[i-startRank_], 0, 1, false), // assumes one vertex per rank  
+      requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_,
+							   arcp(&wgts[i-startRank_], 0, 1, false), // assumes one vertex per rank
 							   i);
-    } 
+    }
 
     const scalar_t *wPtr;
     size_t wLen = 0;
     int stride = 0;
     old_vWeights_[0].getStridedList(wLen, wPtr, stride);
     Teuchos::send<int, scalar_t>(*comm_, nLocalVertices_, wPtr, destRank_);
-    
-    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));     
+
+    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));
 
     input_t *weightInfo = new input_t [nWeightsPerVertex_];
     for (int idx=0; idx < nWeightsPerVertex_; idx++){
@@ -517,15 +524,15 @@ void CommGraphModel<Adapter>::migrateGraph()
     for(int i = startRank_; i < endRank_; i++) {
       offset_t adjStartRank_ = eOffsets_[i-startRank_];
       offset_t adjSize = eOffsets_[i-startRank_+1] - adjStartRank_;
-      requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_, 
-							   arcp(&ewgts[adjStartRank_], 0, adjSize, false), // assumes one vertex per rank  
+      requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_,
+							   arcp(&ewgts[adjStartRank_], 0, adjSize, false), // assumes one vertex per rank
 							   i);
-    } 
+    }
 
     old_eWeights_[0].getStridedList(wLen, wPtr, stride);
     Teuchos::send<int, scalar_t>(*comm_, old_nLocalEdges_, wPtr, destRank_);
-    
-    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));     
+
+    Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));
 
     input_t *eweightInfo = new input_t [nWeightsPerEdge_];
     for (int idx=0; idx < nWeightsPerEdge_; idx++){
@@ -534,24 +541,24 @@ void CommGraphModel<Adapter>::migrateGraph()
     }
     eWeights_ = arcp<input_t>(eweightInfo, 0, nWeightsPerEdge_, true);
 
-    
+
     // Finalize the migration
     vGids_ = arcp(new gno_t[myVertexShare], 0, myVertexShare, true);
     for(int i = startRank_; i < endRank_; i++)
       vGids_[i-startRank_] = i;
-    
+
     nLocalVertices_ = myVertexShare;
-    
+
 
   }
   else {
 
-    // Send adjacency size 
+    // Send adjacency size
     Teuchos::send<int, offset_t>(*comm_, 1, &eOffsets_[nLocalVertices_], destRank_);
-    
+
     // Send adjacency list
     Teuchos::send<int, gno_t>(*comm_, nLocalEdges_, &eGids_[0], destRank_);
-    
+
     // Send vertex weights list
     const scalar_t *wPtr;
     size_t wLen = 0;
@@ -562,17 +569,17 @@ void CommGraphModel<Adapter>::migrateGraph()
     // Send edge weights list
     eWeights_[0].getStridedList(wLen, wPtr, stride);
     Teuchos::send<int, scalar_t>(*comm_, nLocalEdges_, wPtr, destRank_);
-    
+
     nLocalVertices_ = 0;
   }
- 
+
   for (int i = 0; i <= commSize; i++)
     vtxDist_[i] = 0;
 
   Teuchos::gatherAll(*comm_, 1, &nLocalVertices_, commSize, &vtxDist_[1]);
   for (int i = 0; i < commSize; i++)
     vtxDist_[i+1] += vtxDist_[i];
-  
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -580,9 +587,9 @@ template <typename Adapter>
 void CommGraphModel<Adapter>::print()
 {
   std::ostream *os = env_->getDebugOStream();
-  
+
   int me = comm_->getRank();
-  
+
   *os << me
       << " Nvtx  " << nLocalVertices_
       << " Nedge " << nLocalEdges_
@@ -596,7 +603,7 @@ void CommGraphModel<Adapter>::print()
       *os << eGids_[j] << " " ;
     *os << std::endl;
   }
-  
+
   if (nWeightsPerVertex_) {
     for (size_t i = 0; i < nLocalVertices_; i++) {
       *os << me << " " << i << " VWGTS " << vGids_[i] << ": ";

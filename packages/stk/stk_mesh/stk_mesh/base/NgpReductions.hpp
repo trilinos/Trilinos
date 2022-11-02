@@ -39,7 +39,6 @@
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/ngp/NgpSpaces.hpp>
-#include "Kokkos_Parallel_Reduce.hpp"
 
 namespace stk {
 namespace mesh {

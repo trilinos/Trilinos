@@ -52,7 +52,9 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Integration Order",2,"Order of the integration");
     valid_parameters.set("Permittivity","epsilon","Permittivity");
     valid_parameters.set("Conductivity","sigma","Conductivity");
+    valid_parameters.set("Permeability","mu","Permeability");
     valid_parameters.set("Inverse Permeability","1/mu","Inverse Permeability");
+    valid_parameters.set("Current","J","Current source");
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -86,6 +88,7 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
   permittivity_ = params->get<std::string>("Permittivity");
   conductivity_ = params->get<std::string>("Conductivity");
   inverse_permeability_ = params->get<std::string>("Inverse Permeability");
+  current_ = params->get<std::string>("Current");
   this->addClosureModel(model_id);
 
   this->setupDOFs();
@@ -161,7 +164,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       std::string resid="RESIDUAL_"+m_Efield_dof_name+"_CURRENT_SOURCE";
       ParameterList p("Curl B"+m_Efield_dof_name);
       p.set("Residual Name", resid);
-      p.set("Value Name", "CURRENT");
+      p.set("Value Name", current_);
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);

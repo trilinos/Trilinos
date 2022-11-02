@@ -513,7 +513,7 @@ macro(enable_only_modified_packages)
     message("\nDirectly modified or failing non-disabled packages that need"
       " to be tested:  ALL_PACKAGES")
   else()
-    tribits_print_enabled_se_package_list(
+    tribits_print_internal_package_list_enable_status(
       "\nDirectly modified or failing non-disabled packages that need to be tested"
       ON FALSE )
   endif()
@@ -542,7 +542,7 @@ macro(select_final_set_of_packages_to_directly_test)
 
   set(${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST)
 
-  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES})
 
     set(PROCESS_THE_PACKAGE FALSE)
 

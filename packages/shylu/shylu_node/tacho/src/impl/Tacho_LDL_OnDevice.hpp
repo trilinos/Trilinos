@@ -157,8 +157,8 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
             const bool single = (j == (m - 1));
             for (ordinal_type i = 0; i < m; ++i) {
               if (ipiv[i] < 0) {
-                const bool is_first = (i + 1) < m ? (ipiv[i + 1] == ipiv[i]) : false;
-                if (is_first) {
+                {
+                  // first pivot
                   if (single) {
                     ipiv[i] = 0; /// invalidate this pivot
                     fpiv[i] = 0;
@@ -167,7 +167,10 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
                     D(i, 1) = A(i + 1, i); /// symmetric
                     A(i, i) = one;
                   }
-                } else {
+                }
+                {
+                  // second pivot
+                  i ++;
                   const ordinal_type fla_pivot = -ipiv[i] - i - 1;
                   if (single) {
                     fpiv[i] = fla_pivot;

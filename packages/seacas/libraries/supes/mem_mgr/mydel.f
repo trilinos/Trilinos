@@ -35,7 +35,7 @@ C     FIND NAME1 IN DICTIONARY.
 
       CALL MYFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
       LOC = DPOINT(ROW,CHRCOL,1)
       LEN = DPOINT(ROW,CHRCOL,2)
@@ -53,7 +53,7 @@ C ... Using malloc/free -- let system manage void space. Return
 C     memory to system via 'free'.  The value given to memret
 C     is a flag which tells the system that this is a 'safe' free
 C     which should actually execute. (Major Kludge...)
-      LASTER = SUCESS
+      LASTER = SUCCESS
       memret = -999
       if (chrcol .eq. 1) then
         oldadr = loc+myloc-1

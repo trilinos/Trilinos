@@ -676,8 +676,11 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
       advanced_set(TPL_${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_INCLUDE_DIRS}
         CACHE PATH "User provided include dirs in the absence of include files.")
     else()
-      # Library has no header files, no user override, so just set them to null
-      global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      if ("${TPL_${TPL_NAME}_INCLUDE_DIRS}" STREQUAL "")
+        # Library has no header files, no user override, so just set them to
+        # null (unless the user has already set this).
+        global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      endif()
     endif()
 
   endif()
@@ -741,9 +744,9 @@ endfunction()
 #   tribits_tpl_tentatively_enable(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.  But typically, it is called from an SE Package's
+# tentative enable mode.  But typically, it is called from an Package's
 # `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
-# enable a TPL`_).
+# enable an external package/TPL`_).
 #
 # This should only be used for optional TPLs.  It will not work correctly for
 # required TPLs because any enabled packages that require this TPL will not be

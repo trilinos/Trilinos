@@ -428,7 +428,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_IntegratorBasic
+  SOURCES Tempus_UnitTest_IntegratorBasic.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_DIRK_BackwardEuler_CopyFiles
+  DEST_FILES Tempus_DIRK_VanDerPol.xml
+  EXEDEPS UnitTest_DIRK_BackwardEuler
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitAForm_CopyFiles
-  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml Tempus_DIRK_VanDerPol.xml
+  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
   EXEDEPS UnitTest_NewmarkImplicitAForm
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_IntegratorBasic_CopyFiles
+  DEST_FILES Tempus_IntegratorBasic_default.xml Tempus_IntegratorBasic_ref.xml
+  EXEDEPS UnitTest_IntegratorBasic
   )

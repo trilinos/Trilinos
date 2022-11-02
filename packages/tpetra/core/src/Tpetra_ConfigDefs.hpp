@@ -52,12 +52,6 @@ namespace Tpetra {
 }
 
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 1
-#else
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 0
-#endif
-
 #ifdef HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   #define TPETRA_PRINTS_EFFICIENCY_WARNINGS 1
 #else

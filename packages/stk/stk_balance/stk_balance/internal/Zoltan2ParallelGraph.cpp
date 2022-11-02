@@ -14,7 +14,7 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
 {
   const stk::mesh::Part & locallyOwnedPart =  stkMeshBulkData.mesh_meta_data().locally_owned_part();
 
-  if (balanceSettings.areVertexWeightsProvidedViaFields())
+  if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD)
   {
     stk::mesh::EntityVector entitiesToBalance;
     const bool sortById = true;
@@ -321,6 +321,9 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
           else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONNECTIVITY) {
             const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(stkMeshBulkData);
             mVertexWeights[local_id] = *stk::mesh::field_data(connectivityWeights, elementOfConcern);
+          }
+          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
+            mVertexWeights[local_id] = 0; //real field weights set in adjust_vertex_weights
           }
           else {
             ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));

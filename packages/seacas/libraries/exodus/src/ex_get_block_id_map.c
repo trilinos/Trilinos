@@ -30,8 +30,8 @@ int ex_get_block_id_map(int exoid, ex_entity_type obj_type, ex_entity_id entity_
 {
   int            status;
   char           errmsg[MAX_ERR_LENGTH];
-  const char    *dnument;
-  ex_entity_type map_type;
+  const char    *dnument  = NULL;
+  ex_entity_type map_type = EX_INVALID;
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
@@ -54,34 +54,33 @@ int ex_get_block_id_map(int exoid, ex_entity_type obj_type, ex_entity_id entity_
     }
   }
 
-  /* At this point, we have a valid block.  Determine the number of
-     entities it and all previous blocks contain. */
-  switch (obj_type) {
-  case EX_EDGE_BLOCK:
-    dnument  = DIM_NUM_ED_IN_EBLK(blk_id_ndx);
-    map_type = EX_EDGE_MAP;
-    break;
-  case EX_FACE_BLOCK:
-    dnument  = DIM_NUM_FA_IN_FBLK(blk_id_ndx);
-    map_type = EX_FACE_MAP;
-    break;
-  case EX_ELEM_BLOCK:
-    dnument  = DIM_NUM_EL_IN_BLK(blk_id_ndx);
-    map_type = EX_ELEM_MAP;
-    break;
-  default:
-    snprintf(errmsg, MAX_ERR_LENGTH, "Bad block type parameter (%d) specified for file id %d.",
-             obj_type, exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
   size_t offset = 1;
   size_t len    = 0;
   for (int i = 1; i <= blk_id_ndx; i++) {
     offset += len;
     /* inquire values of some dimensions */
     int dimid = 0;
+
+    /* Determine the number of entities in all previous blocks. */
+    switch (obj_type) {
+    case EX_EDGE_BLOCK:
+      dnument  = DIM_NUM_ED_IN_EBLK(i);
+      map_type = EX_EDGE_MAP;
+      break;
+    case EX_FACE_BLOCK:
+      dnument  = DIM_NUM_FA_IN_FBLK(i);
+      map_type = EX_FACE_MAP;
+      break;
+    case EX_ELEM_BLOCK:
+      dnument  = DIM_NUM_EL_IN_BLK(i);
+      map_type = EX_ELEM_MAP;
+      break;
+    default:
+      snprintf(errmsg, MAX_ERR_LENGTH, "Bad block type parameter (%d) specified for file id %d.",
+               obj_type, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
     if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of entities in %s  %" PRId64 " in file id %d",

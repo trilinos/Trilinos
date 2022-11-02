@@ -63,7 +63,7 @@ class ManyBlocksSidesets : public stk::unit_test_util::simple_fields::MeshFixtur
 {
 public:
   ManyBlocksSidesets()
-    : timer(get_comm())
+    : batchTimer(get_comm())
   { }
 
 protected:
@@ -153,71 +153,78 @@ protected:
     }
   }
 
-  stk::performance_tests::Timer timer;
+  stk::performance_tests::BatchTimer batchTimer;
 };
 
 TEST_F(ManyBlocksSidesets, timing)
 {
   if (get_parallel_size() > 10) return;
 
-  const int NUM_RUNS = 100;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 4000;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 
-  setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
 
-  timer.start_timing();
-  for (int run=0; run<NUM_RUNS; run++) {
-    empty_mod_cycle();
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < NUM_ITERS; i++) {
+      empty_mod_cycle();
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(ManyBlocksSidesets, disconnect_blocks_face_creation)
 {
   if (get_parallel_size() > 16) return;
 
-  int NUM_RUNS = 1;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 120);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 400);
   int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 10);
   bool verbose = stk::unit_test_util::simple_fields::has_option("--v");
 
-  setup_multi_block_mesh_without_sidesets(ELEMS_PER_DIM, NUM_BLOCKS);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_multi_block_mesh_without_sidesets(ELEMS_PER_DIM, NUM_BLOCKS);
 
-  stk::tools::disconnect_all_blocks(get_bulk());
+    stk::tools::disconnect_all_blocks(get_bulk());
 
-  stk::performance_tests::setup_sidesets_for_blocks(get_meta());
+    stk::performance_tests::setup_sidesets_for_blocks(get_meta());
 
-  stk::mesh::PartVector elemBlocks;
-  stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlocks);
+    stk::mesh::PartVector elemBlocks;
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlocks);
 
-  print_memory_stats("Before face creation:");
+    print_memory_stats("Before face creation:");
 
-  timer.start_timing();
+    batchTimer.start_batch_timer();
 
-  for(stk::mesh::Part* block : elemBlocks) {
-    stk::mesh::Part& blockPart = *block;
-    unsigned partId = blockPart.id();
+    for(stk::mesh::Part* block : elemBlocks) {
+      stk::mesh::Part& blockPart = *block;
+      unsigned partId = blockPart.id();
 
-    std::string sidesetName = "surface_" + std::to_string(partId);
+      std::string sidesetName = "surface_" + std::to_string(partId);
 
-    stk::mesh::Part* surface = get_meta().get_part(sidesetName);
-    EXPECT_TRUE(nullptr != surface) << "Could not find " << sidesetName;
-    stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block, stk::mesh::PartVector{surface});
+      stk::mesh::Part* surface = get_meta().get_part(sidesetName);
+      EXPECT_TRUE(nullptr != surface) << "Could not find " << sidesetName;
+      stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block, stk::mesh::PartVector{surface});
 
-    if(verbose) {
-      print_stats("After face creation for " + sidesetName + ":");
+      if(verbose) {
+        print_stats("After face creation for " + sidesetName + ":");
+      }
     }
+
+    print_stats("After face creation :");
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-
-  print_stats("After face creation :");
-
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
-
-  output_mesh(get_bulk());
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 

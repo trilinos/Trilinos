@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(
 
 SET(HEADERS "")
 SET(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ED_SystemInterface.C
-	    ${CMAKE_CURRENT_SOURCE_DIR}/exo_entity.C 
+	    ${CMAKE_CURRENT_SOURCE_DIR}/exo_entity.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/exodiff.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/Tolerance.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/face_block.C
@@ -46,17 +46,17 @@ TRIBITS_ADD_ADVANCED_TEST(
  exodiff_test_edge_face
  TEST_0 EXEC ${CMAKE_CURRENT_BINARY_DIR}/test_generate_exo_files
         NOEXEPREFIX NOEXESUFFIX
- TEST_1 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff 
+ TEST_1 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff
         ARGS ${CMAKE_CURRENT_BINARY_DIR}/edge-face-gold.exo
 		         ${CMAKE_CURRENT_BINARY_DIR}/edge-face-no-diff.exo
 		    OUTPUT_FILE exodiff-no-diff.stdout
 		    PASS_REGULAR_EXPRESSION "exodiff: Files are the same"
- TEST_2 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff 
+ TEST_2 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff
         ARGS ${CMAKE_CURRENT_BINARY_DIR}/edge-face-gold.exo
 		         ${CMAKE_CURRENT_BINARY_DIR}/edge-diff.exo
 		    OUTPUT_FILE exodiff-edge-diff.stdout
 		    PASS_REGULAR_EXPRESSION "exodiff: Files are different"
- TEST_3 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff 
+ TEST_3 CMND ${CMAKE_CURRENT_BINARY_DIR}/exodiff
         ARGS ${CMAKE_CURRENT_BINARY_DIR}/edge-face-gold.exo
 		         ${CMAKE_CURRENT_BINARY_DIR}/face-diff.exo
 		    OUTPUT_FILE exodiff-face-diff.stdout

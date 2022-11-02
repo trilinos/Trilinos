@@ -594,13 +594,9 @@ namespace MueLu {
         using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
         const BCRS & tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(Op);
         
-        if(!Op.getRowMap()->getComm()->getRank())
-          std::cout<<"WARNING: Utilities::Transpose(): Using inefficient placeholder algorithm for Transpose"<<std::endl;
-
         RCP<BCRS> At;
-        RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpetraOp);
         {
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Acrs,label);
+          Tpetra::BlockCrsMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
           
           using Teuchos::ParameterList;
           using Teuchos::rcp;
@@ -608,10 +604,9 @@ namespace MueLu {
             rcp (new ParameterList) :
             rcp (new ParameterList (*params));
           transposeParams->set ("sort", false);
-          RCP<CRS> Atcrs = transposer.createTranspose(transposeParams);
-          
-          At = Tpetra::convertToBlockCrsMatrix(*Atcrs,Op.GetStorageBlockSize());
+          At = transposer.createTranspose(transposeParams);
         }
+        
         RCP<Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(At));
         RCP<XCrsMatrix>                                                           AAA  = rcp_implicit_cast<XCrsMatrix>(AA);
         RCP<XMatrix>                                                              AAAA = rcp( new XCrsMatrixWrap(AAA));
@@ -636,10 +631,10 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > X) {
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
 #if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;
       // Need to cast the real-valued multivector to Scalar=complex
     if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
         (typeid(Scalar).name() == typeid(std::complex<float>).name())) {

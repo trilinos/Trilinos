@@ -85,7 +85,7 @@ namespace percept {
     elementOp.init_elementOp();
 
     // FIXME consider caching the coords_field in FieldFunction
-    //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+    //CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType_type >(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::EntityRank rank = stk::topology::ELEMENT_RANK;
     if (is_surface_norm) rank = bulkData.mesh_meta_data().side_rank();
 
@@ -127,8 +127,7 @@ namespace percept {
 #else
     EXCEPTWATCH;
 
-    stk::mesh::Field<double, stk::mesh::Cartesian> *coords_field =
-      bulkData.mesh_meta_data().get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+    stk::mesh::FieldBase *coords_field = bulkData.mesh_meta_data().get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
     // for each node in the codomain, evaluate the function_to_interpolate's function, assign to the codomain field
 
@@ -145,7 +144,7 @@ namespace percept {
 
             //unsigned spatialDim = 0;
             //double * coord = stk::mesh::field_data( *coords_field , bucket.begin() );
-            double * coord = stk::mesh::field_data(*coords_field, bucket);
+            double * coord = static_cast<double*>(stk::mesh::field_data(*coords_field, bucket));
             //if (Util::getFlag(9829)) std::cout << "spatialDim= " << spatialDim << std::endl;
 
             unsigned stride = 0;

@@ -80,7 +80,7 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
   // Use an Tpetra::CrsMatrix for the user data.
   //////////////////////////////////////////////////////////////
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t> tcrsMatrix_t;
-  
+
   UserInputForTests *uinput;
   if (fname.size() > 0)
     uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
@@ -103,9 +103,9 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
   typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
-  
+
   Zoltan2::IdentifierModel<base_adapter_t> *model = NULL;
-  RCP<const base_adapter_t> base_ia = 
+  RCP<const base_adapter_t> base_ia =
                             Teuchos::rcp_dynamic_cast<const base_adapter_t>(ia);
 
   try{
@@ -121,7 +121,7 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
 
   if (gfail)
     printFailureCode(*comm, fail);
-  
+
   // Test the IdentifierModel interface
 
   if (model->getLocalNumIdentifiers() != size_t(nLocalIds)) {
@@ -142,10 +142,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
 
   if (gfail)
     printFailureCode(*comm, fail);
-  
+
   ArrayView<const zgno_t> gids;
   ArrayView<input_t> wgts;
-  
+
   model->getIdentifierList(gids, wgts);
 
   if (!fail && gids.size() != nLocalIds) {
@@ -170,6 +170,41 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
       fail = 7;
     }
   }
+
+  Kokkos::View<const zgno_t*, typename tcrsMatrix_t::device_type> gidsKokkos;
+  Kokkos::View<zscalar_t **, typename tcrsMatrix_t::device_type> wgtsKokkos;
+
+  model->getIdentifierListKokkos(gidsKokkos, wgtsKokkos);
+
+  auto gidsKokkosHost = Kokkos::create_mirror_view(gidsKokkos);
+  Kokkos::deep_copy(gidsKokkosHost, gidsKokkos);
+  auto wgtsKokkosHost = Kokkos::create_mirror_view(wgtsKokkos);
+  Kokkos::deep_copy(wgtsKokkosHost, wgtsKokkos);
+
+
+  if (!fail && gidsKokkosHost.extent(0) != static_cast<size_t>(nLocalIds)) {
+    std::cerr << rank << ") getIdentifierList IDs "
+              << gidsKokkosHost.extent(0) << " "
+              << nLocalIds << std::endl;
+    fail = 5;
+  }
+
+  if (!fail && wgtsKokkosHost.extent(1) != 0) {
+    std::cerr << rank << ") getIdentifierList Weights "
+              << wgtsKokkosHost.extent(1) << " "
+              << 0 << std::endl;
+    fail = 6;
+  }
+
+  for (zlno_t i=0; !fail && i < nLocalIds; i++){
+    std::set<zgno_t>::iterator next = idSet.find(gidsKokkosHost(i));
+    if (next == idSet.end()) {
+      std::cerr << rank << ") getIdentifierList gid not found "
+              << gidsKokkosHost(i) << std::endl;
+      fail = 7;
+    }
+  }
+
 
   gfail = globalFail(*comm, fail);
 

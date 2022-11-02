@@ -318,7 +318,6 @@ namespace FROSch {
         switch (dimension) {
             case 1:
                 return null;
-                break;
             case 2:
                 rotationsPerEntity = 1;
                 break;
@@ -327,7 +326,6 @@ namespace FROSch {
                 break;
             default:
                 FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
-                break;
         }
 
         XMultiVectorPtrVecPtr rotations(rotationsPerEntity);

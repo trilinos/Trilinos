@@ -436,7 +436,6 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   int numdimdim  = 0;
   int timedim    = 0;
   int numnoddim  = 0;
-  int strdim     = 0;
   int namestrdim = 0;
 
   int map_type = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
@@ -465,15 +464,6 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
-  }
-
-  // inquire previously defined dimensions
-  status = nc_inq_dimid(exodusFilePtr, DIM_STR, &strdim);
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    errmsg = fmt::format("Error: failed to get string length in file id {}", exodusFilePtr);
-    ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-    return (EX_FATAL);
   }
 
   // create name string length dimension

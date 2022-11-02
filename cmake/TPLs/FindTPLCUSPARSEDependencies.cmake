@@ -1,2 +1,2 @@
 tribits_extpkg_define_dependencies( CUSPARSE
-  DEPENDENCIES  CUBLAS)
+  DEPENDENCIES  CUDA)

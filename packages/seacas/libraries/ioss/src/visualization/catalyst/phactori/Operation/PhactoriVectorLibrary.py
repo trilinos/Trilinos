@@ -196,4 +196,3 @@ def GetPhactoriVectorLibraryProgrammableFilterLines(pfLns):
   pfLns.append("          inVecA[2] + inMM * inVecB[2]]\n")
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

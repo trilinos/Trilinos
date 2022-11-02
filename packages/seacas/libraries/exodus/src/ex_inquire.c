@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -221,7 +221,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
        It will not include the space for the trailing null, so if it
        is defined as 33 on the database, 32 will be returned.
     */
-    if ((status = nc_inq_dimid(rootid, DIM_STR_NAME, &dimid)) != NC_NOERR) {
+    if (nc_inq_dimid(rootid, DIM_STR_NAME, &dimid) != NC_NOERR) {
       /* If not found, then an older database */
       *ret_int = 32;
     }
@@ -497,7 +497,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
       /* get variable id of status array */
-      if ((status = nc_inq_varid(exoid, VAR_SS_STAT, &varid)) == NC_NOERR) {
+      if (nc_inq_varid(exoid, VAR_SS_STAT, &varid) == NC_NOERR) {
         /* if status array exists, use it, otherwise assume, object exists
            to be backward compatible */
 

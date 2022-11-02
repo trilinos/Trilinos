@@ -57,8 +57,8 @@
 namespace stk {
 namespace rebalance {
 
-typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
-typedef mesh::Field<double>                   ScalarField ;
+typedef mesh::Field<double>  VectorField ;
+typedef mesh::Field<double>  ScalarField ;
 
 
 /** @class Partition for keeping track of a mesh entity partition.
@@ -104,8 +104,8 @@ public:
    *                         processors. Can be NULL.
    */
   virtual void set_mesh_info ( const std::vector<mesh::Entity > &mesh_entities,
-                               const VectorField   * nodal_coord_ref,
-                               const ScalarField   * elem_weight_ref=NULL) = 0;
+                               const stk::mesh::FieldBase   * nodal_coord_ref,
+                               const stk::mesh::FieldBase   * elem_weight_ref=NULL) = 0;
 
   /** \brief Destructor. */
   virtual ~Partition();

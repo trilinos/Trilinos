@@ -138,13 +138,13 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << option << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
-    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.167158, 1.0e-4 );
   }
 }
@@ -184,8 +184,8 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
 
     //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n
-              << " (out of " << nTimeStepSizes-1 << "), dt = " << dt << "\n";
+    out << "\n \n time step #" << n
+        << " (out of " << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     integrator = Tempus::createIntegratorBasic<double>(pl, model);

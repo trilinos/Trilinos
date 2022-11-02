@@ -173,6 +173,27 @@ namespace Thyra {
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
         Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
+      std::list<std::string> sublists = {"maxwell1: 11list", "maxwell1: 22list"};
+      for (auto itSublist = sublists.begin(); itSublist != sublists.end(); ++itSublist)
+      if (paramList.isSublist(*itSublist)) {
+        ParameterList& sublist = paramList.sublist(*itSublist);
+        for (int lvlNo=0; lvlNo < 10; ++lvlNo) {
+          if (sublist.isSublist("level " + std::to_string(lvlNo) + " user data")) {
+            ParameterList& lvlList = sublist.sublist("level " + std::to_string(lvlNo) + " user data");
+            std::list<std::string> convertKeys;
+            for (auto it = lvlList.begin(); it != lvlList.end(); ++it)
+              convertKeys.push_back(lvlList.name(it));
+            for (auto it = convertKeys.begin(); it != convertKeys.end(); ++it)
+              Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(lvlList,*it);
+          }
+        }
+      }
+
+      ParameterList& sublist = paramList.sublist("maxwell1: 11list");
+      if (sublist.isParameter("D0")) {
+        Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(sublist,"D0");
+      }
+
       paramList.set<bool>("Maxwell1: use as preconditioner", true);
       if (useHalfPrecision) {
 #if defined(MUELU_CAN_USE_MIXED_PRECISION)

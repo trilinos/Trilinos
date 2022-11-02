@@ -16,7 +16,6 @@
 // include evaluators here
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
-#include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
@@ -49,6 +48,7 @@ AuxiliaryEquationSet_MassMatrix(
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",default_integration_order,"Order of the integration rule");
+    valid_parameters.set("Operator Label","","Optional label for the operator");
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -65,6 +65,7 @@ AuxiliaryEquationSet_MassMatrix(
   std::string basis_type = params->get<std::string>("Basis Type");
   int basis_order = params->get<int>("Basis Order");
   int integration_order = params->get<int>("Integration Order");
+  opLabel = params->get<std::string>("Operator Label");
 
   // ********************
   // Assemble DOF names and Residual names
@@ -110,7 +111,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     if (basis->getBasis()->isScalarBasis())
     {
       ParameterList p("Mass Matrix " + dof_name + " Residual");
-      p.set("Residual Name", "AUX_MASS_RESIDUAL_"+dof_name);
+      p.set("Residual Name", "AUX_MASS_RESIDUAL_"+opLabel+dof_name);
       p.set("Value Name", dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
@@ -124,7 +125,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     else if (basis->getBasis()->isVectorBasis())
     { 
       ParameterList p("Mass Matrix " + dof_name + " Residual");
-      p.set("Residual Name", "AUX_MASS_RESIDUAL_"+dof_name);
+      p.set("Residual Name", "AUX_MASS_RESIDUAL_"+opLabel+dof_name);
       p.set("Value Name", dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
@@ -174,7 +175,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraLinObjFactory;
 
    std::string fieldStr = (*this->m_dof_names)[0];
-   const std::string residualField = "AUX_MASS_RESIDUAL_"+dof_name; 
+   const std::string residualField = "AUX_MASS_RESIDUAL_"+opLabel+dof_name;
    int pFieldNum;
    int blockIndex;
 
@@ -254,6 +255,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    } else
      TEUCHOS_ASSERT(false);
 
+   std::string scatterContainerName = "Mass Matrix " + opLabel + dof_name + " Scatter Container";
    {
       RCP<std::map<std::string,std::string> > resToField 
          = rcp(new std::map<std::string,std::string>);
@@ -263,14 +265,14 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
          = rcp(new std::vector<std::string>);
       inFieldNames->push_back(outPrefix+residualField);
 
-      std::string scatterName = "AUX_"+dof_name+"_MassMatrix";
+      std::string scatterName = "AUX_"+ opLabel + dof_name + "_MassMatrix";
 
       Teuchos::ParameterList p("Scatter:" + scatterName);
       p.set("Scatter Name", scatterName);
       p.set("Basis",field_library.lookupBasis(fieldStr));
       p.set("Dependent Names", inFieldNames);
       p.set("Dependent Map", resToField);
-      p.set("Global Data Key", "Mass Matrix " + dof_name + " Scatter Container");
+      p.set("Global Data Key", scatterContainerName);
 
       RCP< PHX::Evaluator<panzer::Traits> > op = nlof->buildScatter<EvalT>(p);
 
@@ -280,10 +282,10 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       fm.requireField<EvalT>(tag);
    }
    
-   if(!m_gedc->containsDataObject("Mass Matrix " + dof_name + " Scatter Container")) {
+   if(!m_gedc->containsDataObject(scatterContainerName)) {
       Teuchos::RCP<panzer::GlobalEvaluationData> dataObject 
          = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(nlof,panzer::LinearObjContainer::Mat));
-      m_gedc->addDataObject("Mass Matrix " + dof_name + " Scatter Container",dataObject);
+      m_gedc->addDataObject(scatterContainerName,dataObject);
    }
 }
 

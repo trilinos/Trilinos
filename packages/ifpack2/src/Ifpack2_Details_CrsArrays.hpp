@@ -74,8 +74,7 @@ struct CrsArrayReader
   typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
   typedef Kokkos::View<ImplScalar*, execution_space> ScalarArray;
-  typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> OrdinalArrayHost;
-  typedef Kokkos::View<ImplScalar*, Kokkos::HostSpace> ScalarArrayHost;
+  typedef typename OrdinalArray::HostMirror  OrdinalArrayHost;
   //! The execution space to used to run the row access functors.
   typedef Kokkos::Serial functor_space;
   typedef Kokkos::RangePolicy<functor_space, int> RangePol;
@@ -127,7 +126,7 @@ struct CrsArrayReader
     auto Acrs = dynamic_cast<const TCrsMatrix*>(A);
     if(Acrs)
     {
-      getStructureCrs(Acrs, rowptrs, colinds);
+      getStructureCrs(Acrs, rowptrsHost, rowptrs, colinds);
       return;
     }
     //Need to allocate new array, then copy in one row at a time
@@ -177,7 +176,7 @@ struct CrsArrayReader
   }
 
   //! Faster specialization of getStructure() for when A is a Tpetra::CrsMatrix.
-  static void getStructureCrs(const TCrsMatrix* A, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
+  static void getStructureCrs(const TCrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
   {
     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
     auto localA = A->getLocalMatrixDevice();
@@ -190,6 +189,9 @@ struct CrsArrayReader
     colinds_ = OrdinalArray("ColInds", nnz );
     Kokkos::deep_copy(rowptrs_, rowptrs);
     Kokkos::deep_copy(colinds_, colinds);
+    // deep-copy to host
+    rowptrsHost_ = Kokkos::create_mirror(rowptrs_);
+    Kokkos::deep_copy(rowptrsHost_, rowptrs_);
   }
 };
 

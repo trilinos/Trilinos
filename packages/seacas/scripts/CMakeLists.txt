@@ -1,4 +1,4 @@
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
 INCLUDE(InstallSymLink)
 endif()
 
@@ -9,10 +9,10 @@ ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASNemspread)
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASNemslice)
 IF (${PROJECT_NAME}_ENABLE_SEACASNemspread AND ${PROJECT_NAME}_ENABLE_SEACASNemslice)
   CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/decomp.in
-        ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/decomp
-        @ONLY
-        )
+	${CMAKE_CURRENT_SOURCE_DIR}/decomp.in
+	${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/decomp
+	@ONLY
+	)
   FILE(COPY ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/decomp
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
        FILE_PERMISSIONS OWNER_READ OWNER_WRITE
@@ -23,40 +23,40 @@ ENDIF()
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASBlot)
 IF (${PROJECT_NAME}_ENABLE_SEACASBlot)
   CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/blot.in
-        ${CMAKE_CURRENT_BINARY_DIR}/blot
-        @ONLY
-        )
+	${CMAKE_CURRENT_SOURCE_DIR}/blot.in
+	${CMAKE_CURRENT_BINARY_DIR}/blot
+	@ONLY
+	)
   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/blot DESTINATION bin)
 ENDIF()
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASFastq)
 IF (${PROJECT_NAME}_ENABLE_SEACASFastq)
   CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/fastq.in
-        ${CMAKE_CURRENT_BINARY_DIR}/fastq
-        @ONLY
-        )
+	${CMAKE_CURRENT_SOURCE_DIR}/fastq.in
+	${CMAKE_CURRENT_BINARY_DIR}/fastq
+	@ONLY
+	)
   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/fastq DESTINATION bin)
 ENDIF()
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASEpu)
 IF (${PROJECT_NAME}_ENABLE_SEACASEpu)
   CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/epup.in
-        ${CMAKE_CURRENT_BINARY_DIR}/epup
-        @ONLY
-        )
+	${CMAKE_CURRENT_SOURCE_DIR}/epup.in
+	${CMAKE_CURRENT_BINARY_DIR}/epup
+	@ONLY
+	)
   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/epup DESTINATION bin)
 ENDIF()
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASConjoin)
 IF (${PROJECT_NAME}_ENABLE_SEACASConjoin)
   CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/pconjoin.in
-        ${CMAKE_CURRENT_BINARY_DIR}/pconjoin
-        @ONLY
-        )
+	${CMAKE_CURRENT_SOURCE_DIR}/pconjoin.in
+	${CMAKE_CURRENT_BINARY_DIR}/pconjoin
+	@ONLY
+	)
   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pconjoin DESTINATION bin)
 ENDIF()
 
@@ -86,16 +86,17 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
    IF (${Python_FOUND})
       message(STATUS "Found python version ${Python_VERSION}")
       IF (${Python_VERSION} VERSION_LESS "3.0")
-         SET( EXODUSPY "exodus2.py" )
-         SET( EXOMERGE "exomerge2.py")
-         MESSAGE(STATUS "A Python-2 version of exodus.py and exomerge.py will be installed.")
+	 SET( EXODUSPY "exodus2.py" )
+	 SET( EXOMERGE "exomerge2.py")
+	 MESSAGE(STATUS "A Python-2 version of exodus.py and exomerge.py will be installed.")
       ELSE()
-         SET( EXODUSPY "exodus3.py" )
-#         IF (NOT ${PROJECT_NAME}_HOSTNAME STREQUAL "APPVEYOR-VM")
+	 SET( EXODUSPY "exodus3.py" )
+	 SET( EXOMERGE "exomerge3.py")
+#	 IF (NOT ${PROJECT_NAME}_HOSTNAME STREQUAL "APPVEYOR-VM")
 #            ADD_TEST(NAME test_exodus3.py COMMAND ${CMAKE_INSTALL_PREFIX}/lib/tests/test_exodus3.py)
-#         ENDIF()
-         SET( EXOMERGE "exomerge3.py")
-         MESSAGE(STATUS "A Python-3 version of exodus.py and exomerge.py will be installed.")
+#            ADD_TEST(NAME test_exomerge3.py COMMAND ${CMAKE_INSTALL_PREFIX}/lib/tests/exomerge_unit_test.py)
+#	 ENDIF()
+	 MESSAGE(STATUS "A Python-3 version of exodus.py and exomerge.py will be installed.")
       ENDIF()
 
       IF (BUILD_SHARED_LIBS)
@@ -119,40 +120,47 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
                SET( SEACAS_LIBDIR "lib" )
             ENDIF()
          ENDIF()
-         CONFIGURE_FILE(
-                   ${CMAKE_CURRENT_SOURCE_DIR}/exodus2.in.py
-                   ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py
-                   @ONLY
-                   )
-         CONFIGURE_FILE(
-                   ${CMAKE_CURRENT_SOURCE_DIR}/exodus3.in.py
-                   ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py
-                   @ONLY
-                   )
-         CONFIGURE_FILE(
-                   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exodus3.py
-                   ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py
-                   @ONLY
-                   )
-         CONFIGURE_FILE(
-                   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo
-                   ${CMAKE_CURRENT_BINARY_DIR}/tests/test-assembly.exo
-                   COPYONLY
-                   )
+	 CONFIGURE_FILE(
+		   ${CMAKE_CURRENT_SOURCE_DIR}/exodus2.in.py
+		   ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py
+		   @ONLY
+		   )
+	 CONFIGURE_FILE(
+		   ${CMAKE_CURRENT_SOURCE_DIR}/exodus3.in.py
+		   ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py
+		   @ONLY
+		   )
+	 CONFIGURE_FILE(
+		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.py
+		   ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py
+		   @ONLY
+		   )
+	 CONFIGURE_FILE(
+		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exodus3.py
+		   ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py
+		   @ONLY
+		   )
+	 CONFIGURE_FILE(
+		   ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo
+		   ${CMAKE_CURRENT_BINARY_DIR}/tests/test-assembly.exo
+		   COPYONLY
+		   )
 
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py DESTINATION lib)
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py DESTINATION lib)
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py DESTINATION lib/tests/)
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo DESTINATION lib/tests/)
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge2.py DESTINATION lib)
-         INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge3.py DESTINATION lib)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py DESTINATION lib)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py DESTINATION lib)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py DESTINATION lib/tests/)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/exomerge_unit_test.py DESTINATION lib/tests/)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo DESTINATION lib/tests/)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/exomerge_unit_test.e DESTINATION lib/tests/)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge2.py DESTINATION lib)
+	 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge3.py DESTINATION lib)
 
-         if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-            InstallSymLink(${EXODUSPY} ${CMAKE_INSTALL_PREFIX}/lib/exodus.py)
-            InstallSymLink(${EXOMERGE} ${CMAKE_INSTALL_PREFIX}/lib/exomerge.py)
-         endif()
+	 if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
+	    InstallSymLink(${EXODUSPY} ${CMAKE_INSTALL_PREFIX}/lib/exodus.py)
+	    InstallSymLink(${EXOMERGE} ${CMAKE_INSTALL_PREFIX}/lib/exomerge.py)
+	 endif()
       ELSE()
-         MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since shared exodus library is not available.")
+	 MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since shared exodus library is not available.")
       ENDIF()
    else()
       MESSAGE(STATUS "Exodus.py and exomerge.py NOT installed since Python could not be found.")

@@ -110,9 +110,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);
    Teko::LinearOp Q_E   = Teko::getBlock(1,1,blo);
 
-   // nodal mass matrix
-   Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
-
    // discrete curl and its transpose
    Teko::LinearOp C, Ct;
    if (use_discrete_curl_) {
@@ -124,12 +121,11 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    Teko::LinearOp S_E;
    {
      Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Schur complement"));
-     Teko::LinearOp CurlCurl = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Curl Curl AUXILIARY_EDGE"));
-     S_E = Teko::explicitAdd(Q_E, CurlCurl);
+     S_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("SchurComplement AUXILIARY_EDGE"));
    }
 
    // Check whether we are using Tpetra or Epetra
-   RCP<const Thyra::EpetraLinearOp> EOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Q_rho);
+   RCP<const Thyra::EpetraLinearOp> EOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(Q_E);
    bool useTpetra = (EOp == Teuchos::null);
 
    /////////////////////////////////////////////////
@@ -141,7 +137,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      writeOut("K.mm",*K);
      writeOut("Kt.mm",*Kt);
      writeOut("Q_E.mm",*Q_E);
-     writeOut("Q_rho.mm",*Q_rho);
      writeOut("S_E.mm",*S_E);
 
      if (C != Teuchos::null) {
@@ -178,7 +173,6 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    describeMatrix("K",*K,debug);
    describeMatrix("Kt",*Kt,debug);
    describeMatrix("Q_E",*Q_E,debug);
-   describeMatrix("Q_rho",*Q_rho,debug);
    if (C != Teuchos::null)
      describeMatrix("C",*C,debug);
    describeMatrix("S_E",*S_E,debug);
@@ -208,6 +202,12 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      Teuchos::TimeMonitor tm1(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Solver S_E"));
 
      if (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra" || S_E_prec_type_ == "MueLuRefMaxwell" || S_E_prec_type_ == "ML") {// refMaxwell
+
+       // nodal mass matrix
+       Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
+       describeMatrix("Q_rho",*Q_rho,debug);
+       if (dump)
+         writeOut("Q_rho.mm",*Q_rho);
 
        // Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
        // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
@@ -443,16 +443,19 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 
      // add discrete gradient and edge mass matrix
      Teko::LinearOp Q_E_aux = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE"));
+     Teko::LinearOp Q_E_aux_weighted = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE"));
      Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
      if (S_E_prec_type_ == "ML") {
        RCP<const Epetra_CrsMatrix> eT = get_Epetra_CrsMatrix(*T);
        RCP<const Epetra_CrsMatrix> eQ_E_aux = get_Epetra_CrsMatrix(*Q_E_aux);
+       RCP<const Epetra_CrsMatrix> eQ_E_aux_weighted = get_Epetra_CrsMatrix(*Q_E_aux_weighted);
        S_E_prec_pl.sublist("ML Settings").set("D0",eT);
        S_E_prec_pl.sublist("ML Settings").set("M1",eQ_E_aux);
-       S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E_aux);
+       S_E_prec_pl.sublist("ML Settings").set("Ms",eQ_E_aux_weighted);
      } else {
        S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("D0",T);
        S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("M1",Q_E_aux);
+       S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Ms",Q_E_aux_weighted);
      }
 
      if (dump) {

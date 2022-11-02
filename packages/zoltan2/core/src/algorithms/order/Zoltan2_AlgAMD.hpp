@@ -114,17 +114,21 @@ class AlgAMD : public Algorithm<Adapter>
 {
     private:
 
-    const RCP<GraphModel<Adapter> > model;
+    const RCP<const typename Adapter::base_adapter_t> adapter;
     const RCP<Teuchos::ParameterList> pl;
     const RCP<const Teuchos::Comm<int> > comm;
-      
+    RCP<const Environment> env;
+    modelFlag_t graphFlags;
+
     public:
 
     AlgAMD(
-      const RCP<GraphModel<Adapter> > &model__,
+      const RCP<const typename Adapter::base_adapter_t> &adapter__,
       const RCP<Teuchos::ParameterList> &pl__,
-      const RCP<const Teuchos::Comm<int> > &comm__
-    ) : model(model__), pl(pl__), comm(comm__)
+      const RCP<const Teuchos::Comm<int> > &comm__,
+      RCP<const Environment> &env__,
+      const modelFlag_t &graphFlags__
+    ) : adapter(adapter__), pl(pl__), comm(comm__), env(env__), graphFlags(graphFlags__)
     { }
 
     int globalOrder(
@@ -148,6 +152,7 @@ class AlgAMD : public Algorithm<Adapter>
 
       int ierr= 0;
 
+      const auto model = rcp(new GraphModel<Adapter>(adapter, env, comm, graphFlags));
       const size_t nVtx = model->getLocalNumVertices();
 
       //cout << "Local num vertices" << nVtx << endl;

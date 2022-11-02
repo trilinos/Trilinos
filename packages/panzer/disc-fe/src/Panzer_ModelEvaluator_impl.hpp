@@ -730,6 +730,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 panzer::ModelEvaluator<Scalar>::
 create_W_op() const
 {
+  PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::create_W_op");
   Teuchos::RCP<const ThyraObjFactory<Scalar> > tof
      = Teuchos::rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof_,true);
 

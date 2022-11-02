@@ -196,6 +196,33 @@ create_mirror_view_and_copy(
         !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
         nullptr);
 
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::Rank &&
+    (std::is_same<typename ViewTraits<Args...>::specialize,
+                  Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+     std::is_same<typename ViewTraits<Args...>::specialize,
+                  Kokkos::Impl::ViewSpecializeSacadoFadContiguous>::value),
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v);
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::Rank &&
+        (std::is_same<typename ViewTraits<T, Args...>::specialize,
+                      Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+         std::is_same<typename ViewTraits<T, Args...>::specialize,
+                      Kokkos::Impl::ViewSpecializeSacadoFadContiguous>::value),
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>);
+
+}
+
 } // namespace Kokkos
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)

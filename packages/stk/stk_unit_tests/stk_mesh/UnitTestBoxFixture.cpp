@@ -145,14 +145,9 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
         Entity elem = bulk.get_entity( element_rank, elem_id );
 
         std::vector<Entity> elems ;
-        stk::mesh::get_entities_through_relations(bulk, nodes , elems );
-        ASSERT_EQ( elems.size() , size_t(1) );
-        ASSERT_TRUE( elems[0] == elem );
-
         stk::mesh::get_entities_through_relations(bulk, nodes, element_rank, elems);
         ASSERT_EQ( elems.size() , size_t(1) );
         ASSERT_TRUE( elems[0] == elem );
-
       }
     }
   }

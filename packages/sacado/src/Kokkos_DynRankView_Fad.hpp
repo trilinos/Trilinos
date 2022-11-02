@@ -123,6 +123,20 @@ create_mirror(
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
 
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type * = 0 );
+
+}
+
 } // namespace Kokkos
 
 #include "Kokkos_DynRankView.hpp"
@@ -1265,6 +1279,36 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
   return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
+}
+
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type*)
+{
+  if (v.rank() != N) {
+    KOKKOS_IF_ON_HOST(
+        const std::string message =
+            "Converting DynRankView of rank " + std::to_string(v.rank()) +
+            " to a View of mis-matched rank " + std::to_string(N) + "!";
+        Kokkos::abort(message.c_str());)
+    KOKKOS_IF_ON_DEVICE(
+        Kokkos::abort("Converting DynRankView to a View of mis-matched rank!");)
+  }
+
+  auto layout = v.impl_map().layout();
+  layout.dimension[v.rank()] = Kokkos::dimension_scalar(v);
+  return View<typename RankDataType<T, N>::type, Args...>(
+      v.data(), Impl::reconstructLayout(layout, v.rank()+1));
+}
+
 }
 
 } // end Kokkos

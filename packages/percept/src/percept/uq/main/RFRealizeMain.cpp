@@ -92,16 +92,16 @@ int main(int argc,  char **argv)
   const unsigned numCoeffs = xi.size();
 
   stk::io::StkMeshIoBroker mesh_data(comm);
+  mesh_data.use_simple_fields();
 
   mesh_data.add_mesh_database(input_file, "exodus", stk::io::READ_MESH);
   mesh_data.create_input_mesh();
 
-  stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & alpha =
-    mesh_data.meta_data().declare_field<stk::mesh::Field<double,stk::mesh::SimpleArrayTag> >(stk::topology::ELEMENT_RANK, "alpha");
+  stk::mesh::Field<double> & alpha = mesh_data.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, "alpha");
   stk::mesh::put_field_on_mesh(alpha, mesh_data.meta_data().universal_part(), 1, nullptr);
 
   mesh_data.add_all_mesh_fields_as_input_fields();
-  stk::mesh::FieldBase& phi = *mesh_data.meta_data().get_field (stk::topology::ELEMENT_RANK, "phi");
+  stk::mesh::FieldBase& phi = *mesh_data.meta_data().get_field(stk::topology::ELEMENT_RANK, "phi");
 
   mesh_data.populate_bulk_data();
   mesh_data.read_defined_input_fields(1);

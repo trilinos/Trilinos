@@ -61,19 +61,11 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/MeshUtils.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
 
 using stk::unit_test_util::build_mesh;
-
-void fillStkMeshFromFileSpec(const std::string fileSpec, stk::mesh::BulkData &stkMeshBulkData)
-{
-  stk::io::StkMeshIoBroker stkMeshIoBroker(stkMeshBulkData.parallel());
-  stkMeshIoBroker.set_bulk_data(stkMeshBulkData);
-  stkMeshIoBroker.add_mesh_database(fileSpec, stk::io::READ_MESH);
-  stkMeshIoBroker.create_input_mesh();
-  stkMeshIoBroker.populate_bulk_data();
-}
 
 TEST(UnitTestGhosting, WithChangeParts)
 {
@@ -86,7 +78,7 @@ TEST(UnitTestGhosting, WithChangeParts)
     stk::mesh::MetaData& stkMeshMetaData = bulkPtr->mesh_meta_data();
     stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
     const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
-    fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
+    stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);
 
     stk::mesh::EntityVector elementsOnProc;
     stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
@@ -193,7 +185,7 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
     stkMeshMetaData.use_simple_fields();
     stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
     const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
-    fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
+    stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);
 
     stk::mesh::EntityVector elementsOnProc;
     stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),

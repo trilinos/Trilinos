@@ -210,7 +210,7 @@ std::string XMLObjectImplem::toString() const
   std::string rtn;
   if (content_.length()==0 && children_.length()==0)
   {
-    rtn = terminatedHeader() + "\n";
+    rtn = terminatedHeader(true) + "\n";
   }
   else
   {

@@ -296,7 +296,7 @@ namespace MueLu {
     const size_t numFineBlockRows = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType Magnitude;
+    // typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
     const SC     one       = STS::one();
     const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();

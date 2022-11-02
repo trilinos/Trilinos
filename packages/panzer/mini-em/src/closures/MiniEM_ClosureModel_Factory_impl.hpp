@@ -16,9 +16,6 @@
 
 #include "MiniEM_GaussianPulse.hpp"
 #include "MiniEM_RandomForcing.hpp"
-#include "MiniEM_InversePermeability.hpp"
-#include "MiniEM_Permittivity.hpp"
-#include "MiniEM_Conductivity.hpp"
 #include "MiniEM_TensorConductivity.hpp"
 #include "MiniEM_VariableTensorConductivity.hpp"
 
@@ -109,33 +106,6 @@ buildClosureModels(const std::string& model_id,
         double max = plist.get<double>("range max");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed,min,max));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="INVERSE PERMEABILITY") {
-        double mu = plist.get<double>("mu");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu,DoF));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="PERMITTIVITY") {
-        double epsilon = plist.get<double>("epsilon");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::Permittivity<EvalT,panzer::Traits>(key,*ir,fl,epsilon,DoF));
-	evaluators->push_back(e);
-
-        found = true;
-      }
-      if(type=="CONDUCTIVITY") {
-        double sigma = plist.get<double>("sigma");
-        std::string DoF = plist.get<std::string>("DoF Name");
-	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::Conductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
 	evaluators->push_back(e);
 
         found = true;
@@ -257,6 +227,43 @@ buildClosureModels(const std::string& model_id,
 	  evaluators->push_back(e);
         }
  
+        found = true;
+      }
+      if(type=="ERROR") {
+        // compute ||E-E_ex||^2
+
+        const std::string diffName = "DIFFERENCE_" + plist.get<std::string>("Field") + "_" + plist.get<std::string>("Exact Field");
+        {
+          RCP<std::vector<double> > coeffs = rcp(new std::vector<double>);
+          coeffs->push_back(1);
+          coeffs->push_back(-1);
+
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+          valuesNames->push_back(plist.get<std::string>("Field"));
+          valuesNames->push_back(plist.get<std::string>("Exact Field"));
+
+          Teuchos::ParameterList input;
+          input.set("Sum Name",diffName);
+          input.set("Values Names",valuesNames);
+          input.set("Data Layout",ir->dl_vector);
+          input.set<RCP<const std::vector<double> > >("Scalars", coeffs);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+        {
+          Teuchos::ParameterList input;
+          input.set("Result Name", key);
+          input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
+          input.set("Vector A Name", diffName);
+          input.set("Vector B Name", diffName);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
         found = true;
       }
     }

@@ -62,9 +62,10 @@ class AlgRandom : public Algorithm<Adapter>
 {
   private:
 
-  const RCP<IdentifierModel<Adapter> > model;
+  const RCP<const typename Adapter::base_adapter_t> adapter;
   const RCP<Teuchos::ParameterList> pl;
   const RCP<const Teuchos::Comm<int> > comm;
+  const RCP<const Environment> env;
 
   public:
 
@@ -72,10 +73,11 @@ class AlgRandom : public Algorithm<Adapter>
   typedef typename Adapter::gno_t gno_t;
 
   AlgRandom(
-    const RCP<IdentifierModel<Adapter> > &model__,
+    const RCP<const typename Adapter::base_adapter_t> &adapter__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<const Teuchos::Comm<int> > &comm__
-  ) : model(model__), pl(pl__), comm(comm__)
+    const RCP<const Teuchos::Comm<int> > &comm__,
+    const RCP<const Environment> &env__
+  ) : adapter(adapter__), pl(pl__), comm(comm__), env(env__)
   {
   }
 
@@ -86,18 +88,20 @@ class AlgRandom : public Algorithm<Adapter>
 
   int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
-  
+
     int ierr= 0;
-  
+
     HELLO;
-  
+
     // This is the Fisher-Yates shuffle (aka Knuth shuffle).
     // References:
     //   R.A. Fisher, F. Yates, (1948) [1938], Statistical tables for biological, agricultural and medical research (3rd ed.).
     //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
     //   D.E. Knuth, "The Art of Computer Programming", volume 2, 1969.
-  
+
     // Start with the identity permutation.
+    modelFlag_t modelFlags;
+    const auto model = rcp(new IdentifierModel<Adapter>(adapter, env, comm, modelFlags));
     const size_t n = model->getLocalNumIdentifiers();
     lno_t *perm;
     perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
@@ -109,7 +113,7 @@ class AlgRandom : public Algorithm<Adapter>
     else
       // throw exception?
       ierr = -1;
-  
+
     // Swap random pairs of indices in perm.
     lno_t j, temp;
     for (lno_t i=n-1; i>0; i--){
@@ -120,12 +124,12 @@ class AlgRandom : public Algorithm<Adapter>
       perm[i] = perm[j];
       perm[j] = temp;
     }
-  
+
     solution->setHavePerm(true);
     return ierr;
-  
+
   }
-  
+
 };
 }
 #endif

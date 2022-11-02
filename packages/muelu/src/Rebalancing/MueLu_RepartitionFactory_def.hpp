@@ -152,10 +152,10 @@ namespace MueLu {
       // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
-      GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
+      GetOStream(Runtime0) << "Only one partition: Skip call to the repartitioner." << std::endl;
     } else if (numPartitions == -1) {
       // No repartitioning necessary: decomposition should be Teuchos::null
-      GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+      GetOStream(Runtime0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -83,12 +83,17 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   }
 
   ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
-
-  if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the element block id */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
-             ex_name_of_object(obj_type), entity_id, exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
-    EX_FUNC_LEAVE(EX_FATAL);
+  if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the entity with `entity_id` */
+    if (obj_type == EX_NODE_MAP || obj_type == EX_ELEM_MAP || obj_type == EX_FACE_MAP ||
+        obj_type == EX_EDGE_MAP) {
+      ent_ndx = entity_id;
+    }
+    else {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
+               ex_name_of_object(obj_type), entity_id, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
   }
 
   /* If this is a null entity, then 'ent_ndx' will be negative.

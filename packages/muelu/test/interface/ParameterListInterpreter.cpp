@@ -130,7 +130,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
-  clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
+  clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");

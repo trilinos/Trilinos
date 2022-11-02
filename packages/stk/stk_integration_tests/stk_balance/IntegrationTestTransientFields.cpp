@@ -88,7 +88,7 @@ public:
   void write_transient_mesh(const std::string& meshDesc) const
   {
     stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(
-          meshDesc, m_fileBaseName, m_fieldName, m_varName, m_timeSteps, m_fieldSetter);
+          meshDesc, m_fileBaseName, m_fieldName, stk::topology::NODE_RANK, m_varName, m_timeSteps, m_fieldSetter);
   }
 
   void write_two_element_mesh_with_sideset(stk::unit_test_util::ElementOrdering elemOrdering) const

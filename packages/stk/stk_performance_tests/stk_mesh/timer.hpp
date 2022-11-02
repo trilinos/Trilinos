@@ -35,6 +35,7 @@
 #ifndef STK_PERFORMANCE_TIMER_HPP
 #define STK_PERFORMANCE_TIMER_HPP
 
+#include <limits>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -64,7 +65,11 @@ public:
   void update_timing()
   {
     cumulativeTime += stk::wall_dtime(iterationStartTime);
-    size_t currentGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator) - iterationStartGpuUsage;
+    size_t currentGpuUsage = 0;
+    size_t GpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+    if (GpuUsage > iterationStartGpuUsage) {
+      currentGpuUsage = GpuUsage - iterationStartGpuUsage;
+    }
     size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
     meshOperationHwm = std::max(meshOperationHwm, currentHwm + currentGpuUsage);
   }
@@ -84,6 +89,78 @@ private:
   size_t iterationStartHwm;
   size_t iterationStartGpuUsage;
   size_t meshOperationHwm;
+};
+
+class BatchTimer
+{
+public:
+  BatchTimer(MPI_Comm comm)
+    : communicator(comm),
+      batchStartTime(0.0),
+      minBatchTime(std::numeric_limits<double>::max()),
+      batchBaselineHwm(0),
+      batchBaselineGpuUsage(0),
+      maxBatchHwm(1)
+  { }
+
+  void initialize_batch_timer()
+  {
+    equilibrate_memory_baseline();
+
+    batchBaselineHwm = stk::get_max_hwm_across_procs(communicator);
+    batchBaselineGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+
+  }
+
+  void start_batch_timer()
+  {
+    MPI_Barrier(communicator);
+    batchStartTime = stk::wall_time();
+  }
+
+  void stop_batch_timer()
+  {
+    double batchTime = stk::wall_dtime(batchStartTime);
+    double batchTimeAll = stk::get_global_sum(communicator, batchTime);
+    minBatchTime = std::min(minBatchTime, batchTimeAll);
+
+    size_t batchGpuMemUsage = 0;
+    size_t batchGpuCurrentMemUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+    if (batchGpuCurrentMemUsage > batchBaselineGpuUsage) {
+      batchGpuMemUsage = batchGpuCurrentMemUsage - batchBaselineGpuUsage;
+    }
+    size_t batchCpuMemUsage = stk::get_max_hwm_across_procs(communicator) - batchBaselineHwm;
+    size_t batchHwm = batchGpuMemUsage + batchCpuMemUsage;
+    maxBatchHwm = std::max(maxBatchHwm, batchHwm); 
+
+  }
+
+  void print_batch_timing(unsigned iterationCount)
+  {
+    stk::print_stats_for_performance_compare(std::cout, minBatchTime, maxBatchHwm, iterationCount, communicator);
+  }
+
+  double get_min_batch_time() { return minBatchTime; }
+
+private:
+
+  void equilibrate_memory_baseline()
+  {
+    //raise baseline memory usage to hwm to ensure test memory is accurately measured
+    size_t now, hwm;
+    stk::get_memory_usage(now, hwm);
+    if (now < hwm) {
+      batchBaselineMemBuffer.resize((hwm - now)/sizeof(double));
+    }
+  }
+
+  MPI_Comm communicator;
+  double batchStartTime;
+  double minBatchTime;
+  size_t batchBaselineHwm;
+  size_t batchBaselineGpuUsage;
+  size_t maxBatchHwm;
+  std::vector<double> batchBaselineMemBuffer;
 };
 
 }}

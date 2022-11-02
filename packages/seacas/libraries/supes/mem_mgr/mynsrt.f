@@ -13,7 +13,7 @@ C    See packages/seacas/LICENSE for details
 C     This routine updates the dictionary with a new name (if it is new)
 C     and updates the location and length tables.  The length of the
 C     dictionary is checked before the new name is added.  If LASTER is
-C     not returned with a value of SUCESS, the tables are unchanged.
+C     not returned with a value of SUCCESS, the tables are unchanged.
 
 C***********************************************************************
 
@@ -46,11 +46,11 @@ C     FIND NAME1 IN DICTIONARY
      *   CHRCOL, LASTER, ROW)
       IF (LASTER .EQ. WRTYPE) THEN
          RETURN
-      ELSE IF (LASTER .EQ. SUCESS) THEN
+      ELSE IF (LASTER .EQ. SUCCESS) THEN
          LASTER = BDNAME
          RETURN
       ELSE IF (LASTER .EQ. NONAME) THEN
-         LASTER = SUCESS
+         LASTER = SUCCESS
       END IF
 
 C     UPDATE DICTIONARY.

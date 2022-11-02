@@ -49,7 +49,7 @@ namespace Ioss {
           m_myProcessor(processor)
     {
     }
-    Map(const Map &from) = delete;
+    Map(const Map &from)            = delete;
     Map &operator=(const Map &from) = delete;
     ~Map()                          = default;
 

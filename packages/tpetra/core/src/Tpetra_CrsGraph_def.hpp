@@ -2686,7 +2686,6 @@ namespace Tpetra {
 
     if(debug_) {
       using exec_space = typename local_graph_device_type::execution_space;
-      using size_type = typename local_graph_device_type::size_type;
       int columnsOutOfBounds = 0;
       local_ordinal_type numLocalCols = this->getLocalNumCols();
       Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, columnIndices.extent(0)),

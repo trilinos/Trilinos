@@ -83,9 +83,9 @@ namespace percept {
       size_t num_nodes = m_eMesh->get_bulk_data()->num_nodes(element);
 
 #undef AVERTEX
-#define AVERTEX(vi)  stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_current) , vi )
+#define AVERTEX(vi)  static_cast<double*>(stk::mesh::field_data( *m_coord_field_current, vi ))
 #undef WVERTEX
-#define WVERTEX(vi)  stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_original) , vi )
+#define WVERTEX(vi)  static_cast<double*>(stk::mesh::field_data( *m_coord_field_original, vi ))
 
       // double A_ = 0.0, W_ = 0.0; // current and reference detJ
       // jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
@@ -124,12 +124,12 @@ namespace percept {
       for (int i=0; i < num_nodes; i++)
         {
           stk::mesh::Entity node = v_i[i];
-          Norm[i] = (m_cg_normal_field? stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_cg_normal_field) , v_i[i] ) : 0);
+          Norm[i] = (m_cg_normal_field? static_cast<double*>(stk::mesh::field_data( *m_cg_normal_field, v_i[i] )) : 0);
 
           X[i] = AVERTEX(v_i[i]);
           WX[i] = WVERTEX(v_i[i]);
-          L[i] = (m_cg_lambda_field? *stk::mesh::field_data( *static_cast<const ScalarFieldType  *>(m_cg_lambda_field) , v_i[i] ) : 0.0);
-          Y[i] = (m_coord_field_0 ? stk::mesh::field_data( *static_cast<const CoordinatesFieldType  *>(m_coord_field_0) , v_i[i] ) : 0);
+          L[i] = (m_cg_lambda_field? *static_cast<double*>(stk::mesh::field_data( *m_cg_lambda_field, v_i[i] )) : 0.0);
+          Y[i] = (m_coord_field_0 ? static_cast<double*>(stk::mesh::field_data( *m_coord_field_0, v_i[i] )) : 0);
           std::pair<bool,int> fixed;
           onB[i] = 0.0;
         }

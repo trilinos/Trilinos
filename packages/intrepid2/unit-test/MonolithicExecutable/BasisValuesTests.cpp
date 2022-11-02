@@ -79,7 +79,6 @@ namespace
     using PointScalar  = typename Basis::PointValueType;
     using WeightScalar = typename Basis::OutputValueType;
     using DeviceType   = typename Basis::DeviceType;
-    using Scalar = WeightScalar;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis.getBaseCellTopology().getKey();
     
@@ -140,7 +139,6 @@ namespace
     });
     Kokkos::fence();
     
-    using HostDeviceType = Kokkos::HostSpace::device_type;
     auto hostPoints  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), points);
     auto hostWeights = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), weights);
 

@@ -265,7 +265,7 @@ namespace Iopg {
     nodeBlockCount = 1;
 
     if (nodeCount == 0) {
-      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'";
+      Ioss::WarnOut() << "No nodes were found in the model, file '" << decoded_filename() << "'";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -276,7 +276,7 @@ namespace Iopg {
     }
 
     if (elementCount == 0) {
-      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
+      Ioss::WarnOut() << "No elements were found in the model, file: '" << decoded_filename()
                       << "'";
     }
 

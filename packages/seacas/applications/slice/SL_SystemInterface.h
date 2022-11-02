@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -91,14 +91,18 @@ private:
   int    stepInterval_{1};
 
 public:
-  int  compressionLevel_{0};
-  bool shuffle_{false};
-  bool ints64Bit_{false};
-  bool netcdf4_{false};
-  bool netcdf5_{false};
-  bool disableFieldRecognition_{false};
-  bool szip_{false};
-  bool zlib_{true};
+  int         compressionLevel_{0};
+  bool        shuffle_{false};
+  bool        ints64Bit_{false};
+  bool        netcdf4_{false};
+  bool        netcdf5_{false};
+  bool        disableFieldRecognition_{false};
+  bool        szip_{false};
+  bool        zlib_{true};
+  bool        outputDecompMap_{false};
+  bool        outputDecompField_{false};
+  bool        lineDecomp_{false};
+  std::string lineSurfaceList_{};
 
 private:
   bool contig_{false};

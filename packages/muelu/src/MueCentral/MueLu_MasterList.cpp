@@ -275,6 +275,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"keep data\" type=\"string\" value=\"{}\"/>"
+  "<Parameter name=\"save data\" type=\"string\" value=\"{}\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
@@ -765,6 +766,8 @@ namespace MueLu {
          ("export data","export data")
       
          ("keep data","keep data")
+      
+         ("save data","save data")
       
          ("ML print initial list","print initial parameters")
       
