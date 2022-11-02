@@ -288,6 +288,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
   )
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "SerialGeneralBlockSmoothing"
+    ARGS "--linAlgebra=Tpetra --xml=generalBlkSmoothing.xml --belosType=\"Fixed\ Point\" --matrix=GblkAmat.dat --rhs=GblkRhs.dat --its=2 --userBlks=Gblks.dat --notimings --tol=.976"
+    NUM_MPI_PROCS 1
+    COMM mpi # HAVE_MPI required
+    RUN_SERIAL
+  )
 
   TRIBITS_ADD_TEST(
     Driver

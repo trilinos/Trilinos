@@ -701,13 +701,15 @@ initialize ()
         typedef Teuchos::RCP<Tpetra::Import<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> const >  import_type;
         typedef Tpetra::MultiVector<        typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type,  typename MatrixType::global_ordinal_type,typename MatrixType::node_type> scMV;
         import_type theImport = A_->getGraph()->getImporter();
-        scMV nonOverLapW(theImport->getSourceMap(), 1, false);
-        Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
-        Teuchos::ArrayRCP<scalar_type> nonOverLapWArray = nonOverLapW.getDataNonConst(0);
-        nonOverLapW.putScalar(STS::zero ());
-        for (int ii = 0; ii < (int) theImport->getSourceMap()->getLocalNumElements(); ii++)  nonOverLapWArray[ii] = w_ptr[ii];
-        nonOverLapW.doExport (*W_,         *theImport, Tpetra::ADD);
-        W_->doImport(         nonOverLapW, *theImport, Tpetra::INSERT);
+        if (!theImport.is_null()) {
+          scMV nonOverLapW(theImport->getSourceMap(), 1, false);
+          Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
+          Teuchos::ArrayRCP<scalar_type> nonOverLapWArray = nonOverLapW.getDataNonConst(0);
+          nonOverLapW.putScalar(STS::zero ());
+          for (int ii = 0; ii < (int) theImport->getSourceMap()->getLocalNumElements(); ii++)  nonOverLapWArray[ii] = w_ptr[ii];
+          nonOverLapW.doExport (*W_,         *theImport, Tpetra::ADD);
+          W_->doImport(         nonOverLapW, *theImport, Tpetra::INSERT);
+        }
 
       }
       W_->reciprocal (*W_);
