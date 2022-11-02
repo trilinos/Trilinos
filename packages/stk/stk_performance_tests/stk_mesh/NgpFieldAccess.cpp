@@ -131,11 +131,12 @@ TEST_F(NgpFieldAccess, Centroid)
   const int NUM_ITERS = 100;
   const int ELEMS_PER_DIM = 120;
 
+  batchTimer.initialize_batch_timer();
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     for (int i = 0; i <NUM_ITERS; i++) {
@@ -155,13 +156,14 @@ TEST_F(NgpFieldAccess, HostCentroid)
   const int NUM_ITERS = 100;
   const int ELEMS_PER_DIM = 120;
 
+  batchTimer.initialize_batch_timer();
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
   stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     for (int i = 0; i < NUM_ITERS; i++) {
@@ -182,6 +184,8 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 
+  batchTimer.initialize_batch_timer();
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
@@ -189,7 +193,6 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   stk::mesh::PartVector elemBlockParts;
   stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     for (int i = 0; i < NUM_ITERS; i++) {
@@ -217,6 +220,8 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   BLOCKS = std::max(BLOCKS, 1);
   BLOCKS = std::min(BLOCKS, NUM_BLOCKS);
 
+  batchTimer.initialize_batch_timer();
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_partial_mesh(BLOCKS);
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
@@ -224,7 +229,6 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   stk::mesh::PartVector elemBlockParts;
   stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
   

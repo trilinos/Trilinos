@@ -181,7 +181,7 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
-    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&mySphere}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
@@ -250,7 +250,7 @@ public:
       myCube.add( std::move(facet) );
     }
 
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }

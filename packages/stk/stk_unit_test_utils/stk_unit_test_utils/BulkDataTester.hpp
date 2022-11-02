@@ -287,12 +287,12 @@ public:
         set_state(entity,entity_state);
     }
 
-    void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, const std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>& new_send)
+    void my_ghost_entities_and_fields(stk::mesh::Ghosting & ghosting, const stk::mesh::EntityProcVec& new_send)
     {
         ghost_entities_and_fields(ghosting, new_send);
     }
 
-    void my_add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+    void my_add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, stk::mesh::EntityProcVec& entitiesWithClosure)
     {
         add_closure_entities(ghosting, entities, entitiesWithClosure);
     }

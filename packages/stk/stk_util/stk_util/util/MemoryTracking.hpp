@@ -31,9 +31,10 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _MemoryTracking_hpp_
-#define _MemoryTracking_hpp_
+#ifndef stk_util_MemoryTracking_hpp_
+#define stk_util_MemoryTracking_hpp_
 
+//#define STK_MEMORY_TRACKING
 #ifdef STK_MEMORY_TRACKING
 
 #include <cstdlib>
@@ -41,6 +42,8 @@
 namespace stk {
 
 size_t get_total_bytes_currently_allocated();
+
+size_t get_current_num_ptrs();
 
 size_t get_high_water_mark_in_bytes();
 

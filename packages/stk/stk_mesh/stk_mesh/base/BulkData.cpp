@@ -2854,7 +2854,8 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       pack_sideset_info(*this, buffer , entity );
     }
 
-    comm.communicate();
+    const bool deallocateSendBuffers = true;
+    comm.communicate(deallocateSendBuffers);
 
     SideSetHelper helper(*this, mesh_meta_data().universal_part());
     for ( std::set<EntityProc,EntityLess>::iterator
@@ -3212,7 +3213,7 @@ void BulkData::internal_verify_inputs_and_change_ghosting(
 //----------------------------------------------------------------------
 
 void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
-                                         const std::set<EntityProc , EntityLess>& sendGhosts,
+                                         const std::vector<EntityProc>& sendGhosts,
                                          bool isFullRegen,
                                          const std::vector<EntityProc>& removedSendGhosts)
 {
@@ -3225,11 +3226,9 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
 
     stk::CommSparse commSparse( parallel() );
     for ( int phase = 0; phase < 2; ++phase ) {
-      for ( std::set< EntityProc , EntityLess >::iterator
-              j = sendGhosts.begin(); j != sendGhosts.end() ; ++j ) {
-
-        Entity entity = j->first;
-        const int proc = j->second;
+      for (const EntityProc& entProc : sendGhosts) {
+        Entity entity = entProc.first;
+        const int proc = entProc.second;
 
         if ( isFullRegen || !in_ghost(ghosting , entity, proc) ) {
           // Not already being sent , must send it.
@@ -3262,7 +3261,8 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
         commSparse.allocate_buffers();
       }
       else {
-        commSparse.communicate();
+        const bool deallocateSendBuffers = true;
+        commSparse.communicate(deallocateSendBuffers);
       }
     }
 
@@ -3443,7 +3443,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
     delete_unneeded_entries_from_the_comm_list();
 }
 
-void BulkData::conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting, stk::mesh::Entity entity, int toProc, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+void BulkData::conditionally_add_entity_to_ghosting_set(const Ghosting &ghosting, Entity entity, int toProc, EntityProcVec& entitiesWithClosure)
 {
     const bool notOwnedByRecvGhostProc = toProc != parallel_owner_rank(entity);
     const bool entityIsShared = in_shared( entity_key(entity) , toProc );
@@ -3457,11 +3457,11 @@ void BulkData::conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghostin
 
     if (shouldAddToGhostingSet)
     {
-        entitiesWithClosure.insert(EntityProc(entity , toProc));
+        entitiesWithClosure.push_back(EntityProc(entity , toProc));
     }
 }
 
-void BulkData::add_closure_entities(const stk::mesh::Ghosting &ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+void BulkData::add_closure_entities(const Ghosting &ghosting, const EntityProcVec& entities, EntityProcVec& entitiesWithClosure)
 {
     for ( std::vector< EntityProc >::const_iterator
           i = entities.begin() ; i != entities.end() ; ++i )
@@ -3493,15 +3493,14 @@ void BulkData::internal_add_to_ghosting(
 {
     m_modSummary.track_add_to_ghosting(ghosting, add_send);
 
-    //------------------------------------
-    // Copy ghosting lists into more efficiently edited container.
-    // The send and receive lists must be in entity rank-order.
-    std::set<EntityProc , EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
+    std::vector<EntityProc> entitiesToGhostOntoOtherProcessors;
+    entitiesToGhostOntoOtherProcessors.reserve(add_send.size());
 
     add_closure_entities(ghosting, add_send, entitiesToGhostOntoOtherProcessors);
 
     stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(*this, entitiesToGhostOntoOtherProcessors);
 
+    stk::util::sort_and_unique(entitiesToGhostOntoOtherProcessors, EntityLess(*this));
     ghost_entities_and_fields(ghosting, entitiesToGhostOntoOtherProcessors);
 }
 
@@ -3589,26 +3588,30 @@ void BulkData::internal_change_ghosting(
   m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
 
   // put add_send entities and their closure in newSendGhosts
-  std::set<EntityProc, EntityLess> newSendGhosts(EntityLess(*this));
-  impl::StoreInEntityProcSet sieps(*this, newSendGhosts);
+  EntityProcVec newSendGhosts;
+  impl::StoreInEntityProcVec storeInVec(*this, newSendGhosts);
   impl::OnlyGhosts og(*this);
   for ( const EntityProc& entityProc : add_send ) {
+      storeInVec.proc = entityProc.second;
       og.proc = entityProc.second;
-      sieps.proc = entityProc.second;
-      impl::VisitClosureGeneral(*this,entityProc.first,entity_rank(entityProc.first),sieps,og);
+      impl::VisitClosureGeneral(*this,entityProc.first,entity_rank(entityProc.first),storeInVec,og);
   }
+  stk::util::sort_and_unique(newSendGhosts, EntityLess(*this));
 
   //remove newSendGhosts that are already in comm-list:
-  for (auto sendGhost = newSendGhosts.begin(); sendGhost != newSendGhosts.end();) {
-    const EntityKey key = entity_key(sendGhost->first);
-    const int proc = sendGhost->second;
+  for (EntityProc& sendGhost : newSendGhosts) {
+    const EntityKey key = entity_key(sendGhost.first);
+    const int proc = sendGhost.second;
     if (in_send_ghost(ghosting, key, proc)) {
-      sendGhost = newSendGhosts.erase(sendGhost);
-    }
-    else {
-      ++sendGhost;
+      sendGhost.first = Entity();
     }
   }
+  auto shouldRemove = [&](const EntityProc& ep) {
+    return ep.first.local_offset() == 0;
+  };
+  newSendGhosts.erase(
+       std::remove_if(newSendGhosts.begin(), newSendGhosts.end(), shouldRemove),
+       newSendGhosts.end());
 
   std::vector<Entity> removeRecvGhosts;
   std::vector<bool> ghostStatus(get_size_of_entity_index_space(), false);
@@ -3619,6 +3622,7 @@ void BulkData::internal_change_ghosting(
   stk::mesh::impl::comm_sync_send_recv(*this , removeRecvGhosts, newSendGhosts, removeSendGhosts);
 
   if (!add_send_is_globally_empty) {
+    stk::util::sort_and_unique(newSendGhosts, EntityLess(*this));
     ghost_entities_and_fields(ghosting, newSendGhosts, false);
   }
   else {
@@ -4304,30 +4308,29 @@ void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData,
     }
 }
 
-void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData,
-                                                 stk::mesh::Entity edge,
+void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::Entity edge,
                                                  std::vector<stk::mesh::Entity>& entitiesConnectedToNodes,
                                                  const stk::mesh::Entity* nodes,
-                                                 std::set<EntityProc, EntityLess> &addGhostedEntities)
+                                                 EntityProcVec& addGhostedEntities)
 {
     // Grab all the entities attached to the 2 nodes
     // If the entity is ghosted and the edge is owned, then the edge needs to be ghosted.
-    bool doesEdgeNeedToBeGhosted = doesEdgeNeedGhostingCommunication(stkMeshBulkData, entitiesConnectedToNodes);
+    bool doesEdgeNeedToBeGhosted = doesEdgeNeedGhostingCommunication(*this, entitiesConnectedToNodes);
     if ( doesEdgeNeedToBeGhosted )
     {
         for (size_t j=0;j<entitiesConnectedToNodes.size();j++)
         {
             if ( entitiesConnectedToNodes[j] != Entity() )
             {
-                PairIterEntityComm ghosted = stkMeshBulkData.internal_entity_comm_map( entitiesConnectedToNodes[j] , stkMeshBulkData.aura_ghosting());
+                PairIterEntityComm ghosted = internal_entity_comm_map( entitiesConnectedToNodes[j] , aura_ghosting());
                 for (PairIterEntityComm ec = ghosted; !ec.empty(); ++ec)
                 {
-                    if ( ec->proc != stkMeshBulkData.parallel_rank() )
+                    if ( ec->proc != parallel_rank() )
                     {
-                        bool isEdgeSharedWithOtherProc = stkMeshBulkData.in_shared(stkMeshBulkData.entity_key(edge), ec->proc);
+                        bool isEdgeSharedWithOtherProc = in_shared(entity_key(edge), ec->proc);
                         if ( !isEdgeSharedWithOtherProc )
                         {
-                            addGhostedEntities.insert(EntityProc(edge, ec->proc));
+                            addGhostedEntities.push_back(EntityProc(edge, ec->proc));
                         }
                     }
                 }
@@ -4336,15 +4339,14 @@ void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBul
     }
 }
 
-void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
-                                                                             std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
+void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(EntityProcVec& entitiesToGhostOntoOtherProcessors,
                                                                              EntityRank entity_rank,
                                                                              stk::mesh::Selector selected,
                                                                              bool connectFacesToPreexistingGhosts)
 {
     if(entity_rank == stk::topology::NODE_RANK) { return; }
 
-    const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
+    const stk::mesh::BucketVector& entity_buckets = buckets(entity_rank);
     bool isedge = (entity_rank == stk::topology::EDGE_RANK && mesh_meta_data().spatial_dimension() == 3);
 
     std::vector<stk::mesh::Entity> facesConnectedToNodes;
@@ -4356,39 +4358,40 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
         for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
         {
             Entity entity = bucket[entityIndex];
-            if ( mesh.state(entity) != Unchanged )
+            if ( state(entity) != Unchanged )
             {
-                const stk::mesh::Entity* nodes = mesh.begin_nodes(entity);
+                const stk::mesh::Entity* nodes = begin_nodes(entity);
 
                 if(isedge)
                 {
-                    impl::find_entities_these_nodes_have_in_common(mesh, stk::topology::FACE_RANK,
+                    impl::find_entities_these_nodes_have_in_common(*this, stk::topology::FACE_RANK,
                           numNodes, nodes, facesConnectedToNodes);
-                    removeEntitiesNotSelected(mesh, selected, facesConnectedToNodes);
+                    removeEntitiesNotSelected(*this, selected, facesConnectedToNodes);
                     if(connectFacesToPreexistingGhosts)
-                        connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
+                        connectGhostedEntitiesToEntity(*this, facesConnectedToNodes, entity, nodes);
                 }
 
-                impl::find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEM_RANK,
+                impl::find_entities_these_nodes_have_in_common(*this, stk::topology::ELEM_RANK,
                             numNodes, nodes, elementsConnectedToNodes);
-                removeEntitiesNotSelected(mesh, selected, elementsConnectedToNodes);
+                removeEntitiesNotSelected(*this, selected, elementsConnectedToNodes);
                 if(connectFacesToPreexistingGhosts)
-                    connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
+                    connectGhostedEntitiesToEntity(*this, elementsConnectedToNodes, entity, nodes);
 
                 if ( bucket.owned() || bucket.shared() )
                 {
                     if (isedge)
                     {
-                      determineEntitiesThatNeedGhosting(mesh, entity, facesConnectedToNodes, nodes, entitiesToGhostOntoOtherProcessors);
+                      determineEntitiesThatNeedGhosting(entity, facesConnectedToNodes, nodes, entitiesToGhostOntoOtherProcessors);
                     }
-                    determineEntitiesThatNeedGhosting(mesh, entity, elementsConnectedToNodes, nodes, entitiesToGhostOntoOtherProcessors);
+                    determineEntitiesThatNeedGhosting(entity, elementsConnectedToNodes, nodes, entitiesToGhostOntoOtherProcessors);
                 }
             }
         }
     }
+    stk::util::sort_and_unique(entitiesToGhostOntoOtherProcessors, EntityLess(*this));
 
     std::set< EntityKey > entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
-    stk::mesh::impl::comm_sync_send_recv(mesh, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
+    stk::mesh::impl::comm_sync_send_recv(*this, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
 void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
@@ -4470,10 +4473,11 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
 
 void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin, bool connectFacesToPreexistingGhosts)
 {
-    std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
-    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank, selectedToSkin, connectFacesToPreexistingGhosts);
+    EntityProcVec sendGhosts;
+    find_upward_connected_entities_to_ghost_onto_other_processors(sendGhosts, entity_rank, selectedToSkin, connectFacesToPreexistingGhosts);
 
-    ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
+    stk::util::sort_and_unique(sendGhosts, EntityLess(*this));
+    ghost_entities_and_fields(aura_ghosting(), sendGhosts);
 }
 
 bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, ModEndOptimizationFlag opt )

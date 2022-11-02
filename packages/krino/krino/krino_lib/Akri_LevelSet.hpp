@@ -80,6 +80,8 @@ public:
     const FieldRef  & field_ref,
     double * field);
 
+  static double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
+  static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets);
   double compute_average_edge_length() const;
 
   void build_facets_locally(const stk::mesh::Selector & selector);

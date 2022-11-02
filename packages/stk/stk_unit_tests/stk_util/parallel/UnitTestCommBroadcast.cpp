@@ -49,7 +49,7 @@ TEST(ParallelComm, CommBroadcast_string)
 
   EXPECT_EQ(rootRank, commBroadcast.root_rank());
 
-  stk::pack_and_communicate(commBroadcast, [&commBroadcast,&rootRank]() {
+  stk::pack_and_communicate(commBroadcast, [&]() {
     if (commBroadcast.parallel_rank() == rootRank) {
       std::string str = "message from "+std::to_string(commBroadcast.parallel_rank());
       commBroadcast.send_buffer().pack(str);

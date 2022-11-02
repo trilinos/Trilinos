@@ -58,14 +58,11 @@ public:
 
 protected:
     virtual void fill_send_aura_entities(BulkData& bulkData,
-                                         EntityProcMapping& sendAuraEntityProcs,
-                                         const EntityProcMapping& entitySharing);
+                                         EntityProcMapping& sendAuraEntityProcs);
 
     virtual void change_ghosting(BulkData& bulkData,
-                                 EntityProcMapping& entityProcMapping,
-                                 const EntityProcMapping& entitySharing);
+                                 EntityProcMapping& entityProcMapping);
 private:
-  EntityProcMapping m_entitySharing;
   EntityProcMapping m_sendAura;
   std::vector<EntityProc> m_scratchSpace;
 };

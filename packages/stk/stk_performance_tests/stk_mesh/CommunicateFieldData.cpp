@@ -284,8 +284,18 @@ void test_communicate_field_data_all_ghosting(stk::ParallelMachine communicator,
     batchTimer.print_batch_timing(num_iters);
 }
 
-void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, int num_iters)
+void test_communicate_field_data_ghosting(MPI_Comm communicator,
+                                          unsigned numBlocks, unsigned numFields, int num_iters)
 {
+    stk::performance_tests::BatchTimer batchTimer(communicator);
+    batchTimer.initialize_batch_timer();
+
+    stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
+    std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
+    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
+
+    stk::mesh::BulkData& mesh = exodusFileReader.bulk_data();
     const int my_proc = mesh.parallel_rank();
     if (my_proc == 0) {
         std::cerr << "Calling communicate_field_data " << num_iters << " times"<<std::endl;
@@ -301,8 +311,6 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, int num_ite
     stk::parallel_machine_barrier(mesh.parallel());
 
     const unsigned NUM_RUNS = 5;
-    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
-    batchTimer.initialize_batch_timer();
   
     for (unsigned j = 0; j < NUM_RUNS; j++) {
       batchTimer.start_batch_timer();
@@ -371,15 +379,9 @@ TEST(CommunicateFieldData, Ghosting)
       return;
     }
   
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
-    std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
     const unsigned numBlocks = 1;
     const unsigned numFields = 8;
-    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
-
-    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-    test_communicate_field_data_ghosting(stkMeshBulkData, 1000);
+    test_communicate_field_data_ghosting(communicator, numBlocks, numFields, 1000);
 }
 
 TEST(CommunicateFieldData, Ghosting_MultiBlock)
@@ -390,15 +392,9 @@ TEST(CommunicateFieldData, Ghosting_MultiBlock)
       return;
     }
   
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
-    std::string genMeshSpec = "generated:100x100x48|sideset:xXyY";
-    const unsigned numBlocks = 24;
-    const unsigned numFields = 4;
-    createMetaAndBulkData(exodusFileReader,genMeshSpec, numBlocks, numFields);
-
-    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-    test_communicate_field_data_ghosting(stkMeshBulkData, 300);
+    const unsigned numBlocks = 1;
+    const unsigned numFields = 8;
+    test_communicate_field_data_ghosting(communicator, numBlocks, numFields, 300);
 }
 
 TEST(CommunicateFieldData, NgpGhosting)

@@ -1,19 +1,21 @@
 
 #include "stk_util/util/MemoryTracking.hpp"
+#include <stddef.h>
 #include <cstddef>
 #include <cstdlib>
 #include <utility>
 #include <cstdio>
 #include <algorithm>
+#include <iostream>
 
-//#define STK_MEMORY_TRACKING
 #ifdef STK_MEMORY_TRACKING
 
+static constexpr size_t allocOverhead = 16;
 static size_t total_bytes_allocated = 0;
 static size_t high_water_mark_bytes = 0;
 static size_t high_water_mark_in_ptrs = 0;
 
-static const size_t max_num_ptrs = 10000000;
+static const size_t max_num_ptrs = 20000000;
 static size_t num_ptrs = 0;
 static std::pair<void*,size_t> ptr_sizes[max_num_ptrs];
 
@@ -27,30 +29,51 @@ void add_ptr(void* ptr, size_t sz) {
 }
 
 size_t remove_ptr_and_return_size(void*ptr) {
-    int num = num_ptrs;
-    for(int i=num-1; i>=0; --i) {
-        if (ptr_sizes[i].first == ptr) {
-            size_t size = ptr_sizes[i].second;
-            ptr_sizes[i] = ptr_sizes[num-1];
-            --num_ptrs;
-            return size;
-        }
-    }   
-    return 0;
+  int num = num_ptrs;
+  for(int i=num-1; i>=0; --i) {
+    if (ptr_sizes[i].first == ptr) {
+      size_t size = ptr_sizes[i].second;
+      ptr_sizes[i] = ptr_sizes[num-1];
+      --num_ptrs;
+      return size;
+    }
+  }
+  return 0;
 }
 
 void* operator new(std::size_t sz) {
-    void* ptr = std::malloc(sz);
-    add_ptr(ptr,sz);
-    total_bytes_allocated += sz; 
-    high_water_mark_bytes = std::max(high_water_mark_bytes, total_bytes_allocated);
-    return ptr;
+  void* ptr = std::malloc(sz);
+  add_ptr(ptr,sz);
+  total_bytes_allocated += sz + allocOverhead;
+  high_water_mark_bytes = std::max(high_water_mark_bytes, total_bytes_allocated);
+  return ptr;
+}
+
+void* operator new  ( std::size_t sz, std::align_val_t /* al */)
+{
+  void* ptr = std::malloc(sz);
+  add_ptr(ptr,sz);
+  total_bytes_allocated += sz + allocOverhead;
+  high_water_mark_bytes = std::max(high_water_mark_bytes, total_bytes_allocated);
+  return ptr;
 }
 
 void operator delete(void* ptr) throw()
 {
-    total_bytes_allocated -= remove_ptr_and_return_size(ptr);
-    std::free(ptr);
+  total_bytes_allocated -= (remove_ptr_and_return_size(ptr)+allocOverhead);
+  std::free(ptr);
+}
+
+void operator delete(void* ptr, size_t /*sz*/) throw()
+{
+  total_bytes_allocated -= (remove_ptr_and_return_size(ptr)+allocOverhead);
+  std::free(ptr);
+}
+
+void operator delete  ( void* ptr, std::align_val_t /*al*/ ) noexcept
+{
+  total_bytes_allocated -= (remove_ptr_and_return_size(ptr)+allocOverhead);
+  std::free(ptr);
 }
 
 namespace stk {
@@ -58,6 +81,11 @@ namespace stk {
 size_t get_total_bytes_currently_allocated()
 {
     return total_bytes_allocated;
+}
+
+size_t get_current_num_ptrs()
+{
+  return num_ptrs;
 }
 
 size_t get_high_water_mark_in_bytes()

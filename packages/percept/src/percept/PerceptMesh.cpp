@@ -1998,7 +1998,7 @@
                 //std::cout << "createField vector: " << name << std::endl;
                 VectorIntFieldType & vfield =  m_metaData->declare_field<int>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
-                stk::io::set_field_output_type(vfield, "Vector_3D");
+                stk::io::set_field_output_type(vfield, stk::io::FieldOutputType::VECTOR_3D);
                 field = &vfield;
               }
               break;
@@ -2031,7 +2031,7 @@
                 //std::cout << "createField vector: " << name << std::endl;
                 CoordinatesFieldType & vfield =  m_metaData->declare_field<double>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
-                stk::io::set_field_output_type(vfield, "Vector_3D");
+                stk::io::set_field_output_type(vfield, stk::io::FieldOutputType::VECTOR_3D);
                 field = &vfield;
               }
               break;
