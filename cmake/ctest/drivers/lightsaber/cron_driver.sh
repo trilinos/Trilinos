@@ -40,7 +40,8 @@ export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
 # folder with the machine specific build info
 export BUILDS_DIR=$TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
 
-
+# OneAPI
+export MODULEPATH="$MODULEPATH":/opt/intel/oneapi/modulefiles:/opt/apps/modulefiles
 
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
@@ -76,12 +77,9 @@ export OMP_NUM_THREADS=2
 #setenv TDD_FORCE_CMAKE_INSTALL 0
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
-if [ 1 -eq 0 ]; then
-
 # Actually run stuff
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_avatar_lightsaber.cmake
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_float_lightsaber.cmake
-fi
 
 module load sems-netcdf-c
 module load sems-boost
@@ -109,8 +107,8 @@ module load sems-netcdf-c/4.7.3
 export I_MPI_CXX=dpcpp
 
 # We should really get these from the environment
-export UC_MPI_NAME=ONEAPI
-export LMOD_FAMILY_MPI_VERSION=2021.7.0
+export LMOD_FAMILY_MPI=ONEAPI
+export LMOD_FAMILY_MPI_VERSION=2022.3.0
 
 echo "Configuration = $CTEST_CONFIGURATION"
 module list
