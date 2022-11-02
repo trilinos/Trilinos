@@ -181,6 +181,13 @@ public:
   void update( const Vector<Real> &z, bool flag = true, int iter = -1 ) override;
   void update( const Vector<Real> &z, UpdateType type, int iter = -1 ) override;
 
+  /** \brief Given \f$z\in\mathcal{Z}\f$, store a precomputed state
+    \f$u=u(z)\in\mathcal{U}\f$ which solves \f$e(u,z) = 0\f$ and
+    update the SimOpt objective function and equality constraint
+    accordingly.
+  */
+  void set_precomputed_state(const ROL::Vector<Real> &state,const ROL::Vector<Real> &z);
+
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the objective function
              \f$\widehat{J}(z) = J(u(z),z)\f$ where
              \f$u=u(z)\in\mathcal{U}\f$ solves \f$e(u,z) = 0\f$.

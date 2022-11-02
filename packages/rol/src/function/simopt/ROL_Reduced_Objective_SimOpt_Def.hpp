@@ -183,6 +183,23 @@ void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, UpdateType t
 }
 
 template<typename Real>
+void Reduced_Objective_SimOpt<Real>::set_precomputed_state(const ROL::Vector<Real> &state, const ROL::Vector<Real> &z) {
+  state_->set(state);
+  ROL_TEST_FOR_EXCEPTION(!storage_, std::invalid_argument,
+    ">>> ERROR (ROL:Reduced_Objective_SimOpt:set_precomputed_state): Cannot set precomputed state if storage is disabled!");
+
+  stateStore_->set(*state_, ROL::Objective<Real>::getParameter());
+
+  // Update equality constraint.
+  if (newUpdate_) con_->update(*state_,z,updateType_,updateIter_);
+  else            con_->update(*state_,z,updateFlag_,updateIter_);
+  // Update full objective function.
+  if (newUpdate_) obj_->update(*state_,z,updateType_,updateIter_);
+  else            obj_->update(*state_,z,updateFlag_,updateIter_);
+  isUpdated_ = true;
+}
+
+template<typename Real>
 Real Reduced_Objective_SimOpt<Real>::value( const Vector<Real> &z, Real &tol ) {
   nvalu_++;
   // Solve state equation

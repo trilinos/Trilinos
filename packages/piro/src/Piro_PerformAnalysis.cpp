@@ -302,7 +302,7 @@ Piro::PerformROLAnalysis(
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
   Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, appParams, verbosityLevel, observer);
-  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, appParams, verbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, p_indices, appParams, verbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
@@ -456,8 +456,8 @@ Piro::PerformROLAnalysis(
       *out << "Piro PerformAnalysis: Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
       constr.checkAdjointConsistencyJacobian(rol_x_direction1, sopt_vec_direction2, sopt_vec,true,*out);
 
-      obj.update(rol_x,rol_p);
-      constr.update(rol_x,rol_p);
+      obj.update(rol_x,rol_p,ROL::UpdateType::Temp);
+      constr.update(rol_x,rol_p,ROL::UpdateType::Temp);
       *out << "Piro PerformAnalysis: Checking Symmetry of objective Hessian" << std::endl;
       obj.checkHessSym(sopt_vec,sopt_vec_direction1, sopt_vec_direction2, true,*out);
 
@@ -473,7 +473,7 @@ Piro::PerformROLAnalysis(
 
       if(rolParams.get<bool>("Expensive Derivative Checks", false)) {
         *out << "Piro PerformAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
-        reduced_obj.update(rol_p);
+        reduced_obj.update(rol_p,ROL::UpdateType::Temp);
         auto hsymCheck = reduced_obj.checkHessSym(rol_p, rol_p, rol_p_direction1, true,*out);
         *out << "Piro PerformAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
         *out << std::right

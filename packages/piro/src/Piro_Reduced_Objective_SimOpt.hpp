@@ -84,13 +84,13 @@ class Reduced_Objective_SimOpt : public ROL::Objective<Real> {
         // Solve state equation if not done already.
         if (!isComputed || !storage_) {
             // Update equality constraint with new Opt variable.
-            con_->update_2(z, updateFlag_, updateIter_);
+            con_->update_2(z, ROL::UpdateType::Temp, updateIter_);
             // Solve state equation.
             con_->solve(*dualadjoint_, *state_, z, tol);
             // Update equality constraint with new Sim variable.
-            con_->update_1(*state_, updateFlag_, updateIter_);
+            con_->update_1(*state_, ROL::UpdateType::Temp, updateIter_);
             // Update full objective function.
-            obj_->update(*state_, z, updateFlag_, updateIter_);
+            obj_->update(*state_, z, ROL::UpdateType::Temp, updateIter_);
             // Store state.
             if (storage_) {
                 stateStore_->set(*state_, ROL::Objective<Real>::getParameter());
@@ -379,8 +379,8 @@ class Reduced_Objective_SimOpt : public ROL::Objective<Real> {
         accordingly.
     */
     void set_precomputed_state(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
-        this->con_->update(u, z, this->updateFlag_, this->updateIter_);
-        this->obj_->update(u, z, this->updateFlag_, this->updateIter_);
+        this->con_->update(u, z, ROL::UpdateType::Temp, this->updateIter_);
+        this->obj_->update(u, z, ROL::UpdateType::Temp, this->updateIter_);
         if (this->storage_) {
             this->stateStore_->set(u, ROL::Objective<Real>::getParameter());
         }
