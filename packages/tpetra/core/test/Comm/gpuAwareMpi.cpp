@@ -70,9 +70,9 @@ namespace { // (anonymous)
   using std::endl;
   typedef Tpetra::global_size_t GST;
 
-#if (! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRA_INST_CUDA) ) && (! defined(KOKKOS_ENABLE_HIP) || ! defined(HAVE_TPETRA_INST_HIP))
-#  error "Building this test requires that Trilinos was built with CUDA or HIP enabled, and that Tpetra_INST_CUDA:BOOL=ON or Tpetra_INST_HIP:BOOL=ON.  The latter should be true by default if the former is true.  Thus, if Trilinos was built with CUDA/HIP enabled, then you must have set some nondefault CMake option."
-#endif // (! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRA_INST_CUDA) ) && (! defined(KOKKOS_ENABLE_HIP) || ! defined(HAVE_TPETRA_INST_HIP))
+#if (! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRA_INST_CUDA) ) && (! defined(KOKKOS_ENABLE_HIP) || ! defined(HAVE_TPETRA_INST_HIP)) && (! defined(KOKKOS_ENABLE_SYCL) || ! defined(HAVE_TPETRA_INST_SYCL))
+#  error "Building this test requires that Trilinos was built with CUDA, HIP or SYCL enabled, and that Tpetra_INST_CUDA:BOOL=ON, Tpetra_INST_HIP:BOOL=ON or Tpetra_INST_SYCL:BOOL=ON.  The latter should be true by default if the former is true.  Thus, if Trilinos was built with CUDA/HIP enabled, then you must have set some nondefault CMake option."
+#endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> test_device_type;
@@ -80,6 +80,9 @@ namespace { // (anonymous)
 #elif defined(KOKKOS_ENABLE_HIP)
   typedef Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace> test_device_type;
   typedef Kokkos::Compat::KokkosHIPWrapperNode test_node_type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSpace> test_device_type;
+  typedef Kokkos::Compat::KokkosSYCLWrapperNode test_node_type;
 #endif
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
