@@ -46,9 +46,9 @@
 // what it means for an MPI implementation to be "CUDA aware," and why
 // this matters for performance.
 //
-// The test will only build if CUDA is enabled.  If you want to
-// exercise this test, you must build Tpetra with CUDA enabled, and
-// set the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI to some
+// The test will only build if CUDA/HIP is enabled.  If you want to
+// exercise this test, you must build Tpetra with CUDA or HIP enabled, and
+// set the environment variable TPETRA_ASSUME_GPU_AWARE_MPI to some
 // true value (e.g., "1" or "TRUE").  If you set the environment
 // variable to some false value (e.g., "0" or "FALSE"), the test will
 // run but will pass trivially.  This means that you may control the
@@ -70,12 +70,20 @@ namespace { // (anonymous)
   using std::endl;
   typedef Tpetra::global_size_t GST;
 
-#if ! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRA_INST_CUDA)
-#  error "Building this test requires that Trilinos was built with CUDA enabled, and that Tpetra_INST_CUDA:BOOL=ON.  The latter should be true by default if the former is true.  Thus, if Trilinos was built with CUDA enabled, then you must have set some nondefault CMake option."
-#endif // ! defined(KOKKOS_ENABLE_CUDA) && ! defined(HAVE_TPETRA_INST_CUDA)
+#if (! defined(KOKKOS_ENABLE_CUDA) || ! defined(HAVE_TPETRA_INST_CUDA) ) && (! defined(KOKKOS_ENABLE_HIP) || ! defined(HAVE_TPETRA_INST_HIP)) && (! defined(KOKKOS_ENABLE_SYCL) || ! defined(HAVE_TPETRA_INST_SYCL))
+#  error "Building this test requires that Trilinos was built with CUDA, HIP or SYCL enabled, and that Tpetra_INST_CUDA:BOOL=ON, Tpetra_INST_HIP:BOOL=ON or Tpetra_INST_SYCL:BOOL=ON.  The latter should be true by default if the former is true.  Thus, if Trilinos was built with CUDA/HIP enabled, then you must have set some nondefault CMake option."
+#endif
 
+#if defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> test_device_type;
   typedef Kokkos::Compat::KokkosCudaWrapperNode test_node_type;
+#elif defined(KOKKOS_ENABLE_HIP)
+  typedef Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace> test_device_type;
+  typedef Kokkos::Compat::KokkosHIPWrapperNode test_node_type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSpace> test_device_type;
+  typedef Kokkos::Compat::KokkosSYCLWrapperNode test_node_type;
+#endif
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<LO, GO, test_node_type> map_type;
@@ -84,17 +92,17 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST( Comm, CudaAwareMpi )
+  TEUCHOS_UNIT_TEST( Comm, GPUAwareMpi )
   {
     constexpr bool debug = false;
     int lclSuccess = 1; // to be modified below
     int gblSuccess = 0; // output argument; to be modified below
 
-    out << "Testing CUDA-awareness of the MPI implementation" << endl;
-    const bool assumeMpiIsCudaAware =
-      ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
-    if (! assumeMpiIsCudaAware) {
-      out << "Trilinos (or you, the user) asserts that MPI is NOT CUDA aware."
+    out << "Testing GPU-awareness of the MPI implementation" << endl;
+    const bool assumeMpiIsGPUAware =
+      ::Tpetra::Details::Behavior::assumeMpiIsGPUAware ();
+    if (! assumeMpiIsGPUAware) {
+      out << "Trilinos (or you, the user) asserts that MPI is NOT GPU aware."
           << endl
           << "That's OK; we consider the test having passed in this case,"
           << endl
@@ -103,7 +111,7 @@ namespace { // (anonymous)
       return;
     }
     else {
-      out << "Trilinos (or you, the user) asserts that MPI is CUDA aware."
+      out << "Trilinos (or you, the user) asserts that MPI is GPU aware."
           << endl
           << "Beginning the test now."
           << endl;
