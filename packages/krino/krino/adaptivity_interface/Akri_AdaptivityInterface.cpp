@@ -607,10 +607,10 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & bulk,
 
   const auto & meta = bulk.mesh_meta_data();
   percept::MarkerInfo markerInfo;
-  markerInfo.errorIndicator_ = meta.get_field<percept::ErrorFieldType>(stk::topology::ELEMENT_RANK, indicator_field_name);
-  markerInfo.refineField_ = meta.get_field<percept::RefineFieldType>(stk::topology::ELEMENT_RANK, marker_field_name);
-  markerInfo.refineFieldOrig_ = meta.get_field<percept::RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field_orig");
-  markerInfo.refineLevelField_ = meta.get_field<percept::RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
+  markerInfo.errorIndicator_ = meta.get_field<percept::ErrorFieldType_type>(stk::topology::ELEMENT_RANK, indicator_field_name);
+  markerInfo.refineField_ = meta.get_field<percept::RefineFieldType_type>(stk::topology::ELEMENT_RANK, marker_field_name);
+  markerInfo.refineFieldOrig_ = meta.get_field<percept::RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
+  markerInfo.refineLevelField_ = meta.get_field<percept::RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
   /*
   markerInfo.useMarker_ = true;
 

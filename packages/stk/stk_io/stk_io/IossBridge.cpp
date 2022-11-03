@@ -467,6 +467,20 @@ namespace io {
 
 namespace impl {
 
+const Ioss::VariableType * get_variable_type_from_factory(const std::string & typeName)
+{
+  static Ioss::StorageInitializer initializeStorage;
+
+  const Ioss::VariableType * variableType = nullptr;
+  try {
+    variableType = Ioss::VariableType::factory(typeName);
+  }
+  catch (...) {
+  }
+
+  return variableType;
+}
+
 void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type)
 {
   mesh::MetaData & meta = mesh::MetaData::get(field);
@@ -482,6 +496,40 @@ void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableTyp
       meta.declare_attribute_no_delete(field, type);
     }
   }
+}
+
+void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
+{
+  const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
+
+  if (not variableType) {
+    ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
+                  "  - Scalar\n"
+                  "  - Vector_2D      [x, y]\n"
+                  "  - Vector_3D      [x, y, z]\n"
+                  "  - Full_Tensor_36 [xx, yy, zz, xy, yz, zx, yx, zy, xz]\n"
+                  "  - Full_Tensor_32 [xx, yy, zz, xy, yx]\n"
+                  "  - Full_Tensor_22 [xx, yy, xy, yx]\n"
+                  "  - Full_Tensor_16 [xx, xy, yz, zx, yx, zy, xz]\n"
+                  "  - Full_Tensor_12 [xx, xy, yx]\n"
+                  "  - Sym_Tensor_33  [xx, yy, zz, xy, yz, zx]\n"
+                  "  - Sym_Tensor_31  [xx, yy, zz, xy]\n"
+                  "  - Sym_Tensor_21  [xx, yy, xy]\n"
+                  "  - Sym_Tensor_13  [xx, xy, yz, zx]\n"
+                  "  - Sym_Tensor_11  [xx, xy]\n"
+                  "  - Sym_Tensor_10  [xx]\n"
+                  "  - Asym_Tensor_03 [xy, yz, zx]\n"
+                  "  - Asym_Tensor_02 [xy, yz]\n"
+                  "  - Asym_Tensor_01 [xy]\n"
+                  "  - Matrix_22      [xx, xy, yx, yy]\n"
+                  "  - Matrix_33      [xx, xy, xz, yx, yy, yz, zx, zy, zz]\n"
+                  "  - Quaternion_2D  [s, q]\n"
+                  "  - Quaternion_3D  [x, y, z, q]\n"
+                  "  - Custom named-suffix output type [user-defined]\n"
+                  "Default if unspecified: Scalar or generic array [1, 2, 3, ...]");
+  }
+
+  impl::set_field_output_type(field, variableType);
 }
 
 template<typename ArrayTag>
@@ -1039,52 +1087,46 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       Ioss::VariableType::create_named_suffix_field_type(typeName, suffices);
     }
 
-    const Ioss::VariableType * get_variable_type_from_factory(const std::string & typeName)
+    void set_named_suffix_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
     {
-      static Ioss::StorageInitializer initializeStorage;
-
-      const Ioss::VariableType * variableType = nullptr;
-      try {
-        variableType = Ioss::VariableType::factory(typeName);
-      }
-      catch (...) {
-      }
-
-      return variableType;
-    }
-
-    void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
-    {
-      const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
+      const Ioss::VariableType * variableType = impl::get_variable_type_from_factory(typeName);
 
       if (not variableType) {
-        ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
-                      "  - Scalar\n"
-                      "  - Vector_2D      [x, y]\n"
-                      "  - Vector_3D      [x, y, z]\n"
-                      "  - Full_Tensor_36 [xx, yy, zz, xy, yz, zx, yx, zy, xz]\n"
-                      "  - Full_Tensor_32 [xx, yy, zz, xy, yx]\n"
-                      "  - Full_Tensor_22 [xx, yy, xy, yx]\n"
-                      "  - Full_Tensor_16 [xx, xy, yz, zx, yx, zy, xz]\n"
-                      "  - Full_Tensor_12 [xx, xy, yx]\n"
-                      "  - Sym_Tensor_33  [xx, yy, zz, xy, yz, zx]\n"
-                      "  - Sym_Tensor_31  [xx, yy, zz, xy]\n"
-                      "  - Sym_Tensor_21  [xx, yy, xy]\n"
-                      "  - Sym_Tensor_13  [xx, xy, yz, zx]\n"
-                      "  - Sym_Tensor_11  [xx, xy]\n"
-                      "  - Sym_Tensor_10  [xx]\n"
-                      "  - Asym_Tensor_03 [xy, yz, zx]\n"
-                      "  - Asym_Tensor_02 [xy, yz]\n"
-                      "  - Asym_Tensor_01 [xy]\n"
-                      "  - Matrix_22      [xx, xy, yx, yy]\n"
-                      "  - Matrix_33      [xx, xy, xz, yx, yy, yz, zx, zy, zz]\n"
-                      "  - Quaternion_2D  [s, q]\n"
-                      "  - Quaternion_3D  [x, y, z, q]\n"
-                      "  - Custom named-suffix output type [user-defined]\n"
-                      "Default if unspecified: Scalar or generic array [1, 2, 3, ...]");
+        ThrowErrorMsg("Unrecognized custom named suffix Field output type '" + typeName + "'.\n"
+                      "Please be sure to pre-register your custom output type with a call to:\n"
+                      "  stk::io::create_named_suffix_field_output_type()");
       }
 
       impl::set_field_output_type(field, variableType);
+    }
+
+    void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType)
+    {
+      switch (fieldOutputType) {
+        case (FieldOutputType::SCALAR)         : impl::set_field_output_type(field, "Scalar"); break;
+        case (FieldOutputType::VECTOR_2D)      : impl::set_field_output_type(field, "Vector_2D"); break;
+        case (FieldOutputType::VECTOR_3D)      : impl::set_field_output_type(field, "Vector_3D"); break;
+        case (FieldOutputType::FULL_TENSOR_36) : impl::set_field_output_type(field, "Full_Tensor_36"); break;
+        case (FieldOutputType::FULL_TENSOR_32) : impl::set_field_output_type(field, "Full_Tensor_32"); break;
+        case (FieldOutputType::FULL_TENSOR_22) : impl::set_field_output_type(field, "Full_Tensor_22"); break;
+        case (FieldOutputType::FULL_TENSOR_16) : impl::set_field_output_type(field, "Full_Tensor_16"); break;
+        case (FieldOutputType::FULL_TENSOR_12) : impl::set_field_output_type(field, "Full_Tensor_12"); break;
+        case (FieldOutputType::SYM_TENSOR_33)  : impl::set_field_output_type(field, "Sym_Tensor_33"); break;
+        case (FieldOutputType::SYM_TENSOR_31)  : impl::set_field_output_type(field, "Sym_Tensor_31"); break;
+        case (FieldOutputType::SYM_TENSOR_21)  : impl::set_field_output_type(field, "Sym_Tensor_21"); break;
+        case (FieldOutputType::SYM_TENSOR_13)  : impl::set_field_output_type(field, "Sym_Tensor_13"); break;
+        case (FieldOutputType::SYM_TENSOR_11)  : impl::set_field_output_type(field, "Sym_Tensor_11"); break;
+        case (FieldOutputType::SYM_TENSOR_10)  : impl::set_field_output_type(field, "Sym_Tensor_10"); break;
+        case (FieldOutputType::ASYM_TENSOR_03) : impl::set_field_output_type(field, "Asym_Tensor_03"); break;
+        case (FieldOutputType::ASYM_TENSOR_02) : impl::set_field_output_type(field, "Asym_Tensor_02"); break;
+        case (FieldOutputType::ASYM_TENSOR_01) : impl::set_field_output_type(field, "Asym_Tensor_01"); break;
+        case (FieldOutputType::MATRIX_22)      : impl::set_field_output_type(field, "Matrix_22"); break;
+        case (FieldOutputType::MATRIX_33)      : impl::set_field_output_type(field, "Matrix_33"); break;
+        case (FieldOutputType::QUATERNION_2D)  : impl::set_field_output_type(field, "Quaternion_2D"); break;
+        case (FieldOutputType::QUATERNION_3D)  : impl::set_field_output_type(field, "Quaternion_3D"); break;
+        default:
+          ThrowErrorMsg("Unsupported FieldOutputType: " << static_cast<int>(fieldOutputType));
+      }
     }
 
     bool has_field_output_type(const stk::mesh::FieldBase & field)

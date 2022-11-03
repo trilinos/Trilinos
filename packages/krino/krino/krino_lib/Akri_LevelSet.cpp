@@ -111,7 +111,7 @@ void LevelSet::setup(stk::mesh::MetaData & meta)
 
 void LevelSet::post_commit_setup(stk::mesh::MetaData & meta)
 {
-  const double max_elem_size = compute_maximum_element_size(meta.mesh_bulk_data());
+  const double max_elem_size = compute_maximum_element_size(meta.mesh_bulk_data(), meta.universal_part());
 
   const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
   for (auto&& ls : surfaceManager.get_levelsets())
@@ -1538,6 +1538,8 @@ LevelSet::gradient_magnitude_error(void)
 
   const FieldRef xField = get_coordinates_field();
   const FieldRef isoField = get_isovar_field();
+  xField.field().sync_to_host();
+  isoField.field().sync_to_host();
   //const Vector3d extv = get_extension_velocity();
 
   stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
@@ -1593,42 +1595,39 @@ LevelSet::gradient_magnitude_error(void)
   return global_L2;
 }
 //--------------------------------------------------------------------------------
-double
-LevelSet::compute_average_edge_length() const
-{ /* %TRACE[ON]% */ /* %TRACE% */
 
-  double sum_avg_edge_lengths = 0.0;
-  int num_elems = 0;
+double LevelSet::compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect)
+{
+  double sumAvgEdgeLengths = 0.0;
 
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef isoField = get_isovar_field();
-
-  stk::mesh::Selector active_field_selector = stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
-  std::vector< stk::mesh::Entity> objs;
-  stk::mesh::get_selected_entities( active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs );
-
-  for ( auto && elem : objs )
+  for ( auto && elem : elementsToIntersect )
   {
-    ++num_elems;
-
-    // create element
-    ContourElement ls_elem( mesh(), elem, xField, isoField );
-
-    sum_avg_edge_lengths += ls_elem.average_edge_length();
+    ContourElement lsElem( mesh, elem, xField, isoField );
+    sumAvgEdgeLengths += lsElem.average_edge_length();
   }
 
   // communicate global sums
   const int vec_length = 2;
   std::vector <double> local_sum( vec_length );
   std::vector <double> global_sum( vec_length );
-  local_sum[0] = sum_avg_edge_lengths;
-  local_sum[1] = 1.0*num_elems;
+  local_sum[0] = sumAvgEdgeLengths;
+  local_sum[1] = 1.0*elementsToIntersect.size();
 
-  stk::all_reduce_sum(mesh().parallel(), &local_sum[0], &global_sum[0], vec_length);
+  stk::all_reduce_sum(mesh.parallel(), &local_sum[0], &global_sum[0], vec_length);
 
   const double h_avg = ( global_sum[1] != 0.0 ) ? global_sum[0]/global_sum[1] : 0.0;
 
   return h_avg;
+}
+
+double
+LevelSet::compute_average_edge_length() const
+{ /* %TRACE[ON]% */ /* %TRACE% */
+  stk::mesh::Selector active_field_selector = stk::mesh::selectField(get_isovar_field()) & aux_meta().active_locally_owned_selector();
+  std::vector< stk::mesh::Entity> objs;
+  stk::mesh::get_selected_entities( active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs );
+
+  return compute_global_average_edge_length_for_elements(mesh(), get_coordinates_field(), get_isovar_field(), objs);
 }
 
 //--------------------------------------------------------------------------------
@@ -1637,25 +1636,25 @@ void
 LevelSet::build_facets_locally(const stk::mesh::Selector & selector)
 { /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::build_facets_locally(void)"); /* %TRACE% */
 
-  // clear vector of facets
-  facets->clear();
-
-  const double h_avg = compute_average_edge_length();
-
-  const FieldRef xField = get_coordinates_field();
-  const FieldRef isoField = get_isovar_field();
-
-  stk::mesh::Selector active_field_selector = selector & stk::mesh::selectField(isoField) & aux_meta().active_locally_owned_selector();
+  stk::mesh::Selector active_field_selector = selector & stk::mesh::selectField(get_isovar_field()) & aux_meta().active_locally_owned_selector();
   std::vector< stk::mesh::Entity> objs;
   stk::mesh::get_selected_entities( active_field_selector, mesh().buckets( stk::topology::ELEMENT_RANK ), objs );
 
-  for ( auto && elem : objs )
-  {
-    // create element that is decomposed into subelements
-    ContourElement ls_elem( mesh(), elem, xField, isoField );
-    ls_elem.compute_subelement_decomposition(h_avg);
+  const double avgEdgeLength = compute_average_edge_length();
+  build_facets_for_elements(mesh(), get_coordinates_field(), get_isovar_field(), objs, avgEdgeLength, *facets);
+}
 
-    ls_elem.build_subelement_facets( *facets );
+void
+LevelSet::build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets)
+{
+  facets.clear();
+
+  for ( auto && elem : elementsToIntersect )
+  {
+    ContourElement lsElem( mesh, elem, xField, isoField );
+    lsElem.compute_subelement_decomposition(avgEdgeLength);
+
+    lsElem.build_subelement_facets( facets );
   }
 }
 

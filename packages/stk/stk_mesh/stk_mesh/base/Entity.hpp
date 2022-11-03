@@ -71,6 +71,9 @@ struct Entity
     Entity() : m_value(InvalidEntity) {}
 
     KOKKOS_FUNCTION
+    Entity(Entity_t value) : m_value(value) {}
+
+    KOKKOS_FUNCTION
     explicit Entity(entity_value_type value) : m_value(value) {}
 
     KOKKOS_FUNCTION

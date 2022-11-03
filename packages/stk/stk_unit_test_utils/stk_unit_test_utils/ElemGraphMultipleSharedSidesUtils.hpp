@@ -359,7 +359,7 @@ public:
         if (bulkData.parallel_size() <= 2)
         {
             stk::mesh::put_field_on_mesh(*coordField, meta.universal_part(), meta.spatial_dimension(), nullptr);
-            stk::io::set_field_output_type(*coordField, "Vector_3D");
+            stk::io::set_field_output_type(*coordField, stk::io::FieldOutputType::VECTOR_3D);
             make_mesh_2_elems_connected_through_multiple_sides(nodeIDs, sharedNodeIds);
         }
     }
