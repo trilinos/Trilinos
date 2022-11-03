@@ -101,7 +101,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_INT_LONG_LONG=ON"
   "-DTpetra_INST_FLOAT=ON"
   "-DTpetra_INST_COMPLEX_FLOAT=OFF"
-  "-DTpetra_INST_DOUBLE=OFF"
+  "-DTpetra_INST_DOUBLE=ON"
   "-DTrilinos_ENABLE_Stratimikos=OFF"
   "-DTrilinos_ENABLE_Thyra=OFF"
 )
