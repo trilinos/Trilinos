@@ -53,7 +53,6 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-#include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_MixedScalarMultiplyOp.hpp"
 
 #include "Teuchos_TestForException.hpp"

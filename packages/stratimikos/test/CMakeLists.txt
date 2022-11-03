@@ -226,6 +226,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       "--input-file=stratimikos_HalfBelosPrec_ParameterList.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 4
+    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
     )
 
   TRIBITS_ADD_TEST(
@@ -235,6 +236,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       "--input-file=stratimikos_GMRES_IR_ParameterList.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 4
+    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
