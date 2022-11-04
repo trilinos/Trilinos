@@ -19,6 +19,7 @@ namespace { // (anonymous)
 struct CmdLineArgs {
   CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12){}
 
+  std::string mapFilename;
   std::string matrixFilename;
   std::string rhsFilename;
   std::string lineFilename;
@@ -32,6 +33,8 @@ bool
 getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
 {
   Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("mapFilename", &args.mapFilename, "Name of the map "
+                  "file for the right-hand side vector(s) B");
   cmdp.setOption ("matrixFilename", &args.matrixFilename, "Name of Matrix "
                   "Market file with the sparse matrix A");
   cmdp.setOption ("rhsFilename", &args.rhsFilename, "Name of Matrix Market "
@@ -213,15 +216,27 @@ main (int argc, char* argv[])
   }
 
 
+  bool inline_matrix = false;
 #if defined(HAVE_IFPACK2_XPETRA)
   // If we have Xpetra/Galeri, we can use inline matrix generation.  If we're doing that, we
   // also reset everything else to the empty string to make the later code easier
   if (args.matrixFilename == "") {
+     args.mapFilename   = "";
      args.rhsFilename  = "";
      args.lineFilename = "";
      args.blockSize = 3; 
+     inline_matrix = true;
   }
-  else {
+#endif
+  if(inline_matrix == false) {
+    if (args.mapFilename == "") {
+      if (comm->getRank () == 0) cerr << "Must specify filename for loading the map of the right-hand side(s)!" << endl;
+      return EXIT_FAILURE;
+    }
+    if (args.matrixFilename == "") {
+      if (comm->getRank () == 0) cerr << "Must specify sparse matrix filename!" << endl;
+      return EXIT_FAILURE;
+    }
     if (args.rhsFilename == "") {
       if (comm->getRank () == 0) cerr << "Must specify filename for loading right-hand side(s)!" << endl;
       return EXIT_FAILURE;
@@ -235,25 +250,6 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;    
     }
   }
-#else
-  if (args.matrixFilename == "") {
-    if (comm->getRank () == 0) cerr << "Must specify sparse matrix filename!" << endl;
-    return EXIT_FAILURE;
-  }
-
-  if (args.rhsFilename == "") {
-    if (comm->getRank () == 0) cerr << "Must specify filename for loading right-hand side(s)!" << endl;
-    return EXIT_FAILURE;
-  }
-  if (args.lineFilename == "") {
-    if (comm->getRank () == 0) cerr << "Must specify filename for loading line information!" << endl;
-    return EXIT_FAILURE;    
-  }
-  if (args.blockSize <= 0) {
-    if (comm->getRank () == 0) cerr << "Must specify block size!" << endl;
-    return EXIT_FAILURE;    
-  }
-#endif
 
   // Read sparse matrix A from Matrix Market file.
   RCP<crs_matrix_type> A;
@@ -281,7 +277,19 @@ main (int argc, char* argv[])
   else
 #endif 
     {
-      A = reader_type::readSparseFile(args.matrixFilename, comm);
+      // Read map
+      RCP<const map_type> point_map = reader_type::readMapFile(args.mapFilename, comm);
+      if(point_map.is_null()) {
+        if (comm->getRank () == 0) {
+          cerr << "Failed to load row map from file "
+            "\"" << args.mapFilename << "\"!" << endl;
+        }
+        return EXIT_FAILURE;
+      }
+
+      // Read matrix
+      RCP<const map_type> dummy_col_map;
+      A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
       if (A.is_null()) {
         if (comm->getRank () == 0) {
           cerr << "Failed to load sparse matrix A from file "
@@ -291,8 +299,7 @@ main (int argc, char* argv[])
       }
 
       // Read right-hand side vector(s) B from Matrix Market file.
-      RCP<const map_type> map = A->getRangeMap();
-      RCP<MV> B = reader_type::readDenseFile(args.rhsFilename, comm, map);
+      RCP<MV> B = reader_type::readDenseFile(args.rhsFilename, comm, point_map);
       if (B.is_null()) {
         if (comm->getRank () == 0) {
           cerr << "Failed to load right-hand side vector(s) from file \""
@@ -303,7 +310,7 @@ main (int argc, char* argv[])
       
       // Read line information vector
       // We assume the vector contains the local line ids for each dof.  
-      RCP<IV> line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, map);
+      RCP<IV> line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, point_map);
       if (line_info.is_null ()) {
         if (comm->getRank () == 0) {
           cerr << "Failed to load line_info from file \""
