@@ -168,18 +168,23 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     Teuchos::ptr(dynamic_cast<DefaultPreconditioner<scalar_type> *>(prec));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-  // Process parameter list
+  // This check needed to address Issue #535. 
+  // Corresponding fix exists in stratimikos/adapters/belos/tpetra/Thyra_BelosTpetraPreconditionerFactory_def.hpp
+  Teuchos::RCP<const Teuchos::ParameterList> innerParamList;
+  if (paramList_.is_null ()) {
+    innerParamList = Teuchos::rcp(new Teuchos::ParameterList(*getValidParameters()));
+  }
+  else {
+    innerParamList = paramList_;
+  }
 
   bool useHalfPrecision = false;
-  if (paramList_->isParameter("half precision"))
-    useHalfPrecision = paramList_->get<bool>("half precision");
+  if (innerParamList->isParameter("half precision"))
+    useHalfPrecision = innerParamList->get<bool>("half precision");
 
-  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
-  if (constParamList.is_null ()) {
-    constParamList = getValidParameters ();
-  }
-  const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
-  const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
+  const std::string preconditionerType = Teuchos::getParameter<std::string>(*innerParamList, "Prec Type");
+  const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
+          Teuchos::rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "Ifpack2 Settings")));
 
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
@@ -194,12 +199,10 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   // value of "Overlap".  This avoids use of the newly deprecated
   // three-argument version of Ifpack2::Factory::create() that takes
   // the overlap as an integer.
-  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
+  if (innerParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
       precTypeUpper == "SCHWARZ") {
-    const int overlap = constParamList->get<int> ("Overlap");
-    Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList =
-      Teuchos::sublist (paramList_, "Ifpack2 Settings");
-    nonconstPackageParamList->set ("schwarz: overlap level", overlap);
+    const int overlap = innerParamList->get<int> ("Overlap");
+    packageParamList->set ("schwarz: overlap level", overlap);
   }
 
   // Create the initial preconditioner

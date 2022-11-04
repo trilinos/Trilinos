@@ -181,18 +181,22 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     Teuchos::ptr(dynamic_cast<DefaultPreconditioner<scalar_type> *>(prec));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-  // Process parameter list
+  // This check needed to address Issue #535. 
+  Teuchos::RCP<const Teuchos::ParameterList> innerParamList;
+  if (paramList_.is_null ()) {
+    innerParamList = Teuchos::rcp(new Teuchos::ParameterList(*getValidParameters()));
+  }
+  else {
+    innerParamList = paramList_;
+  }
 
   bool useHalfPrecision = false;
-  if (paramList_->isParameter("half precision"))
-    useHalfPrecision = paramList_->get<bool>("half precision");
+  if (innerParamList->isParameter("half precision"))
+    useHalfPrecision = innerParamList->get<bool>("half precision");
 
-  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
-  if (constParamList.is_null ()) {
-    constParamList = getValidParameters ();
-  }
-  const std::string solverType = Teuchos::getParameter<std::string>(*constParamList, "BelosPrec Solver Type");
-  Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList = Teuchos::sublist(paramList_, "BelosPrec Solver Params");
+  const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
+  const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
+          Teuchos::rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "BelosPrec Solver Params")));
 
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
@@ -219,7 +223,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
     Teuchos::RCP<BelosTpLinProbHalf> belosLinProbHalf = Teuchos::RCP<BelosTpLinProbHalf>(new BelosTpLinProbHalf());
     belosLinProbHalf->setOperator(tpetraFwdMatrixHalf);
-    Teuchos::RCP<TpetraLinOpHalf> belosOpRCPHalf = Teuchos::RCP<TpetraLinOpHalf>(new BelosTpOpHalf(belosLinProbHalf, nonconstPackageParamList, solverType, true));
+    Teuchos::RCP<TpetraLinOpHalf> belosOpRCPHalf = Teuchos::RCP<TpetraLinOpHalf>(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
     RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(belosOpRCPHalf));
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
@@ -233,7 +237,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     // Wrap concrete preconditioner
     Teuchos::RCP<BelosTpLinProb> belosLinProb = Teuchos::RCP<BelosTpLinProb>(new BelosTpLinProb());
     belosLinProb->setOperator(tpetraFwdOp);
-    Teuchos::RCP<TpetraLinOp> belosOpRCP = Teuchos::RCP<TpetraLinOp>(new BelosTpOp(belosLinProb, nonconstPackageParamList, solverType, true));
+    Teuchos::RCP<TpetraLinOp> belosOpRCP = Teuchos::RCP<TpetraLinOp>(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
     thyraPrecOp = Thyra::createLinearOp(belosOpRCP);
   }
   defaultPrec->initializeUnspecified(thyraPrecOp);
