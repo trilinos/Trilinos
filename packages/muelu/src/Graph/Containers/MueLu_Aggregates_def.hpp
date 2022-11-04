@@ -203,6 +203,41 @@ namespace MueLu {
 
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::PrintAllNodesPerAggregate(Teuchos::FancyOStream& out,
+      bool useGlobalNodeIds) const
+  {
+    // Compute list of nodes per aggregate
+    Array<LO> aggPtr;
+    Array<LO> aggNodes;
+    Array<LO> unaggregated;
+    ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+
+    // Loop aggregates and their nodes and print them
+    const int myRank = vertex2AggId_->getMap()->getComm()->getRank();
+    LO numAggregates = GetNumAggregates();
+    ArrayRCP<LO> aggSizes = ComputeAggregateSizes(true);
+    TEUCHOS_ASSERT(numAggregates==aggSizes.size());
+
+    std::stringstream myStream;
+    myStream << "\n";
+    for (LO lAggId = Teuchos::OrdinalTraits<LO>::zero(); lAggId < numAggregates; ++lAggId)
+    {
+      myStream << "p = " << myRank << " | lAggId = " << lAggId << " with " << aggSizes[lAggId] << " nodes:";
+      for (LO lNodeId = aggPtr[lAggId]; lNodeId < aggPtr[lAggId+1]; ++lNodeId)
+      {
+        if (useGlobalNodeIds)
+        {
+          const GO gNodeId = vertex2AggId_->getMap()->getGlobalElement(aggNodes[lNodeId]);
+          myStream << "  " << gNodeId;
+        }
+        else
+          myStream << "  " << aggNodes[lNodeId];
+      }
+      myStream << "\n";
+    }
+    out << myStream.str();
+  }
 
 } //namespace MueLu
 

@@ -1426,6 +1426,164 @@ public:
 
   } //AllowDroppingToCreateAdditionalDirichletRows
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, PrintLocalNodeIdsPerAggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test output to list all aggregates with their nodes" << std::endl;
+
+    // typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<AmalgamationInfo> amalgInfo;
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
+
+    std::stringstream outputToBeTested;
+    RCP<Teuchos::FancyOStream> myOut = rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(outputToBeTested)));
+    aggregates->PrintAllNodesPerAggregate(*myOut, false);
+
+    std::stringstream goldOutput;
+    goldOutput << "\n";
+    {
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      if (comm->getSize() == 1)
+      {
+        goldOutput << "p = 0 | lAggId = 0 with 3 nodes:  0  1  2\n"
+            << "p = 0 | lAggId = 1 with 3 nodes:  3  4  5\n"
+            << "p = 0 | lAggId = 2 with 3 nodes:  6  7  8\n"
+            << "p = 0 | lAggId = 3 with 3 nodes:  9  10  11\n"
+            << "p = 0 | lAggId = 4 with 3 nodes:  12  13  14\n"
+            << "p = 0 | lAggId = 5 with 3 nodes:  15  16  17\n"
+            << "p = 0 | lAggId = 6 with 3 nodes:  18  19  20\n"
+            << "p = 0 | lAggId = 7 with 3 nodes:  21  22  23\n"
+            << "p = 0 | lAggId = 8 with 3 nodes:  24  25  26\n"
+            << "p = 0 | lAggId = 9 with 3 nodes:  27  28  29\n"
+            << "p = 0 | lAggId = 10 with 3 nodes:  30  31  32\n"
+            << "p = 0 | lAggId = 11 with 3 nodes:  33  34  35\n";
+      }
+      else if (comm->getSize() == 4)
+      {
+        switch (comm->getRank())
+        {
+        case 0:
+        {
+          goldOutput << "p = 0 | lAggId = 0 with 3 nodes:  0  1  2\n"
+              << "p = 0 | lAggId = 1 with 3 nodes:  3  4  5\n"
+              << "p = 0 | lAggId = 2 with 3 nodes:  6  7  8\n";
+          break;
+        }
+        case 1:
+        {
+          goldOutput << "p = 1 | lAggId = 0 with 3 nodes:  0  1  2\n"
+              << "p = 1 | lAggId = 1 with 3 nodes:  3  4  5\n"
+              << "p = 1 | lAggId = 2 with 3 nodes:  6  7  8\n";
+          break;
+        }
+        case 2:
+        {
+          goldOutput << "p = 2 | lAggId = 0 with 3 nodes:  0  1  2\n"
+              << "p = 2 | lAggId = 1 with 3 nodes:  3  4  5\n"
+              << "p = 2 | lAggId = 2 with 3 nodes:  6  7  8\n";
+          break;
+        }
+        case 3:
+        {
+          goldOutput << "p = 3 | lAggId = 0 with 3 nodes:  0  1  2\n"
+              << "p = 3 | lAggId = 1 with 3 nodes:  3  4  5\n"
+              << "p = 3 | lAggId = 2 with 3 nodes:  6  7  8\n";
+          break;
+        }
+        }
+      }
+      else
+      {
+        out << "Skip test for " << comm->getSize() << " MPI ranks. Test only for 1 or 4 MPI ranks." << std::endl;
+      }
+    }
+    TEST_EQUALITY(outputToBeTested.str(), goldOutput.str());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, PrintGlobalNodeIdsPerAggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test output to list all aggregates with their nodes" << std::endl;
+
+    // typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<AmalgamationInfo> amalgInfo;
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeUncoupledAggregates(A, amalgInfo);
+
+    std::stringstream outputToBeTested;
+    RCP<Teuchos::FancyOStream> myOut = rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(outputToBeTested)));
+    aggregates->PrintAllNodesPerAggregate(*myOut, true);
+
+    std::stringstream goldOutput;
+    goldOutput << "\n";
+    {
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      if (comm->getSize() == 1)
+      {
+        goldOutput << "p = 0 | lAggId = 0 with 3 nodes:  0  1  2\n"
+            << "p = 0 | lAggId = 1 with 3 nodes:  3  4  5\n"
+            << "p = 0 | lAggId = 2 with 3 nodes:  6  7  8\n"
+            << "p = 0 | lAggId = 3 with 3 nodes:  9  10  11\n"
+            << "p = 0 | lAggId = 4 with 3 nodes:  12  13  14\n"
+            << "p = 0 | lAggId = 5 with 3 nodes:  15  16  17\n"
+            << "p = 0 | lAggId = 6 with 3 nodes:  18  19  20\n"
+            << "p = 0 | lAggId = 7 with 3 nodes:  21  22  23\n"
+            << "p = 0 | lAggId = 8 with 3 nodes:  24  25  26\n"
+            << "p = 0 | lAggId = 9 with 3 nodes:  27  28  29\n"
+            << "p = 0 | lAggId = 10 with 3 nodes:  30  31  32\n"
+            << "p = 0 | lAggId = 11 with 3 nodes:  33  34  35\n";
+      }
+      else if (comm->getSize() == 4)
+      {
+        switch (comm->getRank())
+        {
+        case 0:
+        {
+          goldOutput << "p = 0 | lAggId = 0 with 3 nodes:  0  1  2\n"
+              << "p = 0 | lAggId = 1 with 3 nodes:  3  4  5\n"
+              << "p = 0 | lAggId = 2 with 3 nodes:  6  7  8\n";
+          break;
+        }
+        case 1:
+        {
+          goldOutput << "p = 1 | lAggId = 0 with 3 nodes:  9  10  11\n"
+              << "p = 1 | lAggId = 1 with 3 nodes:  12  13  14\n"
+              << "p = 1 | lAggId = 2 with 3 nodes:  15  16  17\n";
+          break;
+        }
+        case 2:
+        {
+          goldOutput << "p = 2 | lAggId = 0 with 3 nodes:  18  19  20\n"
+              << "p = 2 | lAggId = 1 with 3 nodes:  21  22  23\n"
+              << "p = 2 | lAggId = 2 with 3 nodes:  24  25  26\n";
+          break;
+        }
+        case 3:
+        {
+          goldOutput << "p = 3 | lAggId = 0 with 3 nodes:  27  28  29\n"
+              << "p = 3 | lAggId = 1 with 3 nodes:  30  31  32\n"
+              << "p = 3 | lAggId = 2 with 3 nodes:  33  34  35\n";
+          break;
+        }
+        }
+      }
+      else
+      {
+        out << "Skip test for " << comm->getSize() << " MPI ranks. Test only for 1 or 4 MPI ranks." << std::endl;
+      }
+    }
+    TEST_EQUALITY(outputToBeTested.str(), goldOutput.str());
+  }
+
 #define MUELU_ETI_GROUP(Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustAggregation,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,GetNumAggregates,Scalar,LO,GO,Node) \
@@ -1440,6 +1598,8 @@ public:
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationLocal,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,GreedyDirichlet,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,AllowDroppingToCreateAdditionalDirichletRows,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,PrintLocalNodeIdsPerAggregate,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,PrintGlobalNodeIdsPerAggregate,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,RootStencil,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,SpreadLumpingRootStencil,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,SpreadLumpingReuseGraph,Scalar,LO,GO,Node) \
