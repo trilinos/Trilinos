@@ -150,7 +150,7 @@ namespace MueLu {
         out<<std::endl;
       }
     }
-    
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -181,12 +181,12 @@ namespace MueLu {
     LO currNumUnaggregated=0;
 
     // Construct the "rowptr" and the counter
-    aggPtr[0] = 0; 
+    aggPtr[0] = 0;
     for(LO i=0; i<numAggs; i++) {
       aggPtr[i+1] = aggSizes[i] + aggPtr[i];
       aggCurr[i] = aggPtr[i];
     }
-					           
+
     // Stick the nodes in each aggregate's spot
     for(LO i=0; i<numNodes; i++) {
       LO aggregate = vertex2AggId[i];
