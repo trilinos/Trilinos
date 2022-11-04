@@ -338,6 +338,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false),
+  computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
   debug_ (false)
 {
@@ -384,6 +385,7 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
+  const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
   const bool defaultDebug = false;
 
@@ -406,6 +408,7 @@ setParameters (Teuchos::ParameterList& plist)
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
+  bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
   bool debug = defaultDebug;
 
@@ -640,6 +643,9 @@ setParameters (Teuchos::ParameterList& plist)
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
+  if (plist.isParameter ("chebyshev: compute spectral radius")) {
+    computeSpectralRadius = plist.get<bool> ("chebyshev: compute spectral radius");
+  }
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -694,6 +700,7 @@ setParameters (Teuchos::ParameterList& plist)
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
+  computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
   debug_ = debug;
 
@@ -895,7 +902,8 @@ Chebyshev<ScalarType, MV>::compute ()
       
       Teuchos::RCP<Teuchos::FancyOStream> stream = (debug_ ? out_ : Teuchos::null);
       computedLambdaMax = PowerMethod::powerMethodWithInitGuess (*A_, *D_, eigMaxIters_, x, y, 
-                                                                 eigRelTolerance_, eigNormalizationFreq_, stream);
+                                                                 eigRelTolerance_, eigNormalizationFreq_, stream,
+                                                                 computeSpectralRadius_);
     }
     else
       computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);

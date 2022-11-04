@@ -239,6 +239,9 @@ public:
   ///   always use the zero vector(s) as the initial guess(es).  If
   ///   false, then apply() will use X on input as the initial
   ///   guess(es).
+  /// - "chebyshev: compute spectral radius" (\c bool): If true, the
+  ///   power method will compute the spectral radius of the operator.
+  ///   If false, it will compute the dominant eigenvalue.
   ///
   /// Parameters that govern backwards compatibility:
   /// - "chebyshev: textbook algorithm" (\c bool): If true, use the
@@ -508,6 +511,9 @@ private:
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
+
+  //! Whether the power method will compute the spectral radius or the dominant eigenvalue.
+  bool computeSpectralRadius_;
 
   /// If true, the ChebyshevKernel operator will not to use a fused kernel
   /// and insead use native blas/SpMV operators
