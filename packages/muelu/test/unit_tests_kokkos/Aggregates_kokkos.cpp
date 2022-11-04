@@ -885,6 +885,158 @@ namespace MueLuTests {
 
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, PrintLocalNodeIdsPerAggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test output to list all aggregates with their nodes" << std::endl;
+
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates_kokkos(A);
+
+    std::stringstream outputToBeTested;
+    RCP<Teuchos::FancyOStream> myOut = rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(outputToBeTested)));
+    aggregates->PrintAllNodesPerAggregate(*myOut, false);
+
+    std::stringstream goldOutput;
+    goldOutput << "\n";
+    {
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+      if (comm->getSize() == 1)
+      {
+        goldOutput << "p = 0 | lAggId = 0 with 2 nodes:  0  1\n"
+            << "p = 0 | lAggId = 1 with 3 nodes:  2  3  4\n"
+            << "p = 0 | lAggId = 2 with 3 nodes:  5  6  7\n"
+            << "p = 0 | lAggId = 3 with 3 nodes:  8  9  10\n"
+            << "p = 0 | lAggId = 4 with 3 nodes:  11  12  13\n"
+            << "p = 0 | lAggId = 5 with 3 nodes:  14  15  16\n"
+            << "p = 0 | lAggId = 6 with 3 nodes:  17  18  19\n"
+            << "p = 0 | lAggId = 7 with 3 nodes:  20  21  22\n"
+            << "p = 0 | lAggId = 8 with 3 nodes:  23  24  25\n"
+            << "p = 0 | lAggId = 9 with 3 nodes:  26  27  28\n"
+            << "p = 0 | lAggId = 10 with 3 nodes:  29  30  31\n"
+            << "p = 0 | lAggId = 11 with 4 nodes:  32  33  34  35\n";
+      }
+      else if (comm->getSize() == 4)
+      {
+        switch (comm->getRank())
+        {
+        case 0:
+        {
+          goldOutput << "p = 0 | lAggId = 0 with 2 nodes:  0  1\n"
+              << "p = 0 | lAggId = 1 with 3 nodes:  2  3  4\n"
+              << "p = 0 | lAggId = 2 with 4 nodes:  5  6  7  8\n";
+          break;
+        }
+        case 1:
+        {
+          goldOutput << "p = 1 | lAggId = 0 with 2 nodes:  0  1\n"
+              << "p = 1 | lAggId = 1 with 3 nodes:  2  3  4\n"
+              << "p = 1 | lAggId = 2 with 4 nodes:  5  6  7  8\n";
+          break;
+        }
+        case 2:
+        {
+          goldOutput << "p = 2 | lAggId = 0 with 2 nodes:  0  1\n"
+              << "p = 2 | lAggId = 1 with 3 nodes:  2  3  4\n"
+              << "p = 2 | lAggId = 2 with 4 nodes:  5  6  7  8\n";
+          break;
+        }
+        case 3:
+        {
+          goldOutput << "p = 3 | lAggId = 0 with 2 nodes:  0  1\n"
+              << "p = 3 | lAggId = 1 with 3 nodes:  2  3  4\n"
+              << "p = 3 | lAggId = 2 with 4 nodes:  5  6  7  8\n";
+          break;
+        }
+        }
+      }
+      else
+      {
+        out << "Skip test for " << comm->getSize() << " MPI ranks. Test only for 1 or 4 MPI ranks." << std::endl;
+      }
+    }
+    TEST_EQUALITY(outputToBeTested.str(), goldOutput.str());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, PrintGlobalNodeIdsPerAggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test output to list all aggregates with their nodes" << std::endl;
+
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<Aggregates_kokkos> aggregates = gimmeUncoupledAggregates_kokkos(A, false, false, false, true);
+
+    std::stringstream outputToBeTested;
+    RCP<Teuchos::FancyOStream> myOut = rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(outputToBeTested)));
+    aggregates->PrintAllNodesPerAggregate(*myOut, true);
+
+    std::stringstream goldOutput;
+    goldOutput << "\n";
+    {
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+      if (comm->getSize() == 1)
+      {
+        goldOutput << "p = 0 | lAggId = 0 with 2 nodes:  0  1\n"
+            << "p = 0 | lAggId = 1 with 3 nodes:  2  3  4\n"
+            << "p = 0 | lAggId = 2 with 3 nodes:  5  6  7\n"
+            << "p = 0 | lAggId = 3 with 3 nodes:  8  9  10\n"
+            << "p = 0 | lAggId = 4 with 3 nodes:  11  12  13\n"
+            << "p = 0 | lAggId = 5 with 3 nodes:  14  15  16\n"
+            << "p = 0 | lAggId = 6 with 3 nodes:  17  18  19\n"
+            << "p = 0 | lAggId = 7 with 3 nodes:  20  21  22\n"
+            << "p = 0 | lAggId = 8 with 3 nodes:  23  24  25\n"
+            << "p = 0 | lAggId = 9 with 3 nodes:  26  27  28\n"
+            << "p = 0 | lAggId = 10 with 3 nodes:  29  30  31\n"
+            << "p = 0 | lAggId = 11 with 4 nodes:  32  33  34  35\n";
+      }
+      else if (comm->getSize() == 4)
+      {
+        switch (comm->getRank())
+        {
+        case 0:
+        {
+          goldOutput << "p = 0 | lAggId = 0 with 2 nodes:  0  1\n"
+              << "p = 0 | lAggId = 1 with 3 nodes:  2  3  4\n"
+              << "p = 0 | lAggId = 2 with 4 nodes:  5  6  7  8\n";
+          break;
+        }
+        case 1:
+        {
+          goldOutput << "p = 1 | lAggId = 0 with 2 nodes:  9  10\n"
+              << "p = 1 | lAggId = 1 with 3 nodes:  11  12  13\n"
+              << "p = 1 | lAggId = 2 with 4 nodes:  14  15  16  17\n";
+          break;
+        }
+        case 2:
+        {
+          goldOutput << "p = 2 | lAggId = 0 with 2 nodes:  18  19\n"
+              << "p = 2 | lAggId = 1 with 3 nodes:  20  21  22\n"
+              << "p = 2 | lAggId = 2 with 4 nodes:  23  24  25  26\n";
+          break;
+        }
+        case 3:
+        {
+          goldOutput << "p = 3 | lAggId = 0 with 2 nodes:  27  28\n"
+              << "p = 3 | lAggId = 1 with 3 nodes:  29  30  31\n"
+              << "p = 3 | lAggId = 2 with 4 nodes:  32  33  34  35\n";
+          break;
+        }
+        }
+      }
+      else
+      {
+        out << "Skip test for " << comm->getSize() << " MPI ranks. Test only for 1 or 4 MPI ranks." << std::endl;
+      }
+    }
+    TEST_EQUALITY(outputToBeTested.str(), goldOutput.str());
+  }
+
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregationFactory, SC, LO, GO, NO) \
@@ -898,7 +1050,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase3, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, AllowDroppingToCreateAdditionalDirichletRows, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GreedyDirichlet, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GreedyDirichlet, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, PrintLocalNodeIdsPerAggregate, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, PrintGlobalNodeIdsPerAggregate, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
