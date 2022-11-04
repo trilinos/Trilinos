@@ -102,10 +102,10 @@ ELSE()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassFactory.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeClassBase.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeSimple.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
@@ -118,12 +118,12 @@ ENDIF() # split cpp files
 # Define the targets for package's library(s)
 #
 
-TRIBITS_ADD_LIBRARY(
-  muelu-interface
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS muelu
-  )
+# TRIBITS_ADD_LIBRARY(
+#   muelu-interface
+#   HEADERS ${HEADERS}
+#   SOURCES ${SOURCES}
+#   DEPLIBS muelu
+#   )
 
 # for debugging
 #MESSAGE("")
@@ -132,4 +132,3 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("HEADERS = ${HEADERS}")
 #MESSAGE("")
 #MESSAGE("SOURCES_INTERFACE = ${SOURCES}")
-

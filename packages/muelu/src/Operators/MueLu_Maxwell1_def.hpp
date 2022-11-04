@@ -75,8 +75,7 @@
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
-#include <MueLu_OperatorSmoother_decl.hpp>
-#include <MueLu_OperatorSmoother_def.hpp>
+#include <MueLu_RefMaxwellSmoother.hpp>
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -452,8 +451,8 @@ namespace MueLu {
       if (refmaxwellCoarseSolve) {
         GetOStream(Runtime0) << "Maxwell1::compute(): Setting up RefMaxwell coarse solver" << std::endl;
         auto coarseLvl = Hierarchy11_->GetLevel(Hierarchy11_->GetNumLevels()-1);
-        auto coarseSolver = rcp(new MueLu::OperatorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>("RefMaxwell",
-                                                                                                    precList11_.sublist("coarse: params")));
+        auto coarseSolver = rcp(new MueLu::RefMaxwellSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>("RefMaxwell",
+                                                                                                      precList11_.sublist("coarse: params")));
         coarseSolver->Setup(*coarseLvl);
         coarseLvl->Set("PreSmoother",
                        rcp_dynamic_cast<SmootherBase>(coarseSolver, true));

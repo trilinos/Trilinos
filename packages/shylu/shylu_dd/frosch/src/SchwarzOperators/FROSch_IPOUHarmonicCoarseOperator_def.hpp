@@ -118,6 +118,7 @@ namespace FROSch {
                                                                                                                                    UN partition)
     {
         //FROSCH_ASSERT(numVert+numEdg+numFac != nodesMap->getGlobalNumElements(),"ERROR: Map does not match number of Entities");
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         UN blockId = 1; //This is not implemented for  Block Variant yet
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -160,7 +161,7 @@ namespace FROSch {
                         if (nodesMap->getComm()->getRank() == 0) std::cout<<"This should never happen\n";
                     }
                 }
-                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dmapEle,0,nodesMap->getComm());
             }
         } //RGDSW type CoarseOperator
         else if (partition == 1) {
@@ -176,12 +177,12 @@ namespace FROSch {
                         dmapEle[i] = nodeEle[i]+j*NumEnt_[6]+(dofsPerNode-1)*NumEnt_[5];
                     }
                 }
-                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dmapEle,0,nodesMap->getComm());
+                dofsMaps[j] =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dmapEle,0,nodesMap->getComm());
             }
         } else if (partition == 2) {
             FROSCH_ASSERT(false,"GDSWStar is not implemented yet!");
         }
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,dofEle,0,nodesMap->getComm());
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap =   Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,INVALID,dofEle,0,nodesMap->getComm());
         return tmpMap;
     }
 

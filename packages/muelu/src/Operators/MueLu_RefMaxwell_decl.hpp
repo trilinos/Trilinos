@@ -77,8 +77,9 @@
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_Hierarchy.hpp"
+#include "MueLu_TrilinosSmoother_fwd.hpp"
+#include "MueLu_Hierarchy_fwd.hpp"
+#include "MueLu_XpetraOperator.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
@@ -86,11 +87,6 @@
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
-
-// Stratimikos
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#endif
 
 namespace MueLu {
 
@@ -401,9 +397,7 @@ namespace MueLu {
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
     Teuchos::RCP<SmootherPrototype> PreSmootherData_, PostSmootherData_;
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-    RCP<Thyra::PreconditionerBase<Scalar> > thyraPrecH_, thyraPrec22_;
-#endif
+    RCP<Operator> thyraPrecOpH_, thyraPrecOp22_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;

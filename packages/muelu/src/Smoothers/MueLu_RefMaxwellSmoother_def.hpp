@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_OperatorSMOOTHER_DEF_HPP
-#define MUELU_OperatorSMOOTHER_DEF_HPP
+#ifndef MUELU_REFMAXWELLSMOOTHER_DEF_HPP
+#define MUELU_REFMAXWELLSMOOTHER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -54,7 +54,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_OperatorSmoother_decl.hpp"
+#include "MueLu_RefMaxwellSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
@@ -65,22 +65,22 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OperatorSmoother(const std::string type, const Teuchos::ParameterList& paramList)
+  RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RefMaxwellSmoother(const std::string type, const Teuchos::ParameterList& paramList)
   : type_(type)
   {
     const bool solverSupported = (type_ == "RefMaxwell");
-    this->declareConstructionOutcome(!solverSupported, "OperatorSmoother does not provide the smoother '" + type_ + "'.");
+    this->declareConstructionOutcome(!solverSupported, "RefMaxwellSmoother does not provide the smoother '" + type_ + "'.");
     if (solverSupported)
       SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
     Factory::SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
     this->Input(currentLevel, "D0");
     this->Input(currentLevel, "M1");
@@ -90,7 +90,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     SetupRefMaxwell(currentLevel);
@@ -100,7 +100,7 @@ namespace MueLu {
 
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupRefMaxwell(Level& currentLevel) {
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupRefMaxwell(Level& currentLevel) {
 
     using coordinateType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
     using RealValuedMultiVector = Xpetra::MultiVector<coordinateType,LO,GO,NO>;
@@ -122,8 +122,8 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::OperatorSmoother::Apply(): Setup() has not been called");
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::RefMaxwellSmoother::Apply(): Setup() has not been called");
 
     if (InitialGuessIsZero) {
       X.putScalar(0.0);
@@ -132,27 +132,27 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
-    RCP<OperatorSmoother> smoother = rcp(new OperatorSmoother(*this) );
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
+    RCP<RefMaxwellSmoother> smoother = rcp(new RefMaxwellSmoother(*this) );
     smoother->SetParameterList(this->GetParameterList());
     return smoother;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+  std::string RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     if (SmootherPrototype::IsSetup()) {
       out << op_->description();
       out << std::endl << std::endl;
       // out << cachedDescription_;
     } else {
-      out << "Operator";
+      out << "RefMaxwell";
     }
     return out.str();
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  void RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters1) {
@@ -176,11 +176,11 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t OperatorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+  size_t RefMaxwellSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
 
 
 } // namespace MueLu
 
-#endif // MUELU_OPERATORSMOOTHER_DEF_HPP
+#endif // MUELU_REFMAXWELLSMOOTHER_DEF_HPP

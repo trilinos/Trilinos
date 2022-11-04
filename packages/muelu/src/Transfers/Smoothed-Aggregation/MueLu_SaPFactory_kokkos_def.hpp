@@ -117,9 +117,6 @@ namespace MueLu {
   void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
-    // Add debugging information
-    typename DeviceType::execution_space().print_configuration(GetOStream(Runtime1));
-
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     // Get default tentative prolongator factory
