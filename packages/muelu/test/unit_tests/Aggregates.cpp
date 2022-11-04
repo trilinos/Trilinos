@@ -96,7 +96,6 @@ public:
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
     gimmeUncoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
-  //  RCP<MueLu::Aggregates> gimmeUncoupledAggregates(const RCP<xpetra_matrix_type> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
     {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
@@ -136,7 +135,6 @@ public:
     // Little utility to generate coupled aggregates.
     static RCP<Aggregates>
     gimmeCoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo)
-    //  RCP<Aggregates> gimmeCoupledAggregates(const RCP<xpetra_matrix_type> & A, RCP<AmalgamationInfo> & amalgInfo)
     {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
