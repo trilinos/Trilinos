@@ -169,13 +169,13 @@ powerMethodWithInitGuess(const OperatorType& A,
   if(y.is_null())
     y = Teuchos::rcp(new V(A.getRangeMap()));
 
-  // GH 04 Nov 2022: The previous implementation of the power method was incorrect.
-  // It computed x->norm2() inside the loop, but returned x^T*Ax. This returned horribly
-  // incorrect answers in certain cases, such as the Cheby_belos test, which has two 
-  // largest eigenvalues of 12.5839 and -10.6639. The power method iteration history 
-  // would appear to converge to something between 10 and 12, but the result would 
-  // return something between -10 and 12 instead. These have now been split into two
-  // routes which will behave consistently to themselves.
+  // GH 04 Nov 2022: The previous implementation of the power method was inconsistent with itself.
+  // It computed x->norm2() inside the loop, but returned x^T*Ax.
+  // This returned horribly incorrect estimates for Chebyshev spectral radius in certain 
+  // cases, such as the Cheby_belos test, which has two dominant eigenvalues of 12.5839, -10.6639.
+  // In such case, the power method iteration history would appear to converge to something
+  // between 10 and 12, but the resulting spectral radius estimate was sometimes negative.
+  // These have now been split into two routes which behave consistently with themselves.
   if(computeSpectralRadius) {
     // In this route, the update is as follows:
     // y=A*x, x = Dinv*y, lambda = norm(x), x = x/lambda
