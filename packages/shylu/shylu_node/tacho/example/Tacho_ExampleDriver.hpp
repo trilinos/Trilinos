@@ -27,7 +27,7 @@ using ordinal_type = Tacho::ordinal_type;
 
 template <typename value_type> int driver(int argc, char *argv[]) {
   int nthreads = 1;
-  bool verbose = true;
+  bool verbose = false;
   bool sanitize = false;
   bool duplicate = false;
   std::string file = "test.mtx";
@@ -82,8 +82,13 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
 
+  std::cout << std::endl << "    --------------------- " << std::endl;
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
+  std::cout << "     Method Name:: " << method_name << std::endl;
+  std::cout << "     Solver Type:: " << variant << std::endl;
+  std::cout << "       # Streams:: " << nstreams;
+  std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
 
   int r_val = 0;
   try {
@@ -180,8 +185,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.initialize();
 
     /// symbolic structure can be reused
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i) {
       solver.factorize(values_on_device);
+    }
 
     DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
         x("x", A.NumRows(), nrhs),                  // solution multivector
@@ -192,14 +198,15 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       Kokkos::fill_random(b, random, value_type(1));
     }
 
-    for (int i = 0; i < 3; ++i)
+    std::cout << std::endl;
+    for (int i = 0; i < 3; ++i) {
       solver.solve(x, b, t);
-
-    const double res = solver.computeRelativeResidual(values_on_device, x, b);
-
-    std::cout << "TachoSolver: residual = " << res << "\n\n";
-
+      const double res = solver.computeRelativeResidual(values_on_device, x, b);
+      std::cout << "TachoSolver: residual = " << res << "\n";
+    }
+    std::cout << std::endl;
     solver.release();
+
   } catch (const std::exception &e) {
     std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   }
