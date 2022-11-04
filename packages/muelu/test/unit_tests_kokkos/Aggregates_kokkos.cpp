@@ -616,7 +616,7 @@ namespace MueLuTests {
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
     TEST_EQUALITY(aggPtr.extent_int(0), numAggs+1);
     // TEST_EQUALITY(unaggregated.extent_int(0), 0); // 1 unaggregated node in the MPI_4 case
-    
+
     // test aggPtr(i)+aggSizes(i)=aggPtr(i+1)
     typename Aggregates_kokkos::LO_view::HostMirror aggPtr_h = Kokkos::create_mirror_view(aggPtr);
     typename Aggregates_kokkos::aggregates_sizes_type::HostMirror aggSizes_h = Kokkos::create_mirror_view(aggSizes);

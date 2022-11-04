@@ -180,9 +180,9 @@ namespace MueLu {
 
     return graph_;
   }
-  
+
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void 
+  void
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeNodesInAggregate(LO_view & aggPtr, LO_view & aggNodes, LO_view & unaggregated) const {
     LO numAggs  = GetNumAggregates();
     LO numNodes = vertex2AggId_->getLocalLength();
@@ -212,8 +212,8 @@ namespace MueLu {
     // Preallocate unaggregated to the correct size
     LO numUnaggregated = 0;
     Kokkos::parallel_reduce("MueLu:Aggregates:ComputeNodesInAggregate:unaggregatedSize", range_type(0,numNodes),
-      KOKKOS_LAMBDA(const LO nodeIdx, LO & count) { 
-        if(vertex2AggId(nodeIdx,0)==INVALID) 
+      KOKKOS_LAMBDA(const LO nodeIdx, LO & count) {
+        if(vertex2AggId(nodeIdx,0)==INVALID)
           count++;
       }, numUnaggregated);
     unaggregated = LO_view("unaggregated",numUnaggregated);
@@ -230,7 +230,7 @@ namespace MueLu {
           unaggregated(Kokkos::atomic_fetch_add(&aggCurr(numAggs),1)) = nodeIdx;
         }
       });
-    
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
