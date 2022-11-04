@@ -81,9 +81,6 @@ set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
 set (Trilinos_ENABLE_EpetraExt OFF CACHE BOOL "We do not want EpetraExt" FORCE)
 set (Trilinos_ENABLE_Ifpack OFF CACHE BOOL "We do not want Ifpack" FORCE)
 set (Trilinos_ENABLE_ML OFF CACHE BOOL "We do not want ML" FORCE)
-set (Trilinos_ENABLE_Stratimikos OFF CACHE BOOL "We do not want Stratimikos" FORCE)
-set (Trilinos_ENABLE_Teko OFF CACHE BOOL "We do not want Teko" FORCE)
-set (Trilinos_ENABLE_Thyra OFF CACHE BOOL "We do not want Thyra" FORCE)
 set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "We do not want Zoltan" FORCE)
 
 
@@ -91,6 +88,7 @@ set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "We do not want Zoltan" FORCE)
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Epetra=OFF"
   "-DTrilinos_ENABLE_EpetraExt=OFF"
+  "-DTrilinos_ENABLE_ML=OFF"
   "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
@@ -102,8 +100,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_FLOAT=ON"
   "-DTpetra_INST_COMPLEX_FLOAT=OFF"
   "-DTpetra_INST_DOUBLE=ON"
-  "-DTrilinos_ENABLE_Stratimikos=OFF"
-  "-DTrilinos_ENABLE_Thyra=OFF"
+  "-DTrilinos_ENABLE_Stratimikos=ON"
+  "-DTrilinos_ENABLE_Thyra=ON"
 )
 
 #
