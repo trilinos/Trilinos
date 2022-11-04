@@ -192,7 +192,6 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     constParamList = getValidParameters ();
   }
   const std::string solverType = Teuchos::getParameter<std::string>(*constParamList, "BelosPrec Solver Type");
-  const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "BelosPrec Solver Params");
   Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList = Teuchos::sublist(paramList_, "BelosPrec Solver Params");
 
   // solverTypeUpper is the upper-case version of solverType.
