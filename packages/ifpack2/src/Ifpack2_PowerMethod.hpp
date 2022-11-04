@@ -113,8 +113,9 @@ private:
 /// \param tolerance [in] The relative eigenvalue tolerance. (default: 1e-7)
 /// \param eigNormalizationFreq [in] The frequency of normalization. (default: 1)
 /// \param out [in] The stream to send verbose output to. (default: null)
-/// \param computeSpectralRadius [in] Compute and return \f$\|D^{-1}Ax\|_2\f$ 
-/// if true, compute and return \f$x^TD^{-1}Ax\f$ if false. (default: true)
+/// \param computeSpectralRadius [in] Compute the absolute value of the dominant
+/// eigenvalue of \f$D^{-1}A\f$ if true. Compute the dominant eigenvalue of 
+/// \f$D^{-1}A\f$ if false. (default: true)
 ///
 /// \return Estimate of the maximum eigenvalue of A*D_inv.
 template<class OperatorType, class V>
@@ -342,8 +343,9 @@ computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts)
 /// \param tolerance [in] The relative eigenvalue tolerance. (default: 1e-7)
 /// \param eigNormalizationFreq [in] The frequency of normalization. (default: 1)
 /// \param out [in] The stream to send verbose output to. (default: null)
-/// \param computeSpectralRadius [in] Compute and return \f$\|D^{-1}Ax\|_2\f$ 
-/// if true, compute and return \f$x^TD^{-1}Ax\f$ if false. (default: true)
+/// \param computeSpectralRadius [in] Compute the absolute value of the dominant
+/// eigenvalue of \f$D^{-1}A\f$ if true. Compute the dominant eigenvalue of 
+/// \f$D^{-1}A\f$ if false. (default: true)
 ///
 /// \return Estimate of the maximum eigenvalue of A*D_inv.
 template<class OperatorType, class V>
