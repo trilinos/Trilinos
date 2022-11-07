@@ -305,6 +305,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (IdxView::rank) == 1,
                    "IdxView must be a rank-1 Kokkos::View.");
 
+    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column\n";
+
     if (debug) {
       typedef PackArraySingleColumnWithBoundsCheck<DstView,SrcView,IdxView> impl_type;
       impl_type::pack (dst, src, idx, col, space);
@@ -500,6 +502,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                    "SrcView must be a rank-2 Kokkos::View.");
     static_assert (static_cast<int> (IdxView::rank) == 1,
                    "IdxView must be a rank-1 Kokkos::View.");
+
+    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_multi_column\n";
 
     if (debug) {
       typedef PackArrayMultiColumnWithBoundsCheck<DstView,
@@ -774,6 +778,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                    "IdxView must be a rank-1 Kokkos::View.");
     static_assert (static_cast<int> (ColView::rank) == 1,
                    "ColView must be a rank-1 Kokkos::View.");
+
+    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_multi_column_variable_stride\n";
 
     if (debug) {
       typedef PackArrayMultiColumnVariableStrideWithBoundsCheck<DstView,
@@ -1533,7 +1539,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (ColView::rank) == 1,
                    "ColView must be a rank-1 Kokkos::View.");
 
+    std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride\n";
+
     if (debug) {
+      std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (DEBUG)\n";
       using impl_type =
         UnpackArrayMultiColumnVariableStrideWithBoundsCheck<ExecutionSpace,
           DstView, SrcView, IdxView, ColView, Op>;
@@ -1541,6 +1550,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                          use_atomic_updates);
     }
     else {
+      std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (NO DEBUG)\n";
       using impl_type = UnpackArrayMultiColumnVariableStride<ExecutionSpace,
         DstView, SrcView, IdxView, ColView, Op>;
       impl_type::unpack (execSpace, dst, src, idx, col, op, numCols,
