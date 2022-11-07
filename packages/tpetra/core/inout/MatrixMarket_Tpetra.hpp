@@ -8788,7 +8788,9 @@ namespace Tpetra {
           }
           //TODO Do the views eiData need to be released prior to the matvec?
 
-          eiData = Teuchos::null; // drop host views before device might use them
+          // drop host views
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = Teuchos::null;
           // probe
           A.apply(*ei,*colsA);
 
@@ -8799,6 +8801,8 @@ namespace Tpetra {
                                       globalColsArray, offsetToUseInPrinting);
 
           // reconstruct dropped eiData
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = ei->getDataNonConst(i);
           for (int j=0; j<rem; ++j ) {
             GO curGlobalCol = maxColGid - rem + j + TGOT::one();
             //TODO  extract the g2l map outside of this loop loop
@@ -8834,7 +8838,9 @@ namespace Tpetra {
           }
           //TODO Do the views eiData need to be released prior to the matvec?
 
-          eiData = Teuchos::null; // drop host views before device might use them
+          // drop eiData views
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = Teuchos::null;
           // probe
           A.apply(*ei,*colsA);
 
@@ -8844,6 +8850,8 @@ namespace Tpetra {
                                       globalColsArray, offsetToUseInPrinting);
 
           // reconstruct dropped eiData
+          for (size_t i=0; i<numMVs; ++i)
+            eiData[i] = ei->getDataNonConst(i);
           for (int j=0; j<rem; ++j ) {
             GO curGlobalCol = maxColGid - rem + j + TGOT::one();
             //TODO  extract the g2l map outside of this loop loop
