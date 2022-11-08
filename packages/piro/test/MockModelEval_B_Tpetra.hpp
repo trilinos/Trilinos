@@ -83,7 +83,7 @@ class MockModelEval_B_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm);
+  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false);
 
   //@}
 

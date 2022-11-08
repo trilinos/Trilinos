@@ -88,13 +88,19 @@ int main(int argc, char *argv[]) {
 
     Piro::SolverFactory solverFactory;
 
-    int numTests = 1;
+    int numTests = 3;
 
     for (int iTest = 0; iTest < numTests; iTest++) {
         if (doAll) {
             switch (iTest) {
                 case 0:
-                    inputFile = "input_Solve_NOX_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
+                    break;
+                case 1:
+                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    break;
+                case 2:
+                    inputFile = "input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml";
                     break;
                 default:
                     std::cout << "iTest logic error " << std::endl;
@@ -112,12 +118,18 @@ int main(int argc, char *argv[]) {
                       << std::endl;
 
         try {
-            // Create (1) a Model Evaluator and (2) a ParameterList
-            const RCP<Thyra::ModelEvaluator<double>> Model = rcp(new MockModelEval_A_Tpetra(appComm));
+            // Create (1) a ParameterList and (2) the Model Evaluator and optionally the corresponding adjoint mode elvaluator
 
             RCP<Teuchos::ParameterList> piroParams =
                 rcp(new Teuchos::ParameterList("Piro Parameters"));
             Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
+
+            const RCP<Thyra::ModelEvaluator<double>> model = rcp(new MockModelEval_A_Tpetra(appComm));
+            bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
+            bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
+            RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
+            if(explicitAdjointME)
+              adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
 
             // Use these two objects to construct a Piro solved application
             RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double>> piro;
@@ -137,9 +149,13 @@ int main(int argc, char *argv[]) {
                     createLinearSolveStrategy(linearSolverBuilder);
 
                 RCP<Thyra::ModelEvaluator<double>> thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
-                    Model, lowsFactory));
+                    model, lowsFactory));
 
-                piro = solverFactory.createSolver(piroParams, thyraModel);
+                RCP<Thyra::ModelEvaluator<double>> thyraAdjointModel;
+                if(Teuchos::nonnull(adjointModel)) 
+                  thyraAdjointModel= rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(adjointModel, lowsFactory));
+
+                piro = solverFactory.createSolver(piroParams, thyraModel, thyraAdjointModel);
             }
 
             const Teuchos::RCP<Teuchos::ParameterList> solveParams =

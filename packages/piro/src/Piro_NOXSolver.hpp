@@ -68,6 +68,7 @@ class NOXSolver
   /** \brief . */
   NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
             const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+            const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
             const Teuchos::RCP<ObserverBase<Scalar> > &observer = Teuchos::null);
   //@}
 
@@ -78,6 +79,7 @@ class NOXSolver
   Teuchos::RCP<ObserverBase<Scalar> > getObserver() {return observer;}
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > getSubModel() {return model;}
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > getAdjointSubModel() {return adjointModel;}
 
   private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
@@ -95,7 +97,8 @@ class NOXSolver
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjointModel; 
 
   /** \brief to write only when the converged solutions or all solutions. */
   bool writeOnlyConvergedSol;

@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<6; iTest++) {
+  for (int iTest=0; iTest<7; iTest++) {
 
     if (doAll) {
       switch (iTest) {
@@ -105,7 +105,8 @@ int main(int argc, char *argv[]) {
        case 2: inputFile="input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml"; break;
        case 3: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml"; break;
        case 4: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml"; break;
-       case 5: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml"; break;
+       case 5: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml"; break;
+       case 6: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -129,16 +130,22 @@ int main(int argc, char *argv[]) {
      
         // Create (1) a Model Evaluator and (2) a ParameterList
         std::string modelName;
-        RCP<Thyra::ModelEvaluator<double>> Model;
+        bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
+        bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
+        RCP<Thyra::ModelEvaluator<double>> model, adjointModel(Teuchos::null);
         if (mockModel=="MockModelEval_A_Tpetra") {
           if(boundConstrained) {
-            Model = rcp(new MockModelEval_A_Tpetra(appComm));
+            model = rcp(new MockModelEval_A_Tpetra(appComm));
+            if(explicitAdjointME)
+              adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
             modelName = "A";
           } else   // optimization of problem A often diverges when the parameters are not constrained
             continue;
         }
         else {//if (mockModel=="MockModelEval_B_Tpetra") 
-          Model = rcp(new MockModelEval_B_Tpetra(appComm));
+          model = rcp(new MockModelEval_B_Tpetra(appComm));
+          if(explicitAdjointME)
+            adjointModel = rcp(new MockModelEval_B_Tpetra(appComm,true));
           modelName = "B";
         }
 
@@ -173,10 +180,13 @@ int main(int argc, char *argv[]) {
         const RCP<Thyra::LinearOpWithSolveFactoryBase<double>> lowsFactory =
             createLinearSolveStrategy(linearSolverBuilder);
 
-        RCP<Thyra::ModelEvaluator<double>> ModelWithSolve = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
-            Model, lowsFactory));
+        RCP<Thyra::ModelEvaluator<double>> modelWithSolve = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
+            model, lowsFactory));
+        RCP<Thyra::ModelEvaluator<double>> adjointModelWithSolve(Teuchos::null);
+        if(Teuchos::nonnull(adjointModel))
+          adjointModelWithSolve= rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(adjointModel, lowsFactory));
 
-        const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = solverFactory.createSolver(piroParams, ModelWithSolve);
+        const RCP<Thyra::ModelEvaluatorDefaultBase<double>> piro = solverFactory.createSolver(piroParams, modelWithSolve, adjointModelWithSolve);
 
         // Call the analysis routine
         RCP<Thyra::VectorBase<double>> p;

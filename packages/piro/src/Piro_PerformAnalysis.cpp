@@ -64,12 +64,8 @@
 #include "ROL_ThyraVector.hpp"
 #include "ROL_ScaledThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
-#include "ROL_ThyraME_Objective.hpp"
-#include "ROL_ThyraProductME_Objective.hpp"
 #include "Piro_ThyraProductME_Objective_SimOpt.hpp"
 #include "Piro_ThyraProductME_Constraint_SimOpt.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_TypeB_AlgorithmFactory.hpp"
 #include "ROL_TypeU_AlgorithmFactory.hpp"
@@ -239,13 +235,14 @@ Piro::PerformROLAnalysis(
   }
 
   using std::string;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model, adjointModel;
   Teuchos::RCP<Piro::SteadyStateSolver<double>> piroSSSolver;
 #ifdef HAVE_PIRO_NOX
   auto piroNOXSolver = Teuchos::rcp_dynamic_cast<Piro::NOXSolver<double>>(Teuchos::rcpFromRef(piroModel));
   if(Teuchos::nonnull(piroNOXSolver)) {
     piroSSSolver = Teuchos::rcp_dynamic_cast<Piro::SteadyStateSolver<double>>(piroNOXSolver);
     model = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getSubModel());
+    adjointModel = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroNOXSolver->getAdjointSubModel());
   } else
 #endif
   {
@@ -301,8 +298,8 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, appParams, verbosityLevel, observer);
-  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, p_indices, appParams, verbosityLevel, observer);
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(model, g_index, p_indices, appParams, verbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(model, adjointModel, p_indices, appParams, verbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
@@ -362,10 +359,6 @@ Piro::PerformROLAnalysis(
       rol_x.checkVector(rol_y, rol_z,print, *out);
     }
   }
-
-
-
-
 
   //! check correctness of Gradient prvided by Model Evaluator
   if(rolParams.get<bool>("Check Gradient", false)) {
@@ -618,7 +611,6 @@ Piro::PerformROLAnalysis(
         ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));
         prob.addBoundConstraint(bnd);
         prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
-        //, r_ptr);
         bool lumpConstraints(false), printToStream(true);
         prob.finalize(lumpConstraints, printToStream, *out);
         ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));

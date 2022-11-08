@@ -68,11 +68,11 @@
               <ParameterList name="Preconditioner Types">
                 <ParameterList name="Ifpack2">
                   <Parameter name="Overlap" type="int" value="1" />
-                  <Parameter name="Prec Type" type="string" value="RILUK" />
+                  <Parameter name="Prec Type" type="string" value="Amesos2" />
                   <ParameterList name="Ifpack2 Settings">
-                    <Parameter name="fact: drop tolerance" type="double" value="0" />
-                    <Parameter name="fact: iluk level-of-fill" type="int" value="0" />
-                    <Parameter name="fact: level-of-fill" type="int" value="1" />
+                    <ParameterList name="Amesos2">
+                    </ParameterList>
+                    <Parameter name="Amesos2 solver name" type="string" value="klu"/>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
@@ -158,7 +158,7 @@
         <!--Parameter name="Uniform Parameter Guess" type="double" value="2.0"/ -->
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
-        <Parameter name="Check Gradient" type="bool" value="true" />
+        <Parameter name="Check Gradient" type="bool" value="false" />
         <Parameter name="Number Of Gradient Checks" type="int" value="1" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
@@ -168,10 +168,10 @@
         <Parameter name="Step Tolerance" type="double" value="1e-4" />
         <Parameter name="Max Iterations" type="int" value="36" />
 
-        <Parameter name="Bound Constrained" type="bool" value="false" />
+        <Parameter name="Bound Constrained" type="bool" value="true" />
 
         <Parameter name="Full Space" type="bool" value="false" />
-        <Parameter name="Use NOX Solver" type="bool" value="false" />
+        <Parameter name="Use NOX Solver" type="bool" value="true" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">
@@ -196,6 +196,8 @@
               <Parameter name="Use Default Scaling" type="bool" value="true" />
               <Parameter name="Initial Hessian Scale" type="double" value="1.0" />
               <Parameter name="Barzilai-Borwein" type="int" value="1" />
+              <Parameter name="Use as Preconditioner" type="bool" value="false" />
+              <Parameter name="Use as Hessian" type="bool" value="false" />
             </ParameterList>
 
             <!-- =========== KRYLOV INPUTS =========== -->
@@ -209,57 +211,39 @@
 
           <!-- =========== STEP SUBLIST =========== -->
           <ParameterList name="Step">
-            <Parameter name="Type" type="string" value="Line Search" />
+            <Parameter name="Type" type="string" value="Trust Region" />
 
-            <!-- =========== LINE SEARCH =========== -->
-            <ParameterList name="Line Search">
-              <Parameter name="Function Evaluation Limit" type="int" value="20" />
-              <Parameter name="Sufficient Decrease Tolerance" type="double" value="1.e-4" />
-              <Parameter name="Normalize Initial Step Size" type="bool" value="false" />
-              <Parameter name="Initial Step Size" type="double" value="1.0" />
-              <Parameter name="Lower Bound for Initial Step Size" type="double" value="1.0e-4" />
-              <Parameter name="User Defined Initial Step Size" type="bool" value="false" />
-              <Parameter name="Use Previous Step Length as Initial Guess" type="bool" value="false" />
-              <Parameter name="Use Adaptive Step Size Selection" type="bool" value="true" />
-              <ParameterList name="PQN">
-                <Parameter name="Lower Step Size Safeguard" type="double" value="0.1" />
-                <Parameter name="Upper Step Size Safeguard" type="double" value="0.9" />
-                <Parameter name="Subproblem Solver" type="string" value="Spectral Gradient" />
-                <Parameter name="Subproblem Iteration Limit" type="int" value="1000" />
-                <Parameter name="Subproblem Absolute Tolerance" type="double" value="1.0e-4" />
-                <Parameter name="Subproblem Relative Tolerance" type="double" value="1.0e-2" />
+            <!-- =========== TRUST REGION =========== -->
+            <ParameterList name="Trust Region">
+              <Parameter name="Subproblem Model" type="string" value="Kelley-Sachs" />
+              <Parameter name="Subproblem Solver" type="string" value="Truncated CG" />
+              <Parameter name="Initial Radius" type="double" value="-1.0" />
+              <!--Parameter name="Maximum Radius" type="double" value="5.e3" /-->
+              <Parameter name="Step Acceptance Threshold" type="double" value="0.05" />
+              <Parameter name="Radius Shrinking Threshold" type="double" value="0.05" />
+              <Parameter name="Radius Growing Threshold" type="double" value="0.9" />
+              <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625" />
+              <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25" />
+              <Parameter name="Radius Growing Rate" type="double" value="2.5" />
+              <Parameter name="Safeguard Size" type="double" value="100.0" />
+
+              <!-- =========== CONTROLS FOR INEXACTNESS =========== -->
+              <ParameterList name="Inexact">
+
+                <!-- =========== INEXACT OBJECTIVE VALUE UPDATE =========== -->
+                <ParameterList name="Value">
+                  <Parameter name="Tolerance Scaling" type="double" value="1.e-1" />
+                  <Parameter name="Exponent" type="double" value="0.9" />
+                  <Parameter name="Forcing Sequence Initial Value" type="double" value="1.0" />
+                  <Parameter name="Forcing Sequence Update Frequency" type="int" value="10" />
+                  <Parameter name="Forcing Sequence Reduction Factor" type="double" value="0.1" />
               </ParameterList>
 
-              <!-- =========== DESCENT ALGORITHM SPECIFICATION =========== -->
-              <ParameterList name="Descent Method">
-                <!--Parameter name="Type" type="string" value="Newton-Krylov" /-->
-                <Parameter name="Type" type="string" value="Quasi-Newton Method" />
+                <!-- =========== INEXACT GRADIENT UPDATE =========== -->
+                <ParameterList name="Gradient">
+                  <Parameter name="Tolerance Scaling" type="double" value="1.e-1" />
+                  <Parameter name="Relative Tolerance" type="double" value="2.0" />
               </ParameterList>
-
-              <ParameterList name="Quasi-Newton">
-                <Parameter name="Method" type="string" value="L-Secant-B" />
-                <ParameterList name="L-Secant-B">
-                  <Parameter name="Sufficient Decrease Parameter" type="double" value="1.0e-02" />
-                  <Parameter name="Relative Tolerance Exponent" type="double" value="1.0" />
-                  <ParameterList name="Cauchy Point">
-                    <Parameter name="Maximum Number of Reduction Steps" type="int" value="10" />
-                    <Parameter name="Maximum Number of Expansion Steps" type="int" value="10" />
-                    <Parameter name="Initial Step Size" type="double" value="1.0" />
-                    <Parameter name="Normalize Initial Step Size" type="bool" value="false" />
-                    <Parameter name="Reduction Rate" type="double" value="0.1" />
-                    <Parameter name="Expansion Rate" type="double" value="10.0" />
-                    <Parameter name="Decrease Tolerance" type="double" value="1.0e-8" />
-                  </ParameterList>
-                </ParameterList>
-              </ParameterList>
-
-              <!-- =========== LINE-SEARCH ALGORITHM SPECIFICATION =========== -->
-              <ParameterList name="Line-Search Method">
-                <Parameter name="Type" type="string" value="Backtracking" />
-                <!--Parameter name="Type" type="string" value="Cubic Interpolation" / -->
-                <Parameter name="Backtracking Rate" type="double" value="0.5" />
-                <Parameter name="Increase Rate" type="double" value="2.0" />
-                <Parameter name="Bracketing Tolerance" type="double" value="1.e-8" />
               </ParameterList>
             </ParameterList>
           </ParameterList>

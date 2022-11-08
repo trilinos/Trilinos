@@ -81,7 +81,6 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "Piro_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
@@ -93,8 +92,10 @@
 
 template <typename Scalar>
 Piro::SteadyStateSolver<Scalar>::
-SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model) :
+SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel) :
   model_(model),
+  adjointModel_(adjointModel),
   num_p_(model->Np()),
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
@@ -104,8 +105,10 @@ template <typename Scalar>
 Piro::SteadyStateSolver<Scalar>::
 SteadyStateSolver(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel,
     int numParameters) :
   model_(model),
+  adjointModel_(adjointModel),
   num_p_(numParameters),
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
@@ -430,12 +433,11 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     ROL::Ptr<ROL::Vector<Scalar> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
 
 
-
-    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, p_indices, appParams, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
       
     for (int i=0; i<num_g_; ++i) {      
 
-      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, appParams, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, i, p_indices, appParams, Teuchos::VERB_NONE);
 
       ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
@@ -444,9 +446,9 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
 
       reduced_obj.update(rol_p,ROL::UpdateType::Temp);
       reduced_obj.set_precomputed_state(rol_x,rol_p);
-      if(i>0) {
+      if(i>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
         constr.computeJacobian1_ = false;
-        constr.computeJacobian1Tr_ = false;
+        constr.computeAdjointJacobian1_ = false;
       }
 
       Scalar tmp = reduced_obj.value(rol_p,tol);
@@ -1245,9 +1247,9 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   }
 
 
-  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, p_indices, appParams, Teuchos::VERB_HIGH);
+  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_HIGH);
   for (int g_index=0; g_index<num_g_; ++g_index) {
-    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
     
     ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
     ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);    
@@ -1256,9 +1258,9 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
 
     reduced_obj.update(rol_p,ROL::UpdateType::Temp);
     reduced_obj.set_precomputed_state(rol_x,rol_p);
-    if(g_index>0) {
+    if(g_index>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
       constr.computeJacobian1_ = false;
-      constr.computeJacobian1Tr_ = false;
+      constr.computeAdjointJacobian1_ = false;
     }
 
     for (auto j = 0; j < n_directions; ++j) {
