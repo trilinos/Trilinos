@@ -224,16 +224,16 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
           const size_type col,
           const execution_space &space)
     {
-      typedef typename DstView::execution_space execution_space;
-      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
-      typedef typename IdxView::non_const_value_type index_type;
+      using execution_space = typename DstView::execution_space;
+      using range_type = Kokkos::RangePolicy<execution_space, size_type>;
+      using index_type = typename IdxView::non_const_value_type;
 
       size_t errorCount;
       Kokkos::parallel_reduce
         ("Tpetra::MultiVector pack one col debug only",
          range_type (space, 0, idx.size ()),
          PackArraySingleColumnWithBoundsCheck (dst, src, idx, col),
-         Kokkos::Sum(errorCount));
+         Kokkos::Sum<size_t>(errorCount));
 
       if (errorCount != 0) {
         // Go back and find the out-of-bounds entries in the index
