@@ -29,6 +29,14 @@
 
 namespace krino{
 
+size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank)
+{
+  size_t numEntities = stk::mesh::count_selected_entities(mesh.mesh_meta_data().locally_owned_part(), mesh.buckets(entityRank));
+  const size_t localNumEntities = numEntities;
+  stk::all_reduce_sum(mesh.parallel(), &localNumEntities, &numEntities, 1);
+  return numEntities;
+}
+
 template <class CONTAINER>
 class ContainerResizer
 {
@@ -194,14 +202,14 @@ void update_max_edge_lengths_squared(const CONTAINER & elementNodeCoords, double
 //--------------------------------------------------------------------------------
 
 double
-compute_maximum_element_size(stk::mesh::BulkData& mesh)
+compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector)
 {
   const unsigned ndim = mesh.mesh_meta_data().spatial_dimension();
   double max_sqr_edge_length = 0.0;
 
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
 
-  stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
+  stk::mesh::Selector locally_owned_selector = selector & mesh.mesh_meta_data().locally_owned_part();
 
   const stk::mesh::BucketVector & buckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, locally_owned_selector );
   std::vector<krino::Vector3d> elementNodeCoords;
@@ -444,31 +452,74 @@ void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh
     sierra::Env::outputP0() << "Terminating after performing max iterations.  There still may be nodes with a nodal volume less than " << threshold << "." << std::endl;
 }
 
+template <class FIRST_CONTAINER_TYPE>
+inline
+void append_1st_container_to_end_of_2nd_vector(
+        const FIRST_CONTAINER_TYPE &firstContainer,
+        std::vector<typename FIRST_CONTAINER_TYPE::value_type> &targetVec)
+{
+    targetVec.insert(targetVec.end(), firstContainer.begin(), firstContainer.end());
+}
+
+void get_nodes_of_subentity(const stk::mesh::BulkData & bulk,
+    const stk::mesh::Entity entity,
+    const stk::mesh::EntityRank subEntityRank,
+    const stk::mesh::ConnectivityOrdinal subEntityOrdinal,
+    std::vector<stk::mesh::Entity> & subEntityNodes)
+{
+  const stk::mesh::Entity *entityNodeEntities = bulk.begin_nodes(entity);
+  const stk::topology entityTopology = bulk.bucket(entity).topology();
+  subEntityNodes.resize(entityTopology.sub_topology(subEntityRank,subEntityOrdinal).num_nodes());
+  entityTopology.sub_topology_nodes(entityNodeEntities, subEntityRank, subEntityOrdinal, subEntityNodes.data());
+}
+
+void get_nodes_of_element_side(const stk::mesh::BulkData & bulk,
+    const stk::mesh::Entity element,
+    const stk::mesh::ConnectivityOrdinal elementSideOrdinal,
+    std::vector<stk::mesh::Entity> & elementSideNodes)
+{
+  get_nodes_of_subentity(bulk, element, bulk.mesh_meta_data().side_rank(), elementSideOrdinal, elementSideNodes);
+}
+
+bool does_element_side_exist(stk::mesh::BulkData& mesh, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
+{
+  stk::mesh::Entity side = stk::mesh::Entity();
+  stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
+
+  unsigned elem_num_sides = mesh.num_connectivity(element, side_rank);
+  const stk::mesh::Entity * elem_sides = mesh.begin(element, side_rank);
+  const stk::mesh::ConnectivityOrdinal * elem_ord_it = mesh.begin_ordinals(element, side_rank);
+  for (unsigned i=0 ; i<elem_num_sides ; ++i)
+  {
+    if (elem_ord_it[i] == side_ordinal)
+    {
+      side = elem_sides[i];
+      break;
+    }
+  }
+
+  return mesh.is_valid(side);
+}
+
 //--------------------------------------------------------------------------------
 
 void
-batch_create_sides(stk::mesh::BulkData & mesh, const std::vector<SideRequest> & side_requests)
+batch_create_sides(stk::mesh::BulkData & mesh, const std::vector<SideDescription> & sideDescriptions)
 {
-  const stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
-
   if (!mesh.has_face_adjacent_element_graph())
   {
     mesh.initialize_face_adjacent_element_graph();
   }
 
   mesh.modification_begin();
-  for (auto && side_request : side_requests)
+  for (auto && sideDescription : sideDescriptions)
   {
-    stk::mesh::Entity element = side_request.element;
-    const unsigned element_side_ord = side_request.element_side_ordinal;
-
-    stk::mesh::Entity existing_element_side = find_entity_by_ordinal(mesh, element, side_rank, element_side_ord);
-    if (mesh.is_valid(existing_element_side))
+    if (mesh.is_valid(sideDescription.element))
     {
-      continue;
+      ThrowAssertMsg(mesh.bucket(sideDescription.element).owned(), "Expecting owned entity");
+      if (!does_element_side_exist(mesh, sideDescription.element, sideDescription.elementSideOrdinal))
+          mesh.declare_element_side(sideDescription.element, sideDescription.elementSideOrdinal, sideDescription.sideParts);
     }
-
-    mesh.declare_element_side(element, element_side_ord, side_request.side_parts);
   }
   mesh.modification_end();
 
@@ -488,7 +539,7 @@ make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh)
   std::vector<stk::mesh::Entity> sides;
   stk::mesh::get_selected_entities( not_ghost_selector, mesh.buckets(side_rank), sides );
 
-  std::vector<SideRequest> side_requests;
+  std::vector<SideDescription> side_requests;
 
   mesh.modification_begin();
   for (auto&& side : sides)
@@ -1176,6 +1227,23 @@ static bool is_entity_attached_to_element(const stk::mesh::BulkData & mesh, cons
 }
 
 void
+attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element)
+{
+  //Sorry! Passing these scratch vectors into stk's declare_relation function is
+  //a performance improvement (fewer allocations). But stk will try to clean up
+  //this ugliness soon. (i.e., find a better way to get the performance.)
+  stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+  //const auto & [ordinal, permutation] = determine_ordinal_and_permutation(mesh, element, entity);
+  const auto & ordinalAndPermutations = determine_ordinal_and_permutation(mesh, element, entity);
+  const auto & ordinal = ordinalAndPermutations.first;
+  const auto & permutation = ordinalAndPermutations.second;
+
+  mesh.declare_relation( element, entity, ordinal, permutation, scratch1, scratch2, scratch3 );
+  ThrowRequireMsg(is_entity_attached_to_element(mesh, entityRank, entity, element),  "Could not attach " << debug_entity_1line(mesh,entity) << "  to element " << debug_entity_1line(mesh,element));
+}
+
+void
 attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
 {
   //Sorry! Passing these scratch vectors into stk's declare_relation function is
@@ -1356,8 +1424,11 @@ void destroy_custom_ghostings(stk::mesh::BulkData & mesh)
 //--------------------------------------------------------------------------------
 
 void
-delete_mesh_entities(stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & child_elems)
+delete_mesh_entities(stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & child_elems)
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::delete_old_mesh_entities(void)"); /* %TRACE% */
+
+  if (child_elems.empty())
+    return;
 
   stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 

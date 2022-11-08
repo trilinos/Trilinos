@@ -60,7 +60,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   if (meta.is_using_simple_fields()) {
     coord_field = &meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
     stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
-    stk::io::set_field_output_type(*coord_field, "Vector_3D");
+    stk::io::set_field_output_type(*coord_field, stk::io::FieldOutputType::VECTOR_3D);
   }
   else {
     coord_field = &meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK,

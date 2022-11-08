@@ -34,6 +34,7 @@
 
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
+#include <Akri_Quality.hpp>
 
 namespace krino {
 
@@ -2683,7 +2684,7 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 
   // regression test
   const ScaledJacobianQualityMetric qualityMetric;
-  const double quality = determine_quality(mesh, krino_mesh->get_active_part(), qualityMetric);
+  const double quality = compute_mesh_quality(mesh, krino_mesh->get_active_part(), qualityMetric);
   const double goldQuality = 0.21;
   EXPECT_GT(quality, goldQuality);
 }

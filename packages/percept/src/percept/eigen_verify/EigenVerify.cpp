@@ -79,7 +79,7 @@ void EigenVerify::create_fields(const int num_time_steps)
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
         nullptr);
-    stk::io::set_field_output_type(*fieldAll[m], "Vector_3D");
+    stk::io::set_field_output_type(*fieldAll[m], stk::io::FieldOutputType::VECTOR_3D);
 
     // allocate data for the eigenvectors (receiving)
     xferFieldAll[m] = & (mesh_data[m]->meta_data().declare_field<double>(stk::topology::NODE_RANK, xfer_field_name_all));
@@ -104,7 +104,7 @@ void EigenVerify::create_fields(const int num_time_steps)
   std::string error_field_name = "error." + field_name;
   errorField = & ( mesh_data[1]->meta_data().declare_field<double>(stk::topology::NODE_RANK, error_field_name) );
   stk::mesh::put_field_on_mesh( *errorField, mesh_data[1]->meta_data().universal_part(), mesh_data[1]->meta_data().spatial_dimension(), nullptr);
-  stk::io::set_field_output_type(*errorField, "Vector_3D");
+  stk::io::set_field_output_type(*errorField, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 void EigenVerify::load_field_data(const int m)

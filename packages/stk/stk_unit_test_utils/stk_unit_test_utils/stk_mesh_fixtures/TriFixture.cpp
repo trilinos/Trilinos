@@ -311,7 +311,7 @@ TriFixtureImpl<DIM>::TriFixtureImpl(MetaData& meta,
 {
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 template <int DIM>
@@ -349,7 +349,7 @@ TriFixtureImpl<DIM>::TriFixtureImpl(stk::ParallelMachine pm,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 
 }
 

@@ -533,8 +533,34 @@ void put_edge_block_io_part_attribute( stk::mesh::Part &part);
 void put_assembly_io_part_attribute( stk::mesh::Part &part);
 
 void create_named_suffix_field_output_type(const std::string & typeName, const std::vector<std::string> & suffices);
+void set_named_suffix_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName);
 
-void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName);
+enum class FieldOutputType {
+  //                  Output Subscripts:
+  SCALAR,           //  []
+  VECTOR_2D,        //  [x, y]
+  VECTOR_3D,        //  [x, y, z]
+  FULL_TENSOR_36,   //  [xx, yy, zz, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_32,   //  [xx, yy, zz, xy, yx]
+  FULL_TENSOR_22,   //  [xx, yy, xy, yx]
+  FULL_TENSOR_16,   //  [xx, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_12,   //  [xx, xy, yx]
+  SYM_TENSOR_33,    //  [xx, yy, zz, xy, yz, zx]
+  SYM_TENSOR_31,    //  [xx, yy, zz, xy]
+  SYM_TENSOR_21,    //  [xx, yy, xy]
+  SYM_TENSOR_13,    //  [xx, xy, yz, zx]
+  SYM_TENSOR_11,    //  [xx, xy]
+  SYM_TENSOR_10,    //  [xx]
+  ASYM_TENSOR_03,   //  [xy, yz, zx]
+  ASYM_TENSOR_02,   //  [xy, yz]
+  ASYM_TENSOR_01,   //  [xy]
+  MATRIX_22,        //  [xx, xy, yx, yy]
+  MATRIX_33,        //  [xx, xy, xz, yx, yy, yz, zx, zy, zz]
+  QUATERNION_2D,    //  [s, q]
+  QUATERNION_3D     //  [x, y, z, q]
+};
+
+void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
 
 bool has_field_output_type(const stk::mesh::FieldBase & field);
 const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field);

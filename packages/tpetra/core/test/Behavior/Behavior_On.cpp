@@ -64,7 +64,7 @@ TEUCHOS_STATIC_SETUP()
 {
   setenv("TPETRA_DEBUG", "ON", 1);
   setenv("TPETRA_VERBOSE", "ON", 1);
-  setenv("TPETRA_ASSUME_CUDA_AWARE_MPI", "ON", 1);
+  setenv("TPETRA_ASSUME_GPU_AWARE_MPI", "ON", 1);
   setenv("CUDA_LAUNCH_BLOCKING", "1", 1);
 }
 
@@ -85,10 +85,10 @@ TEUCHOS_UNIT_TEST(Behavior, On)
   bool verb_named = Tpetra::Details::Behavior::verbose("Named");
   TEUCHOS_TEST_ASSERT(verb_named, out, success);
 
-  // TPETRA_ASSUME_CUDA_AWARE_MPI was set globally in TEUCHOS_STATIC_SETUP to ON,
-  // so any query on TPETRA_ASSUME_CUDA_AWARE_MPI should evaluate to true
-  bool cuda_aware_mpi = Tpetra::Details::Behavior::assumeMpiIsCudaAware();
-  TEUCHOS_TEST_ASSERT(cuda_aware_mpi, out, success);
+  // TPETRA_ASSUME_GPU_AWARE_MPI was set globally in TEUCHOS_STATIC_SETUP to ON,
+  // so any query on TPETRA_ASSUME_GPU_AWARE_MPI should evaluate to true
+  bool gpu_aware_mpi = Tpetra::Details::Behavior::assumeMpiIsGPUAware();
+  TEUCHOS_TEST_ASSERT(gpu_aware_mpi, out, success);
 
   TEST_ASSERT(Tpetra::Details::Behavior::cudaLaunchBlocking());
 }

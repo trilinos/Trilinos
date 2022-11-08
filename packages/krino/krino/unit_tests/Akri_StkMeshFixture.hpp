@@ -21,13 +21,17 @@ protected:
     static constexpr unsigned theBlockId = 1;
     const stk::ParallelMachine mComm = MPI_COMM_WORLD;
     const int mProc{stk::parallel_machine_rank(mComm)};
-    std::unique_ptr<stk::mesh::BulkData> mMeshPtr{stk::mesh::MeshBuilder(mComm).set_spatial_dimension(DIM).create()};
+    std::vector< std::string > entityRankNames{ std::string("NODE"), std::string("EDGE"), std::string("FACE"), std::string("ELEMENT"), std::string("FAMILY_TREE") };
+    std::unique_ptr<stk::mesh::BulkData> mMeshPtr{stk::mesh::MeshBuilder(mComm).set_spatial_dimension(DIM).set_entity_rank_names(entityRankNames).create()};
     stk::mesh::BulkData & mMesh{*mMeshPtr};
     StkMeshBuilder<DIM> mBuilder{mMesh, mComm};
 
+    AuxMetaData & get_aux_meta() { return mBuilder.get_aux_meta(); }
+    const AuxMetaData & get_aux_meta() const { return mBuilder.get_aux_meta(); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mBuilder.get_assigned_node_global_ids(); }
     stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mMesh.get_entity(stk::topology::NODE_RANK, get_assigned_node_global_ids()[nodeIndex]); }
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mBuilder.get_owned_elements(); }
+    stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const { return mBuilder.get_node_coordinates(node); }
 
     template <typename MeshSpecType>
     void build_full_np1_mesh(const MeshSpecType &meshSpec)

@@ -168,6 +168,8 @@ class ManagedCommBufferBase
 
     void clear_recv_bufs();
 
+    void deallocate_send_bufs();
+
   protected:
 
     void set_recv_buffer_storage();

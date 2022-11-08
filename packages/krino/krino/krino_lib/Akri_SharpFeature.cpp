@@ -10,30 +10,12 @@
 #include <Akri_MeshHelpers.hpp>
 #include "Akri_AuxMetaData.hpp"
 #include "Akri_CDMesh_Utils.hpp"
+#include "Akri_Edge.hpp"
 #include "Akri_Phase_Support.hpp"
 
 namespace krino {
 
-uint64_t edge_from_edge_node_offsets(stk::mesh::Entity::entity_value_type edgeNodeOffset0, stk::mesh::Entity::entity_value_type edgeNodeOffset1)
-{
-  static_assert(std::is_same<stk::mesh::Entity::entity_value_type, uint32_t>::value, "stk::mesh::Entity must be 32 bit.");
-  return (static_cast<uint64_t>(edgeNodeOffset1) << 32) + edgeNodeOffset0;
-}
-
-uint64_t edge_from_edge_nodes(const stk::mesh::BulkData & mesh, stk::mesh::Entity edgeNode0, stk::mesh::Entity edgeNode1)
-{
-  return (mesh.identifier(edgeNode0) < mesh.identifier(edgeNode1)) ?
-      edge_from_edge_node_offsets(edgeNode0.local_offset(), edgeNode1.local_offset()) :
-      edge_from_edge_node_offsets(edgeNode1.local_offset(), edgeNode0.local_offset());
-}
-
-std::array<stk::mesh::Entity,2> get_edge_nodes(uint64_t edge)
-{
-  static_assert(std::is_same<stk::mesh::Entity::entity_value_type, uint32_t>::value, "stk::mesh::Entity must be 32 bit.");
-  return std::array<stk::mesh::Entity, 2>{stk::mesh::Entity(edge & 0xFFFFFFFF), stk::mesh::Entity(edge >> 32)};
-}
-
-std::array<uint64_t,6> get_tet_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
+std::array<Edge,6> get_tet_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
 {
   StkMeshEntities elementNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
   return { edge_from_edge_nodes(mesh, elementNodes[0],elementNodes[1]),
@@ -44,7 +26,7 @@ std::array<uint64_t,6> get_tet_edges(const stk::mesh::BulkData & mesh, const stk
            edge_from_edge_nodes(mesh, elementNodes[3],elementNodes[2]) };
 }
 
-std::array<uint64_t,3> get_tri_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
+std::array<Edge,3> get_tri_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
 {
   StkMeshEntities elementNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
   return { edge_from_edge_nodes(mesh, elementNodes[0],elementNodes[1]),
@@ -52,56 +34,29 @@ std::array<uint64_t,3> get_tri_edges(const stk::mesh::BulkData & mesh, const stk
            edge_from_edge_nodes(mesh, elementNodes[2],elementNodes[0]) };
 }
 
-uint64_t get_segment_edge(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
+Edge get_segment_edge(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
 {
   StkMeshEntities elementNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
   return edge_from_edge_nodes(mesh, elementNodes[0],elementNodes[1]);
 }
 
-void fill_element_edges(const stk::mesh::BulkData & mesh, const unsigned dim, const stk::mesh::Entity element, std::vector<uint64_t> & elementEdges)
+void fill_element_edges(const stk::mesh::BulkData & mesh, const unsigned dim, const stk::mesh::Entity element, std::vector<Edge> & elementEdges)
 {
   if (dim == 2)
   {
-    const std::array<uint64_t,3> triEdges = get_tri_edges(mesh, element);
+    const std::array<Edge,3> triEdges = get_tri_edges(mesh, element);
     elementEdges.assign(triEdges.begin(), triEdges.end());
     return;
   }
 
-  const std::array<uint64_t,6> tetEdges = get_tet_edges(mesh, element);
+  const std::array<Edge,6> tetEdges = get_tet_edges(mesh, element);
   elementEdges.assign(tetEdges.begin(), tetEdges.end());
 }
 
-void fill_face_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity face, std::vector<uint64_t> & sideEdges)
+void fill_tet_face_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity face, std::vector<Edge> & sideEdges)
 {
-  const std::array<uint64_t,3> triEdges = get_tri_edges(mesh, face);
+  const std::array<Edge,3> triEdges = get_tri_edges(mesh, face);
   sideEdges.assign(triEdges.begin(), triEdges.end());
-}
-
-int get_edge_owner(const stk::mesh::BulkData & mesh, const uint64_t edge)
-{
-  const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
-  return std::min(mesh.parallel_owner_rank(edgeNodes[0]), mesh.parallel_owner_rank(edgeNodes[1]));
-}
-
-std::vector<uint64_t> get_owned_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
-{
-  std::vector<uint64_t> edges;
-  std::vector<uint64_t> elementEdges;
-  const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
-  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector))
-  {
-    for(const auto & elem : *bucketPtr)
-    {
-      fill_element_edges(mesh, dim, elem, elementEdges);
-      for (auto edge : elementEdges)
-        if (get_edge_owner(mesh, edge) == mesh.parallel_rank())
-          edges.push_back(edge);
-    }
-  }
-
-  stk::util::sort_and_unique(edges);
-
-  return edges;
 }
 
 static bool does_entity_have_selected_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Selector & elementSelector)
@@ -127,16 +82,16 @@ build_side_selector(const stk::mesh::BulkData & mesh)
   return stk::mesh::selectUnion(sideParts);
 }
 
-bool edge_has_owned_node(const stk::mesh::BulkData & mesh, const uint64_t edge)
+bool edge_has_owned_node(const stk::mesh::BulkData & mesh, const Edge edge)
 {
   const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
   return mesh.parallel_rank() == mesh.parallel_owner_rank(edgeNodes[0]) || mesh.parallel_rank() == mesh.parallel_owner_rank(edgeNodes[1]);
 }
 
-std::vector<uint64_t> get_edges_with_owned_nodes_of_selected_faces(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector)
+std::vector<Edge> get_edges_with_owned_nodes_of_selected_faces(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector)
 {
-  std::vector<uint64_t> edges;
-  std::vector<uint64_t> sideEdges;
+  std::vector<Edge> edges;
+  std::vector<Edge> sideEdges;
   for(const auto & bucketPtr : mesh.buckets(stk::topology::FACE_RANK))
   {
     if (sideSelector(*bucketPtr))
@@ -145,7 +100,7 @@ std::vector<uint64_t> get_edges_with_owned_nodes_of_selected_faces(const stk::me
       {
         if (does_entity_have_selected_element(mesh, side, elementSelector))
         {
-          fill_face_edges(mesh, side, sideEdges);
+          fill_tet_face_edges(mesh, side, sideEdges);
           for (auto edge : sideEdges)
             if (edge_has_owned_node(mesh, edge))
               edges.push_back(edge);
@@ -217,7 +172,7 @@ void SharpFeatureInfo::find_sharp_features_3D(const stk::mesh::BulkData & mesh, 
   std::map<stk::mesh::Entity,std::vector<stk::mesh::Entity>> nodeToSharpEdgeNeighbors;
   const int parallelRank = mesh.parallel_rank();
 
-  const std::vector<uint64_t> edgesWithOwnedNodes = get_edges_with_owned_nodes_of_selected_faces(mesh, elementSelector, sideSelector);
+  const std::vector<Edge> edgesWithOwnedNodes = get_edges_with_owned_nodes_of_selected_faces(mesh, elementSelector, sideSelector);
   for (auto edge : edgesWithOwnedNodes)
   {
     if (edge_has_sharp_feature_3D(mesh, coordsField, elementSelector, sideSelector, cosFeatureAngle, edge))
@@ -323,7 +278,7 @@ bool SharpFeatureInfo::angle_is_sharp_between_any_two_sides_3D(const stk::mesh::
   return false;
 }
 
-bool SharpFeatureInfo::edge_has_sharp_feature_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle, const uint64_t edge)
+bool SharpFeatureInfo::edge_has_sharp_feature_3D(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector, const stk::mesh::Selector & sideSelector, const double cosFeatureAngle, const Edge edge)
 {
   const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
   std::vector<stk::mesh::Entity> sidesOfEdge;

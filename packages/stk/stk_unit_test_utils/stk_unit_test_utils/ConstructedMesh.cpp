@@ -170,7 +170,7 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
 
   stk::mesh::Field<double> & coordsField = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
   stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), m_spatialDimension, nullptr);
-  stk::io::set_field_output_type(coordsField, "Vector_3D");
+  stk::io::set_field_output_type(coordsField, stk::io::FieldOutputType::VECTOR_3D);
 
   bulk.modification_begin();
   if(bulk.parallel_rank() == 0) {

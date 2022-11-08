@@ -50,54 +50,68 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
 )
 
-# If we have CUDA, and we have CUDA-aware MPI, also test idot
-# with CUDA-aware MPI explicitly turned off at runtime.
+IF(Tpetra_INST_CUDA)
+  SET(TPETRA_ENABLE_GPU ON)
+ELSEIF(Tpetra_INST_HIP)
+  SET(TPETRA_ENABLE_GPU ON)
+ELSEIF(Tpetra_INST_SYCL)
+  SET(TPETRA_ENABLE_GPU ON)
+ELSE()
+  SET(TPETRA_ENABLE_GPU OFF)
+ENDIF()
+
+# If we have GPUs, and we have GPU-aware MPI, also test idot
+# with GPU-aware MPI explicitly turned off at runtime.
 # This exercises a different code path in idot.
-IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA AND TPETRA_ASSUME_CUDA_AWARE_MPI)
+IF (TPETRA_ENABLE_GPU AND TPETRA_ASSUME_GPU_AWARE_MPI)
   TRIBITS_ADD_TEST(
     idot
-    NAME idot_no_cuda_aware
+    NAME idot_no_gpu_aware
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
-    ENVIRONMENT TPETRA_ASSUME_CUDA_AWARE_MPI=OFF
+    ENVIRONMENT TPETRA_ASSUME_GPU_AWARE_MPI=OFF
   )
 
   TRIBITS_ADD_TEST(
     idot
-    NAME idot_no_cuda_aware
+    NAME idot_no_gpu_aware
     COMM mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 4
-    ENVIRONMENT TPETRA_ASSUME_CUDA_AWARE_MPI=OFF
+    ENVIRONMENT TPETRA_ASSUME_GPU_AWARE_MPI=OFF
   )
 ENDIF ()
 
-ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 ASSERT_DEFINED (Tpetra_INST_CUDA)
+ASSERT_DEFINED (Tpetra_INST_HIP)
+ASSERT_DEFINED (Tpetra_INST_SYCL)
 
-# mfh 21 Aug 2017: The "CUDA-aware MPI" test still builds and runs if
-# Tpetra_ASSUME_CUDA_AWARE_MPI is OFF, but it is a trivial run (doing
-# nothing and passing) unless the TPETRA_ASSUME_CUDA_AWARE_MPI
+# mfh 21 Aug 2017: The "GPU-aware MPI" test still builds and runs if
+# TPETRA_ASSUME_GPU_AWARE_MPI is OFF, but it is a trivial run (doing
+# nothing and passing) unless the TPETRA_ASSUME_GPU_AWARE_MPI
 # environment variable is set (to some "true" value, like "1", "ON",
 # "YES", or "TRUE").  This makes the test useful for cross-compilation
-# and other situations where the MPI implementation's CUDA-awareness
+# and other situations where the MPI implementation's GPU-awareness
 # cannot be known until run time.
 
-IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA)
+IF (TPETRA_ENABLE_GPU AND TPETRA_ASSUME_GPU_AWARE_MPI)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    cudaAwareMpi
+    gpuAwareMpi
     SOURCES
-      cudaAwareMpi.cpp
+      gpuAwareMpi.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     NUM_MPI_PROCS 2
     COMM mpi
     )
+ENDIF ()
 
+IF ( (TPETRA_INST_CUDA OR TPETRA_INST_HIP)  AND TPETRA_ASSUME_GPU_AWARE_MPI)
+  # Does not work with SYCL
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    cudaMpi_CanaryTest
+    gpuMpi_CanaryTest
     SOURCES
-      cudaMpi_CanaryTest.cpp
+      gpuMpi_CanaryTest.cpp
     NUM_MPI_PROCS 2
     COMM mpi
     )

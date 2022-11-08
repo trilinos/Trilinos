@@ -68,7 +68,7 @@ TEST(stkMeshHowTo, useAdvancedFields)
 
   double initialTensorValue[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   stk::mesh::put_field_on_mesh(tensorField, metaData.universal_part(), 9, initialTensorValue);
-  stk::io::set_field_output_type(tensorField, "Full_Tensor_36");
+  stk::io::set_field_output_type(tensorField, stk::io::FieldOutputType::FULL_TENSOR_36);
 
   double initialVectorValue[] = {1, 2, 3, 4, 5, 6, 7, 8};
   const unsigned nodesPerTet = 4;

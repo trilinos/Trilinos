@@ -47,7 +47,8 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Core.hpp"
+#include "Kokkos_Complex.hpp"
 
 //
 // Currently this doesn't test:
@@ -61,12 +62,13 @@ template <typename VectorType>
 struct UnitTestSetup {
 
   typedef VectorType vec_type;
+  typedef typename vec_type::value_type value_type;
 
   double rtol, atol;
   double crtol, catol;
   int sz;
   vec_type x, y, cx;
-  double a;
+  value_type a;
 
   UnitTestSetup() {
     rtol = 1e-4;
@@ -88,38 +90,51 @@ struct UnitTestSetup {
   }
 };
 
-#define UNARY_UNIT_TEST(VEC, OP, OPNAME)                                \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+/**
+ * @def UNARY_UNIT_TEST
+ * Common series of test for any unary operator.
+ */
+#define UNARY_UNIT_TEST(VEC, SCALAR_T, OP, OPNAME, USING_OP)            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME) {                        \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x);                                      \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_OP                                                          \
       v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_const) {                             \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const) {                \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx);                                     \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
+    {                                                                   \
+    USING_OP                                                            \
       v.fastAccessCoeff(i) = OP(setup.cx.fastAccessCoeff(0));           \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_resize) {               \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x);                                                    \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+    USING_OP                                                            \
       v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define BINARY_UNIT_TEST(VEC, OP, OPNAME)                               \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+#define BINARY_UNIT_TEST(VEC, SCALAR_T, OP, OPNAME)                     \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME) {                        \
     UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.y;                               \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -129,7 +144,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const) {                        \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const) {           \
     UTS setup;                                                          \
     UTS::vec_type u = setup.a OP setup.y;                               \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -138,7 +153,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const) {                       \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const) {          \
     UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.a ;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -148,7 +163,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_both_const) {                        \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_both_const) {           \
     UTS setup;                                                          \
     UTS::vec_type u = setup.cx OP setup.cx;                             \
     UTS::vec_type v(1, 0.0);                                            \
@@ -158,7 +173,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const2) {                       \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const2) {          \
     UTS setup;                                                          \
     UTS::vec_type u = setup.cx OP setup.x;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -168,7 +183,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const2) {                      \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const2) {         \
     UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.cx;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -178,7 +193,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_resize) {               \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.x OP setup.y;                                             \
@@ -189,7 +204,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const_resize) {                 \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const_resize) {    \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.a OP setup.y;                                             \
@@ -200,7 +215,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const_resize) {                \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const_resize) {   \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.x OP setup.a;                                             \
@@ -212,103 +227,130 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define BINARYFUNC_UNIT_TEST(VEC, OP, SOP, OPNAME)                      \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+#define BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, OP, SOP, USING_SOP, OPNAME) \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME) {                        \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.y);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),            \
                                 setup.y.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const) {                        \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const) {           \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.a,setup.y);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.a,                               \
                                 setup.y.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const) {                       \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const) {          \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.a);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),            \
                                 setup.a);                               \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_both_const) {                        \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_both_const) {           \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx,setup.cx);                            \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.cx.fastAccessCoeff(0),           \
                                  setup.cx.fastAccessCoeff(0));          \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const2) {                       \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const2) {          \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx,setup.x);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.cx.fastAccessCoeff(0),           \
                                 setup.x.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const2) {                      \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const2) {         \
     UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.cx);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),            \
                                 setup.cx.fastAccessCoeff(0));           \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_resize) {               \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x,setup.y);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),            \
                                 setup.y.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const_resize) {                 \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const_resize) {    \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.a,setup.y);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.a,                               \
                                 setup.y.fastAccessCoeff(i));            \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const_resize) {                \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const_resize) {   \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x,setup.a);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
+    {                                                                   \
+      USING_SOP                                                         \
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),            \
                                 setup.a);                               \
+    }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define OPASSIGN_UNIT_TEST(VEC, OP, OPNAME)                             \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+#define OPASSIGN_UNIT_TEST(VEC, SCALAR_T, OP, OPNAME)                   \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME) {                        \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -318,7 +360,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_const) {                             \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const) {                \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -328,7 +370,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_const2) {                            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const2) {               \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -338,7 +380,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_resize) {               \
     UTS setup;                                                          \
     UTS::vec_type u = setup.a;                                          \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -351,8 +393,8 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define SAXPY_UNIT_TEST(VEC)                                            \
-  TEUCHOS_UNIT_TEST( VEC, saxpy) {                                      \
+#define SAXPY_UNIT_TEST(VEC, SCALAR_T)                                  \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, saxpy) {                         \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -363,7 +405,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, saxpy_resize) {                               \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, saxpy_resize) {                  \
     UTS setup;                                                          \
     UTS::vec_type u = setup.cx;                                         \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -374,7 +416,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, saxpy_const) {                                \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, saxpy_const) {                   \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -385,7 +427,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, saxpy_const2) {                               \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, saxpy_const2) {                  \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
@@ -397,8 +439,8 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define TERNARY_UNIT_TEST(VEC)                                          \
-  TEUCHOS_UNIT_TEST( VEC, ternay) {                                     \
+#define TERNARY_UNIT_TEST(VEC, SCALAR_T)                                \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, ternay) {                        \
     UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = -std::sin(setup.x);                               \
@@ -407,46 +449,45 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
-#define VECTOR_UNIT_TESTS(VEC)                                  \
-  UNARY_UNIT_TEST(VEC, +, UnaryPlus)                            \
-  UNARY_UNIT_TEST(VEC, -, UnaryMinus)                           \
-  UNARY_UNIT_TEST(VEC, std::exp, Exp)                           \
-  UNARY_UNIT_TEST(VEC, std::log, Log)                           \
-  UNARY_UNIT_TEST(VEC, std::log10, Log10)                       \
-  UNARY_UNIT_TEST(VEC, std::sqrt, Sqrt)                         \
-  UNARY_UNIT_TEST(VEC, std::cbrt, Cbrt)                         \
-  UNARY_UNIT_TEST(VEC, std::sin, Sin)                           \
-  UNARY_UNIT_TEST(VEC, std::cos, Cos)                           \
-  UNARY_UNIT_TEST(VEC, std::tan, Tan)                           \
-  UNARY_UNIT_TEST(VEC, std::sinh, Sinh)                         \
-  UNARY_UNIT_TEST(VEC, std::cosh, Cosh)                         \
-  UNARY_UNIT_TEST(VEC, std::tanh, Tanh)                         \
-  UNARY_UNIT_TEST(VEC, std::asin, ASin)                         \
-  UNARY_UNIT_TEST(VEC, std::acos, ACos)                         \
-  UNARY_UNIT_TEST(VEC, std::atan, ATan)                         \
-  UNARY_UNIT_TEST(VEC, std::asinh, ASinh)                       \
-  UNARY_UNIT_TEST(VEC, std::acosh, ACosh)                       \
-  UNARY_UNIT_TEST(VEC, std::atanh, ATanh)                       \
+/**
+ * Default series of tests to perform for any type.
+ * The set of operators should make sense for both real and complex types.
+ */
+#define VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)                        \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, +    , UnaryPlus ,)                    \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, -    , UnaryMinus,)                    \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, exp  , Exp       , using std::exp;  )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, log  , Log       , using std::log;  )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, log10, Log10     , using std::log10;)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sqrt , Sqrt      , using std::sqrt; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sin  , Sin       , using std::sin;  )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cos  , Cos       , using std::cos;  )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, tan  , Tan       , using std::tan;  )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sinh , Sinh      , using std::sinh; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cosh , Cosh      , using std::cosh; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, tanh , Tanh      , using std::tanh; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, asin , ASin      , using std::asin; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, acos , ACos      , using std::acos; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, atan , ATan      , using std::atan; )  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, asinh, ASinh     , using std::asinh;)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, acosh, ACosh     , using std::acosh;)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, atanh, ATanh     , using std::atanh;)  \
                                                                 \
-  BINARY_UNIT_TEST(VEC, +, Plus)                                \
-  BINARY_UNIT_TEST(VEC, -, Minus)                               \
-  BINARY_UNIT_TEST(VEC, *, Times)                               \
-  BINARY_UNIT_TEST(VEC, /, Divide)                              \
+  BINARY_UNIT_TEST(VEC, SCALAR_T, +, Plus)                              \
+  BINARY_UNIT_TEST(VEC, SCALAR_T, -, Minus)                             \
+  BINARY_UNIT_TEST(VEC, SCALAR_T, *, Times)                             \
+  BINARY_UNIT_TEST(VEC, SCALAR_T, /, Divide)                            \
                                                                 \
-  BINARYFUNC_UNIT_TEST(VEC, atan2, std::atan2, ATan2)           \
-  BINARYFUNC_UNIT_TEST(VEC, pow, std::pow, Pow)                 \
-  BINARYFUNC_UNIT_TEST(VEC, max, std::max, Max)                 \
-  BINARYFUNC_UNIT_TEST(VEC, min, std::min, Min)                 \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, pow, pow, using std::pow;, Pow)   \
                                                                 \
-  OPASSIGN_UNIT_TEST(VEC, +=, PlusEqual)                        \
-  OPASSIGN_UNIT_TEST(VEC, -=, MinusEqual)                       \
-  OPASSIGN_UNIT_TEST(VEC, *=, TimesEqual)                       \
-  OPASSIGN_UNIT_TEST(VEC, /=, DivideEqual)                      \
+  OPASSIGN_UNIT_TEST(VEC, SCALAR_T, +=, PlusEqual)                      \
+  OPASSIGN_UNIT_TEST(VEC, SCALAR_T, -=, MinusEqual)                     \
+  OPASSIGN_UNIT_TEST(VEC, SCALAR_T, *=, TimesEqual)                     \
+  OPASSIGN_UNIT_TEST(VEC, SCALAR_T, /=, DivideEqual)                    \
                                                                 \
-  SAXPY_UNIT_TEST(VEC)                                          \
-  TERNARY_UNIT_TEST(VEC)                                        \
+  SAXPY_UNIT_TEST(VEC, SCALAR_T)                                        \
                                                                 \
-  TEUCHOS_UNIT_TEST( VEC, initializer_list_copy ) {                     \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, initializer_list_copy ) {        \
     UTS setup;                                                          \
     UTS::vec_type u = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };       \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -455,7 +496,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u", v, "v",                               \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, initializer_list_assign ) {                   \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, initializer_list_assign ) {      \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };                     \
@@ -465,7 +506,7 @@ struct UnitTestSetup {
     success = compareVecs(u, "u", v, "v",                               \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
-  TEUCHOS_UNIT_TEST( VEC, range_based_for ) {                           \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, range_based_for ) {              \
     UTS setup;                                                          \
     UTS::vec_type u(setup.sz, 0.0);                                     \
     for (auto& z : u) { z = 3.0; }                                      \
@@ -474,52 +515,78 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
-namespace DynamicVecTest {
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  VECTOR_UNIT_TESTS(DynamicVector)
+/**
+ * Series of tests to run for complex type.
+ * It will run the series of tests for any type.
+ */
+#define VECTOR_UNIT_TESTS_COMPLEX_TYPE(VEC,SCALAR_T)                               \
+  /* Run the series of tests for any type. */                                      \
+  VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)
+
+/**
+ * Series of tests to run for real type.
+ * It will run the series of tests for any type, as well as tests that don't work or
+ * don't make sense for complex type.
+ */
+#define VECTOR_UNIT_TESTS_REAL_TYPE(VEC,SCALAR_T)                                  \
+  /* Run the series of tests for any type. */                                      \
+  VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)                                         \
+  /* Operator cbrt not supported for complex type but supported for real type. */  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cbrt , Cbrt, using std::cbrt;)                    \
+  /* Operator atan2 not supported for complex type but supported for real type. */ \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, atan2, atan2, using std::atan2;, ATan2)      \
+  /* Operators min and max are not supported for complex type. */                  \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, max  , max  , using std::max  ;, Max)        \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, min  , min  , using std::min  ;, Min)        \
+  /* Ternary test uses 'operator<' that is not defined for complex type. */        \
+  TERNARY_UNIT_TEST(VEC, SCALAR_T)
+
+/**
+ * Common test structure for dynamic storage.
+ */
+#define TEST_DYNAMIC_STORAGE(__storage_type__,__vec_type__,__scalar_type__,__macro_for_tests__)\
+  typedef Kokkos::DefaultExecutionSpace execution_space;                                       \
+  typedef Stokhos::__storage_type__<int,__scalar_type__,execution_space> storage_type;         \
+  typedef Sacado::MP::Vector<storage_type> vec_type;                                           \
+  typedef UnitTestSetup<vec_type> UTS;                                                         \
+  __macro_for_tests__(__vec_type__,__scalar_type__)
+
+namespace DynamicVecTest
+{
+  TEST_DYNAMIC_STORAGE(DynamicStorage, DynamicVector, double, VECTOR_UNIT_TESTS_REAL_TYPE)
 }
 
-namespace DynamicStridedVecTest {
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef Stokhos::DynamicStridedStorage<int,double,execution_space> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  VECTOR_UNIT_TESTS(DynamicStridedVector)
+namespace DynamicStridedVecTest
+{
+  TEST_DYNAMIC_STORAGE(DynamicStridedStorage, DynamicStridedVector, double, VECTOR_UNIT_TESTS_REAL_TYPE)
 }
 
-namespace StaticVecTest {
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef Stokhos::StaticStorage<int,double,8,execution_space> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  VECTOR_UNIT_TESTS(StaticVector)
+/**
+ * Common test structure for static storage.
+ */
+#define TEST_STATIC_STORAGE(__storage_type__,__vec_type__,__scalar_type__,__scalar_type_name__,__storage_size__,__macro_for_tests__) \
+    typedef ::Kokkos::DefaultExecutionSpace execution_space;                                                                         \
+    typedef ::Stokhos::__storage_type__<int,__scalar_type__,__storage_size__,execution_space> storage_type;                          \
+    typedef ::Sacado::MP::Vector<storage_type> vec_type;                                                                             \
+    typedef UnitTestSetup<vec_type> UTS;                                                                                             \
+    __macro_for_tests__(__vec_type__,__scalar_type_name__)
+
+namespace StaticVecTest
+{
+  TEST_STATIC_STORAGE(StaticStorage, StaticVector, double, double, 8, VECTOR_UNIT_TESTS_REAL_TYPE)
 }
 
-namespace StaticFixedVecTest {
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef Stokhos::StaticFixedStorage<int,double,8,execution_space> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  VECTOR_UNIT_TESTS(StaticFixedVector)
-}
+namespace StaticFixedVecTest
+{
+  namespace Double        {TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector,                   double ,                double, 8, VECTOR_UNIT_TESTS_REAL_TYPE   )}
 
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+// Skip std::complex when compiling with CUDA, because std::complex isn't supported in that case.
+// Note that even though the tests aren't run on the device, nvcc still complains that __device__ code functions are called
+// from __host__ code (or vice versa).
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+  namespace Complex_std   {TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector,   std   ::complex<double>,    std_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
+#endif
 
-  Kokkos::initialize();
-//  Kokkos::HostSpace::execution_space::initialize();
-//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::initialize();
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-//  Kokkos::HostSpace::execution_space::finalize();
-//  if (Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::finalize();
-
-  return res;
+  // Always test for Kokkos::complex because it is always shipped as part of Kokkos, whatever the space.
+  namespace Complex_Kokkos{TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector, ::Kokkos::complex<double>, kokkos_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
 }

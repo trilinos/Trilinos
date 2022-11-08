@@ -299,13 +299,13 @@ GearsFixture::GearsFixture(ParallelMachine pm, size_t num_gears, GearParams gear
   cylindrical_coord_field = &meta_data.declare_field<double>(stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE);
 
   put_field_on_mesh(*cartesian_coord_field, meta_data.universal_part(), SpatialDimension, nullptr);
-  stk::io::set_field_output_type(*cartesian_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*cartesian_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 
   put_field_on_mesh(*displacement_field, meta_data.universal_part(), SpatialDimension, nullptr);
-  stk::io::set_field_output_type(*displacement_field, "Vector_3D");
+  stk::io::set_field_output_type(*displacement_field, stk::io::FieldOutputType::VECTOR_3D);
 
   put_field_on_mesh(*translation_field, cylindrical_coord_part, SpatialDimension, nullptr);
-  stk::io::set_field_output_type(*translation_field, "Vector_3D");
+  stk::io::set_field_output_type(*translation_field, stk::io::FieldOutputType::VECTOR_3D);
 
   put_field_on_mesh(*cylindrical_coord_field, cylindrical_coord_part, SpatialDimension, nullptr);
 

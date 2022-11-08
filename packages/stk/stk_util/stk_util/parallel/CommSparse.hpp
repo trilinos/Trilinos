@@ -206,7 +206,7 @@ public:
   void allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs);
 
   /** Communicate send buffers to receive buffers.  */
-  void communicate();
+  void communicate(bool deallocateSendBuffers = false);
 
   /** Communicate send buffers to receive buffers, interleave unpacking with
    *    caller-provided functor.  */

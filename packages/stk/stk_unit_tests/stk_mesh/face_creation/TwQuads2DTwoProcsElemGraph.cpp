@@ -18,7 +18,7 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
   stk::mesh::Field<double> &coordField = fixture.m_meta.declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
   stk::mesh::put_field_on_mesh(coordField, fixture.m_meta.universal_part(), fixture.m_meta.spatial_dimension(), nullptr);
   stk::mesh::Part& block_1 = fixture.m_meta.declare_part_with_topology("block_1", stk::topology::QUADRILATERAL_4_2D);
-  stk::io::set_field_output_type(coordField, "Vector_3D");
+  stk::io::set_field_output_type(coordField, stk::io::FieldOutputType::VECTOR_3D);
   stk::io::put_io_part_attribute(block_1);
 
   fixture.m_meta.commit();
