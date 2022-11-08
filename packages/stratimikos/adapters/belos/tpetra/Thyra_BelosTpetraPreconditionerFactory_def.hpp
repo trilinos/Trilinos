@@ -344,7 +344,7 @@ BelosTpetraPreconditionerFactory<MatrixType>::getValidParameters() const
       "half precision", false,
       "Whether a half-of-standard-precision Belos-solver-as-preconditioner should be built."
       );
-    Teuchos::ParameterList &packageParamList = validParamList->sublist(
+    validParamList->sublist(
       "BelosPrec Solver Params", false,
       "Belos solver settings that are passed onto the Belos solver itself."
       );
