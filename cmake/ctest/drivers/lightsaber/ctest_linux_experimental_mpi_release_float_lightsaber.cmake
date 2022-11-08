@@ -101,6 +101,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_COMPLEX_FLOAT=OFF"
   "-DTpetra_INST_DOUBLE=ON"
   "-DTrilinos_ENABLE_Stratimikos=ON"
+  "-DStratimikos_ENABLE_TESTS=ON"
+  "-DStratimikos_ENABLE_EXAMPLES=ON"
   "-DTrilinos_ENABLE_Thyra=ON"
 )
 
