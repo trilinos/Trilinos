@@ -202,26 +202,19 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     operator() (const size_type k, value_type& lclErrCount) const {
       using index_type = typename IdxView::non_const_value_type;
 
+      
+      if (k >= static_cast<index_type> (idx.extent (0))) {
+        ++lclErrCount;
+        return;
+      }
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
-          lclRow >= static_cast<index_type> (src.extent (0))) {
+          lclRow >= static_cast<index_type> (src.extent (0)) || 
+          col >= static_cast<index_type> (src.extent (1))) {
         ++lclErrCount;
+        return;
       }
-      else {
-        dst(k) = src(lclRow, col);
-      }
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void init (value_type& initialErrorCount) const {
-      initialErrorCount = 0;
-    }
-
-    KOKKOS_INLINE_FUNCTION void
-    join (value_type& dstErrorCount,
-          const value_type& srcErrorCount) const
-    {
-      dstErrorCount += srcErrorCount;
+      dst(k) = src(lclRow, col);
     }
 
     static void
@@ -235,12 +228,12 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
       typedef typename IdxView::non_const_value_type index_type;
 
-      size_t errorCount = 0;
+      size_t errorCount;
       Kokkos::parallel_reduce
         ("Tpetra::MultiVector pack one col debug only",
          range_type (space, 0, idx.size ()),
          PackArraySingleColumnWithBoundsCheck (dst, src, idx, col),
-         errorCount);
+         Kokkos::Sum(errorCount));
 
       if (errorCount != 0) {
         // Go back and find the out-of-bounds entries in the index
@@ -308,8 +301,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column\n";
 
     if (debug) {
-      typedef PackArraySingleColumnWithBoundsCheck<DstView,SrcView,IdxView> impl_type;
+      std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column debug\n";
+      using impl_type = PackArraySingleColumnWithBoundsCheck<DstView,SrcView,IdxView>;
       impl_type::pack (dst, src, idx, col, space);
+      std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column done\n";
     }
     else {
       using impl_type = PackArraySingleColumn<DstView, SrcView, IdxView>;
