@@ -189,7 +189,7 @@ namespace Tpetra {
       //           << " size=" << comm_->getSize()
       //           << "\n";
 
-      // comm_->barrier();
+      comm_->barrier();
 
       std::cerr << __FILE__ << ":"<<__LINE__ << ":"
                 << " rank=" << comm_->getRank()
