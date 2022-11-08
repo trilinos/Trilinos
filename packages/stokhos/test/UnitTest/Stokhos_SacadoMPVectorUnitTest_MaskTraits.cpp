@@ -612,21 +612,3 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_div)
     TEST_EQUALITY(b,-1.);
 
 }
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Kokkos::initialize();
-//  Kokkos::HostSpace::execution_space::initialize();
-//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::initialize();
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-//  Kokkos::HostSpace::execution_space::finalize();
-//  if (Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::finalize();
-
-  return res;
-}
