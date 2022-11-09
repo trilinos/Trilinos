@@ -3675,10 +3675,6 @@ addSorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    row_ptrs_array, col_inds_array>
     (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
   Cvals = values_array("C values", addHandle->get_c_nnz());
@@ -3722,10 +3718,6 @@ addUnsorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-    row_ptrs_array, col_inds_array>
       (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
   Cvals = values_array("C values", addHandle->get_c_nnz());
@@ -3808,7 +3800,6 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
