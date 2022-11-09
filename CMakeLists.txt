@@ -69,6 +69,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
+if("${CCACHE_NODISABLE}")
+# ccache must be requested explicitly by setting env-var CCACHE_NODISABLE
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
     # Set up wrapper scripts
@@ -94,6 +96,7 @@ if(CCACHE_PROGRAM)
         set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/launch-cxx")
     endif()
  endif()
+endif()
 
 ## set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
