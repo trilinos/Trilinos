@@ -8545,9 +8545,7 @@ namespace Tpetra {
           }
         }
 
-        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
         const std::string header = writeOperatorImpl(out, A, params);
-        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
 
         if (myRank==0) {
           if (precisionChanged)
@@ -8786,7 +8784,6 @@ namespace Tpetra {
               localColsArray.push_back(curLocalCol);
             }
           }
-          //TODO Do the views eiData need to be released prior to the matvec?
 
           // drop host views
           for (size_t i=0; i<numMVs; ++i)
@@ -8803,8 +8800,8 @@ namespace Tpetra {
           // reconstruct dropped eiData
           for (size_t i=0; i<numMVs; ++i)
             eiData[i] = ei->getDataNonConst(i);
-          for (int j=0; j<rem; ++j ) {
-            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+          for (size_t j=0; j<numMVs; ++j ) {
+            GO curGlobalCol = minColGid + k*numMVs + j;
             //TODO  extract the g2l map outside of this loop loop
             LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
             if (curLocalCol != TLOT::invalid()) {
@@ -8836,7 +8833,6 @@ namespace Tpetra {
               localColsArray.push_back(curLocalCol);
             }
           }
-          //TODO Do the views eiData need to be released prior to the matvec?
 
           // drop eiData views
           for (size_t i=0; i<numMVs; ++i)
