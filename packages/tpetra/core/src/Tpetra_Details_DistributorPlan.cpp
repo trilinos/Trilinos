@@ -205,7 +205,10 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
-    if (exportID >= 0) {
+    if (exportID >= numProcs) {
+      badID = myProcID;
+      break;
+    } else if (exportID >= 0) {
       // exportID is a valid process ID.  Increment the number of
       // messages this process will send to that process.
       ++starts[exportID];
@@ -227,6 +230,19 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     }
   }
 
+  if (debug) {
+    // Test whether any process in the communicator got an invalid
+    // process ID.  If badID != -1 on this process, then it equals
+    // this process' rank.  The max of all badID over all processes
+    // is the max rank which has an invalid process ID.
+    int gbl_badID;
+    reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
+        << gbl_badID << ", perhaps among other processes, got a bad "
+        "send process ID.");
+  }
+  
 #if defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
   {
     int global_needSendBuff;
