@@ -2,9 +2,9 @@
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../thyra/core/example/operator_solve)
 
-
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
-IF (${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
      Belos_epetra_GCRODR_strattest
      SOURCES
@@ -16,40 +16,41 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
      )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE(
-  test_epetra_stratimikos_solver_driver
-  SOURCES
-    test_epetra_stratimikos_solver_driver.cpp
-    test_epetra_stratimikos_solver.hpp
-    test_epetra_stratimikos_solver.cpp
-  COMM serial mpi
-  )
-
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
   DEST_FILES
-    FourByFour.xml
-    FourByFour.amesos.xml
-    FourByFour.aztecoo.np.xml
-    FourByFour.aztecoo.ifpack.xml
-    FourByFour.aztecoo.ifpack.adjoint.xml
-    FourByFour.aztecoo.ml.xml
-    FourByFour.belos.np.xml
-    FourByFour.belos.ifpack.xml
-    FourByFour.belos.ml.xml
-    BelosGCRODRTest.xml
+  FourByFour.xml
+  FourByFour.amesos.xml
+  FourByFour.aztecoo.np.xml
+  FourByFour.aztecoo.ifpack.xml
+  FourByFour.aztecoo.ifpack.adjoint.xml
+  FourByFour.aztecoo.ml.xml
+  FourByFour.belos.np.xml
+  FourByFour.belos.ifpack.xml
+  FourByFour.belos.ml.xml
+  BelosGCRODRTest.xml
   SOURCE_PREFIX "_"
-  EXEDEPS test_epetra_stratimikos_solver_driver
-  )
+)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
   DEST_FILES FourByFour.mtx
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
   SOURCE_PREFIX "In_"
-  EXEDEPS test_epetra_stratimikos_solver_driver 
+)
+
+IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
+  TRIBITS_ADD_EXECUTABLE(
+    test_epetra_stratimikos_solver_driver
+    SOURCES
+    test_epetra_stratimikos_solver_driver.cpp
+    test_epetra_stratimikos_solver.hpp
+    test_epetra_stratimikos_solver.cpp
+    COMM serial mpi
   )
+ENDIF()
+
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
-IF (${PACKAGE_NAME}_ENABLE_Amesos)
+IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Amesos)
   TRIBITS_ADD_TEST(
     test_epetra_stratimikos_solver_driver
     NAME test_epetra_stratimikos_solver_driver_amesos
@@ -61,9 +62,8 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     )
 ENDIF()
 
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AztecOO)
-IF (${PACKAGE_NAME}_ENABLE_AztecOO)
+IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters AND ${PACKAGE_NAME}_ENABLE_AztecOO)
 
 
   TRIBITS_ADD_TEST(
@@ -110,7 +110,7 @@ ENDIF()
 
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
-IF (${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Belos)
 
 
   TRIBITS_ADD_TEST(
@@ -241,18 +241,18 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../belos/kokkos/example
-  SOURCE_FILES bcsstk12.mtx 
+  SOURCE_FILES bcsstk12.mtx
   EXEDEPS test_tpetra_belos
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestXMLFiles
     DEST_FILES
-      TpetraBelosTest.xml 
+      TpetraBelosTest.xml
       TpetraSingReduceTest.xml
       stratimikos_BelosPrec_ParameterList.xml
       stratimikos_HalfBelosPrec_ParameterList.xml
       stratimikos_GMRES_IR_ParameterList.xml
-    EXEDEPS test_tpetra_belos 
+    EXEDEPS test_tpetra_belos
   )
 
 ENDIF()
@@ -353,4 +353,3 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapter
    )
 
 ENDIF ()
-
