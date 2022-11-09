@@ -313,7 +313,7 @@ namespace Intrepid2 {
           { {-0.5}, {0.5} }
         };
 
-        Basis_HGRAD_LINE_C1_FEM<DeviceType> lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceType> lineB;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankViewHost ConstructWithLabel(lineNodesHost, 4, 1);
@@ -326,14 +326,14 @@ namespace Intrepid2 {
         Kokkos::deep_copy(lineNodes, lineNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
-        const ordinal_type numFields = lineBasis.getCardinality();
+        const ordinal_type numFields = lineB.getCardinality();
         const ordinal_type numPoints = lineNodes.extent(0);
-        const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+        const ordinal_type spaceDim = lineB.getBaseCellTopology().getDimension();
 
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
+          lineB.getValues(vals, lineNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (ordinal_type i=0;i<numFields;++i)
@@ -360,7 +360,7 @@ namespace Intrepid2 {
                                     OPERATOR_MAX };
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
-            lineBasis.getValues(vals, lineNodes, op);
+            lineB.getValues(vals, lineNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
@@ -395,7 +395,7 @@ namespace Intrepid2 {
             const auto op = ops[h];
             const auto DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
-            lineBasis.getValues(vals, lineNodes, op);
+            lineB.getValues(vals, lineNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (ordinal_type i1=0;i1<numFields;++i1)

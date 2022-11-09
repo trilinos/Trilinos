@@ -492,9 +492,9 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HGRAD_QUAD_C1_FEM<DeviceType> quadBasis;
-        const ordinal_type numFields = quadBasis.getCardinality();
-        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+        Basis_HGRAD_QUAD_C1_FEM<DeviceType> quadB;
+        const ordinal_type numFields = quadB.getCardinality();
+        const ordinal_type spaceDim = quadB.getBaseCellTopology().getDimension();
 
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -522,8 +522,8 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
 
         // Check mathematical correctness.
-        quadBasis.getDofCoords(cvals);
-        quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+        quadB.getDofCoords(cvals);
+        quadB.getValues(bvals, cvals, OPERATOR_VALUE);
 
         auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
         Kokkos::deep_copy(bvals_host, bvals);
