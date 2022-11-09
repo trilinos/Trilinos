@@ -263,8 +263,6 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   using vals_type = typename CrsMatrixType::nonconst_values_host_view_type;
 
   Teuchos::OSTab tab (Teuchos::rcpFromRef (out));
-  int localEqual = 1;
-
   //
   // Are my local matrices equal?
   //
@@ -272,6 +270,9 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   vals_type valOrig, val;
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
+
+  bool localEntriesMismatch = false;
+  bool localIndicesMismatch = false;
 
   ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
@@ -281,7 +282,7 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
     numEntries = A.getNumEntriesInGlobalRow (globalRow);
 
     if (numEntriesOrig != numEntries) {
-      localEqual = 0;
+      localEntriesMismatch = true;
       break;
     }
     Kokkos::resize(indOrig,numEntriesOrig);
@@ -299,13 +300,15 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
     for (size_t k = 0; k < numEntries; ++k) {
       // Values should be _exactly_ equal.
       if (indOrig[k] != ind[k] || valOrig[k] != val[k]) {
-        localEqual = 0;
+        localIndicesMismatch = true;
         break;
       }
     }
   }
 
+  const int localEqual = !(localEntriesMismatch || localIndicesMismatch);
   RCP<const Comm<int> > comm = A.getRowMap ()->getComm ();
+
   int globalEqual = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, 1, &localEqual, &globalEqual);
   return globalEqual == 1;
@@ -516,8 +519,6 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   typedef NodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
-  bool result = true; // current Boolean result; reused below
-  bool success = true;
 
   out << "Test: Operator Matrix Market I/O, w/ Map with index base "
       << indexBase << endl;
@@ -561,7 +562,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
     reader_type::readSparse (readInMatrixFile, rowMap, colMap,
                              domainMap, rangeMap,
                              callFillComplete, tolerant, debug);
-  result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2, out);
+  bool result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2, out);
   bool local_success = true;
   TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   if (! result) { // see if ignoring zero values helps
@@ -569,9 +570,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
     local_success = true;
     TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   }
-  success = success && local_success;
-
-  return success;
+  return local_success;
 }
 
 } // namespace (anonymous)
