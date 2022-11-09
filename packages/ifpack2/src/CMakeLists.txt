@@ -229,6 +229,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Container
     BandedContainer
     DenseContainer
+    DatabaseSchwarz
     Diagonal
     DiagonalFilter
     DropFilter

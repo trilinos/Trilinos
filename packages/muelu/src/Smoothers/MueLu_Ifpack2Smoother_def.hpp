@@ -307,9 +307,12 @@ namespace MueLu {
       SetupGeneric(currentLevel);
     }
 
+    std::cout << "MueLu: prec set!" << std::endl;
     SmootherPrototype::IsSetup(true);
+    std::cout << "MueLu: prec is setup!" << std::endl;
 
-    this->GetOStream(Statistics1) << description() << std::endl;
+    //this->GetOStream(Statistics1) << description() << std::endl;
+    std::cout << "MueLu: prec setup done!" << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -420,9 +423,11 @@ namespace MueLu {
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
       SetPrecParameters();
 
+      std::cout << "MueLu: schwarz prec initialize" << std::endl;
       prec_->initialize();
     }
 
+    std::cout << "MueLu: schwarz prec compute" << std::endl;
     prec_->compute();
   }
 
@@ -690,9 +695,11 @@ namespace MueLu {
 
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
       SetPrecParameters();
+      std::cout << "MueLu: prec initialize" << std::endl;
       prec_->initialize();
     }
 
+    std::cout << "MueLu: prec compute" << std::endl;
     prec_->compute();
   }
 
@@ -952,9 +959,11 @@ namespace MueLu {
     if (!reusePreconditioner) {
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
       SetPrecParameters();
+      std::cout << "MueLu: generic prec initialize" << std::endl;
       prec_->initialize();
     }
 
+    std::cout << "MueLu: generic prec compute" << std::endl;
     prec_->compute();
   }
 

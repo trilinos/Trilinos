@@ -28,7 +28,7 @@
       <Parameter name="order_method"                    type="string"  value="rcm"/>
     </ParameterList>
 
-    <Parameter name="subdomain solver name"             type="string" value="BLOCK_RELAXATION"/>
+    <Parameter name="subdomain solver name"             type="string" value="DATABASE SCHWARZ"/>
     <ParameterList name="subdomain solver parameters">
       <Parameter name= "relaxation: type"                type="string" value="Jacobi"/>
       <Parameter name= "relaxation: sweeps"                type="int" value="1"/>

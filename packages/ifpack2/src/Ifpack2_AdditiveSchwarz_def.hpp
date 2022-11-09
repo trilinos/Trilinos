@@ -654,7 +654,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
     MV ReducedReorderedY (additiveSchwarzFilter->getRowMap(), numVectors);
     additiveSchwarzFilter->CreateReducedProblem(OverlappingB, OverlappingY, ReducedReorderedB);
     //Apply inner solver
+    std::cout << "Calling filtered Schwarz inner prec..." << std::endl;
     Inverse_->solve (ReducedReorderedY, ReducedReorderedB);
+    std::cout << "Solve done!" << std::endl;
     //Scatter ReducedY back to non-singleton rows of OverlappingY, according to the reordering.
     additiveSchwarzFilter->UpdateLHS(ReducedReorderedY, OverlappingY);
   }
@@ -678,7 +680,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
 
       // process reordering
       if (! UseReordering_) {
+        std::cout << "Solving inner prec without reorder..." << std::endl;
         Inverse_->solve (ReducedY, ReducedB);
+        std::cout << "Solve done!" << std::endl;
       }
       else {
         RCP<ReorderFilter<row_matrix_type> > rf =
@@ -691,7 +695,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
         MV ReorderedB (ReducedB, Teuchos::Copy);
         MV ReorderedY (ReducedY, Teuchos::Copy);
         rf->permuteOriginalToReordered (ReducedB, ReorderedB);
+        std::cout << "Solving inner prec reordered..." << std::endl;
         Inverse_->solve (ReorderedY, ReorderedB);
+        std::cout << "Solve done!" << std::endl;
         rf->permuteReorderedToOriginal (ReorderedY, ReducedY);
       }
 
@@ -701,7 +707,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
     else {
       // process reordering
       if (! UseReordering_) {
+        std::cout << "Solving inner prec without reorder..." << std::endl;
         Inverse_->solve (OverlappingY, OverlappingB);
+        std::cout << "Solve done!" << std::endl;
       }
       else {
         MV ReorderedB (OverlappingB, Teuchos::Copy);
@@ -715,7 +723,9 @@ localApply (MV& OverlappingB, MV& OverlappingY) const
            "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
            "never happen.  Please report this bug to the Ifpack2 developers.");
         rf->permuteOriginalToReordered (OverlappingB, ReorderedB);
+        std::cout << "Solving inner prec reordered..." << std::endl;
         Inverse_->solve (ReorderedY, ReorderedB);
+        std::cout << "Solve done!" << std::endl;
         rf->permuteReorderedToOriginal (ReorderedY, OverlappingY);
       }
     }
@@ -919,6 +929,7 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
       if (result.second) {
         // FIXME (mfh 26 Aug 2015) Rewrite innerPrecParams() so this
         // isn't another deep copy.
+        std::cout << "Setting inner prec params..." << std::endl;
         Inverse_->setParameters (rcp (new ParameterList (result.first)));
       }
     }
@@ -1045,6 +1056,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     setup (); // This does a lot of the initialization work.
 
     if (! Inverse_.is_null ()) {
+      std::cout << "Calling inner prec symbolic..." << std::endl;
       Inverse_->symbolic (); // Initialize subdomain solver.
     }
 
@@ -1119,7 +1131,9 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   { // Start timing here.
 
     IsComputed_ = false;
+    std::cout << "Calling inner prec numeric..." << std::endl;
     Inverse_->numeric ();
+    std::cout << "Finished numeric!" << std::endl;
   } // Stop timing here.
 
   IsComputed_ = true;
@@ -1606,6 +1620,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       Ifpack2::Details::registerLinearSolverFactory ();
     }
 
+    std::cout << "Building inner prec..." << std::endl;
     // FIXME (mfh 26 Aug 2015) Provide the capability to get inner
     // solvers from packages other than Ifpack2.
     typedef typename MV::mag_type MT;
@@ -1616,22 +1631,26 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
       "with name \"" << innerName << "\".");
     innerPrec->setMatrix (innerMatrix_);
-
+    std::cout << "Matrix is set!" << std::endl;
     // Extract and apply the sublist of parameters to give to the
     // inner solver, if there is such a sublist of parameters.
     std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+    std::cout << "Getting inner prec params..." << std::endl;
     if (result.second) {
       // FIXME (mfh 26 Aug 2015) We don't really want to use yet
       // another deep copy of the ParameterList here.
       innerPrec->setParameters (rcp (new ParameterList (result.first)));
+      std::cout << "Inner prec params set!" << std::endl;
     }
     Inverse_ = innerPrec; // "Commit" the inner solver.
+    std::cout << "Inner prec committed!" << std::endl;
   }
   else if (Inverse_->getMatrix ().getRawPtr () != innerMatrix_.getRawPtr ()) {
     // The new inner matrix is different from the inner
     // preconditioner's current matrix, so give the inner
     // preconditioner the new inner matrix.
     Inverse_->setMatrix (innerMatrix_);
+    std::cout << "Inner prec matrix set!" << std::endl;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
     Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
@@ -1643,6 +1662,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   // preconditioner.  Calling setInnerPreconditioner here would be
   // legal, but it would require an unnecessary reset of the inner
   // preconditioner (i.e., calling initialize() and compute() again).
+  std::cout << "Schwarz setup done!" << std::endl;
 }
 
 
