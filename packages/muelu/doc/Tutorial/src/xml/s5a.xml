@@ -41,7 +41,7 @@
       <Parameter name="A"                              type="string" value="myRAPFact"/>
       <Parameter name="repartition: min rows per proc"      type="int"    value="2000"/>
       <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
-      <Parameter name="repartition: start level"            type="int"    value="1"/>    
+      <Parameter name="repartition: start level"            type="int"    value="1"/>
     </ParameterList>
     
     <ParameterList name="myIsorropiaInterface">

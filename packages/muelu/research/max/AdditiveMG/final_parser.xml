@@ -54,7 +54,7 @@
 	      <Parameter name= "fact: relax value"                type="double" value="0."/>
 	    </ParameterList>
 	  </ParameterList>
-	   <!-- 
+	   <!--
 	   <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
 	   -->
 	  <!-- ===========  REPARTITIONING  =========== -->
