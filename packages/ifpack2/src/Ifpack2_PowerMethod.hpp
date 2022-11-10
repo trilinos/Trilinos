@@ -235,6 +235,7 @@ powerMethodWithInitGuess(const OperatorType& A,
   } else {
     // In this route, the update is as follows:
     // y=A*x, y = Dinv*y, lambda = x->dot(y), x = y/lambda
+    ST xDinvAx = norm;
     if(verbose) {
       *out << "  PowerMethod using largest eigenvalue route" << endl;
     }
@@ -246,16 +247,16 @@ powerMethodWithInitGuess(const OperatorType& A,
       y->elementWiseMultiply(STS::one(), D_inv, *y, STS::zero());
 
       if(((iter+1) % eigNormalizationFreq == 0) && (iter < numIters-2)) {
-        norm = x->dot(*y);
-        if(norm == zero) { // Return something reasonable.
+        xDinvAx = x->dot(*y);
+        if(xDinvAx == zero) { // Return something reasonable.
           if(verbose) {
-            *out << "   norm is zero; returning zero" << endl;
+            *out << "   xDinvAx is zero; returning zero" << endl;
             *out << "   Power method terminated after "<< iter << " iterations." << endl;
           }
           return zero;
         } else {
           lambdaMaxOld = lambdaMax;
-          lambdaMax = pow(norm, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
+          lambdaMax = pow(xDinvAx, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
           if(Teuchos::ScalarTraits<ST>::magnitude(lambdaMax-lambdaMaxOld) < tolerance * Teuchos::ScalarTraits<ST>::magnitude(lambdaMax)) {
             if(verbose) {
               *out << "  lambdaMax: " << lambdaMax << endl;
