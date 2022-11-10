@@ -383,8 +383,7 @@ namespace Intrepid2 {
                 //create basis
                 // for virtual function, value and point types are declared in the class
                 typedef ValueType outputValueType;
-                typedef ValueType pointValueType;
-                
+
                 Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> basis;
                 //Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
                 //  Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM<double,FieldContainer<double> >() );
