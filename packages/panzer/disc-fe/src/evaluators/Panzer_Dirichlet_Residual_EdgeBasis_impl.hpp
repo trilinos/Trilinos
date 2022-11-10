@@ -165,6 +165,7 @@ evaluateFields(
     auto value_h = Kokkos::create_mirror_view(value.get_static_view());
     Kokkos::deep_copy(dof_h, dof.get_static_view());
     Kokkos::deep_copy(value_h, value.get_static_view());
+    auto worksetJacobians_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),worksetJacobians);
     switch (subcellDim) {
     case 1: {  // 2D element Tri and Quad
       if (intrepid_basis->getDofCount(1, subcellOrd)) {
@@ -186,7 +187,7 @@ evaluateFields(
 
           for (int i=0;i<ndofsEdge;++i) {
             const int b = intrepid_basis->getDofOrdinal(1, subcellOrd, i);
-            auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
+            auto J = Kokkos::subview(worksetJacobians_h, c, b, Kokkos::ALL(), Kokkos::ALL());
             Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
             
             for(int d=0;d<cellDim;d++) {
@@ -223,7 +224,7 @@ evaluateFields(
                 edgeOrts[edgeOrd]);
 
             {
-              auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
+              auto J = Kokkos::subview(worksetJacobians_h, c, b, Kokkos::ALL(), Kokkos::ALL());
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
               
               for(int d=0;d<dof.extent_int(2);d++) {
@@ -251,7 +252,7 @@ evaluateFields(
               faceOrts[subcellOrd]);
 
           for(int b=0;b<dof.extent_int(1);b++) {
-            auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
+            auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanU, J, ortFaceTanU);
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanV, J, ortFaceTanV);
             

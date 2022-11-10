@@ -35,6 +35,7 @@
 #ifndef stk_util_parallel_ManagedBufferBase_hpp
 #define stk_util_parallel_ManagedBufferBase_hpp
 
+#include <stddef.h>
 #include <vector>
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 #include "stk_util/parallel/CommBuffer.hpp"
@@ -166,6 +167,8 @@ class ManagedCommBufferBase
     void clear_send_bufs();
 
     void clear_recv_bufs();
+
+    void deallocate_send_bufs();
 
   protected:
 

@@ -1998,7 +1998,7 @@
                 //std::cout << "createField vector: " << name << std::endl;
                 VectorIntFieldType & vfield =  m_metaData->declare_field<int>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
-                stk::io::set_field_output_type(vfield, "Vector_3D");
+                stk::io::set_field_output_type(vfield, stk::io::FieldOutputType::VECTOR_3D);
                 field = &vfield;
               }
               break;
@@ -2031,7 +2031,7 @@
                 //std::cout << "createField vector: " << name << std::endl;
                 CoordinatesFieldType & vfield =  m_metaData->declare_field<double>(static_cast<stk::topology::rank_t>(entity_rank), name);
                 stk::mesh::put_field_on_mesh( vfield , *part, dimensions[0] , nullptr);
-                stk::io::set_field_output_type(vfield, "Vector_3D");
+                stk::io::set_field_output_type(vfield, stk::io::FieldOutputType::VECTOR_3D);
                 field = &vfield;
               }
               break;
@@ -5974,7 +5974,7 @@
           m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
           if (!m_weights_field)
             {
-              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
               stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }

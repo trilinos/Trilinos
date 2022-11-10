@@ -165,6 +165,9 @@ public:
   void use_nonconformal_element_size(bool flag) { my_flag_use_nonconformal_element_size = flag; }
   bool use_nonconformal_element_size() const { return my_flag_use_nonconformal_element_size; }
 
+  void set_use_facets_instead_of_levelset_fields(bool flag) { myFlagUseFacetsInsteadOfLsFields = flag; }
+  bool use_facets_instead_of_levelset_fields() const { return myFlagUseFacetsInsteadOfLsFields; }
+
   void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
   bool do_nearby_refinement_before_interface_refinement() const { return myFlagDoNearbyRefinementBeforeInterfaceRefinement; }
 
@@ -245,6 +248,7 @@ private:
   bool my_flag_use_hierarchical_dofs;
   bool my_flag_constrain_CDFEM_to_XFEM_space;
   bool my_flag_use_nonconformal_element_size;
+  bool myFlagUseFacetsInsteadOfLsFields{false};
   bool myFlagDoNearbyRefinementBeforeInterfaceRefinement;
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
   mutable stk::diag::Timer my_timer_cdfem;

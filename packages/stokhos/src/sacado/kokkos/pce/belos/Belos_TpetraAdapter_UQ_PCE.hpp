@@ -373,7 +373,12 @@ namespace Belos {
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), numRowsB*numColsB);
       b_view_type B_view_dev( B_1d_view_dev.data(), numRowsB, numColsB);
-      Kokkos::deep_copy(B_view_dev, B_view_host);
+      //Kokkos::deep_copy(B_view_dev, B_view_host);
+      // Device-to-host copies requires dest to be contiguous, which
+      // C_view_host may not be.  So do 1 column at a time.
+      for (int j=0; j<numColsB; ++j)
+        Kokkos::deep_copy(Kokkos::subview(B_view_dev,Kokkos::ALL,j),
+                          Kokkos::subview(B_view_host,Kokkos::ALL,j));
 
       // Do local multiply
       {
@@ -498,17 +503,24 @@ namespace Belos {
       }
       // reduce across processors -- could check for RDMA
       RCP<const Comm<int> > pcomm = A.getMap()->getComm ();
-      if (pcomm->getSize () == 1)
-        Kokkos::deep_copy(C_view_host, C_view_dev);
+      if (pcomm->getSize () == 1) {
+        //Kokkos::deep_copy(C_view_host, C_view_dev);
+        // Device-to-host copies requires dest to be contiguous, which
+        // C_view_host may not be.  So do 1 column at a time.
+        for (int j=0; j<numColsC; ++j)
+          Kokkos::deep_copy(Kokkos::subview(C_view_host,Kokkos::ALL,j),
+                            Kokkos::subview(C_view_dev,Kokkos::ALL,j));
+      }
       else {
         typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
         c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
                                      strideC, numColsC);
-        Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
-                                          Kokkos::pair<int,int>(0, numRowsC),
-                                          Kokkos::pair<int,int>(0, numColsC)),
-                          C_view_dev);
+        for (int j=0; j<numColsC; ++j)
+          Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
+                                            Kokkos::pair<int,int>(0, numRowsC),
+                                            j),
+                            Kokkos::subview(C_view_dev, Kokkos::ALL, j));
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
                         C_view_tmp.data(),
                         C_view_host.data());

@@ -210,6 +210,11 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
+IF ("${SOURCES}" STREQUAL "")
+  # always include at least one file in the adapters library.
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  APPEND_GLOB(SOURCES ${DIR}/muelu-trivial-adapter.cpp)
+ENDIF()
 TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}

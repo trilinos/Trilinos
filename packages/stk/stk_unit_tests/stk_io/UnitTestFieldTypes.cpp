@@ -852,6 +852,36 @@ struct FieldConfig
   std::string outputStorageName {};
 };
 
+stk::io::FieldOutputType
+get_field_output_type_from_storage(const std::string & storageType)
+{
+  if (storageType == scalar)              return stk::io::FieldOutputType::SCALAR;
+  else if (storageType == vector_2d)      return stk::io::FieldOutputType::VECTOR_2D;
+  else if (storageType == vector_3d)      return stk::io::FieldOutputType::VECTOR_3D;
+  else if (storageType == full_tensor_36) return stk::io::FieldOutputType::FULL_TENSOR_36; 
+  else if (storageType == full_tensor_32) return stk::io::FieldOutputType::FULL_TENSOR_32; 
+  else if (storageType == full_tensor_22) return stk::io::FieldOutputType::FULL_TENSOR_22; 
+  else if (storageType == full_tensor_16) return stk::io::FieldOutputType::FULL_TENSOR_16; 
+  else if (storageType == full_tensor_12) return stk::io::FieldOutputType::FULL_TENSOR_12; 
+  else if (storageType == sym_tensor_33)  return stk::io::FieldOutputType::SYM_TENSOR_33;
+  else if (storageType == sym_tensor_31)  return stk::io::FieldOutputType::SYM_TENSOR_31;
+  else if (storageType == sym_tensor_21)  return stk::io::FieldOutputType::SYM_TENSOR_21;
+  else if (storageType == sym_tensor_13)  return stk::io::FieldOutputType::SYM_TENSOR_13;
+  else if (storageType == sym_tensor_11)  return stk::io::FieldOutputType::SYM_TENSOR_11;
+  else if (storageType == sym_tensor_10)  return stk::io::FieldOutputType::SYM_TENSOR_10;
+  else if (storageType == asym_tensor_03) return stk::io::FieldOutputType::ASYM_TENSOR_03; 
+  else if (storageType == asym_tensor_02) return stk::io::FieldOutputType::ASYM_TENSOR_02; 
+  else if (storageType == asym_tensor_01) return stk::io::FieldOutputType::ASYM_TENSOR_01; 
+  else if (storageType == matrix_22)      return stk::io::FieldOutputType::MATRIX_22;
+  else if (storageType == matrix_33)      return stk::io::FieldOutputType::MATRIX_33;
+  else if (storageType == quaternion_2d)  return stk::io::FieldOutputType::QUATERNION_2D;
+  else if (storageType == quaternion_3d)  return stk::io::FieldOutputType::QUATERNION_3D;
+  else {
+    ThrowErrorMsg("Invalid storage type: " << storageType);
+    return stk::io::FieldOutputType::SCALAR;  // Quiet down compiler
+  }
+}
+
 template <typename T>
 stk::mesh::FieldBase & create_stk_field(stk::mesh::MetaData & meta, const FieldConfig & fieldConfig)
 {
@@ -862,14 +892,28 @@ stk::mesh::FieldBase & create_stk_field(stk::mesh::MetaData & meta, const FieldC
   stk::mesh::put_field_on_mesh(field, meta.universal_part(), fieldConfig.firstDimension, fieldConfig.numCopies, nullptr);
 
   if (fieldConfig.storageName != unspecified) {
-    stk::io::set_field_output_type(field, fieldConfig.storageName);
+    stk::io::set_field_output_type(field, get_field_output_type_from_storage(fieldConfig.storageName));
   }
 
   return field;
 }
 
+template <typename T>
+stk::mesh::FieldBase & create_custom_stk_field(stk::mesh::MetaData & meta, const FieldConfig & fieldConfig)
+{
+  Ioss::Init::Initializer::initialize_ioss();
+  const int numStates = 1;
+  stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
+  stk::mesh::FieldBase& field = meta.declare_field<T>(rank, fieldConfig.fieldName, numStates);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), fieldConfig.firstDimension, fieldConfig.numCopies, nullptr);
+
+  stk::io::set_named_suffix_field_output_type(field, fieldConfig.storageName);
+
+  return field;
+}
+
 void test_output_field(const stk::mesh::MetaData & meta, stk::mesh::FieldBase & field, const FieldConfig & fieldConfig,
-                   Ioss::Field::BasicType expectedDataType, const std::vector<std::string> & expectedComponentNames)
+                       Ioss::Field::BasicType expectedDataType, const std::vector<std::string> & expectedComponentNames)
 {
   const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(field, field.entity_rank(), meta.universal_part());
   EXPECT_EQ(int(fieldConfig.firstDimension), res.dimension());
@@ -936,6 +980,19 @@ void create_and_test_output_field(const FieldConfig & fieldConfig,
   meta.use_simple_fields();
 
   stk::mesh::FieldBase & field = create_stk_field<T>(meta, fieldConfig);
+  test_output_field(meta, field, fieldConfig, expectedDataType, expectedComponentNames);
+}
+
+template <typename T>
+void create_and_test_custom_output_field(const FieldConfig & fieldConfig,
+                                         Ioss::Field::BasicType expectedDataType,
+                                         const std::vector<std::string> & expectedComponentNames)
+{
+  const int spatialDimension = 3;
+  stk::mesh::MetaData meta(spatialDimension);
+  meta.use_simple_fields();
+
+  stk::mesh::FieldBase & field = create_custom_stk_field<T>(meta, fieldConfig);
   test_output_field(meta, field, fieldConfig, expectedDataType, expectedComponentNames);
 }
 
@@ -1434,8 +1491,8 @@ TEST(StkIoFieldType, outputFieldType_Custom)
   FieldConfig fieldConfig {"f", "alphabet", 3, 1};
   std::vector<std::string> expectedComponentNames {"f_A", "f_B", "f_C"};
 
-  create_and_test_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
-  create_and_test_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
+  create_and_test_custom_output_field<int>(fieldConfig, Ioss::Field::INTEGER, expectedComponentNames);
+  create_and_test_custom_output_field<double>(fieldConfig, Ioss::Field::DOUBLE, expectedComponentNames);
 }
 
 

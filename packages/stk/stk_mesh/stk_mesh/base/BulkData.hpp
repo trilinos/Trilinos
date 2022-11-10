@@ -944,20 +944,18 @@ protected: //functions
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
   void ghost_entities_and_fields(Ghosting & ghosting,
-                                 const std::set<EntityProc , EntityLess>& new_send,
+                                 const EntityProcVec& new_send,
                                  bool isFullRegen = false,
                                  const std::vector<EntityProc>& removedSendGhosts = std::vector<EntityProc>());
 
-  void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting,
-                                                stk::mesh::Entity entity,
+  void conditionally_add_entity_to_ghosting_set(const Ghosting &ghosting,
+                                                Entity entity,
                                                 int toProc,
-                                                std::set <stk::mesh::EntityProc,
-                                                stk::mesh::EntityLess > &entitiesWithClosure);
+                                                EntityProcVec& entitiesWithClosure);
 
-  void add_closure_entities(const stk::mesh::Ghosting& ghosting,
-                            const stk::mesh::EntityProcVec& entities,
-                            std::set <stk::mesh::EntityProc,
-                            stk::mesh::EntityLess > &entitiesWithClosure);
+  void add_closure_entities(const Ghosting& ghosting,
+                            const EntityProcVec& entities,
+                            EntityProcVec& entitiesWithClosure);
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
@@ -1496,14 +1494,12 @@ private:
 
   bool verify_parallel_attributes( std::ostream & error_log );
 
-  void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData,
-                                         stk::mesh::Entity edge,
+  void determineEntitiesThatNeedGhosting(stk::mesh::Entity edge,
                                          std::vector<stk::mesh::Entity>& entitiesConnectedToNodes,
                                          const stk::mesh::Entity* nodes,
-                                         std::set<EntityProc, EntityLess> &addGhostedEntities);
+                                         EntityProcVec& addGhostedEntities);
 
-  void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
-                                                                     std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
+  void find_upward_connected_entities_to_ghost_onto_other_processors(EntityProcVec& entitiesToGhostOntoOtherProcessors,
                                                                      EntityRank entity_rank,
                                                                      stk::mesh::Selector selected,
                                                                      bool connectFacesToPreexistingGhosts);

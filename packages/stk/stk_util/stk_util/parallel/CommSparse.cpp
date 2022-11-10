@@ -338,7 +338,7 @@ void CommSparse::verify_send_buffers_filled()
 #endif
 }
 
-void CommSparse::communicate()
+void CommSparse::communicate(bool deallocateSendBuffers)
 {
 #ifdef STK_HAS_MPI
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
@@ -354,6 +354,12 @@ void CommSparse::communicate()
 
     if ( 1 < m_size ) {
       communicate_any( m_comm , m_send , m_recv, m_send_procs, m_recv_procs );
+    }
+  }
+
+  if (deallocateSendBuffers) {
+    if (m_exchanger) {
+      m_exchanger->deallocate_send_bufs();
     }
   }
 #endif

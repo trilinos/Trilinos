@@ -433,8 +433,7 @@ struct StoreInEntityProcMapping {
 };
 
 struct StoreInEntityProcSet {
-    StoreInEntityProcSet(
-            BulkData & mesh_in,
+    StoreInEntityProcSet(const BulkData & mesh_in,
             std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
     :mesh(mesh_in)
     ,myset(set_in)
@@ -449,8 +448,29 @@ struct StoreInEntityProcSet {
       return false;
     }
 
-    BulkData & mesh;
+    const BulkData & mesh;
     std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
+    int proc;
+    std::vector<int> alreadyGhostedToProc;
+};
+
+struct StoreInEntityProcVec {
+    StoreInEntityProcVec(const BulkData & mesh_in, EntityProcVec& vec_in)
+    :mesh(mesh_in)
+    ,myvec(vec_in)
+    ,alreadyGhostedToProc(mesh_in.get_size_of_entity_index_space(), -1) { }
+
+    bool operator()(Entity entity) {
+      if (proc != alreadyGhostedToProc[entity.local_offset()]) {
+        alreadyGhostedToProc[entity.local_offset()] = proc;
+        myvec.push_back(EntityProc(entity,proc));
+        return true;
+      }
+      return false;
+    }
+
+    const BulkData & mesh;
+    EntityProcVec& myvec;
     int proc;
     std::vector<int> alreadyGhostedToProc;
 };
@@ -470,32 +490,16 @@ struct OnlyGhosts  {
     int proc;
 };
 
-struct OnlyGhostsEPM  {
-  OnlyGhostsEPM(BulkData & mesh_in, const EntityProcMapping& entityShr)
-  : mesh(mesh_in), entitySharing(entityShr) {}
-  bool operator()(Entity entity) {
-    if (proc != mesh.parallel_owner_rank(entity)) {
-      const bool isSharedWithProc = entitySharing.find(entity, proc);
-      return !isSharedWithProc;
-    }
-    return false;
-  }
-  BulkData & mesh;
-  const EntityProcMapping& entitySharing;
-  int proc;
-};
-
 struct NotAlreadyShared  {
-    NotAlreadyShared(BulkData & mesh_in, const EntityProcMapping& entityShr)
-    : mesh(mesh_in), entitySharing(entityShr) {}
+    NotAlreadyShared(BulkData & mesh_in)
+    : mesh(mesh_in) {}
     bool operator()(Entity entity) {
       if (proc != mesh.parallel_owner_rank(entity)) {
-        return !entitySharing.find(entity,proc);
+        return !mesh.in_shared(entity,proc);
       }
       return false;
     }
     BulkData & mesh;
-    const EntityProcMapping& entitySharing;
     int proc;
 };
 

@@ -42,6 +42,7 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternBlocking.hpp"  // for DataExchangeUnknownPatternBlocking
 #include "stk_util/parallel/CommBuffer.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
+#include <stddef.h>
 #include <cstddef>                          // for size_t, ptrdiff_t
 #include <map>                              // for map
 #include <stdexcept>                        // for runtime_error
@@ -57,6 +58,7 @@ public:
   ParallelMachine parallel()      const { return m_comm ; }
   int             parallel_size() const { return m_size ; }
   int             parallel_rank() const { return m_rank ; }
+  int             root_rank() const { return m_root_rank; }
 
   /** Obtain the message buffer for the root_rank processor */
   CommBuffer & send_buffer();
@@ -87,6 +89,17 @@ private:
   CommBuffer      m_buffer ;
 };
 
+template<typename PACK_ALGORITHM>
+bool pack_and_communicate(CommBroadcast & comm, const PACK_ALGORITHM & algorithm)
+{
+  algorithm();
+  comm.allocate_buffer();
+  algorithm();
+  comm.communicate();
+
+  return (comm.parallel_rank() == comm.root_rank() && comm.send_buffer().capacity() > 0)
+      || (comm.parallel_rank() != comm.root_rank() && comm.recv_buffer().capacity() > 0);
+}
 
 std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
 

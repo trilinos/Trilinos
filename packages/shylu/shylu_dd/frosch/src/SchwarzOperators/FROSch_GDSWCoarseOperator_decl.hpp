@@ -110,7 +110,6 @@ namespace FROSch {
         virtual int initialize()
         {
             FROSCH_ASSERT(false,"GDSWCoarseOperator cannot be built without a repeated Map");
-            return 0;
         };
 
         int initialize(UN dimension,

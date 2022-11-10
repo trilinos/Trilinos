@@ -56,14 +56,13 @@ AuraGhostingDownwardConnectivity::~AuraGhostingDownwardConnectivity()
 
 void AuraGhostingDownwardConnectivity::generate_aura(BulkData& bulkData)
 {
-  EntityProcMapping entitySharing(bulkData.get_size_of_entity_index_space());
   EntityProcMapping sendAuraEntityProcs(bulkData.get_size_of_entity_index_space());
   const MetaData& meta = bulkData.mesh_meta_data();
 
   std::vector<int> sharingProcs;
   for(EntityRank rank : {stk::topology::ELEM_RANK, stk::topology::CONSTRAINT_RANK}) {
     impl::for_each_selected_entity_run_no_threads(bulkData, rank, meta.locally_owned_part(),
-      [&entitySharing, &sendAuraEntityProcs, &sharingProcs](const BulkData& bulk, const MeshIndex& meshIndex) {
+      [&sendAuraEntityProcs, &sharingProcs](const BulkData& bulk, const MeshIndex& meshIndex) {
         Entity entity = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
         for(EntityRank lowerRank : {stk::topology::NODE_RANK, stk::topology::EDGE_RANK, stk::topology::FACE_RANK}) {
           const unsigned numConn = bulk.num_connectivity(entity, lowerRank);
@@ -74,7 +73,6 @@ void AuraGhostingDownwardConnectivity::generate_aura(BulkData& bulkData)
               bulk.comm_shared_procs(conn[i], sharingProcs);
 
               for(int p : sharingProcs) {
-                entitySharing.addEntityProc(conn[i], p);
                 sendAuraEntityProcs.addEntityProc(entity, p);
               }
             }
@@ -84,7 +82,7 @@ void AuraGhostingDownwardConnectivity::generate_aura(BulkData& bulkData)
     );
   }
 
-  change_ghosting(bulkData, sendAuraEntityProcs, entitySharing);
+  change_ghosting(bulkData, sendAuraEntityProcs);
 }
 
 }}} // end namepsace stk mesh impl

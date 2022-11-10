@@ -169,6 +169,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
   numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 
+  batchTimer.initialize_batch_timer();
+
   setup_mesh_with_many_blocks_many_elements_in_one_block();
 
   stk::mesh::PartVector addParts;
@@ -176,7 +178,6 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
   stk::mesh::EntityVector elements;
   get_bulk().get_entities(stk::topology::ELEM_RANK, stk::mesh::Selector(*block1PartVector[0]), elements);
 
-  batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     for(unsigned i = 0; i < NUM_ITERS; i++) {

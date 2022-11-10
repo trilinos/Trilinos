@@ -91,7 +91,8 @@
 // Use "scalar" version of mean-based preconditioner (i.e., a preconditioner
 // with double as the scalar type).  This is currently necessary to get the
 // MueLu tests to pass on OpenMP and Cuda due to various kernels that don't
-// work with the PCE scalar type.
+// work with the PCE scalar type.  Also required for RILUK test on Cuda
+// without UVM (since factorization occurs on the host).
 #define USE_SCALAR_MEAN_BASED_PREC 1
 
 template <typename scalar, typename ordinal>
@@ -1038,13 +1039,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill vector
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    for (LocalOrdinal j=0; j<pce_size; ++j)
-      val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
-        nrow, pce_size, row, j);
-    x_view[i] = val;
+  {
+    ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      for (LocalOrdinal j=0; j<pce_size; ++j)
+        val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
+          nrow, pce_size, row, j);
+      x_view[i] = val;
+    }
   }
 
   // Multiply
@@ -1076,28 +1079,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Multiply with flattened matix
   RCP<Tpetra_Vector> y2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_y =
-    Stokhos::create_flat_vector_view(*y2, flat_y_map);
-  flat_matrix->apply(*flat_x, *flat_y);
+  {
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_y =
+      Stokhos::create_flat_vector_view(*y2, flat_y_map);
+    flat_matrix->apply(*flat_x, *flat_y);
 
-  /*
-  cijk_graph->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-                       Teuchos::VERB_EXTREME);
+    /*
+    cijk_graph->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                         Teuchos::VERB_EXTREME);
 
-  flat_graph->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-                       Teuchos::VERB_EXTREME);
+    flat_graph->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                         Teuchos::VERB_EXTREME);
 
-  flat_matrix->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-                        Teuchos::VERB_EXTREME);
+    flat_matrix->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                          Teuchos::VERB_EXTREME);
 
-  flat_x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-                   Teuchos::VERB_EXTREME);
+    flat_x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                     Teuchos::VERB_EXTREME);
 
-  flat_y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-                   Teuchos::VERB_EXTREME);
-  */
+    flat_y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                     Teuchos::VERB_EXTREME);
+    */
+  }
 
   // Check
   BaseScalar tol = 1.0e-14;
@@ -1206,18 +1211,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  Scalar b_val(cijk);
-  for (LocalOrdinal j=0; j<pce_size; ++j) {
-    b_val.fastAccessCoeff(j) =
-      BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
-  }
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1)
-      b_view[i] = Scalar(0.0);
-    else
-      b_view[i] = b_val * (h*h);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    Scalar b_val(cijk);
+    for (LocalOrdinal j=0; j<pce_size; ++j) {
+      b_val.fastAccessCoeff(j) =
+        BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
+    }
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      if (row == 0 || row == nrow-1)
+        b_view[i] = Scalar(0.0);
+      else
+        b_view[i] = b_val * (h*h);
+    }
   }
 
   // b->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
@@ -1249,13 +1256,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  bool solved_flat = Stokhos::CG_Solve(*flat_matrix, *flat_x, *flat_b,
-                                       tol, max_its, out.getOStream().get());
-  TEST_EQUALITY_CONST( solved_flat, true );
+  {
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    bool solved_flat = Stokhos::CG_Solve(*flat_matrix, *flat_x, *flat_b,
+                                         tol, max_its, out.getOStream().get());
+    TEST_EQUALITY_CONST( solved_flat, true );
+  }
 
   btol = 500*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
@@ -1377,45 +1386,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  Scalar b_val(cijk);
-  for (LocalOrdinal j=0; j<pce_size; ++j) {
-    b_val.fastAccessCoeff(j) =
-      BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
-  }
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1)
-      b_view[i] = Scalar(0.0);
-    else
-      b_view[i] = b_val * (h*h);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    Scalar b_val(cijk);
+    for (LocalOrdinal j=0; j<pce_size; ++j) {
+      b_val.fastAccessCoeff(j) =
+        BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
+    }
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      if (row == 0 || row == nrow-1)
+        b_view[i] = Scalar(0.0);
+      else
+        b_view[i] = b_val * (h*h);
+    }
   }
 
-  // Create preconditioner
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  RCP<ParameterList> muelu_params =
-    getParametersFromXmlFile("muelu_cheby.xml");
-#if USE_SCALAR_MEAN_BASED_PREC
-  typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_OP;
-  typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_Tpetra_CrsMatrix;
-  RCP<Scalar_Tpetra_CrsMatrix> mean_matrix =
-    Stokhos::build_mean_scalar_matrix(*matrix);
-  RCP<Scalar_OP> mean_matrix_op = mean_matrix;
-  RCP<Scalar_OP> M_s =
-    MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
-  RCP<OP> M = rcp(new Stokhos::MeanBasedTpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M_s));
-#else
-  Cijk mean_cijk =
-    Stokhos::create_mean_based_product_tensor<typename Storage::execution_space,typename Storage::ordinal_type,BaseScalar>();
-  Kokkos::setGlobalCijkTensor(mean_cijk);
-  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
-  RCP<OP> mean_matrix_op = mean_matrix;
-  RCP<OP> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
-  Kokkos::setGlobalCijkTensor(cijk);
-#endif
-
-  // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
   typedef typename BST::mag_type base_mag_type;
@@ -1423,36 +1409,65 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   base_mag_type btol = 1e-9;
   mag_type tol = btol;
   int max_its = 1000;
-  bool solved = Stokhos::PCG_Solve(*matrix, *x, *b, *M, tol, max_its,
+  {
+    // Create preconditioner
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+    RCP<ParameterList> muelu_params =
+      getParametersFromXmlFile("muelu_cheby.xml");
+#if USE_SCALAR_MEAN_BASED_PREC
+    typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_OP;
+    typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_Tpetra_CrsMatrix;
+    RCP<Scalar_Tpetra_CrsMatrix> mean_matrix =
+      Stokhos::build_mean_scalar_matrix(*matrix);
+    RCP<Scalar_OP> mean_matrix_op = mean_matrix;
+    RCP<Scalar_OP> M_s =
+      MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
+    RCP<OP> M = rcp(new Stokhos::MeanBasedTpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M_s));
+#else
+    Cijk mean_cijk =
+      Stokhos::create_mean_based_product_tensor<typename Storage::execution_space,typename Storage::ordinal_type,BaseScalar>();
+    Kokkos::setGlobalCijkTensor(mean_cijk);
+    RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
+    RCP<OP> mean_matrix_op = mean_matrix;
+    RCP<OP> M =
+      MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
+    Kokkos::setGlobalCijkTensor(cijk);
+#endif
+
+    // Solve
+    bool solved = Stokhos::PCG_Solve(*matrix, *x, *b, *M, tol, max_its,
                                    out.getOStream().get());
-  TEST_EQUALITY_CONST( solved, true );
+    TEST_EQUALITY_CONST( solved, true );
+  }
 
   // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
   //             Teuchos::VERB_EXTREME);
 
   // Check by solving flattened system
-   typedef Tpetra::Vector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_Vector;
-  typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
-  RCP<const Tpetra_Map> flat_x_map, flat_b_map;
-  RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
-  flat_graph =
-    Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph, pce_size);
-  RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
-    Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  // typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatPrec;
-  // RCP<FlatPrec> flat_M =
-  //   MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(flat_matrix, *muelu_params);
-  // bool solved_flat = Stokhos::PCG_Solve(*flat_matrix, *flat_x, *flat_b, *flat_M,
-  //                                      tol, max_its, out.getOStream().get());
-  bool solved_flat = Stokhos::CG_Solve(*flat_matrix, *flat_x, *flat_b,
-                                       tol, max_its, out.getOStream().get());
-  TEST_EQUALITY_CONST( solved_flat, true );
+  {
+    typedef Tpetra::Vector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_Vector;
+    typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
+    RCP<const Tpetra_Map> flat_x_map, flat_b_map;
+    RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
+    flat_graph =
+      Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
+                                     cijk_graph, pce_size);
+    RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
+      Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    // typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatPrec;
+    // RCP<FlatPrec> flat_M =
+    //   MueLu::CreateTpetraPreconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node>(flat_matrix, *muelu_params);
+    // bool solved_flat = Stokhos::PCG_Solve(*flat_matrix, *flat_x, *flat_b, *flat_M,
+    //                                      tol, max_its, out.getOStream().get());
+    bool solved_flat = Stokhos::CG_Solve(*flat_matrix, *flat_x, *flat_b,
+                                         tol, max_its, out.getOStream().get());
+    TEST_EQUALITY_CONST( solved_flat, true );
+  }
 
   btol = 500*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
@@ -1565,9 +1580,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  for (size_t i=0; i<num_my_row; ++i) {
-    b_view[i] = Scalar(1.0);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    for (size_t i=0; i<num_my_row; ++i) {
+      b_view[i] = Scalar(1.0);
+    }
   }
 
   // Solve
@@ -1608,21 +1625,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
-  typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
-  RCP< FBLinProb > flat_problem =
-    rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
-  RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
-    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
+  {
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
+    typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
+    typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
+    RCP< FBLinProb > flat_problem =
+      rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
+    RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
                                                                belosParams));
-  flat_problem->setProblem();
-  Belos::ReturnType flat_ret = flat_solver->solve();
-  TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+    flat_problem->setProblem();
+    Belos::ReturnType flat_ret = flat_solver->solve();
+    TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+  }
 
   typename ST::magnitudeType btol = 100*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
@@ -1736,75 +1755,91 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
-  // Create mean matrix for preconditioning
-  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
-
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  for (size_t i=0; i<num_my_row; ++i) {
-    b_view[i] = Scalar(1.0);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    for (size_t i=0; i<num_my_row; ++i) {
+      b_view[i] = Scalar(1.0);
+    }
   }
 
-  // Create preconditioner
-  typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
-  Ifpack2::Factory factory;
-  RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", mean_matrix);
-  M->initialize();
-  M->compute();
-
-  // Solve
-  typedef Teuchos::ScalarTraits<BaseScalar> ST;
-  typedef BaseScalar BelosScalar;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
-  problem->setRightPrec(M);
-  problem->setProblem();
   RCP<ParameterList> belosParams = rcp(new ParameterList);
+  typedef BaseScalar BelosScalar;
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
   typename ST::magnitudeType tol = 1e-9;
-  belosParams->set("Flexible Gmres", false);
-  belosParams->set("Num Blocks", 100);
-  belosParams->set("Convergence Tolerance", BelosScalar(tol));
-  belosParams->set("Maximum Iterations", 100);
-  belosParams->set("Verbosity", 33);
-  belosParams->set("Output Style", 1);
-  belosParams->set("Output Frequency", 1);
-  belosParams->set("Output Stream", out.getOStream());
-  //belosParams->set("Orthogonalization", "TSQR");
-  RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
-    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
-  Belos::ReturnType ret = solver->solve();
-  TEST_EQUALITY_CONST( ret, Belos::Converged );
+  {
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+    typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
+
+#if USE_SCALAR_MEAN_BASED_PREC
+    typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_Tpetra_CrsMatrix;
+    RCP<Scalar_Tpetra_CrsMatrix> mean_matrix =
+      Stokhos::build_mean_scalar_matrix(*matrix);
+    typedef Ifpack2::Preconditioner<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Scalar_Prec;
+    Ifpack2::Factory factory;
+    RCP<Scalar_Prec> M_s = factory.create<Scalar_Tpetra_CrsMatrix>("RILUK", mean_matrix);
+    M_s->initialize();
+    M_s->compute();
+    RCP<OP> M = rcp(new Stokhos::MeanBasedTpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M_s));
+#else
+    RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
+    typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
+    Ifpack2::Factory factory;
+    RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", mean_matrix);
+    M->initialize();
+    M->compute();
+#endif
+
+    // Solve
+    RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
+    problem->setRightPrec(M);
+    problem->setProblem();
+    belosParams->set("Flexible Gmres", false);
+    belosParams->set("Num Blocks", 100);
+    belosParams->set("Convergence Tolerance", BelosScalar(tol));
+    belosParams->set("Maximum Iterations", 100);
+    belosParams->set("Verbosity", 33);
+    belosParams->set("Output Style", 1);
+    belosParams->set("Output Frequency", 1);
+    belosParams->set("Output Stream", out.getOStream());
+    //belosParams->set("Orthogonalization", "TSQR");
+    RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+    Belos::ReturnType ret = solver->solve();
+    TEST_EQUALITY_CONST( ret, Belos::Converged );
+  }
 
   // Check by solving flattened system
-  typedef Tpetra::Vector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_Vector;
-  typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
-  RCP<const Tpetra_Map> flat_x_map, flat_b_map;
-  RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
-  flat_graph =
-    Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph, pce_size);
-  RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
-    Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
-  typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
-  RCP< FBLinProb > flat_problem =
-    rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
-  RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
-    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
-                                                               belosParams));
-  flat_problem->setProblem();
-  Belos::ReturnType flat_ret = flat_solver->solve();
-  TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+  {
+    typedef Tpetra::Vector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_Vector;
+    typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
+    RCP<const Tpetra_Map> flat_x_map, flat_b_map;
+    RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
+    flat_graph =
+      Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
+                                     cijk_graph, pce_size);
+    RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
+      Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
+    typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
+    typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
+    RCP< FBLinProb > flat_problem =
+      rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
+    RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
+                                                                 belosParams));
+    flat_problem->setProblem();
+    Belos::ReturnType flat_ret = flat_solver->solve();
+    TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+  }
 
   typename ST::magnitudeType btol = 100*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
@@ -1933,18 +1968,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  Scalar b_val(cijk);
-  for (LocalOrdinal j=0; j<pce_size; ++j) {
-    b_val.fastAccessCoeff(j) =
-      BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
-  }
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1)
-      b_view[i] = Scalar(0.0);
-    else
-      b_view[i] = b_val * (h*h);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    Scalar b_val(cijk);
+    for (LocalOrdinal j=0; j<pce_size; ++j) {
+      b_val.fastAccessCoeff(j) =
+        BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
+    }
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      if (row == 0 || row == nrow-1)
+        b_view[i] = Scalar(0.0);
+      else
+        b_view[i] = b_val * (h*h);
+    }
   }
 
   // Create preconditioner
@@ -2011,24 +2048,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
-  typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
-  RCP< FBLinProb > flat_problem =
-    rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
-  RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
-    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
-                                                               belosParams));
-  // RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
-  //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,FMV,FOP>(flat_problem,
-  //                                                           belosParams));
-  flat_problem->setProblem();
-  Belos::ReturnType flat_ret = flat_solver->solve();
-  TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+  {
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
+    typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
+    typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
+    RCP< FBLinProb > flat_problem =
+      rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
+    RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
+                                                                 belosParams));
+    // RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
+    //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,FMV,FOP>(flat_problem,
+    //                                                           belosParams));
+    flat_problem->setProblem();
+    Belos::ReturnType flat_ret = flat_solver->solve();
+    TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
+  }
 
   typename ST::magnitudeType btol = 100*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
@@ -2154,18 +2193,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
-  Scalar b_val(cijk);
-  for (LocalOrdinal j=0; j<pce_size; ++j) {
-    b_val.fastAccessCoeff(j) =
-      BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
-  }
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1)
-      b_view[i] = Scalar(0.0);
-    else
-      b_view[i] = b_val * (h*h);
+  {
+    ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+    Scalar b_val(cijk);
+    for (LocalOrdinal j=0; j<pce_size; ++j) {
+      b_val.fastAccessCoeff(j) =
+        BaseScalar(2.0) - BaseScalar(1.0) / BaseScalar(j+1);
+    }
+    for (size_t i=0; i<num_my_row; ++i) {
+      const GlobalOrdinal row = myGIDs[i];
+      if (row == 0 || row == nrow-1)
+        b_view[i] = Scalar(0.0);
+      else
+        b_view[i] = b_val * (h*h);
+    }
   }
 
   // Solve
@@ -2194,10 +2235,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   return;
 #endif
   out << "Solving linear system with " << solver_name << std::endl;
-  RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(
-    solver_name, matrix, x, b);
-  solver->solve();
-
+  {
+    RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(
+      solver_name, matrix, x, b);
+    solver->solve();
+  }
   // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
   //             Teuchos::VERB_EXTREME);
 
@@ -2213,15 +2255,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
-  RCP<Flat_Tpetra_Vector> flat_x =
-    Stokhos::create_flat_vector_view(*x2, flat_x_map);
-  RCP<Flat_Tpetra_Vector> flat_b =
-    Stokhos::create_flat_vector_view(*b, flat_b_map);
-  typedef Amesos2::Solver<Flat_Tpetra_CrsMatrix,Flat_Tpetra_MultiVector> Flat_Solver;
-  RCP<Flat_Solver> flat_solver =
-    Amesos2::create<Flat_Tpetra_CrsMatrix,Flat_Tpetra_MultiVector>(
-      solver_name, flat_matrix, flat_x, flat_b);
-  flat_solver->solve();
+  {
+    RCP<Flat_Tpetra_Vector> flat_x =
+      Stokhos::create_flat_vector_view(*x2, flat_x_map);
+    RCP<Flat_Tpetra_Vector> flat_b =
+      Stokhos::create_flat_vector_view(*b, flat_b_map);
+    typedef Amesos2::Solver<Flat_Tpetra_CrsMatrix,Flat_Tpetra_MultiVector> Flat_Solver;
+    RCP<Flat_Solver> flat_solver =
+      Amesos2::create<Flat_Tpetra_CrsMatrix,Flat_Tpetra_MultiVector>(
+        solver_name, flat_matrix, flat_x, flat_b);
+    flat_solver->solve();
+  }
 
   typedef Kokkos::Details::ArithTraits<BaseScalar> ST;
   typename ST::mag_type btol = 1e-12;

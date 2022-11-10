@@ -64,7 +64,7 @@ TEST(ElementGraph, heterogeneous_mesh)
       stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
           meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
       stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3, nullptr);
-      stk::io::set_field_output_type(node_coord, "Vector_3D");
+      stk::io::set_field_output_type(node_coord, stk::io::FieldOutputType::VECTOR_3D);
 
       stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta_data , node_coord );
       meta_data.commit();

@@ -31,6 +31,16 @@ void ManagedCommBufferBase::clear_recv_bufs()
   }
 }
 
+void ManagedCommBufferBase::deallocate_send_bufs()
+{
+  for (size_t i=0; i < m_sendBufs.size(); ++i) {
+    get_send_buf(i).reset();
+    std::vector<unsigned char> tmp;
+    m_sendBufStorage[i].swap(tmp);
+  }
+  m_sendBuffersAllocated = false;
+}
+
 void ManagedCommBufferBase::set_recv_buffer_storage()
 {
   for (size_t i=0; i < m_recvBufs.size(); ++i) {

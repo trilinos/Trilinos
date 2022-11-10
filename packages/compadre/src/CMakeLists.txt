@@ -29,20 +29,16 @@ target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOU
 target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/constraints>)
 target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tpl>)
 
-# openmp if needed
-if (Compadre_USE_OPENMP)
-  find_package(OpenMP QUIET)
-  if(OpenMP_CXX_FOUND)
-      target_link_libraries(compadre PUBLIC OpenMP::OpenMP_CXX)
-  endif()
-endif()
-
 # link to Kokkos
 if (KOKKOS_EXISTING_ELSEWHERE) # user points to Kokkos installation
   target_link_libraries(compadre PUBLIC Kokkos::kokkoscore)
 elseif (KOKKOS_IN_TRILINOS) # Kokkos found in Trilinos installation
   target_include_directories(compadre PUBLIC ${Trilinos_INCLUDE_DIRS})
-  target_link_libraries(compadre PUBLIC kokkoscore)
+  if(Trilinos_VERSION VERSION_LESS "13.5")
+    target_link_libraries(compadre PUBLIC kokkoscore)
+  else()
+    target_link_libraries(compadre PUBLIC KokkosCore::all_libs)
+  endif()
 elseif (KOKKOS_BUILT_FOR_USER) # Kokkos built for user by this project
   target_link_libraries(compadre PUBLIC Kokkos::kokkoscore)
 endif()
@@ -50,7 +46,11 @@ endif()
 if (KOKKOSKERNELS_EXISTING_ELSEWHERE) # user points to KokkosKernels installation
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 elseif (KOKKOSKERNELS_IN_TRILINOS) # KokkosKernels found in Trilinos installation
-  target_link_libraries(compadre PUBLIC kokkoskernels)
+  if(Trilinos_VERSION VERSION_LESS "13.5")
+    target_link_libraries(compadre PUBLIC kokkoskernels)
+  else()
+    target_link_libraries(compadre PUBLIC KokkosKernels::all_libs)
+  endif()
 elseif (KOKKOSKERNELS_BUILT_FOR_USER) # Kokkos-Kernels built for user by this project
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 endif()

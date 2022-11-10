@@ -115,7 +115,7 @@ namespace Sacado {
 }
 */
 
-#define MP_UNARYOP_MACRO(OPNAME,OP,OPER)                                \
+#define MP_UNARYOP_MACRO(OPNAME,OP,OPER,USING_OP)                       \
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
@@ -150,22 +150,26 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
+        USING_OP                                                        \
         return OPER(expr.val());                                        \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type coeff(int i) const {                                   \
+        USING_OP                                                        \
         return OPER(expr.coeff(i));                                     \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type fastAccessCoeff(int i) const {                         \
+        USING_OP                                                        \
         return OPER(expr.fastAccessCoeff(i));                           \
       }                                                                 \
                                                                         \
       template <int i>                                                  \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type getCoeff() const {                                     \
+        USING_OP                                                        \
         return OPER(expr.template getCoeff<i>());                       \
       }                                                                 \
                                                                         \
@@ -216,28 +220,28 @@ namespace Sacado {                                                      \
   };                                                                    \
 }
 
-MP_UNARYOP_MACRO(operator+, UnaryPlusOp, +)
-MP_UNARYOP_MACRO(operator-, UnaryMinusOp, -)
-MP_UNARYOP_MACRO(exp, ExpOp, std::exp)
-MP_UNARYOP_MACRO(log, LogOp, std::log)
-MP_UNARYOP_MACRO(log10, Log10Op, std::log10)
-MP_UNARYOP_MACRO(sqrt, SqrtOp, std::sqrt)
-MP_UNARYOP_MACRO(cbrt, CbrtOp, std::cbrt)
-MP_UNARYOP_MACRO(cos, CosOp, std::cos)
-MP_UNARYOP_MACRO(sin, SinOp, std::sin)
-MP_UNARYOP_MACRO(tan, TanOp, std::tan)
-MP_UNARYOP_MACRO(acos, ACosOp, std::acos)
-MP_UNARYOP_MACRO(asin, ASinOp, std::asin)
-MP_UNARYOP_MACRO(atan, ATanOp, std::atan)
-MP_UNARYOP_MACRO(cosh, CoshOp, std::cosh)
-MP_UNARYOP_MACRO(sinh, SinhOp, std::sinh)
-MP_UNARYOP_MACRO(tanh, TanhOp, std::tanh)
-MP_UNARYOP_MACRO(acosh, ACoshOp, std::acosh)
-MP_UNARYOP_MACRO(asinh, ASinhOp, std::asinh)
-MP_UNARYOP_MACRO(atanh, ATanhOp, std::atanh)
-MP_UNARYOP_MACRO(abs, AbsOp, std::abs)
-MP_UNARYOP_MACRO(fabs, FAbsOp, std::fabs)
-MP_UNARYOP_MACRO(ceil, CeilOp, std::ceil)
+MP_UNARYOP_MACRO(operator+, UnaryPlusOp , +    , )
+MP_UNARYOP_MACRO(operator-, UnaryMinusOp, -    , )
+MP_UNARYOP_MACRO(exp      , ExpOp       , exp  , using std::exp;)
+MP_UNARYOP_MACRO(log      , LogOp       , log  , using std::log;)
+MP_UNARYOP_MACRO(log10    , Log10Op     , log10, using std::log10;)
+MP_UNARYOP_MACRO(sqrt     , SqrtOp      , sqrt , using std::sqrt;)
+MP_UNARYOP_MACRO(cbrt     , CbrtOp      , cbrt , using std::cbrt;)
+MP_UNARYOP_MACRO(cos      , CosOp       , cos  , using std::cos;)
+MP_UNARYOP_MACRO(sin      , SinOp       , sin  , using std::sin;)
+MP_UNARYOP_MACRO(tan      , TanOp       , tan  , using std::tan;)
+MP_UNARYOP_MACRO(acos     , ACosOp      , acos , using std::acos;)
+MP_UNARYOP_MACRO(asin     , ASinOp      , asin , using std::asin;)
+MP_UNARYOP_MACRO(atan     , ATanOp      , atan , using std::atan;)
+MP_UNARYOP_MACRO(cosh     , CoshOp      , cosh , using std::cosh;)
+MP_UNARYOP_MACRO(sinh     , SinhOp      , sinh , using std::sinh;)
+MP_UNARYOP_MACRO(tanh     , TanhOp      , tanh , using std::tanh;)
+MP_UNARYOP_MACRO(acosh    , ACoshOp     , acosh, using std::acosh;)
+MP_UNARYOP_MACRO(asinh    , ASinhOp     , asinh, using std::asinh;)
+MP_UNARYOP_MACRO(atanh    , ATanhOp     , atanh, using std::atanh;)
+MP_UNARYOP_MACRO(abs      , AbsOp       , abs  , using std::abs;)
+MP_UNARYOP_MACRO(fabs     , FAbsOp      , fabs , using std::fabs;)
+MP_UNARYOP_MACRO(ceil     , CeilOp      , ceil , using std::ceil;)
 
 #undef MP_UNARYOP_MACRO
 
@@ -559,7 +563,7 @@ MP_BINARYOP_MACRO(operator/, DivisionOp, /)
 
 #undef MP_BINARYOP_MACRO
 
-#define MP_BINARYOP_MACRO(OPNAME,OP,OPER)                               \
+#define MP_BINARYOP_MACRO(OPNAME,OP,OPER,USING_OP)                      \
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
@@ -600,22 +604,26 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
+        USING_OP                                                        \
         return OPER(expr1.val(), expr2.val());                          \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type coeff(int i) const {                                   \
+        USING_OP                                                        \
         return OPER(expr1.coeff(i), expr2.coeff(i));                    \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type fastAccessCoeff(int i) const {                         \
+        USING_OP                                                        \
         return OPER(expr1.fastAccessCoeff(i), expr2.fastAccessCoeff(i)); \
       }                                                                 \
                                                                         \
       template <int i>                                                  \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type getCoeff() const {                                     \
+        USING_OP                                                        \
         return OPER(expr1.template getCoeff<i>(),                       \
                     expr2.template getCoeff<i>());                      \
       }                                                                 \
@@ -658,22 +666,26 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
+        USING_OP                                                        \
         return OPER(expr1.val(), c);                                    \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type coeff(int i) const {                                   \
+        USING_OP                                                        \
         return OPER(expr1.coeff(i), c);                                 \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type fastAccessCoeff(int i) const {                         \
+        USING_OP                                                        \
         return OPER(expr1.fastAccessCoeff(i), c);                       \
       }                                                                 \
                                                                         \
       template <int i>                                                  \
         KOKKOS_INLINE_FUNCTION                                          \
       value_type getCoeff() const {                                     \
+        USING_OP                                                        \
         return OPER(expr1.template getCoeff<i>(), c);                   \
       }                                                                 \
                                                                         \
@@ -714,22 +726,26 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
+        USING_OP                                                        \
         return OPER(c, expr2.val());                                    \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type coeff(int i) const {                                   \
+        USING_OP                                                        \
         return OPER(c, expr2.coeff(i));                                 \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type fastAccessCoeff(int i) const {                         \
+        USING_OP                                                        \
         return OPER(c, expr2.fastAccessCoeff(i));                       \
       }                                                                 \
                                                                         \
       template <int i>                                                  \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type getCoeff() const {                                     \
+        USING_OP                                                        \
         return OPER(c, expr2.template getCoeff<i>());                   \
       }                                                                 \
                                                                         \
@@ -796,14 +812,14 @@ namespace Sacado {                                                      \
   };                                                                    \
 }
 
-MP_BINARYOP_MACRO(atan2, Atan2Op, std::atan2)
-MP_BINARYOP_MACRO(pow, PowerOp, std::pow)
+MP_BINARYOP_MACRO(atan2, Atan2Op, atan2, using std::atan2;)
+MP_BINARYOP_MACRO(pow  , PowerOp, pow  , using std::pow;  )
 #ifdef __CUDACC__
-MP_BINARYOP_MACRO(max, MaxOp, ::max)
-MP_BINARYOP_MACRO(min, MinOp, ::min)
+MP_BINARYOP_MACRO(max, MaxOp, ::max, using std::max;)
+MP_BINARYOP_MACRO(min, MinOp, ::min, using std::min;)
 #else
-MP_BINARYOP_MACRO(max, MaxOp, std::max)
-MP_BINARYOP_MACRO(min, MinOp, std::min)
+MP_BINARYOP_MACRO(max, MaxOp, max, using std::max;)
+MP_BINARYOP_MACRO(min, MinOp, min, using std::min;)
 #endif
 
 #undef MP_BINARYOP_MACRO

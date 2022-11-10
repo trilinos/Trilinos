@@ -454,8 +454,6 @@ namespace FROSch {
 
         // Throw the error
         FROSCH_ASSERT(false, errMsg.str());
-
-        return;
     }
 }
 

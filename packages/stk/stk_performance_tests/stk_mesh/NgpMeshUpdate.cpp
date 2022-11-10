@@ -49,15 +49,16 @@ class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fi
 public:
   NgpMeshChangeElementPartMembership()
     : stk::unit_test_util::simple_fields::MeshFixture(),
-      newPartName("block2"),
-      numElements(1000000)
+      newPartName("block2")
   { }
 
   void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
 #ifdef NDEBUG
-    setup_mesh("generated:400x250x10", auraOption);
+    numElements = 750000;
+    setup_mesh("generated:300x250x10", auraOption);
 #else
+    numElements = 10000;
     setup_mesh("generated:10x10x100", auraOption);
 #endif
     get_meta().declare_part(newPartName);
@@ -131,11 +132,6 @@ class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
 public:
   NgpMeshGhosting()
     : stk::unit_test_util::simple_fields::MeshFixture(),
-#ifdef NDEBUG
-      numElements(1000000),
-#else
-      numElements(10000),
-#endif
       ghostingName("testGhosting")
   { }
 
@@ -143,8 +139,10 @@ protected:
   void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
 #ifdef NDEBUG
+    numElements = 1000000;
     setup_mesh("generated:400x250x10", auraOption);
 #else
+    numElements = 10000;
     setup_mesh("generated:10x10x100", auraOption);
 #endif
     get_bulk().modification_begin();

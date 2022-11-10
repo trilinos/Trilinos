@@ -408,7 +408,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doImport (forward mode)";
+    const char modeString[] = "beginImport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -439,7 +439,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doExport (forward mode)";
+    const char modeString[] = "beginExport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -470,7 +470,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doImport (reverse mode)";
+    const char modeString[] = "beginImport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -501,7 +501,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doExport (reverse mode)";
+    const char modeString[] = "beginExport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -532,7 +532,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doImport (forward mode)";
+    const char modeString[] = "endImport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -563,7 +563,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doExport (forward mode)";
+    const char modeString[] = "endExport (forward mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -594,7 +594,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doImport (reverse mode)";
+    const char modeString[] = "endImport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -625,7 +625,7 @@ namespace Tpetra {
   {
     using Details::Behavior;
     using std::endl;
-    const char modeString[] = "doExport (reverse mode)";
+    const char modeString[] = "endExport (reverse mode)";
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
@@ -905,7 +905,7 @@ namespace Tpetra {
        "cannot have permutes in restricted mode.");
 
     // Do we need all communication buffers to live on host?
-    const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
+    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "doTransfer: Use new interface; "
@@ -1260,7 +1260,7 @@ namespace Tpetra {
        "cannot have permutes in restricted mode.");
 
     // Do we need all communication buffers to live on host?
-    const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
+    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "doTransfer: Use new interface; "
@@ -1332,7 +1332,7 @@ namespace Tpetra {
 
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "8. unpackAndCombine" << endl;
+          os << *prefix << "8. unpackAndCombine - remoteLIDs " << remoteLIDs.extent(0) << ", constantNumPackets " << constantNumPackets << endl;
           std::cerr << os.str ();
         }
         doUnpackAndCombine(remoteLIDs, constantNumPackets, CM);
@@ -1422,11 +1422,12 @@ namespace Tpetra {
             << endl;
           std::cerr << os.str ();
         }
+
         distributorActor_.doPostsAndWaits(distributorPlan, numExp_d, 1, numImp_d);
 
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Count totalImportPackets" << std::endl;
+          os << *prefix << "Count totalImportPackets" << std::endl; 
           std::cerr << os.str ();
         }
         using the_dev_type = typename decltype (numImp_d)::device_type;

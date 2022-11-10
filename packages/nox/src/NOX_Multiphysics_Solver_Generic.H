@@ -127,14 +127,16 @@ public:
     const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
     const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
-  //! reset methods inherited from NOX::Solver::Generic and needed here to avoid hiding this overloaded virtual method
+  //! reset methods inherited from NOX::Solver::Generic are needed here to avoid hiding this overloaded virtual method
+
+  virtual void reset() = 0;
 
   virtual void
   reset(const NOX::Abstract::Vector& initialGuess) = 0;
 
   virtual void
   reset(const NOX::Abstract::Vector& initialGuess,
-    const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
+        const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
 
 };
 } // namespace Solver

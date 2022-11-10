@@ -321,16 +321,15 @@ namespace MueLu {
 
     (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
+    // Generic data saving (this saves the data on all levels)
+    if(paramList.isParameter("save data")) 
+      this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
+
     // Save level data
     if (paramList.isSublist("export data")) {
       ParameterList printList = paramList.sublist("export data");
 
-      if (printList.isParameter("A"))
-        this->matricesToPrint_     = Teuchos::getArrayFromStringParameter<int>(printList, "A");
-      if (printList.isParameter("P"))
-        this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "P");
-      if (printList.isParameter("R"))
-        this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
+      // Vectors, aggregates and other things that need special handling
       if (printList.isParameter("Nullspace"))
         this->nullspaceToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
       if (printList.isParameter("Coordinates"))
@@ -339,9 +338,17 @@ namespace MueLu {
         this->aggregatesToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Aggregates");
       if (printList.isParameter("pcoarsen: element to node map"))
         this->elementToNodeMapsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "pcoarsen: element to node map");
+
+      // If we asked for an arbitrary matrix to be printed, we do that here
+      for(auto iter = printList.begin(); iter != printList.end(); iter++) {
+        const std::string & name = printList.name(iter);
+        // Ignore the special cases
+        if(name == "Nullspace" || name == "Coordinates" || name == "Aggregates" || name == "pcoarsen: element to node map")
+          continue;
+
+        this->matricesToPrint_[name] = Teuchos::getArrayFromStringParameter<int>(printList, name);
+      }
     }
-    if(paramList.isParameter("save data"))
-      this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
 
     // Set verbosity parameter
     VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
@@ -2380,13 +2387,13 @@ namespace MueLu {
         ParameterList foo = hieraList.sublist("DataToWrite");
         std::string dataName = "Matrices";
         if (foo.isParameter(dataName))
-          this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["A"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
         dataName = "Prolongators";
         if (foo.isParameter(dataName))
-          this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["P"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
         dataName = "Restrictors";
         if (foo.isParameter(dataName))
-          this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+          this->matricesToPrint_["R"] = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
       }
 
       // Get level configuration

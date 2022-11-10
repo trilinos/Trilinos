@@ -69,8 +69,8 @@ TEUCHOS_UNIT_TEST(Behavior, Default)
   // Can't test against default since these behaviors may be 
   // changed by environment variables (in which case, test against
   // default fails)
-  std::cout << "\n        Cuda-aware MPI?  " 
-            << Tpetra::Details::Behavior::assumeMpiIsCudaAware()
+  std::cout << "\n        GPU-aware MPI?  " 
+            << Tpetra::Details::Behavior::assumeMpiIsGPUAware()
             << "\n";
 
   std::cout << "\n        Tpetra Debug?  "

@@ -65,7 +65,11 @@ public:
   void update_timing()
   {
     cumulativeTime += stk::wall_dtime(iterationStartTime);
-    size_t currentGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator) - iterationStartGpuUsage;
+    size_t currentGpuUsage = 0;
+    size_t GpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+    if (GpuUsage > iterationStartGpuUsage) {
+      currentGpuUsage = GpuUsage - iterationStartGpuUsage;
+    }
     size_t currentHwm = stk::get_max_hwm_across_procs(communicator) - iterationStartHwm;
     meshOperationHwm = std::max(meshOperationHwm, currentHwm + currentGpuUsage);
   }
@@ -101,8 +105,11 @@ public:
 
   void initialize_batch_timer()
   {
+    equilibrate_memory_baseline();
+
     batchBaselineHwm = stk::get_max_hwm_across_procs(communicator);
     batchBaselineGpuUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+
   }
 
   void start_batch_timer()
@@ -117,7 +124,11 @@ public:
     double batchTimeAll = stk::get_global_sum(communicator, batchTime);
     minBatchTime = std::min(minBatchTime, batchTimeAll);
 
-    size_t batchGpuMemUsage = stk::get_max_gpu_mem_used_across_procs(communicator) - batchBaselineGpuUsage;
+    size_t batchGpuMemUsage = 0;
+    size_t batchGpuCurrentMemUsage = stk::get_max_gpu_mem_used_across_procs(communicator);
+    if (batchGpuCurrentMemUsage > batchBaselineGpuUsage) {
+      batchGpuMemUsage = batchGpuCurrentMemUsage - batchBaselineGpuUsage;
+    }
     size_t batchCpuMemUsage = stk::get_max_hwm_across_procs(communicator) - batchBaselineHwm;
     size_t batchHwm = batchGpuMemUsage + batchCpuMemUsage;
     maxBatchHwm = std::max(maxBatchHwm, batchHwm); 
@@ -132,12 +143,24 @@ public:
   double get_min_batch_time() { return minBatchTime; }
 
 private:
+
+  void equilibrate_memory_baseline()
+  {
+    //raise baseline memory usage to hwm to ensure test memory is accurately measured
+    size_t now, hwm;
+    stk::get_memory_usage(now, hwm);
+    if (now < hwm) {
+      batchBaselineMemBuffer.resize((hwm - now)/sizeof(double));
+    }
+  }
+
   MPI_Comm communicator;
   double batchStartTime;
   double minBatchTime;
   size_t batchBaselineHwm;
   size_t batchBaselineGpuUsage;
   size_t maxBatchHwm;
+  std::vector<double> batchBaselineMemBuffer;
 };
 
 }}

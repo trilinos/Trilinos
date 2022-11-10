@@ -41,6 +41,7 @@
 #include <Akri_MeshDiagnostics.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_SnapToNode.hpp>
@@ -376,7 +377,7 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 
   {
     const ScaledJacobianQualityMetric qualityMetric;
-    krinolog << "After cutting quality is " << determine_quality(mesh, the_new_mesh->get_active_part(), qualityMetric) << stk::diag::dendl;
+    krinolog << "After cutting quality is " << compute_mesh_quality(mesh, the_new_mesh->get_active_part(), qualityMetric) << stk::diag::dendl;
   }
 
 
@@ -389,13 +390,6 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 
   const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
   return status;
-}
-
-static void rebuild_mesh_sidesets(stk::mesh::BulkData & mesh)
-{
-  for (auto && part : mesh.mesh_meta_data().get_parts())
-    if (part->primary_entity_rank() == mesh.mesh_meta_data().side_rank())
-      stk::mesh::reconstruct_sideset(mesh, *part);
 }
 
 bool
@@ -417,10 +411,9 @@ CDMesh::modify_mesh()
   if (modificationIsNeeded)
   {
     stk::mesh::toggle_sideset_updaters(stk_bulk(), false);
-
     stk_bulk().modification_begin();
     create_node_entities();
-    std::vector<SideRequest> side_requests;
+    std::vector<SideDescription> side_requests;
     create_element_and_side_entities(side_requests);
     destroy_custom_ghostings(stk_bulk());
     delete_mesh_entities(stk_bulk(), unused_old_child_elems);
@@ -648,8 +641,6 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   the_new_mesh->stk_bulk().modification_end();
 
   delete_extraneous_inactive_sides(mesh, the_new_mesh->get_parent_part(), the_new_mesh->get_active_part());
-
-  rebuild_mesh_sidesets(mesh);
 
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
@@ -2400,7 +2391,7 @@ void
 CDMesh::attach_existing_and_identify_missing_subelement_sides(
     const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems,
-    std::vector<SideRequest> & side_requests)
+    std::vector<SideDescription> & side_requests)
 {
   stk::mesh::BulkData & stk_mesh = stk_bulk();
   const bool build_internal_sides = my_cdfem_support.use_internal_face_stabilization();
@@ -2445,8 +2436,7 @@ CDMesh::attach_existing_and_identify_missing_subelement_sides(
       else
       {
         ThrowRequire(sides.size() == 1);
-        stk::mesh::Entity elem_side_entity = sides[0];
-        attach_entity_to_elements(stk_bulk(), elem_side_entity);
+        attach_entity_to_element(stk_bulk(), stk_meta().side_rank(), sides[0], subelem->entity());
       }
     }
   }
@@ -2540,7 +2530,7 @@ bool have_multiple_conformal_volume_parts_in_common(const stk::mesh::BulkData & 
 }
 
 void
-CDMesh::add_possible_interface_sides(std::vector<SideRequest> & sideRequests) const
+CDMesh::add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const
 {
   // This will add sides that *might be* interface sides.
   // Because this probes the nodes, it will add "keyhole" sides that aren't actually on an interface
@@ -2865,7 +2855,7 @@ CDMesh::element_side_should_be_active(const stk::mesh::Entity side) const
   return active;
 }
 void
-CDMesh::handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideRequest> & side_requests)
+CDMesh::handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests)
 {
   stk::mesh::Entity elem_entity = elem.entity();
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "single coincident subelement for elem #" << stk_bulk().identifier(elem_entity) << " with phase " << subelem->get_phase() << stk::diag::dendl;
@@ -3155,6 +3145,8 @@ double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)
 
   const stk::mesh::Selector interfaceSideSelector = my_phase_support.get_all_conformal_surfaces_selector();
 
+  get_coords_field().field().sync_to_host();
+
   std::function<double(stk::mesh::Entity)> get_length_scale_for_side;
   if (my_cdfem_support.get_length_scale_type_for_interface_CFL() == CONSTANT_LENGTH_SCALE)
   {
@@ -3191,6 +3183,8 @@ double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)
 
 double CDMesh::compute_cdfem_displacement_cfl() const
 {
+  get_cdfem_displacements_field().field().sync_to_host();
+
   auto get_side_displacement = build_get_side_displacement_from_cdfem_displacements_function(stk_bulk(), get_cdfem_displacements_field());
 
   return compute_cdfem_cfl(get_side_displacement);
@@ -3198,6 +3192,7 @@ double CDMesh::compute_cdfem_displacement_cfl() const
 
 double CDMesh::compute_interface_velocity_cfl(const FieldRef velocityField, const double dt) const
 {
+  velocityField.field().sync_to_host();
 
   auto get_side_displacement = build_get_side_displacement_from_velocity_function(stk_bulk(), velocityField, dt);
 
@@ -3341,7 +3336,7 @@ CDMesh::create_node_entities()
 //--------------------------------------------------------------------------------
 
 void
-CDMesh::create_element_and_side_entities(std::vector<SideRequest> & side_requests)
+CDMesh::create_element_and_side_entities(std::vector<SideDescription> & side_requests)
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::create_element_and_side_entities(void)"); /* %TRACE% */
 
   // Count how many we need to set pool size
@@ -3416,7 +3411,9 @@ CDMesh::prolongation()
   double proc_padding = 0.0;
   if (guess_and_check_proc_padding)
   {
-    const double max_elem_size = compute_maximum_element_size(stk_bulk());
+    // NOTE: Decomposed elements will have some nodes that are not yet prolonged, so limit ourselves to nonconforming elements when calculating the max element size
+    const stk::mesh::Selector parentElementSelector = get_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+    const double max_elem_size = compute_maximum_element_size(stk_bulk(), parentElementSelector);
     proc_padding = 3.0*max_elem_size;
     proc_target_bbox.pad(proc_padding);
   }

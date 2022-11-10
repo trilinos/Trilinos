@@ -16,19 +16,16 @@ ASSERT_EXIT({{ statement } ::exit(EXIT_SUCCESS); }, ::testing::ExitedWithCode(0)
 // KokkosParser tests go here because they modify the Kokkos backend
 //
 TEST (KokkosInitialize, NoArgsGiven) { 
-    Kokkos::InitArguments args;
     ASSERT_NO_DEATH({
             // default constructor is hidden for KokkosParser
             // but still visible from this test
             auto kp = Compadre::KokkosParser(false);
-            kp.finalize();
     });
 }
 TEST (KokkosInitialize, NoCommandLineArgsGiven) { 
+    std::vector<std::string> arguments = {KOKKOS_THREADS_ARG+std::string("=4")};
     ASSERT_NO_DEATH({
-            std::vector<std::string> arguments = {"--kokkos-threads=4"};
             auto kp = KokkosParser(arguments);
-            kp.finalize();
     });
 }
 
@@ -47,14 +44,14 @@ int main(int argc, char **argv) {
     int sig = RUN_ALL_TESTS();
 
     // initializes kokkos
-    auto kp = KokkosParser(argc, argv, true);
+    Kokkos::initialize(argc, argv);
 
     // execute all tests
     ::testing::GTEST_FLAG(filter) = "-Kokkos*";
     sig += RUN_ALL_TESTS();
 
     // finalize Kokkos and MPI (if available)
-    kp.finalize();
+    Kokkos::finalize();
 
     // finialize MPI (if available)
     #ifdef COMPADRE_USE_MPI

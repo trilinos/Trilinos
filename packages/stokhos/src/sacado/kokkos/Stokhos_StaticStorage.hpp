@@ -287,22 +287,7 @@ namespace Stokhos {
 
 }
 
-namespace Sacado {
-  template <typename ordinal_t, typename value_t, int Num, typename device_t>
-  struct StringName< Stokhos::StaticStorage<ordinal_t,
-                                            value_t,
-                                            Num,
-                                            device_t> > {
-    static std::string eval() {
-      std::stringstream ss;
-      ss << "Stokhos::StaticStorage<"
-         << StringName<ordinal_t>::eval() << ","
-         << StringName<value_t>::eval() << ","
-         << Num << ","
-         << StringName<device_t>::eval() << ">";
-      return ss.str();
-    }
-  };
-}
+#include "Stokhos_StorageHelpers.hpp"
+STOKHOS_STORAGE_HELPER_STRINGNAME_STATIC(StaticStorage)
 
 #endif // STOKHOS_STATIC_STORAGE_HPP

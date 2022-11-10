@@ -16,6 +16,7 @@
 #include <Akri_Intersection_Points.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_SharpFeature.hpp>
 #include <Akri_SnapIndependentSetFinder.hpp>
@@ -605,33 +606,6 @@ std::vector<stk::mesh::Entity> get_sorted_nodes_modified_in_current_snapping_ite
   return sortedSnappedNodes;
 }
 
-double determine_quality(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & elementSelector,
-    const QualityMetric &qualityMetric)
-{
-  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
-  std::vector<stk::math::Vector3d> nodeLocations;
-
-  double quality = qualityMetric.get_best_value_for_metric();
-  for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector))
-  {
-    if (bucket->topology().base() == stk::topology::TETRAHEDRON_4 || bucket->topology().base() == stk::topology::TRIANGLE_3_2D)
-    {
-      for (auto && element : *bucket)
-      {
-        fill_element_node_coordinates(mesh, element, coordsField, nodeLocations);
-        const double elementQuality = qualityMetric.get_element_quality_metric(nodeLocations);
-        quality = std::min(quality, elementQuality);
-      }
-    }
-  }
-
-  const double localQuality = quality;
-  stk::all_reduce_min(mesh.parallel(), &localQuality, &quality, 1);
-
-  return quality;
-}
-
 std::vector<stk::mesh::EntityId> get_sorted_ids_of_owned_nodes_of_elements_of_nodes(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,
     const std::vector<stk::mesh::Entity> & nodes)
@@ -778,7 +752,7 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
       update_intersection_points_and_snap_infos_after_snap_iteration(mesh, geometry, sharpFeatureInfo.get(), iterationSortedSnapNodes, nodesToCapturedDomains, elementSelector, qualityMetric, globalIDsAreParallelConsistent, intersectionPoints, snapInfos);
     }
 
-    krinolog << "After snapping quality is " << determine_quality(mesh, elementSelector, qualityMetric) << stk::diag::dendl;
+    krinolog << "After snapping quality is " << compute_mesh_quality(mesh, elementSelector, qualityMetric) << stk::diag::dendl;
 
     return nodesToCapturedDomains;
 }

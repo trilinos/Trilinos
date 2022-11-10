@@ -50,7 +50,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"

@@ -330,8 +330,8 @@ protected:
     stk::mesh::put_field_on_mesh(*m_coordsField, *m_block1Part, 3, vectInitValue);
     stk::mesh::put_field_on_mesh(*m_surfaceField, *m_surface1Part, 3, vectInitValue);
     stk::mesh::put_field_on_mesh(*m_distFactField, *m_block1Part, 1, &scalarInitValue);
-    stk::io::set_field_output_type(*m_coordsField, "Vector_3D");
-    stk::io::set_field_output_type(*m_surfaceField, "Vector_3D");
+    stk::io::set_field_output_type(*m_coordsField, stk::io::FieldOutputType::VECTOR_3D);
+    stk::io::set_field_output_type(*m_surfaceField, stk::io::FieldOutputType::VECTOR_3D);
   }
 
   void add_orphan_nodes(const unsigned numOrphansPerProc)

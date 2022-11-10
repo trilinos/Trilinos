@@ -27,6 +27,7 @@ export https_proxy="https://wwwproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
 export TDD_DEBUG_VERBOSE=1
 
+. /etc/profile
 source ~/.bashrc
 
 
@@ -39,7 +40,8 @@ export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
 # folder with the machine specific build info
 export BUILDS_DIR=$TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
 
-
+# OneAPI
+export MODULEPATH="$MODULEPATH":/opt/intel/oneapi/modulefiles:/opt/apps/modulefiles
 
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
@@ -47,6 +49,7 @@ export BUILDS_DIR=$TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
 
 # ===========================================================================
 # GCC family
+echo "GREP: *** GCC Family Tests ***"
 export CTEST_CONFIGURATION="default"
 module purge
 module load sems-gcc/10.1.0
@@ -78,7 +81,6 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_avatar_lightsaber.cmake
 ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_float_lightsaber.cmake
 
-
 module load sems-netcdf-c
 module load sems-boost
 module load sems-zlib
@@ -87,32 +89,6 @@ module unload sems-cmake
 module unload sems-openmpi
 module unload sems-gcc
 # ===========================================================================
-
-# ===========================================================================
-# OneAPI family
-export CTEST_CONFIGURATION="default"
-module purge
-module load sems-gcc/10.1.0
-module load oneapi
-export I_MPI_CXX=dpcpp
-
-echo "Configuration = $CTEST_CONFIGURATION"
-env
-
-export OMP_NUM_THREADS=1
-
-# Set variables to work aroun TriBITS problems
-#setenv TDD_FORCE_CMAKE_INSTALL 0
-export TRIBITS_TDD_USE_SYSTEM_CTEST=1
-
-# Actually run stuff
-ctest -S $BUILDS_DIR/ctest_linux_experimental_mpi_release_sycl_cpu_lightsaber.cmake
-
-
-module unload oneapi
-module unload sems-gcc
-# ===========================================================================
-
 
 
 echo

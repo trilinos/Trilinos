@@ -281,12 +281,12 @@ namespace { // (anonymous)
     return false;
   }
 
-  constexpr bool assumeMpiIsCudaAwareDefault () {
-#ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
+  constexpr bool assumeMpiIsGPUAwareDefault () {
+#ifdef TPETRA_ASSUME_GPU_AWARE_MPI
     return true;
 #else
     return false;
-#endif // TPETRA_ASSUME_CUDA_AWARE_MPI
+#endif // TPETRA_ASSUME_GPU_AWARE_MPI
   }
 
   constexpr bool cudaLaunchBlockingDefault () {
@@ -342,10 +342,10 @@ bool Behavior::timing ()
                                                    defaultValue);
 }
 
-bool Behavior::assumeMpiIsCudaAware ()
+bool Behavior::assumeMpiIsGPUAware ()
 {
-  constexpr char envVarName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
-  constexpr bool defaultValue = assumeMpiIsCudaAwareDefault ();
+  constexpr char envVarName[] = "TPETRA_ASSUME_GPU_AWARE_MPI";
+  constexpr bool defaultValue = assumeMpiIsGPUAwareDefault ();
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
