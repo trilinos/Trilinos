@@ -215,9 +215,9 @@ namespace MueLu {
 
     // Loop aggregates and their nodes and print them
     const int myRank = vertex2AggId_->getMap()->getComm()->getRank();
-    LO numAggregates = GetNumAggregates();
-    ArrayRCP<LO> aggSizes = ComputeAggregateSizes(true);
-    TEUCHOS_ASSERT(numAggregates==aggSizes.size());
+    const LO numAggregates = GetNumAggregates();
+    ArrayRCP<const LO> aggSizes = ComputeAggregateSizes(true);
+    TEUCHOS_ASSERT(static_cast<size_t>(numAggregates)==aggSizes.size());
 
     std::stringstream myStream;
     myStream << "\n";

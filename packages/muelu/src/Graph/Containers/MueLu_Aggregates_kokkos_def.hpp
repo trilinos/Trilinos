@@ -275,7 +275,7 @@ namespace MueLu {
     const int myRank = vertex2AggId_->getMap()->getComm()->getRank();
     const LO numAggregates = GetNumAggregates();
     const auto aggSizes = ComputeAggregateSizes(true);
-    TEUCHOS_ASSERT(numAggregates==aggSizes.size());
+    TEUCHOS_ASSERT(static_cast<size_t>(numAggregates)==aggSizes.size());
 
     // Get the data over to host (just for printing)
     {
