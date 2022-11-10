@@ -306,6 +306,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
   computeMaxResNorm_ (false),
+  computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
   debug_ (false)
 {
