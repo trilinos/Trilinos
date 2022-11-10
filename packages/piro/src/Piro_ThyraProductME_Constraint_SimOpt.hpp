@@ -95,7 +95,7 @@ public:
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::value" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::value" << std::endl;
 
 
     const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
@@ -144,7 +144,7 @@ public:
       const ROL::Vector<Real> &z, Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_1" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_1" << std::endl;
 
     if(computeJacobian1_) {
       // Create Jacobian
@@ -171,7 +171,7 @@ public:
       computeJacobian1_ = false;
     } else {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_1, Skipping Jacobian Computation" << std::endl;
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_1, Skipping Jacobian Computation" << std::endl;
     }
 
     const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
@@ -184,7 +184,7 @@ public:
       const ROL::Vector<Real> &z, Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_2" << std::endl;
 
     const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
@@ -220,14 +220,14 @@ public:
         auto dfdp_op = thyra_model_->create_DfDp_op(i);
         TEUCHOS_TEST_FOR_EXCEPTION(
             dfdp_op == Teuchos::null, std::logic_error,
-            std::endl << "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+            std::endl << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
             "Needed df/dp operator (" << i << ") is null!" << std::endl);
         outArgs.set_DfDp(i,dfdp_op);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(!ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP),
             std::logic_error,
             std::endl <<
-            "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+            "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
             "The code related to df/dp multivector has been commented out because never tested.  " <<
             std::endl);
 
@@ -247,7 +247,7 @@ public:
         else
           TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
-              std::endl << "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+              std::endl << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
               "For df/dp(" << i <<") with adjoint sensitivities, " <<
               "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
               "DERIV_MV_BY_COL with p not distributed, or "
@@ -275,7 +275,7 @@ public:
             dfdp_op == Teuchos::null,
             std::logic_error,
             std::endl <<
-            "ROL::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
+            "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_2():  " <<
             "The code related to df/dp multivector has been commented out because never tested.  " <<
             std::endl);
         /*
@@ -325,7 +325,7 @@ public:
       Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1" << std::endl;
 
     const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
@@ -371,7 +371,7 @@ public:
       computeJacobian1_ = false;
     } else {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1, Skipping Jacobian Computation" << std::endl;
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1, Skipping Jacobian Computation" << std::endl;
     }
 
     if (Teuchos::nonnull(prec_factory))
@@ -406,7 +406,7 @@ public:
       const ROL::Vector<Real> &z, Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1" << std::endl;
 
 
     Teuchos::RCP< Thyra::LinearOpBase<Real> > lop;
@@ -438,7 +438,7 @@ public:
     }
     else {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
     }
 
 
@@ -455,7 +455,7 @@ public:
       Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1" << std::endl;
 
     const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
@@ -515,7 +515,7 @@ public:
       outArgs.set_W_op(Teuchos::null);
 
     } else if (verbosityLevel_ >= Teuchos::VERB_HIGH)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
 
     if (Teuchos::nonnull(prec_factory))
       prec_factory->initializePrec(losb, prec.get());
@@ -563,7 +563,7 @@ public:
       const ROL::Vector<Real> &z, Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2" << std::endl;
 
     const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
@@ -592,7 +592,7 @@ public:
         auto dfdp_op = thyra_model_->create_DfDp_op(i);
         TEUCHOS_TEST_FOR_EXCEPTION(
             dfdp_op == Teuchos::null, std::logic_error,
-            std::endl << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2:  " <<
+            std::endl << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2:  " <<
             "Needed df/dp operator (" << i << ") is null!" << std::endl);
         outArgs.set_DfDp(i,dfdp_op);
       } else {
@@ -600,7 +600,7 @@ public:
             !ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP),
             std::logic_error,
             std::endl <<
-            "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
+            "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
             "The code related to df/dp multivector has been commented out because never tested.  " <<
             std::endl);
 
@@ -620,7 +620,7 @@ public:
         else
           TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
-              std::endl << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
+              std::endl << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
               "For df/dp(" << i <<") with adjoint sensitivities, " <<
               "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
               "DERIV_MV_BY_COL with p not distributed, or "
@@ -643,7 +643,7 @@ public:
             dfdp_op == Teuchos::null,
             std::logic_error,
             std::endl <<
-            "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
+            "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_2():  " <<
             "The code related to df/dp multivector has been commented out because never tested.  " <<
             std::endl);
         /*
@@ -690,13 +690,13 @@ public:
       Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::solve" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::solve" << std::endl;
 
     if(thyra_solver_.is_null()) {
-      bool print = this->print_;
-      this->print_ = false;  //unfortunately solve uses cout instead of user-provided stream, so temporarily disabling print
+      bool print = ROL::Constraint_SimOpt<Real>::print_;
+      ROL::Constraint_SimOpt<Real>::print_ = false;  //unfortunately solve uses cout instead of user-provided stream, so temporarily disabling print
       ROL::Constraint_SimOpt<Real>::solve(c,u,z,tol);
-      this->print_ = print; 
+      ROL::Constraint_SimOpt<Real>::print_ = print; 
     }
     else {
       if(this->zero_) { //SimOpt.Solve.Zero Initial Guess
@@ -750,7 +750,7 @@ public:
       Real &tol) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_11" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_11" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xx);
@@ -776,7 +776,7 @@ public:
 
       inArgs.set_f_multiplier(thyra_w.getVector());
 
-      ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint: H_xx product vector is not supported");
+      ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint: H_xx product vector is not supported");
       outArgs.set_hess_vec_prod_f_xx(thyra_ahwv.getVector());
 
       thyra_model_->evalModel(inArgs, outArgs);
@@ -816,7 +816,7 @@ public:
       Real &/*tol*/) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_12" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_12" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
 
@@ -849,7 +849,7 @@ public:
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_px, p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_px product vector is not supported");
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_px product vector is not supported");
         outArgs.set_hess_vec_prod_f_px(p_indices_[i], prodvec_ahwv->getNonconstVectorBlock(i));
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -890,7 +890,7 @@ public:
       Real &/*tol*/) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_21" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_21" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = true;
@@ -929,7 +929,7 @@ public:
 
       for(std::size_t j=0; j<p_indices_.size(); ++j) {
         bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_xp, p_indices_[j]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_xp product vector is not supported");
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_xp product vector is not supported");
         outArgs.set_hess_vec_prod_f_xp(p_indices_[j], ahwv_vec[j]);
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -971,7 +971,7 @@ public:
       Real &/*tol*/) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_22" << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointHessian_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = true;
@@ -1016,7 +1016,7 @@ public:
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
           bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_f_pp, p_indices_[i], p_indices_[j]);
-          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Constraint_SimOpt: H_pp product vector is not supported");
+          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Constraint_SimOpt: H_pp product vector is not supported");
 
           outArgs.set_hess_vec_prod_f_pp(p_indices_[i], p_indices_[j], ahwv_vec[i][j]);
         }
@@ -1055,7 +1055,7 @@ public:
 
   void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     if(verbosityLevel_ >= Teuchos::VERB_HIGH) {
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::solve_update, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::solve_update, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
     }
     if(type != ROL::UpdateType::Accept)
       computeJacobian1_ = computeAdjointJacobian1_  = true;
@@ -1064,7 +1064,7 @@ public:
   void update_1( const ROL::Vector<Real> &u, ROL::UpdateType type, int iter = -1 ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_HIGH) {
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::update_1, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::update_1, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
     }
 
     if(type != ROL::UpdateType::Accept)
@@ -1077,7 +1077,7 @@ public:
   void update_2( const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1 ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_HIGH) {
-      *out_ << "ROL::ThyraProductME_Constraint_SimOpt::update_2, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::update_2, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
     }
     
     if(type != ROL::UpdateType::Accept) {
@@ -1091,11 +1091,11 @@ public:
 
 
   void update_1( const ROL::Vector<Real> & , bool , int  = -1 ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "ROL::ThyraProductME_Constraint_SimOpt::update_1:  Deprecated Update function, it should not be called." << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "Piro::ThyraProductME_Constraint_SimOpt::update_1:  Deprecated Update function, it should not be called." << std::endl);
   }
 
   void update_2( const ROL::Vector<Real> & , bool , int  = -1 ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "ROL::ThyraProductME_Constraint_SimOpt::update_2:  Deprecated Update function, it should not be called." << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "Piro::ThyraProductME_Constraint_SimOpt::update_2:  Deprecated Update function, it should not be called." << std::endl);
   }
 
 

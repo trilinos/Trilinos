@@ -138,6 +138,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Analysis">
+      <Parameter name="Output Level" type="int" value="4" />
       <Parameter name="Analysis Package" type="string" value="ROL" />
       <ParameterList name="Dakota">
         <Parameter name="Input File" type="string" value="dak.in" />
@@ -147,8 +148,7 @@
       </ParameterList>
       <ParameterList name="ROL">
         <Parameter name="Response Vector Index" type="int" value="0" />
-        <Parameter name="Parameter Vector Index" type="int" value="0" />
-        <Parameter name="Print Output" type="bool" value="true" />
+        <Parameter name="Parameter Vector Index 0" type="int" value="0" />
 
         <Parameter name="Seed For Thyra Randomize" type="int" value="42" />
 
@@ -162,10 +162,6 @@
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />
 
-        <Parameter name="Gradient Tolerance" type="double" value="1e-4" />
-        <Parameter name="Step Tolerance" type="double" value="1e-4" />
-        <Parameter name="Max Iterations" type="int" value="36" />
-
         <Parameter name="Bound Constrained" type="bool" value="false" />
 
         <Parameter name="Full Space" type="bool" value="false" />
@@ -175,7 +171,7 @@
         <ParameterList name="ROL Options">
           <!-- =========== BEGIN GENERAL INPUT PARAMETER SUBLIST =========== -->
           <ParameterList name="General">
-            <Parameter name="Output Level" type="int" value="3" />
+            <Parameter name="Output Level" type="int" value="4" />
             <Parameter name="Variable Objective Function" type="bool" value="false" />
             <Parameter name="Scale for Epsilon Active Sets" type="double" value="1.0" />
 

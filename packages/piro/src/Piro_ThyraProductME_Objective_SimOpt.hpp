@@ -74,11 +74,11 @@ public:
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::value" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::value" << std::endl;
 
     if(objectiveStr_.isValueValid_) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Objective_SimOpt::value, Skipping Computation of Value" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::value, Skipping Computation of Value" << std::endl;
       return objectiveStr_.value_;
     }
 
@@ -109,14 +109,14 @@ public:
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_1" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1" << std::endl;
 
     TEUCHOS_ASSERT(objectiveStr_.areGradientsAllocated_);
 
 
     if(objectiveStr_.isGradient1Valid_ ) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_1, Skipping Computation of Gradient 1" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1, Skipping Computation of Gradient 1" << std::endl;
       return g.set(*objectiveStr_.gradient1_ptr_);
     }
 
@@ -152,7 +152,7 @@ public:
       dgdx_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
     else {
       ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "ROL::ThyraProductME_Objective: DgDx does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
+          "Piro::ThyraProductME_Objective: DgDx does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
     }
 
     outArgs.set_DgDx(g_index_, Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(thyra_dgdx.getVector(), dgdx_orient));
@@ -161,7 +161,7 @@ public:
 
     if(!objectiveStr_.isValueValid_) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_1, Computing Value" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1, Computing Value" << std::endl;
       objectiveStr_.value_ = ::Thyra::get_ele(*thyra_g,0);
       objectiveStr_.isValueValid_ = true;
     }
@@ -174,13 +174,13 @@ public:
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_2" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2" << std::endl;
 
     TEUCHOS_ASSERT(objectiveStr_.areGradientsAllocated_);
 
     if(objectiveStr_.isGradient2Valid_) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_2, Skipping Computation of Gradient 2" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2, Skipping Computation of Gradient 2" << std::endl;
       return g.set(*objectiveStr_.gradient2_ptr_);
     }
 
@@ -206,7 +206,7 @@ public:
 
     if(!objectiveStr_.isValueValid_) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "ROL::ThyraProductME_Objective_SimOpt::gradient_2, Computing Value" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2, Computing Value" << std::endl;
       thyra_g = Thyra::createMember<Real>(thyra_model_->get_g_space(g_index_));
       outArgs.set_g(g_index_, thyra_g);
     }
@@ -221,7 +221,7 @@ public:
         dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
       else {
         ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
-            "ROL::ThyraProductME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
+            "Piro::ThyraProductME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
       }
 
       outArgs.set_DgDp(g_index_,p_indices_[i], Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(prodvec_dgdp_p->getNonconstMultiVectorBlock(i), dgdp_orient));
@@ -242,7 +242,7 @@ public:
                   const ROL::Vector<Real> &z,
                   const int g_idx) {
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = true;
@@ -274,7 +274,7 @@ public:
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices_[i], p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_pp is not supported");
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp is not supported");
 
         Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model_->create_hess_g_pp(g_idx, p_indices_[i], p_indices_[i]);
         outArgs.set_hess_g_pp(g_idx, p_indices_[i], p_indices_[i], hess_g_pp);
@@ -290,7 +290,7 @@ public:
       const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::hessVec_11" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_11" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, g_index_);
@@ -318,7 +318,7 @@ public:
       Thyra::put_scalar(1.0, multiplier_g.ptr());
       inArgs.set_g_multiplier(g_index_, multiplier_g);
 
-      ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective: H_xx product vector is not supported");
+      ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective: H_xx product vector is not supported");
       outArgs.set_hess_vec_prod_g_xx(g_index_, thyra_hv.getVector());
 
       thyra_model_->evalModel(inArgs, outArgs);
@@ -354,7 +354,7 @@ public:
       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::hessVec_12" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_12" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = true;
@@ -393,7 +393,7 @@ public:
 
       for(std::size_t j=0; j<p_indices_.size(); ++j) {
         bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, p_indices_[j]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
         outArgs.set_hess_vec_prod_g_xp(g_index_,p_indices_[j], hv_vec[j]);
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -432,7 +432,7 @@ public:
       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::hessVec_21" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_21" << std::endl;
 
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
@@ -470,7 +470,7 @@ public:
 
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
         outArgs.set_hess_vec_prod_g_px(g_index_,p_indices_[i], prodvec_hv->getNonconstMultiVectorBlock(i));
       }
       thyra_model_->evalModel(inArgs, outArgs);
@@ -506,7 +506,7 @@ public:
       const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::hessVec_22" << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
     bool supports_deriv = true;
@@ -551,7 +551,7 @@ public:
       for(std::size_t i=0; i<p_indices_.size(); ++i) {
         for(std::size_t j=0; j<p_indices_.size(); ++j) {
           bool supports_deriv =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, p_indices_[i], p_indices_[j]);
-          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
+          ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
 
           outArgs.set_hess_vec_prod_g_pp(g_index_,p_indices_[i], p_indices_[j], hv_vec[i][j]);
         }
@@ -592,7 +592,7 @@ public:
   void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     
     if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-      *out_ << "ROL::ThyraProductME_Objective_SimOpt::update, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
+      *out_ << "Piro::ThyraProductME_Objective_SimOpt::update, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
 
     switch(type) {
       case ROL::UpdateType::Initial:    
@@ -633,7 +633,7 @@ public:
   }
 
   void update( const ROL::Vector<Real> &, const ROL::Vector<Real> &z, bool, int  = -1 ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "ROL::ThyraProductME_Objective_SimOpt::update:  Deprecated Update function, it should not be called." << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "Piro::ThyraProductME_Objective_SimOpt::update:  Deprecated Update function, it should not be called." << std::endl);
   }
 
 private:

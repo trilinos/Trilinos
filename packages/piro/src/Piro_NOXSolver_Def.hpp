@@ -160,11 +160,13 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
 
     RCP<Thyra::VectorBase<Scalar> > initial_guess;
-    bool nominalInitialGuess = Teuchos::is_null(inArgs.get_x();
-    if(!nominalInitialGuess) { //used in optimization
-      initial_guess = inArgs.get_x()->clone_v();
-    } else {
+    
+    //use nominal initial guess only if inArgs.get_x() is not defined
+    bool nominalInitialGuess = Teuchos::is_null(inArgs.get_x());
+    if(nominalInitialGuess) {
       initial_guess = modelNominalState->clone_v();
+    } else {
+      initial_guess = inArgs.get_x()->clone_v();
     }
 
     solve_status = solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);

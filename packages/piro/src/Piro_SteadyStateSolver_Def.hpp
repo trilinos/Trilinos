@@ -1247,7 +1247,7 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   }
 
 
-  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_HIGH);
+  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
   for (int g_index=0; g_index<num_g_; ++g_index) {
     Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
     
