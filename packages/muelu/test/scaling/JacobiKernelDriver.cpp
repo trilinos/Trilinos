@@ -180,7 +180,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
         DrowptrMKL[i] = i;
         if(i < n)  {
           DcolindMKL[i] = i;
-          DvalsMKL[i]   = - omega * Dvals(i,0); 
+          DvalsMKL[i]   = - omega * Dvals(i,0);
         }
     });
 
@@ -191,7 +191,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     Au->getComm()->barrier();
 
     // **********************************
-    // Multiply (A*B) 
+    // Multiply (A*B)
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi MKL: Multiply")));
     result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &XTempMKL);
     KCRS::execution_space::fence();
@@ -236,7 +236,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
     mkl_sparse_destroy(XTempMKL);
     mkl_sparse_destroy(YTempMKL);
 
-#else 
+#else
     std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
 #endif
 
@@ -542,7 +542,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           #ifdef HAVE_MUELU_MKL
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
-            TimeMonitor t(*TimeMonitor::getNewTimer("JAC MKL: Total"));            
+            TimeMonitor t(*TimeMonitor::getNewTimer("JAC MKL: Total"));
             Jacobi_MKL_SPMM(*A,*B,*C,*D,omega);
           }
           #endif

@@ -450,7 +450,7 @@ namespace MueLuTests {
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
 
-#endif 
+#endif
 
   } // BuildNotayAggregates2D
 

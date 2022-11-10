@@ -78,7 +78,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Copy & paste from MueLu_TestHelpers.cpp 
+// Copy & paste from MueLu_TestHelpers.cpp
 namespace MueLuTests {
 
   // static members initialization of the class TestHelpers::Parameters
@@ -87,7 +87,7 @@ namespace MueLuTests {
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
- typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 CheckCommutingProperty(MueLu::Level & nodeLevel_coarse, MueLu::Level & edgeLevel_fine, MueLu::Level & edgeLevel_coarse) {
 #include <MueLu_UseShortNames.hpp>
   RCP<Matrix> Pn = nodeLevel_coarse.Get<RCP<Matrix> >("P");
@@ -107,12 +107,12 @@ CheckCommutingProperty(MueLu::Level & nodeLevel_coarse, MueLu::Level & edgeLevel
   RCP<Matrix> right = XMM::Multiply(*D0_f,false,*Pn,false,dummy,*out0);
   
   // We need a non-FC matrix for the add, sadly
-  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
+  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());
   RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
   XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
   XMM::TwoMatrixAdd(*right, false, -one, *summation, one);
   
-  MT norm = summation->getFrobeniusNorm();     
+  MT norm = summation->getFrobeniusNorm();
   return norm;
 }
 
@@ -120,8 +120,8 @@ CheckCommutingProperty(MueLu::Level & nodeLevel_coarse, MueLu::Level & edgeLevel
 
 
 template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void read_matrix(Xpetra::UnderlyingLib & lib,RCP<const Teuchos::Comm<int> > & comm, 
-                 RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & SM_Matrix, 
+void read_matrix(Xpetra::UnderlyingLib & lib,RCP<const Teuchos::Comm<int> > & comm,
+                 RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & SM_Matrix,
                  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & D0_Matrix,
                  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Kn_Matrix,
                  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > & coords) {
@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
   {
     RCP<MueLu::Level> Finest = NodeH.GetLevel();
-    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Kn_Matrix);
 
     // Level 0
@@ -222,9 +222,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Plain aggregation)
-    FactoryManager M1; 
+    FactoryManager M1;
     M1.SetKokkosRefactor(false);
-    Teuchos::ParameterList tp_list; 
+    Teuchos::ParameterList tp_list;
     tp_list.set("tentative: constant column sums",false);
     tp_list.set("tentative: calculate qr",false);
     RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -237,18 +237,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     r = NodeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
     RCP<Level> l0 = NodeH.GetLevel(0);
     RCP<Level> l1 = NodeH.GetLevel(1);
-  }  
+  }
 
   out<<"*** Copy Node->Edge Data *** "<<std::endl;
   // Copy Data to Edge Hierarchy
-  for(int i=0; i<NumLevels; i++) {  
+  for(int i=0; i<NumLevels; i++) {
     EdgeH.AddNewLevel();
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
-      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
 
       RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
       //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Plain aggregation)
-    FactoryManager M1; 
+    FactoryManager M1;
     M1.SetKokkosRefactor(false);
     RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
     M1.SetFactory("P",PedgeFact);
@@ -290,7 +290,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
 
   // Check the commuting property
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-  Teuchos::Array<MT> norm(1), norm0(1);  
+  Teuchos::Array<MT> norm(1), norm0(1);
   norm0[0] = Teuchos::ScalarTraits<MT>::zero();
 
   norm[0] = CheckCommutingProperty<SC,LO,GO,NO>(*node_l1,*l0,*l1);
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
   out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
   {
     RCP<MueLu::Level> Finest = NodeH.GetLevel();
-    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Kn_Matrix);
 
     // Level 0
@@ -331,9 +331,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Plain aggregation)
-    FactoryManager M1; 
+    FactoryManager M1;
     M1.SetKokkosRefactor(false);
-    Teuchos::ParameterList tp_list; 
+    Teuchos::ParameterList tp_list;
     tp_list.set("tentative: constant column sums",false);
     tp_list.set("tentative: calculate qr",false);
     RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -346,18 +346,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     r = NodeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
     RCP<Level> l0 = NodeH.GetLevel(0);
     RCP<Level> l1 = NodeH.GetLevel(1);
-  }  
+  }
 
   out<<"*** Copy Node->Edge Data *** "<<std::endl;
   // Copy Data to Edge Hierarchy
-  for(int i=0; i<NumLevels; i++) {  
+  for(int i=0; i<NumLevels; i++) {
     EdgeH.AddNewLevel();
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
-      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
 
       RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
       //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
@@ -376,10 +376,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Smoothed Reitzinger)
-    FactoryManager M1; 
+    FactoryManager M1;
     M1.SetKokkosRefactor(false);
     RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
-    RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+    RCP<SaPFactory> PFact = rcp(new SaPFactory());
     PFact->SetFactory("P",PedgeFact);
     M1.SetFactory("Ptent",PedgeFact);
     M1.SetFactory("P",PFact);
@@ -430,7 +430,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
   out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
   {
     RCP<MueLu::Level> Finest = NodeH.GetLevel();
-    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Kn_Matrix);
     Finest->Set("Coordinates", coords);
 
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     FactoryManager M1;
     {
       M1.SetKokkosRefactor(false);
-      Teuchos::ParameterList tp_list; 
+      Teuchos::ParameterList tp_list;
       tp_list.set("tentative: constant column sums",false);
       tp_list.set("tentative: calculate qr",false);
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -455,7 +455,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     FactoryManager M2;
     {
       M2.SetKokkosRefactor(false);
-      Teuchos::ParameterList tp_list; 
+      Teuchos::ParameterList tp_list;
       tp_list.set("tentative: constant column sums",false);
       tp_list.set("tentative: calculate qr",false);
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -471,18 +471,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     RCP<Level> l0 = NodeH.GetLevel(0);
     RCP<Level> l1 = NodeH.GetLevel(1);
     RCP<Level> l2 = NodeH.GetLevel(2);
-  }  
+  }
 
   out<<"*** Copy Node->Edge Data *** "<<std::endl;
   // Copy Data to Edge Hierarchy
-  for(int i=0; i<NumLevels; i++) {  
+  for(int i=0; i<NumLevels; i++) {
     EdgeH.AddNewLevel();
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
-      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
 
       RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
       //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
@@ -501,11 +501,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Smoothed Reitzinger)
-    FactoryManager M1; 
+    FactoryManager M1;
     {
       M1.SetKokkosRefactor(false);
       RCP<ReitzingerPFactory> PedgeFact1  = rcp(new ReitzingerPFactory());
-      RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+      RCP<SaPFactory> PFact = rcp(new SaPFactory());
       PFact->SetFactory("P",PedgeFact1);
       M1.SetFactory("Ptent",PedgeFact1);
       M1.SetFactory("D0",PedgeFact1);
@@ -513,11 +513,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     }
 
     // Level 2 (just like level 1)
-    FactoryManager M2; 
+    FactoryManager M2;
     {
       M2.SetKokkosRefactor(false);
       RCP<ReitzingerPFactory> PedgeFact2  = rcp(new ReitzingerPFactory());
-      RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+      RCP<SaPFactory> PFact = rcp(new SaPFactory());
       PFact->SetFactory("P",PedgeFact2);
       M2.SetFactory("Ptent",PedgeFact2);
       M2.SetFactory("D0",PedgeFact2);
@@ -574,7 +574,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
   out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
   {
     RCP<MueLu::Level> Finest = NodeH.GetLevel();
-    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Kn_Matrix);
     Finest->Set("Coordinates", coords);
 
@@ -586,7 +586,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     FactoryManager M1;
     {
       M1.SetKokkosRefactor(false);
-      Teuchos::ParameterList tp_list; 
+      Teuchos::ParameterList tp_list;
       tp_list.set("tentative: constant column sums",false);
       tp_list.set("tentative: calculate qr",false);
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -599,7 +599,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     FactoryManager M2;
     {
       M2.SetKokkosRefactor(false);
-      Teuchos::ParameterList tp_list; 
+      Teuchos::ParameterList tp_list;
       tp_list.set("tentative: constant column sums",false);
       tp_list.set("tentative: calculate qr",false);
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
@@ -615,18 +615,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     RCP<Level> l0 = NodeH.GetLevel(0);
     RCP<Level> l1 = NodeH.GetLevel(1);
     RCP<Level> l2 = NodeH.GetLevel(2);
-  }  
+  }
 
   out<<"*** Copy Node->Edge Data *** "<<std::endl;
   // Copy Data to Edge Hierarchy
-  for(int i=0; i<NumLevels; i++) {  
+  for(int i=0; i<NumLevels; i++) {
     EdgeH.AddNewLevel();
     RCP<Level> NodeL = NodeH.GetLevel(i);
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
     if(i!=0) {
-      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
 
       RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
       //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
@@ -645,7 +645,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     M0.SetKokkosRefactor(false);
     
     // Level 1 (Plain aggregation)
-    FactoryManager M1; 
+    FactoryManager M1;
     {
       M1.SetKokkosRefactor(false);
       RCP<ReitzingerPFactory> PFact  = rcp(new ReitzingerPFactory());
@@ -655,7 +655,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
     }
 
     // Level 2 (just like level 1)
-    FactoryManager M2; 
+    FactoryManager M2;
     {
       M2.SetKokkosRefactor(false);
       RCP<ReitzingerPFactory> PFact  = rcp(new ReitzingerPFactory());
@@ -691,7 +691,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
 
   // Check the commuting property
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-  Teuchos::Array<MT> norm(1), norm0(1);  
+  Teuchos::Array<MT> norm(1), norm0(1);
   norm0[0] = Teuchos::ScalarTraits<MT>::zero();
 
   norm[0] = CheckCommutingProperty<SC,LO,GO,NO>(*node_l1,*l0,*l1);
