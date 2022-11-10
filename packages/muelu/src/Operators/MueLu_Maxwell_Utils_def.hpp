@@ -74,11 +74,11 @@ namespace MueLu {
                                                                                          magnitudeType rowSumTol,
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                                                                          bool useKokkos_,
-                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos_, 
-                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos_,   
+                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos_,
+                                                                                         Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos_,
                                                                                          Kokkos::View<bool*, typename Node::device_type> & BCdomainKokkos_,
 #endif
-                                                                                         int & BCedges_, 
+                                                                                         int & BCedges_,
                                                                                          int & BCnodes_,
                                                                                          Teuchos::ArrayRCP<bool> & BCrows_,
                                                                                          Teuchos::ArrayRCP<bool> & BCcols_,
@@ -147,7 +147,7 @@ namespace MueLu {
                                                                                   RCP<Matrix> & D0_Matrix_,
                                                                                   RCP<Matrix> & SM_Matrix_,
                                                                                   RCP<Matrix> & M1_Matrix_,
-                                                                                  RCP<Matrix> & Ms_Matrix_) {    
+                                                                                  RCP<Matrix> & Ms_Matrix_) {
 
     bool defaultFilter = false;
 

@@ -60,7 +60,7 @@ namespace MueLu {
 
   /*!
     @class SmootherFactory
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Generic Smoother Factory for generating the smoothers of the MG hierarchy
 
     This factory is generic and can produce any kind of Smoother.

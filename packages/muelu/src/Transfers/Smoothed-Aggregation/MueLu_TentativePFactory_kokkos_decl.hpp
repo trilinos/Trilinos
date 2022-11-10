@@ -156,7 +156,7 @@ namespace MueLu {
 
     // NOTE: All of thess should really be private, but CUDA doesn't like that
     
-    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo_kokkos> amalgInfo, 
+    void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo_kokkos> amalgInfo,
                                  RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
 

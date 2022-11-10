@@ -157,8 +157,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     A = Pr->BuildMatrix();
     nullspace = Pr->BuildNullspace();
     //  The coordinates used by Galeri here might not match the coordinates that come into this function.
-    //  In particular, they might correspond to different stretch factors. To fix this, we overwrite the 
-    //  coordinate array with those that Galeri now provides. 
+    //  In particular, they might correspond to different stretch factors. To fix this, we overwrite the
+    //  coordinate array with those that Galeri now provides.
     
 
     if(!coordinates.is_null() && (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") ) {
@@ -172,7 +172,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
       for (size_t kkk = 0; kkk < coordinates->getNumVectors(); kkk++) {
         Teuchos::ArrayRCP<real_type> old = coordinates->getDataNonConst(kkk);
         Teuchos::ArrayRCP<real_type> newvals  = newcoordinates->getDataNonConst(kkk);
-        int numCopies = newvals.size() / old.size();  
+        int numCopies = newvals.size() / old.size();
         for (int jj=0; jj < old.size(); jj++) old[jj] = newvals[numCopies*jj];
       }
     }
@@ -255,7 +255,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 //     2) all file entries defining blk k occur before
 //        file entries defining blk k+1.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void readUserBlks(const std::string& userBlkFileName, const std::string& smootherOrCoarse, Teuchos::ParameterList& mueluList, 
+void readUserBlks(const std::string& userBlkFileName, const std::string& smootherOrCoarse, Teuchos::ParameterList& mueluList,
                   const Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A) {
 
 //     userBlkFileName          MatrixMarket file defining blocks
@@ -305,11 +305,11 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             fclose(fp);
 
             // Assign ownership of each block to one mpirank corresponding
-            // to which mpirank owns the most rows within a block. When 
-            // ties occur, highest procId wins.                           
+            // to which mpirank owns the most rows within a block. When
+            // ties occur, highest procId wins.
 
             // first, set to procId+1 if we own the largest # of rows
-            // in block.  Otherwise, set to 0.                       
+            // in block.  Otherwise, set to 0.
 
             Teuchos::ArrayRCP<int> maxOwnedRowsPerBlock(nBlks, 0);
             Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, (LocalOrdinal) nBlks, myOwnedRowsPerBlock.getRawPtr(),maxOwnedRowsPerBlock.getRawPtr());
@@ -333,7 +333,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             maxDofsInAnyBlock *= 2; // We only have an estimate as to the largest number of dofs in any block (as some dofs
             maxDofsInAnyBlock++;    // might reside on other processors. So we multiple our estimate by 2 hoping to be large
                                     // enough. Later, we check to see if things are not large enough and re-allocate space
-                                    // in this case. 
+                                    // in this case.
 
             Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > blockLists(nOwned,Teuchos::null);
 
@@ -358,7 +358,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
                 curRow = row;
                 while ((row == curRow) && (jj <= nnzs)){
                   if (i == maxDofsInAnyBlock) {
-                    maxDofsInAnyBlock *= 2; 
+                    maxDofsInAnyBlock *= 2;
                     buffer.resize(maxDofsInAnyBlock);
                   }
                   buffer[i] = col; i++;

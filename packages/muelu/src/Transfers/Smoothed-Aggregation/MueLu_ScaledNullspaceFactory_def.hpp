@@ -91,11 +91,11 @@ namespace MueLu {
         tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get());
       } else {
         // A User "Nullspace" (nspName) is not available (use factory)
-        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get()); 
+        tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get());
 
       } // end if "Nullspace" not available
     } else {
-      tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get()); 
+      tentativeNullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory("Nullspace").get());
     }
 
   
@@ -112,7 +112,7 @@ namespace MueLu {
     }
    
     GetOStream(Runtime1) << "ScaledNullspaceFactory: Generating scaled nullspace, blocksize = "<< tentativeNullspace->getNumVectors() <<std::endl;
-    nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());  
+    nullspace = MultiVectorFactory::Build(tentativeNullspace->getMap(), tentativeNullspace->getNumVectors());
     *nullspace = *tentativeNullspace;  // Copy the tentative nullspace
     RCP<MultiVector> blockDiagonal = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
     

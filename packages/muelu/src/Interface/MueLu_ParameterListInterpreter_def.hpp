@@ -322,7 +322,7 @@ namespace MueLu {
     (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
     // Generic data saving (this saves the data on all levels)
-    if(paramList.isParameter("save data")) 
+    if(paramList.isParameter("save data"))
       this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList,"save data");
 
     // Save level data

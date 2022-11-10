@@ -91,11 +91,11 @@ namespace MueLu {
                                            magnitudeType rowSumTol,
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                            bool useKokkos_,
-                                           Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos, 
-                                           Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos,   
+                                           Kokkos::View<bool*, typename Node::device_type> & BCrowsKokkos,
+                                           Kokkos::View<bool*, typename Node::device_type> & BCcolsKokkos,
                                            Kokkos::View<bool*, typename Node::device_type> & BCdomainKokkos,
 #endif
-                                           int & BCedges, 
+                                           int & BCedges,
                                            int & BCnodes,
                                            Teuchos::ArrayRCP<bool> & BCrows,
                                            Teuchos::ArrayRCP<bool> & BCcols,

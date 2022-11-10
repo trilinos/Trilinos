@@ -270,11 +270,11 @@ private:
 
 #ifdef HAVE_MUELU_TPETRA
 template<class Scalar, class LO, class GO, class Node>
-class LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>, 
+class LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>,
                    Tpetra::Operator<Scalar,LO,GO,Node>,
                    typename Teuchos::ScalarTraits<Scalar>::magnitudeType> :
-    public Trilinos::Details::LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>, 
-                                           Tpetra::Operator<Scalar,LO,GO,Node>, 
+    public Trilinos::Details::LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>,
+                                           Tpetra::Operator<Scalar,LO,GO,Node>,
                                            typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
     virtual public Teuchos::Describable
 {
