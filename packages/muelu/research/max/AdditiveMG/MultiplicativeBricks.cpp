@@ -227,11 +227,11 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> coordinates;
 
-  if (problem_type == "ADR1D") 
+  if (problem_type == "ADR1D")
 	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("1D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR2D") 
+  else if (problem_type == "ADR2D")
 	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("2D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR3D") 
+  else if (problem_type == "ADR3D")
 	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("3D", xpetraMap, matrixParameters.GetParameterList());
 
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
@@ -241,13 +241,13 @@ int main(int argc, char *argv[]) {
   RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
 
  // ===================================================
- // 	Domain Decomposition Preconditioner 
+ // 	Domain Decomposition Preconditioner
  // 	===================================
 
   //Creation of the MueLu list for the DD preconditioner
   RCP<Teuchos::ParameterList> dd_list = rcp(new Teuchos::ParameterList());
   dd_list->setName("MueLu");
-  dd_list->set("verbosity", "low"); 
+  dd_list->set("verbosity", "low");
   dd_list->set("number of equations", 1);
   dd_list->set("max levels", 1);
   dd_list->set("coarse: type", "SCHWARZ"); //FOR A ONE LEVEL PRECONDITIONER THE COARSE LEVEL IS INTERPRETED AS SMOOTHING LEVEL
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
   RCP<muelu_tpetra_operator_type> B_DD = MueLu::CreateTpetraPreconditioner( (RCP<operator_type>)A, *dd_list );
 
  // ===================================================
- // 	Multi Grid Preconditioner 
+ // 	Multi Grid Preconditioner
  // 	===================================
  
   RCP<muelu_tpetra_operator_type> M;
@@ -325,7 +325,7 @@ for(int trial = 1; trial<=number_runs; ++trial)
     std::cout << "number of iterations with MueLu preconditioner= " << numIterations_muelu << std::endl;
     std::cout << "||Residual|| = " << normVec_muelu[0] << std::endl;
  }
-} 
+}
 
 
   #include <Teuchos_TimeMonitor.hpp>

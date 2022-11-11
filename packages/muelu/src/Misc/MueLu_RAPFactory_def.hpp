@@ -286,7 +286,7 @@ namespace MueLu {
           Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
                         doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
-                        RAPparams);         
+                        RAPparams);
         } else {
           RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
           Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LO>(0));

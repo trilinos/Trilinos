@@ -83,7 +83,7 @@ namespace MueLu {
         Input(fineLevel, TransferVecName_);
         Input(fineLevel, "CoarseMap");
 
-        if(useAggregatesMode_) 
+        if(useAggregatesMode_)
           Input(fineLevel, "Aggregates");
         else {
           Input(coarseLevel, "P Graph");
@@ -234,7 +234,7 @@ namespace MueLu {
    
     // Fill in coarse TV
     size_t error_count = 0;
-    for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {      
+    for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
       if (procWinner[lnode] == myPID &&
           //lnode < vertex2AggID.size() &&
           lnode < fineData.size() && // TAW do not access off-processor data
@@ -242,7 +242,7 @@ namespace MueLu {
         if(coarseData[vertex2AggID[lnode]] == LO_INVALID)
           coarseData[vertex2AggID[lnode]] = fineData[lnode];
         if(coarseData[vertex2AggID[lnode]] != fineData[lnode])
-          error_count++;        
+          error_count++;
       }
     }
 

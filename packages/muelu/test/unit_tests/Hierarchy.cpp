@@ -807,8 +807,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::ParameterList matrixParams;
     matrixParams.set("matrixType","Laplace1D");
-    matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even    
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);  
+    matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
@@ -890,8 +890,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::ParameterList matrixParams;
     matrixParams.set("matrixType","Laplace1D");
-    matrixParams.set("nx",(GlobalOrdinal)100);// needs to be even    
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);  
+    matrixParams.set("nx",(GlobalOrdinal)100);// needs to be even
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
@@ -1102,7 +1102,7 @@ namespace MueLuTests {
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList galeriList, ifpack2Params;
     galeriList.set("nx", nx);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);
 
     ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
 
@@ -1230,7 +1230,7 @@ namespace MueLuTests {
     // Here we want no pre-smoothing on levels 0 and 1
     RCP<SmootherPrototype> noSmooProto;
     RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSmootherPrototype("Gauss-Seidel", 2);
-    RCP<SmootherFactory>   SmooFact = rcp( new SmootherFactory(noSmooProto,smooProto) );    
+    RCP<SmootherFactory>   SmooFact = rcp( new SmootherFactory(noSmooProto,smooProto) );
     M0.SetFactory("Smoother", SmooFact);
     M1.SetFactory("Smoother", SmooFact);
 

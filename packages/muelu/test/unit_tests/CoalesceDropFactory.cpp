@@ -1942,7 +1942,7 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates", coordinates);
 
 
-    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());      
+    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());
     Teuchos::ParameterList ibList;
     ibList.set("aggregation: block diagonal: interleaved blocksize",3);
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -2037,7 +2037,7 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates", coordinates);
 
 
-    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());      
+    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());
     Teuchos::ParameterList ibList;
     ibList.set("aggregation: block diagonal: interleaved blocksize",3);
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -2137,7 +2137,7 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates", coordinates);
 
 
-    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());      
+    RCP<InitialBlockNumberFactory> ibFact = rcp(new InitialBlockNumberFactory());
     Teuchos::ParameterList ibList;
     ibList.set("aggregation: block diagonal: interleaved blocksize",3);
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());

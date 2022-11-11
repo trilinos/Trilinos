@@ -233,7 +233,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
       // rebalance coordinates
       // TAW: Note, that each sub-block manager overwrites the Coordinates. So far we only support one set of Coordinates
-      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)   
+      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)
       if(UseSingleSource)  {
 	RCP<xdMV> localCoords = oldCoordinates->getMultiVector(curBlockId);
 

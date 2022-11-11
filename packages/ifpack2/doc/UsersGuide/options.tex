@@ -380,6 +380,11 @@ The following parameters are used in the Chebyshev method:
     {bool}
     {\false}
     {The \texttt{apply} call will optionally return the norm of the residual.}
+\ccc{chebyshev: compute spectral radius}
+    {bool}
+    {\true}
+    {The power method will compute the spectral radius if true. If false, it will
+     instead compute the dominant eigenvalue (these differ by absolute value).}
 \ccc{eigen-analysis: type}
     {string}
     {"power-method"}

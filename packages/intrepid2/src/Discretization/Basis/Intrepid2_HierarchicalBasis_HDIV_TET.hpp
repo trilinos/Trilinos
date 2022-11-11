@@ -85,12 +85,12 @@ namespace Intrepid2
     ordinal_type numFields_, numPoints_;
     
     size_t fad_size_output_;
-        
-    static const ordinal_type numVertices         = 4;
-    static const ordinal_type numFaces            = 4;
-    static const ordinal_type numVerticesPerFace  = 3;
-    static const ordinal_type numInteriorFamilies = 3;
-    
+
+    static constexpr ordinal_type numVertices = 4;
+    static constexpr ordinal_type numFaces = 4;
+    static constexpr ordinal_type numVerticesPerFace = 3;
+    static constexpr ordinal_type numInteriorFamilies = 3;
+
     // index into face_vertices with faceOrdinal * numVerticesPerFace + vertexNumber
     const ordinal_type face_vertices[numFaces*numVerticesPerFace] = {0,1,2, // face 0
                                                                      0,1,3, // face 1
@@ -432,9 +432,7 @@ namespace Intrepid2
     }
     
     KOKKOS_INLINE_FUNCTION
-    void operator()( const TeamMember & teamMember ) const
-    {
-      const ordinal_type numFaces            = 4;
+    void operator()(const TeamMember &teamMember) const {
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView scratch0, scratch1, scratch2, scratch3;
       if (fad_size_output_ > 0) {
@@ -512,7 +510,6 @@ namespace Intrepid2
             auto &scratchP_2ip1 = scratch1;
             auto &scratchL_2ipjp1 = scratch2; // L^{2(i+j+1)}, integrated Jacobi
 
-            const ordinal_type numInteriorFamilies = 3;
             const ordinal_type min_ijk_sum = 1;
             const ordinal_type max_ijk_sum = polyOrder_-1;
             const ordinal_type min_ij_sum  = 0;
@@ -611,12 +608,9 @@ namespace Intrepid2
           // interior functions
           {
             // rename the scratch memory to match our usage here:
-            auto &scratchP = scratch0;
-            auto &scratchP_2ip1 = scratch1;
             auto &scratchL_2ipjp1 = scratch2;
             auto &scratchP_2ipjp1 = scratch3;
 
-            const int numInteriorFamilies = 3;
             const int interiorFieldOrdinalOffset = numFaceFunctions_;
             for (int interiorFamilyOrdinal=1; interiorFamilyOrdinal<=numInteriorFamilies; interiorFamilyOrdinal++)
             {
@@ -631,9 +625,9 @@ namespace Intrepid2
               
               OutputScalar vectorWeight_x, vectorWeight_y, vectorWeight_z;
               computeFaceVectorWeight(vectorWeight_x, vectorWeight_y, vectorWeight_z, relatedFaceOrdinal, lambda, lambda_dx, lambda_dy, lambda_dz);
-              
-              ordinal_type fieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
-              
+
+              ordinal_type interiorFieldOrdinal = interiorFieldOrdinalOffset + interiorFamilyOrdinal - 1;
+
               const ordinal_type min_ijk_sum = 1;
               const ordinal_type max_ijk_sum = polyOrder_-1;
               const ordinal_type min_ij_sum  = 0;
@@ -674,13 +668,13 @@ namespace Intrepid2
                         interiorFamilyOrdinal - 1, j, k, scratchP_2ipjp1,
                         lambda, lambda_dx, lambda_dy, lambda_dz);
 
-                    auto & outputDiv = output_(fieldOrdinal,pointOrdinal);
+                    auto &outputDiv = output_(interiorFieldOrdinal, pointOrdinal);
                     interiorFunctionDiv(outputDiv, scratchL_2ipjp1(k), faceDiv,
                                         L_2ipjp1_k_dx, L_2ipjp1_k_dy,
                                         L_2ipjp1_k_dz, faceValue_x, faceValue_y,
                                         faceValue_z);
 
-                    fieldOrdinal += numInteriorFamilies; // increment due to the interleaving.
+                    interiorFieldOrdinal += numInteriorFamilies;  // increment due to the interleaving.
                   }
                 }
               }
@@ -706,7 +700,7 @@ namespace Intrepid2
           device_assert(false);
       }
     }
-    
+
     // Provide the shared memory capacity.
     // This function takes the team_size as an argument,
     // which allows team_size-dependent allocations.

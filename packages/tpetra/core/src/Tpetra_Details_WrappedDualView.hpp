@@ -167,11 +167,14 @@ public:
     t_host hostView;
     if(deviceView.use_count() != 0)
     {
-      hostView = Kokkos::create_mirror_view_and_copy(
+      hostView = Kokkos::create_mirror_view(
+          Kokkos::WithoutInitializing,
           typename t_host::memory_space(),
           deviceView);
     }
     originalDualView = DualViewType(deviceView, hostView);
+    originalDualView.clear_sync_state();
+    originalDualView.modify_device();
     dualView = originalDualView;
   }
 

@@ -9,7 +9,7 @@
   <Parameter name="multigrid algorithm" type="string" value="sa"/>
   <Parameter name="sa: damping factor"  type="double" value="1.33333"/>
 
-   <!-- 
+   <!--
   <Parameter name="coarse: type" type="string" value="RELAXATION"/>
   <ParameterList name="coarse: params">
     <Parameter name="relaxation: type"  type="string" value="Jacobi"/>
