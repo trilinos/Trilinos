@@ -421,6 +421,8 @@ int specializedLAPACK<T>::test(bool verbose)
   return numberFailedTests;
 }
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
 template<class T>
 int specializedLAPACK<std::complex<T> >::test( bool verbose )
 {
@@ -478,3 +480,5 @@ int specializedLAPACK<std::complex<T> >::test( bool verbose )
   
 return numberFailedTests;
 }
+
+#endif
