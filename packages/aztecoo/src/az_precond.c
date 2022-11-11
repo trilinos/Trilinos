@@ -314,44 +314,44 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
               for (i = 0; i < m; i++)
                  tsize += (rpntr[i+1] - rpntr[i]) * (cpntr[i+1] - cpntr[i]);
 
-                 sprintf(tag,"d2_indx %s",precond->context->tag);
-                 d2_indx  = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
-                                            data_org[AZ_name], tag, &i);
-                 sprintf(tag,"d2_bindx %s",precond->context->tag);
-                 d2_bindx = (int *) AZ_manage_memory(m*sizeof(int), AZ_ALLOC,
-                                            data_org[AZ_name], tag, &i);
-                 sprintf(tag,"d2_rpntr %s",precond->context->tag);
-                 d2_rpntr = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
-                                            data_org[AZ_name], tag, &i);
-                 sprintf(tag,"d2_bpntr %s",precond->context->tag);
-                 d2_bpntr = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
-                                            data_org[AZ_name], tag, &i);
-                 sprintf(tag,"d2_inv %s",precond->context->tag);
-                 d2_inv   = (double *) AZ_manage_memory(tsize*sizeof(double),
-                                            AZ_ALLOC, data_org[AZ_name],tag,&i);
-                 d2_bpntr[0] = 0;
-                 sprintf(tag,"dmat_calk_binv %s",precond->context->tag);
-                 Dmat     = (AZ_MATRIX *) AZ_manage_memory(sizeof(AZ_MATRIX), 
-                                            AZ_ALLOC,data_org[AZ_name],tag,&i);
+              sprintf(tag,"d2_indx %s",precond->context->tag);
+              d2_indx  = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
+                                         data_org[AZ_name], tag, &i);
+              sprintf(tag,"d2_bindx %s",precond->context->tag);
+              d2_bindx = (int *) AZ_manage_memory(m*sizeof(int), AZ_ALLOC,
+                                         data_org[AZ_name], tag, &i);
+              sprintf(tag,"d2_rpntr %s",precond->context->tag);
+              d2_rpntr = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
+                                         data_org[AZ_name], tag, &i);
+              sprintf(tag,"d2_bpntr %s",precond->context->tag);
+              d2_bpntr = (int *) AZ_manage_memory((m+1)*sizeof(int),AZ_ALLOC,
+                                         data_org[AZ_name], tag, &i);
+              sprintf(tag,"d2_inv %s",precond->context->tag);
+              d2_inv   = (double *) AZ_manage_memory(tsize*sizeof(double),
+                                          AZ_ALLOC, data_org[AZ_name],tag,&i);
+              d2_bpntr[0] = 0;
+              sprintf(tag,"dmat_calk_binv %s",precond->context->tag);
+              Dmat     = (AZ_MATRIX *) AZ_manage_memory(sizeof(AZ_MATRIX), 
+                                         AZ_ALLOC,data_org[AZ_name],tag,&i);
 
-                 Dmat->rpntr         = d2_rpntr;   Dmat->cpntr    = d2_rpntr;
-                 Dmat->bpntr         = d2_bpntr;   Dmat->bindx    = d2_bindx;
-                 Dmat->indx          = d2_indx;    Dmat->val      = d2_inv;
-                 Dmat->data_org      = data_org;
-                 Dmat->matvec        = precond->Pmat->matvec;
-                 Dmat->matrix_type   = precond->Pmat->matrix_type;
+              Dmat->rpntr         = d2_rpntr;   Dmat->cpntr    = d2_rpntr;
+              Dmat->bpntr         = d2_bpntr;   Dmat->bindx    = d2_bindx;
+              Dmat->indx          = d2_indx;    Dmat->val      = d2_inv;
+              Dmat->data_org      = data_org;
+              Dmat->matvec        = precond->Pmat->matvec;
+              Dmat->matrix_type   = precond->Pmat->matrix_type;
 
-                 if (options[AZ_pre_calc] != AZ_reuse) {
-                    AZ_calc_blk_diag_inv(val, indx, bindx, rpntr, cpntr, bpntr,
-                                         d2_inv, d2_indx, d2_bindx, d2_rpntr, 
-                                         d2_bpntr, data_org);
-                 }
-                 else if (i == AZ_NEW_ADDRESS) {
-                   AZ_printf_err( "Error: options[AZ_pre_calc]==AZ_reuse and"
-                         "previous factors\n       not found. Check"
-                         "data_org[AZ_name].\n");
-                   exit(-1);
-                 }
+              if (options[AZ_pre_calc] != AZ_reuse) {
+                 AZ_calc_blk_diag_inv(val, indx, bindx, rpntr, cpntr, bpntr,
+                                      d2_inv, d2_indx, d2_bindx, d2_rpntr, 
+                                      d2_bpntr, data_org);
+              }
+              else if (i == AZ_NEW_ADDRESS) {
+                AZ_printf_err( "Error: options[AZ_pre_calc]==AZ_reuse and"
+                      "previous factors\n       not found. Check"
+                      "data_org[AZ_name].\n");
+                exit(-1);
+              }
            }
            else if (previous_factors != data_org[AZ_name]) {
               AZ_printf_err( "Warning: Using a previous factorization as a"
