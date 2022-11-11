@@ -383,7 +383,7 @@ namespace MueLuTests {
       TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
       fineLevel  .SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
-      coarseLevel.SetFactoryManager(Teuchos::null);  
+      coarseLevel.SetFactoryManager(Teuchos::null);
       fineLevel.Request("A");
       fineLevel.Set    ("A", A);
 

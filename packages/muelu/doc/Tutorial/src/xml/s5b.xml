@@ -40,7 +40,7 @@
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="PA-AMG"/>
       <Parameter name="Damping factor"                      type="double" value="1.33"/>
-    </ParameterList>    
+    </ParameterList>
     
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
@@ -89,7 +89,7 @@
       <Parameter name="Partition"                           type="string" value="myRepartitionInterface"/>
       <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/>
       <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/>
-      <Parameter name="startLevel"                          type="int"    value="1"/>  
+      <Parameter name="startLevel"                          type="int"    value="1"/>
       <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
@@ -175,7 +175,7 @@
       <Parameter name="P"                                   type="string"   value="PA-AMG"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>      
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>

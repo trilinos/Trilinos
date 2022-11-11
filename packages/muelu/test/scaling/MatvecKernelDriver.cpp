@@ -117,7 +117,7 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
   printf("\n");
 }
 
-#if defined(HAVE_MUELU_TPETRA) 
+#if defined(HAVE_MUELU_TPETRA)
 //==============================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
@@ -163,7 +163,7 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
     // The domain map isn't linear, so we need a new domain map
     ContiguousDomainMap = rcp(new map_type(DomainMap->getGlobalNumElements(),
                                            DomainMap->getLocalNumElements(), 0, DomainMap->getComm()));
-    if(importer) {    
+    if(importer) {
       // If there's an importer then we can use it to get a new column map
       go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getLocalElementList());
 
@@ -178,7 +178,7 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
       // The problem has matching domain/column maps, and somehow the domain map isn't linear, so just use the new domain map
       ContiguousColumnMap = rcp(new map_type(ColumnMap->getGlobalNumElements(),ContiguousDomainMap->getLocalElementList(), 0, ColumnMap->getComm()));
     }
-  }  
+  }
 }
 
 #endif
@@ -207,13 +207,13 @@ public:
     LO Nx = (LO) X.getMap()->getLocalNumElements();
     LO Ny = (LO) Y.getMap()->getLocalNumElements();
 
-    // NOTE:  Petsc requires contiguous GIDs for the row map    
+    // NOTE:  Petsc requires contiguous GIDs for the row map
     Teuchos::RCP<const map_type> c_row_map, c_col_map, c_domain_map;
     MakeContiguousMaps(A,c_row_map,c_col_map,c_domain_map);
 
     // Note: PETSC appears to favor local indices for vector insertion
     std::vector<PetscInt> l_indices(std::max(Nx,Ny));
-    for(int i=0; i<std::max(Nx,Ny); i++) 
+    for(int i=0; i<std::max(Nx,Ny); i++)
       l_indices[i] = i;
 
     // x vector
@@ -252,22 +252,22 @@ public:
       GlobalRow[0] = c_row_map->getGlobalElement(i);
       
       MatSetValues(A_p,1,GlobalRow, numEntries, new_indices.data(), values.data(),INSERT_VALUES);
-    }                   
+    }
     MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);
 
   }
 
-  ~Petsc_SpmV_Pack() { 
+  ~Petsc_SpmV_Pack() {
     VecDestroy(&x_p);
     VecDestroy(&y_p);
     MatDestroy(&A_p);
   }
 
-  bool spmv(const Scalar alpha, const Scalar beta) { 
+  bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = MatMult(A_p,x_p,y_p);
     return (rv != 0);
-  }  
+  }
 
 private:
   Mat A_p;
@@ -353,7 +353,7 @@ public:
     HYPRE_CHK_ERR(HYPRE_IJVectorInitialize(y_ij));
     HYPRE_CHK_ERR(HYPRE_IJVectorSetValues(y_ij,Y.getLocalLength(),row_indices,Y.getDataNonConst(0).getRawPtr()));
     HYPRE_CHK_ERR(HYPRE_IJVectorAssemble(y_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorGetObject(y_ij, (void**) &y_par));   
+    HYPRE_CHK_ERR(HYPRE_IJVectorGetObject(y_ij, (void**) &y_par));
   }
 
   ~HYPRE_SpmV_Pack() {
@@ -362,7 +362,7 @@ public:
     HYPRE_IJVectorDestroy(y_ij);
   }
 
-  bool spmv(const Scalar alpha, const Scalar beta) { 
+  bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = HYPRE_ParCSRMatrixMatvec(alpha,parcsr_matrix, x_par,beta, y_par);
     return (rv != 0);
   }

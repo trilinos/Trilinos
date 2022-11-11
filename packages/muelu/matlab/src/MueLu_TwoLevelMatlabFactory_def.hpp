@@ -72,7 +72,7 @@ namespace MueLu {
     validParamList->set<std::string>("Provides"     , "" ,"A comma-separated list of objects provided on the coarse level by the TwoLevelMatlabFactory");
     validParamList->set<std::string>("Needs Fine"   , "", "A comma-separated list of objects needed on the fine level by the TwoLevelMatlabFactory");
     validParamList->set<std::string>("Needs Coarse" , "", "A comma-separated list of objects needed on the coarse level by the TwoLevelMatlabFactory");
-    validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");    
+    validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");
     return validParamList;
   }
 

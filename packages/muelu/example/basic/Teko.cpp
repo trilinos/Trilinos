@@ -98,7 +98,7 @@ void GenerateDefault_2x2_Splitting(const RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >& c
                                    Teko::LinearOp & A,
                                    Teko::MultiVector & x,
                                    Teko::MultiVector & b)
-{  
+{
    typedef Tpetra::Vector<SC,LO,GO,NO>        TP_Vec;
    typedef Tpetra::CrsMatrix<SC,LO,GO,NO>     TP_Crs;
    typedef Tpetra::Operator<SC,LO,GO,NO>      TP_Op;
@@ -146,7 +146,7 @@ int extract_int(std::istringstream & iss) {
   iss >> s;
   if(s != "") {
     return stoi(s); }
-  else 
+  else
     return -1;
 }
 
@@ -167,7 +167,7 @@ std::vector<std::vector<GO> > read_block_gids(std::string partitionFile, RCP<con
   std::vector<std::vector<GO> > block_gids(num_blocks);
   auto vv = pfile->get1dView();
   for(LO i=0; i<(LO)vv.size(); i++){
-    LO block_id = vv[i];    
+    LO block_id = vv[i];
     block_gids[block_id].push_back(rowMap->getGlobalElement(i));
   }
 
@@ -201,7 +201,7 @@ template<class SC,class LO, class GO, class NO>
   int solve_thyra(RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > & crsMat, const std::string &xmlFile) {
   typedef Tpetra::CrsMatrix<SC>       TP_Crs;
   typedef Thyra::PreconditionerFactoryBase<SC>        Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl; 
+  typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
 
   typedef Thyra::MultiVectorBase<SC>  MV;
   typedef Thyra::LinearOpBase<SC>     OP;
@@ -296,7 +296,7 @@ template<class SC,class LO, class GO, class NO>
   // tell Stratimikos => Teko about MueLu
   RCP<Stratimikos::DefaultLinearSolverBuilder> linearSolverBuilder = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder);
   linearSolverBuilder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-  Stratimikos::enableMueLu<SC,LO,GO,NO>(*linearSolverBuilder);  
+  Stratimikos::enableMueLu<SC,LO,GO,NO>(*linearSolverBuilder);
  
   /////////////////////////////////////////////////////////
   // Build the Thyra operators
@@ -444,8 +444,8 @@ int main(int argc,char * argv[])
 
      if(coordsFile!= "") {
        RCP<const TP_Map> coordsMap = rowMap;
-       if(coordsMapFile != "") 
-         coordsMap = Tpetra::MatrixMarket::Reader<TP_Crs>::readMapFile(coordsMapFile,rowMap->getComm()); 
+       if(coordsMapFile != "")
+         coordsMap = Tpetra::MatrixMarket::Reader<TP_Crs>::readMapFile(coordsMapFile,rowMap->getComm());
        coords = Tpetra::MatrixMarket::Reader<TP_Crs>::readDenseFile(coordsFile,coordsMap->getComm(),coordsMap);
      }
    }
@@ -465,9 +465,9 @@ int main(int argc,char * argv[])
    Teko::MultiVector x,b;
 
    int rv;
-   if(partitionFile == "") 
+   if(partitionFile == "")
      rv = solve_thyra(crsMat,xmlFile);
-   else 
+   else
      rv = solve_tpetra<SC,LO,GO,NO>(crsMat,rhs,coords,xmlFile,partitionFile);
    
    return rv;

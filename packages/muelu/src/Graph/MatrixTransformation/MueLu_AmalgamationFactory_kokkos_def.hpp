@@ -93,7 +93,7 @@ namespace MueLu {
 
        If numPDEs>1
          If matrix uses point storage, then storageblocksize=1  and fullblockssize=numPDEs.
-         If matrix uses block storage, with block size of n, then storageblocksize=n, and fullblocksize=numPDEs/n.  
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and fullblocksize=numPDEs/n.
          Thus far, only storageblocksize=numPDEs and fullblocksize=1 has been tested.
     */
 
