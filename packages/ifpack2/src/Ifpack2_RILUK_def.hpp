@@ -549,7 +549,7 @@ void RILUK<MatrixType>::initialize ()
     L_solver_->initialize ();
     //NOTE (Nov-09-2022): 
     //For Cuda >= 11.3 (using cusparseSpSV), skip trisolve computes here.
-    //Instead, call trisolve computes within RILUK compute  
+    //Instead, call trisolve computes within RILUK compute
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
     L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
 #endif
@@ -1040,20 +1040,38 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
         // Start by solving L Y = X for Y.
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-11-2022):
+        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+        //since cusparseSpSV_solve() does not support in-place computation
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        L_solver_->apply (X, Y_tmp, mode);
+#else
         L_solver_->apply (X, Y, mode);
-
+#endif
         if (!this->isKokkosKernelsSpiluk_) {
           // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
           // write "solve D Y = Y for Y."
           Y.elementWiseMultiply (one, *D_, Y, zero);
         }
-
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-11-2022):
+        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+        //since cusparseSpSV_solve() does not support in-place computation
+        U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
+#else
         U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
+#endif
       }
       else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
         // Start by solving U^P Y = X for Y.
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-11-2022): see note above
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        U_solver_->apply (X, Y_tmp, mode);
+#else
         U_solver_->apply (X, Y, mode);
-
+#endif
         if (!this->isKokkosKernelsSpiluk_) {
           // Solve D^P Y = Y.
           //
@@ -1062,8 +1080,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           // D_, not just with D_ itself.
           Y.elementWiseMultiply (one, *D_, Y, zero);
 	    }
-
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-11-2022): see note above
+        L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+#else
         L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+#endif
       }
     }
     else { // alpha != 1 or beta != 0
