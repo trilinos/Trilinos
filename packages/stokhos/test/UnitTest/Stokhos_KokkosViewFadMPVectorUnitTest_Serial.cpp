@@ -50,18 +50,3 @@
 // Instantiate test for Serial device
 using Kokkos::Serial;
 VIEW_FAD_MP_VECTOR_TESTS_DEVICE( Serial )
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  // Initialize serial
-  Kokkos::initialize();
-
-  // Run tests
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  // Finish up
-  Kokkos::finalize();
-
-  return ret;
-}

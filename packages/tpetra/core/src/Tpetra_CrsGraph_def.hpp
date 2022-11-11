@@ -683,8 +683,7 @@ namespace Tpetra {
 
     lclIndsPacked_wdv = local_inds_wdv_type(k_local_graph_.entries);
     lclIndsUnpacked_wdv = lclIndsPacked_wdv;
-    this->setRowPtrsUnpacked(k_local_graph_.row_map);
-    this->setRowPtrsPacked(k_local_graph_.row_map);
+    this->setRowPtrs(k_local_graph_.row_map);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -730,8 +729,7 @@ namespace Tpetra {
 
     lclIndsPacked_wdv = local_inds_wdv_type(lclGraph.entries);
     lclIndsUnpacked_wdv = lclIndsPacked_wdv;
-    setRowPtrsUnpacked(lclGraph.row_map);
-    setRowPtrsPacked(lclGraph.row_map);
+    setRowPtrs(lclGraph.row_map);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -2664,6 +2662,8 @@ namespace Tpetra {
   setAllIndices (const typename local_graph_device_type::row_map_type& rowPointers,
                  const typename local_graph_device_type::entries_type::non_const_type& columnIndices)
   {
+    using ProfilingRegion=Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::CrsGraph::setAllIndices");
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasColMap () || getColMap ().is_null (), std::runtime_error,
@@ -2753,8 +2753,7 @@ namespace Tpetra {
     noRedundancies_      = true;
     lclIndsPacked_wdv= local_inds_wdv_type(columnIndices);
     lclIndsUnpacked_wdv          = lclIndsPacked_wdv;
-    setRowPtrsUnpacked(rowPointers);
-    setRowPtrsPacked(rowPointers);
+    setRowPtrs(rowPointers);
 
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -3651,11 +3650,16 @@ namespace Tpetra {
         }
       }
       // Build the local graph.
-      setRowPtrsPacked(ptr_d_const);
+      if (requestOptimizedStorage)
+        setRowPtrs(ptr_d_const);
+      else
+        setRowPtrsPacked(ptr_d_const);
       lclIndsPacked_wdv = local_inds_wdv_type(ind_d);
     }
     else { // We don't have to pack, so just set the pointers.
-      setRowPtrsPacked(rowPtrsUnpacked_dev_);
+      // Note: The setRowPtrsPacked call has an aditional memcpy to host that we want to avoid
+      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
+      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
       lclIndsPacked_wdv = lclIndsUnpacked_wdv; 
 
       if (debug_) {
@@ -3707,7 +3711,6 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      setRowPtrsUnpacked(rowPtrsPacked_dev_);
       lclIndsUnpacked_wdv = lclIndsPacked_wdv;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;

@@ -200,7 +200,7 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
       });
     Kokkos::parallel_for(Ni+1,KOKKOS_LAMBDA(const size_t i) {
         if(i!=0) B1rowptrMKL[Nb+i] = B1rowptr[Nb-1];
-        B2rowptrMKL[Nb+i] = B2rowptr[i]; 
+        B2rowptrMKL[Nb+i] = B2rowptr[i];
       });
 
     // Reindex the column indices into C's column map
@@ -230,16 +230,16 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     tm = Teuchos::null;
     Au->getComm()->barrier();
 
-    if(algorithm_name == "MULT_ADD" ) {      
+    if(algorithm_name == "MULT_ADD" ) {
       // **********************************
-      // Multiply #1 (A*B1) 
+      // Multiply #1 (A*B1)
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 1")));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp1MKL);
       KCRS::execution_space::fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Multiply 1 failed: "+mkl_error(result));
 
       // **********************************
-      // Multiply #2 (A*B2) 
+      // Multiply #2 (A*B2)
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Multiply 2")));
       result = mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, B1MKL, &Temp2MKL);
       KCRS::execution_space::fence();
@@ -252,7 +252,7 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
       KCRS::execution_space::fence();
       if(result != SPARSE_STATUS_SUCCESS) throw std::runtime_error("MKL Add failed: "+mkl_error(result));
     }
-    else if(algorithm_name == "ADD_MULT" ) {      
+    else if(algorithm_name == "ADD_MULT" ) {
       // **********************************
       // Add B1 + B2
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Add")));
@@ -296,7 +296,7 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     mkl_sparse_destroy(Temp1MKL);
     if(algorithm_name == "MULT_ADD" ) mkl_sparse_destroy(Temp2MKL);
 
-#else 
+#else
     std::runtime_error("ERROR: MKL wrapper can only be called with Tpetra enabled");
 #endif
 
@@ -645,7 +645,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
          #ifdef HAVE_MUELU_MKL
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
-            TimeMonitor t(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Total"));            
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM2 MKL MULT_ADD: Total"));
             MM2_MKL(*A,*B1,*B2,*C,Bcolmap,std::string("MULT_ADD"));
           }
           #endif
@@ -655,7 +655,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
          #ifdef HAVE_MUELU_MKL
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
-            TimeMonitor t(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Total"));            
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM2 MKL ADD_MULT: Total"));
             MM2_MKL(*A,*B1,*B2,*C,Bcolmap,std::string("ADD_MULT"));
           }
           #endif

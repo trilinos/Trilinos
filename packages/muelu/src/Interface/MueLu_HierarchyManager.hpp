@@ -248,12 +248,12 @@ namespace MueLu {
       }
 
       // Matrices to print
-      for(auto iter=matricesToPrint_.begin(); iter!=matricesToPrint_.end(); iter++) 
+      for(auto iter=matricesToPrint_.begin(); iter!=matricesToPrint_.end(); iter++)
         ExportDataSetKeepFlags(H,iter->second,iter->first);
 
       // Vectors, aggregates and other things that need special case handling
       ExportDataSetKeepFlags(H, nullspaceToPrint_,  "Nullspace");
-      ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");     
+      ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");
       // NOTE: Aggregates use the next level's Factory
       ExportDataSetKeepFlagsNextLevel(H, aggregatesToPrint_,  "Aggregates");
 #ifdef HAVE_MUELU_INTREPID2
@@ -261,7 +261,7 @@ namespace MueLu {
 #endif
 
       // Data to save only (these do not have a level, so we do all levels)
-      for(int i=0; i<dataToSave_.size(); i++) 
+      for(int i=0; i<dataToSave_.size(); i++)
         ExportDataSetKeepFlagsAll(H,dataToSave_[i]);
 
       int  levelID     = 0;
@@ -382,7 +382,7 @@ namespace MueLu {
     Teuchos::Array<int> elementToNodeMapsToPrint_;
 
     // Data we'll need to save, not necessarily print
-    Teuchos::Array<std::string> dataToSave_;   
+    Teuchos::Array<std::string> dataToSave_;
 
     // Matrices we'll need to print
     std::map<std::string,Teuchos::Array<int> > matricesToPrint_;

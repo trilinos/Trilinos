@@ -219,11 +219,11 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> coordinates;
 
-  if (problem_type == "ADR1D") 
+  if (problem_type == "ADR1D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("1D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR2D") 
+  else if (problem_type == "ADR2D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("2D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR3D") 
+  else if (problem_type == "ADR3D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("3D", xpetraMap, matrixParameters.GetParameterList());
 
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());

@@ -109,7 +109,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
       if (W.span() == 0) {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
-        r_val = (lwork + sizeof(value_type_w)) / sizeof(value_type_w) + 1;
+        r_val = sizeof(value_type_w) * ((lwork + sizeof(value_type_w) - 1) / sizeof(value_type_w) + 1);
       } else
         r_val = cusolver_invoke(member, A, P, W);
     }

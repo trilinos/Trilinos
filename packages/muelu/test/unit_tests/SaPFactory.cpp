@@ -329,7 +329,7 @@ namespace MueLuTests {
       Teuchos::ArrayView<const SC> vals;
       P->getLocalRowView((LO) i, indices, vals);
       size_t nnz = indices.size();
-      for (size_t j = 0; j < nnz; j++)  { 
+      for (size_t j = 0; j < nnz; j++)  {
         if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(zero)) lowerViolation = true;
         if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(one))  upperViolation = true;
         //if (STS::magnitude(vals[j]) < STS::magnitude(zero)) lowerViolation = true;

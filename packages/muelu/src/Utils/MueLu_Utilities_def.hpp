@@ -355,7 +355,7 @@ namespace MueLu {
       }
     } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-    }    
+    }
   }
 
 

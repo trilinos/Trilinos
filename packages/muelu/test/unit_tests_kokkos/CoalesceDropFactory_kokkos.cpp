@@ -101,7 +101,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1) {
 				auto v0 = lclLWGraph.getNeighborVertices(0);
 				auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -177,7 +177,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1) {
 				auto v0 = lclLWGraph.getNeighborVertices(0);
 				auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -255,7 +255,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1 && lclLWGraph.getNeighborVertices(0).length == 1) {
 				correct = true;
 			      } else {

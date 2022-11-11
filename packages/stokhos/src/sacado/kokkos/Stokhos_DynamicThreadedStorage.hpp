@@ -56,21 +56,8 @@ namespace Stokhos {
 
 }
 
-namespace Sacado {
-  template <typename ordinal_t, typename value_t, typename device_t>
-  struct StringName< Stokhos::DynamicThreadedStorage<ordinal_t,
-                                                     value_t,
-                                                     device_t> > {
-    static std::string eval() {
-      std::stringstream ss;
-      ss << "Stokhos::DynamicThreadedStorage<"
-         << StringName<ordinal_t>::eval() << ","
-         << StringName<value_t>::eval() << ","
-         << StringName<device_t>::eval() << ">";
-      return ss.str();
-    }
-  };
-}
+#include "Stokhos_StorageHelpers.hpp"
+STOKHOS_STORAGE_HELPER_STRINGNAME_DYNAMIC(DynamicThreadedStorage)
 
 // No Host specialization
 

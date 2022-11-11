@@ -326,12 +326,12 @@ namespace MueLu {
     naggx_ = (nx_-2*xboost)/bx_ + ((nx_-2*xboost) % bx_ ? 1 : 0);
 
     if(nDim_ > 1)
-      naggy_ = (ny_-2*yboost)/by_ + ( (ny_-2*yboost) % by_ ? 1 : 0);      
-    else 
+      naggy_ = (ny_-2*yboost)/by_ + ( (ny_-2*yboost) % by_ ? 1 : 0);
+    else
       naggy_ = 1;
 
     if(nDim_ > 2)
-      naggz_ = (nz_-2*zboost)/bz_ + ( (nz_-2*zboost) % bz_ ? 1 : 0);   
+      naggz_ = (nz_-2*zboost)/bz_ + ( (nz_-2*zboost) % bz_ ? 1 : 0);
     else
       naggz_ = 1;
 
@@ -432,7 +432,7 @@ namespace MueLu {
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void  BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getIJK(LocalOrdinal LID, int &i, int &j, int &k) const {
-   i = (*xMap_)[x_[LID]]; 
+   i = (*xMap_)[x_[LID]];
    j = (nDim_>1) ? (*yMap_)[y_[LID]] : 0;
    k =  (nDim_>2) ? (*zMap_)[z_[LID]] : 0;
   }
@@ -504,7 +504,7 @@ namespace MueLu {
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
         MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
         GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-      }      
+      }
       Set(currentLevel, "DofsPerNode", 1);
       Set(currentLevel, "Graph", graph);
       Set(currentLevel, "Filtering",false);
@@ -512,7 +512,7 @@ namespace MueLu {
     else {
       FactoryMonitor m(*this, "Generating Graph", currentLevel);
       /*** Case 2: Dropping required ***/
-      // There is at least one active dimension in which we are not coarsening.  
+      // There is at least one active dimension in which we are not coarsening.
       // Those connections need to be dropped
       bool drop_x = (bx_ == 1);
       bool drop_y = (nDim_> 1 && by_ == 1);
@@ -538,7 +538,7 @@ namespace MueLu {
 
         for(size_t cidx=rowptr[row]; cidx<rowptr[row+1]; cidx++) {
           int ic,jc,kc;
-          LO col = colind[cidx];          
+          LO col = colind[cidx];
           getIJK(col,ic,jc,kc);
 
           if( (row2 !=col) && ((drop_x && ir != ic) || (drop_y && jr != jc) || (drop_z && kr != kc) )) {
@@ -570,7 +570,7 @@ namespace MueLu {
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
         MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
         GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-      }      
+      }
       Set(currentLevel, "DofsPerNode", 1);
       Set(currentLevel, "Graph", graph);
       Set(currentLevel, "Filtering",true);

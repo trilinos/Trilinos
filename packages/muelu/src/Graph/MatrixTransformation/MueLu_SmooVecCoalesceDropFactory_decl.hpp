@@ -83,16 +83,16 @@ namespace MueLu {
 
     Experimental dropping function based on taking a set of random vectors u, running
     a smoother on A u = 0, and then basing the drop decisions on "how smooth" the vectors
-    are local. Neighobring regions where the vectors are smooth can be aggregated 
-    together and so these are kept in the associated drop matrix. Areas that are 
+    are local. Neighobring regions where the vectors are smooth can be aggregated
+    together and so these are kept in the associated drop matrix. Areas that are
     not smooth should end up in different aggregates and so the A_ij representing
     these should be dropped.  This Factory can address both PDE systems and
     scalar PDEs, always creating a matrix reprsenting nodal connections as opposed
-    to dof connections. 
+    to dof connections.
 
      To enter this factor as opposed to the more standard CoalesceDropFactory() one
-     must set "aggregation: drop scheme" to "unsupported vector smoothing". In this 
-     case some of the parameter options associated with CoalesceDropFactory (e.g., 
+     must set "aggregation: drop scheme" to "unsupported vector smoothing". In this
+     case some of the parameter options associated with CoalesceDropFactory (e.g.,
      "aggregation: drop tol", "aggregation: Dirichlet threshold", "lightweight wrap")
      will cause parameter validator errors.
 
@@ -102,7 +102,7 @@ namespace MueLu {
     Parameter                  | type      | default   | master.xml | validated | requested | description
     ---------------------------|-----------|-----------|:----------:|:---------:|:---------:|------------
      A                         |Factory    | null      |            | *         | *         | Generating factory of the operator A
-     "aggregation: drop scheme"|std::string|"classical"| *          | *         | *         | Must choose "unsupported vector smoothing" 
+     "aggregation: drop scheme"|std::string|"classical"| *          | *         | *         | Must choose "unsupported vector smoothing"
      "aggregation: number of times to pre or post smooth"|int| 10|* |           | *         | Amount of pre or post smoothing invocations
      "aggregation: number of random vectors"|int| 10   |          * | *         | *         | Number of random vectors
      "aggregation: penalty parameters"|Array(double)|{12.0,-.20}| * | *         | *         | Ultimately determines how much dropping is done

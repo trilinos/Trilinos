@@ -29,7 +29,7 @@
       <type>int</type>
       <default>0</default>
       <description>Level of fill for ILU</description>
-    </parameter>   
+    </parameter>
     <parameter>
       <name>Block 1: relaxation: sweeps</name>
       <type>int</type>
@@ -108,9 +108,9 @@
     </parameter>
   </input-defaults>
   
-  <!-- This block may contain some decision logic for the string replacement code 
+  <!-- This block may contain some decision logic for the string replacement code
        It runs before the standard string replacement of the defaults in the default
-       parameter list  
+       parameter list
   -->
   <interpreter-logic>
     
