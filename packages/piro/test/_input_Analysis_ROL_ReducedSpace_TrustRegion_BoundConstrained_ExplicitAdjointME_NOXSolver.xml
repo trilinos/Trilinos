@@ -169,6 +169,8 @@
         <Parameter name="Full Space" type="bool" value="false" />
         <Parameter name="Use NOX Solver" type="bool" value="true" />
 
+        <Parameter name="Objective Recovery Value" type="double" value="1.0e10" />
+
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">
           <!-- =========== BEGIN GENERAL INPUT PARAMETER SUBLIST =========== -->

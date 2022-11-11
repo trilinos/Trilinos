@@ -68,7 +68,9 @@ public:
         verbosityLevel_(verbLevel), observer_(observer)  {
     write_interval_ = optParams_.get("Write Interval", 1);
     optParams_.set<int>("Optimizer Iteration Number", -1);
-  };
+    useObjectiveRecoveryValue_ = optParams_.isParameter("Objective Recovery Value");
+    objectiveRecoveryValue_ = useObjectiveRecoveryValue_ ? optParams_.get<Real>("Objective Recovery Value") : Real(0.0);
+   };
 
 
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
@@ -100,6 +102,13 @@ public:
     thyra_model_->evalModel(inArgs, outArgs);
 
     objectiveStr_.value_ = ::Thyra::get_ele(*g,0);
+
+    //set value to (large) recovery value if solver did not converge
+    if(useObjectiveRecoveryValue_ && optParams_.isParameter("State Solve Converged") && !optParams_.get<bool>("State Solve Converged")) {
+      if(verbosityLevel_ >= Teuchos::VERB_LOW)
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::value, Setting objective value to recovery value " << objectiveRecoveryValue_ << std::endl;
+      objectiveStr_.value_ = objectiveRecoveryValue_;
+    }
 
     objectiveStr_.isValueValid_ = true;
 
@@ -139,6 +148,8 @@ public:
     Teuchos::RCP< Thyra::VectorBase<Real> > thyra_g;
 
     if(!objectiveStr_.isValueValid_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1, Computing Objective Value" << std::endl;
       thyra_g = Thyra::createMember<Real>(thyra_model_->get_g_space(g_index_));
       outArgs.set_g(g_index_, thyra_g);
     }
@@ -160,9 +171,15 @@ public:
     thyra_model_->evalModel(inArgs, outArgs);
 
     if(!objectiveStr_.isValueValid_) {
-      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1, Computing Value" << std::endl;
       objectiveStr_.value_ = ::Thyra::get_ele(*thyra_g,0);
+      
+      //set value to (large) recovery value if solver did not converge
+      if(useObjectiveRecoveryValue_ && optParams_.isParameter("State Solve Converged") && !optParams_.get<bool>("State Solve Converged")) {
+        if(verbosityLevel_ >= Teuchos::VERB_LOW)
+          *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_1, Setting objective value to recovery value " << objectiveRecoveryValue_ << std::endl;
+        objectiveStr_.value_ = objectiveRecoveryValue_;
+      }
+      
       objectiveStr_.isValueValid_ = true;
     }
 
@@ -206,7 +223,7 @@ public:
 
     if(!objectiveStr_.isValueValid_) {
       if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2, Computing Value" << std::endl;
+        *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2, Computing Objective Value" << std::endl;
       thyra_g = Thyra::createMember<Real>(thyra_model_->get_g_space(g_index_));
       outArgs.set_g(g_index_, thyra_g);
     }
@@ -221,7 +238,7 @@ public:
         dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
       else {
         ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
-            "Piro::ThyraProductME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
+            "Piro::ThyraProductME_Objective::gradient_2, DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
       }
 
       outArgs.set_DgDp(g_index_,p_indices_[i], Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(prodvec_dgdp_p->getNonconstMultiVectorBlock(i), dgdp_orient));
@@ -230,6 +247,14 @@ public:
 
     if(!objectiveStr_.isValueValid_) {
       objectiveStr_.value_ = ::Thyra::get_ele(*thyra_g,0);
+      
+      //set value to (large) recovery value if solver did not converge
+      if(useObjectiveRecoveryValue_ && optParams_.isParameter("State Solve Converged") && !optParams_.get<bool>("State Solve Converged")) {
+        if(verbosityLevel_ >= Teuchos::VERB_LOW)
+          *out_ << "Piro::ThyraProductME_Objective_SimOpt::gradient_2, Setting objective value to recovery value " << objectiveRecoveryValue_ << std::endl;
+        objectiveStr_.value_ = objectiveRecoveryValue_;
+      }
+
       objectiveStr_.isValueValid_ = true;
     }
 
@@ -674,6 +699,8 @@ private:
   const Teuchos::RCP<const Thyra::ModelEvaluator<Real>> thyra_model_;
   const int g_index_;
   const std::vector<int> p_indices_;
+  Real objectiveRecoveryValue_;
+  bool useObjectiveRecoveryValue_;
 
   ObjectiveStruct objectiveStr_, cached_objectiveStr_,  tmp_objectiveStr_;
 

@@ -289,6 +289,9 @@ Piro::PerformROLAnalysis(
   //set names of parameters in the "Optimization Status" sublist
   piroParams.sublist("Optimization Status").set("Parameter Names", Teuchos::rcpFromRef(p_names));
 
+  if(rolParams.isParameter("Objective Recovery Value"))
+    piroParams.sublist("Optimization Status").set("Objective Recovery Value", rolParams.get<double>("Objective Recovery Value"));
+
   Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<double> const>> p_spaces(num_parameters);
   Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<double>>> p_vecs(num_parameters);
   for (auto i = 0; i < num_parameters; ++i) {
@@ -753,6 +756,8 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
   validPL->set<bool>("Bound Constrained", true, "Whether to enforce bounds to the parameters during the optimization");
   validPL->set<bool>("Full Space", true, "Whether to use a full-space or a reduced-space optimization approach");
   validPL->set<bool>("Use NOX Solver", true, "Whether to use NOX for solving the state equation or the native ROL solver");
+
+  validPL->set<double>("Objective Recovery Value", 1.0e10, "Objective value used when the state solver does not converge. If not defined, the objective will be computed using the unconverged state");
 
   validPL->sublist("ROL Options",  false, "Options to pass to ROL");
   validPL->sublist("Matrix Based Dot Product",  false, "Whether to use a Matrix based dot product (instead of the l2 one) to define gradient in ROL");
