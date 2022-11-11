@@ -697,7 +697,7 @@ std::pair<ModifiableLinearOp, bool> getAbsRowSumMatrixTpetra(const LinearOp &op)
     tCrsOp->getLocalRowView(i, indices, values);
 
     // build abs value row sum
-    for (LO j = 0; j < numEntries; j++)
+    for (size_t j = 0; j < numEntries; j++)
       diag.sumIntoLocalValue(i, std::abs(values(j)));
   }
 
