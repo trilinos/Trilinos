@@ -60,7 +60,7 @@ namespace MueLu {
 
   /*!
     @class MatlabSmoother
-    @ingroup MueMexClasses 
+    @ingroup MueMexClasses
     @brief Class that encapsulates Matlab smoothers.
 
     //   This class creates an Matlab preconditioner factory. The factory creates a smoother based on the
@@ -178,7 +178,7 @@ namespace MueLu {
     //! Matlab solve function
     std::string solveFunction_;
 
-    //! Matrix, (maybe) used in apply 
+    //! Matrix, (maybe) used in apply
     mutable RCP<Matrix> A_;
     
   }; // class MatlabSmoother
@@ -190,12 +190,12 @@ namespace MueLu {
     const ParameterList& paramList = this->GetParameterList();
 
     RCP<MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
-      rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(paramList));   
+      rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(paramList));
 
     cloneSmoother->needsSetup_    = needsSetup_;
     cloneSmoother->setupFunction_ = setupFunction_;
     cloneSmoother->solveFunction_  = solveFunction_;
-    cloneSmoother->A_             = A_;    
+    cloneSmoother->A_             = A_;
     
     for(size_t i=0; i< solveData_.size(); i++)
       cloneSmoother->solveData_->push_back(solveData_[i]);

@@ -159,9 +159,9 @@ namespace MueLu {
      int nx_, ny_, nz_;
     mutable
      int bx_, by_, bz_;
-    mutable 
+    mutable
      bool dirichletX_,dirichletY_,dirichletZ_;
-    mutable 
+    mutable
      int naggx_, naggy_, naggz_;
 
     mutable

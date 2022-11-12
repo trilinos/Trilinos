@@ -104,7 +104,7 @@ namespace MueLuTests {
     SemiCoarsenPFact->SetFactory("LineDetection_VertLineIds", LineDetectionFact);
     SemiCoarsenPFact->SetFactory("LineDetection_Layers", LineDetectionFact);
     SemiCoarsenPFact->SetFactory("CoarseNumZLayers", LineDetectionFact);
-    // seem to need two factories to avoid failing multipleCallCheck on some machines? 
+    // seem to need two factories to avoid failing multipleCallCheck on some machines?
     RCP<LineDetectionFactory> LineDetectionFact2 = rcp(new LineDetectionFactory());
     LineDetectionFact2->SetParameter("linedetection: orientation",
                                     Teuchos::ParameterEntry(std::string("vertical")));
@@ -185,7 +185,7 @@ namespace MueLuTests {
   } // NullSpace test
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SemiCoarsenPFactoryWithSemiRestriction,TestSemiRestrict,Scalar,LO,GO,Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SemiCoarsenPFactoryWithSemiRestriction,TestSemiRestrict,Scalar,LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

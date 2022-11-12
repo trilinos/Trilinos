@@ -44,7 +44,7 @@ AdditiveVariant::AdditiveFineSmoother( RCP<crs_matrix_type> A )
 	  //Creation of the MueLu list for the DD preconditioner
 	  RCP<ParameterList> dd_list = rcp(new Teuchos::ParameterList());
 	  dd_list->setName("MueLu");
-	  dd_list->set("verbosity", "low"); 
+	  dd_list->set("verbosity", "low");
 	  dd_list->set("number of equations", 1);
 	  dd_list->set("max levels", 1);
 	  dd_list->set("coarse: type", "SCHWARZ"); //FOR A ONE LEVEL PRECONDITIONER THE COARSE LEVEL IS INTERPRETED AS SMOOTHING LEVEL
@@ -75,7 +75,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 	  //Creation of the MueLu list for the DD preconditioner
 		RCP<ParameterList> coarse_list = rcp(new Teuchos::ParameterList());
 		coarse_list->setName("MueLu");
-		coarse_list->set("verbosity", "low"); 
+		coarse_list->set("verbosity", "low");
 		coarse_list->set("number of equations", 1);
 		coarse_list->set("max levels", 2);
 		coarse_list->set("multigrid algorithm", "unsmoothed");
@@ -91,7 +91,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 		coarse_list->set("repartition: min rows per proc", static_cast<int>(A->getGlobalNumRows()) );
 		coarse_list->set("repartition: max imbalance", 1.2);
 		coarse_list->set("repartition: remap parts", false);
-		coarse_list->set("coarse: type", "SCHWARZ"); 
+		coarse_list->set("coarse: type", "SCHWARZ");
 
 		//Creation of Sublist for smoother	
 	  ParameterList& coarse_smooth_sublist = coarse_list->sublist("coarse: params");
@@ -99,7 +99,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 		coarse_smooth_sublist.set("schwarz: combine mode", "Zero");
 		coarse_smooth_sublist.set("subdomain solver name", "RILUK");
 
-		//Creation of the sublist for the subdomain solver 
+		//Creation of the sublist for the subdomain solver
 		ParameterList& coarse_subdomain_solver = coarse_smooth_sublist.sublist("subdomain solver parameters");
 		coarse_subdomain_solver.set("fact: iluk level-of-fill", 3);
 		coarse_subdomain_solver.set("fact: absolute threshold", 0.);
@@ -119,8 +119,8 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 	
     RCP<Xpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type > > coords = Xpetra::toXpetra( coords_	); 	
 
-    H->GetLevel(0)->Set("A", mueluA); 
-    H->GetLevel(0)->Set("Coordinates", coords); 
+    H->GetLevel(0)->Set("A", mueluA);
+    H->GetLevel(0)->Set("Coordinates", coords);
 
     // Multigrid setup phase
     mueLuFactory.SetupHierarchy(*H);	
@@ -129,10 +129,10 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 
   	RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> prolong, restr;
 
-  	if (L->IsAvailable("P")) 
+  	if (L->IsAvailable("P"))
     	  prolong = L->template Get< RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> >("P");
 
-  	if (L->IsAvailable("R")) 
+  	if (L->IsAvailable("R"))
     	  restr = L->template Get< RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> >("R");
 
 		RCP<crs_matrix_type> tpetra_prolong = MueLuUtilities::Op2NonConstTpetraCrs(prolong);
@@ -176,7 +176,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 
 	  GlobalComm_->barrier();
 
-	  RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), AP->getColMap(), tpetra_prolong->getGlobalNumCols() ) ); 
+	  RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), AP->getColMap(), tpetra_prolong->getGlobalNumCols() ) );
 	  Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getLocalElementList();
 
 	  for(int color = 0; color<3; ++color)
@@ -213,7 +213,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 
 	//=============================================================================================================
 
-    RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP); 
+    RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP);
     RCP<xpetra_matrix> mueluPbar = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Pbar);
 
     H->GetLevel(1)->Set("Pbar", mueluPbar);
@@ -233,14 +233,14 @@ void AdditiveVariant::apply( const multivector_type &r, multivector_type &Pr, Te
 
 	multivector_type r_fine(DomainMap_, 1);
 	r_fine.doImport(r, Export_fine1, Tpetra::INSERT);	
-	multivector_type B_fine_Pr(RangeMap_,1); 
+	multivector_type B_fine_Pr(RangeMap_,1);
 	B_fine_->apply(r_fine, B_fine_Pr, mode, alpha, beta);
 	multivector_type B_Pr1(r.getMap(),1);	
 	B_Pr1.doImport(B_fine_Pr, Export_fine2, Tpetra::INSERT);
 
 	multivector_type r_coarse(DomainMap_, 1);
 	r_coarse.doImport(r, Export_fine1, Tpetra::INSERT);	
-	multivector_type B_coarse_Pr(RangeMap_,1); 
+	multivector_type B_coarse_Pr(RangeMap_,1);
 	B_coarse_->apply(r_coarse, B_coarse_Pr, mode, alpha, beta);
 	multivector_type B_Pr2(r.getMap(),1);
 	B_Pr2.doImport(B_coarse_Pr, Export_fine2, Tpetra::INSERT);

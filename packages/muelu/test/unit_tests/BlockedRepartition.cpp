@@ -1207,7 +1207,7 @@ namespace MueLuTests {
   zoltan22->SetFactory("A",AR22Fact);
   zoltan22->SetFactory("number of partitions",RepHeuFact);
   zoltan22->SetFactory("Coordinates",Coord22);
-#endif 
+#endif
 
   RCP<RepartitionFactory> repart22 = rcp(new RepartitionFactory());
   repart22->SetFactory("A",AR22Fact);

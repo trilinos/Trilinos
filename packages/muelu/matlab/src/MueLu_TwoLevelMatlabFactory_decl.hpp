@@ -70,7 +70,7 @@
 namespace MueLu {
   /*!
     @class TwoLevelMatlabFactory
-    @ingroup MueMexClasses 
+    @ingroup MueMexClasses
     @brief Factory for interacting with Matlab
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -114,7 +114,7 @@ namespace MueLu {
 
     //@{
 
-    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the fine level.  These must be listed before coarse needs.   
+    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the fine level.  These must be listed before coarse needs.
     mutable std::vector<std::string> needsFine_;
 
     //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the coarse level.  These must be listed after fine needs.

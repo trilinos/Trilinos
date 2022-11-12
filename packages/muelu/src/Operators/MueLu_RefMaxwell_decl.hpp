@@ -333,8 +333,8 @@ namespace MueLu {
                   MultiVector & R) const {
       using STS = Teuchos::ScalarTraits<Scalar>;
       R.update(STS::one(),B,STS::zero());
-      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());   
-    }      
+      this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
+    }
     
 
   private:

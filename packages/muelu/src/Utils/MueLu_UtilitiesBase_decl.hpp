@@ -375,7 +375,7 @@ namespace MueLu {
      * @ret: vector containing max_{i\not=k}(-a_ik)
     */
 
-    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { 
+    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) {
       size_t numRows = A.getRowMap()->getLocalNumElements();
       Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
       Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
@@ -388,7 +388,7 @@ namespace MueLu {
           if (Teuchos::as<size_t>(cols[j]) != i) {
             mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
           }
-        }          
+        }
         maxvec[i] = mymax;
       }
       return maxvec;
@@ -411,8 +411,8 @@ namespace MueLu {
           if (Teuchos::as<size_t>(cols[j]) != i && block_id[i] == block_id[cols[j]]) {
             mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
           }
-        }          
-        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax); 
+        }
+        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax);
 
         maxvec[i] = mymax;
       }
@@ -853,7 +853,7 @@ namespace MueLu {
     }
 
     /*! @brief Find non-zero values in an ArrayRCP
-      Compares the value to 2 * machine epsilon 
+      Compares the value to 2 * machine epsilon
 
       @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
       @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero

@@ -36,7 +36,7 @@
       <Parameter name="PreSmoother"           type="string" value="NoSmoother"/>
       <Parameter name="PostSmoother"          type="string" value="BackwardGaussSeidel"/>
       <Parameter name="CoarseSolver"          type="string"  value="DirectSolver"/>
-    </ParameterList>    
+    </ParameterList>
 
   </ParameterList>
 </ParameterList>

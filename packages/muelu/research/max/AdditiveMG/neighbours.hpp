@@ -56,8 +56,8 @@ void neighbours2D(Teuchos::RCP<tpetra_matrix_type> tpetra_prolong, std::vector<i
 	{
                 int neighbour = -1;
 
-                //The following if statements control the neighbours of a subdomain in a 2D brick partitioned mesh 
-                //Each subdomains is incorporated in a 3x3 square which is sliced into 3 stripes 
+                //The following if statements control the neighbours of a subdomain in a 2D brick partitioned mesh
+                //Each subdomains is incorporated in a 3x3 square which is sliced into 3 stripes
                 //The neighbours of a subdomain are checked plane by plane: in total there are three planes to span
                 // In case the subdomains sit on a boundary, there are missing neighbours for a specific color
                 // (this is what the last two conditions of each if statement take care of)
@@ -119,7 +119,7 @@ void neighbours3D(Teuchos::RCP<tpetra_matrix_type> tpetra_prolong, std::vector<i
 	{
 		int neighbour = -1;
 
-                //The following if statements control the neighbours of a subdomain in a 3D brick partitioned mesh 
+                //The following if statements control the neighbours of a subdomain in a 3D brick partitioned mesh
                 //Each subdomains is incorporated in a 3x3x3 cube which is sliced into 3 squares living on three different planes
                 //The neighbours of a subdomain are checked plane by plane: in total there are three planes to span
                 // In case the subdomains sit on a boundary, there are missing neighbours for a specific color

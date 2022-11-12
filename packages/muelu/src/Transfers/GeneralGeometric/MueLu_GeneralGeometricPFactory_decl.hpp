@@ -84,7 +84,7 @@ namespace MueLu {
   | Parameter   | type    | default   | master.xml | validated | requested | description                                                                      |
   | ------------|---------|-----------|:----------:|:---------:|:---------:|----------------------------------------------------------------------------------|
   | Coarsen     | string  | -1        |            |           |           | A string that specify the coarsening rate, if it is a single character, it will  |
-  |             |         |           |            |           |           | indicate a unique coarsening rate in each direction, if it is longer, it will be | 
+  |             |         |           |            |           |           | indicate a unique coarsening rate in each direction, if it is longer, it will be |
   |             |         |           |            |           |           | processed as a vector with 3 entries, one for each spatial direction             |
   | A           | Factory | null      |            | *         | *         | Generating factory of the matrix A used during the prolongator smoothing process |
   | Nullspace   | Factory | null      |            | *         | *         | Generating factory of the nullspace. The GeneralGeometricPFactory provides       |

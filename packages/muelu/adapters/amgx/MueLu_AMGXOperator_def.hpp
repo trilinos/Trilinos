@@ -106,7 +106,7 @@ namespace MueLu {
           vectorTimer1_->incrementNumCalls();
         }
        
-        // Solve the system and time. 
+        // Solve the system and time.
         solverTimer_->start();
         AMGX_solver_solve(Solver_, X_, Y_);
         solverTimer_->stop();

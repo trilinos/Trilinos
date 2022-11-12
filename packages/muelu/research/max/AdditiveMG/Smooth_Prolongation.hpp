@@ -64,9 +64,9 @@ class AdditiveVariant: public operator_type{
 
 		bool hasTransposeApply()const{return false;}
 	
-		RCP< const driver_map_type > getDomainMap() const{return DomainMap_;}; 
+		RCP< const driver_map_type > getDomainMap() const{return DomainMap_;};
 
-		RCP< const driver_map_type > getRangeMap() const{return RangeMap_;}; 
+		RCP< const driver_map_type > getRangeMap() const{return RangeMap_;};
 
 	private:		
 
@@ -81,12 +81,12 @@ class AdditiveVariant: public operator_type{
 		RCP< const driver_map_type > RangeMap_;
 
 		//MueLu Preconditioner to store the smoother at the fine level
-		RCP<muelu_tpetra_operator_type>	B_fine_ = Teuchos::null; 
+		RCP<muelu_tpetra_operator_type>	B_fine_ = Teuchos::null;
 
 	  //RCP<Ifpack2::AdditiveSchwarz< row_matrix_type, precond_type > > B_DD_;
 
-		//MueLu Preconditioner to store 
-		RCP<muelu_tpetra_operator_type>	B_coarse_ = Teuchos::null; 
+		//MueLu Preconditioner to store
+		RCP<muelu_tpetra_operator_type>	B_coarse_ = Teuchos::null;
 
 		void AdditiveFineSmoother( RCP<crs_matrix_type> );
 

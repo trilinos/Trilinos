@@ -49,7 +49,7 @@
     <Parameter name="repartition: rebalance P and R"          type="bool"     value="false"/>
     <ParameterList name="repartition: params">
        <Parameter name="algorithm" type="string" value="multijagged"/>
-    </ParameterList> 
+    </ParameterList>
     <!-- end of default values -->
 
 </ParameterList>
