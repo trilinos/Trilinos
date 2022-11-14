@@ -200,11 +200,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
-  if (solverTypeUpper.size () > 0) {
-    for (size_t k = 0; k < solverTypeUpper.size (); ++k) {
-      solverTypeUpper[k] = ::toupper(solverTypeUpper[k]);
-    }
-  }
+  std::transform(solverTypeUpper.begin(), solverTypeUpper.end(),solverTypeUpper.begin(), ::toupper);
 
   // Create the initial preconditioner
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {

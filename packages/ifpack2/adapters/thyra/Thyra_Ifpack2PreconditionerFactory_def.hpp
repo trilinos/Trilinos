@@ -188,11 +188,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
-  if (precTypeUpper.size () > 0) {
-    for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-      precTypeUpper[k] = ::toupper(precTypeUpper[k]);
-    }
-  }
+  std::transform(precTypeUpper.begin(), precTypeUpper.end(),precTypeUpper.begin(), ::toupper);
   
   // mfh 09 Nov 2013: If the Ifpack2 list doesn't already have the
   // "schwarz: overlap level" parameter, then override it with the
