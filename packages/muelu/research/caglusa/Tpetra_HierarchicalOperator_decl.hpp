@@ -13,6 +13,10 @@
 namespace Tpetra {
 
     /*
+
+    A container class for hierarchical matrices of different types.
+    In particular, both H- and H2-matrices are supported.
+
     The unknowns of the kernel approximations are collected in the clusterMap.
     For H-matrices, this is just a concatenation.
     For H2-matrices, the map also contains the intermediate clusters that might be needed in upward/downward pass.
@@ -25,8 +29,10 @@ namespace Tpetra {
           ((I+transferMatrices[0]) * ... * (I+transferMatrices[K-1])) *
           basisMatrix^T
 
-   nearField and basisMatrix are CRS matrices.
+   nearField and basisMatrix are standard (point) CRS matrices.
    kernelApproximations and transferMatrices[.] are blocked CRS matrices
+
+   I is the identity matrix and is not explicitely saved.
 
    Maps:
    map (standard): domain and range of H;
@@ -37,7 +43,7 @@ namespace Tpetra {
 
 
    For H-matrices:
-   K = 0, i.e. no transfer matrices
+   K = 0, i.e. there are no transfer matrices
 
    For H2-matrices:
    upward and downward pass in the cluster hierarchy are encoded in transfer matrices
@@ -278,6 +284,14 @@ namespace Tpetra {
       oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
       oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis     << setw(15) << numClusterPairs  << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
       out << oss.str();
+    }
+
+    bool hasFarField() const {
+      return kernelApproximations_->blockA_->getGlobalNumEntries() > 0;
+    }
+
+    bool hasTransferMatrices() const {
+      return transferMatrices_.size() > 0;
     }
 
   private:

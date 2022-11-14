@@ -96,6 +96,10 @@ namespace Xpetra {
       op_->describe(out, verbLevel);
     }
 
+    bool hasFarField() const {
+      return op_->hasFarField();
+    }
+
   private:
     RCP<tHOp> op_;
   };

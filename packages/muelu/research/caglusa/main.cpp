@@ -68,8 +68,7 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_TentativePFactory.hpp>
-#include <MueLu_SaPFactory.hpp>
+#include "MueLu_RAPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
@@ -189,18 +188,82 @@ struct IOhelpers {
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                                RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > auxH,
+                                Teuchos::ParameterList& params,
+                                Teuchos::FancyOStream& out) {
+  #include "MueLu_UseShortNames.hpp"
+
+  params.set("coarse: max size", 1);
+  params.set("max levels", auxH->GetNumLevels());
+
+  op->describe(out, Teuchos::VERB_EXTREME);
+
+  RCP<Hierarchy> H = rcp(new Hierarchy());
+  RCP<Level> lvl = H->GetLevel(0);
+  lvl->Set("A", rcp_dynamic_cast<Operator>(op));
+  // lvl->Set("Coordinates", coords);
+  for(int lvlNo = 1; lvlNo < auxH->GetNumLevels(); lvlNo++) {
+    RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
+    H->AddNewLevel();
+    lvl = H->GetLevel(lvlNo);
+    RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
+    // auto mgr = auxLvl->GetFactoryManager();
+    // auxLvl->print(std::cout, MueLu::Debug);
+
+    RCP<Matrix> P = auxLvl->Get<RCP<Matrix> >("P");
+    RCP<Operator> fineAOp = fineLvl->Get<RCP<Operator> >("A");
+    lvl->Set("P", P);
+    params.sublist("level "+std::to_string(lvlNo)).set("P", P);
+
+    auto fineA = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(fineAOp);
+    if (!fineA.is_null()) {
+      auto coarseA = fineA->restrict(P);
+      coarseA->describe(out, Teuchos::VERB_EXTREME);
+      if ((lvlNo+1 == auxH->GetNumLevels()) || !coarseA->hasFarField())
+        lvl->Set("A", coarseA->toMatrix());
+      else
+        lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+    } else {
+      // classical RAP
+      auto fineAmat = rcp_dynamic_cast<Matrix>(fineAOp, true);
+      Level fineLevel, coarseLevel;
+      fineLevel.SetFactoryManager(Teuchos::null);
+      coarseLevel.SetFactoryManager(Teuchos::null);
+      coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+      fineLevel.SetLevelID(0);
+      coarseLevel.SetLevelID(1);
+      fineLevel.Set("A", fineAmat);
+      coarseLevel.Set("P", P);
+      RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+      coarseLevel.Request("A", rapFact.get());
+      RCP<Matrix> coarseA = coarseLevel.Get<RCP<Matrix> >("A", rapFact.get());
+      lvl->Set("A", coarseA);
+    }
+  }
+
+  RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
+  H->setlib(op->getDomainMap()->lib());
+  H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
+  mueLuFactory->SetupHierarchy(*H);
+  H->IsPreconditioner(true);
+
+  return H;
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   #include "MueLu_UseShortNames.hpp"
 
-  std::string xmlHierarchical  = "hierarchical-1d-mm-global.xml";
-  std::string xmlMueLu        = "muelu.xml";
-  std::string xmlAuxHierarchy = "auxiliary.xml";
-  clp.setOption("xml",    &xmlHierarchical);
-  clp.setOption("xmlMueLu", &xmlMueLu);
-  clp.setOption("xmlAux", &xmlAuxHierarchy);
+  std::string xmlHierarchical = "hierarchical-1d-mm-global.xml"; clp.setOption("xml",      &xmlHierarchical, "XML describing the hierarchical operator");
+  std::string xmlMueLu        = "muelu.xml";                     clp.setOption("xmlMueLu", &xmlMueLu,        "XML with MueLu parameters");
+  std::string xmlAuxHierarchy = "auxiliary.xml";                 clp.setOption("xmlAux",   &xmlAuxHierarchy, "XML with MueLu parameters for the auxiliary hierarchy");
   bool printTimings  = true; clp.setOption("timings", "notimings", &printTimings,  "print timings to screen");
   bool doTests       = true; clp.setOption("tests",   "notests",   &doTests,       "Test operator using known LHS & RHS.");
   bool doUnPrecSolve = true; clp.setOption("unPrec",  "noUnPrec",  &doUnPrecSolve, "Solve unpreconditioned");
+  bool doPrecSolve   = true; clp.setOption("prec",    "noPrec",    &doPrecSolve,   "Solve preconditioned with AMG");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -237,7 +300,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
-  Teuchos::ParameterList         hierarchicalParams;
+  Teuchos::ParameterList hierarchicalParams;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierarchical, Teuchos::Ptr<Teuchos::ParameterList>(&hierarchicalParams), *comm);
 
   RCP<HOp> op;
@@ -255,24 +318,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   {
     // Read in auxiliary stuff
 
-    const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
-    const bool readLocal = hierarchicalParams.get<bool>("read local", false);
-
     // Auxiliary matrix used for multigrid construction
     const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
     if (auxOpStr == "near")
       auxOp = op->nearFieldMatrix();
     else {
+      const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
+      const bool readLocal = hierarchicalParams.get<bool>("read local", false);
+
       // colmap of auxiliary operator
       RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
 
       auxOp  = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
     }
 
+    // known pair of LHS, RHS
     X_ex = IO::ReadMultiVector(hierarchicalParams.get<std::string>("exact solution"), map);
     RHS  = IO::ReadMultiVector(hierarchicalParams.get<std::string>("right-hand side"), map);
+    // solution vector
     X    = MultiVectorFactory::Build(map, 1);
 
+    // coordinates
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
   }
 
@@ -364,7 +430,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   }
 #endif // HAVE_MUELU_BELOS
 
-  {
+  if (doPrecSolve) {
     // Solve linear system using a AMG preconditioned Krylov method
 
     RCP<Hierarchy> auxH, H;
@@ -381,7 +447,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Teuchos::ParameterList auxParams;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
       auxParams.sublist("user data").set("Coordinates", coords);
-      // TEUCHOS_ASSERT_EQUALITY(auxParams.get("multigrid algorithm", "unsmoothed"), "unsmoothed");
 
       auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
     }
@@ -397,40 +462,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       Teuchos::ParameterList params;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
-      params.set("coarse: max size", 1);
-      params.set("max levels", auxH->GetNumLevels());
+      params.sublist("user data").set("Coordinates", coords);
 
-      op->describe(out, Teuchos::VERB_EXTREME);
-
-      H = rcp(new Hierarchy());
-      RCP<Level> lvl = H->GetLevel(0);
-      lvl->Set("A", rcp_dynamic_cast<Operator>(op));
-      lvl->Set("Coordinates", coords);
-      for(int lvlNo = 1; lvlNo < auxH->GetNumLevels(); lvlNo++) {
-        H->AddNewLevel();
-        RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
-        // auto mgr = auxLvl->GetFactoryManager();
-        // auxLvl->print(std::cout, MueLu::Debug);
-        RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
-        lvl = H->GetLevel(lvlNo);
-        auto P = auxLvl->Get<RCP<Matrix> >("P");
-        auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
-        lvl->Set("P", P);
-        params.sublist("level "+std::to_string(lvlNo)).set("P", P);
-
-        auto coarseA = fineA->restrict(P);
-        coarseA->describe(out, Teuchos::VERB_EXTREME);
-        if (lvlNo+1 == auxH->GetNumLevels())
-          lvl->Set("A", coarseA->toMatrix());
-        else
-          lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
-      }
-
-      RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
-      H->setlib(op->getDomainMap()->lib());
-      H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
-      mueLuFactory->SetupHierarchy(*H);
-      H->IsPreconditioner(true);
+      H = constructHierarchyFromAuxiliary(op, auxH, params, out);
     }
 
 
@@ -482,15 +516,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       success &= (ret == Belos::Converged);
     }
-
-    stacked_timer->stop("Hierarchical Driver");
-    Teuchos::StackedTimer::OutputOptions options;
-    options.output_fraction = options.output_histogram = options.output_minmax = true;
-    if (printTimings)
-      stacked_timer->report(out, comm, options);
-
 #endif // HAVE_MUELU_BELOS
+
   }
+
+  stacked_timer->stop("Hierarchical Driver");
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = options.output_histogram = options.output_minmax = true;
+  if (printTimings)
+    stacked_timer->report(out, comm, options);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main
