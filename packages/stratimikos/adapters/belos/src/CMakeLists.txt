@@ -9,7 +9,10 @@ APPEND_GLOB(HEADERS ${srcDir}/*.hpp)
 APPEND_GLOB(SOURCES ${srcDir}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${srcDir})
 
+IF(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
 SET_AND_INC_DIRS(tpetraSrcDir ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+ENDIF()
+
 APPEND_GLOB(HEADERS ${tpetraSrcDir}/*.hpp)
 APPEND_GLOB(SOURCES ${tpetraSrcDir}/*.cpp)
 
