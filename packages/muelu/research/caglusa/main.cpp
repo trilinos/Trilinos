@@ -68,6 +68,7 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
+#include <MueLu_MasterList.hpp>
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
@@ -198,6 +199,8 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
   params.set("coarse: max size", 1);
   params.set("max levels", auxH->GetNumLevels());
 
+  const bool implicitTranspose = params.get("transpose: use implicit", MueLu::MasterList::getDefault<bool>("transpose: use implicit"));
+
   op->describe(out, Teuchos::VERB_EXTREME);
 
   RCP<Hierarchy> H = rcp(new Hierarchy());
@@ -216,6 +219,13 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
     RCP<Operator> fineAOp = fineLvl->Get<RCP<Operator> >("A");
     lvl->Set("P", P);
     params.sublist("level "+std::to_string(lvlNo)).set("P", P);
+
+    if (!implicitTranspose) {
+      TEUCHOS_ASSERT(auxLvl->IsAvailable("R"));
+      RCP<Matrix> R = auxLvl->Get<RCP<Matrix> >("R");
+      lvl->Set("R", R);
+      params.sublist("level "+std::to_string(lvlNo)).set("R", R);
+    }
 
     auto fineA = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(fineAOp);
     if (!fineA.is_null()) {
