@@ -257,7 +257,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     concretePrecOpHalf->initialize();
     concretePrecOpHalf->compute();
 
-    RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(concretePrecOpHalf));
+    Teuchos::RCP<TpetraLinOp> wrappedOp = Teuchos::rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(concretePrecOpHalf));
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
 #endif
