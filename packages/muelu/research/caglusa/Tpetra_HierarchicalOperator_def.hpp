@@ -289,6 +289,8 @@ namespace Tpetra {
   Teuchos::RCP<HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   restrict(const Teuchos::RCP<matrix_type>& P) {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Galerkin product")));
+
     // H_c = P^T * H * P
     using lo_vec_type = typename blocked_map_type::lo_vec_type;
     using vec_type = typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -566,6 +568,8 @@ namespace Tpetra {
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   toMatrix() {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Conversion from H-matrix to CSR")));
+
     using Teuchos::RCP;
     using Teuchos::rcp;
 
