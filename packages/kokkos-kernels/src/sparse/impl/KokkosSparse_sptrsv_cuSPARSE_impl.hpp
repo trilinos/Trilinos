@@ -168,7 +168,7 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
         h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
         h->spsvDescr, h->pBuffer));
 
-    //Destroy dummy dense vector descriptors
+    // Destroy dummy dense vector descriptors
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr_dummy));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr_dummy));
   }
@@ -366,7 +366,7 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
         h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
         h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
 
-    //Destroy dense vector descriptors
+    // Destroy dense vector descriptors
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr));
   }
