@@ -187,10 +187,6 @@ class SPTRSVHandle {
         pBuffer = nullptr;
       }
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr_dummy));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr_dummy));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
     }

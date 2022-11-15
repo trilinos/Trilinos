@@ -167,6 +167,10 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
         h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy,
         h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
         h->spsvDescr, h->pBuffer));
+
+    //Destroy dummy dense vector descriptors
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr_dummy));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr_dummy));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
@@ -361,6 +365,10 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(
         h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
         h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
+
+    //Destroy dense vector descriptors
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
