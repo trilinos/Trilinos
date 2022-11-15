@@ -9,7 +9,7 @@ APPEND_GLOB(HEADERS ${srcDir}/*.hpp)
 APPEND_GLOB(SOURCES ${srcDir}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${srcDir})
 
-SET_AND_INC_DIRS(tpetraSrcDir ${CMAKE_CURRENT_SOURCE_DIR}/../tpetra)
+SET_AND_INC_DIRS(tpetraSrcDir ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
 APPEND_GLOB(HEADERS ${tpetraSrcDir}/*.hpp)
 APPEND_GLOB(SOURCES ${tpetraSrcDir}/*.cpp)
 
