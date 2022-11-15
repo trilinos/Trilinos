@@ -192,7 +192,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
   bool useHalfPrecision = false;
   if (innerParamList->isParameter("half precision"))
-    useHalfPrecision = innerParamList->get<bool>("half precision");
+    useHalfPrecision = Teuchos::getParameter<bool>(*innerParamList, "half precision");
 
   const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
   const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
@@ -203,7 +203,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   std::transform(solverTypeUpper.begin(), solverTypeUpper.end(),solverTypeUpper.begin(), ::toupper);
 
   // Create the initial preconditioner
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
+  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
     *out << "\nCreating a new BelosTpetra::Preconditioner object...\n";
   }
   Teuchos::RCP<LinearOpBase<scalar_type> > thyraPrecOp;
@@ -287,7 +287,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::setParameterList(
 {
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
 
-  const Teuchos::RCP<const Teuchos::ParameterList> validParamList = this->getValidParameters();
+  const auto validParamList = this->getValidParameters();
   paramList->validateParametersAndSetDefaults(*validParamList, 0);
   paramList->validateParameters(*validParamList, 0);
 

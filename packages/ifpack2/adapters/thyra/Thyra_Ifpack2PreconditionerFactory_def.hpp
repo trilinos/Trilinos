@@ -180,7 +180,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   bool useHalfPrecision = false;
   if (innerParamList->isParameter("half precision"))
-    useHalfPrecision = innerParamList->get<bool>("half precision");
+    useHalfPrecision = Teuchos::getParameter<bool>(*innerParamList, "half precision");
 
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*innerParamList, "Prec Type");
   const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
@@ -203,7 +203,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // Create the initial preconditioner
 
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
+  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
     *out << "\nCreating a new Ifpack2::Preconditioner object...\n";
   }
   timer.start(true);
@@ -324,7 +324,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::setParameterList(
 {
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
 
-  const Teuchos::RCP<const Teuchos::ParameterList> validParamList = this->getValidParameters();
+  const auto validParamList = this->getValidParameters();
   paramList->validateParametersAndSetDefaults(*validParamList, 0);
   paramList->validateParameters(*validParamList, 1);
 
