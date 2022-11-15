@@ -119,7 +119,7 @@ namespace Tpetra {
         }
       }
 
-      // Set the two importers to Isend
+      // Set the importers to Isend
       Teuchos::RCP<Teuchos::ParameterList> distParams = rcp(new Teuchos::ParameterList());
       distParams->set("Send type", "Isend");
       {
@@ -136,6 +136,16 @@ namespace Tpetra {
         auto revDistor = kernelApproximationsImporter->getDistributor().getReverse(false);
         if (!revDistor.is_null())
           revDistor->setParameterList(distParams);
+      }
+
+      {
+        Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > basisMatrixImporter = basisMatrix_->getGraph()->getImporter();
+        if (!basisMatrixImporter.is_null()) {
+          basisMatrixImporter->getDistributor().setParameterList(distParams);
+          auto revDistor = basisMatrixImporter->getDistributor().getReverse(false);
+          if (!revDistor.is_null())
+            revDistor->setParameterList(distParams);
+        }
       }
 
       // Allocate memory for apply with vectors

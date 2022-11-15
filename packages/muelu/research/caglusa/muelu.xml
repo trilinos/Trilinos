@@ -21,8 +21,13 @@
   <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
   <ParameterList    name="smoother: params">
     <Parameter      name="relaxation: sweeps"                   type="int"      value="2"/>>
-    <Parameter      name="relaxation: damping factor"           type="double"   value="0.666"/>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="0.95"/>
     <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+  </ParameterList>
+
+  <ParameterList name="matvec params">
+    <!-- <Parameter name="Send type" type="string" value="Send"/> -->
+    <Parameter name="Send type" type="string" value="Isend"/>
   </ParameterList>
 
 </ParameterList>
