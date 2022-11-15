@@ -76,6 +76,7 @@
 
 namespace Thyra {
 
+using Teuchos::rcp;
 
 // Constructors/initializers/accessors
 
@@ -184,7 +185,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*innerParamList, "Prec Type");
   const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
-          Teuchos::rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "Ifpack2 Settings")));
+          rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "Ifpack2 Settings")));
 
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
@@ -257,7 +258,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     concretePrecOpHalf->initialize();
     concretePrecOpHalf->compute();
 
-    Teuchos::RCP<TpetraLinOp> wrappedOp = Teuchos::rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(concretePrecOpHalf));
+    Teuchos::RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(concretePrecOpHalf));
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
 #endif

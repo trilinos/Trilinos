@@ -76,6 +76,7 @@
 
 namespace Thyra {
 
+using Teuchos::rcp;
 
 // Constructors/initializers/accessors
 
@@ -196,7 +197,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
   const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
   const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
-          Teuchos::rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "BelosPrec Solver Params")));
+          rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "BelosPrec Solver Params")));
 
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
@@ -217,9 +218,9 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdMatrix));
     auto tpetraFwdMatrixHalf = tpetraFwdMatrix->template convert<half_scalar_type>();
 
-    Teuchos::RCP<BelosTpLinProbHalf> belosLinProbHalf = Teuchos::RCP<BelosTpLinProbHalf>(new BelosTpLinProbHalf());
+    Teuchos::RCP<BelosTpLinProbHalf> belosLinProbHalf = rcp(new BelosTpLinProbHalf());
     belosLinProbHalf->setOperator(tpetraFwdMatrixHalf);
-    Teuchos::RCP<TpetraLinOpHalf> belosOpRCPHalf = Teuchos::RCP<TpetraLinOpHalf>(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
+    Teuchos::RCP<TpetraLinOpHalf> belosOpRCPHalf = rcp(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
     RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(belosOpRCPHalf));
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
@@ -228,9 +229,9 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 #endif
   } else {
     // Wrap concrete preconditioner
-    Teuchos::RCP<BelosTpLinProb> belosLinProb = Teuchos::RCP<BelosTpLinProb>(new BelosTpLinProb());
+    Teuchos::RCP<BelosTpLinProb> belosLinProb = rcp(new BelosTpLinProb());
     belosLinProb->setOperator(tpetraFwdOp);
-    Teuchos::RCP<TpetraLinOp> belosOpRCP = Teuchos::RCP<TpetraLinOp>(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
+    Teuchos::RCP<TpetraLinOp> belosOpRCP = rcp(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
     thyraPrecOp = Thyra::createLinearOp(belosOpRCP);
   }
   defaultPrec->initializeUnspecified(thyraPrecOp);
