@@ -9,6 +9,13 @@
 
 
   <Parameter        name="coarse: type"                       type="string"   value="lapack"/>
+  <ParameterList    name="coarse: params">
+    <ParameterList    name="Amesos2">
+      <ParameterList    name="LAPACK">
+        <Parameter        name="IsContiguous"              type="bool"     value="false"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
