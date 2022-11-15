@@ -294,6 +294,22 @@ namespace Tpetra {
       return transferMatrices_.size() > 0;
     }
 
+    bool denserThanDenseMatrix() const {
+      const size_t numRows = nearField_->getRowMap()->getGlobalNumElements();
+      const size_t nnzNearField = nearField_->getGlobalNumEntries();
+      // const double nnzNearPerRow = Teuchos::as<double>(nnzNearField)/numRows;
+      const size_t nnzKernelApprox = kernelApproximations_->pointA_->getGlobalNumEntries();
+      // const size_t numClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
+      const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
+      size_t nnzTransfer = 0;
+      for (size_t i = 0; i<transferMatrices_.size(); i++)
+        nnzTransfer += transferMatrices_[i]->pointA_->getGlobalNumEntries();
+      const size_t nnzTotal = nnzNearField+nnzKernelApprox+nnzBasis+nnzTransfer;
+      const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
+
+      return (nnzTotalPerRow >= numRows);
+    }
+
   private:
 
     void allocateMemory(size_t numVectors) const;

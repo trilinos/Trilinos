@@ -220,11 +220,43 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
     auto fineA = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(fineAOp);
     if (!fineA.is_null()) {
       auto coarseA = fineA->restrict(P);
-      coarseA->describe(out, Teuchos::VERB_EXTREME);
-      if ((lvlNo+1 == auxH->GetNumLevels()) || !coarseA->hasFarField())
-        lvl->Set("A", coarseA->toMatrix());
-      else
+      if ((lvlNo+1 == auxH->GetNumLevels()) || !coarseA->hasFarField() || coarseA->denserThanDenseMatrix()) {
+        // coarseA->describe(out, Teuchos::VERB_EXTREME);
+
+        auto matA = coarseA->toMatrix();
+
+        {
+          using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+          const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+          const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
+          auto testLHS       = MultiVectorFactory::Build(coarseA->getDomainMap(), 1);
+          auto testRHS_HOp   = MultiVectorFactory::Build(coarseA->getRangeMap(),  1);
+          auto testRHS_dense = MultiVectorFactory::Build(coarseA->getRangeMap(),  1);
+          testLHS->putScalar(one);
+          coarseA->apply(*testLHS, *testRHS_HOp);
+          matA->apply(*testLHS, *testRHS_dense);
+          testRHS_dense->update(one, *testRHS_HOp, -one);
+          auto norm = testRHS_dense->getVector(0)->norm2();
+          out << "|op_dense*1 - op_H*1| = " << norm << std::endl;
+          TEUCHOS_ASSERT(norm < tol);
+        }
+
+        using std::setw;
+        using std::endl;
+        const size_t numRows = matA->getRowMap()->getGlobalNumElements();
+        const size_t nnz = matA->getGlobalNumEntries();
+        const double nnzPerRow = Teuchos::as<double>(nnz)/numRows;
+        std::ostringstream oss;
+        oss << std::left;
+        oss << setw(9) << "rows"  << setw(12) << "nnz"  << setw(14) << "nnz/row" << setw(12)  << endl;
+        oss << setw(9) << numRows << setw(12) << nnz << setw(14) << nnzPerRow << endl;
+        out << oss.str();
+
+        lvl->Set("A", matA);
+      } else {
+        coarseA->describe(out, Teuchos::VERB_EXTREME);
         lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+      }
     } else {
       // classical RAP
       auto fineAmat = rcp_dynamic_cast<Matrix>(fineAOp, true);
@@ -237,9 +269,24 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
       fineLevel.Set("A", fineAmat);
       coarseLevel.Set("P", P);
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+      Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
+      rapList.set("transpose: use implicit", true);
+      rapFact->SetParameterList(rapList);
       coarseLevel.Request("A", rapFact.get());
-      RCP<Matrix> coarseA = coarseLevel.Get<RCP<Matrix> >("A", rapFact.get());
-      lvl->Set("A", coarseA);
+      RCP<Matrix> matA = coarseLevel.Get<RCP<Matrix> >("A", rapFact.get());
+
+      using std::setw;
+      using std::endl;
+      const size_t numRows = matA->getRowMap()->getGlobalNumElements();
+      const size_t nnz = matA->getGlobalNumEntries();
+      const double nnzPerRow = Teuchos::as<double>(nnz)/numRows;
+      std::ostringstream oss;
+      oss << std::left;
+      oss << setw(9) << "rows"  << setw(12) << "nnz"  << setw(14) << "nnz/row" << setw(12)  << endl;
+      oss << setw(9) << numRows << setw(12) << nnz << setw(14) << nnzPerRow << endl;
+      out << oss.str();
+
+      lvl->Set("A", matA);
     }
   }
 

@@ -100,6 +100,10 @@ namespace Xpetra {
       return op_->hasFarField();
     }
 
+    bool denserThanDenseMatrix() const {
+      return op_->denserThanDenseMatrix();
+    }
+
   private:
     RCP<tHOp> op_;
   };
