@@ -74,6 +74,28 @@ namespace Tpetra {
     return newA;
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  Teuchos::RCP<Tpetra::BlockedMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  transpose(Teuchos::RCP<Tpetra::BlockedMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) {
+
+    TEUCHOS_ASSERT(A->ghosted_blockMap_.is_null());
+
+    Teuchos::RCP<Teuchos::ParameterList> transposeParams = rcp(new Teuchos::ParameterList);
+
+    Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposerPoint(A->pointA_);
+    auto pointAT = transposerPoint.createTranspose(transposeParams);
+
+    Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposerBlock(A->blockA_);
+    auto blockAT = transposerBlock.createTranspose(transposeParams);
+
+    auto AT = Teuchos::rcp(new Tpetra::BlockedMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(pointAT, blockAT, A->blockMap_));
+
+    return AT;
+  }
+
 
   template <class Scalar,
             class LocalOrdinal,
@@ -83,7 +105,8 @@ namespace Tpetra {
   HierarchicalOperator(const Teuchos::RCP<matrix_type>& nearField,
                        const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                        const Teuchos::RCP<matrix_type>& basisMatrix,
-                       std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices)
+                       std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
+                       const bool setupTransposes)
       :
       nearField_(nearField),
       kernelApproximations_(kernelApproximations),
@@ -148,10 +171,23 @@ namespace Tpetra {
         }
       }
 
+      if (setupTransposes) {
+        Teuchos::RCP<Teuchos::ParameterList> transposeParams = rcp(new Teuchos::ParameterList);
+
+        Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposerBasisMatrix(basisMatrix_);
+        basisMatrixT_ = transposerBasisMatrix.createTranspose(transposeParams);
+
+        for (size_t i = 0; i<transferMatrices_.size(); i++) {
+          transferMatricesT_.push_back(transpose(transferMatrices_[i]));
+        }
+
+        canApplyWithoutTransposes_ = true;
+      } else
+        canApplyWithoutTransposes_ = false;
+
       // Allocate memory for apply with vectors
       allocateMemory(1);
     }
-
 
   template <class Scalar,
             class LocalOrdinal,
@@ -164,25 +200,29 @@ namespace Tpetra {
         Teuchos::ETransp mode,
         Scalar alpha,
         Scalar beta) const {
+    if (canApplyWithoutTransposes_)
+      applyWithoutTransposes(X, Y, mode, alpha, beta);
+    else
+      applyWithTransposes(X, Y, mode, alpha, beta);
+  }
+
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  void
+  HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  applyWithTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                      Teuchos::ETransp mode,
+                      Scalar alpha,
+                      Scalar beta) const {
     using Teuchos::RCP;
     const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
     const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     bool flip = true;
 
     allocateMemory(X.getNumVectors());
-
-    // near field - part 1
-    RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
-    {
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 1")));
-      if (mode == Teuchos::NO_TRANS) {
-        X_colmap_->beginImport(X, *nearFieldImporter, INSERT);
-      } else if (mode == Teuchos::TRANS) {
-        nearField_->localApply(X, *X_colmap_, mode, alpha, zero);
-        Y.scale (beta);
-        Y.beginExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
-      }
-    }
 
     // upward pass
     {
@@ -226,15 +266,16 @@ namespace Tpetra {
       }
     }
 
-    // near field - part 2
+    // near field - part 1
+    RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
     {
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 2")));
-
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 1")));
       if (mode == Teuchos::NO_TRANS) {
-        X_colmap_->endImport(X, *nearFieldImporter, INSERT);
-        nearField_->localApply(*X_colmap_, Y, mode, alpha, beta);
+        X_colmap_->beginImport(X, *nearFieldImporter, INSERT);
       } else if (mode == Teuchos::TRANS) {
-        Y.endExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
+        nearField_->localApply(X, *X_colmap_, mode, alpha, zero);
+        Y.scale (beta);
+        Y.beginExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
       }
     }
 
@@ -260,6 +301,18 @@ namespace Tpetra {
       }
     }
 
+    // near field - part 2
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 2")));
+
+      if (mode == Teuchos::NO_TRANS) {
+        X_colmap_->endImport(X, *nearFieldImporter, INSERT);
+        nearField_->localApply(*X_colmap_, Y, mode, alpha, beta);
+      } else if (mode == Teuchos::TRANS) {
+        Y.endExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
+      }
+    }
+
     // downward pass
     {
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("downward pass")));
@@ -281,6 +334,133 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  void
+  HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  applyWithoutTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                         Teuchos::ETransp mode,
+                         Scalar alpha,
+                         Scalar beta) const {
+    using Teuchos::RCP;
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    bool flip = true;
+
+    allocateMemory(X.getNumVectors());
+
+    // upward pass
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("upward pass")));
+
+      basisMatrixT_->apply(X, *coefficients_, Teuchos::NO_TRANS);
+
+      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
+        if (flip) {
+          coefficients2_->assign(*coefficients_);
+          transferMatrices_[i]->localApply(*coefficients_, *coefficients2_, Teuchos::NO_TRANS, one, one);
+          flip = false;
+        } else {
+          coefficients_->assign(*coefficients2_);
+          transferMatrices_[i]->localApply(*coefficients2_, *coefficients_, Teuchos::NO_TRANS, one, one);
+          flip = true;
+        }
+    }
+
+    // far field interactions - part 1
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("far field 1")));
+
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
+      if (flip) {
+        if (mode == Teuchos::NO_TRANS) {
+          coefficients_colmap_->beginImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+        } else if (mode == Teuchos::TRANS) {
+          kernelApproximations_->localApply(*coefficients_, *coefficients_colmap_, mode, alpha);
+          coefficients2_->putScalar(zero);
+          coefficients2_->beginExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
+        }
+      } else {
+        if (mode == Teuchos::NO_TRANS) {
+          coefficients_colmap_->beginImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+        } else if (mode == Teuchos::TRANS) {
+          kernelApproximations_->localApply(*coefficients2_, *coefficients_colmap_, mode, alpha);
+          coefficients_->putScalar(zero);
+          coefficients_->beginExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
+        }
+      }
+    }
+
+    // near field - part 1
+    RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 1")));
+      if (mode == Teuchos::NO_TRANS) {
+        X_colmap_->beginImport(X, *nearFieldImporter, INSERT);
+      } else if (mode == Teuchos::TRANS) {
+        nearField_->localApply(X, *X_colmap_, mode, alpha, zero);
+        Y.scale (beta);
+        Y.beginExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
+      }
+    }
+
+    // far field interactions - part 2
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("far field 2")));
+
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
+      if (flip) {
+        if (mode == Teuchos::NO_TRANS) {
+          coefficients_colmap_->endImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+          kernelApproximations_->localApply(*coefficients_colmap_, *coefficients2_, mode, alpha);
+        } else if (mode == Teuchos::TRANS) {
+          coefficients2_->endExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
+        }
+      } else {
+        if (mode == Teuchos::NO_TRANS) {
+          coefficients_colmap_->endImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+          kernelApproximations_->localApply(*coefficients_colmap_, *coefficients_, mode, alpha);
+        } else if (mode == Teuchos::TRANS) {
+          coefficients_->endExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
+        }
+      }
+    }
+
+    // near field - part 2
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 2")));
+
+      if (mode == Teuchos::NO_TRANS) {
+        X_colmap_->endImport(X, *nearFieldImporter, INSERT);
+        nearField_->localApply(*X_colmap_, Y, mode, alpha, beta);
+      } else if (mode == Teuchos::TRANS) {
+        Y.endExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
+      }
+    }
+
+    // downward pass
+    {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("downward pass")));
+
+      for (size_t i = 0; i<transferMatrices_.size(); i++)
+        if (flip) {
+          coefficients_->assign(*coefficients2_);
+          transferMatricesT_[i]->localApply(*coefficients2_, *coefficients_, Teuchos::NO_TRANS, one, one);
+          flip = false;
+        } else {
+          coefficients2_->assign(*coefficients_);
+          transferMatricesT_[i]->localApply(*coefficients_, *coefficients2_, Teuchos::NO_TRANS, one, one);
+          flip = true;
+        }
+      if (flip)
+        basisMatrix_->apply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
+      else
+        basisMatrix_->apply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
+    }
+  }
 
   template <class Scalar,
             class LocalOrdinal,
@@ -439,13 +619,13 @@ namespace Tpetra {
         }
       }
       // std::cout << "dropped " << dropped << " kept " << kept << " ignored " << ignored << std::endl;
-
-      newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
-                                        kernelApproximations_->blockA_->getRangeMap());
-      newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
-      diffKernelApprox->fillComplete(clusterCoeffMap_,
-                                     clusterCoeffMap_);
     }
+
+    newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
+                                        kernelApproximations_->blockA_->getRangeMap());
+    newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
+    diffKernelApprox->fillComplete(clusterCoeffMap_,
+                                   clusterCoeffMap_);
 
     // coarse point matrix of cluster pairs
     Teuchos::RCP<matrix_type> newKernelApprox;

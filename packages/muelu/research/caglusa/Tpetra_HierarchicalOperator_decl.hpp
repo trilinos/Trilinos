@@ -97,7 +97,8 @@ namespace Tpetra {
     HierarchicalOperator(const Teuchos::RCP<matrix_type>& nearField,
                          const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                          const Teuchos::RCP<matrix_type>& basisMatrix,
-                         std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices);
+                         std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
+                         const bool setupTransposes=true);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
@@ -314,10 +315,26 @@ namespace Tpetra {
 
     void allocateMemory(size_t numVectors) const;
 
+    void applyWithTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                             Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+    void applyWithoutTransposes(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                                Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+    bool canApplyWithoutTransposes_;
+
     Teuchos::RCP<matrix_type> nearField_;
     Teuchos::RCP<blocked_matrix_type> kernelApproximations_;
     Teuchos::RCP<matrix_type> basisMatrix_;
+    Teuchos::RCP<matrix_type> basisMatrixT_;
     std::vector<Teuchos::RCP<blocked_matrix_type> > transferMatrices_;
+    std::vector<Teuchos::RCP<blocked_matrix_type> > transferMatricesT_;
     Teuchos::RCP<const map_type> clusterCoeffMap_;
     mutable Teuchos::RCP<mv_type> coefficients_, coefficients2_;
     mutable Teuchos::RCP<mv_type> X_colmap_, coefficients_colmap_;
