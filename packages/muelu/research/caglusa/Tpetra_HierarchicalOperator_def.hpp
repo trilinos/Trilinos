@@ -514,9 +514,9 @@ namespace Tpetra {
         identity->fillComplete ();
       }
 
-      // transfer = basisMatrix_ * (identity + transferMatrices_[0]) * ... * (identity + transferMatrices_[n-1])
+      // transfer = basisMatrix_ * (identity + transferMatrices_[K-1]) * ... * (identity + transferMatrices_[0])
       Teuchos::RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
-      for (size_t i = 0; i<transferMatrices_.size(); i++) {
+      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
         Teuchos::RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
         Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
         MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
@@ -563,7 +563,7 @@ namespace Tpetra {
 
     if (hasFarField()) {
 
-      // transfer = basisMatrix_ * (identity + transferMatrices_[0]) * ... * (identity + transferMatrices_[n-1])
+      // transfer = basisMatrix_ * (identity + transferMatrices_[K-1]) * ... * (identity + transferMatrices_[0])
       RCP<matrix_type> transfer = rcp(new matrix_type(*basisMatrix_));
 
       if (hasTransferMatrices()) {
@@ -579,7 +579,7 @@ namespace Tpetra {
           identity->fillComplete ();
         }
 
-        for (size_t i = 0; i<transferMatrices_.size(); i++) {
+        for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
           RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
           RCP<matrix_type> temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
           MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
