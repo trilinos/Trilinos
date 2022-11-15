@@ -235,7 +235,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     concretePrecOpHalf =
       Ifpack2::Factory::create<row_matrix_type> (preconditionerType, tpetraFwdMatrixHalf);
 #else
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Ifpack2 does not have correct precisions enabled to use half precision.")
 #endif
   } else {
     typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,

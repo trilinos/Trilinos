@@ -160,7 +160,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
   // Belos-specific typedefs:
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>     TpetraMV; 
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMV; 
   typedef Belos::TpetraOperator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOp;
   typedef Belos::LinearProblem<scalar_type, TpetraMV, TpetraLinOp> BelosTpLinProb;
 
@@ -170,7 +170,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   //      with both scalar types.
   typedef typename Teuchos::ScalarTraits<scalar_type>::halfPrecision half_scalar_type;
   typedef Tpetra::Operator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOpHalf;
-  typedef Tpetra::MultiVector<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type>     TpetraMVHalf; 
+  typedef Tpetra::MultiVector<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMVHalf; 
   typedef Belos::TpetraOperator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOpHalf;
   typedef Belos::LinearProblem<half_scalar_type, TpetraMVHalf, TpetraLinOpHalf> BelosTpLinProbHalf;
 #endif
@@ -224,10 +224,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
 #else
-    if (Teuchos::nonnull(out)) {
-      *out << "\nSolver does not have correct precisions enabled to use half precision.\n";
-    }
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Solver does not have correct precisions enabled to use half precision.")
 #endif
   } else {
     // Wrap concrete preconditioner
