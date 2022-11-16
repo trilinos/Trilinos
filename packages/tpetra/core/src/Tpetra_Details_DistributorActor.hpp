@@ -45,10 +45,15 @@
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Tpetra_Details_MpiTypeTraits.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
 #include "Kokkos_TeuchosCommAdapters.hpp"
+
+#ifdef HAVE_TPETRA_MPI
+#include "mpi.h"
+#endif
 
 namespace Tpetra {
 namespace Details {
@@ -227,6 +232,74 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
 
+  //  All-to-all communication layout is quite different from
+  //  point-to-point, so we handle it separately.
+  if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+#ifdef HAVE_TPETRA_MPI
+    TEUCHOS_TEST_FOR_EXCEPTION(!plan.getIndicesTo().is_null(),
+                               std::runtime_error,
+                               "Send Type=\"Alltoall\" only works for fast-path communication.");
+
+    auto comm = plan.getComm();
+    std::vector<int> sendcounts (comm->getSize(), 0);
+    std::vector<int> sdispls    (comm->getSize(), 0);
+    std::vector<int> recvcounts (comm->getSize(), 0);
+    std::vector<int> rdispls    (comm->getSize(), 0);
+
+    size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
+    for (size_t p = 0; p < numBlocks; ++p) {
+      sdispls[plan.getProcsTo()[p]]    = plan.getStartsTo()[p]  * numPackets;
+      sendcounts[plan.getProcsTo()[p]] = plan.getLengthsTo()[p] * numPackets;
+    }
+
+    const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+    size_t curBufferOffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+                                 curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Exceeded size of 'imports' array in packing loop on Process " <<
+                                 myRank << ".  imports.size() = " << imports.size () << " < "
+                                 "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
+                                 curBufLen << ").");
+      rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
+      recvcounts[plan.getProcsFrom()[i]] = curBufLen;
+      curBufferOffset += curBufLen;
+    }
+
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
+    using T = typename exports_view_type::non_const_value_type;
+    T t;
+    MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
+    const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                  imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                  (*rawComm)());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                               "MPI_Alltoallv failed with error \""
+                               << Teuchos::mpiErrorCodeToString (err) << "\".");
+
+    return;
+#else
+    if (plan.hasSelfMessage()) {
+      // This is how we "send a message to ourself": we copy from
+      // the export buffer to the import buffer.  That saves
+      // Teuchos::Comm implementations other than MpiComm (in
+      // particular, SerialComm) the trouble of implementing self
+      // messages correctly.  (To do this right, SerialComm would
+      // need internal buffer space for messages, keyed on the
+      // message's tag.)
+      size_t selfReceiveOffset = 0;
+      deep_copy_offset(imports, exports, selfReceiveOffset,
+                       plan.getStartsTo()[0]*numPackets,
+                       plan.getLengthsTo()[0]*numPackets);
+    }
+#endif
+  }
+
   size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -366,6 +439,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           plan.getStartsTo()[selfNum]*numPackets,
           plan.getLengthsTo()[selfNum]*numPackets);
     }
+
   }
   else { // data are not blocked by proc, use send buffer
 
@@ -482,6 +556,89 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
+
+  //  All-to-all communication layout is quite different from
+  //  point-to-point, so we handle it separately.
+  if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+#ifdef HAVE_TPETRA_MPI
+    TEUCHOS_TEST_FOR_EXCEPTION(!plan.getIndicesTo().is_null(),
+                               std::runtime_error,
+                               "Send Type=\"Alltoall\" only works for fast-path communication.");
+
+    auto comm = plan.getComm();
+    std::vector<int> sendcounts (comm->getSize(), 0);
+    std::vector<int> sdispls    (comm->getSize(), 0);
+    std::vector<int> recvcounts (comm->getSize(), 0);
+    std::vector<int> rdispls    (comm->getSize(), 0);
+
+    size_t curPKToffset = 0;
+    for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
+      sdispls[plan.getProcsTo()[pp]]    = curPKToffset;
+      size_t numPackets = 0;
+      for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
+        numPackets += numExportPacketsPerLID[j];
+      }
+      sendcounts[plan.getProcsTo()[pp]] = numPackets;
+      curPKToffset += numPackets;
+    }
+
+    const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+
+    size_t curBufferOffset = 0;
+    size_t curLIDoffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      size_t totalPacketsFrom_i = 0;
+      for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
+        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+      }
+      curLIDoffset += plan.getLengthsFrom()[i];
+
+      rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
+      recvcounts[plan.getProcsFrom()[i]] = totalPacketsFrom_i;
+      curBufferOffset += totalPacketsFrom_i;
+    }
+
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
+    using T = typename exports_view_type::non_const_value_type;
+    T t;
+    MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
+    const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                  imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                  (*rawComm)());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                               "MPI_Alltoallv failed with error \""
+                               << Teuchos::mpiErrorCodeToString (err) << "\".");
+
+    return;
+#else
+    if (plan.hasSelfMessage()) {
+
+      size_t selfReceiveOffset = 0;
+
+      // setup arrays containing starting-offsets into exports for each send,
+      // and num-packets-to-send for each send.
+      Array<size_t> sendPacketOffsets(plan.getNumSends(),0), packetsPerSend(plan.getNumSends(),0);
+      size_t maxNumPackets = 0;
+      size_t curPKToffset = 0;
+      for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
+        sendPacketOffsets[pp] = curPKToffset;
+        size_t numPackets = 0;
+        for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
+          numPackets += numExportPacketsPerLID[j];
+        }
+        if (numPackets > maxNumPackets) maxNumPackets = numPackets;
+        packetsPerSend[pp] = numPackets;
+        curPKToffset += numPackets;
+      }
+
+      deep_copy_offset(imports, exports, selfReceiveOffset,
+          sendPacketOffsets[0], packetsPerSend[0]);
+    }
+#endif
+  }
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
