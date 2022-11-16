@@ -70,6 +70,7 @@ public:
     optParams_.set<int>("Optimizer Iteration Number", -1);
     useObjectiveRecoveryValue_ = optParams_.isParameter("Objective Recovery Value");
     objectiveRecoveryValue_ = useObjectiveRecoveryValue_ ? optParams_.get<Real>("Objective Recovery Value") : Real(0.0);
+    updateType_ = ROL::UpdateType::Temp;
    };
 
 
@@ -111,6 +112,14 @@ public:
     }
 
     objectiveStr_.isValueValid_ = true;
+
+    if((updateType_ == ROL::UpdateType::Initial) && (observer_ != Teuchos::null)) {
+      int iter = 0;
+      const ROL::ThyraVector<Real>  & thyra_u = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
+      observer_->observeSolution(iter, *(thyra_u.getVector()), Teuchos::null, Teuchos::null, Teuchos::null);
+      if(objectiveStr_.isValueValid_)
+        observer_->observeResponse(iter);
+    }
 
     return objectiveStr_.value_;
   }
@@ -619,6 +628,8 @@ public:
     if(verbosityLevel_ >= Teuchos::VERB_HIGH)
       *out_ << "Piro::ThyraProductME_Objective_SimOpt::update, UpdateType::" << ROL::UpdateTypeToString(type) << " Iter " << iter << std::endl;
 
+    updateType_ = type;
+
     switch(type) {
       case ROL::UpdateType::Initial:    
         cached_objectiveStr_.allocateGradients(u, z);
@@ -701,6 +712,7 @@ private:
   const std::vector<int> p_indices_;
   Real objectiveRecoveryValue_;
   bool useObjectiveRecoveryValue_;
+  ROL::UpdateType updateType_;
 
   ObjectiveStruct objectiveStr_, cached_objectiveStr_,  tmp_objectiveStr_;
 
