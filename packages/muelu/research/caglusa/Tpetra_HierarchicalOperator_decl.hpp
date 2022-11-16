@@ -333,6 +333,7 @@ namespace Tpetra {
                                 Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     bool canApplyWithoutTransposes_;
+    std::string coarseningCriterion_;
 
     Teuchos::RCP<matrix_type> nearField_;
     Teuchos::RCP<blocked_matrix_type> kernelApproximations_;

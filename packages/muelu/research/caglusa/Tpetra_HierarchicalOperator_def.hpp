@@ -121,6 +121,7 @@ namespace Tpetra {
       std::string sendTypeNearField = "Isend";
       std::string sendTypeBasisMatrix = "Isend";
       std::string sendTypeKernelApproximations = "Alltoall";
+      coarseningCriterion_ = "numClusters";
       if (!params.is_null()) {
         if (params->isType<bool>("setupTransposes"))
           setupTransposes = params->get<bool>("setupTransposes");
@@ -132,6 +133,9 @@ namespace Tpetra {
           sendTypeBasisMatrix = params->get<std::string>("Send type basisMatrix");
         if (params->isType<std::string>("Send type kernelApproximations"))
           sendTypeKernelApproximations = params->get<std::string>("Send type kernelApproximations");
+        if (params->isType<std::string>("Coarsening criterion"))
+          coarseningCriterion_ = params->get<std::string>("Coarsening criterion");
+        TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense"))
       }
 
 
@@ -570,6 +574,25 @@ namespace Tpetra {
       auto lcl_clusterSizes = clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto lcl_ghosted_clusterSizes = ghosted_clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
 
+      //
+      std::vector<size_t> clusterPairSizes;
+      for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
+        auto brow = lcl_BlockGraph.row(brlid);
+        for (LocalOrdinal k = 0; k < brow.length; ++k) {
+          // Entries of the block matrix for kernelApproximations
+          // decide whether the cluster pair is present and only take
+          // values 1 or 0.
+          if (brow.value(k) > HALF) {
+            LocalOrdinal bclid = brow.colidx(k);
+            clusterPairSizes.push_back(lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
+          }
+        }
+      }
+      std::sort(clusterPairSizes.begin(), clusterPairSizes.end());
+      double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols())/Teuchos::as<double>(P->getGlobalNumRows());
+      size_t tgt_clusterPairSize = clusterPairSizes[Teuchos::as<size_t>(clusterPairSizes.size()*(1-coarseningRate))];
+      //
+
       // number of cluster pairs dropped
       int dropped = 0;
       // number of cluster pairs we kept
@@ -591,8 +614,15 @@ namespace Tpetra {
             size_t bcsize = lcl_ghosted_clusterSizes(bclid, 0);
 
             // criterium for removing a cluster pair from the far field
-            // Size of the sparse cluster approximation >= size of dense equivalent
-            if (brsize * bcsize >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0)) {
+            bool removeCluster;
+            if (coarseningCriterion_ == "equivalentDense") {
+              // Size of the sparse cluster approximation >= size of dense equivalent
+              removeCluster = (brsize * bcsize
+                               >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
+            } else if (coarseningCriterion_ == "numClusters") {
+              removeCluster = (lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0) < tgt_clusterPairSize);
+            }
+            if (removeCluster) {
               // we are dropping the cluster pair from the far field
               ++dropped;
               new_brow.value(k) = ZERO;
