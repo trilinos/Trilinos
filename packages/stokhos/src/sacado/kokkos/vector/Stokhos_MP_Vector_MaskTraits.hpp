@@ -511,25 +511,31 @@ public:
 
 private:
     bool data[size];
-    
+
 public:
     KOKKOS_INLINE_FUNCTION Mask(){
         for(std::size_t i=0; i<size; ++i)
             this->set(i,false);
     }
-    
+
     KOKKOS_INLINE_FUNCTION Mask(bool a){
         for(std::size_t i=0; i<size; ++i)
             this->set(i,a);
     }
-    
+
     KOKKOS_INLINE_FUNCTION Mask(const Mask &a){
         for(std::size_t i=0; i<size; ++i)
             data[i] = a.data[i];
     }
-    
+
+    KOKKOS_INLINE_FUNCTION Mask& operator=(const Mask &a){
+        for(std::size_t i=0; i<size; ++i)
+            this->data[i] = a.data[i];
+        return *this;
+    }
+
     KOKKOS_INLINE_FUNCTION std::size_t getSize() const {return size;}
-    
+
     KOKKOS_INLINE_FUNCTION bool operator> (double v)
     {
         double sum = 0;
@@ -547,7 +553,7 @@ public:
 
         return sum < v*size;
     }
-    
+
     KOKKOS_INLINE_FUNCTION bool operator>= (double v)
     {
         double sum = 0;
