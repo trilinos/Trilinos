@@ -95,16 +95,7 @@ bool BelosTpetraPreconditionerFactory<MatrixType>::isCompatible(
   ) const
 {
   const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc.getOp();
-
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-
-  typedef Thyra::TpetraLinearOp<scalar_type, local_ordinal_type, global_ordinal_type, node_type> ThyraTpetraLinOp;
-  const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp,true);
-
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
-  const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = Teuchos::nonnull(thyraTpetraFwdOp) ? thyraTpetraFwdOp->getConstTpetraOperator() : Teuchos::null;
+  const auto tpetraFwdOp =  TpetraOperatorVectorExtraction<scalar_type>::getConstTpetraOperator(fwdOp);
 
   const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp,true);
 
@@ -152,12 +143,8 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
 
-  typedef Thyra::TpetraLinearOp<scalar_type, local_ordinal_type, global_ordinal_type, node_type> ThyraTpetraLinOp;
-  const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraTpetraFwdOp));
-
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
-  const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = thyraTpetraFwdOp->getConstTpetraOperator();
+  const auto tpetraFwdOp =  TpetraOperatorVectorExtraction<scalar_type>::getConstTpetraOperator(fwdOp);
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
   // Belos-specific typedefs:
@@ -183,7 +170,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
   // This check needed to address Issue #535. 
-  Teuchos::RCP<const Teuchos::ParameterList> innerParamList;
+  Teuchos::RCP<Teuchos::ParameterList> innerParamList;
   if (paramList_.is_null ()) {
     innerParamList = Teuchos::rcp(new Teuchos::ParameterList(*getValidParameters()));
   }
@@ -196,8 +183,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     useHalfPrecision = Teuchos::getParameter<bool>(*innerParamList, "half precision");
 
   const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
-  const Teuchos::RCP<Teuchos::ParameterList> packageParamList = 
-          rcp(new Teuchos::ParameterList(*Teuchos::sublist(innerParamList, "BelosPrec Solver Params")));
+  const Teuchos::RCP<Teuchos::ParameterList> packageParamList = Teuchos::rcpFromRef(innerParamList->sublist("BelosPrec Solver Params"));
 
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
