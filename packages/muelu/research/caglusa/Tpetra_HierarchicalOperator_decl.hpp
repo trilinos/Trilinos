@@ -267,6 +267,10 @@ namespace Tpetra {
     }
 
     void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+      describe(out, verbLevel, true);
+    }
+
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel, const bool printHeader) const {
       using std::setw;
       using std::endl;
       const size_t numRows = nearField_->getRowMap()->getGlobalNumElements();
@@ -282,7 +286,8 @@ namespace Tpetra {
       const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
       std::ostringstream oss;
       oss << std::left;
-      oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
+      if (printHeader)
+        oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
       oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis     << setw(15) << numClusterPairs  << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
       out << oss.str();
     }

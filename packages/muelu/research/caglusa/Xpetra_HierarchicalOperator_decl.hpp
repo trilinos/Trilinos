@@ -94,7 +94,11 @@ namespace Xpetra {
     RCP<const Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const { return op_; }
 
     void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
-      op_->describe(out, verbLevel);
+      describe(out, verbLevel, true);
+    }
+
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel, const bool printHeader) const {
+      op_->describe(out, verbLevel, printHeader);
     }
 
     bool hasFarField() const {

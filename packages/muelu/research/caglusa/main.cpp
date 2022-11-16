@@ -80,6 +80,8 @@
 #include <BelosMueLuAdapter.hpp>
 #endif
 
+#define MUELU_HIERARCHICAL_DEBUG
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -239,6 +241,7 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
 
         auto matA = coarseA->toMatrix();
 
+#ifdef MUELU_HIERARCHICAL_DEBUG
         {
           using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
           const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
@@ -254,6 +257,7 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
           out << "|op_dense*1 - op_H*1| = " << norm << std::endl;
           TEUCHOS_ASSERT(norm < tol);
         }
+#endif
 
         using std::setw;
         using std::endl;
@@ -262,13 +266,13 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
         const double nnzPerRow = Teuchos::as<double>(nnz)/numRows;
         std::ostringstream oss;
         oss << std::left;
-        oss << setw(9) << "rows"  << setw(12) << "nnz"  << setw(14) << "nnz/row" << setw(12)  << endl;
+        // oss << setw(9) << "rows"  << setw(12) << "nnz"  << setw(14) << "nnz/row" << setw(12)  << endl;
         oss << setw(9) << numRows << setw(12) << nnz << setw(14) << nnzPerRow << endl;
         out << oss.str();
 
         lvl->Set("A", matA);
       } else {
-        coarseA->describe(out, Teuchos::VERB_EXTREME);
+        coarseA->describe(out, Teuchos::VERB_EXTREME, /*printHeader=*/false);
         lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
       }
     } else {
