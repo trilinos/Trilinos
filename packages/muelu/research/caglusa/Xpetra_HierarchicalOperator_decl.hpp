@@ -33,7 +33,8 @@ namespace Xpetra {
     HierarchicalOperator(const RCP<matrix_type>& nearField,
                          const RCP<blocked_matrix_type>& kernelApproximations,
                          const RCP<matrix_type>& basisMatrix,
-                         std::vector<RCP<blocked_matrix_type> >& transferMatrices);
+                         std::vector<RCP<blocked_matrix_type> >& transferMatrices,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const map_type> getDomainMap() const {

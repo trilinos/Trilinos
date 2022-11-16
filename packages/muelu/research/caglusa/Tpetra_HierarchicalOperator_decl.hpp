@@ -98,7 +98,7 @@ namespace Tpetra {
                          const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                          const Teuchos::RCP<matrix_type>& basisMatrix,
                          std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
-                         const bool setupTransposes=true);
+                         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {

@@ -106,7 +106,7 @@ namespace Tpetra {
                        const Teuchos::RCP<blocked_matrix_type>& kernelApproximations,
                        const Teuchos::RCP<matrix_type>& basisMatrix,
                        std::vector<Teuchos::RCP<blocked_matrix_type> >& transferMatrices,
-                       const bool setupTransposes)
+                       const Teuchos::RCP<Teuchos::ParameterList>& params)
       :
       nearField_(nearField),
       kernelApproximations_(kernelApproximations),
@@ -116,7 +116,24 @@ namespace Tpetra {
       auto map = nearField_->getDomainMap();
       clusterCoeffMap_ = basisMatrix_->getDomainMap();
 
-      const bool doDebugChecks = true;
+      bool setupTransposes = true;
+      bool doDebugChecks = true;
+      std::string sendTypeNearField = "Isend";
+      std::string sendTypeBasisMatrix = "Isend";
+      std::string sendTypeKernelApproximations = "Alltoall";
+      if (!params.is_null()) {
+        if (params->isType<bool>("setupTransposes"))
+          setupTransposes = params->get<bool>("setupTransposes");
+        if (params->isType<bool>("doDebugChecks"))
+          doDebugChecks = params->get<bool>("doDebugChecks");
+        if (params->isType<std::string>("Send type nearField"))
+          sendTypeNearField = params->get<std::string>("Send type nearField");
+        if (params->isType<std::string>("Send type basisMatrix"))
+          sendTypeBasisMatrix = params->get<std::string>("Send type basisMatrix");
+        if (params->isType<std::string>("Send type kernelApproximations"))
+          sendTypeKernelApproximations = params->get<std::string>("Send type kernelApproximations");
+      }
+
 
       if (doDebugChecks) {
         // near field matrix lives on map and is nonlocal
@@ -142,10 +159,10 @@ namespace Tpetra {
         }
       }
 
-      // Set the importers to Isend
+      // Set the send types
       Teuchos::RCP<Teuchos::ParameterList> distParams = rcp(new Teuchos::ParameterList());
-      distParams->set("Send type", "Isend");
       {
+        distParams->set("Send type", sendTypeNearField);
         Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
         nearFieldImporter->getDistributor().setParameterList(distParams);
         auto revDistor = nearFieldImporter->getDistributor().getReverse(false);
@@ -154,14 +171,7 @@ namespace Tpetra {
       }
 
       {
-        Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
-        kernelApproximationsImporter->getDistributor().setParameterList(distParams);
-        auto revDistor = kernelApproximationsImporter->getDistributor().getReverse(false);
-        if (!revDistor.is_null())
-          revDistor->setParameterList(distParams);
-      }
-
-      {
+        distParams->set("Send type", sendTypeBasisMatrix);
         Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > basisMatrixImporter = basisMatrix_->getGraph()->getImporter();
         if (!basisMatrixImporter.is_null()) {
           basisMatrixImporter->getDistributor().setParameterList(distParams);
@@ -169,6 +179,15 @@ namespace Tpetra {
           if (!revDistor.is_null())
             revDistor->setParameterList(distParams);
         }
+      }
+
+      {
+        distParams->set("Send type", sendTypeKernelApproximations);
+        Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
+        kernelApproximationsImporter->getDistributor().setParameterList(distParams);
+        auto revDistor = kernelApproximationsImporter->getDistributor().getReverse(false);
+        if (!revDistor.is_null())
+          revDistor->setParameterList(distParams);
       }
 
       if (setupTransposes) {

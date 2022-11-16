@@ -180,7 +180,11 @@ struct IOhelpers {
       transferMatrices.push_back(transfer);
     }
 
-    op = rcp(new HOp(nearField, blockKernelApproximations, basisMatrix, transferMatrices));
+    RCP<Teuchos::ParameterList> params;
+    if (hierarchicalParams.isSublist("params")) {
+      params = Teuchos::rcpFromRef(hierarchicalParams.sublist("params"));
+    }
+    op = rcp(new HOp(nearField, blockKernelApproximations, basisMatrix, transferMatrices, params));
 
     return op;
   }
