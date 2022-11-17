@@ -434,6 +434,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
 
 
     Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+    auto  stateStore = ROL::makePtr<ROL::VectorController<Scalar>>();
       
     for (int i=0; i<num_g_; ++i) {      
 
@@ -443,10 +444,9 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
 
       //create the ROL reduce objective initializing it with the current state and parameter
-      auto  stateStore = ROL::makePtr<ROL::VectorController<Scalar>>();
-      stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
       ROL::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,stateStore,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
       reduced_obj.update(rol_p,ROL::UpdateType::Temp);
+      stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
 
       //reduced_obj.set_precomputed_state(rol_x,rol_p);
       if(i>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
@@ -1251,6 +1251,8 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
 
 
   Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+  auto stateStore = ROL::makePtr<ROL::VectorController<Scalar>>(); 
+  
   for (int g_index=0; g_index<num_g_; ++g_index) {
     Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
     
@@ -1258,10 +1260,9 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
     ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);    
 
     //create the ROL reduce objective initializing it with the current state and parameter
-    auto stateStore = ROL::makePtr<ROL::VectorController<Scalar>>(); 
-    stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
     ROL::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,stateStore,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
     reduced_obj.update(rol_p,ROL::UpdateType::Temp);
+    stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
 
     if(g_index>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
       constr.computeJacobian1_ = false;
