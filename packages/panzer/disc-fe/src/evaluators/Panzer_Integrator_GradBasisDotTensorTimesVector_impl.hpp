@@ -334,11 +334,11 @@ namespace panzer
 	bytes = scratch_view::shmem_size(1) + scratch_view::shmem_size(basis_.extent(1));
 
       auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-      parallel_for(policy, *this, this->getName());
+      parallel_for(this->getName(), policy, *this);
     }
     else {
       auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag,PHX::Device>(workset.num_cells);
-      parallel_for(policy, *this, this->getName());
+      parallel_for(this->getName(), policy, *this);
     }
   } // end of evaluateFields()
 
