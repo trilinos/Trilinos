@@ -52,6 +52,18 @@
 
 namespace Piro {
 
+  template<class CharT, class Traits=std::char_traits<CharT>>
+  class RolOutputBuffer : public std::basic_streambuf<CharT,Traits> {
+     public:
+     const std::stringstream& getStringStream() const;
+
+     protected:
+     inline virtual int overflow(int c = Traits::eof());
+
+     private:
+     std::stringstream ss;
+  };
+
   //! \name Top-level Thyra analysis driver
   //@{
   //! \brief Performs analysis of a solved model.
@@ -97,6 +109,12 @@ namespace Piro {
   //! \ingroup Piro_analysis_driver_grp
   Teuchos::RCP<const Teuchos::ParameterList>
     getValidPiroAnalysisDakotaParameters();
+  //@}
+
+  //! Valid parameters for the list sent to PerformROLAnalysis
+  //! \ingroup Piro_analysis_driver_grp
+  Teuchos::RCP<const Teuchos::ParameterList>
+    getValidPiroAnalysisROLParameters(int num_parameters);
   //@}
 }
 
