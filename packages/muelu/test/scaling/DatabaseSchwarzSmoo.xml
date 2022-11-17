@@ -22,21 +22,23 @@
   <Parameter name="coarse: type" type="string" value="SCHWARZ"/>
   <ParameterList    name="coarse: params">
     <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
-    <Parameter name="schwarz: combine mode"             type="string" value="ADD"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="AVG"/>
     <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
+    <Parameter name="schwarz: update damping"           type="double" value="1.0"/>
+<!--
     <ParameterList name="schwarz: reordering list">
       <Parameter name="order_method"                    type="string"  value="rcm"/>
     </ParameterList>
+-->
 
-    <Parameter name="subdomain solver name"             type="string" value="BLOCK_RELAXATION"/>
+    <Parameter name="subdomain solver name"             type="string" value="DATABASE SCHWARZ"/>
     <ParameterList name="subdomain solver parameters">
-      <Parameter name= "relaxation: type"                type="string" value="Jacobi"/>
-      <Parameter name= "relaxation: sweeps"                type="int" value="1"/>
-      <Parameter name= "relaxation: zero starting solution"                type="bool" value="false"/>
-      <Parameter name= "partitioner: type"                type="string" value="user"/>
-      <Parameter name= "partitioner: nonsymmetric overlap combine"  type="bool" value="true"/>
-      <Parameter name= "relaxation: damping factor"                type="double" value="1.0"/>
+      <Parameter name= "database schwarz: patch size"             type="int" value="9"/> <!-- 9 DOFs per patch for degree 2 -->
+      <Parameter name= "database schwarz: patch tolerance"        type="double" value="0.01"/> <!-- A==B if |A-B|_l1 < 0.01 -->
+      <Parameter name= "database schwarz: skip database"          type="bool" value="false"/> <!-- don't skip constructing a database (for performance comparisons)-->
+      <Parameter name= "database schwarz: print database summary" type="bool" value="true"/> <!-- print a summary of the compression after setup -->
     </ParameterList>
+
   </ParameterList>
 
   <!-- ===========  REPARTITIONING  =========== -->

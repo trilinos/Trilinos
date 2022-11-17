@@ -46,6 +46,8 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include <iostream>
@@ -67,9 +69,38 @@ DatabaseSchwarz (const Teuchos::RCP<const row_matrix_type>& A)
     ComputeTime_(0.0),
     ApplyTime_(0.0),
     ComputeFlops_(0.0),
-    ApplyFlops_(0.0)
+    ApplyFlops_(0.0),
+    PatchSize_(9),
+    PatchTolerance_(1e-3),
+    SkipDatabase_(false),
+    Verbose_(false)
 {
   this->setObjectLabel("Ifpack2::DatabaseSchwarz");
+}
+
+
+template<class MatrixType>
+DatabaseSchwarz<MatrixType>::
+DatabaseSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
+                 Teuchos::ParameterList& params)
+  : A_(A),
+    IsInitialized_(false),
+    IsComputed_(false),
+    NumInitialize_(0),
+    NumCompute_(0),
+    NumApply_(0),
+    InitializeTime_(0.0),
+    ComputeTime_(0.0),
+    ApplyTime_(0.0),
+    ComputeFlops_(0.0),
+    ApplyFlops_(0.0),
+    PatchSize_(9),
+    PatchTolerance_(1e-3),
+    SkipDatabase_(false),
+    Verbose_(false)
+{
+  this->setObjectLabel("Ifpack2::DatabaseSchwarz");
+  this->setParameters(params);
 }
 
 
@@ -89,11 +120,48 @@ void DatabaseSchwarz<MatrixType>::setMatrix(const Teuchos::RCP<const row_matrix_
   }
 }
 
+
 template<class MatrixType>
 void
-DatabaseSchwarz<MatrixType>::setParameters (const Teuchos::ParameterList& List)
+DatabaseSchwarz<MatrixType>::setParameters(const Teuchos::ParameterList& params)
 {
-  (void) List;
+  // GH: Copied from CAG and others. Yes, const_cast bad.
+  this->setParametersImpl(const_cast<Teuchos::ParameterList&>(params));
+}
+
+
+template<class MatrixType>
+void
+DatabaseSchwarz<MatrixType>::setParametersImpl(Teuchos::ParameterList& params)
+{
+  // GH: since patch size varies dramatically, it doesn't make sense to force a default size
+  // but I don't know if it's any better to throw if the user doesn't provide a patch size
+  const int defaultPatchSize = 9;
+  const double defaultPatchTolerance = 1e-3;
+  const bool defaultSkipDatabase = false;
+  const bool defaultVerbose = false;
+
+  // the size of patch to search for
+  PatchSize_ = params.get<int>("database schwarz: patch size",defaultPatchSize);
+  
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    PatchSize_ < 0, std::invalid_argument,
+    "Ifpack2::DatabaseSchwarz::setParameters: \"database schwarz: patch size\" parameter "
+    "must be a nonnegative integer.  You gave a value of " << PatchSize_ << ".");
+
+  // the tolerance at which two patch matrices are considered "equal"
+  PatchTolerance_ = params.get("database schwarz: patch tolerance", defaultPatchTolerance);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    PatchTolerance_ <= 0, std::invalid_argument,
+    "Ifpack2::DatabaseSchwarz::setParameters: \"database schwarz: patch tolerance\" parameter "
+    "must be a positive double.  You gave a value of " << PatchTolerance_ << ".");
+
+  // whether to skip the database computation and invert all patches or not
+  SkipDatabase_ = params.get<bool>("database schwarz: skip database",defaultSkipDatabase);
+
+  // verbosity: controls whether to print a database summary at the end of the compute phase
+  Verbose_ = params.get<bool>("database schwarz: print database summary",defaultVerbose);
 }
 
 
@@ -121,7 +189,7 @@ template<class MatrixType>
 Teuchos::RCP<const typename DatabaseSchwarz<MatrixType>::row_matrix_type>
 DatabaseSchwarz<MatrixType>::getMatrix() const
 {
-  return getMatrix();
+  return A_;
 }
 
 
@@ -269,12 +337,53 @@ apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_
     Y.scale(beta);
 
     // 2. Solve prec on X
-    // 2a. Split X into Xk on each local patch
+    auto X_view = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto Y_view = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-    // 2b. Solve each Xk using Lapack::GETRS(const char & TRANS, const OrdinalType & n, const OrdinalType & nrhs, const ScalarType * A, const OrdinalType & lda, const OrdinalType * IPIV, ScalarType * B, const OrdinalType & ldb, OrdinalType * info)
-    
-    // 2c. Add alpha*weights*Xk into Y for each Xk
-    
+    Teuchos::LAPACK<int, double> lapack;
+    int INFO = 0;
+    for(unsigned int ipatch=0; ipatch<NumPatches_; ipatch++) {
+      int idatabase = DatabaseIndices_[ipatch];
+
+      // 2a. Split X into Xk on each local patch
+      Teuchos::Array<double> x_patch(PatchSize_);
+      for(unsigned int i=0; i<x_patch.size(); ++i) {
+        x_patch[i] = X_view(PatchIndices_[ipatch][i],0);
+      }
+
+      // 2b. Solve each using Lapack::GETRS
+      // GH: TODO: can improve this by grouping all patches such that DatabaseIndices_[ipatch] is equal
+      // in the compute phase and then utilizing the multiple RHS capability here.
+      int numRhs = 1;
+      
+      int* ipiv = &ipiv_[idatabase*PatchSize_];
+
+      lapack.GETRS('N', DatabaseMatrices_[idatabase]->numRows(), numRhs,
+                   DatabaseMatrices_[idatabase]->values(), DatabaseMatrices_[idatabase]->numRows(),
+                   ipiv, x_patch.getRawPtr(),
+                   DatabaseMatrices_[idatabase]->numRows(), &INFO);
+
+      // INFO < 0 is a bug.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        INFO < 0, std::logic_error, "Ifpack2::DenseContainer::factor: "
+        "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
+        "incorrectly.  INFO = " << INFO << " < 0.  "
+        "Please report this bug to the Ifpack2 developers.");
+      // INFO > 0 means the matrix is singular.  This is probably an issue
+      // either with the choice of rows the rows we extracted, or with the
+      // input matrix itself.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        INFO > 0, std::runtime_error, "Ifpack2::DenseContainer::factor: "
+        "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
+        "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
+        "(one-based index i) is exactly zero.  This probably means that the input "
+        "patch is singular.");
+
+      // 2c. Add alpha*weights*Xk into Y for each Xk
+      for(unsigned int i=0; i<x_patch.size(); ++i) {
+        Y_view(PatchIndices_[ipatch][i],0) += alpha*Weights_[PatchIndices_[ipatch][i]]*x_patch[i];
+      }
+    }
   }
   ++NumApply_;
   ApplyTime_ += (timer->wallTime() - startTime);
@@ -335,132 +444,176 @@ void DatabaseSchwarz<MatrixType>::compute()
       initialize();
     }
     IsComputed_ = false;
-    
-
-    // we do not change the local row, so we avoid doing a copy
-    // for(unsigned int i=0; i<A_->getLocalNumRows(); ++i) {
-    //   typename row_matrix_type::local_inds_host_view_type indices;
-    //   typename row_matrix_type::values_host_view_type values;
-    //   size_t numEntries = 0;
-    //   A_->getLocalRowView(i, indices, values); // LocalRowView complains about temporaries and nonconst lvalues, we'll revisit
-    //   std::cout << indices.extent(0) << std::endl;
-    //   std::cout << values.extent(0) << std::endl;
-    //   std::cout << numEntries << std::endl;
-    // }
+    const int maxNnzPerRow = A_->getGlobalMaxNumRowEntries();
 
     // Phase 1: Loop over rows of A_, construct patch indices, and construct patch matrices
-    std::vector<std::vector<typename row_matrix_type::local_ordinal_type> > patchIndices;
+    PatchIndices_.resize(0);
     NumPatches_ = 0;
     // loop over potential candidates by checking rows of A_
-    for(unsigned int irow=0; irow<A_->getLocalNumRows(); ++irow) {
-      // grab row irow of A_
-      typename row_matrix_type::nonconst_local_inds_host_view_type rowIndices("row indices", 10);
-      typename row_matrix_type::nonconst_values_host_view_type rowValues("row values", 10);
-      size_t numEntries;
-      A_->getLocalRowCopy(irow, rowIndices, rowValues, numEntries);
+    for(local_ordinal_type irow=0; irow < (local_ordinal_type) A_->getLocalNumRows(); ++irow) {
+      size_t num_entries = A_->getNumEntriesInLocalRow(irow);
 
       // if irow is a potential patch candidate
-      if(numEntries == PatchSize_) {
+      if((local_ordinal_type) num_entries == PatchSize_) {
+        // grab row irow of A_
+        typename row_matrix_type::nonconst_local_inds_host_view_type row_inds("row indices", maxNnzPerRow);
+        typename row_matrix_type::nonconst_values_host_view_type row_vals("row values", maxNnzPerRow);
+        A_->getLocalRowCopy(irow, row_inds, row_vals, num_entries);
+
         // check if we've added DOF irow before
-        bool isNewPatch = true;
-        for(size_t ipatch=0; ipatch<patchIndices.size(); ++ipatch) {
-          for(size_t i=0; i<patchIndices[ipatch].size(); ++i) {
-            if(patchIndices[ipatch][i]==irow) {
-              isNewPatch = false;
-              // likely the ugliest way to break out other than using goto TheEnd:
-              ipatch=patchIndices.size();
+        bool is_new_patch = true;
+        for(size_t ipatch=0; ipatch<PatchIndices_.size(); ++ipatch) {
+          for(size_t i=0; i<PatchIndices_[ipatch].size(); ++i) {
+            if(PatchIndices_[ipatch][i] == irow) {
+              is_new_patch = false;
+              ipatch=PatchIndices_.size(); // likely the ugliest way to break out other than using goto TheEnd:
               break;
             }
           }
         }
 
-        // if this patch is new, append the indices and then compute the local Ak
-        if(isNewPatch) {
-          // append indices
-          Teuchos::ArrayView<typename row_matrix_type::local_ordinal_type> indicesArrayView(rowIndices.data(),numEntries);
-          std::vector<typename row_matrix_type::local_ordinal_type> indicesVector = Teuchos::createVector(indicesArrayView);
-          patchIndices.push_back(indicesVector);
+        // if this patch is new, append the indices
+        if(is_new_patch) {
+          Teuchos::ArrayView<typename row_matrix_type::local_ordinal_type> indices_array_view(row_inds.data(),num_entries);
+          std::vector<typename row_matrix_type::local_ordinal_type> indices_vector = Teuchos::createVector(indices_array_view);
+          PatchIndices_.push_back(indices_vector);
           NumPatches_++;
         }
       }
     }
-    // sanity check everything
-    std::cout << "Found " << NumPatches_ << " patches!" << std::endl;
-    for(size_t ipatch=0; ipatch<patchIndices.size(); ++ipatch) {
-      std::cout << "patch " << ipatch << " = [";
-      for(size_t i=0; i<patchIndices[ipatch].size(); ++i)
-        std::cout << patchIndices[ipatch][i] << " ";
-      std::cout << "]" << std::endl;
-    }
-
+    
     // Phase 2: construct the list of local patch matrices
-    // std::vector<Teuchos::SerialDenseMatrix<row_matrix_type::local_ordinal_type,row_matrix_type::scalar_type> > patchMatrices;
-    // // compute the local patch matrix A_k via Vk*A_*Vk^T
-    // std::vector<typename row_matrix_type::scalar_type> Ak_values(PatchSize_*PatchSize_,0);
-    // for(size_t i=0; i<PatchSize_; ++i) {
-    //   A_->getLocalRowCopy(indicesVector[i], rowIndices, rowValues, numEntries);
-    //   for(size_t j=0; j<PatchSize_; ++j) {
-    //     Ak_values.push_back(rowValues(j));
-    //   }
-    // }
-    // Teuchos::SerialDenseMatrix<int,double> patchMatrix(Teuchos::DataAccess::Copy, Ak_values.data(), 1, PatchSize_, PatchSize_);
+    typedef typename Teuchos::SerialDenseMatrix<typename row_matrix_type::local_ordinal_type,typename row_matrix_type::scalar_type> DenseMatType;
+    typedef Teuchos::RCP<DenseMatType> DenseMatRCP;
+    DatabaseIndices_.resize(NumPatches_,-1);
+    Weights_.resize(A_->getLocalNumRows(),0);
+    std::vector<double> index_count(A_->getLocalNumRows(),0);
+    // compute the local patch matrix A_k by grabbing values from the rows of A_
+    for(unsigned int ipatch=0; ipatch< NumPatches_; ++ipatch) {
+      // form a local patch matrix and grab the indices for its rows/columns
+      DenseMatRCP patch_matrix = Teuchos::rcp(new DenseMatType(PatchSize_, PatchSize_));
+      auto indices_vector = PatchIndices_[ipatch];
 
-    // // check if the local patch matrix has been seen before
-    // // ignore for now
+      for(local_ordinal_type i=0; i<PatchSize_; ++i) {
+        index_count[indices_vector[i]]++;
+        // grab each row from A_ and throw them into patch_matrix
+        typename row_matrix_type::nonconst_local_inds_host_view_type row_inds("row indices", maxNnzPerRow);
+        typename row_matrix_type::nonconst_values_host_view_type row_vals("row values", maxNnzPerRow);
+        size_t num_entries;
+        A_->getLocalRowCopy(indices_vector[i], row_inds, row_vals, num_entries);
+        for(local_ordinal_type j=0; j<PatchSize_; ++j) {
+          for(size_t k=0; k<num_entries; ++k) {
+            if(row_inds(k) == indices_vector[j]) {
+              (*patch_matrix)(i,j) = row_vals(k);
+            }
+          }
+        }
+      }
+      
+      // check if the local patch matrix has been seen before
+      // this is skipped and the patch is stored anyway if SkipDatabase_ is true
+      bool found_match = false;
+      if(!SkipDatabase_) {
+        for(size_t idatabase=0; idatabase<DatabaseMatrices_.size(); ++idatabase) {
+          double abserror=0;
 
-    // //Teuchos::ArrayView<double> densematvalues[PatchSize_*PatchSize_];
-    // //Teuchos::SerialDenseMatrix<int,double> patchmatrix(PatchSize_, PatchSize_);
-    // //Teuchos::SerialDenseMatrix<int,double> patchmatrix(Teuchos::DataAccess::Copy, densematvalues, 1, PatchSize_, PatchSize_);
-    // //Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double> > patchmatrix = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,double>(Teuchos::DataAccess::Copy, densematvalues, 1, PatchSize_, PatchSize_));
-
-    // // add the matrix to the database
-    // patchMatrices.push_back(patchMatrix);
+          for(local_ordinal_type irow=0; irow<PatchSize_; irow++) {
+            for(local_ordinal_type icol=0; icol<PatchSize_; ++icol) {
+              DenseMatRCP database_candidate = DatabaseMatrices_[idatabase];
+              abserror += std::abs((*patch_matrix)(irow,icol)-(*database_candidate)(irow,icol));
+            }
+          }
+          if(abserror < PatchTolerance_) {
+            DatabaseIndices_[ipatch] = idatabase;
+            found_match = true;
+            break;
+          }
+        }
+      }
+      if(!found_match) {
+        // add the matrix Ak to the database
+        DatabaseMatrices_.push_back(patch_matrix);
+        DatabaseIndices_[ipatch] = DatabaseMatrices_.size()-1;
+        if(DatabaseMatrices_[DatabaseMatrices_.size()-1].is_null())
+          std::cerr << "The database matrix is null!" << std::endl;
+      }
+    }
+    // compute proc-local overlap weights
+    for(unsigned int i=0; i<index_count.size(); ++i) {
+      Weights_[i] = 1./index_count[i];
+    }
+    DatabaseSize_ = DatabaseMatrices_.size();
+    
+    // compute how many patches refer to a given database entry
+    std::vector<int> database_counts(DatabaseSize_,0);
+    for(unsigned int ipatch=0; ipatch<NumPatches_; ++ipatch) {
+      database_counts[DatabaseIndices_[ipatch]]++;
+    }
 
     // Phase 3: factor the patches using LAPACK (GETRF for factorization)
     Teuchos::LAPACK<int, double> lapack;
     int INFO = 0;
-    // int* blockIpiv = &ipiv_[this->blockOffsets_[i] * this->scalarsPerRow_];
-    // lapack.GETRF(diagBlocks_[i].numRows(),
-    //             diagBlocks_[i].numCols(),
-    //             diagBlocks_[i].values(),
-    //             diagBlocks_[i].stride(),
-    //             blockIpiv, &INFO);
-    // INFO < 0 is a bug.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      INFO < 0, std::logic_error, "Ifpack2::DenseContainer::factor: "
-      "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
-      "incorrectly.  INFO = " << INFO << " < 0.  "
-      "Please report this bug to the Ifpack2 developers.");
-    // INFO > 0 means the matrix is singular.  This is probably an issue
-    // either with the choice of rows the rows we extracted, or with the
-    // input matrix itself.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      INFO > 0, std::runtime_error, "Ifpack2::DenseContainer::factor: "
-      "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
-      "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
-      "(one-based index i) is exactly zero.  This probably means that the input "
-      "patch is singular.");
+    ipiv_.resize(DatabaseSize_*PatchSize_);
+    std::fill(ipiv_.begin (), ipiv_.end (), 0);
+    for(unsigned int idatabase=0; idatabase<DatabaseSize_; idatabase++) {
+      int* ipiv = &ipiv_[idatabase*PatchSize_];
 
+      lapack.GETRF(DatabaseMatrices_[idatabase]->numRows(),
+                   DatabaseMatrices_[idatabase]->numCols(),
+                   DatabaseMatrices_[idatabase]->values(),
+                   DatabaseMatrices_[idatabase]->stride(),
+                   ipiv, &INFO);
 
+      // INFO < 0 is a bug.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        INFO < 0, std::logic_error, "Ifpack2::DenseContainer::factor: "
+        "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
+        "incorrectly.  INFO = " << INFO << " < 0.  "
+        "Please report this bug to the Ifpack2 developers.");
+      // INFO > 0 means the matrix is singular.  This is probably an issue
+      // either with the choice of rows the rows we extracted, or with the
+      // input matrix itself.
+      if(INFO > 0) {
+        std::cout << "SINGULAR LOCAL MATRIX, COUNT=" << database_counts[idatabase] << std::endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        INFO > 0, std::runtime_error, "Ifpack2::DenseContainer::factor: "
+        "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
+        "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
+        "(one-based index i) is exactly zero.  This probably means that the input "
+        "patch is singular.");
+    }
   }
   IsComputed_ = true;
   ++NumCompute_;
 
   ComputeTime_ += (timer->wallTime() - startTime);
+
+  // print a summary after compute finishes if Verbose_ is true (TODO: fancyostream)
+  if(Verbose_) {
+    std::cout << "Ifpack2::DatabaseSchwarz()::Compute() summary\n";
+    std::cout << "Found " << NumPatches_ << " patches of size " << PatchSize_ << " in matrix A\n";
+    std::cout << "Database tol = " << PatchTolerance_ << "\n";
+    std::cout << "Database size = " << DatabaseSize_ << " patches\n";
+  }
 }
 
 
 template <class MatrixType>
 std::string DatabaseSchwarz<MatrixType>::description() const {
   std::ostringstream out;
-  std::cout << "DatabaseSchwarz description 1..." << std::endl;
+
   // Output is a valid YAML dictionary in flow style.  If you don't
   // like everything on a single line, you should call describe()
   // instead.
   out << "\"Ifpack2::DatabaseSchwarz\": {";
-  out << "Initialized: " << (isInitialized() ? "true" : "false") << ", "
-      << "Computed: " << (isComputed() ? "true" : "false") << ", ";
-  std::cout << "DatabaseSchwarz description 2..." << std::endl;
+  out << "Initialized: " << (isInitialized() ? "true" : "false")
+      << ", Computed: " << (isComputed() ? "true" : "false")
+      << ", patch size: " << PatchSize_
+      << ", patch tolerance: " << PatchTolerance_
+      << ", skip database: " << (SkipDatabase_ ? "true" : "false")
+      << ", print database summary: " << (Verbose_ ? "true" : "false");
+
   if (getMatrix().is_null()) {
     out << "Matrix: null";
   }
@@ -470,10 +623,8 @@ std::string DatabaseSchwarz<MatrixType>::description() const {
         << getMatrix()->getGlobalNumCols() << "]"
         << ", Global nnz: " << getMatrix()->getGlobalNumEntries();
   }
-  std::cout << "DatabaseSchwarz description 3..." << std::endl;
-
+  
   out << "}";
-  std::cout << "DatabaseSchwarz description done!" << std::endl;
   return out.str();
 }
 

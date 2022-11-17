@@ -42,11 +42,7 @@
 */
 
 /// \file Ifpack2_DatabaseSchwarz_decl.hpp
-/// \brief Declaration of DatabaseSchwarz interface
-///
-/// This file declares the user-facing interface.
-/// Ifpack2_Details_DatabaseSchwarz_decl.hpp declares the
-/// <i>implementation</i> of this interface.
+/// \brief Declaration of DatabaseSchwarz class
 
 #ifndef IFPACK2_DATABASESCHWARZ_DECL_HPP
 #define IFPACK2_DATABASESCHWARZ_DECL_HPP
@@ -66,7 +62,37 @@
 
 namespace Ifpack2 {
 
-
+/// \class DatabaseSchwarz
+/// \brief Overlapping Schwarz where redundant patches are not stored explicitly.
+/// \tparam MatrixType The type of matrix to use.
+///
+/// This class implements an overlapping Schwarz assuming it has already
+/// been provided overlapping data containers. Additionally, it is assumed
+/// there is at least one row with PatchSize_ nonzeros for each patch.
+/// This means that a matrix obtained from piecewise linear FEMs in 2d,
+/// for example, will not have rows with 4 nonzeros for each patch.
+/// However, piecewise quadratic FEMs in 2d will have one row with 9 nonzeros
+/// for each cell in the mesh, meaning all the patches will be detected.
+/// For a matrix corresponding to a Taylor-Hood discretization in 2d
+/// (quadratic velocities and linear pressures), the patch size would be 22.
+///
+/// The general algorithm proceeds as follows:
+/// <ol>
+/// <li> The rows of A are analyzed sequentially for any row with num_entries == PatchSize_ </li>
+/// <li> If the current row corresponds to a DOF that has already been "visited", it is skipped </li>
+/// <li> Then, all nonzero indices belonging to the row are marked as "visited" </li>
+/// <li> The local patch matrix is formed and compared to a database of previous patch matrices.
+///      If any patch matrix in the database has an l1 distance to the current patch matrix less than tol,
+///      the current patch is not matrix is not stored, but an index pointing it to a replacement is stored instead </li>
+/// <li> Finally, if this patch matrix is not sufficiently close to one that has already been seen, it is added to the database </li>
+/// <li> The compute phase then inverts only the patch matcies in the database,
+///      and the apply phase loops over all patches and applies the inverse of each appropriate patch matrix </li>
+/// </ol>
+///
+/// In general, there is a noticeable speedup when using this method
+/// compared to a typical method. This speedup may be further improved
+/// by using more advanced linear algebra interfaces such as batched
+/// Kokkos solves instead of the current LAPACK approach.
 template<class MatrixType>
 class DatabaseSchwarz :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -137,20 +163,20 @@ public:
   ///   vectors x and y in the sparse matrix-vector product y = A*x
   ///   must both have the same distribution over process(es).
   ///
-  /// We do <i>not</i> require that the row Map and the range Map of A
-  /// be the same.  However, set-up will take less time if they are
-  /// identical (in terms of pointer equality).  This is because we
-  /// have to extract the diagonal entries of A as a row Map vector:
-  /// if the row and range Maps are not identical, we have to
-  /// redistribute the vector from the row Map to the range Map.
-  ///
-  /// The constructor will only check the requirements on the various
-  /// Maps of A if the CMake configuration option
-  /// <tt>Teuchos_ENABLE_DEBUG</tt> was set to <tt>ON</tt> before
-  /// building Trilinos.  The checks require \f$O(1)\f$ global
-  /// reductions over all processes in A's communicator, so we prefer
-  /// to avoid them if we can.
   explicit DatabaseSchwarz(const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Constructor.
+  ///
+  /// \param[in] A The sparse matrix to which to apply DatabaseSchwarz
+  ///   iteration.  The matrix A must be square, and its domain Map
+  ///   and range Map must be the same.  The latter means that the
+  ///   vectors x and y in the sparse matrix-vector product y = A*x
+  ///   must both have the same distribution over process(es).
+  /// \param[in] params The parameterlist containing settings for the
+  ///   object, such as the patch size to search for.
+  ///
+  DatabaseSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
+                   Teuchos::ParameterList& params);
 
   //! Destructor.
   virtual ~DatabaseSchwarz();
@@ -198,7 +224,7 @@ public:
   setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
-  //! @name Implementation of Tpetra::Operator
+  //! \name Implementation of Tpetra::Operator
   //@{
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
@@ -286,6 +312,9 @@ public:
 
 private:
 
+  //! Implementation of parameter setting
+  void setParametersImpl(Teuchos::ParameterList& params);
+
   //! Abbreviation for the Teuchos::ScalarTraits specialization for scalar_type.
   typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
@@ -331,11 +360,38 @@ private:
   /// const because it is declared this way in Tpetra::Operator.
   mutable double ApplyFlops_;
 
-  /// Size of inner patches to search for. Default is 9
-  const int PatchSize_ = 9;
+  /// Size of inner patches to search for
+  local_ordinal_type PatchSize_;
 
   /// Number of found patches
   mutable size_t NumPatches_;
+
+  /// Tolerance at which to consider two patches "equal"
+  double PatchTolerance_;
+
+  /// Boolean to indicate we'd like to skip all database comparisons and instead invert all patches
+  bool SkipDatabase_;
+
+  /// Boolean to indicate we'd like to skip all database comparisons and instead invert all patches
+  bool Verbose_;
+
+  /// A vector of vectors where each row of PatchIndices_ is the indices corresponding to a patch
+  mutable std::vector<std::vector<typename row_matrix_type::local_ordinal_type> > PatchIndices_;
+
+  /// Size of database
+  mutable size_t DatabaseSize_;
+
+  /// Database patches
+  mutable std::vector<Teuchos::RCP<typename Teuchos::SerialDenseMatrix<typename row_matrix_type::local_ordinal_type,typename row_matrix_type::scalar_type> > > DatabaseMatrices_;
+
+  /// Database indices
+  std::vector<int> DatabaseIndices_;
+
+  /// Patch weights
+  std::vector<double> Weights_;
+
+  /// Pivots used for LAPACK
+  mutable Teuchos::Array<int> ipiv_;
 
   //@}
 }; // class DatabaseSchwarz
