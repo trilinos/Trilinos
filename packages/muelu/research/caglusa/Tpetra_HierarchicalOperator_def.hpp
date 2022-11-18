@@ -759,8 +759,17 @@ namespace Tpetra {
       newKernelBlockGraph->apply(*v_temp, *clusterUseCount, Teuchos::NO_TRANS);
       newKernelBlockGraph->apply(*v_temp, *clusterUseCount, Teuchos::TRANS, ONE, ONE);
 
-      // vector of indices of transfers that need to be kept for the coarse operator
-      std::vector<int> keepTransfers;
+      // construct identity on clusterCoeffMap_
+      Teuchos::RCP<matrix_type> identity = rcp(new matrix_type(clusterCoeffMap_, 1));
+      {
+        Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getLocalElementList ();
+        for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+          Teuchos::Array<GlobalOrdinal> col (1, *it);
+          Teuchos::Array<Scalar> val (1, ONE);
+          identity->insertGlobalValues (*it, col (), val ());
+        }
+        identity->fillComplete ();
+      }
 
       for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
         // We drop a transfer operator T_i when
@@ -773,19 +782,16 @@ namespace Tpetra {
 
         if (gbl_use_count < HALF) {
           // We do not keep the i-th transfer for the coarse operator.
-          // newBasisMatrix := newBasisMatrix * (T_i)^T
-          RCP<matrix_type> temp = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
-          MatrixMatrix::Multiply(*newBasisMatrix, false, *transferMatrices_[i]->pointA_, true, *temp);
+          // newBasisMatrix := newBasisMatrix * (I+transferMatrices_[i])^T
+          Teuchos::RCP<matrix_type> temp2 = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
+          RCP<matrix_type> temp = rcp(new matrix_type(newBasisMatrix->getRowMap(), clusterCoeffMap_, 0));
+          MatrixMatrix::Multiply(*newBasisMatrix, false, *temp2, true, *temp);
           newBasisMatrix = temp;
+
         } else {
           // We keep the i-th transfer for the coarse operator.
-          keepTransfers.push_back(i);
+          newTransferMatrices.insert(newTransferMatrices.begin(), transferMatrices_[i]);
         }
-      }
-
-      // construct list of new transfer matrices
-      for (auto it = keepTransfers.begin(); it != keepTransfers.end(); ++it) {
-        newTransferMatrices.insert(newTransferMatrices.begin(), transferMatrices_[*it]);
       }
     }
 
@@ -811,10 +817,10 @@ namespace Tpetra {
         identity->fillComplete ();
       }
 
-      // transfer = basisMatrix_ * (identity + transferMatrices_[K-1]) * ... * (identity + transferMatrices_[0])
+      // transfer = newBasisMatrix * (identity + newTransferMatrices[K-1]^T) * ... * (identity + newTransferMatrices[0])^T
       Teuchos::RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
-      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
-        Teuchos::RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
+      for (int i = Teuchos::as<int>(newTransferMatrices.size())-1; i>=0; i--) {
+        Teuchos::RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
         Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
         MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
         transfer = temp2;
@@ -829,7 +835,7 @@ namespace Tpetra {
         MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
       }
 
-      // P^T * nearField * P
+      // P^T * nearField * P + diffFarField
       {
         RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
         MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);

@@ -236,6 +236,30 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
     auto fineA = rcp_dynamic_cast<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(fineAOp);
     if (!fineA.is_null()) {
       auto coarseA = fineA->restrict(P);
+
+#ifdef MUELU_HIERARCHICAL_DEBUG
+      {
+        // Test that the Galerkin product worked
+        using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+        const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+        const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
+        auto testLHS            = MultiVectorFactory::Build(coarseA->getDomainMap(), 1);
+        auto testRHS_HOp_coarse = MultiVectorFactory::Build(coarseA->getRangeMap(),  1);
+        auto testRHS_HOp_fine   = MultiVectorFactory::Build(coarseA->getRangeMap(),  1);
+        auto temp1              = MultiVectorFactory::Build(fineA->getDomainMap(),   1);
+        auto temp2              = MultiVectorFactory::Build(fineA->getRangeMap(),    1);
+        testLHS->putScalar(one);
+        coarseA->apply(*testLHS, *testRHS_HOp_coarse);
+        P->apply(*testLHS, *temp1);
+        fineA->apply(*temp1, *temp2);
+        P->apply(*temp2, *testRHS_HOp_fine, Teuchos::TRANS);
+        testRHS_HOp_fine->update(one, *testRHS_HOp_coarse, -one);
+        auto norm = testRHS_HOp_fine->getVector(0)->norm2();
+        out << "|P^T*op_fine*P*1 - op_H_coarse*1| = " << norm << std::endl;
+        TEUCHOS_ASSERT(norm < tol);
+      }
+#endif
+
       if ((lvlNo+1 == auxH->GetNumLevels()) || !coarseA->hasFarField() || coarseA->denserThanDenseMatrix()) {
         // coarseA->describe(out, Teuchos::VERB_EXTREME);
 
@@ -243,6 +267,7 @@ constructHierarchyFromAuxiliary(RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrd
 
 #ifdef MUELU_HIERARCHICAL_DEBUG
         {
+          // test that the conversion to Crs format worked
           using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
           const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
           const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
