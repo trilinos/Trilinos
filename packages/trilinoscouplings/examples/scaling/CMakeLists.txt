@@ -54,14 +54,6 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson2D_p2_tpetra
-    SOURCES example_Poisson2D_p2_tpetra.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    COMM mpi # Fails to build in serial (see Trilinos #465)
-    )
-
   TRIBITS_ADD_EXECUTABLE(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
@@ -90,6 +82,30 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 
   IF(${PACKAGE_NAME}_ENABLE_Belos AND
       ${PACKAGE_NAME}_ENABLE_MueLu)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Example_Poisson2D_p2_tpetra
+      SOURCES example_Poisson2D_p2_tpetra.cpp
+        TrilinosCouplings_Pamgen_Utils.cpp
+      NUM_MPI_PROCS 1
+      COMM mpi # Fails to build in serial (see Trilinos #465)
+      )
+
+    TRIBITS_ADD_EXECUTABLE(
+      Example_Poisson2D_pn_tpetra
+      SOURCES example_Poisson2D_pn_tpetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp	
+      COMM mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      Example_Poisson2D_pn_tpetra
+      NAME "Poisson2D_pn=4_tpetra"
+      ARGS "--mesh=Poisson2D_p4.xml --solver=muelu_ho.xml"
+      COMM mpi
+      NUM_MPI_PROCS 1
+      )
 
     IF(MueLu_ENABLE_Epetra)
       TRIBITS_ADD_TEST(
@@ -168,14 +184,6 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     COMM serial mpi
     )
 
-  TRIBITS_ADD_EXECUTABLE(
-    Example_Poisson2D_pn_tpetra
-    SOURCES example_Poisson2D_pn_tpetra.cpp
-    TrilinosCouplings_Pamgen_Utils.cpp
-    TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp	
-    COMM mpi
-    )
-
  TRIBITS_ADD_TEST(
    Example_Poisson2D_pn
    NAME "Poisson2D_pn=2"
@@ -197,14 +205,6 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
    NAME "Poisson2D_pn=4"
    ARGS "Poisson2D_p4.xml"
    COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn_tpetra
-   NAME "Poisson2D_pn=4_tpetra"
-   ARGS "--mesh=Poisson2D_p4.xml --solver=muelu_ho.xml"
-   COMM mpi
    NUM_MPI_PROCS 1
    )
 
