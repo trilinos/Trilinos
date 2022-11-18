@@ -279,6 +279,7 @@ namespace Tpetra {
       const size_t nnzKernelApprox = kernelApproximations_->pointA_->getGlobalNumEntries();
       const size_t numClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
       const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
+      size_t numTransfers = transferMatrices_.size();
       size_t nnzTransfer = 0;
       for (size_t i = 0; i<transferMatrices_.size(); i++)
         nnzTransfer += transferMatrices_[i]->pointA_->getGlobalNumEntries();
@@ -287,8 +288,26 @@ namespace Tpetra {
       std::ostringstream oss;
       oss << std::left;
       if (printHeader)
-        oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
-      oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis     << setw(15) << numClusterPairs  << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
+        oss << setw(9) << "rows"  << setw(12)
+            << "nnz(near)"  << setw(14)
+            << "nnz(near)/row" << setw(12)
+            << "nnz(basis)" << setw(15)
+            << "#cluster pairs" << setw(12)
+            << "nnz(kernel)"    << setw(14)
+            << "#transfers"    << setw(14)
+            << "nnz(transfer)" << setw(12)
+            << "nnz(total)" << setw(14)
+            << "nnz(total)/row" << endl;
+      oss << setw(9) << numRows << setw(12)
+          << nnzNearField << setw(14)
+          << nnzNearPerRow   << setw(12)
+          << nnzBasis     << setw(15)
+          << numClusterPairs  << setw(12)
+          << nnzKernelApprox << setw(14)
+          << numTransfers    << setw(14)
+          << nnzTransfer     << setw(12)
+          << nnzTotal     << setw(14)
+          << nnzTotalPerRow   << endl;
       out << oss.str();
     }
 

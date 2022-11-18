@@ -121,7 +121,7 @@ namespace Tpetra {
       std::string sendTypeNearField = "Isend";
       std::string sendTypeBasisMatrix = "Isend";
       std::string sendTypeKernelApproximations = "Alltoall";
-      coarseningCriterion_ = "numClusters";
+      coarseningCriterion_ = "transferLevels";
       if (!params.is_null()) {
         if (params->isType<bool>("setupTransposes"))
           setupTransposes = params->get<bool>("setupTransposes");
@@ -135,7 +135,7 @@ namespace Tpetra {
           sendTypeKernelApproximations = params->get<std::string>("Send type kernelApproximations");
         if (params->isType<std::string>("Coarsening criterion"))
           coarseningCriterion_ = params->get<std::string>("Coarsening criterion");
-        TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense"))
+        TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"))
       }
 
 
@@ -574,24 +574,73 @@ namespace Tpetra {
       auto lcl_clusterSizes = clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto lcl_ghosted_clusterSizes = ghosted_clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
 
-      //
-      std::vector<size_t> clusterPairSizes;
-      for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
-        auto brow = lcl_BlockGraph.row(brlid);
-        for (LocalOrdinal k = 0; k < brow.length; ++k) {
-          // Entries of the block matrix for kernelApproximations
-          // decide whether the cluster pair is present and only take
-          // values 1 or 0.
-          if (brow.value(k) > HALF) {
-            LocalOrdinal bclid = brow.colidx(k);
-            clusterPairSizes.push_back(lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
+      // Compute all cluster pair sizes, sort them, and pick cut-off
+      // so that the number of cluster pairs decreases propotionally
+      // to the number of unknowns.
+      size_t tgt_clusterPairSize;
+      if (coarseningCriterion_ == "numClusters") {
+        std::vector<size_t> clusterPairSizes;
+        for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
+          auto brow = lcl_BlockGraph.row(brlid);
+          for (LocalOrdinal k = 0; k < brow.length; ++k) {
+            // Entries of the block matrix for kernelApproximations
+            // decide whether the cluster pair is present and only take
+            // values 1 or 0.
+            if (brow.value(k) > HALF) {
+              LocalOrdinal bclid = brow.colidx(k);
+              clusterPairSizes.push_back(lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
+            }
+          }
+        }
+        std::sort(clusterPairSizes.begin(), clusterPairSizes.end());
+        double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols())/Teuchos::as<double>(P->getGlobalNumRows());
+        tgt_clusterPairSize = clusterPairSizes[Teuchos::as<size_t>(clusterPairSizes.size()*(1-coarseningRate))];
+        // std::cout << "HERE " << clusterPairSizes[0] << " " << tgt_clusterPairSize << " " << clusterPairSizes[clusterPairSizes.size()-1] << std::endl;
+      }
+
+      // Drop cluster pairs by level in the tree.
+      auto comm = getComm();
+      std::set<LocalOrdinal> blidsToDrop;
+      if (coarseningCriterion_ == "transferLevels") {
+        double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols())/Teuchos::as<double>(P->getGlobalNumRows());
+        size_t droppedClusterPairs = 0;
+        size_t totalNumClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
+        RCP<vec_type> tempV = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+        RCP<vec_type> tempV2 = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+        for (int k = Teuchos::as<int>(transferMatrices_.size())-1; k>=0; --k) {
+
+          if (droppedClusterPairs < (1.0-coarseningRate) * totalNumClusterPairs) {
+            auto lcl_transfer = transferMatrices_[k]->blockA_->getLocalMatrixHost();
+            auto lcl_transfer_graph = lcl_transfer.graph;
+            for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent(0); j++)
+              blidsToDrop.insert(lcl_transfer_graph.entries(j));
+
+            // size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+
+            // if (comm->getRank() == 0)
+            //   std::cout << "level " << k << " clustersInLevel " << clustersInLevel << std::endl;
+
+            tempV->putScalar(ONE);
+            transferMatrices_[k]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
+
+            // size_t numClusters = tempV2->norm1();
+            // if (comm->getRank() == 0)
+            //   std::cout << "numClusters " << numClusters << std::endl;
+            tempV->putScalar(ZERO);
+            kernelApproximations_->blockA_->apply(*tempV2, *tempV);
+
+            Scalar numClusterPairs = tempV->dot(*tempV2);
+            // if (comm->getRank() == 0)
+            //   std::cout << "numClusterPairs " << numClusterPairs << std::endl;
+
+            droppedClusterPairs += numClusterPairs;
+          } else {
+            // if (comm->getRank() == 0)
+            //   std::cout << "Dropped " << transferMatrices_.size()-1-k << " transfers of " << transferMatrices_.size() << " dropped cp: " << droppedClusterPairs <<std::endl;
+            break;
           }
         }
       }
-      std::sort(clusterPairSizes.begin(), clusterPairSizes.end());
-      double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols())/Teuchos::as<double>(P->getGlobalNumRows());
-      size_t tgt_clusterPairSize = clusterPairSizes[Teuchos::as<size_t>(clusterPairSizes.size()*(1-coarseningRate))];
-      //
 
       // number of cluster pairs dropped
       int dropped = 0;
@@ -614,13 +663,16 @@ namespace Tpetra {
             size_t bcsize = lcl_ghosted_clusterSizes(bclid, 0);
 
             // criterium for removing a cluster pair from the far field
-            bool removeCluster;
+            bool removeCluster = false;
             if (coarseningCriterion_ == "equivalentDense") {
               // Size of the sparse cluster approximation >= size of dense equivalent
               removeCluster = (brsize * bcsize
                                >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0));
             } else if (coarseningCriterion_ == "numClusters") {
               removeCluster = (lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0) < tgt_clusterPairSize);
+            } else if (coarseningCriterion_ == "transferLevels") {
+              removeCluster = ((blidsToDrop.find(brlid) != blidsToDrop.end()) ||
+                               (blidsToDrop.find(bclid) != blidsToDrop.end()));
             }
             if (removeCluster) {
               // we are dropping the cluster pair from the far field
@@ -667,7 +719,17 @@ namespace Tpetra {
           }
         }
       }
-      // std::cout << "dropped " << dropped << " kept " << kept << " ignored " << ignored << std::endl;
+      // // number of cluster pairs dropped
+      // int gbl_dropped = 0;
+      // // number of cluster pairs we kept
+      // int gbl_kept = 0;
+      // // number of cluster pairs that were no longer present
+      // int gbl_ignored = 0;
+      // Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &dropped, &gbl_dropped);
+      // Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &kept, &gbl_kept);
+      // Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ignored, &gbl_ignored);
+      // if (comm->getRank() == 0)
+      //   std::cout << "dropped " << gbl_dropped << " kept " << gbl_kept << " ignored " << gbl_ignored << std::endl;
     }
 
     newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
@@ -690,29 +752,24 @@ namespace Tpetra {
     {
       auto comm = getComm();
 
-      RCP<mv_type> mv_temp         = rcp(new mv_type(newKernelBlockGraph->getDomainMap(), 1));
-      RCP<mv_type> clusterUseCount = rcp(new mv_type(newKernelBlockGraph->getDomainMap(), 1));
-      mv_temp->putScalar(ONE);
+      RCP<vec_type> v_temp         = rcp(new vec_type(newKernelBlockGraph->getDomainMap()));
+      RCP<vec_type> clusterUseCount = rcp(new vec_type(newKernelBlockGraph->getDomainMap()));
+      v_temp->putScalar(ONE);
       clusterUseCount->putScalar(ZERO);
-      newKernelBlockGraph->apply(*mv_temp, *clusterUseCount, Teuchos::NO_TRANS);
-      newKernelBlockGraph->apply(*mv_temp, *clusterUseCount, Teuchos::TRANS, ONE, ONE);
+      newKernelBlockGraph->apply(*v_temp, *clusterUseCount, Teuchos::NO_TRANS);
+      newKernelBlockGraph->apply(*v_temp, *clusterUseCount, Teuchos::TRANS, ONE, ONE);
 
       // vector of indices of transfers that need to be kept for the coarse operator
       std::vector<int> keepTransfers;
 
-      // std::ostringstream oss;
       for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
         // We drop a transfer operator T_i when
         //  sum(T_i * clusterUseCount) == 0
         // Since we need to use Scalar, we instead check for < 0.5
-        transferMatrices_[i]->blockA_->localApply(*clusterUseCount, *mv_temp, Teuchos::TRANS);
-        auto lcl_counts = mv_temp->getLocalViewHost(Tpetra::Access::ReadOnly);
-        Scalar lcl_use_count = ZERO, gbl_use_count = ZERO;
-        for (LocalOrdinal n = 0; n < lcl_counts.extent_int(0); ++n) {
-          lcl_use_count += lcl_counts(n, 0);
-        }
-        Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &lcl_use_count, &gbl_use_count);
-        // oss << "Transfer " << i << " count " << gbl_count << std::endl;
+        transferMatrices_[i]->blockA_->localApply(*clusterUseCount, *v_temp, Teuchos::NO_TRANS);
+        Scalar gbl_use_count = v_temp->norm1();
+        // if (comm->getRank() == 0)
+        //   std::cout << "Transfer " << i << " count " << gbl_use_count << std::endl;
 
         if (gbl_use_count < HALF) {
           // We do not keep the i-th transfer for the coarse operator.
@@ -725,7 +782,6 @@ namespace Tpetra {
           keepTransfers.push_back(i);
         }
       }
-      // std::cout << oss.str();
 
       // construct list of new transfer matrices
       for (auto it = keepTransfers.begin(); it != keepTransfers.end(); ++it) {
