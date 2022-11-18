@@ -78,9 +78,6 @@ void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
   // Clear out existing and allocate
   const auto ext = dev_view.extent(0);
 
-  // Do not overwrite in case array is already referenced elsewhere
-  if (array.is_null()) array = array_t(ext);
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     ext != array.size(), std::logic_error, "Ifpack2::MDF::copy_dev_view_to_host_array: "
     "Size of permuations on host and device do not match.  "
@@ -130,6 +127,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {
   allocateSolvers();
+  allocatePermutations();
 }
 
 
@@ -152,6 +150,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {
   allocateSolvers();
+  allocatePermutations();  
 }
 
 
@@ -162,6 +161,21 @@ MDF<MatrixType>::~MDF()
   {
     KernelHandle_->destroy_spiluk_handle();
   }
+}
+
+template<class MatrixType>
+void MDF<MatrixType>::allocatePermutations (bool force)
+{
+  if (A_.is_null()) return;
+
+  // Allocate arrays as soon as size as known so their pointer is availabe
+  if (force || permutations_.is_null() || A_->getLocalNumRows() != permutations_.size())
+  {
+    permutations_ = Teuchos::null;
+    reversePermutations_ = Teuchos::null;
+    permutations_ = permutations_type(A_->getLocalNumRows());
+    reversePermutations_ = permutations_type(A_->getLocalNumRows());
+  } 
 }
 
 template<class MatrixType>
@@ -187,8 +201,6 @@ MDF<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isComputed_ = false;
     A_local_ = Teuchos::null;
     MDF_handle_ = Teuchos::null;
-    permutations_ = Teuchos::null;
-    reversePermutations_ = Teuchos::null;
 
     // The sparse triangular solvers get a triangular factor as their
     // input matrix.  The triangular factors L_ and U_ are getting
@@ -205,6 +217,8 @@ MDF<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     A_ = A;
+
+    allocatePermutations(true);
   }
 }
 
@@ -494,8 +508,6 @@ void MDF<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     MDF_handle_ = Teuchos::null;
-    permutations_ = Teuchos::null;
-    reversePermutations_ = Teuchos::null;
 
     A_local_ = makeLocalFilter (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(

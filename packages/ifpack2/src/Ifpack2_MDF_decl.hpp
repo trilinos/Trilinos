@@ -582,6 +582,7 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   void allocateSolvers ();
+  void allocatePermutations(bool force = false);
   static void checkOrderingConsistency (const row_matrix_type& A);
   // void initAllValues (const row_matrix_type& A);
 
