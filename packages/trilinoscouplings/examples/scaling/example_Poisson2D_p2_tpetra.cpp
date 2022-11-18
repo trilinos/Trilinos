@@ -132,7 +132,7 @@
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
-//#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
@@ -141,7 +141,7 @@
 
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-//#endif
+#endif
 
 using namespace std;
 using namespace Intrepid;

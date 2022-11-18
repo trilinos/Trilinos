@@ -129,7 +129,7 @@
 #include "AztecOO.h"
 
 // MueLu Includes
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+//#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #  include "MueLu.hpp"
 #  include "MueLu_ParameterListInterpreter.hpp"
 #  include "MueLu_TpetraOperator.hpp"
@@ -142,7 +142,7 @@
 #  include "MueLu_AvatarInterface.hpp"
 #endif
 
-#endif // HAVE_TRILINOSCOUPLINGS_MUELU
+//#endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
@@ -151,7 +151,7 @@
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
-//#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
@@ -159,7 +159,7 @@
 #include <BelosFixedPointSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-//#endif
+#endif
 
 using namespace std;
 using namespace Intrepid;

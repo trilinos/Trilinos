@@ -121,6 +121,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -171,7 +172,9 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #include <Stratimikos_MueLuHelpers.hpp>
+#endif
 #endif
 
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
