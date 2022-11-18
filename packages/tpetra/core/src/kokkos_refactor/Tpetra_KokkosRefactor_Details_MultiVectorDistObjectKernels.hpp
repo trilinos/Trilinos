@@ -203,14 +203,14 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       using index_type = typename IdxView::non_const_value_type;
 
       
-      if (k >= static_cast<index_type> (idx.extent (0))) {
+      if (k >= static_cast<size_type> (idx.extent (0))) {
         ++lclErrCount;
         return;
       }
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
           lclRow >= static_cast<index_type> (src.extent (0)) || 
-          col >= static_cast<index_type> (src.extent (1))) {
+          col >= static_cast<size_type> (src.extent (1))) {
         ++lclErrCount;
         return;
       }
