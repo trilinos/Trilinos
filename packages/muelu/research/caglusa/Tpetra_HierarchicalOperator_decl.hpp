@@ -353,6 +353,7 @@ namespace Tpetra {
 
     bool canApplyWithoutTransposes_;
     std::string coarseningCriterion_;
+    bool debugOutput_;
 
     Teuchos::RCP<matrix_type> nearField_;
     Teuchos::RCP<blocked_matrix_type> kernelApproximations_;

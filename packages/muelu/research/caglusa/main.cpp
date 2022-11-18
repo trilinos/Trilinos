@@ -536,6 +536,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       Teuchos::ParameterList auxParams;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
+      auxParams.set("hierarchy label", "Auxiliary");
       auxParams.sublist("user data").set("Coordinates", coords);
 
       auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
