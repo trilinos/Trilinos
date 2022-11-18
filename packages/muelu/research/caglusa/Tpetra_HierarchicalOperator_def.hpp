@@ -644,29 +644,29 @@ namespace Tpetra {
         RCP<vec_type> tempV2 = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
         for (int k = Teuchos::as<int>(transferMatrices_.size())-1; k>=0; --k) {
 
-          if (droppedClusterPairs < (1.0-coarseningRate) * totalNumClusterPairs) {
+          size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+
+          if (debugOutput_ && (comm->getRank() == 0))
+            std::cout << "level " << k << " clustersInLevel " << clustersInLevel << std::endl;
+
+          tempV->putScalar(ONE);
+          transferMatrices_[k]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
+
+          size_t numClusters = tempV2->norm1();
+          if (debugOutput_ && (comm->getRank() == 0))
+            std::cout << "numClusters " << numClusters << std::endl;
+          tempV->putScalar(ZERO);
+          kernelApproximations_->blockA_->apply(*tempV2, *tempV);
+
+          Scalar numClusterPairs = tempV->dot(*tempV2);
+          if (debugOutput_ && (comm->getRank() == 0))
+            std::cout << "numClusterPairs " << numClusterPairs << std::endl;
+
+          if (droppedClusterPairs + numClusterPairs < (1.0-coarseningRate) * totalNumClusterPairs) {
             auto lcl_transfer = transferMatrices_[k]->blockA_->getLocalMatrixHost();
             auto lcl_transfer_graph = lcl_transfer.graph;
             for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent_int(0); j++)
               blidsToDrop.insert(lcl_transfer_graph.entries(j));
-
-            size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
-
-            if (debugOutput_ && (comm->getRank() == 0))
-              std::cout << "level " << k << " clustersInLevel " << clustersInLevel << std::endl;
-
-            tempV->putScalar(ONE);
-            transferMatrices_[k]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
-
-            size_t numClusters = tempV2->norm1();
-            if (debugOutput_ && (comm->getRank() == 0))
-              std::cout << "numClusters " << numClusters << std::endl;
-            tempV->putScalar(ZERO);
-            kernelApproximations_->blockA_->apply(*tempV2, *tempV);
-
-            Scalar numClusterPairs = tempV->dot(*tempV2);
-            if (debugOutput_ && (comm->getRank() == 0))
-              std::cout << "numClusterPairs " << numClusterPairs << std::endl;
 
             droppedClusterPairs += numClusterPairs;
           } else {
