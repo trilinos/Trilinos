@@ -683,7 +683,7 @@ Piro::PerformROLAnalysis(
 #else
   (void)piroModel;
   (void)p;
-  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  out = Teuchos::VerboseObjectBase::getDefaultOStream();
   *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
        << "\nYou must enable ROL." << endl;
   return 0;  // should not fail tests
