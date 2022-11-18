@@ -273,7 +273,7 @@ initialize(panzer::ConnManager & conn,
     // Since we added all of the arrays together, they're going to be broken
     // We need to fix all of the broken faces
     int num_boundary=0;
-    for (int i=0; i<ob1.size();++i){
+    for (size_t i=0; i<ob1.size();++i){
       
       // Make sure side 1 of face was set (either by this process or by multiple processes
       assert(b1[i] >= shift);
