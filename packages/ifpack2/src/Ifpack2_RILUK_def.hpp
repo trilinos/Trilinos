@@ -547,10 +547,17 @@ void RILUK<MatrixType>::initialize ()
     checkOrderingConsistency (*A_local_);
     L_solver_->setMatrix (L_);
     L_solver_->initialize ();
+    //NOTE (Nov-09-2022): 
+    //For Cuda >= 11.3 (using cusparseSpSV), skip trisolve computes here.
+    //Instead, call trisolve computes within RILUK compute
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
     L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
+#endif
     U_solver_->setMatrix (U_);
     U_solver_->initialize ();
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
     U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
+#endif
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -1032,6 +1039,23 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-15-2022):
+        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+        //since cusparseSpSV_solve() does not support in-place computation
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+
+        // Start by solving L Y_tmp = X for Y_tmp.
+        L_solver_->apply (X, Y_tmp, mode);
+
+        if (!this->isKokkosKernelsSpiluk_) {
+          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+          // write "solve D Y = Y for Y."
+          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+        }
+
+        U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
+#else
         // Start by solving L Y = X for Y.
         L_solver_->apply (X, Y, mode);
 
@@ -1042,8 +1066,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         }
 
         U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
+#endif
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
+      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).          
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+        //NOTE (Nov-15-2022):
+        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+        //since cusparseSpSV_solve() does not support in-place computation
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+
+        // Start by solving U^P Y_tmp = X for Y_tmp.
+        U_solver_->apply (X, Y_tmp, mode);
+
+        if (!this->isKokkosKernelsSpiluk_) {
+          // Solve D^P Y = Y.
+          //
+          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+          // need to do an elementwise multiply with the conjugate of
+          // D_, not just with D_ itself.
+          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+	    }
+
+        L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+#else
         // Start by solving U^P Y = X for Y.
         U_solver_->apply (X, Y, mode);
 
@@ -1057,6 +1102,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 	    }
 
         L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+#endif
       }
     }
     else { // alpha != 1 or beta != 0
