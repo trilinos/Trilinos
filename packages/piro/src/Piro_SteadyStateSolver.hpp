@@ -60,11 +60,13 @@ class SteadyStateSolver
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  explicit SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  explicit SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel);
 
   /** \brief . */
   SteadyStateSolver(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel,
       int numParameters);
   //@}
 
@@ -148,7 +150,7 @@ class SteadyStateSolver
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgsImpl() const;
   //@}
 
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_, adjointModel_;
 
   int num_p_;
   int num_g_;

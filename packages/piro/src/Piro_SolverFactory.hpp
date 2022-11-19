@@ -78,7 +78,8 @@ public:
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolverAdaptive(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
+      const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr = Teuchos::null,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
 
   template <typename Scalar>

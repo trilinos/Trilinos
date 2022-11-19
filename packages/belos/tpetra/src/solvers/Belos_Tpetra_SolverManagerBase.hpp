@@ -198,7 +198,7 @@ public:
     return lastSolverOutput_.converged ? Belos::Converged : Belos::Unconverged;
   }
 
-  typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const {
+  typename Teuchos::ScalarTraits<SC>::magnitudeType achievedTol() const override {
     using STS = Teuchos::ScalarTraits<SC>;
     using real_type = typename STS::magnitudeType;
     const SC one = STS::one ();

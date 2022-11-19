@@ -93,18 +93,19 @@ const RCP<Thyra::ModelEvaluator<double> > thyraModelNew(const RCP<EpetraExt::Mod
 
 const RCP<Thyra::ModelEvaluator<double> > solverNew(
     const RCP<Thyra::ModelEvaluator<double> > &thyraModel,
+    const RCP<Thyra::ModelEvaluator<double> > &thyraAdjointModel = Teuchos::null,
     const RCP<Piro::ObserverBase<double> > &observer = Teuchos::null)
 {
   const RCP<ParameterList> piroParams(new ParameterList("Piro Parameters"));
   updateParametersFromXmlFile("input_Solve_LOCA_1.xml", piroParams.ptr());
-  return observedLocaSolver<double>(piroParams, thyraModel, observer);
+  return observedLocaSolver<double>(piroParams, thyraModel, thyraAdjointModel, observer);
 }
 
 const RCP<Thyra::ModelEvaluator<double> > solverNew(
     const RCP<EpetraExt::ModelEvaluator> &epetraModel,
     const RCP<Piro::ObserverBase<double> > &observer = Teuchos::null)
 {
-  return solverNew(thyraModelNew(epetraModel), observer);
+  return solverNew(thyraModelNew(epetraModel), Teuchos::null, observer);
 }
 
 // Floating point tolerance

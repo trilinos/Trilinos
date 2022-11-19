@@ -637,6 +637,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
     sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
     sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
+    sacado/kokkos/Stokhos_StorageHelpers.hpp
     sacado/kokkos/Stokhos_mpl_for_each.hpp
     sacado/kokkos/Stokhos_ViewStorage.hpp
     sacado/kokkos/Stokhos_Is_Constant.hpp

@@ -117,6 +117,8 @@ int Zoltan_Serialize_Params(struct Zoltan_Struct const *from, char **buf)
     param = param->next;
   }
   *buf = bufptr;
+
+  return ZOLTAN_OK;
 }
 
 int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
@@ -137,6 +139,8 @@ int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
     bufptr += 2 * MAX_PARAM_STRING_LEN;
   }
   *buf = bufptr;
+
+  return ZOLTAN_OK;
 }
 
 int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)

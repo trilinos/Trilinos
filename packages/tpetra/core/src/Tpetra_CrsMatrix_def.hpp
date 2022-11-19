@@ -1498,13 +1498,13 @@ namespace Tpetra {
     if (debug) {
       const char myPrefix[] = "After packing, ";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (size_t (myGraph_->rowPtrsUnpacked_host_.extent (0)) != size_t (lclNumRows + 1),
-         std::logic_error, myPrefix << "myGraph_->rowPtrsUnpacked_host_.extent(0) = "
-         << myGraph_->rowPtrsUnpacked_host_.extent (0) << " != lclNumRows+1 = " <<
+        (size_t (myGraph_->rowPtrsPacked_host_.extent (0)) != size_t (lclNumRows + 1),
+         std::logic_error, myPrefix << "myGraph_->rowPtrsPacked_host_.extent(0) = "
+         << myGraph_->rowPtrsPacked_host_.extent (0) << " != lclNumRows+1 = " <<
          (lclNumRows+1) << ".");
-      if (myGraph_->rowPtrsUnpacked_host_.extent (0) != 0) {
-        const size_t numOffsets (myGraph_->rowPtrsUnpacked_host_.extent (0));
-        const size_t valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets-1);
+      if (myGraph_->rowPtrsPacked_host_.extent (0) != 0) {
+        const size_t numOffsets (myGraph_->rowPtrsPacked_host_.extent (0));
+        const size_t valToCheck = myGraph_->rowPtrsPacked_host_(numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (valToCheck != size_t (valuesPacked_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
