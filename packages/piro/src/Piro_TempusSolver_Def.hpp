@@ -345,14 +345,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     }
     
     //Create Piro::TempusIntegrator
-    //Throw an error if adjointModel_ is null
-    if ((adjointModel_ == Teuchos::null) && (sens_method_ == ADJOINT)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          true,
-          Teuchos::Exceptions::InvalidParameter,
-          "\n Error! Piro::TempusSolver: adjoint ModelEvaluator passed in is null!\n");
-    }
-    piroTempusIntegrator_ = (sens_method_ == ADJOINT) ?
+    //if adjointModel_ is null and the problem requires adjoints, Tempus will create and implicitly defined adjoint model.
+    piroTempusIntegrator_ = Teuchos::nonnull(adjointModel_) ?  
                             Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, adjointModel_, sens_method_)) :
                             Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, sens_method_));
     this->setPiroTempusIntegrator(piroTempusIntegrator_);  

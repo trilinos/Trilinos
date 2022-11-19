@@ -80,7 +80,7 @@ namespace Thyra {
 // Floating point tolerance
 const double tol = 1.0e-8;
 
-void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
+void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdjointME)
 {
   const std::string sens_method_string = "Adjoint";
   std::string soln_outfile_name; 
@@ -120,8 +120,9 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     RCP<SinCosModel> model = Teuchos::rcp(new SinCosModel(scm_pl));
 
     //Set up adjoint model for adjoint sensivitities 
-    RCP<SinCosModelAdjoint> adjoint_model =
-      Teuchos::rcp(new SinCosModelAdjoint(scm_pl));
+    RCP<SinCosModelAdjoint> adjoint_model = explicitAdjointME ? 
+      Teuchos::rcp(new SinCosModelAdjoint(scm_pl)) :
+      Teuchos::null;
 
     dt /= 2;
 
@@ -343,9 +344,14 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
 
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities_ExplicitAdjointModel)
 {
-  test_sincos_asa(out, success);
+  test_sincos_asa(out, success, true);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities_ImplicitAdjointModel)
+{
+  test_sincos_asa(out, success, false);
 }
 
 #endif /* HAVE_PIRO_TEMPUS */
