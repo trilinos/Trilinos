@@ -364,6 +364,8 @@ namespace Tpetra {
     Teuchos::RCP<const map_type> clusterCoeffMap_;
     mutable Teuchos::RCP<mv_type> coefficients_, coefficients2_;
     mutable Teuchos::RCP<mv_type> X_colmap_, coefficients_colmap_;
+
+    Teuchos::RCP<Teuchos::ParameterList> params_;
   };
 }
 

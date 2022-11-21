@@ -129,36 +129,39 @@ namespace Tpetra {
       nearField_(nearField),
       kernelApproximations_(kernelApproximations),
       basisMatrix_(basisMatrix),
-      transferMatrices_(transferMatrices)
+      transferMatrices_(transferMatrices),
+      params_(params)
     {
       auto map = nearField_->getDomainMap();
       clusterCoeffMap_ = basisMatrix_->getDomainMap();
 
-      bool setupTransposes = true;
-      bool doDebugChecks = true;
-      std::string sendTypeNearField = "Isend";
-      std::string sendTypeBasisMatrix = "Isend";
-      std::string sendTypeKernelApproximations = "Alltoall";
-      coarseningCriterion_ = "transferLevels";
-      debugOutput_ = false;
-      if (!params.is_null()) {
-        if (params->isType<bool>("setupTransposes"))
-          setupTransposes = params->get<bool>("setupTransposes");
-        if (params->isType<bool>("doDebugChecks"))
-          doDebugChecks = params->get<bool>("doDebugChecks");
-        if (params->isType<std::string>("Send type nearField"))
-          sendTypeNearField = params->get<std::string>("Send type nearField");
-        if (params->isType<std::string>("Send type basisMatrix"))
-          sendTypeBasisMatrix = params->get<std::string>("Send type basisMatrix");
-        if (params->isType<std::string>("Send type kernelApproximations"))
-          sendTypeKernelApproximations = params->get<std::string>("Send type kernelApproximations");
-        if (params->isType<std::string>("Coarsening criterion"))
-          coarseningCriterion_ = params->get<std::string>("Coarsening criterion");
-        TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"));
-        if (params->isType<bool>("debugOutput"))
-          debugOutput_ = params->get<bool>("debugOutput");
-      }
+      bool setupTransposes;
+      bool doDebugChecks;
+      std::string sendTypeNearField;
+      std::string sendTypeBasisMatrix;
+      std::string sendTypeKernelApproximations;
 
+      Teuchos::ParameterList defaultParams("Default params");
+      defaultParams.set("setupTransposes", true);
+      defaultParams.set("doDebugChecks", true);
+      defaultParams.set("Send type nearField", "Isend");
+      defaultParams.set("Send type basisMatrix", "Isend");
+      defaultParams.set("Send type kernelApproximations", "Alltoall");
+      defaultParams.set("Coarsening criterion", "transferLevels");
+      defaultParams.set("debugOutput", false);
+      defaultParams.set("keepTransfers", -1);
+      if (params_.is_null())
+        params_ = Teuchos::rcp(new Teuchos::ParameterList(""));
+      params_->validateParametersAndSetDefaults(defaultParams);
+
+      setupTransposes = params_->get<bool>("setupTransposes");
+      doDebugChecks = params_->get<bool>("doDebugChecks");
+      sendTypeNearField = params_->get<std::string>("Send type nearField");
+      sendTypeBasisMatrix = params_->get<std::string>("Send type basisMatrix");
+      sendTypeKernelApproximations = params_->get<std::string>("Send type kernelApproximations");
+      coarseningCriterion_ = params_->get<std::string>("Coarsening criterion");
+      TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"));
+      debugOutput_ = params_->get<bool>("debugOutput");
 
       if (doDebugChecks) {
         // near field matrix lives on map and is nonlocal
@@ -642,6 +645,7 @@ namespace Tpetra {
         size_t totalNumClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
         RCP<vec_type> tempV = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
         RCP<vec_type> tempV2 = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
+        int keepTransfers = params_->get<int>("keepTransfers",-1);
         for (int k = Teuchos::as<int>(transferMatrices_.size())-1; k>=0; --k) {
 
           size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
@@ -662,7 +666,13 @@ namespace Tpetra {
           if (debugOutput_ && (comm->getRank() == 0))
             std::cout << "numClusterPairs " << numClusterPairs << std::endl;
 
-          if (droppedClusterPairs + numClusterPairs < (1.0-coarseningRate) * totalNumClusterPairs) {
+          bool doDrop;
+          if (keepTransfers >= 0) {
+            doDrop = (keepTransfers<=k);
+          } else {
+            doDrop = (droppedClusterPairs + numClusterPairs < (1.0-coarseningRate) * totalNumClusterPairs);
+          }
+          if (doDrop) {
             auto lcl_transfer = transferMatrices_[k]->blockA_->getLocalMatrixHost();
             auto lcl_transfer_graph = lcl_transfer.graph;
             for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent_int(0); j++)
@@ -856,7 +866,8 @@ namespace Tpetra {
     return Teuchos::rcp(new HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(newNearField,
                                                                                          newBlockedKernelApproximation,
                                                                                          newBasisMatrix,
-                                                                                         newTransferMatrices));
+                                                                                         newTransferMatrices,
+                                                                                         params_));
   }
 
 
