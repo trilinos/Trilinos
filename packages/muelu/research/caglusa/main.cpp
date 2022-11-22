@@ -402,6 +402,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   #include "MueLu_UseShortNames.hpp"
 
   std::string xmlHierarchical = "hierarchical-1d-mm-global.xml"; clp.setOption("xml",      &xmlHierarchical, "XML describing the hierarchical operator");
+  std::string xmlBelos        = "belos.xml";                     clp.setOption("xmlBelos", &xmlBelos,        "XML with Belos parameters");
   std::string xmlMueLu        = "muelu.xml";                     clp.setOption("xmlMueLu", &xmlMueLu,        "XML with MueLu parameters");
   std::string xmlAuxHierarchy = "auxiliary.xml";                 clp.setOption("xmlAux",   &xmlAuxHierarchy, "XML with MueLu parameters for the auxiliary hierarchy");
   bool printTimings  = true; clp.setOption("timings", "notimings", &printTimings,  "print timings to screen");
@@ -573,6 +574,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   }
 
 #ifdef HAVE_MUELU_BELOS
+  Teuchos::ParameterList belosParams;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlBelos, Teuchos::Ptr<Teuchos::ParameterList>(&belosParams), *comm);
   if (doUnPrecSolve) {
     // Solve linear system using unpreconditioned Krylov method
     out << "\n*********************************************************\n";
@@ -589,12 +592,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
     std::string belosType = "Pseudoblock CG";
-    RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-    belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
-    belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
-    belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList->set("Output Frequency",      1);
-    belosList->set("Output Style",          Belos::Brief);
+    auto belosSolverList = rcpFromRef(belosParams.sublist(belosType));
 
     bool set = belosProblem->setProblem();
     if (set == false) {
@@ -603,7 +601,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // Create an iterative solver manager
     Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-    RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
+    RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
     solver->setProblem(belosProblem);
 
     // Perform solve
@@ -677,12 +675,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
       std::string belosType = "Pseudoblock CG";
-      RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-      belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
-      belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
-      belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-      belosList->set("Output Frequency",      1);
-      belosList->set("Output Style",          Belos::Brief);
+      auto belosSolverList = rcpFromRef(belosParams.sublist(belosType));
 
       belosProblem->setRightPrec(belosPrec);
 
@@ -693,7 +686,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // Create an iterative solver manager
       Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-      RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
+      RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosSolverList);
       solver->setProblem(belosProblem);
 
       // Perform solve
