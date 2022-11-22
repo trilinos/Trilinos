@@ -77,6 +77,7 @@
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
+#include "Tpetra_Util.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -701,6 +702,8 @@ namespace Xpetra {
         Teuchos::ArrayView<LocalOrdinal> indices = indicesRCP();
         Teuchos::ArrayView<Scalar>       values = valuesRCP();
 
+        bool sorted = true;
+
         // Read in rowptr
         for (int i = 0; i < m; i++) {
           int row, rownnz;
@@ -727,6 +730,8 @@ namespace Xpetra {
             int index;
             ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
             indices[ptr] = Teuchos::as<LocalOrdinal>(index);
+            if (j>0)
+              sorted = sorted & (indices[ptr-1] < indices[ptr]);
             ++ptr;
           }
           ptr = rowptr[row];
@@ -741,6 +746,18 @@ namespace Xpetra {
         for (int i = m; i > 0; i--)
           rowptr[i] = rowptr[i-1];
         rowptr[0] = 0;
+
+#ifdef HAVE_XPETRA_TPETRA
+        if (!sorted) {
+          for (LocalOrdinal lclRow = 0; lclRow < m; lclRow++) {
+            size_t rowBegin = rowptr[lclRow];
+            size_t rowEnd = rowptr[lclRow+1];
+            Tpetra::sort2(&indices[rowBegin], &indices[rowEnd], &values[rowBegin]);
+          }
+        }
+#else
+        TEUCHOS_ASSERT(sorted);
+#endif
 
         ACrs->setAllValues(rowptrRCP, indicesRCP, valuesRCP);
 
@@ -1495,6 +1512,8 @@ namespace Xpetra {
         Teuchos::ArrayView<LocalOrdinal> indices = indicesRCP();
         Teuchos::ArrayView<Scalar>       values = valuesRCP();
 
+        bool sorted = true;
+
         // Read in rowptr
         for (int i = 0; i < m; i++) {
           int row, rownnz;
@@ -1521,6 +1540,8 @@ namespace Xpetra {
             int index;
             ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
             indices[ptr] = Teuchos::as<LocalOrdinal>(index);
+            if (j>0)
+              sorted = sorted & (indices[ptr-1] < indices[ptr]);
             ++ptr;
           }
           ptr = rowptr[row];
@@ -1535,6 +1556,18 @@ namespace Xpetra {
         for (int i = m; i > 0; i--)
           rowptr[i] = rowptr[i-1];
         rowptr[0] = 0;
+
+#ifdef HAVE_XPETRA_TPETRA
+        if (!sorted) {
+          for (LocalOrdinal lclRow = 0; lclRow < m; lclRow++) {
+            size_t rowBegin = rowptr[lclRow];
+            size_t rowEnd = rowptr[lclRow+1];
+            Tpetra::sort2(&indices[rowBegin], &indices[rowEnd], &values[rowBegin]);
+          }
+        }
+#else
+        TEUCHOS_ASSERT(sorted);
+#endif
 
         ACrs->setAllValues(rowptrRCP, indicesRCP, valuesRCP);
 
