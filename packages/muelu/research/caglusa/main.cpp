@@ -65,6 +65,7 @@
 
 
 #include <Xpetra_IO.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
@@ -468,6 +469,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
     if ((auxOpStr == "near") || (auxOpStr == "distanceLaplacian")) {
       auxOp = op->nearFieldMatrix();
+#ifdef HAVE_MUELU_DEBUG
+      // CoalesceDropFactory_kokkos assumes fitted row and column maps
+      Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkLocalRowMapMatchesColMap(*auxOp);
+#endif
 
       {
         // apply dropping to auxOp
