@@ -4705,7 +4705,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
     const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
+    // const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
     typedef typename Node::execution_space exec_space;
 
     exec_space defaultSpace;
