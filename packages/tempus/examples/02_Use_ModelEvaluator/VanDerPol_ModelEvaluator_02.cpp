@@ -103,7 +103,6 @@ evalModelImpl(
     // Evaluate the implicit ODE f(xdot, x, t) [= 0]
     RCP<const Thyra::VectorBase<Scalar> > x_dot_in;
     x_dot_in = inArgs.get_x_dot().assert_not_null();
-    Scalar alpha = inArgs.get_alpha();
     Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
     Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in );
     f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
