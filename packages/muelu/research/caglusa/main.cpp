@@ -72,6 +72,9 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+#include <MueLu_AmalgamationFactory_kokkos.hpp>
+#include <MueLu_CoalesceDropFactory_kokkos.hpp>
+#include <MueLu_ThresholdAFilterFactory.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -192,6 +195,56 @@ struct IOhelpers {
   }
 
 };
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+buildDistanceLaplacian(RCP<const Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph,
+                       RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> >& coords)
+{
+  #include "MueLu_UseShortNames.hpp"
+
+  const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const LocalOrdinal INV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  auto distLapl = MatrixFactory::Build(graph);
+
+  auto rowMap = graph->getRowMap();
+  auto colMap = graph->getColMap();
+  auto ghosted_coords = MultiVectorFactory::Build(colMap, coords->getNumVectors());
+  ghosted_coords->doImport(*coords, *graph->getImporter(), Xpetra::INSERT);
+
+  {
+    auto lcl_coords = coords->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto lcl_ghosted_coords = ghosted_coords->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto lcl_distLapl = distLapl->getLocalMatrixHost();
+
+    // TODO: parallel_for
+    for (LocalOrdinal rlid = 0; rlid < lcl_distLapl.numRows(); ++rlid) {
+      auto row = lcl_distLapl.row(rlid);
+      Scalar diag = ZERO;
+      LocalOrdinal diagIndex = INV;
+      for (LocalOrdinal k = 0; k < row.length; ++k) {
+        LocalOrdinal clid = row.colidx(k);
+        if (rowMap->getGlobalElement(rlid) == colMap->getGlobalElement(clid)) {
+          diagIndex = k;
+        } else {
+          Scalar dist = ZERO;
+          for (size_t j = 0; j < lcl_coords.extent(1); j++) {
+            auto s = lcl_coords(rlid,j) - lcl_ghosted_coords(clid,j);
+            dist += s*s;
+          }
+          row.value(k) = ONE/std::sqrt(dist);
+          diag -= row.value(k);
+        }
+      }
+      TEUCHOS_ASSERT(diagIndex != INV);
+      row.value(diagIndex) = diag;
+    }
+  }
+  distLapl->fillComplete();
+  return distLapl;
+}
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -408,18 +461,64 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   {
     // Read in auxiliary stuff
 
+    // coordinates
+    coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
+
     // Auxiliary matrix used for multigrid construction
     const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
-    if (auxOpStr == "near")
+    if ((auxOpStr == "near") || (auxOpStr == "distanceLaplacian")) {
       auxOp = op->nearFieldMatrix();
-    else {
+
+      {
+        // apply dropping to auxOp
+        Level fineLevel;
+        fineLevel.SetFactoryManager(Teuchos::null);
+        fineLevel.SetLevelID(0);
+        fineLevel.Set("A",auxOp);
+        fineLevel.Set("Coordinates",coords);
+        fineLevel.Set("DofsPerNode",1);
+        fineLevel.setlib(auxOp->getDomainMap()->lib());
+        auto amalgFact = rcp(new AmalgamationFactory_kokkos());
+        auto dropFact = rcp(new CoalesceDropFactory_kokkos());
+        dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+        double dropTol = hierarchicalParams.get<double>("drop tolerance");
+        // double dropTol = 0.1; // 1D
+        // double dropTol = 0.03; // 2D
+        std::string dropScheme = "classical";
+        dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+        dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(dropScheme));
+
+        fineLevel.Request("A",dropFact.get());
+        fineLevel.Get("A", auxOp, dropFact.get());
+      }
+
+      {
+        // filter out small entries in auxOp
+        Level fineLevel;
+        fineLevel.SetFactoryManager(Teuchos::null);
+        fineLevel.SetLevelID(0);
+        fineLevel.Set("A",auxOp);
+        auto filterFact = rcp(new ThresholdAFilterFactory("A", 1.0e-8, true, -1));
+        fineLevel.Request("A",filterFact.get());
+        filterFact->Build(fineLevel);
+        auxOp = fineLevel.Get< RCP<Matrix> >("A",filterFact.get());
+      }
+
+      if (auxOpStr == "distanceLaplacian") {
+        // build distance Laplacian using graph of auxOp and coordinates
+        auto graph = auxOp->getCrsGraph();
+        auxOp = buildDistanceLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>(graph, coords);
+      }
+
+    } else {
       const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
       const bool readLocal = hierarchicalParams.get<bool>("read local", false);
 
       // colmap of auxiliary operator
       RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
 
-      auxOp  = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
+      auxOp = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
     }
 
     // known pair of LHS, RHS
@@ -428,8 +527,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // solution vector
     X    = MultiVectorFactory::Build(map, 1);
 
-    // coordinates
-    coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
   }
 
   if (doTests) {
