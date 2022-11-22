@@ -349,8 +349,8 @@ public:
   // a kind of crummy scal implementation that we can put in an execution space instance
   struct ScalTag{};
   KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
-    if (i >= Y_.extent(0)) {return;}
-    for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+    if (i >= ordinal_type(Y_.extent(0))) {return;}
+    for (ordinal_type k = 0; k < ordinal_type(Y_.extent(1)); ++k) {
       if (0 == beta_) {
         Y_(i, k) = 0;
       } else {
@@ -764,8 +764,8 @@ public:
   // a kind of crummy scal implementation that we can put in an execution space instance
   struct ScalTag{};
   KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
-    if (i >= Y_.extent(0)) {return;}
-    for (ordinal_type k = 0; k < Y_.extent(1); ++k) {
+    if (i >= ordinal_type(Y_.extent(0))) {return;}
+    for (ordinal_type k = 0; k < ordinal_type(Y_.extent(1)); ++k) {
       if (0 == beta_) {
         Y_(i, k) = 0;
       } else {

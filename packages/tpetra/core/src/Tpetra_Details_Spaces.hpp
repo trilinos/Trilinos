@@ -210,7 +210,7 @@ public:
         if (i < 0) {
             THROW_RUNTIME("requested instance id " << i << " (< 0)");
         }
-        if (i >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
+        if (size_t(i) >= Tpetra::Details::Behavior::spacesIdWarnLimit()) {
             THROW_RUNTIME(
                 "requested instance id " << i << " (>= " 
                 << Tpetra::Details::Behavior::spacesIdWarnLimit()
@@ -219,7 +219,7 @@ public:
         
 
         // make sure we can store an exec space at index i for priority p
-        if (i <= instances[p].size()) {
+        if (size_t(i) <= instances[p].size()) {
             instances[p].resize(i+1);
         }
 
