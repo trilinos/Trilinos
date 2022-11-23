@@ -591,10 +591,6 @@ namespace Tpetra {
     // We are constructing the coarse block matrix newKernelBlockGraph
     // and the point matrix diffKernelApprox.
     {
-      auto lcl_BlockGraph = kernelApproximations_->blockA_->getLocalMatrixHost();
-      auto lcl_newBlockGraph = newKernelBlockGraph->getLocalMatrixHost();
-      auto lcl_KernelApprox = kernelApproximations_->pointA_->getLocalMatrixHost();
-      auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
       typename vec_type::dual_view_type::t_host::const_type lcl_numUnknownsPerCluster;
       typename vec_type::dual_view_type::t_host::const_type lcl_ghosted_numUnknownsPerCluster;
       auto lcl_offsets = Kokkos::create_mirror_view(kernelApproximations_->blockMap_->offsets_);
@@ -616,6 +612,7 @@ namespace Tpetra {
       // to the number of unknowns.
       size_t tgt_clusterPairSize = 0;
       if (coarseningCriterion_ == "numClusters") {
+        auto lcl_BlockGraph = kernelApproximations_->blockA_->getLocalMatrixHost();
         std::vector<size_t> clusterPairSizes;
         for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
           auto brow = lcl_BlockGraph.row(brlid);
@@ -695,6 +692,10 @@ namespace Tpetra {
       int ignored = 0;
       // loop over cluster pairs
       // TODO: parallel_for
+      auto lcl_BlockGraph = kernelApproximations_->blockA_->getLocalMatrixHost();
+      auto lcl_newBlockGraph = newKernelBlockGraph->getLocalMatrixHost();
+      auto lcl_KernelApprox = kernelApproximations_->pointA_->getLocalMatrixHost();
+      auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
       for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
         size_t brsize = lcl_clusterSizes(brlid, 0);
         auto brow = lcl_BlockGraph.row(brlid);
