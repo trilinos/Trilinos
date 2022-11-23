@@ -457,7 +457,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
 
   RCP<const map_type> map = op->getDomainMap();
-  RCP<matrix_type>    auxOp;
+  RCP<matrix_type>    auxOp, mass;
   RCP<mv_type>        X_ex, RHS, X;
   RCP<coord_mv>       coords;
   {
@@ -470,7 +470,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
     if ((auxOpStr == "near") || (auxOpStr == "distanceLaplacian")) {
       auxOp = op->nearFieldMatrix();
-#ifdef HAVE_MUELU_DEBUG
+#ifdef MUELU_HIERARCHICAL_DEBUG
       // CoalesceDropFactory_kokkos assumes fitted row and column maps
       Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkLocalRowMapMatchesColMap(*auxOp);
 #endif
@@ -525,6 +525,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
 
       auxOp = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
+    }
+
+    {
+      const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
+      const bool readLocal = hierarchicalParams.get<bool>("read local", false);
+      // colmap of auxiliary operator
+      RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
+
+      mass = IOhelpers::Read(hierarchicalParams.get<std::string>("mass matrix"), map, aux_colmap, map, map, true, readBinary, readLocal);
     }
 
     // known pair of LHS, RHS
@@ -698,7 +707,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
       X->update(one, *X_ex, -one);
-      out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl;
+      out << "|X-X_ex|_2 = " << X->getVector(0)->norm2() << std::endl;
+
+      auto massDiff = MultiVectorFactory::Build(map, 1);
+      mass->apply(*X, *massDiff);
+      out << "|x-x_ex|_L2 = " << Teuchos::ScalarTraits<Scalar>::squareroot(X->getVector(0)->dot(*massDiff->getVector(0))) << std::endl;
 
       success &= (ret == Belos::Converged);
     }
