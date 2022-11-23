@@ -51,10 +51,12 @@
 #include <stk_util/environment/EnvData.hpp>                     // for EnvData
 #include <stk_util/environment/LogWithTimeAndMemory.hpp>        // for log_w...
 #include <stk_util/environment/memory_util.hpp>                 // for get_c...
+#include <stk_util/util/MemoryTracking.hpp>
 #include <stk_util/parallel/Parallel.hpp>                       // for paral...
 #include <stk_util/parallel/ParallelReduce.hpp>                 // for Reduc...
 #include <stk_util/util/ParameterList.hpp>                      // for Param...
 #include <stk_util/util/human_bytes.hpp>                        // for human...
+#include <stk_util/util/MemoryTracking.hpp>
 #include <string>                                               // for string
 #include <utility>                                              // for pair
 #include <vector>                                               // for vector
@@ -84,11 +86,22 @@ class IoMeshDriver
 {
 public:
   IoMeshDriver(MPI_Comm comm)
-  : m_comm(comm), m_curAvg_baseline(0)
+  : m_comm(comm), m_curAvg_baseline(0), m_baselineBuffer()
   {
     set_output_streams();
+    equilibrate_memory_baseline();
+  }
+
+  void equilibrate_memory_baseline()
+  {
+    size_t now = 0, hwm = 0;
+    stk::get_memory_usage(now, hwm);
+    if (hwm > now) {
+      m_baselineBuffer.resize((hwm-now)*sizeof(double));
+    }
+
     size_t curMax = 0, curMin = 0, curAvg = 0;
-    stk::get_current_memory_usage_across_processors(m_comm, curMax, curMin, curAvg);
+    stk::get_memory_high_water_mark_across_processors(m_comm, curMax, curMin, curAvg);
     m_curAvg_baseline = curAvg;
   }
 
@@ -102,43 +115,49 @@ public:
 
   void log_mesh_counts(const stk::mesh::BulkData& mesh)
   {
-    std::vector<size_t> globalCounts;
-    std::vector<size_t> minGlobalCounts;
-    std::vector<size_t> maxGlobalCounts;
-    std::vector<size_t> auraGlobalCounts;
-    std::vector<size_t> sharedNotOwnedCounts;
+    size_t curMax = 0, curMin = 0, curAvg = 0;
+    stk::get_memory_high_water_mark_across_processors(m_comm, curMax, curMin, curAvg);
+    size_t totalBytes = mesh.parallel_size() * (curAvg - m_curAvg_baseline);
+
+    constexpr unsigned numRanks = static_cast<unsigned>(stk::topology::ELEM_RANK+1);
+    std::vector<size_t> globalCounts(numRanks, 0);
+    std::vector<size_t> minGlobalCounts(numRanks, 0);
+    std::vector<size_t> maxGlobalCounts(numRanks, 0);
+    std::vector<size_t> auraGlobalCounts(numRanks, 0);
+    std::vector<size_t> sharedNotOwnedCounts(numRanks, 0);
     stk::mesh::comm_mesh_counts(mesh, globalCounts, minGlobalCounts, maxGlobalCounts);
     stk::mesh::Selector sharedNotOwned = mesh.mesh_meta_data().globally_shared_part() & !mesh.mesh_meta_data().locally_owned_part();
     stk::mesh::count_entities(sharedNotOwned, mesh, sharedNotOwnedCounts);
-    constexpr unsigned numRanks = static_cast<unsigned>(stk::topology::ELEM_RANK+1);
     stk::all_reduce(m_comm, stk::ReduceSum<numRanks>(sharedNotOwnedCounts.data()));
     stk::mesh::Selector aura = mesh.mesh_meta_data().aura_part();
     stk::mesh::count_entities(aura, mesh, auraGlobalCounts);
     stk::all_reduce(m_comm, stk::ReduceSum<numRanks>(auraGlobalCounts.data()));
 
-    std::string logString = " - Elements: "+std::to_string(globalCounts[stk::topology::ELEM_RANK]);
-    if (globalCounts[stk::topology::FACE_RANK] > 0) {
-      logString += ", Faces: "+std::to_string(globalCounts[stk::topology::FACE_RANK]);
-    }
-    if (globalCounts[stk::topology::EDGE_RANK] > 0) {
-      logString += ", Edges: "+std::to_string(globalCounts[stk::topology::EDGE_RANK]);
-    }
-    if (auraGlobalCounts[stk::topology::ELEM_RANK] > 0) {
-      logString += ", total Aura Elems: "+std::to_string(auraGlobalCounts[stk::topology::ELEM_RANK]);
-    }
-
-    stk::log_with_time_and_memory(m_comm, logString);
-    stk::log_with_time_and_memory(m_comm, " - Nodes: "+std::to_string(globalCounts[stk::topology::NODE_RANK])
-                                          +", shared-not-owned: "+std::to_string(sharedNotOwnedCounts[stk::topology::NODE_RANK])
-                                          +", total Aura: "+std::to_string(auraGlobalCounts[stk::topology::NODE_RANK]));
-    size_t curMax = 0, curMin = 0, curAvg = 0;
-    stk::get_memory_high_water_mark_across_processors(m_comm, curMax, curMin, curAvg);
-    size_t totalBytes = mesh.parallel_size() * (curAvg - m_curAvg_baseline);
-    size_t bytesPerElem = totalBytes/globalCounts[stk::topology::ELEM_RANK];
-    stk::log_with_time_and_memory(m_comm, "Total Mesh Memory: "+stk::human_bytes(totalBytes)
-                                         + ", bytes-per-element: " + std::to_string(bytesPerElem));
-
     stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+    {
+      std::ostringstream os;
+      os<<std::setw(8)<<" "<<std::setw(12)<<"owned"<<std::setw(14)<<"sh-not-owned"<<std::setw(10)<<"aura"<<std::endl;
+      for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
+        os<<std::setw(34+8)<<(mesh.mesh_meta_data().entity_rank_names()[rank])
+          <<std::setw(12)<<globalCounts[rank]
+          <<std::setw(12)<<sharedNotOwnedCounts[rank]
+          <<std::setw(12)<<auraGlobalCounts[rank]
+          <<std::endl;
+      }
+      stk::log_with_time_and_memory(m_comm, os.str());
+    }
+
+    size_t totalEntities = 0;
+    for(size_t count : globalCounts) totalEntities += count;
+    for(size_t count : sharedNotOwnedCounts) totalEntities += count;
+    for(size_t count : auraGlobalCounts) totalEntities += count;
+
+    size_t bytesPerEntity = totalEntities>0 ? totalBytes/totalEntities : 0;
+    std::string bytesPerEntityStr = totalEntities>0 ? std::to_string(bytesPerEntity) : std::string("N/A");
+    stk::log_with_time_and_memory(m_comm, "Total HWM Mesh Memory: "+stk::human_bytes(totalBytes));
+    stk::log_with_time_and_memory(m_comm, "Total Mesh Entities: "+std::to_string(totalEntities)
+                                         + ", bytes-per-entity: " + bytesPerEntityStr);
+
     for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
       size_t localBucketCapacity = 0, localBucketSize = 0;
       const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
@@ -151,7 +170,7 @@ public:
       size_t globalBucketCapacity = stk::get_global_sum(m_comm, localBucketCapacity);
       size_t globalBucketSize = stk::get_global_sum(m_comm, localBucketSize);
       std::ostringstream os;
-      os<<globalNumBuckets<<" "<<rank<<" buckets, total capacity: "<<globalBucketCapacity<<", total size: "<<globalBucketSize;
+      os<<globalNumBuckets<<" "<<rank<<" buckets, total size/capacity: "<<globalBucketSize<<" / "<<globalBucketCapacity;
       if (globalNumBuckets > 0) {
         double totalSz = globalBucketSize;
         double proportion = totalSz / globalBucketCapacity;
@@ -170,18 +189,25 @@ public:
     size_t globalHWMBytes = stk::get_global_sum(m_comm, localHWMBytes);
     size_t localHWMPtrs = stk::get_high_water_mark_in_ptrs();
     size_t globalHWMPtrs = stk::get_global_sum(m_comm, localHWMPtrs);
-    stk::log_with_time_and_memory(m_comm, "Total HWM tracked bytes: "+stk::human_bytes(globalHWMBytes)+", HWM num ptrs: "+std::to_string(globalHWMPtrs));
+    stk::log_with_time_and_memory(m_comm, "Total HWM tracked bytes: "+std::to_string(globalHWMBytes)+", HWM num ptrs: "+std::to_string(globalHWMPtrs));
 #endif
   }
 
   void mesh_read(const std::string &type,
-		       const std::string &working_directory,
-		       const std::string &filename,
-		       stk::io::StkMeshIoBroker &ioBroker,
-		       int integer_size,
-		       stk::io::HeartbeatType hb_type,
-		       int interpolation_intervals)
+                 const std::string &working_directory,
+                 const std::string &filename,
+                 stk::io::StkMeshIoBroker &ioBroker,
+                 int integer_size,
+                 stk::io::HeartbeatType hb_type,
+                 int interpolation_intervals)
   {
+#ifdef STK_MEMORY_TRACKING
+    stk::reset_high_water_mark_in_bytes();
+    stk::reset_high_water_mark_in_ptrs();
+#endif
+
+//    constexpr unsigned N = 1000000;
+//    std::vector<double> v(N, 0.0);
     if (interpolation_intervals == 0)
       interpolation_intervals = 1;
     
@@ -209,9 +235,6 @@ public:
     if (m_addFaces) {
       stk::mesh::create_faces(ioBroker.bulk_data());
     }
-
-    stk::log_with_time_and_memory(m_comm, "Finished populating input mesh, aura is "
-          +std::string((ioBroker.bulk_data().is_automatic_aura_on() ? "on" : "off")));
   }
 
   void mesh_write(const std::string &type,
@@ -382,21 +405,46 @@ public:
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
-    std::string readOrCreate = ((type=="generated" || type=="pamgen") ? "Creating" : "Reading");
-    stk::log_with_time_and_memory(m_comm, readOrCreate+" input mesh: "+filename);
-
     stk::mesh::BulkData::AutomaticAuraOption aura = m_auraOption ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA;
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     builder.set_aura_option(aura);
     builder.set_upward_connectivity(m_upwardConnectivity);
+    builder.set_bucket_capacity(m_bucketCapacity);
+    stk::log_with_time_and_memory(m_comm, "Creating MetaData/BulkData objects");
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
 
-    stk::io::StkMeshIoBroker ioBroker(MPI_COMM_WORLD);
-    ioBroker.set_bulk_data(bulk);
+    stk::log_with_time_and_memory(m_comm, "Creating StkMeshIoBroker object");
 
+    stk::io::StkMeshIoBroker ioBroker(MPI_COMM_WORLD);
+    set_io_properties(ioBroker, lower_case_variable_names, decomp_method, compose_output, parallel_io, compression_level, compression_shuffle, integer_size);
+
+    stk::log_with_time_and_memory(m_comm, "Setting memory baseline");
+    equilibrate_memory_baseline();
+    stk::log_with_time_and_memory(m_comm, "Finished setting memory baseline");
+
+    stk::log_with_time_and_memory(m_comm, "Reading input mesh: "+filename);
+
+    ioBroker.set_bulk_data(bulk);
+    mesh_read(type, working_directory, filename, ioBroker, integer_size, hb_type, interpolation_intervals);
+
+    stk::log_with_time_and_memory(m_comm, "Finished reading input mesh");
+
+    log_mesh_counts(*bulk);
+
+    mesh_write(type, working_directory, filename, ioBroker, integer_size, hb_type, interpolation_intervals);
+  }
+
+  void set_io_properties(stk::io::StkMeshIoBroker& ioBroker,
+                         bool lower_case_variable_names,
+                         const std::string& decomp_method,
+                         bool compose_output,
+                         const std::string& parallel_io,
+                         int compression_level,
+                         bool compression_shuffle,
+                         int integer_size)
+  {
     ioBroker.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", lower_case_variable_names));
 
-    bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
       ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
     }
@@ -405,9 +453,12 @@ public:
       ioBroker.property_add(Ioss::Property("COMPOSE_RESULTS", true));
       ioBroker.property_add(Ioss::Property("COMPOSE_RESTART", true));
     }
+
     if (!parallel_io.empty()) {
       ioBroker.property_add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
     }
+
+    bool use_netcdf4 = false;
     if (compression_level > 0) {
       ioBroker.property_add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
       use_netcdf4 = true;
@@ -419,24 +470,18 @@ public:
     if (use_netcdf4) {
       ioBroker.property_add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
+
     if (integer_size == 8) {
       ioBroker.property_add(Ioss::Property("INTEGER_SIZE_DB", integer_size));
       ioBroker.property_add(Ioss::Property("INTEGER_SIZE_API", integer_size));
     }
-
-    mesh_read(type, working_directory, filename, ioBroker, integer_size, hb_type,
-		    interpolation_intervals);
-
-    log_mesh_counts(*bulk);
-
-    mesh_write(type, working_directory, filename, ioBroker, integer_size, hb_type,
-		    interpolation_intervals);
   }
 
   void set_add_edges(bool trueOrFalse) { m_addEdges = trueOrFalse; }
   void set_add_faces(bool trueOrFalse) { m_addFaces = trueOrFalse; }
   void set_upward_connectivity(bool trueOrFalse) { m_upwardConnectivity = trueOrFalse; }
   void set_aura_option(bool trueOrFalse) { m_auraOption = trueOrFalse; }
+  void set_bucket_capacity(int bktCap) { m_bucketCapacity = bktCap; }
 
 private:
   MPI_Comm m_comm;
@@ -445,6 +490,8 @@ private:
   bool m_addFaces;
   bool m_upwardConnectivity;
   bool m_auraOption;
+  int m_bucketCapacity;
+  std::vector<double> m_baselineBuffer;
 };
 
 int main(int argc, const char** argv)
@@ -465,6 +512,7 @@ int main(int argc, const char** argv)
   bool auraOption = false;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
+  int bucketCapacity = 512;
 
   MPI_Comm comm = stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
   int myRank = stk::parallel_machine_rank(comm);
@@ -488,6 +536,7 @@ int main(int argc, const char** argv)
   cmdLine.add_optional<std::string>({"heartbeat_format", "h", "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]"}, "none");
   cmdLine.add_optional<int>({"interpolate", "i", "number of intervals to divide each input time step into"}, 0);
   cmdLine.add_optional<int>({"integer_size", "I", "use 4 or 8-byte integers for input and output"}, 4);
+  cmdLine.add_optional<int>({"bucket_capacity", "b", "bucket capacity"}, 512);
 
   stk::CommandLineParser::ParseState parseState = cmdLine.parse(argc, argv);
 
@@ -510,8 +559,6 @@ int main(int argc, const char** argv)
     stk::parallel_machine_finalize();
     return returnCode;
   }
-
-  IoMeshDriver ioMeshDriver(comm);
 
   if (cmdLine.is_option_provided("directory")) {
     working_directory = cmdLine.get_option_value<std::string>("directory");
@@ -570,6 +617,9 @@ int main(int argc, const char** argv)
   if (cmdLine.is_option_provided("integer_size")) {
     integer_size = cmdLine.get_option_value<int>("integer_size");
   }
+  if (cmdLine.is_option_provided("bucket_capacity")) {
+    bucketCapacity = cmdLine.get_option_value<int>("bucket_capacity");
+  }
 
   mesh = cmdLine.get_option_value<std::string>("mesh");
 
@@ -611,10 +661,13 @@ int main(int argc, const char** argv)
   else if (heartbeat_format == "spyhis")
     hb_type = stk::io::SPYHIS;
 
+  IoMeshDriver ioMeshDriver(comm);
+
   ioMeshDriver.set_add_edges(addEdges);
   ioMeshDriver.set_add_faces(addFaces);
   ioMeshDriver.set_upward_connectivity(upwardConnectivity);
   ioMeshDriver.set_aura_option(auraOption);
+  ioMeshDriver.set_bucket_capacity(bucketCapacity);
 
   ioMeshDriver.driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 

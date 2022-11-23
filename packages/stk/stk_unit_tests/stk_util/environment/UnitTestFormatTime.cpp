@@ -42,43 +42,43 @@ TEST(UnitTestFormatTime, UnitTest)
 {
   double time = 41.399684906;
   
-  ASSERT_EQ((std::string("41") == stk::formatTime(time, stk::TIMEFORMAT_HMS)), true);
-  ASSERT_EQ((std::string("41.400") == stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("41") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS)), true);
-  ASSERT_EQ((std::string("41.400") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("41.3997") == stk::formatTime(time, stk::TIMEFORMAT_NONE)), true);
+  ASSERT_EQ(std::string("00:00:41"), stk::formatTime(time, stk::TIMEFORMAT_HMS));
+  ASSERT_EQ(std::string("00:00:41.400"), stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("41"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS));
+  ASSERT_EQ(std::string("41.400"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("41.3997"), stk::formatTime(time, stk::TIMEFORMAT_NONE));
 
   time = 441.399684906;
   
-  ASSERT_EQ((std::string("7:21") == stk::formatTime(time, stk::TIMEFORMAT_HMS)), true);
-  ASSERT_EQ((std::string("7:21.400") == stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("441") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS)), true);
-  ASSERT_EQ((std::string("441.400") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("441.4") == stk::formatTime(time, stk::TIMEFORMAT_NONE)), true);
+  ASSERT_EQ(std::string("00:07:21"), stk::formatTime(time, stk::TIMEFORMAT_HMS));
+  ASSERT_EQ(std::string("00:07:21.400"), stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("441"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS));
+  ASSERT_EQ(std::string("441.400"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("441.4"), stk::formatTime(time, stk::TIMEFORMAT_NONE));
 
   time = 5441.399684906;
   
-  ASSERT_EQ((std::string("1:30:41") == stk::formatTime(time, stk::TIMEFORMAT_HMS)), true);
-  ASSERT_EQ((std::string("1:30:41.400") == stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("5441") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS)), true);
-  ASSERT_EQ((std::string("5441.400") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("5441.4") == stk::formatTime(time, stk::TIMEFORMAT_NONE)), true);
+  ASSERT_EQ(std::string("01:30:41"), stk::formatTime(time, stk::TIMEFORMAT_HMS));
+  ASSERT_EQ(std::string("01:30:41.400"), stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("5441"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS));
+  ASSERT_EQ(std::string("5441.400"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("5441.4"), stk::formatTime(time, stk::TIMEFORMAT_NONE));
 
   time = 1251305441.399684906;
   
-  ASSERT_EQ((std::string("347584:50:41") == stk::formatTime(time, stk::TIMEFORMAT_HMS)), true);
-  ASSERT_EQ((std::string("347584:50:41.400") == stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("1251305441") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS)), true);
-  ASSERT_EQ((std::string("1251305441.400") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("1.25131e+09") == stk::formatTime(time, stk::TIMEFORMAT_NONE)), true);
+  ASSERT_EQ(std::string("347584:50:41"), stk::formatTime(time, stk::TIMEFORMAT_HMS));
+  ASSERT_EQ(std::string("347584:50:41.400"), stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("1251305441"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS));
+  ASSERT_EQ(std::string("1251305441.400"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("1.25131e+09"), stk::formatTime(time, stk::TIMEFORMAT_NONE));
 
   time = -41.399684906;
   
-  ASSERT_EQ((std::string("-41") == stk::formatTime(time, stk::TIMEFORMAT_HMS)), true);
-  ASSERT_EQ((std::string("-41.400") == stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("-41") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS)), true);
-  ASSERT_EQ((std::string("-41.400") == stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS)), true);
-  ASSERT_EQ((std::string("-41.3997") == stk::formatTime(time, stk::TIMEFORMAT_NONE)), true);
+  ASSERT_EQ(std::string("-00:00:41"), stk::formatTime(time, stk::TIMEFORMAT_HMS));
+  ASSERT_EQ(std::string("-00:00:41.400"), stk::formatTime(time, stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("-41"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS));
+  ASSERT_EQ(std::string("-41.400"), stk::formatTime(time, stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS));
+  ASSERT_EQ(std::string("-41.3997"), stk::formatTime(time, stk::TIMEFORMAT_NONE));
 }
 
 

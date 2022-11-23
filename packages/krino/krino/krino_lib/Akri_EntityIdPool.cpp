@@ -86,7 +86,7 @@ EntityIdPool::check_ids_are_32_bit(stk::mesh::EntityRank rank, std::vector<stk::
       break;
     }
   }
-  ThrowRequireMsg(!have_bad_id, "Exhausted valid ids for rank " << rank << "!");
+  ThrowRequireMsg(!have_bad_id, "Exhausted valid 32 bit ids for rank " << rank << "!");
 }
 
 } // namespace krino

@@ -94,7 +94,7 @@ public:
   // name_with_state() includes any suffix indicating the state, ie "_STKFS_OLD"
   const std::string & name_with_state() const { assert_valid(); return my_field->name(); }
   // name() is the basic field name without any suffix for state, regardless of the state of the field
-  std::string name() const { assert_valid(); return my_field->field_state(stk::mesh::StateNone)->name(); }
+  const std::string & name() const { assert_valid(); return my_field->field_state(stk::mesh::StateNone)->name(); }
 
   unsigned length(const stk::mesh::Bucket& b) const
   {

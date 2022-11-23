@@ -464,7 +464,7 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
       const bool inSideset = isActive && sset.contains(sideElements[0], sideOrdinals[0]);
       const bool permutationZero = sidePermutations[0]==0;
       const bool positivePolarity = (inSideset) ? permutationZero : !permutationZero;
-      return std::make_pair(true, positivePolarity);
+      return std::make_pair(inSideset, positivePolarity);
     }
 
     int numFound = 0;
@@ -480,14 +480,13 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 
         if(sset.contains(elem, sideOrdinals[i])) {
             numFound++;
-
             if (sidePermutations[i] == 0) {
                 foundElemWithPermutationZero = true;
             }
         }
     }
 
-    return std::make_pair(true, (numFound==1 ? foundElemWithPermutationZero : false));
+    return std::make_pair(numFound > 0, (numFound==1 ? foundElemWithPermutationZero : false));
 }
 
 std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face,
@@ -501,18 +500,27 @@ std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData
         return returnValue;
     }
 
-    returnValue = is_positive_sideset_polarity(bulk, *sidesetParts[0], face, activePart);
+    auto it = std::find_if(sidesetParts.begin(), sidesetParts.end(), [&](const stk::mesh::Part* p){
+      returnValue = is_positive_sideset_polarity(bulk, *p, face, activePart);
+      return returnValue.first;
+    });
 
     if (sidesetParts.size() > 1) {
         stk::mesh::Selector activeSelector = activePart == nullptr ? bulk.mesh_meta_data().universal_part() : *activePart;
-        for(unsigned i=1; i<sidesetParts.size(); ++i)
+        for(auto& ssetIter = it; ssetIter<sidesetParts.end(); ++ssetIter)
         {
-            const stk::mesh::Part* sidesetPart = sidesetParts[i];
-            std::pair<bool,bool> partPolarity = is_positive_sideset_polarity(bulk, *sidesetPart, face, activePart);
+            const stk::mesh::Part& sidesetPart = *(*ssetIter);
+            std::pair<bool,bool> partPolarity = is_positive_sideset_polarity(bulk, sidesetPart, face, activePart);
 
-            ThrowRequireMsg(partPolarity == returnValue,
+            if (partPolarity.first && partPolarity != returnValue) {
+            stk::RuntimeWarningP0() <<
                             "Polarity for face: " << bulk.identifier(face) << " on sideset: "
-                                                  << sidesetParts[0]->name()  << " does not match that on sideset: " << sidesetPart->name());
+                                                  << (*it)->name() << " has polarity = " << returnValue.first << ", " << returnValue.second
+                                                  << " does not match that on sideset: " << sidesetPart.name()
+                                                  << " has polarity = " << partPolarity.first << ", " << partPolarity.second;
+            } else if (returnValue.first == false && partPolarity.first == true) {
+              returnValue = partPolarity;
+            }
         }
     }
 

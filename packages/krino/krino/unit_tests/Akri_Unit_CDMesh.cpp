@@ -35,6 +35,7 @@
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Quality.hpp>
+#include <Akri_RefinementInterface.hpp>
 
 namespace krino {
 
@@ -589,12 +590,14 @@ public:
     std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), ls_policy.ls_fields());
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
     {
+      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
           cdfemSupport.get_interpolation_fields(),
           *interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees());
+          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
+          minIntPtWeightForEstimatingCutQuality);
     }
     interfaceGeometry->prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
 
@@ -663,6 +666,7 @@ public:
     stk::mesh::BulkData & mesh = fixture.bulk_data();
     stk::mesh::MetaData & meta = fixture.meta_data();
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
+    RefinementInterface * refinement = nullptr;
 
     if (parallel_size != 2) return;
 
@@ -728,6 +732,7 @@ public:
     }
 
     rebalance_utils::rebalance_mesh(mesh,
+        refinement,
         krino_mesh.get(),
         elem_weight_field.name(),
         coord_field.name(),
@@ -2983,6 +2988,19 @@ TEST_F(NonconformalAdaptivityTest, InternalSidePositivePermutationNonOwnedElemen
   cdfemSupport.set_cdfem_edge_tol(0.1);
   cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
+  stk::mesh::MetaData & meta = fixture.meta_data();
+
+  auto & aux_meta = AuxMetaData::get(fixture.meta_data());
+  auto & active_part = aux_meta.active_part();
+
+//  auto hadapt = [&meta](const std::string & markerFieldName, int debug_level)
+//    {
+//      HAdapt::do_adaptive_refinement(meta, markerFieldName);
+//    };
+//  auto & refinement = krino::PerceptRefinement::create(meta, hadapt);
+  auto & refinement = krino::KrinoRefinement::create(meta);
+  cdfemSupport.set_non_interface_conforming_refinement(refinement);
+
   setup_ls_field();
 
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
@@ -2992,13 +3010,8 @@ TEST_F(NonconformalAdaptivityTest, InternalSidePositivePermutationNonOwnedElemen
 
   register_ls_on_blocks({&block1_part, &block2_part});
 
-  auto & aux_meta = AuxMetaData::get(fixture.meta_data());
-  FieldRef marker_field =
-      aux_meta.register_field("refine_marker", FieldType::INTEGER, stk::topology::ELEMENT_RANK,
-          1u, 1, fixture.meta_data().universal_part());
+  FieldRef marker_field = refinement.get_marker_field();
 
-  auto & meta = fixture.meta_data();
-  auto & active_part = aux_meta.active_part();
   stk::diag::TimerSet enabledTimerSet(0);
   stk::diag::Timer root_timer = createRootTimer("test", enabledTimerSet);
   HAdapt::setup(meta, active_part, root_timer);
@@ -3023,7 +3036,7 @@ TEST_F(NonconformalAdaptivityTest, InternalSidePositivePermutationNonOwnedElemen
     mesh.change_entity_owner(changes);
   }
 
-  EXPECT_NO_THROW(HAdapt::do_adaptive_refinement(meta, marker_field.name()));
+  EXPECT_NO_THROW(refinement.do_refinement());
 }
 
 typedef CompleteDecompositionFixture<SimpleStkFixture3d, SingleLSPolicy> MeshCloneTest;

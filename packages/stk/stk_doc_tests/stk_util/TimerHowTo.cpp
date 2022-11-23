@@ -72,7 +72,7 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
     std::string expectedOutput = "                                                     \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
-totalTestRuntime                           1        SKIP  SKIP             0.100 SKIP      \
+totalTestRuntime                           1        SKIP  SKIP             00:00:00.100 SKIP      \
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
     ";
@@ -112,16 +112,16 @@ TEST(StkDiagTimerHowTo, useChildTimers)
   std::string expectedOutput = "                                                         \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
-totalTestRuntime                             1        SKIP   SKIP        0.100 SKIP        \
-  childTimer1                                1        SKIP   SKIP        0.100 SKIP        \
-  childTimer2                                1        SKIP   SKIP        0.100 SKIP        \
+totalTestRuntime                             1        SKIP   SKIP        00:00:00.100 SKIP        \
+  childTimer1                                1        SKIP   SKIP        00:00:00.100 SKIP        \
+  childTimer2                                1        SKIP   SKIP        00:00:00.100 SKIP        \
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
-totalTestRuntime                             1        SKIP   SKIP        0.200 SKIP        \
-  childTimer1                                2        SKIP   SKIP        0.200 SKIP        \
-  childTimer2                                1        SKIP   SKIP        0.100 SKIP        \
+totalTestRuntime                             1        SKIP   SKIP        00:00:00.200 SKIP        \
+  childTimer1                                2        SKIP   SKIP        00:00:00.200 SKIP        \
+  childTimer2                                1        SKIP   SKIP        00:00:00.100 SKIP        \
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
             ";
@@ -160,14 +160,14 @@ TEST(StkDiagTimerHowTo, disableChildTimers)
   std::string expectedOutput = "                                                         \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
-totalTestRuntime                             1        SKIP   SKIP        0.100 SKIP        \
-  enabledTimer                               1        SKIP   SKIP        0.100 SKIP        \
+totalTestRuntime                             1        SKIP   SKIP        00:00:00.100 SKIP        \
+  enabledTimer                               1        SKIP   SKIP        00:00:00.100 SKIP        \
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
-totalTestRuntime                             1        SKIP   SKIP        0.200 SKIP        \
-  enabledTimer                               1        SKIP   SKIP        0.100 SKIP        \
+totalTestRuntime                             1        SKIP   SKIP        00:00:00.200 SKIP        \
+  enabledTimer                               1        SKIP   SKIP        00:00:00.100 SKIP        \
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
             ";

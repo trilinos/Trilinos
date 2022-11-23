@@ -249,7 +249,8 @@ void TransferCopyById::do_transfer()
   m_meshb.begin_transfer();
 
   pack_send_fields(m_commSparse);
-  m_commSparse.communicate();
+  const bool deallocateSendBuffers = false;
+  m_commSparse.communicate(deallocateSendBuffers);
 
   MeshIDSet remoteKeys = m_search.get_remote_keys();
 

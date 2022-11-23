@@ -49,7 +49,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 #include <Kokkos_Core.hpp>
 #include <cstdlib>
@@ -315,8 +315,8 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
 
@@ -398,8 +398,8 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
 
@@ -488,8 +488,8 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
   unsigned numStreams = stk::unit_test_util::simple_fields::get_command_line_option("-s", 3);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
   
@@ -578,8 +578,8 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
 
@@ -673,8 +673,8 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
   EXPECT_TRUE(numBlocksToSync <= numBlocks && numBlocksToSync >= 1);
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 100);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
 
@@ -773,9 +773,9 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
   unsigned numElemsPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 100);
   unsigned sleepTime = stk::unit_test_util::simple_fields::get_command_line_option("-m", 50);
   unsigned waitIteration = stk::unit_test_util::simple_fields::get_command_line_option("-p", 20);
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer2(MPI_COMM_WORLD);
-  stk::performance_tests::BatchTimer batchTimer3(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer2(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer3(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   batchTimer2.initialize_batch_timer();
   batchTimer3.initialize_batch_timer();

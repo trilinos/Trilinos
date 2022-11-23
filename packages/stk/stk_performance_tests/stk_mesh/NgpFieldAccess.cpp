@@ -50,7 +50,7 @@
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_util/stk_config.h>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
@@ -118,7 +118,7 @@ protected:
     }
   }
 
-  stk::performance_tests::BatchTimer batchTimer;
+  stk::unit_test_util::BatchTimer batchTimer;
   stk::mesh::Field<double> *centroid;
   stk::mesh::Field<double> *hostCentroid;
 };

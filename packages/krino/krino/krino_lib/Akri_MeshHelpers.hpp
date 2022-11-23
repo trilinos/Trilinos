@@ -135,12 +135,6 @@ void make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh);
 
 double compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Entity element, const stk::mesh::Field<double> * const coords_field);
 
-bool is_refinement_child(const stk::mesh::BulkData & stk_bulk, stk::mesh::Entity entity);
-bool has_refinement_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity parent);
-void get_refinement_immediate_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children);
-void get_refinement_leaf_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children);
-void get_refinement_all_children(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & children);
-
 // Temporary method for manually correcting the relation permutation
 void set_relation_permutation(stk::mesh::BulkData & mesh, stk::mesh::Entity from, stk::mesh::Entity to, stk::mesh::ConnectivityOrdinal to_ord, stk::mesh::Permutation to_permutation);
 

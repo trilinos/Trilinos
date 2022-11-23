@@ -38,7 +38,7 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <cstdlib>
 
 TEST(EntityCommDatabase, TimingInsertErase )
@@ -66,7 +66,7 @@ TEST(EntityCommDatabase, TimingInsertErase )
 #endif
   const unsigned NUM_RUNS = 5;
 
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
 
   for (unsigned j = 0; j < NUM_RUNS; j++) {

@@ -41,7 +41,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
-namespace performance_tests {
+namespace unit_test_util {
 
 class Timer
 {

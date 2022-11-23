@@ -1633,9 +1633,12 @@ bool is_good_rank_and_id(const MetaData& meta,
 
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
-                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle)
+                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle,
+                                  const std::vector<EntityId>& reservedIds)
 {
   EntityId localMax = stk::mesh::get_max_id_on_local_proc(mesh, rank);
+  EntityId localMaxReserved = reservedIds.empty() ? 0 : *std::max_element(reservedIds.begin(), reservedIds.end());
+  localMax = std::max(localMax, localMaxReserved);
 
   for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {    
     stk::mesh::Entity entity(local_offset);

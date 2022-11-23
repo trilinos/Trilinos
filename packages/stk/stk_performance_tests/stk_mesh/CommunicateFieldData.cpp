@@ -47,7 +47,7 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -217,7 +217,7 @@ void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName,
 
 void test_communicate_field_data_all_ghosting(stk::ParallelMachine communicator, int num_iters)
 {
-    stk::performance_tests::BatchTimer batchTimer(communicator);
+    stk::unit_test_util::BatchTimer batchTimer(communicator);
     batchTimer.initialize_batch_timer();
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -287,7 +287,7 @@ void test_communicate_field_data_all_ghosting(stk::ParallelMachine communicator,
 void test_communicate_field_data_ghosting(MPI_Comm communicator,
                                           unsigned numBlocks, unsigned numFields, int num_iters)
 {
-    stk::performance_tests::BatchTimer batchTimer(communicator);
+    stk::unit_test_util::BatchTimer batchTimer(communicator);
     batchTimer.initialize_batch_timer();
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -330,7 +330,7 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
         std::cerr << "Calling communicate_field_data " << num_iters << " times"<<std::endl;
     }
 
-    stk::performance_tests::BatchTimer batchTimer(mesh.parallel());
+    stk::unit_test_util::BatchTimer batchTimer(mesh.parallel());
     batchTimer.initialize_batch_timer();
     createNgpFields(mesh);
     const stk::mesh::MetaData& meta = mesh.mesh_meta_data();

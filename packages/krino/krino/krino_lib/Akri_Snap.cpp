@@ -106,13 +106,39 @@ static bool element_has_all_nodes(const std::vector<stk::mesh::Entity> & elemNod
   return true;
 }
 
+static void clip_intersection_point_weights(std::vector<double> & intPtWeights, const double tol)
+{
+  double adjustment = 0.;
+  double sumGood = 0.;
+  for (auto && intPtWeight : intPtWeights)
+  {
+    if (intPtWeight < tol)
+      adjustment += tol - intPtWeight;
+    else
+      sumGood += intPtWeight;
+  }
+
+  if (adjustment > 0.)
+  {
+    adjustment = adjustment/sumGood;
+    for (auto && intPtWeight : intPtWeights)
+    {
+      if (intPtWeight < tol)
+        intPtWeight = tol;
+      else
+        intPtWeight -= intPtWeight*adjustment;
+    }
+  }
+}
+
 static double estimate_quality_of_cutting_intersection_points(const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const std::vector<stk::mesh::Entity> & elemNodes,
     const std::vector<Vector3d> & elemNodeCoords,
     const std::vector<size_t> intersectionPointIndices,
     const std::vector<IntersectionPoint> & intersectionPoints,
-    const QualityMetric &qualityMetric)
+    const QualityMetric &qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality)
 {
   if (intersectionPointIndices.empty())
     return std::max(0., qualityMetric.get_element_quality_metric(elemNodeCoords));
@@ -121,9 +147,12 @@ static double estimate_quality_of_cutting_intersection_points(const stk::mesh::B
   const IntersectionPoint & intPtToApply = intersectionPoints[*intersectionPointIndices.begin()];
   const std::vector<size_t> remainingIntersectionPointIndices(intersectionPointIndices.begin()+1, intersectionPointIndices.end());
 
-  const stk::math::Vector3d intPtLocation = compute_intersection_point_location(mesh.mesh_meta_data().spatial_dimension(), coordsField, intPtToApply);
-
   const auto & intPtNodes = intPtToApply.get_nodes();
+  std::vector<double> intPtWts = intPtToApply.get_weights();
+  clip_intersection_point_weights(intPtWts, minIntPtWeightForEstimatingCutQuality);
+
+  const stk::math::Vector3d intPtLocation = compute_intersection_point_location(mesh.mesh_meta_data().spatial_dimension(), coordsField, intPtNodes, intPtWts);
+
   double qualityAfterCut = qualityMetric.get_best_value_for_metric();
   if (element_has_all_nodes(elemNodes, intPtNodes))
   {
@@ -148,14 +177,14 @@ static double estimate_quality_of_cutting_intersection_points(const stk::mesh::B
         }
       }
 
-      const double elemQualityAfterCuts = estimate_quality_of_cutting_intersection_points(mesh, coordsField, cutElemNodes, cutElemNodeCoords, remainingIntersectionPointIndices, intersectionPoints, qualityMetric);
+      const double elemQualityAfterCuts = estimate_quality_of_cutting_intersection_points(mesh, coordsField, cutElemNodes, cutElemNodeCoords, remainingIntersectionPointIndices, intersectionPoints, qualityMetric, minIntPtWeightForEstimatingCutQuality);
       if (qualityMetric.is_first_quality_metric_better_than_second(qualityAfterCut, elemQualityAfterCuts))
         qualityAfterCut = elemQualityAfterCuts;
     }
   }
   else
   {
-    qualityAfterCut = estimate_quality_of_cutting_intersection_points(mesh, coordsField, elemNodes, elemNodeCoords, remainingIntersectionPointIndices, intersectionPoints, qualityMetric);
+    qualityAfterCut = estimate_quality_of_cutting_intersection_points(mesh, coordsField, elemNodes, elemNodeCoords, remainingIntersectionPointIndices, intersectionPoints, qualityMetric, minIntPtWeightForEstimatingCutQuality);
   }
 
   return qualityAfterCut;
@@ -304,12 +333,13 @@ static mapFromEntityToIntPtIndexAndSnapAllowed get_node_to_intersection_point_in
   return nodeToIntPtIndicesAndWhichSnapsAllowed;
 }
 
-std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quality_per_node_per_domain(const stk::mesh::BulkData & mesh,
+static std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quality_per_node_per_domain(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,
     const FieldRef coordsField,
     const std::vector<IntersectionPoint> & intersectionPoints,
     const mapFromEntityToIntPtIndexAndSnapAllowed & nodeToIntPtIndicesAndWhichSnapsAllowed,
     const QualityMetric &qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality,
     const bool globalIDsAreParallelConsistent)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
@@ -338,7 +368,7 @@ std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quali
       {
         elemNodes.assign(mesh.begin_nodes(elem), mesh.end_nodes(elem));
         fill_node_locations(dim, coordsField, elemNodes, elemNodeCoords);
-        const double elemQualityAfterCuts = estimate_quality_of_cutting_intersection_points(mesh, coordsField, elemNodes, elemNodeCoords, sortedIntersectionPointIndices, intersectionPoints, qualityMetric);
+        const double elemQualityAfterCuts = estimate_quality_of_cutting_intersection_points(mesh, coordsField, elemNodes, elemNodeCoords, sortedIntersectionPointIndices, intersectionPoints, qualityMetric, minIntPtWeightForEstimatingCutQuality);
 
         if (qualityMetric.is_first_quality_metric_better_than_second(qualityAfterCut, elemQualityAfterCuts))
           qualityAfterCut = elemQualityAfterCuts;
@@ -358,6 +388,7 @@ append_snap_infos_from_intersection_points(const stk::mesh::BulkData & mesh,
     const std::vector<IntersectionPoint> & intersectionPoints,
     const mapFromEntityToIntPtIndexAndSnapAllowed & nodeToIntPtIndicesAndWhichSnapsAllowed,
     const QualityMetric &qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality,
     const bool globalIDsAreParallelConsistent,
     std::vector<SnapInfo> & snapInfos)
 {
@@ -368,7 +399,8 @@ append_snap_infos_from_intersection_points(const stk::mesh::BulkData & mesh,
 
   int owner = mesh.parallel_rank();
 
-  const auto domainsToNodesToQuality = determine_quality_per_node_per_domain(mesh, elementSelector, coordsField, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, globalIDsAreParallelConsistent);
+  const auto domainsToNodesToQuality = determine_quality_per_node_per_domain(mesh, elementSelector, coordsField, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent);
+  const double minQualityThatIsForSureNotInverted = 0.;
 
   for (auto entry : nodeToIntPtIndicesAndWhichSnapsAllowed)
   {
@@ -394,7 +426,7 @@ append_snap_infos_from_intersection_points(const stk::mesh::BulkData & mesh,
 
           // For face and volume cuts, allow quality to go down to acceptable_value_for_metric because estimate is not that good
           //const double minAcceptableQuality = (nodes.size() == 2) ? cutQualityEstimate : std::min(qualityMetric.get_acceptable_value_for_metric(), cutQualityEstimate);
-          const double minAcceptableQuality = cutQualityEstimate;
+          const double minAcceptableQuality = std::max(minQualityThatIsForSureNotInverted, cutQualityEstimate);
 
           const double postSnapQuality = compute_quality_if_node_is_snapped_terminating_early_if_below_threshold(mesh, elementSelector, coordsField, node, snapLocation, qualityMetric, minAcceptableQuality);
           if (qualityMetric.is_first_quality_metric_better_than_second(postSnapQuality, minAcceptableQuality))
@@ -423,12 +455,13 @@ build_snap_infos_from_intersection_points(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     const std::vector<IntersectionPoint> & intersectionPoints,
     const QualityMetric &qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality,
     const bool globalIDsAreParallelConsistent)
 {
   std::vector<SnapInfo> snapInfos;
 
   const auto nodeToIntPtIndicesAndWhichSnapsAllowed = get_node_to_intersection_point_indices_and_which_snaps_allowed(mesh, sharpFeatureInfo, intersectionPoints);
-  append_snap_infos_from_intersection_points(mesh, elementSelector, nodesToCapturedDomains, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, globalIDsAreParallelConsistent, snapInfos);
+  append_snap_infos_from_intersection_points(mesh, elementSelector, nodesToCapturedDomains, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent, snapInfos);
 
   return snapInfos;
 }
@@ -690,6 +723,7 @@ void update_intersection_points_and_snap_infos_after_snap_iteration(const stk::m
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     const stk::mesh::Selector & elementSelector,
     const ScaledJacobianQualityMetric & qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality,
     const bool globalIDsAreParallelConsistent,
     std::vector<IntersectionPoint> & intersectionPoints,
     std::vector<SnapInfo> & snapInfos)
@@ -702,7 +736,7 @@ void update_intersection_points_and_snap_infos_after_snap_iteration(const stk::m
 
   const auto nodeToIntPtIndicesAndWhichSnapsAllowed = get_node_to_intersection_point_indices_and_which_snaps_allowed_for_nodes_that_need_new_snap_infos(mesh, sharpFeatureInfo, intersectionPoints, sortedIdsOfNodesThatNeedNewSnapInfos);
 
-  append_snap_infos_from_intersection_points(mesh, elementSelector, nodesToCapturedDomains, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, globalIDsAreParallelConsistent, snapInfos);
+  append_snap_infos_from_intersection_points(mesh, elementSelector, nodesToCapturedDomains, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent, snapInfos);
 }
 
 NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
@@ -710,7 +744,8 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const FieldSet & interpolationFields,
     const InterfaceGeometry & geometry,
     const bool globalIDsAreParallelConsistent,
-    const double snappingSharpFeatureAngleInDegrees)
+    const double snappingSharpFeatureAngleInDegrees,
+    const double minIntPtWeightForEstimatingCutQuality)
 {/* %TRACE[ON]% */ Trace trace__("krino::snap_as_much_as_possible_while_maintaining_quality()"); /* %TRACE% */
 
     const ScaledJacobianQualityMetric qualityMetric;
@@ -728,7 +763,7 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     std::vector<IntersectionPoint> intersectionPoints;
     geometry.store_phase_for_uncut_elements(mesh);
     intersectionPoints = build_all_intersection_points(mesh, geometry, nodesToCapturedDomains);
-    std::vector<SnapInfo> snapInfos = build_snap_infos_from_intersection_points(mesh, sharpFeatureInfo.get(), elementSelector, nodesToCapturedDomains, intersectionPoints, qualityMetric, globalIDsAreParallelConsistent);
+    std::vector<SnapInfo> snapInfos = build_snap_infos_from_intersection_points(mesh, sharpFeatureInfo.get(), elementSelector, nodesToCapturedDomains, intersectionPoints, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent);
 
     while (true)
     {
@@ -749,7 +784,7 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
 
       const std::vector<stk::mesh::Entity> iterationSortedSnapNodes = get_sorted_nodes_modified_in_current_snapping_iteration(mesh, independentSnapInfos);
 
-      update_intersection_points_and_snap_infos_after_snap_iteration(mesh, geometry, sharpFeatureInfo.get(), iterationSortedSnapNodes, nodesToCapturedDomains, elementSelector, qualityMetric, globalIDsAreParallelConsistent, intersectionPoints, snapInfos);
+      update_intersection_points_and_snap_infos_after_snap_iteration(mesh, geometry, sharpFeatureInfo.get(), iterationSortedSnapNodes, nodesToCapturedDomains, elementSelector, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent, intersectionPoints, snapInfos);
     }
 
     krinolog << "After snapping quality is " << compute_mesh_quality(mesh, elementSelector, qualityMetric) << stk::diag::dendl;

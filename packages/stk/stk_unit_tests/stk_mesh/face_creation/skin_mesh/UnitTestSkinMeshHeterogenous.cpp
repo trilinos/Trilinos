@@ -75,6 +75,9 @@ TEST(ElementGraph, heterogeneous_mesh)
         stk::io::write_mesh(fileName, bulk_data);
       }
     }
+
+    stk::parallel_machine_barrier(comm);
+
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, comm, stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
     stk::mesh::BulkData& bulk_data = *bulkPtr;

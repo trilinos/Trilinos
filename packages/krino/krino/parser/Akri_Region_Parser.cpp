@@ -44,6 +44,10 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
       region->set_initial_refinement_levels(initial_refinement_levels);
     }
 
+    bool usePercept = true;
+    region_node.get_if_present("use_percept", usePercept);
+    region->set_use_percept(usePercept);
+
     bool use_32bit_ids = false;
     region_node.get_if_present("use_32bit_ids", use_32bit_ids);
 

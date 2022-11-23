@@ -34,7 +34,8 @@
 #ifndef STK_SIMD_PARALLEL_H
 #define STK_SIMD_PARALLEL_H
 
-#include <stk_simd_view/simd_view.hpp>
+#include <Kokkos_Core.hpp>
+#include <stk_simd_view/simd_layout.hpp>
 #include <stk_simd_view/has_typedef.hpp>
 #include <stk_simd_view/simd_index.hpp>
 #include <typeinfo>
@@ -43,7 +44,7 @@ namespace stk {
 namespace simd {
 
 template <typename Func>
-STK_INLINE
+KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
   typedef typename
     Kokkos::Impl::FunctorPolicyExecutionSpace<Func, void>::execution_space execution_space;
@@ -56,7 +57,7 @@ constexpr bool is_gpu() {
 
 
 template <typename T, typename Func>
-STK_INLINE
+KOKKOS_INLINE_FUNCTION
 int get_simd_loop_size(int N) {
   return is_gpu<Func>() ? N : simd_pad<T>(N) / SimdSizeTraits<T>::simd_width;
 }
@@ -151,7 +152,7 @@ parallel_for(const Kokkos::TeamPolicy<>::member_type& thread, int N, const Func&
 
 
 template <typename T, typename Func>
-STK_INLINE void
+KOKKOS_INLINE_FUNCTION void
 for_each(int N, const Func& func) {
   const int simdLoopSize = get_simd_loop_size<T, Func>(N);
   for (int i=0; i < simdLoopSize; ++i) {
@@ -160,7 +161,7 @@ for_each(int N, const Func& func) {
 }
 
 template <typename Func>
-STK_INLINE void
+KOKKOS_INLINE_FUNCTION void
 for_each(int N, const Func& func) {
   const int simdLoopSize = get_simd_loop_size<double, Func>(N);
   for (int i=0; i < simdLoopSize; ++i) {
@@ -181,7 +182,7 @@ struct SimdReduct {
     initialVal = 0.0;
   }
 
-  STK_INLINE void operator() (PolicyTag tag, const int n, value_type& reductee) const {
+  KOKKOS_INLINE_FUNCTION void operator() (PolicyTag tag, const int n, value_type& reductee) const {
     if (n != simdLoopSizeWithoutRemainder) {
       func(tag, simd::DeviceIndex(n), reductee);
     } else {
@@ -209,7 +210,7 @@ struct SimdReduct<Func, RealType, void> {
     initialVal = 0.0;
   }
 
-  STK_INLINE void operator() (const int n, value_type& reductee) const {
+  KOKKOS_INLINE_FUNCTION void operator() (const int n, value_type& reductee) const {
     if (n != simdLoopSizeWithoutRemainder) {
       func(simd::DeviceIndex(n), reductee);
     } else {

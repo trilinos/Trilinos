@@ -56,6 +56,11 @@ bool SnapInfo::Comparator::is_first_higher_priority_than_second(const SnapInfo& 
     return false;
 }
 
+bool SnapInfo::Comparator::does_first_win_priority_tie_with_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const
+{
+    return false;
+}
+
 std::ostream & operator<<(std::ostream & os, const SnapInfo& snapInfo)
 {
     os << "  Owner: " << snapInfo.get_owner() << std::endl;

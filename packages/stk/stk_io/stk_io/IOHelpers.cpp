@@ -543,7 +543,11 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
                 }
                 else {
                     std::ostringstream os;
-                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side {"<<elemSidePairs[is*2]<<","<<(elemSidePairs[is*2+1]-1)<<"} not valid."<<std::endl;
+                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side "
+                      <<elemSidePairs[is*2]<<" on element "<<(elemSidePairs[is*2+1]-1)
+                      <<" in sideset: " << sset->name()
+                      <<" does not have a corresponding face entity in the current mesh database"
+                      <<" (possibly referenced by a reduced restart file)."<<std::endl;
                     std::cerr<<os.str();
                 }
             }

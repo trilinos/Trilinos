@@ -958,13 +958,14 @@ protected: //functions
                             EntityProcVec& entitiesWithClosure);
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
+  const EntityCommDatabase& internal_comm_db() const { return m_entity_comm_map; }
+
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
 
   PairIterEntityComm internal_entity_comm_map(Entity entity) const
   {
-    if (m_entitycomm[entity.local_offset()] != nullptr) {
-      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
-      return PairIterEntityComm(vec.begin(), vec.end());
+    if (m_entitycomm[entity.local_offset()] != -1) {
+      return m_entity_comm_map.comm(m_entitycomm[entity.local_offset()]);
     }
     return PairIterEntityComm();
   }
@@ -973,8 +974,8 @@ protected: //functions
 
   PairIterEntityComm internal_entity_comm_map(Entity entity, const Ghosting & sub ) const
   {
-    if (m_entitycomm[entity.local_offset()] != nullptr) {
-      return ghost_info_range(m_entitycomm[entity.local_offset()]->comm_map, sub.ordinal());
+    if (m_entitycomm[entity.local_offset()] != -1) {
+      return ghost_info_range(m_entity_comm_map.comm(m_entitycomm[entity.local_offset()]), sub.ordinal());
     }
     return PairIterEntityComm();
   }
@@ -984,12 +985,9 @@ protected: //functions
 
   PairIterEntityComm internal_entity_comm_map_shared(Entity entity) const
   {
-    const EntityComm* entityComm = m_entitycomm[entity.local_offset()];
-    if (entityComm != nullptr) {
-      if (entityComm->isShared) {
-        const EntityCommInfoVector& vec = entityComm->comm_map;
-        return shared_comm_info_range(vec);
-      }
+    const int entityCommIndex = m_entitycomm[entity.local_offset()];
+    if (entityCommIndex != -1) {
+      return shared_comm_info_range(m_entity_comm_map.comm(entityCommIndex));
     }
     return PairIterEntityComm();
   }
@@ -1106,7 +1104,7 @@ protected: //functions
 
   void internal_resolve_shared_part_membership_for_element_death(); // Mod Mark
 
-  void remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
+  void remove_unneeded_induced_parts(stk::mesh::Entity entity, PairIterEntityComm entity_comm_info,
           PartStorage& part_storage, stk::CommSparse& comm);
 
   void internal_resolve_shared_membership(const stk::mesh::EntityVector & entitiesNoLongerShared); // Mod Mark
@@ -1131,10 +1129,10 @@ protected: //functions
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
 
-  std::pair<EntityComm*,bool> entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
+  std::pair<int,bool> entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
       EntityKey key = entity_key(entity);
-      std::pair<EntityComm*,bool> result = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
+      std::pair<int,bool> result = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
       if(result.second)
       {
           m_entitycomm[entity.local_offset()] = result.first;
@@ -1145,7 +1143,7 @@ protected: //functions
   }
   void remove_entity_comm(Entity entity)
   {
-    m_entitycomm[entity.local_offset()] = nullptr;
+    m_entitycomm[entity.local_offset()] = -1;
   }
 
   bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
@@ -1533,7 +1531,7 @@ protected: //data
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   impl::EntityKeyMapping* m_entityKeyMapping;
   EntityCommListInfoVector m_entity_comm_list;
-  std::vector<EntityComm*> m_entitycomm;
+  std::vector<int> m_entitycomm;
   std::vector<int> m_owner;
   std::vector<std::pair<EntityKey,EntityCommInfo>> m_removedGhosts;
   CommListUpdater m_comm_list_updater;
@@ -1906,8 +1904,9 @@ BulkData::has_permutation(Entity entity, EntityRank rank) const
 inline bool
 BulkData::in_shared(Entity entity) const
 {
-  if (m_entitycomm[entity.local_offset()] != nullptr) {
-    return m_entitycomm[entity.local_offset()]->isShared;
+  if (m_entitycomm[entity.local_offset()] != -1) {
+    PairIterEntityComm commInfo = m_entity_comm_map.comm(m_entitycomm[entity.local_offset()]);
+    return commInfo.front().ghost_id == SHARED;
   }
   return false;
 }
@@ -1958,7 +1957,7 @@ BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 inline bool
 BulkData::in_receive_ghost( const Ghosting & ghost , Entity entity ) const
 {
-  if (m_entitycomm[entity.local_offset()] == nullptr) {
+  if (m_entitycomm[entity.local_offset()] == -1) {
     return false;
   }
 
@@ -1967,11 +1966,9 @@ BulkData::in_receive_ghost( const Ghosting & ghost , Entity entity ) const
     return false;
   }
 
-  const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
-  EntityCommInfoVector::const_iterator i = vec.begin();
-  EntityCommInfoVector::const_iterator end = vec.end();
-  for(; i!=end; ++i) {
-    if (i->ghost_id == ghost.ordinal()) {
+  PairIterEntityComm entityCommInfo = m_entity_comm_map.comm(m_entitycomm[entity.local_offset()]);
+  for(; !entityCommInfo.empty(); ++entityCommInfo) {
+    if (entityCommInfo->ghost_id == ghost.ordinal()) {
       return true;
     }
   }

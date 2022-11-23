@@ -64,13 +64,16 @@ struct Resource_ {
 
   String path() const
   {
-    std::string s(m_name.c_str());
     auto parent = m_parent;
+    if (!parent) {
+      return m_name;
+    }
+    std::string s(m_name.s_str());
     while (parent) {
-      s = std::string(parent->m_name.c_str()).append(".").append(s);
+      s = parent->m_name.s_str()+"."+s;
       parent = parent->m_parent;
     }
-    return s.c_str();
+    return s;
   }
 };
 
@@ -183,33 +186,68 @@ bool Resource::exists(const String& resource_name) const { return find(m_resourc
 
 namespace {
 
-bool match2(const String& resource_name, const String& s)
+bool match2name(const String& resource_name, const String& s)
 {
-  if (resource_name.size() < s.size()) return false;
+  if (resource_name.size() != s.size()) return false;
 
-  const char* n_start = resource_name.c_str();
-  const char* n = n_start + resource_name.size() - s.size();
-  while (n != n_start && *n != SEP)
-    --n;
-  if (*n == SEP) ++n;
-
-  return case_strcmp(n, s.c_str()) == 0;
+  return case_strcmp(resource_name.c_str(), s.c_str()) == 0;
 }
+
+bool match2nameLess(const String& resource_name, const String& s)
+{
+  return resource_name.s_str() < s.s_str();
+}
+
+bool operator<(const Resource& rsrc, const String& resource_name)
+{
+  return match2nameLess(rsrc.name(), resource_name);
+}
+
+struct Matcher
+{
+
+bool operator()(const Resource& lhs, const String& rhs) const
+{
+  return lhs < rhs;
+}
+
+};
 
 } // namespace <unnamed>
 
 void Resource::match(const String& resource_name, ResourceList& result_list) const
 {
-  if (match2(path(), resource_name)) result_list.insert(*this);
+  if (match2name(name(), resource_name)) {
+    result_list.insert(*this);
+    return;
+  }
 
   ResourceList& resource_list = getResourceMap(m_resource_);
   resource_list.match(resource_name, result_list);
 }
 
+void ResourceList::insert(Resource resource)
+{
+  m_resourceVector.insert(std::lower_bound(m_resourceVector.begin(), m_resourceVector.end(), resource), resource);
+}
+
 void ResourceList::match(const String& resource_name, ResourceList& result_list) const
 {
-  for (auto it = begin(); it != end(); ++it) {
-    (*it).match(resource_name, result_list);
+  const_iterator it = std::lower_bound(begin(), end(), resource_name, Matcher());
+  bool matched = false;
+  while(it != end() && it->name() == resource_name) {
+    result_list.insert(*it);
+    matched = true;
+    ++it;
+  }
+
+  if (!matched) {
+    for(auto& rsrc : *this) {
+      rsrc.match(resource_name, result_list);
+      if (!result_list.empty()) {
+        return;
+      }
+    }
   }
 }
 

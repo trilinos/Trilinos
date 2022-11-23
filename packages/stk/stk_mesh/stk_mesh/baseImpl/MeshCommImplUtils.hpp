@@ -74,7 +74,7 @@ void pack_part_memberships( const BulkData& meshbulk, stk::CommSparse & comm ,
                             const std::vector<EntityProc> & send_list );
 
 void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
-                                       const EntityCommInfoVector& entity_comm_info,
+                                       PairIterEntityComm entity_comm_info,
                                        stk::CommSparse& comm,
                                        EntityKey expected_key);
 
@@ -129,7 +129,7 @@ bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
                                           int entity_owner,
                                           const std::vector<int>& recvd_ghost_ids);
 
-void comm_shared_procs(const EntityCommInfoVector& commInfoVec,
+void comm_shared_procs(PairIterEntityComm commInfo,
                        std::vector<int>& sharingProcs);
 
 void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs);
@@ -146,17 +146,6 @@ bool is_comm_ordered(const PairIterEntityComm& ec)
     }
   }
   return true;
-}
-
-inline
-PairIterEntityComm get_entity_comm_range(const EntityCommListInfo& entityCommListInfo)
-{
-  if (entityCommListInfo.entity_comm != nullptr) {
-    return PairIterEntityComm(entityCommListInfo.entity_comm->comm_map.begin(),
-                              entityCommListInfo.entity_comm->comm_map.end());
-  }
-
-  return PairIterEntityComm();
 }
 
 } // namespace impl

@@ -82,7 +82,7 @@ bool MeshModification::modification_end(modification_optimization opt)
       stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
       delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
 
-      CommEntityMods commEntityMods(m_bulkData, m_bulkData.internal_comm_list());
+      CommEntityMods commEntityMods(m_bulkData, m_bulkData.internal_comm_db(), m_bulkData.internal_comm_list());
       commEntityMods.communicate(CommEntityMods::PACK_ALL);
 
       stk::mesh::EntityVector entitiesNoLongerShared;
@@ -187,7 +187,7 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
         stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
         delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
 
-        CommEntityMods commEntityMods(m_bulkData, m_bulkData.internal_comm_list());
+        CommEntityMods commEntityMods(m_bulkData, m_bulkData.internal_comm_db(), m_bulkData.internal_comm_list());
         commEntityMods.communicate(CommEntityMods::PACK_SHARED);
         internal_resolve_shared_modify_delete(commEntityMods.get_shared_mods(), entitiesToRemoveFromSharing, entitiesNoLongerShared);
         m_bulkData.internal_resolve_shared_membership(entitiesNoLongerShared);

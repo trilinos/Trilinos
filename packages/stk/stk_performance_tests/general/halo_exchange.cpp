@@ -3,7 +3,7 @@
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlocking.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternBlocking.hpp"
-#include "stk_performance_tests/stk_mesh/timer.hpp"
+#include "stk_unit_test_utils/timer.hpp"
 #include <vector>
 #include <cmath>
 #include <cassert>
@@ -14,6 +14,8 @@
 #include <fstream>
 #include "stk_unit_test_utils/getOption.h"
 #include "gtest/gtest.h"
+
+//#define WRITE_TIMING_FILES
 
 namespace {
 
@@ -38,7 +40,7 @@ class TimerWrapper
     }
 
   private:
-    stk::performance_tests::Timer m_timer;
+    stk::unit_test_util::Timer m_timer;
     int m_nruns = 1;
 };
 
@@ -232,6 +234,7 @@ void print_timing_stats(std::ostream& os, const TimingStats& timer)
   os << print_line("t_other", tOther, timer.tTotal) << std::endl;
 }
 
+#ifdef WRITE_TIMING_FILES
 void write_timing_files(const TimingStats& timer, MPI_Comm comm, const std::string& prefix)
 {
   // collect all data on root process
@@ -278,7 +281,7 @@ void write_timing_files(const TimingStats& timer, MPI_Comm comm, const std::stri
                       // several performance tests in a row
 
 }
-
+#endif
 
 //-----------------------------------------------------------------------------
 // Heat equation solver
@@ -1107,6 +1110,7 @@ class HeatEquationHaloCommSparseUnknown : public HeatEquationHaloCommSparseBase
   protected:
     void start_communication() override
     {
+      const bool deallocateSendBuffers = false;
       m_commSparse.reset_buffers();
       for (int phase=0; phase < 2; ++phase)
       {
@@ -1115,7 +1119,7 @@ class HeatEquationHaloCommSparseUnknown : public HeatEquationHaloCommSparseBase
         if (phase == 0)
           m_commSparse.allocate_buffers();
         else
-          m_commSparse.communicate();
+          m_commSparse.communicate(deallocateSendBuffers);
       }
     }
 
@@ -1224,7 +1228,9 @@ TEST(HeatEquationHaloTest, PerformanceEfficient)
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
       print_timing_stats(std::cout, timer);
 
+#ifdef WRITE_TIMING_FILES
     write_timing_files(timer, MPI_COMM_WORLD, "efficient");
+#endif
 }
 
 
@@ -1245,7 +1251,9 @@ TEST(HeatEquationHaloTest, PerformanceParallelDataExchangeBlocking)
       print_timing_stats(std::cout, timer);
     }
 
+#ifdef WRITE_TIMING_FILES
     write_timing_files(timer, MPI_COMM_WORLD, "parallel_data_exchange_blocking");
+#endif
 }
 
 
@@ -1262,8 +1270,9 @@ TEST(HeatEquationHaloTest, PerformanceParallelDataExchangeNonBlocking)
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
       print_timing_stats(std::cout, timer);
 
+#ifdef WRITE_TIMING_FILES
     write_timing_files(timer, MPI_COMM_WORLD, "parallel_data_exchange_non_blocking");
-
+#endif
 }
 
 TEST(HeatEquationHaloTest, PerformanceCommSparseUnknown)
@@ -1279,10 +1288,10 @@ TEST(HeatEquationHaloTest, PerformanceCommSparseUnknown)
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
       print_timing_stats(std::cout, timer);
 
+#ifdef WRITE_TIMING_FILES
     write_timing_files(timer, MPI_COMM_WORLD, "comm_sparse_unknown");
-
+#endif
 }
-
 
 TEST(HeatEquationHaloTest, PerformanceCommSparseKnown)
 {
@@ -1297,5 +1306,7 @@ TEST(HeatEquationHaloTest, PerformanceCommSparseKnown)
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
       print_timing_stats(std::cout, timer);
 
+#ifdef WRITE_TIMING_FILES
     write_timing_files(timer, MPI_COMM_WORLD, "comm_sparse_known");
+#endif
 }

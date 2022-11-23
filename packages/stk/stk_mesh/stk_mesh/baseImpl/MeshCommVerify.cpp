@@ -292,6 +292,7 @@ static void put_tag(CommBuffer& buf, PackTags tag)
 }
 
 void pack_owned_verify(const BulkData& mesh,
+                       const EntityCommDatabase& commDB,
                        const EntityCommListInfoVector& commList,
                        CommSparse& commSparse)
 {
@@ -304,7 +305,9 @@ void pack_owned_verify(const BulkData& mesh,
       std::vector<int> share_procs ;
       std::vector<int> ghost_procs ;
 
-      const PairIterEntityComm comm = impl::get_entity_comm_range(info);
+      ThrowAssert(info.entity_comm != -1);
+      ThrowAssert(info.entity_comm == commDB.entity_comm(mesh.entity_key(info.entity)));
+      const PairIterEntityComm comm = commDB.comm(info.entity_comm);
 
       for ( size_t j = 0 ; j < comm.size() ; ++j ) {
         if ( comm[j].ghost_id == BulkData::SHARED ) {
