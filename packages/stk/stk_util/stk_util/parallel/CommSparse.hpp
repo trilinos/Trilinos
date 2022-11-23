@@ -206,7 +206,7 @@ public:
   void allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs);
 
   /** Communicate send buffers to receive buffers.  */
-  void communicate(bool deallocateSendBuffers = false);
+  bool communicate(bool deallocateSendBuffers = true);
 
   /** Communicate send buffers to receive buffers, interleave unpacking with
    *    caller-provided functor.  */
@@ -258,14 +258,7 @@ bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorit
     algorithm();
     comm.allocate_buffers();
     algorithm();
-    comm.communicate();
-
-    for (int i=0; i < comm.parallel_size(); ++i) {
-      if (comm.send_buffer(i).capacity() > 0 || comm.recv_buffer(i).capacity() > 0) {
-        return true;
-      }
-    }
-    return false;
+    return comm.communicate();
   } else {
     algorithm();
     const bool actuallySendingOrReceiving = comm.allocate_buffers();

@@ -24,6 +24,7 @@
 namespace krino {
 
 class Phase_Support;
+class RefinementInterface;
 
 enum Prolongation_Model
 {
@@ -148,10 +149,12 @@ public:
   // In case of both nonconformal adaptivity, perform at least 2 rounds of level set initialization and decomposition.
   // This is to capture features that might be missed on the unrefined mesh.
   int get_num_initial_decomposition_cycles() const { return (my_num_initial_decomposition_cycles > 1) ? my_num_initial_decomposition_cycles : ((my_interface_maximum_refinement_level > 0) ? 2 : 1); }
-  const std::string & get_nonconformal_adapt_marker_name() const { return my_nonconformal_adapt_marker_name; }
+  FieldRef get_nonconforming_refinement_node_marker_field() const { return myNonInterfaceConformingRefinementNodeMarkerField; }
   const std::string & get_nonconformal_adapt_indicator_name() const { return my_nonconformal_adapt_indicator_name; }
-  void set_nonconformal_hadapt(const std::function<void(const std::string &, int)> & hadapt) { my_nonconformal_hadapt = hadapt; }
-  const std::function<void(const std::string &, int)> & get_nonconformal_hadapt() const { return my_nonconformal_hadapt; }
+
+  void set_non_interface_conforming_refinement(RefinementInterface & refinement) { myNonInterfaceConformingRefinement = &refinement; }
+  bool has_non_interface_conforming_refinement() const { return nullptr != myNonInterfaceConformingRefinement; }
+  RefinementInterface & get_non_interface_conforming_refinement() const { return *myNonInterfaceConformingRefinement; }
 
   bool is_ale_prolongation_field(const FieldRef field) const
   {
@@ -199,7 +202,7 @@ public:
   void force_ale_prolongation_for_field(const std::string & field_name);
 
 private:
-  void setup_refinement_marker();
+  void setup_refinement_node_marker();
   void set_snap_fields();
 
 private:
@@ -235,9 +238,9 @@ private:
   int my_post_cdfem_refinement_levels;
   std::vector<std::string> my_post_cdfem_refinement_blocks;
   uint64_t my_nonconformal_adapt_target_element_count;
-  std::string my_nonconformal_adapt_marker_name;
+  FieldRef myNonInterfaceConformingRefinementNodeMarkerField;
   std::string my_nonconformal_adapt_indicator_name;
-  std::function<void(const std::string &, int)> my_nonconformal_hadapt;
+  RefinementInterface * myNonInterfaceConformingRefinement{nullptr};
   Edge_Degeneracy_Handling my_cdfem_edge_degeneracy_handling;
   CDFEM_Snapper my_cdfem_snapper;
   double my_cdfem_dof_edge_tol;

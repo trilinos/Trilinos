@@ -637,6 +637,8 @@ NGP_TEST_F(NgpParallelSum, Performance)
     stk::io::write_mesh(serialMeshName, *bulk);
   }
 
+  stk::parallel_machine_barrier(MPI_COMM_WORLD);
+
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);

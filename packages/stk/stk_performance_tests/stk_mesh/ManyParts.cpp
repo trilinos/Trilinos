@@ -37,13 +37,13 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
 TEST(many_parts, many_parts)
 {
   const unsigned NUM_RUNS = 5;
   unsigned num_parts = 3000;
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();

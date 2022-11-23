@@ -39,6 +39,7 @@ void ManagedCommBufferBase::deallocate_send_bufs()
     m_sendBufStorage[i].swap(tmp);
   }
   m_sendBuffersAllocated = false;
+  m_sendBuffersDeallocated = true;
 }
 
 void ManagedCommBufferBase::set_recv_buffer_storage()

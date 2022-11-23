@@ -135,6 +135,8 @@ class ManagedCommBufferBase
 
     stk::CommBuffer& get_send_buf(int rank)
     {
+      if (m_sendBuffersDeallocated)
+        throw std::runtime_error("send buffers deallocated!");
       if (m_sendsInProgress)
         throw std::runtime_error("cannot access send buffers while sends are in progress (did you forget to complete the sends?)");
 
@@ -143,6 +145,8 @@ class ManagedCommBufferBase
 
     const stk::CommBuffer& get_send_buf(int rank) const
     { 
+      if (m_sendBuffersDeallocated)
+        throw std::runtime_error("send buffers deallocated!");
       return m_sendBufs[rank];
     }
 
@@ -191,6 +195,7 @@ class ManagedCommBufferBase
     bool m_sendsInProgress = false;
     bool m_recvsInProgress = false;
     bool m_sendBuffersAllocated = false;
+    bool m_sendBuffersDeallocated = false;
     MPI_Comm m_comm;
 };
 

@@ -57,6 +57,7 @@
 #include <stk_util/environment/RuntimeWarning.hpp>  // for RuntimeWarning
 #include <stk_util/parallel/ParallelReduce.hpp>     // for all_reduce_sum
 #include <stk_util/util/SortAndUnique.hpp>          // for sort_and_unique
+#include <stk_util/util/string_case_compare.hpp>
 #include <stk_util/util/tokenize.hpp>               // for tokenize
 #include <typeinfo>                                 // for type_info
 #include "Ioss_Assembly.h"                          // for Assembly
@@ -836,7 +837,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         {
           stk::mesh::Part *pp = parts[ii];
           std::string altName = getPartName(*pp);
-          if (altName == name)
+          if (stk::equal_case(altName, name))
             return pp;
         }
       return 0;

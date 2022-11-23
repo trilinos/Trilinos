@@ -318,7 +318,8 @@ bool is_good_rank_and_id(const MetaData& meta,
 
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
-                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle);
+                                  const std::vector<Entity::entity_value_type>& deletedEntitiesCurModCycle,
+                                  const std::vector<EntityId>& reservedIds = std::vector<EntityId>());
 
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,

@@ -66,6 +66,7 @@ class CDFEMRebalance final : public MultipleCriteriaSettings
 {
 public:
   CDFEMRebalance(stk::mesh::BulkData & bulk_data,
+      const RefinementInterface * refinement,
       CDMesh * cdmesh,
       const std::string & coordinates_field_name,
       const std::vector<stk::mesh::Field<double> *> & weights_fields,
@@ -74,6 +75,7 @@ public:
       const double default_weight = 0.)
       : MultipleCriteriaSettings(
             bulk_data, weights_fields, max_num_nodal_rebal_iters, default_weight),
+        myRefinement(refinement),
         my_cdmesh(cdmesh),
         my_bulk_data(bulk_data),
         my_coordinates_field_name(coordinates_field_name),
@@ -96,6 +98,7 @@ public:
   }
 
 private:
+  const RefinementInterface * myRefinement;
   CDMesh * my_cdmesh;
   stk::mesh::BulkData & my_bulk_data;
   std::string my_coordinates_field_name;
@@ -112,7 +115,10 @@ void CDFEMRebalance::modifyDecomposition(stk::balance::DecompositionChangeList &
    *    the parent destination.
    */
 
-  impl::update_rebalance_for_adaptivity(decomp_changes, my_bulk_data);
+  if (myRefinement)
+  {
+    impl::update_rebalance_for_adaptivity(decomp_changes, *myRefinement, my_bulk_data);
+  }
 
   if(my_cdmesh)
   {
@@ -125,6 +131,7 @@ void CDFEMRebalance::modifyDecomposition(stk::balance::DecompositionChangeList &
 void
 update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
     stk::mesh::Field<double> & element_weights_field,
+    const RefinementInterface * refinement,
     const CDMesh * cdmesh)
 {
   // First sum CDFEM child weights to their CDFEM parents, then adaptivity children to
@@ -135,10 +142,14 @@ update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
     impl::accumulate_cdfem_child_weights_to_parents(bulk_data, element_weights_field, *cdmesh);
   }
 
-  impl::accumulate_adaptivity_child_weights_to_parents(bulk_data, element_weights_field);
+  if (refinement)
+  {
+    impl::accumulate_adaptivity_child_weights_to_parents(bulk_data, *refinement, element_weights_field);
+  }
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
@@ -154,11 +165,12 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
       << " to use for rebalance weights.");
   const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
-  update_parent_child_rebalance_weights(bulk_data, *element_weights_field, cdmesh);
+  update_parent_child_rebalance_weights(bulk_data, *element_weights_field, refinement, cdmesh);
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   CDFEMRebalance balancer(bulk_data,
+      refinement,
       cdmesh,
       coordinates_field_name,
       {element_weights_field},
@@ -179,6 +191,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,
@@ -196,13 +209,14 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
         "Failed to find element rank field " << field_name << " to use for rebalance weights.");
     const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
-    update_parent_child_rebalance_weights(bulk_data, *element_weights_field, cdmesh);
+    update_parent_child_rebalance_weights(bulk_data, *element_weights_field, refinement, cdmesh);
     weights_fields.push_back(element_weights_field);
   }
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   CDFEMRebalance balancer(bulk_data,
+      refinement,
       cdmesh,
       coordinates_field_name,
       weights_fields,

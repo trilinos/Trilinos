@@ -26,27 +26,13 @@
 #include <string>
 #include <vector>
 
+#include "Akri_RefinementInterface.hpp"
 namespace krino
 {
 
-stk::mesh::Part & get_refinement_active_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
+void filter_refinement_marker(const RefinementInterface & refinement, const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
 {
-  const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
-  stk::mesh::Part* active_part = meta.get_part(active_part_name);
-  ThrowRequireMsg(nullptr != active_part, "Active part not found: " << active_part_name);
-  return *active_part;
-}
-stk::mesh::Part & get_refinement_inactive_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
-{
-  const std::string inactive_part_name = "refine_inactive_elements_part_"+std::to_string((int)rank);
-  stk::mesh::Part* inactive_part = meta.get_part(inactive_part_name);
-  ThrowRequireMsg(nullptr != inactive_part, "Inactive part not found: " << inactive_part_name);
-  return *inactive_part;
-}
-
-void filter_refinement_marker(const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
-{
-  const auto & perceptParentPart = get_refinement_inactive_part(mesh.mesh_meta_data(), stk::topology::ELEMENT_RANK);
+  const auto & parentPart = refinement.parent_part();
 
   for (auto && bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part()))
   {
@@ -58,7 +44,7 @@ void filter_refinement_marker(const stk::mesh::BulkData & mesh, FieldRef elem_ma
         if (markers[i] == Refinement_Marker::REFINE || markers[i] == Refinement_Marker::COARSEN)
           markers[i] = Refinement_Marker::NOTHING;
     }
-    else if (bucketPtr->member(perceptParentPart))
+    else if (bucketPtr->member(parentPart))
     {
       for (int i = 0; i < size; ++i)
         if (markers[i] == Refinement_Marker::REFINE)
@@ -78,18 +64,16 @@ stk::mesh::Selector cdfem_do_not_refine_or_unrefine_selector(const CDFEM_Support
 }
 
 
-void perform_multilevel_adaptivity(stk::mesh::BulkData & mesh,
-    const std::string & marker_field_name,
-    const std::function<void(const std::string &, int)> & marker_function,
-    const std::function<void(const std::string &, int)> & adapt_function,
+void perform_multilevel_adaptivity(RefinementInterface & refinement,
+    stk::mesh::BulkData & mesh,
+    const std::function<void(int)> & marker_function,
     const stk::mesh::Selector & do_not_refine_selector)
 {
   Tracespec trace__("perform_multilevel_adaptivity()");
 
   const auto & aux_meta = AuxMetaData::get(mesh.mesh_meta_data());
 
-  const FieldRef elem_marker = aux_meta.get_field(
-      stk::topology::ELEMENT_RANK, marker_field_name, stk::mesh::StateNew);
+  const FieldRef elem_marker = refinement.get_marker_field();
 
   const stk::mesh::Selector active_selector = aux_meta.active_part();
   const stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
@@ -100,8 +84,8 @@ void perform_multilevel_adaptivity(stk::mesh::BulkData & mesh,
   int num_refinements = 0;
   while (!done)
   {
-    marker_function(marker_field_name, num_refinements);
-    filter_refinement_marker(mesh, elem_marker, do_not_refine_selector);
+    marker_function(num_refinements);
+    filter_refinement_marker(refinement, mesh, elem_marker, do_not_refine_selector);
 
     const auto & local_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, locally_owned_selector);
     unsigned num_marked_refine = 0;
@@ -120,7 +104,7 @@ void perform_multilevel_adaptivity(stk::mesh::BulkData & mesh,
     if (global_num_marked_refine > 0)
     {
       const int debug_level = 0;
-      adapt_function(marker_field_name, debug_level);
+      refinement.do_refinement(debug_level);
 
       ++num_refinements;
     }
@@ -130,10 +114,13 @@ void perform_multilevel_adaptivity(stk::mesh::BulkData & mesh,
     }
   }
 
-  // This probably should not be needed.
-  CDMesh::fixup_adapted_element_parts(mesh);
+  if (refinement.require_post_refinement_fixups())
+  {
+    // This probably should not be needed.
+    CDMesh::fixup_adapted_element_parts(mesh);
 
-  // This probably should not be needed.
-  attach_sides_to_elements(mesh);
+    // This probably should not be needed.
+    attach_sides_to_elements(mesh);
+  }
 }
 }

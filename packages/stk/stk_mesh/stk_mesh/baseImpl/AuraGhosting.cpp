@@ -145,16 +145,18 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   bool removed = false ;
   const unsigned auraGhostingOrdinal = bulkData.aura_ghosting().ordinal();
 
+  const EntityCommDatabase& commDB = bulkData.internal_comm_db();
   EntityCommInfoVector comm_ghost ;
   for ( EntityCommListInfoVector::reverse_iterator
         i = bulkData.m_entity_comm_list.rbegin() ; i != bulkData.m_entity_comm_list.rend() ; ++i) {
 
-    if (!i->entity_comm) {
+    if (i->entity_comm == -1) {
       continue;
     }
 
     EntityCommListInfo& entityComm = *i;
-    if (!entityComm.entity_comm->isGhost) {
+    PairIterEntityComm commInfo = ghost_info_range(commDB.comm(entityComm.entity_comm), auraGhostingOrdinal);
+    if (commInfo.empty()) {
       continue;
     }
 
@@ -163,16 +165,14 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
       // Is owner, potentially removing ghost-sends
       // Have to make a copy
 
-      const EntityCommInfoVector& commInfoVec = entityComm.entity_comm->comm_map;
       comm_ghost.clear();
-      for(const EntityCommInfo& commInfo : commInfoVec) {
-        if (commInfo.ghost_id == auraGhostingOrdinal) {
-          comm_ghost.push_back(commInfo);
+      for(; !commInfo.empty(); ++commInfo) {
+        if (commInfo->ghost_id == auraGhostingOrdinal) {
+          comm_ghost.push_back(*commInfo);
         }
       }
 
-      EntityAndProcs* entityProcs = sendAuraEntityProcs.find_entity_procs(entityComm.entity);
-      if (entityProcs == nullptr) {
+      if (sendAuraEntityProcs.get_num_procs(entityComm.entity) == 0) {
         for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
           const EntityCommInfo tmp = comm_ghost.back();
           bulkData.entity_comm_map_erase(entityComm.key, tmp);
@@ -182,11 +182,11 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
         for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
           const EntityCommInfo tmp = comm_ghost.back();
 
-          if (!entityProcs->find_proc(tmp.proc) ) {
+          if (!sendAuraEntityProcs.find(entityComm.entity, tmp.proc) ) {
             bulkData.entity_comm_map_erase(entityComm.key, tmp);
           }
           else {
-            entityProcs->erase_proc(tmp.proc);
+            sendAuraEntityProcs.eraseEntityProc(entityComm.entity, tmp.proc);
           }
         }
       }
@@ -219,6 +219,7 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   }
   EntityLess entityLess(bulkData);
   sendAuraEntityProcs.fill_vec(sendAuraGhosts);
+  sendAuraEntityProcs.deallocate();
   stk::util::sort_and_unique(sendAuraGhosts, entityLess);
 
   const bool isFullRegen = true;

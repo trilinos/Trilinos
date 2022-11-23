@@ -47,7 +47,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <vector>
 #include <string>
@@ -230,7 +230,7 @@ public:
   static constexpr double beta = 0.3333333;
   static constexpr double gamma = 3.14159;
 
-  stk::performance_tests::BatchTimer batchTimer;
+  stk::unit_test_util::BatchTimer batchTimer;
   stk::mesh::FieldDataManager * m_fieldDataManager;
 
   DoubleVecField * dispField;

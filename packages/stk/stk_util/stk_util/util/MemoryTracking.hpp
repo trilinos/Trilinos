@@ -46,9 +46,10 @@ size_t get_total_bytes_currently_allocated();
 size_t get_current_num_ptrs();
 
 size_t get_high_water_mark_in_bytes();
-
 size_t get_high_water_mark_in_ptrs();
 
+void reset_high_water_mark_in_bytes();
+void reset_high_water_mark_in_ptrs();
 }//namespace stk
 
 #endif

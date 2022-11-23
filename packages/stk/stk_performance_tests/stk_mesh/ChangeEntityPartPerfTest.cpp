@@ -40,7 +40,7 @@
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
 namespace
 {
@@ -154,7 +154,7 @@ protected:
   stk::mesh::PartVector parts;
   stk::mesh::PartVector block1PartVector;
   stk::mesh::PartVector block2PartVector;
-  stk::performance_tests::BatchTimer batchTimer;
+  stk::unit_test_util::BatchTimer batchTimer;
 
 private:
   bool elementsOnBlock1;

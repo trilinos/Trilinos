@@ -47,6 +47,13 @@ void compute_global_sum_and_max(ParallelMachine comm,
                                 uint64_t& globalSumNumIds,
                                 uint64_t& globalMaxNumIds);
 
+void generate_parallel_ids_in_gap(ParallelMachine comm,
+                                  const std::vector<uint64_t>& existingIds,
+                                  uint64_t maxAllowedId,
+                                  uint64_t numNewIdsLocal,
+                                  uint64_t globalNumIdsRequested,
+                                  std::vector<uint64_t>& newIds);
+
 void generate_parallel_ids_above_existing_max(ParallelMachine comm,
                                               uint64_t numNewIdsLocal,
                                               uint64_t globalNumIdsRequested,
@@ -84,7 +91,8 @@ void generate_parallel_ids_above_existing_max(ParallelMachine comm,
   std::vector<uint64_t> generate_parallel_unique_ids(const uint64_t maxAllowedId,
                                                      const std::vector<uint64_t>& existingIds,
                                                      uint64_t numNewIdsLocal,
-                                                     ParallelMachine comm);
+                                                     ParallelMachine comm,
+                                                     uint64_t localMaxExistingId = 0);
 }
 
 #endif

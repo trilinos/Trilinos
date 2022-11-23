@@ -35,10 +35,11 @@
  */
 
 #include "stk_util/diag/StringUtil.hpp"
-#include <cstdlib>   // for free
-#include <iomanip>   // for operator<<, setprecision
-#include <sstream>   // for operator<<, basic_ostream, ostream, basic_ostream::operator<<, ostri...
-#include <string>    // for basic_string, string, basic_string<>::const_iterator, char_traits
+
+#include <cstdlib>  // for free
+#include <iomanip>  // for operator<<, setprecision
+#include <sstream>  // for operator<<, basic_ostream, ostream, basic_ostream::operator<<, ostri...
+#include <string>   // for basic_string, string, basic_string<>::const_iterator, char_traits
 
 #if __GNUC__ >= 3
 #include <cxxabi.h>  // for __cxa_demangle
@@ -182,48 +183,49 @@ inline std::string::const_iterator find_next_nonspace(std::string::const_iterato
   return find_next_not_char(p, end, ' ');
 }
 
+auto find_next_space_after_nonspace(std::string::const_iterator p, std::string::const_iterator end)
+{
+  return find_next_space(find_next_nonspace(p, end), end);
+}
+
 } // namespace <null>
 
-std::string
-word_wrap(
-  const std::string &s,
-  unsigned int line_length,
-  const std::string &prefix,
-  const std::string &prefix_first_line)
+std::string word_wrap(
+    const std::string &s, unsigned int max_line_length, const std::string &prefix, const std::string &prefix_first_line)
 {
   std::string t;
   const std::string *u = &prefix_first_line;
 
-  std::string::const_iterator p0, p1, p2, p3;
-  p0 = p1 = p2 = s.begin();
+  std::string::const_iterator line_start, next_space, line_end, next_newline;
+  line_start = line_end = s.begin();
 
-  while (p2 != s.end() ) {
+  const auto line_length = [&line_start, &u](std::string::const_iterator _line_end) {
+    return std::distance(line_start, _line_end) + u->size();
+  };
 
-    // skip preceeding whitespace
-    p1 = find_next_nonspace(p0, s.end());
-    p3 = find_next_endl(p0, s.end());
-    p2 = p1 = find_next_space(p1, s.end());
+  while (line_end != s.end()) {
+    line_end = find_next_space_after_nonspace(line_start, s.end());
     do {
-      p1 = find_next_nonspace(p1, s.end());
-      p1 = find_next_space(p1, s.end());
-      if (p3 < p1) {
-        p2 = p3;
+      next_space = find_next_space_after_nonspace(line_end, s.end());
+      if (line_length(next_space) > max_line_length) {
         break;
       }
-      unsigned int diff = p1 - p0;
-      if (diff > (line_length - u->size()))
-        break;
-      p2 = p1;
-    } while (p2 != s.end());
+      line_end = next_space;
+    } while (line_end != s.end());
 
-    t.append(*u).append(p0, p2).append("\n");
+    next_newline = find_next_endl(line_start, s.end());
+    if ((next_newline < line_end) || (line_length(next_newline) < max_line_length)) {
+      line_end = next_newline;
+    }
 
-    if (p2 == p3)
+    t.append(*u).append(line_start, line_end).append("\n");
+
+    if (line_end == next_newline)
       u = &prefix_first_line;
     else
       u = &prefix;
 
-    p0 = p2 + 1;
+    line_start = line_end + 1;
   }
 
   return t;

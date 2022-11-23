@@ -90,28 +90,24 @@ typedef std::map<EntityVector, stk::mesh::impl::ParallelElementDataVector> SideN
 class SharedSidesCommunication
 {
 public:
-    enum ReceivedDataType {ELEM_SIDE_DATA_MAP, ELEM_SIDE_DATA_VEC};
     SharedSidesCommunication(stk::mesh::BulkData& bulkData,
-                             const impl::ElemSideProcVector & elementSidesToSend,
-                             ReceivedDataType recvdDataType = ELEM_SIDE_DATA_VEC)
+                             const impl::ElemSideProcVector & elementSidesToSend)
     : m_bulkData(bulkData),
+      m_commSparse(bulkData.parallel()),
       m_elementSidesToSend(elementSidesToSend)
     {
-        communicate_element_sides(recvdDataType);
     }
 
-    SideNodeToReceivedElementDataMap get_received_element_side_map() const { return m_elementSidesReceived; }
-    impl::ParallelElementDataVector get_received_element_side_vec() const { return m_elementSidesReceivedVec; }
+    void communicate_element_sides();
+    void unpack_side_data_map(SideNodeToReceivedElementDataMap& elementSidesReceived);
+    void unpack_side_data_vec(impl::ParallelElementDataVector& elementSidesReceived);
+
 private:
-    void communicate_element_sides(ReceivedDataType recvdDataType);
-    void pack_shared_side_nodes_of_elements(stk::CommSparse &comm) const;
-    void unpack_side_data_map(stk::CommSparse &comm);
-    void unpack_side_data_vec(stk::CommSparse &comm);
-private:
+    void pack_shared_side_nodes_of_elements(stk::CommSparse& comm) const;
+
     stk::mesh::BulkData& m_bulkData;
+    stk::CommSparse m_commSparse;
     const impl::ElemSideProcVector & m_elementSidesToSend;
-    SideNodeToReceivedElementDataMap m_elementSidesReceived;
-    impl::ParallelElementDataVector m_elementSidesReceivedVec;
 };
 
 
@@ -234,7 +230,8 @@ protected:
                                     impl::ElemSideProcVector & elementSidesToSend,
                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    impl::ParallelElementDataVector communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend);
+    void communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend,
+                                  impl::ParallelElementDataVector& elementSidesReceived);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 

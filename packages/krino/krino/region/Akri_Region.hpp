@@ -25,6 +25,8 @@ namespace Ioss { class Region; }
 
 namespace krino{
 
+class RefinementInterface;
+
 class Region {
 public:
   Region(Simulation & owning_simulation, const std::string & regionName);
@@ -55,6 +57,7 @@ public:
   void process_output(bool forceOutput);
   ResultsOutputOptions * get_results_options() { return my_results_options.get(); }
   void set_initial_refinement_levels(int levels) { my_initial_refinement_levels = levels; }
+  void set_use_percept(bool usePercept) { myFlagUsePercept = usePercept; }
 
 private:
   Simulation & my_simulation;
@@ -74,6 +77,7 @@ private:
   size_t my_output_file_index;
   bool my_output_file_created;
   int my_initial_refinement_levels;
+  bool myFlagUsePercept{false};
 };
 
 } // namespace krino

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "stk_util/parallel/ParallelComm.hpp"
-#include "stk_performance_tests/stk_mesh/timer.hpp"
+#include "stk_unit_test_utils/timer.hpp"
 #include <vector>
 
 
@@ -23,7 +23,7 @@ TEST(ParallelDataExchangePerf, parallel_data_exchange_t_dense)
       sendData[i][j] = j;
   }
 
-  stk::performance_tests::BatchTimer batchTimer(comm);
+  stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();

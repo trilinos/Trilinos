@@ -15,32 +15,38 @@ template <class Info>
 class IndependentSetFinder
 {
 public:
-    static std::vector<Info> find_independent_set(const std::vector<Info> &infos,
-                                                  const typename Info::Comparator &comparator,
-                                                  const typename Info::ConflictFinder &conflictFinder,
-                                                  const bool includeSetsWithHigherPriorityOutNeighbors,
-                                                  stk::ParallelMachine comm);
+    static std::vector<Info> find_independent_set(
+                            const std::vector<Info> &infos,
+                            const typename Info::Comparator &comparator,
+                            stk::ParallelMachine comm);
 
-private:
+public: // for testing
     enum InOutUnknownStatus
     {
         UNKNOWN_STATUS = 1,
         IN = 2,
         OUT = 3
     };
-
+    static bool is_better_than_neighbors_or_wins_tie_breaker_with_unknown_neighbors(
+                            const size_t iInfo,
+                            const std::vector<Info> &infos,
+                            const typename Info::Comparator &infoComparator,
+                            const IndependentSetInfoToInfoGraph<Info> &conflictingInfoGraph,
+                            const std::vector<InOutUnknownStatus>& infoInOutStatus);
+private:
     const typename Info::Comparator &mInfoComparator;
-    const bool mIncludeSetsWithHigherPriorityOutNeighbors;
     const std::vector<Info> &mInfos;
     const IndependentSetInfoToInfoGraph<Info> mConflictingInfoGraph;
     stk::ParallelMachine mComm;
     std::vector<size_t> mSortedIndicesForGlobalIdsOfOffProcInfos;
 
-    IndependentSetFinder(const std::vector<Info> &info, const typename Info::Comparator &comparator, const typename Info::ConflictFinder &conflictFinder, const bool includeSetsWithHigherPriorityOutNeighbors, stk::ParallelMachine comm)
+    IndependentSetFinder(
+                            const std::vector<Info> &info,
+                            const typename Info::Comparator &comparator,
+                            stk::ParallelMachine comm)
     : mInfoComparator{comparator},
-      mIncludeSetsWithHigherPriorityOutNeighbors(includeSetsWithHigherPriorityOutNeighbors),
       mInfos{info},
-      mConflictingInfoGraph{mInfos,conflictFinder},
+      mConflictingInfoGraph{mInfos},
       mComm{comm}
       {
           populate_sorted_info_indices();
@@ -55,17 +61,20 @@ private:
     void pack_status_of_shared_infos(const std::vector<InOutUnknownStatus> &inOutStatus, stk::CommSparse &commSparse)const;
     void receive_status_of_shared_infos(std::vector<InOutUnknownStatus> &inOutStatus, stk::CommSparse &commSparse) const;
     void populate_sorted_info_indices();
-    std::function<bool(size_t,size_t)> build_function_to_check_is_neighbor_higher_priority_than_info(const std::vector<InOutUnknownStatus>& inOutStatus) const;
+    static bool does_tied_or_not_better_neighbor_win_tie_breaker(
+                            const typename Info::Comparator &infoComparator,
+                            const Info &info,
+                            const Info &infoNbr,
+                            const InOutUnknownStatus & neighborInOutStatus);
 };
 
 template <class Info>
-std::vector<Info> IndependentSetFinder<Info>::find_independent_set(const std::vector<Info> &infos,
-                                                                                   const typename Info::Comparator &comparator,
-                                                                                   const typename Info::ConflictFinder &conflictFinder,
-                                                                                   const bool includeSetsWithHigherPriorityOutNeighbors,
-                                                                                   stk::ParallelMachine comm)
+std::vector<Info> IndependentSetFinder<Info>::find_independent_set(
+                        const std::vector<Info> &infos,
+                        const typename Info::Comparator &comparator,
+                        stk::ParallelMachine comm)
 {
-    IndependentSetFinder finder(infos, comparator, conflictFinder, includeSetsWithHigherPriorityOutNeighbors, comm);
+    IndependentSetFinder finder(infos, comparator, comm);
     return finder.find_independent_set();
 }
 
@@ -77,64 +86,95 @@ std::vector<Info> IndependentSetFinder<Info>::find_independent_set() const
 }
 
 template <class Info>
-void IndependentSetFinder<Info>::assign_info_to_be_in_and_conflicting_neighbors_as_out(size_t iInfo, std::vector<IndependentSetFinder<Info>::InOutUnknownStatus> &inOutStatus) const
+void IndependentSetFinder<Info>::assign_info_to_be_in_and_conflicting_neighbors_as_out(
+                        size_t iInfo,
+                        std::vector<IndependentSetFinder<Info>::InOutUnknownStatus> &inOutStatus) const
 {
     inOutStatus[iInfo] = IN;
-    for(size_t iAdjInfo : mConflictingInfoGraph.get_conflicting_infos_for(iInfo))
-    {
-        inOutStatus[iAdjInfo] = OUT;
-    }
+    mConflictingInfoGraph.for_each_conflicting_info(
+                            iInfo,
+                            [&](const size_t iAdjInfo)
+                            {
+                                inOutStatus[iAdjInfo] = OUT;
+                            });
 }
 
 template <class Info>
-std::function<bool(size_t,size_t)> IndependentSetFinder<Info>::build_function_to_check_is_neighbor_higher_priority_than_info(const std::vector<InOutUnknownStatus>& inOutStatus) const
+bool IndependentSetFinder<Info>::does_tied_or_not_better_neighbor_win_tie_breaker(
+                        const typename Info::Comparator &infoComparator,
+                        const Info &info,
+                        const Info &infoNbr,
+                        const InOutUnknownStatus & neighborInOutStatus)
 {
-    auto is_neighbor_higher_priority_than_info = [&](size_t iInfoNbr, size_t iInfo)
-    {
-      ThrowRequireWithSierraHelpMsg(inOutStatus[iInfoNbr] != IN);
-      const bool needToConsiderNeighbor = !mIncludeSetsWithHigherPriorityOutNeighbors || inOutStatus[iInfoNbr] != OUT;
-      return needToConsiderNeighbor && mInfoComparator.is_first_higher_priority_than_second(mInfos[iInfoNbr], mInfos[iInfo]);
-    };
-
-    return is_neighbor_higher_priority_than_info;
+    return  neighborInOutStatus == UNKNOWN_STATUS &&
+           !infoComparator.is_first_higher_priority_than_second(info, infoNbr) &&
+            infoComparator.does_first_win_priority_tie_with_second(infoNbr, info);
 }
 
+template <class Info>
+bool IndependentSetFinder<Info>::is_better_than_neighbors_or_wins_tie_breaker_with_unknown_neighbors(
+                        const size_t iInfo,
+                        const std::vector<Info> &infos,
+                        const typename Info::Comparator &infoComparator,
+                        const IndependentSetInfoToInfoGraph<Info> &conflictingInfoGraph,
+                        const std::vector<InOutUnknownStatus>& infoInOutStatus)
+{
+    if(conflictingInfoGraph.is_true_for_any_conflicting_info(
+                            iInfo,
+                            [&](const size_t iAdjInfo)
+                            {
+                                return does_tied_or_not_better_neighbor_win_tie_breaker(
+                                                                infoComparator,
+                                                                infos[iInfo],
+                                                                infos[iAdjInfo],
+                                                                infoInOutStatus[iAdjInfo]);
+                            }))
+        return false;
+    return true;
+}
 
 template <class Info>
-bool IndependentSetFinder<Info>::determine_independent_set_in_out_status_for_infos_locally(std::vector<InOutUnknownStatus>& infoInOutStatus) const
+bool IndependentSetFinder<Info>::determine_independent_set_in_out_status_for_infos_locally(
+                        std::vector<InOutUnknownStatus> &infoInOutStatus) const
 {
-    const auto is_neighbor_higher_priority_than_info = build_function_to_check_is_neighbor_higher_priority_than_info(infoInOutStatus);
     int thisProc = stk::parallel_machine_rank(mComm);
     bool didAnythingChange{false};
-    bool done=false;
-    while(!done)
+
+    for(size_t iInfo = 0; iInfo < mInfos.size(); ++iInfo)
     {
-        done = true;
-        for(size_t iInfo = 0; iInfo < mInfos.size(); ++iInfo)
+        if( thisProc == mInfos[iInfo].get_owner() && infoInOutStatus[iInfo] == UNKNOWN_STATUS)
         {
-            if( thisProc == mInfos[iInfo].get_owner() && infoInOutStatus[iInfo] == UNKNOWN_STATUS)
+            const bool isHigherPriorityThanAllNeighbors =
+                mConflictingInfoGraph.is_info_higher_priority_than_all_conflicting_neighbors(iInfo, mInfoComparator);
+
+            if(isHigherPriorityThanAllNeighbors)
             {
-                const bool isHighestPriority =
-                    mConflictingInfoGraph.is_info_higher_priority_than_conflicting_neighbors(iInfo, is_neighbor_higher_priority_than_info);
-                if(isHighestPriority)
+                assign_info_to_be_in_and_conflicting_neighbors_as_out(iInfo, infoInOutStatus);
+                didAnythingChange=true;
+            }
+            else
+            {
+                const bool isLowerThanAnyNeighbor = mConflictingInfoGraph.is_lower_priority_than_any_neighbor(iInfo, mInfoComparator);
+                if(isLowerThanAnyNeighbor)
+                {
+                    infoInOutStatus[iInfo] = OUT;
+                    didAnythingChange=true;
+                }
+                else if(is_better_than_neighbors_or_wins_tie_breaker_with_unknown_neighbors(iInfo, mInfos, mInfoComparator, mConflictingInfoGraph, infoInOutStatus))
                 {
                     assign_info_to_be_in_and_conflicting_neighbors_as_out(iInfo, infoInOutStatus);
                     didAnythingChange=true;
-                    done = !mIncludeSetsWithHigherPriorityOutNeighbors;
-                }
-                else if (!mIncludeSetsWithHigherPriorityOutNeighbors)
-                {
-                    infoInOutStatus[iInfo] = OUT;
                 }
             }
         }
     }
-
     return didAnythingChange;
 }
 
 template <class Info>
-void IndependentSetFinder<Info>::pack_status_of_shared_infos(const std::vector<InOutUnknownStatus> &infoInOutStatus, stk::CommSparse &commSparse) const
+void IndependentSetFinder<Info>::pack_status_of_shared_infos(
+                        const std::vector<InOutUnknownStatus> &infoInOutStatus,
+                        stk::CommSparse &commSparse) const
 {
     stk::pack_and_communicate(commSparse,[&]()
     {
@@ -157,7 +197,10 @@ void IndependentSetFinder<Info>::pack_status_of_shared_infos(const std::vector<I
 }
 
 template <class Info>
-size_t get_info_index(const std::vector<Info> &infos, const std::vector<size_t> & sortedIndices, const typename Info::GlobalId & infoId)
+size_t get_info_index(
+                        const std::vector<Info> &infos,
+                        const std::vector<size_t> &sortedIndices,
+                        const typename Info::GlobalId &infoId)
 {
   auto it = std::lower_bound(sortedIndices.begin(), sortedIndices.end(), infoId,
             [&infos](size_t lhs, const typename Info::GlobalId & rhs) -> bool { return infos[lhs].get_unique_id() < rhs; });
@@ -166,7 +209,9 @@ size_t get_info_index(const std::vector<Info> &infos, const std::vector<size_t> 
 }
 
 template <class Info>
-void IndependentSetFinder<Info>::receive_status_of_shared_infos(std::vector<InOutUnknownStatus> &inOutStatus, stk::CommSparse &commSparse) const
+void IndependentSetFinder<Info>::receive_status_of_shared_infos(
+                        std::vector<InOutUnknownStatus> &inOutStatus,
+                        stk::CommSparse &commSparse) const
 {
     const auto& sortedIndicesForGlobalIdsOfOffProcInfos = mSortedIndicesForGlobalIdsOfOffProcInfos;
     const auto& infos = mInfos;
@@ -202,7 +247,7 @@ std::vector<typename IndependentSetFinder<Info>::InOutUnknownStatus> Independent
       const bool didAnythingChange=determine_independent_set_in_out_status_for_infos_locally(infoInOutStatus);
       if(stk::is_true_on_any_proc(mComm,didAnythingChange))
       {
-          done = !mIncludeSetsWithHigherPriorityOutNeighbors;
+          done = false;
           parallel_communicate_status_of_IN_infos(infoInOutStatus);
       }
     }

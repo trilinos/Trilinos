@@ -40,7 +40,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/perf_util.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -579,7 +579,7 @@ TEST(skinning_large_cube_perf_test, skinning_large_cube)
   std::vector<size_t> dims = {50, 50, 50};
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 5;
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();

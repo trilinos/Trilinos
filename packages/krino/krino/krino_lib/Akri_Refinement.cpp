@@ -23,9 +23,9 @@ namespace krino {
 
 void Refinement::declare_refinement_parts()
 {
-  myParentPart = &myMeta.declare_part("Refinement_Parent");
-  myChildPart = &myMeta.declare_part("Refinement_Child");
-  myRefinedEdgeNodePart = &myMeta.declare_part("Refinement_Edge_Node");
+  myParentPart = &myMeta.declare_part("Refinement_Parent", stk::topology::ELEMENT_RANK, true);
+  myChildPart = &myMeta.declare_part("Refinement_Child", stk::topology::ELEMENT_RANK, true);
+  myRefinedEdgeNodePart = &myMeta.declare_part_with_topology("Refinement_Edge_Node", stk::topology::NODE);
 }
 
 void Refinement::declare_refinement_fields()
@@ -33,25 +33,33 @@ void Refinement::declare_refinement_fields()
   if (3 == myMeta.spatial_dimension())
   {
     myChildElementIds8Field = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_8");
-    const stk::mesh::Part & tet4TopologyPart = myMeta.get_topology_root_part(stk::topology::TETRAHEDRON_4);
-    stk::mesh::put_field_on_mesh(myChildElementIds8Field.field(), parent_part() & tet4TopologyPart, 8, nullptr);
+    const stk::topology elemTopology = stk::topology::TETRAHEDRON_4;
+    const stk::mesh::Part & tet4TopologyPart = myMeta.get_topology_root_part(elemTopology);
+    stk::mesh::put_field_on_mesh(myChildElementIds8Field.field(), parent_part() & tet4TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
   }
   else if (2 == myMeta.spatial_dimension())
   {
     myChildElementIds4Field = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_CHILD_ELEMENT_IDS_4");
-    const stk::mesh::Part & tri3TopologyPart = myMeta.get_topology_root_part(stk::topology::TRIANGLE_3_2D);
-    stk::mesh::put_field_on_mesh(myChildElementIds4Field.field(), parent_part() & tri3TopologyPart, 4, nullptr);
+    const stk::topology elemTopology = stk::topology::TRIANGLE_3_2D;
+    const stk::mesh::Part & tri3TopologyPart = myMeta.get_topology_root_part(elemTopology);
+    stk::mesh::put_field_on_mesh(myChildElementIds4Field.field(), parent_part() & tri3TopologyPart, get_num_children_when_fully_refined(elemTopology), nullptr);
   }
 
+  myRefinementLevelField = myMeta.declare_field<int>(stk::topology::ELEMENT_RANK, "REFINEMENT_LEVEL");
+  stk::mesh::put_field_on_mesh(myRefinementLevelField.field(), myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be child_part
+
   myParentElementIdField = myMeta.declare_field<uint64_t>(stk::topology::ELEMENT_RANK, "REFINEMENT_PARENT_ELEMENT_ID");
-  stk::mesh::put_field_on_mesh(myParentElementIdField.field(), child_part(), 1, nullptr);
+  stk::mesh::put_field_on_mesh(myParentElementIdField.field(), myMeta.universal_part(), 1, nullptr); // needed everywhere for restart, otherwise could be child_part
 
   myRefinedEdgeNodeParentIdsField = myMeta.declare_field<uint64_t>(stk::topology::NODE_RANK, "REFINEMENT_REFINED_EDGE_NODE_PARENTS_IDS");
   stk::mesh::put_field_on_mesh(myRefinedEdgeNodeParentIdsField.field(), refined_edge_node_part(), 2, nullptr);
 }
 
-Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart)
+Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit)
   : myMeta(meta),
+    myForce64Bit(force64Bit),
+    myAssert32Bit(assert32Bit),
+    myNodeRefiner(force64Bit, assert32Bit),
     myEntityIdPool(meta),
     myActivePart(activePart)
 {
@@ -60,25 +68,14 @@ Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart)
   declare_refinement_fields();
 }
 
-Refinement &
-Refinement::get(const stk::mesh::MetaData & meta)
+Refinement::Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart)
+  : Refinement(meta, activePart, false, false)
 {
-  Refinement * refinement = const_cast<Refinement*>(meta.get_attribute<Refinement>());
-  ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
-  return *refinement;
 }
 
-Refinement &
-Refinement::create(stk::mesh::MetaData & meta, stk::mesh::Part * activePart)
+Refinement::Refinement(stk::mesh::MetaData & meta)
+  : Refinement(meta, nullptr, false, false)
 {
-  Refinement * refinement = const_cast<Refinement*>(meta.get_attribute<Refinement>());
-  ThrowRequireMsg(nullptr == refinement, "Refinement::create should be called only once per MetaData.");
-  if (nullptr == refinement)
-  {
-    refinement = new Refinement(meta, activePart);
-    meta.declare_attribute_with_delete<Refinement>(refinement);
-  }
-  return *refinement;
 }
 
 bool Refinement::is_parent(const stk::mesh::Bucket & bucket) const
@@ -101,19 +98,39 @@ bool Refinement::is_child(const stk::mesh::Entity elem) const
   return myMeta.mesh_bulk_data().bucket(elem).member(child_part());
 }
 
-unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity elem) const
+int Refinement::refinement_level(const stk::mesh::Entity elem) const
 {
-  stk::topology elemTopology = myMeta.mesh_bulk_data().bucket(elem).topology();
-  switch(elemTopology)
+  if (!is_child(elem))
+    return 0;
+  const auto * refineLevel = field_data<int>(myRefinementLevelField, elem);
+  ThrowAssertMsg(refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  return *refineLevel;
+}
+
+void Refinement::set_refinement_level(const stk::mesh::Entity elem, const int refinementLevel) const
+{
+  auto * refineLevel = field_data<int>(myRefinementLevelField, elem);
+  ThrowAssertMsg(is_child(elem) && refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  *refineLevel = refinementLevel;
+}
+
+unsigned Refinement::get_num_children_when_fully_refined(const stk::topology elementTopology)
+{
+  switch(elementTopology)
   {
   case stk::topology::TRIANGLE_3_2D:
       return 4;
   case stk::topology::TETRAHEDRON_4:
       return 8;
   default:
-      ThrowRuntimeError("Element topology not found in get_num_children_when_fully_refined: " << elemTopology.name());
+      ThrowRuntimeError("Element topology not found in get_num_children_when_fully_refined: " << elementTopology.name());
       break;
   }
+}
+
+unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity elem) const
+{
+  return get_num_children_when_fully_refined(myMeta.mesh_bulk_data().bucket(elem).topology());
 }
 
 std::array<stk::mesh::Entity,2> Refinement::get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const
@@ -138,7 +155,7 @@ static bool has_child_with_invalid_id(const uint64_t * childElemIdsData, const u
   return (stk::mesh::InvalidEntityId == childElemIdsData[numChildWhenFullyRefined-1]);
 }
 
-bool Refinement::is_a_partially_refined_parent_element(const stk::mesh::Entity parentElem) const
+bool Refinement::is_this_parent_element_partially_refined(const stk::mesh::Entity parentElem) const
 {
   ThrowAssert(is_parent(parentElem));
   //const auto & [childElemIdsData, numChildWhenFullyRefined] = get_child_ids_and_num_children_when_fully_refined(parentElem);
@@ -390,6 +407,7 @@ void Refinement::set_parent_parts_and_parent_child_relation_fields(const stk::me
   mesh.change_entity_parts(parentElement, stk::mesh::ConstPartVector{myParentPart}, removeParts);
 
   const stk::mesh::EntityId parentElementId = mesh.identifier(parentElement);
+  const int parentRefinementLevel = refinement_level(parentElement);
   FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
   auto * childElemIds = field_data<uint64_t>(childElementIdsField, parentElement);
   std::fill(childElemIds, childElemIds+numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
@@ -398,6 +416,7 @@ void Refinement::set_parent_parts_and_parent_child_relation_fields(const stk::me
     childElemIds[iChild] = mesh.identifier(childElements[iChild]);
     auto * parentElemId = field_data<uint64_t>(myParentElementIdField, childElements[iChild]);
     *parentElemId = parentElementId;
+    set_refinement_level(childElements[iChild], parentRefinementLevel+1);
   }
 }
 
@@ -512,7 +531,7 @@ size_t Refinement::count_new_child_elements(const EdgeMarkerInterface & edgeMark
     for(const auto & elem : std::get<2>(bucketData))
     {
       const stk::topology bucketTopology = std::get<0>(bucketData);
-      edgeMarker.fill_element_refined_edge_nodes(elem, bucketTopology, elemChildEdgeNodes);
+      edgeMarker.fill_element_refined_edge_nodes(myNodeRefiner, elem, bucketTopology, elemChildEdgeNodes);
       const int caseId = get_edge_refinement_case_id(mesh, elemChildEdgeNodes);
       if (0 != caseId)
         numNewChildElems += num_new_child_elements_for_case_id(bucketTopology, caseId);
@@ -520,6 +539,31 @@ size_t Refinement::count_new_child_elements(const EdgeMarkerInterface & edgeMark
   }
 
   return numNewChildElems;
+}
+
+stk::mesh::PartVector Refinement::get_parts_for_child_elements(const stk::mesh::Bucket & parentBucket) const
+{
+  const stk::mesh::PartVector& parentParts = parentBucket.supersets();
+
+  stk::mesh::PartVector childParts;
+  childParts.reserve(parentParts.size());
+
+  for ( auto&& part : parentParts )
+  {
+    stk::mesh::EntityRank part_rank = part->primary_entity_rank();
+    if ((part_rank == stk::topology::INVALID_RANK || part_rank == parentBucket.entity_rank()) &&
+        part != myParentPart &&
+        (!stk::mesh::is_auto_declared_part(*part) || stk::mesh::is_topology_root_part(*part)))
+    {
+      childParts.push_back(part);
+    }
+  }
+
+  childParts.push_back(myChildPart);
+  if (myActivePart)
+    childParts.push_back(myActivePart);
+
+  return childParts;
 }
 
 std::vector<Refinement::BucketData> Refinement::get_buckets_data_for_candidate_elements_to_refine(const EdgeMarkerInterface & edgeMarker) const
@@ -533,10 +577,7 @@ std::vector<Refinement::BucketData> Refinement::get_buckets_data_for_candidate_e
 
   for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
   {
-    stk::mesh::PartVector childParts = get_removable_parts(mesh, *bucketPtr);
-    childParts.push_back(myChildPart);
-    if (myActivePart)
-      childParts.push_back(myActivePart);
+    const stk::mesh::PartVector childParts = get_parts_for_child_elements(*bucketPtr);
     bucketsData.emplace_back(bucketPtr->topology(), childParts, emptyVector);
 
     stk::mesh::EntityVector & bucketElements = std::get<2>(bucketsData.back());
@@ -559,7 +600,7 @@ void Refinement::refine_elements_with_refined_edges_and_store_sides_to_create(co
     const auto & bucketElements = std::get<2>(bucketData);
     for(const auto & elem : bucketElements)
     {
-      edgeMarker.fill_element_refined_edge_nodes(elem, bucketTopology, elemChildEdgeNodes);
+      edgeMarker.fill_element_refined_edge_nodes(myNodeRefiner, elem, bucketTopology, elemChildEdgeNodes);
       refine_element_if_it_has_refined_edges_and_append_sides_to_create(bucketTopology, bucketChildParts, elem, elemChildEdgeNodes, sideRequests, elementsToDelete);
     }
   }
@@ -573,35 +614,171 @@ stk::mesh::PartVector Refinement::get_parts_for_new_refined_edge_nodes() const
   return refinedEdgeNodeParts;
 }
 
-void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
+bool Refinement::locally_have_any_hanging_refined_nodes() const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  const stk::mesh::Selector selector = mesh.mesh_meta_data().locally_owned_part() & !parent_part();
+
+  std::array<stk::mesh::Entity,3> edgeNodes;
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
+  {
+    const stk::topology elemTopology = bucketPtr->topology();
+    const unsigned numEdges = elemTopology.num_edges();
+
+    for (auto && elem : *bucketPtr)
+    {
+      const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+
+      for (unsigned iEdge = 0; iEdge < numEdges; ++iEdge)
+      {
+        elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
+        const Edge edge = edge_from_edge_nodes(mesh, edgeNodes[0], edgeNodes[1]);
+        if (myNodeRefiner.is_edge_marked_for_refinement(edge))
+        {
+          krinolog << "Found element with hanging node on edge " << debug_edge(mesh, edge) << " of element " << debug_entity_1line(mesh, elem) << stk::diag::dendl;;
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool Refinement::have_any_hanging_refined_nodes() const
+{
+  return stk::is_true_on_any_proc(myMeta.mesh_bulk_data().parallel(), locally_have_any_hanging_refined_nodes());
+}
+
+void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  mesh.modification_begin();
 
-  myNodeRefiner.find_edges_to_refine(mesh, edgeMarker);
+  myNodeRefiner.create_refined_edge_nodes(mesh, get_parts_for_new_refined_edge_nodes(), myRefinedEdgeNodeParentIdsField);
 
-  const bool haveEdgesToRefineLocally = get_num_edges_to_refine() > 0;
-  if(stk::is_true_on_any_proc(mesh.parallel(), haveEdgesToRefineLocally))
+  const std::vector<BucketData> bucketsData = get_buckets_data_for_candidate_elements_to_refine(edgeMarker);
+  const size_t numNewElements = count_new_child_elements(edgeMarker, bucketsData);
+  myEntityIdPool.reserve(stk::topology::ELEMENT_RANK, numNewElements, myAssert32Bit, myForce64Bit);
+
+  std::vector<stk::mesh::Entity> elementsToDelete;
+  std::vector<SideDescription> sideRequests;
+  refine_elements_with_refined_edges_and_store_sides_to_create(edgeMarker, bucketsData, sideRequests, elementsToDelete);
+  delete_mesh_entities(mesh, elementsToDelete);
+  mesh.modification_end();
+
+  if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
+    batch_create_sides(mesh, sideRequests);
+
+  myNodeRefiner.prolong_refined_edge_nodes(mesh);
+}
+
+void Refinement::create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(const EdgeMarkerInterface & edgeMarker)
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  const std::vector<BucketData> bucketsData = get_buckets_data_for_candidate_elements_to_refine(edgeMarker);
+  const size_t numNewElements = count_new_child_elements(edgeMarker, bucketsData);
+
+  myEntityIdPool.reserve(stk::topology::ELEMENT_RANK, numNewElements, myAssert32Bit, myForce64Bit);
+
+  std::vector<stk::mesh::Entity> elementsToDelete;
+  std::vector<SideDescription> sideRequests;
+
+  if(stk::is_true_on_any_proc(mesh.parallel(), numNewElements > 0))
   {
     mesh.modification_begin();
-
-    myNodeRefiner.create_refined_edge_nodes(mesh, get_parts_for_new_refined_edge_nodes(), myRefinedEdgeNodeParentIdsField);
-
-    const std::vector<BucketData> bucketsData = get_buckets_data_for_candidate_elements_to_refine(edgeMarker);
-    const size_t numNewElements = count_new_child_elements(edgeMarker, bucketsData);
-    const bool use64Bit = false;
-    myEntityIdPool.reserve(stk::topology::ELEMENT_RANK, numNewElements, !use64Bit, use64Bit);
-
-    std::vector<stk::mesh::Entity> elementsToDelete;
-    std::vector<SideDescription> sideRequests;
     refine_elements_with_refined_edges_and_store_sides_to_create(edgeMarker, bucketsData, sideRequests, elementsToDelete);
     delete_mesh_entities(mesh, elementsToDelete);
     mesh.modification_end();
 
     if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
       batch_create_sides(mesh, sideRequests);
+  }
+}
+
+void Refinement::remove_parent_parts(const std::vector<stk::mesh::Entity> & elements)
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  stk::mesh::ConstPartVector removeParts{myParentPart};
+  stk::mesh::ConstPartVector addParts;
+  if (myActivePart)
+    addParts.push_back(myActivePart);
+
+  for (auto && element : elements)
+    mesh.change_entity_parts(element, addParts, removeParts);
+}
+
+void Refinement::mark_already_refined_edges()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  myNodeRefiner.clear_edges_to_refine();
+
+  const stk::mesh::Selector selector = refined_edge_node_part();
+
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, selector))
+  {
+    for (auto && existingRefinedNode : *bucketPtr)
+    {
+      const auto edgeNodeParents = get_edge_parent_nodes(existingRefinedNode);
+      if (mesh.is_valid(edgeNodeParents[0]) && mesh.is_valid(edgeNodeParents[1]))
+      {
+        myNodeRefiner.mark_already_refined_edge(edge_from_edge_nodes(mesh, edgeNodeParents[0], edgeNodeParents[1]), existingRefinedNode);
+      }
+    }
+  }
+}
+
+void Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  if(stk::is_true_on_any_proc(mesh.parallel(), edgeMarker.locally_have_elements_to_unrefine()))
+  {
+    std::vector<stk::mesh::Entity> childElementsToDeleteForUnrefinement;
+    std::vector<stk::mesh::Entity> elementsWithoutChildrenAfterUnrefinement;
+    edgeMarker.fill_elements_modified_by_unrefinement(elementsWithoutChildrenAfterUnrefinement, childElementsToDeleteForUnrefinement);
+
+    mesh.modification_begin();
+    remove_parent_parts(elementsWithoutChildrenAfterUnrefinement);
+    delete_mesh_entities(mesh, childElementsToDeleteForUnrefinement);
+    mesh.modification_end();
+
+    mark_already_refined_edges();
+
+    create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
+  }
+}
+
+void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  find_edges_to_refine(edgeMarker);
+
+  const bool haveEdgesToRefineLocally = get_num_edges_to_refine() > 0;
+  if(stk::is_true_on_any_proc(mesh.parallel(), haveEdgesToRefineLocally))
+  {
+    create_refined_nodes_elements_and_sides(edgeMarker);
+
+    create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
+
+    if (myActivePart)
+      activate_selected_sides_touching_active_elements(mesh, myMeta.universal_part(), *myActivePart);
 
     myNodeRefiner.prolong_refined_edge_nodes(mesh);
   }
+
+  do_unrefinement(edgeMarker);
+
+  ThrowAssertMsg(!have_any_hanging_refined_nodes(), "Mesh has hanging refined node.");
+}
+
+void Refinement::do_uniform_refinement(const int numUniformRefinementLevels)
+{
+  UniformEdgeMarker uniformMarker(myMeta.mesh_bulk_data(), *this);
+  for (int i=0; i<numUniformRefinementLevels; ++i)
+    do_refinement(uniformMarker);
 }
 
 void Refinement::fully_unrefine_mesh()
@@ -627,8 +804,101 @@ void Refinement::fully_unrefine_mesh()
 
 void Refinement::find_edges_to_refine(const EdgeMarkerInterface & edgeMarker)
 {
+  edgeMarker.mark_edges_to_be_refined(myNodeRefiner);
+}
+
+void Refinement::restore_parent_and_child_element_parts_after_restart()
+{
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  myNodeRefiner.find_edges_to_refine(mesh, edgeMarker);
+
+  std::vector<stk::mesh::Entity> children;
+  std::vector<stk::mesh::Entity> parents;
+  for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part()))
+  {
+    for (auto && elem : *bucket)
+    {
+      const auto * parentElemIdData = field_data<uint64_t>(myParentElementIdField, elem);
+      ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField.name() << " defined.");
+      const stk::mesh::Entity parent = myMeta.mesh_bulk_data().get_entity(stk::topology::ELEMENT_RANK, *parentElemIdData);
+      if (mesh.is_valid(parent))
+      {
+        children.push_back(elem);
+        parents.push_back(parent);
+      }
+    }
+  }
+
+  stk::util::sort_and_unique(parents);
+
+  const stk::mesh::PartVector childAddParts{&child_part()};
+  const stk::mesh::PartVector childRemoveParts;
+  mesh.batch_change_entity_parts(children, childAddParts, childRemoveParts);
+
+  const stk::mesh::PartVector parentAddParts{&parent_part()};
+  stk::mesh::PartVector parentRemoveParts;
+  if (myActivePart)
+    parentRemoveParts.push_back(myActivePart);
+
+  mesh.batch_change_entity_parts(parents, parentAddParts, parentRemoveParts);
+}
+
+void Refinement::add_child_to_parent(const stk::mesh::EntityId childId, const stk::mesh::Entity parent)
+{
+  const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(parent);
+  FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
+  auto * childElemIdsData = field_data<uint64_t>(childElementIdsField, parent);
+
+  unsigned iChild = 0;
+  while(iChild<numChildWhenFullyRefined && childElemIdsData[iChild] != stk::mesh::InvalidEntityId)
+    ++iChild;
+
+  ThrowRequireMsg(iChild < numChildWhenFullyRefined, "Logic error when assigning child id for parent element.");
+
+  childElemIdsData[iChild] = childId;
+}
+
+void Refinement::parallel_sync_child_element_ids_fields()
+{
+  std::vector< const stk::mesh::FieldBase *> syncFields;
+  if (myChildElementIds4Field.valid())
+    syncFields.push_back(&myChildElementIds4Field.field());
+  if (myChildElementIds8Field.valid())
+    syncFields.push_back(&myChildElementIds8Field.field());
+  stk::mesh::communicate_field_data(myMeta.mesh_bulk_data(), syncFields);
+}
+
+void Refinement::restore_child_element_ids_field_after_restart()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part() & parent_part()))
+  {
+    const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(bucket->topology());
+    FieldRef childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
+    auto * childElemIds = field_data<uint64_t>(childElementIdsField, *bucket);
+    std::fill(childElemIds, childElemIds+bucket->size()*numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
+  }
+
+  for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part() & child_part()))
+  {
+    for (auto && child : *bucket)
+    {
+      stk::mesh::Entity parent = get_parent(child);
+      if (mesh.is_valid(parent))
+      {
+        add_child_to_parent(mesh.identifier(child), parent);
+      }
+    }
+  }
+
+  parallel_sync_child_element_ids_fields();
+}
+
+void Refinement::restore_after_restart()
+{
+  restore_parent_and_child_element_parts_after_restart();
+
+  restore_child_element_ids_field_after_restart();
 }
 
 }
