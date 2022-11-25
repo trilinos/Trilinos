@@ -23,7 +23,7 @@ namespace Iohb {
 
     ~Layout();
 
-    friend std::ostream &operator<<(std::ostream & /*o*/, Layout & /*lo*/);
+    const std::string layout() const { return layout_.str(); }
 
     void add_literal(const std::string &label);
     void add_legend(const std::string &label);
@@ -46,30 +46,24 @@ namespace Iohb {
   inline void Layout::output_common(const std::string &name)
   {
     if (count_++ > 0 && !separator_.empty()) {
-      layout_ << separator_;
+      fmt::print(layout_, "{}", separator_);
     }
 
     if (showLabels && name != "") {
-      layout_ << name;
-      layout_ << "=";
-    }
-    else if (fieldWidth_ != 0) {
-      layout_ << std::setw(fieldWidth_);
+      fmt::print("{}=", name);
     }
   }
 
   template <typename T> inline void Layout::add(const std::string &name, const T &value)
   {
     output_common(name);
-    layout_ << value;
+    fmt::print(layout_, "{0:{1}}", value, fieldWidth_);
   }
 
   template <> inline void Layout::add(const std::string &name, const double &value)
   {
     output_common(name);
-    layout_.setf(std::ios::scientific);
-    layout_.setf(std::ios::showpoint);
-    layout_ << std::setprecision(precision_) << value;
+    fmt::print(layout_, "{0: {1}.{2}e}", value, fieldWidth_, precision_);
   }
 
   template <typename T>
@@ -80,15 +74,7 @@ namespace Iohb {
     }
     else {
       output_common(name);
-      for (size_t i = 0; i < value.size(); i++) {
-        if (!showLabels && (fieldWidth_ != 0)) {
-          layout_ << std::setw(fieldWidth_);
-        }
-        layout_ << value[i];
-        if (i < value.size() - 1 && !separator_.empty()) {
-          layout_ << separator_;
-        }
-      }
+      fmt::print(layout_, "{0:{1}}", fmt::join(value, separator_), fieldWidth_);
     }
   }
 
@@ -99,17 +85,7 @@ namespace Iohb {
     }
     else {
       output_common(name);
-      layout_.setf(std::ios::scientific);
-      layout_.setf(std::ios::showpoint);
-      for (size_t i = 0; i < value.size(); i++) {
-        if (!showLabels && (fieldWidth_ != 0)) {
-          layout_ << std::setw(fieldWidth_);
-        }
-        layout_ << std::setprecision(precision_) << value[i];
-        if (i < value.size() - 1 && !separator_.empty()) {
-          layout_ << separator_;
-        }
-      }
+      fmt::print(layout_, "{0: {2}.{1}e}", fmt::join(value, separator_), precision_, fieldWidth_);
     }
   }
 

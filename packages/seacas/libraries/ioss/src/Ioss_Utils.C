@@ -80,9 +80,6 @@ std::string   Ioss::Utils::m_preWarningText = "\nIOSS WARNING: ";
 namespace {
   auto initial_time = std::chrono::steady_clock::now();
 
-  template <typename INT>
-  void set_owned_node_count(Ioss::Region &region, int my_processor, INT dummy);
-
   ////////////////////////////////////////////////////////////////////////
   bool is_separator(const char separator, const char value) { return separator == value; }
 
@@ -233,7 +230,7 @@ int Ioss::Utils::extract_id(const std::string &name_id)
 {
   int id = 0;
 
-  std::vector<std::string> tokens = Ioss::tokenize(name_id, "_");
+  auto tokens = Ioss::tokenize(name_id, "_");
   if (tokens.size() > 1) {
     // Check whether last token is an integer...
     std::string str_id = tokens.back();
@@ -415,7 +412,7 @@ namespace {
 
     char suffix[2] = {suffix_separator, '\0'};
 
-    std::vector<std::string> tokens = Ioss::tokenize(names[which_names.back()], suffix);
+    auto tokens = Ioss::tokenize(names[which_names.back()], suffix);
 
     if (tokens.size() <= 2) {
       return nullptr;
@@ -440,7 +437,7 @@ namespace {
     // Gather the first 'inner_ccomp' inner field suffices...
     std::vector<Ioss::Suffix> suffices;
     for (size_t i = 0; i < inner_comp; i++) {
-      std::vector<std::string> ltokens = Ioss::tokenize(names[which_names[i]], suffix);
+      auto ltokens = Ioss::tokenize(std::string(names[which_names[i]]), suffix);
       // The second-last token is the suffix for this component...
       Ioss::Suffix tmp(ltokens[inner_token]);
       suffices.push_back(tmp);
@@ -451,7 +448,7 @@ namespace {
     size_t j = inner_comp;
     for (int copy = 1; copy < N; copy++) {
       for (size_t i = 0; i < inner_comp; i++) {
-        std::vector<std::string> ltokens = Ioss::tokenize(names[which_names[j++]], suffix);
+        auto ltokens = Ioss::tokenize(std::string(names[which_names[j++]]), suffix);
         // The second-last token is the suffix for this component...
         if (suffices[i] != ltokens[inner_token]) {
           return nullptr;
@@ -479,8 +476,8 @@ namespace {
     char suffix[2] = {suffix_separator, '\0'};
 
     for (int which_name : which_names) {
-      std::vector<std::string> tokens     = Ioss::tokenize(names[which_name], suffix);
-      size_t                   num_tokens = tokens.size();
+      auto   tokens     = Ioss::tokenize(names[which_name], suffix);
+      size_t num_tokens = tokens.size();
 
       // The last token is the suffix for this component...
       Ioss::Suffix tmp(tokens[num_tokens - 1]);
@@ -583,15 +580,15 @@ namespace {
         // It is possible that the first name(s) that match with two
         // suffices have a basename that match other names with only a
         // single suffix lc_cam_x, lc_cam_y, lc_sfarea.
-        for (int ii = index + 1; ii < num_names; ii++) {
-          char                    *tst_name = names[ii];
+        for (int id = index + 1; id < num_names; id++) {
+          char                    *tst_name = names[id];
           std::vector<std::string> subtokens;
           field_tokenize(tst_name, suffix_separator, subtokens);
-          if ((truth_table == nullptr || truth_table[ii] == 1) && // Defined on this entity
+          if ((truth_table == nullptr || truth_table[id] == 1) && // Defined on this entity
               std::strncmp(name, tst_name, bn_len) == 0 &&       // base portion must match
               (!same_length || (strlen(tst_name) == name_length)) &&
               subtokens.size() == num_tokens) {
-            which_names.push_back(ii);
+            which_names.push_back(id);
           }
         }
 
@@ -1506,7 +1503,7 @@ void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::Role
     fmt::print("{1:>{0}s}:{2}  ", max_width, field_name, comp_count);
     cur_out += max_width + 4;
     if (cur_out + max_width >= width) {
-      fmt::print("\n\t");
+      fmt::print(suffix);
       cur_out = 8;
     }
   }

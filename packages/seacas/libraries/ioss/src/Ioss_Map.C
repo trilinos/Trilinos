@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -123,7 +123,6 @@ void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
     }
   }
   else {
-    m_reverse.reserve(m_reverse.size() + num_to_get);
     for (int64_t i = 0; i < num_to_get; i++) {
       int64_t local_id = offset + i + 1;
       bool    ok       = m_reverse.insert({m_map[local_id], local_id}).second;
@@ -254,7 +253,7 @@ template <typename INT> void Ioss::Map::reverse_map_data(INT *data, size_t count
   if (!is_sequential()) {
     for (size_t i = 0; i < count; i++) {
       INT global_id = data[i];
-      data[i]       = global_to_local__(global_id, true);
+      data[i]       = (INT)global_to_local__(global_id, true);
     }
   }
   else if (m_offset != 0) {
@@ -286,7 +285,7 @@ template <typename INT> void Ioss::Map::map_data(INT *data, size_t count) const
   IOSS_FUNC_ENTER(m_);
   if (!is_sequential()) {
     for (size_t i = 0; i < count; i++) {
-      data[i] = m_map[data[i]];
+      data[i] = (INT)m_map[data[i]];
     }
   }
   else if (m_offset != 0) {
@@ -322,12 +321,12 @@ void Ioss::Map::map_implicit_data(INT *ids, size_t count, size_t offset) const
   // ids are implicit
   if (is_sequential()) {
     for (size_t i = 0; i < count; i++) {
-      ids[i] = m_offset + offset + 1 + i;
+      ids[i] = static_cast<INT>(m_offset + offset + 1 + i);
     }
   }
   else {
     for (size_t i = 0; i < count; i++) {
-      ids[i] = m_map[offset + 1 + i];
+      ids[i] = static_cast<INT>(m_map[offset + 1 + i]);
     }
   }
 }

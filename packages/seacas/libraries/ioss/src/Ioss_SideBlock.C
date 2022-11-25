@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -93,7 +93,7 @@ std::string Ioss::SideBlock::generate_sideblock_name(const std::string &sideset_
     IOSS_ERROR(errmsg);
   }
 
-  std::vector<std::string> tokens = Ioss::tokenize(sideset_name, "_");
+  auto tokens = Ioss::tokenize(sideset_name, "_");
   if (tokens.size() == 2) {
     bool all_dig = tokens[1].find_first_not_of("0123456789") == std::string::npos;
     if (all_dig && Ioss::Utils::str_equal(tokens[0], "surface")) {
@@ -157,9 +157,9 @@ namespace {
   template <typename INT> int internal_consistent_side_number(std::vector<INT> &element_side)
   {
     size_t ecount = element_side.size();
-    int    side   = ecount > 0 ? element_side[1] : 0;
+    int    side   = ecount > 0 ? static_cast<INT>(element_side[1]) : 0;
     for (size_t i = 3; i < ecount; i += 2) {
-      int this_side = element_side[i];
+      int this_side = static_cast<INT>(element_side[i]);
       if (this_side != side) {
         side = 999; // Indicates the sides are not consistent ;
         break;

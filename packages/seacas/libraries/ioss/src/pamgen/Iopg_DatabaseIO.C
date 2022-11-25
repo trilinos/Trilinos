@@ -1062,13 +1062,6 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Fi
   return num_to_get;
 }
 
-int64_t DatabaseIO::get_field_internal(const Ioss::Region * /* reg */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  return -1;
-}
-
 int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
                                        void *data, size_t data_size) const
 {
@@ -1428,64 +1421,6 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Fiel
     }
   }
   return num_to_get;
-}
-
-int64_t DatabaseIO::get_field_internal(const Ioss::SideSet * /* fs */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  return -1;
-}
-int64_t DatabaseIO::put_field_internal(const Ioss::Region * /* region */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output region field");
-  return -1;
-}
-
-int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock * /* eb */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output element block field");
-  return -1;
-}
-int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock * /* fb */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output sideblock field");
-  return -1;
-}
-int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock * /* nb */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output nodeblock field");
-  return -1;
-}
-
-int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet * /* ns */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output nodeset field");
-  return -1;
-}
-int64_t DatabaseIO::put_field_internal(const Ioss::SideSet * /* fs */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output sideset field");
-  return -1;
-}
-int64_t DatabaseIO::put_field_internal(const Ioss::CommSet * /* cs */,
-                                       const Ioss::Field & /* field */, void * /* data */,
-                                       size_t /* data_size */) const
-{
-  unsupported("output commset field");
-  return -1;
 }
 
 const Ioss::Map &DatabaseIO::get_node_map() const

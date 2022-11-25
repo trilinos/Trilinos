@@ -311,7 +311,6 @@ namespace Iotm {
 
     std::set<std::string> get_blocks_touched_by_sideset(const SidesetData *sideset) const;
 
-    size_t m_processorCount{0};
     size_t m_myProcessor{0};
 
     size_t                             m_timestepCount{0};

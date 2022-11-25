@@ -276,7 +276,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // to the output region based on values in `options`
   std::vector<int> selected_steps = get_selected_steps(region, options);
 
-  int step_count = region.get_property("state_count").get_int();
+  int step_count = (int)region.get_property("state_count").get_int();
 #ifdef SEACAS_HAVE_MPI
   int min_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MIN);
   int max_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MAX);
@@ -315,7 +315,7 @@ namespace {
     // This routine checks all steps of the input database and selects those which
     // meet the requirements specified in `options`.  The returned (1-based) vector will have a
     // value of `1` if the step is to be output and `0` if skipped.
-    int              step_count = region.get_property("state_count").get_int();
+    int              step_count = (int)region.get_property("state_count").get_int();
     std::vector<int> selected_steps(step_count + 1);
 
     // If user specified a list of times to transfer to output database,
