@@ -17,7 +17,7 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       |     |      |       |           |    |
  quad    |  4  |  X   |    X  |    X      |  X |
  |       |  5  |  X   |       |           |    |
- |       |  8  |  X   |       |           |    |
+ |       |  8  |  X   |    X  |           |    |
  |       |  9  |  X   |    X  |    X      |  X |
  |       | 12  |  X   |    X  |           |    |
  |       | 16  |  X   |    X  |           |    |
@@ -37,7 +37,7 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 13  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  shell   |  2  |  X   |    X  |    X      |  X |
- |       |  3  |      |    X  |    X      |  X |
+ |       |  3  | tri3 |    X  |    X      |  X |
  |       |  4  |  X   |    X  |    X      |  X |
  |       |  8  |  X   |    X  |    X      |  X |
  |       |  9  |  X   |    X  |    X      |  X |
@@ -70,7 +70,7 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 52  |  X   |    X  |           |    |
  |       |     |      |       |           |    |
  hex     | 8   |  X   |    X  |    X      |  X |
- |       | 9   |  X   |       |           |    |
+ |       | 9   |  X   |    X  |           |    |
  |       | 16  |  X   |    X  |    X      |  X |
  |       | 20  |  X   |    X  |    X      |  X |
  |       | 27  |  X   |    X  |    X      |  X |
