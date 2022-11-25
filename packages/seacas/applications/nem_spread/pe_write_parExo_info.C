@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,11 +26,13 @@
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
+#if (__cplusplus >= 201703L)
+#define FALL_THROUGH [[fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
-#endif /* __GNUC__ >= 7 */
+#endif
 
 namespace {
   template <typename INT>
