@@ -41,11 +41,12 @@ int ex_put_cmap_params_cc(int exoid, const void_int *node_cmap_ids,
                           const void_int *elem_proc_ptrs)
 {
   size_t num_n_comm_maps, num_e_comm_maps;
-  int    status, n_varid[2], e_varid[2], iproc;
+  int    status, n_varid[2], e_varid[2];
   int    varid, n_dimid[1], e_dimid[1];
   int    n_varid_idx, e_varid_idx;
   int    num_icm;
   size_t start[1], count[1];
+  size_t iproc;
 
   long long nl_ecnt_cmap, nl_ncnt_cmap;
   void_int *n_var_idx = NULL;
