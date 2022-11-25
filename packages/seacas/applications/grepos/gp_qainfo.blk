@@ -6,5 +6,5 @@ C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'Grepos                          '
-      QAINFO(2) = '2022/09/13                      '
-      QAINFO(3) = ' 1.91                           '
+      QAINFO(2) = '2022/10/06                      '
+      QAINFO(3) = ' 1.92                           '
