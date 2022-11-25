@@ -7,6 +7,16 @@ else()
 endif()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	Utst_heartbeat
+	NAME Utst_heartbeat
+	SOURCES Utst_heartbeat.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_utils
 	NAME Utst_utils
 	SOURCES Utst_utils.C
@@ -37,8 +47,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	NUM_MPI_PROCS 1
 )
 
-if (TPL_ENABLE_Pnetcdf)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_blob_write_read
 	NAME Utst_blob_write_read
 	NOEXEPREFIX
@@ -46,19 +55,7 @@ if (TPL_ENABLE_Pnetcdf)
 	INSTALLABLE
 	SOURCES Utst_blob_write_read.C
 	XHOSTTYPE Windows
-  )
-ELSE()
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	Utst_blob_write_read
-	NAME Utst_blob_write_read
-	NOEXEPREFIX
-	${ADD_SUFFIX}
-	INSTALLABLE
-	SOURCES Utst_blob_write_read.C
-	NUM_MPI_PROCS 1
-	XHOSTTYPE Windows
-  )
-ENDIF()
+)
 
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
