@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2021 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -24,8 +24,6 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 # Currently doesn't run on windows due to use of sed...
-if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
-
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_unit_test
  TEST_0 EXEC aprepro
@@ -124,8 +122,6 @@ TRIBITS_ADD_ADVANCED_TEST(
  FINAL_PASS_REGULAR_EXPRESSION
  XHOSTTYPE Windows
 )
-endif()
-
 endif()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
