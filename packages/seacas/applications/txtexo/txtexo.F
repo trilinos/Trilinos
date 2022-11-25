@@ -48,6 +48,8 @@ C.
       CALL BANNER (0, QAINFO,
      &     'TEXT FILE TO EXODUSII DATABASE TRANSLATOR',
      &     ' ', ' ')
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
 
       CALL MDINIT (A)
       CALL MCINIT (C)
@@ -321,6 +323,8 @@ C     --Read the database time steps
       if (ndb .ne. 12 .and. ndb .gt. 0) call exclos(ndb, ierr)
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
       CALL WRAPUP (QAINFO(1))
 
       END
