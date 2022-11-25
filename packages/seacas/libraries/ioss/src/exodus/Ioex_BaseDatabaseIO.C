@@ -93,10 +93,6 @@ namespace {
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
 
-  template <typename T>
-  void generate_block_truth_table(Ioex::VariableNameMap &variables, Ioss::IntVector &truth_table,
-                                  std::vector<T *> &blocks, char field_suffix_separator);
-
   void insert_sort_and_unique(const std::vector<std::string> &src, std::vector<std::string> &dest);
 
   class AssemblyTreeFilter

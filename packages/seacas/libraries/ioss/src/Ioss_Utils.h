@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_EntityType.h>
@@ -33,34 +35,16 @@ namespace Ioss {
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
 
-namespace {
-  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
-  template <typename T> size_t unique(std::vector<T> &out, bool skip_first)
-  {
-    if (out.empty())
-      return 0;
-    size_t i    = 1;
-    size_t pos  = 1;
-    T      oldv = out[0];
-    if (skip_first) {
-      i    = 2;
-      pos  = 2;
-      oldv = out[1];
-    }
-    for (; i < out.size(); ++i) {
-      T newv   = out[i];
-      out[pos] = newv;
-      pos += (newv != oldv);
-      oldv = newv;
-    }
-    return pos;
-  }
-} // namespace
+#ifdef NDEBUG
+#define IOSS_ASSERT_USED(x) (void)x
+#else
+#define IOSS_ASSERT_USED(x)
+#endif
 
 namespace Ioss {
   /* \brief Utility methods.
    */
-  class Utils
+  class IOSS_EXPORT Utils
   {
   public:
     Utils()  = default;
@@ -122,6 +106,15 @@ namespace Ioss {
         errmsg << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
         IOSS_ERROR(errmsg);
       }
+    }
+
+    static bool is_path_absolute(const std::string &path)
+    {
+#ifdef __IOSS_WINDOWS__
+      return path[0] == '\\' || path[1] == ':';
+#else
+      return path[0] == '/';
+#endif
     }
 
     /** \brief guess file type from extension */
@@ -529,15 +522,40 @@ namespace Ioss {
     static void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
                               const std::string &header, const std::string &suffix = "\n\t",
                               bool print_empty = false);
+
+  private:
+    // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
+    template <typename T> static size_t unique(std::vector<T> &out, bool skip_first)
+    {
+      if (out.empty())
+        return 0;
+      size_t i    = 1;
+      size_t pos  = 1;
+      T      oldv = out[0];
+      if (skip_first) {
+        i    = 2;
+        pos  = 2;
+        oldv = out[1];
+      }
+      for (; i < out.size(); ++i) {
+        T newv   = out[i];
+        out[pos] = newv;
+        pos += (newv != oldv);
+        oldv = newv;
+      }
+      return pos;
+    }
   };
 
   inline std::ostream &OUTPUT() { return *Utils::m_outputStream; }
 
   inline std::ostream &DebugOut() { return *Utils::m_debugStream; }
 
-  inline std::ostream &WarnOut()
+  inline std::ostream &WarnOut(bool output_prewarning = true)
   {
-    *Utils::m_warningStream << Utils::m_preWarningText;
+    if (output_prewarning) {
+      *Utils::m_warningStream << Utils::m_preWarningText;
+    }
     return *Utils::m_warningStream;
   }
 

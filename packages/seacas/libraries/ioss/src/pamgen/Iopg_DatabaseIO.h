@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iopg_export.h"
+
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -42,7 +44,7 @@ namespace Ioss {
 /** \brief A namespace for the pamgen database format.
  */
 namespace Iopg {
-  class IOFactory : public Ioss::IOFactory
+  class IOPG_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -54,7 +56,7 @@ namespace Iopg {
                               const Ioss::PropertyManager &properties) const;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOPG_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

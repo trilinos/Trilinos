@@ -149,7 +149,6 @@ namespace {
       }
     }
   }
-#endif
 
   template <typename T> void pack(int &idx, std::vector<int> &pack, T *from, int count)
   {
@@ -157,6 +156,7 @@ namespace {
       pack[idx++] = from[i];
     }
   }
+#endif
 
   template <typename T> void unpack(int &idx, const T *pack, T *to, int count)
   {
@@ -725,7 +725,6 @@ namespace Iocgns {
       }
 
       IOSS_ERROR(errmsg);
-      return false;
     }
     return true;
   }
@@ -1334,7 +1333,7 @@ namespace Iocgns {
                      "ERROR: CGNS: Zone {} adjacency data is not correct type. Require "
                      "Abutting1to1 and PointList."
                      " {}\t{}\t{}",
-                     zone, connect_type, ptset_type, donor_ptset_type);
+                     zone, static_cast<int>(connect_type), static_cast<int>(ptset_type), static_cast<int>(donor_ptset_type));
           IOSS_ERROR(errmsg);
         }
 
@@ -1819,9 +1818,8 @@ namespace Iocgns {
 
     // Create a lambda to eliminate some duplicate code in coordinate outputs...
     auto coord_lambda = [&data, &first,
-                         base](const char *ordinate, int cgns_file_ptr,
-                               const std::vector<CGNSIntVector> &block_local_node_map,
-                               int                               myProcessor) {
+                         base, this](const char *ordinate, int cgns_file_ptr,
+                               const std::vector<CGNSIntVector> &block_local_node_map) {
       auto *rdata = static_cast<double *>(data);
 
       for (int zone = 1; zone < static_cast<int>(block_local_node_map.size()); zone++) {
@@ -1842,15 +1840,15 @@ namespace Iocgns {
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "mesh_model_coordinates_x") {
         // Use the lambda...
-        coord_lambda("CoordinateX", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
+        coord_lambda("CoordinateX", get_file_pointer(), m_blockLocalNodeMap);
       }
 
       else if (field.get_name() == "mesh_model_coordinates_y") {
-        coord_lambda("CoordinateY", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
+        coord_lambda("CoordinateY", get_file_pointer(), m_blockLocalNodeMap);
       }
 
       else if (field.get_name() == "mesh_model_coordinates_z") {
-        coord_lambda("CoordinateZ", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
+        coord_lambda("CoordinateZ", get_file_pointer(), m_blockLocalNodeMap);
       }
 
       else if (field.get_name() == "mesh_model_coordinates") {
@@ -1875,8 +1873,7 @@ namespace Iocgns {
           // ========================================================================
           // Repetitive code for each coordinate direction; use a lambda to consolidate...
           auto blk_coord_lambda = [block_map, base, zone, &coord, first, num_coord, phys_dimension,
-                                   &rdata](const char *ord_name, int ordinate, int cgns_file_ptr,
-                                           int myProcessor) {
+                                   &rdata, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
             CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble),
                                   &first, &num_coord, coord.data()));
 
@@ -1888,14 +1885,14 @@ namespace Iocgns {
           // End of lambda...
           // ========================================================================
 
-          blk_coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
+          blk_coord_lambda("CoordinateX", 0, get_file_pointer());
 
           if (phys_dimension >= 2) {
-            blk_coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
+            blk_coord_lambda("CoordinateY", 1, get_file_pointer());
           }
 
           if (phys_dimension >= 3) {
-            blk_coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
+            blk_coord_lambda("CoordinateZ", 2, get_file_pointer());
           }
         }
       }
@@ -2268,8 +2265,7 @@ namespace Iocgns {
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
         auto coord_lambda = [base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
-                             &rdata](const char *ord_name, int ordinate, int cgns_file_ptr,
-                                     int myProcessor) {
+                             &rdata, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
           CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble), rmin,
                                 rmax, coord.data()));
 
@@ -2281,14 +2277,14 @@ namespace Iocgns {
         // End of lambda...
         // ========================================================================
 
-        coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
+        coord_lambda("CoordinateX", 0, get_file_pointer());
 
         if (phys_dimension >= 2) {
-          coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
+          coord_lambda("CoordinateY", 1, get_file_pointer());
         }
 
         if (phys_dimension == 3) {
-          coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
+          coord_lambda("CoordinateZ", 2, get_file_pointer());
         }
       }
       else if (field.get_name() == "cell_node_ids") {
@@ -2582,8 +2578,7 @@ namespace Iocgns {
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
         auto coord_lambda = [&coord, num_to_get, phys_dimension, &rdata, base,
-                             zone](const char *ord_name, int ordinate, int cgns_file_ptr,
-                                   int myProcessor) {
+                             zone, this](const char *ord_name, int ordinate, int cgns_file_ptr) {
           int crd_index = 0;
 
           // Map to global coordinate position...
@@ -2597,13 +2592,13 @@ namespace Iocgns {
         // End of lambda...
         // ========================================================================
 
-        coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
+        coord_lambda("CoordinateX", 0, get_file_pointer());
 
         if (phys_dimension >= 2) {
-          coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
+          coord_lambda("CoordinateY", 1, get_file_pointer());
         }
         if (phys_dimension == 3) {
-          coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
+          coord_lambda("CoordinateZ", 2, get_file_pointer());
         }
       }
       else {

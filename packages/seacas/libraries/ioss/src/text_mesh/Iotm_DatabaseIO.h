@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
@@ -48,7 +50,7 @@ namespace Ioss {
 /** \brief A namespace for the generated database format.
  */
 namespace Iotm {
-  class IOFactory : public Ioss::IOFactory
+  class IOTM_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -60,7 +62,7 @@ namespace Iotm {
                               const Ioss::PropertyManager &props) const override;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOTM_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

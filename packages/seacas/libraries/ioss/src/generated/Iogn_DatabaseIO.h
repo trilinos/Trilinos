@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iogn_export.h"
+
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -47,7 +49,7 @@ namespace Ioss {
  */
 namespace Iogn {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOGN_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -59,7 +61,7 @@ namespace Iogn {
                               const Ioss::PropertyManager &props) const override;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOGN_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

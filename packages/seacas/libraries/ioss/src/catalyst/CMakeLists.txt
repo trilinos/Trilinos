@@ -10,12 +10,20 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/iocatalyst_export.h")
+
 TRIBITS_ADD_LIBRARY(
 	Iocatalyst
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS Ioss ${DEPLIBS}
 )
+
+generate_export_header(Iocatalyst)
+target_include_directories(Iocatalyst
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 #IF (BUILD_TESTING)
 #  ENABLE_TESTING()

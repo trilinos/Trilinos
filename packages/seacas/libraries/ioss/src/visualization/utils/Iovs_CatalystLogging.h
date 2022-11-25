@@ -7,6 +7,8 @@
 #ifndef IOSS_IOVS_CATALYST_LOGGING_H
 #define IOSS_IOVS_CATALYST_LOGGING_H
 
+#include "iovs_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_PropertyManager.h>
 #include <string>
@@ -14,7 +16,7 @@
 
 namespace Iovs {
 
-  class CatalystLogging
+  class IOVS_EXPORT CatalystLogging
   {
     // Enables Catalyst log output from IOSS when Catalyst CGNS or
     // Exodus IOSS databases are created.  Rank 0 of the application

@@ -8,8 +8,10 @@
  */
 #include <vector>
 
+#include "ioss_export.h"
+
 namespace Ioss {
-  struct MeshCopyOptions
+  struct IOSS_EXPORT MeshCopyOptions
   {
     std::vector<double> selected_times{};
     double              minimum_time{0.0};

@@ -7,6 +7,8 @@
 #ifndef __CATALYST_MANAGER_BASE_H
 #define __CATALYST_MANAGER_BASE_H
 
+#include "iovs_export.h"
+
 #include "visualization/cgns/CatalystCGNSMeshBase.h"
 #include "visualization/exodus/CatalystExodusMeshBase.h"
 #include <memory>
@@ -15,7 +17,7 @@
 
 namespace Iovs {
 
-  class CatalystManagerBase
+  class IOVS_EXPORT CatalystManagerBase
   {
 
   public:

@@ -6,13 +6,15 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <cstdint> // for int64_t
 #include <vector>  // for vector
 
 namespace Ioss {
   class DatabaseIO;
 
-  class CoordinateFrame
+  class IOSS_EXPORT CoordinateFrame
   {
   public:
     CoordinateFrame(int64_t my_id, char my_tag, const double *point_list);

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
 #include <Ioss_Utils.h>
 #include <cassert>
@@ -23,7 +25,7 @@
 
 namespace Ioss {
 
-  class ParallelUtils
+  class IOSS_EXPORT ParallelUtils
   {
   public:
     ParallelUtils() = default;

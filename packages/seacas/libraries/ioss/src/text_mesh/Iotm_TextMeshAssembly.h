@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <ctype.h>                                   // for toupper
@@ -50,7 +52,7 @@ namespace Iotm {
 
     using AssemblyDataType = std::string;
 
-    struct AssemblyData : public EntityGroupData<AssemblyDataType>
+    struct IOTM_EXPORT AssemblyData : public EntityGroupData<AssemblyDataType>
     {
       using DataType = AssemblyDataType;
 
@@ -158,7 +160,7 @@ namespace Iotm {
       mutable std::vector<std::string>              m_traversalList;
     };
 
-    class AssemblyParser
+    class IOTM_EXPORT AssemblyParser
     {
     public:
       AssemblyParser() : m_assemblyType(INVALID_ASSEMBLY)

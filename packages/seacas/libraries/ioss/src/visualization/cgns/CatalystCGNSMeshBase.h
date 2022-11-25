@@ -7,12 +7,14 @@
 #ifndef __CATALYST_CGNS_MESH_BASE_H
 #define __CATALYST_CGNS_MESH_BASE_H
 
+#include "iovs_export.h"
+
 #include <string>
 #include <vector>
 
 namespace Iovs_cgns {
 
-  class CatalystCGNSMeshBase
+  class IOVS_EXPORT CatalystCGNSMeshBase
   {
 
   public:

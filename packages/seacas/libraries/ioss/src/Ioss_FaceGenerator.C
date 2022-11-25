@@ -33,13 +33,8 @@
 
 #define DO_TIMING 0
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
-#define FALL_THROUGH [[gnu::fallthrough]]
-#else
-#define FALL_THROUGH ((void)0)
-#endif /* __GNUC__ >= 7 */
-
 namespace {
+#ifdef SEACAS_HAVE_MPI
   template <typename T> void generate_index(std::vector<T> &index)
   {
     T sum = 0;
@@ -49,6 +44,7 @@ namespace {
       sum += cnt;
     }
   }
+#endif
 
 #if defined(USE_MURMUR)
   uint64_t MurmurHash64A(const size_t key);
@@ -337,8 +333,8 @@ namespace Ioss {
 
   FaceGenerator::FaceGenerator(Ioss::Region &region) : region_(region) {}
 
-  template void FaceGenerator::generate_faces(int, bool, bool);
-  template void FaceGenerator::generate_faces(int64_t, bool, bool);
+  template IOSS_EXPORT void FaceGenerator::generate_faces(int, bool, bool);
+  template IOSS_EXPORT void FaceGenerator::generate_faces(int64_t, bool, bool);
 
   template <typename INT>
   void FaceGenerator::generate_faces(INT /*dummy*/, bool block_by_block, bool local_ids)

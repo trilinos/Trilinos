@@ -3,17 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#pragma once
 
-#include "ioss_export.h"
+#include "Ioss_NullEntity.h"
 
-namespace Ioss {
-  class IOSS_EXPORT Initializer
-  {
-  public:
-    Initializer();
-    ~Initializer();
-    // Assignment operator
-    // Copy constructor
-  };
-} // namespace Ioss
+Ioss::NullEntity::~NullEntity() = default;

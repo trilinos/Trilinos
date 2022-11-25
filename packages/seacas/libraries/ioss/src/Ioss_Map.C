@@ -151,8 +151,10 @@ void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
   }
 }
 
-template bool Ioss::Map::set_map(int *ids, size_t count, size_t offset, bool in_define_mode);
-template bool Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset, bool in_define_mode);
+template IOSS_EXPORT bool Ioss::Map::set_map(int *ids, size_t count, size_t offset,
+                                             bool in_define_mode);
+template IOSS_EXPORT bool Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset,
+                                             bool in_define_mode);
 
 template <typename INT>
 bool Ioss::Map::set_map(INT *ids, size_t count, size_t offset, bool in_define_mode)
@@ -242,8 +244,8 @@ void Ioss::Map::set_default(size_t count, size_t offset)
 }
 
 #ifndef DOXYGEN_SKIP_THIS
-template void Ioss::Map::reverse_map_data(int *data, size_t count) const;
-template void Ioss::Map::reverse_map_data(int64_t *data, size_t count) const;
+template IOSS_EXPORT void Ioss::Map::reverse_map_data(int *data, size_t count) const;
+template IOSS_EXPORT void Ioss::Map::reverse_map_data(int64_t *data, size_t count) const;
 #endif
 
 template <typename INT> void Ioss::Map::reverse_map_data(INT *data, size_t count) const
@@ -275,8 +277,8 @@ void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t co
 }
 
 #ifndef DOXYGEN_SKIP_THIS
-template void Ioss::Map::map_data(int *data, size_t count) const;
-template void Ioss::Map::map_data(int64_t *data, size_t count) const;
+template IOSS_EXPORT void Ioss::Map::map_data(int *data, size_t count) const;
+template IOSS_EXPORT void Ioss::Map::map_data(int64_t *data, size_t count) const;
 #endif
 
 template <typename INT> void Ioss::Map::map_data(INT *data, size_t count) const
@@ -307,8 +309,10 @@ void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) con
 }
 
 #ifndef DOXYGEN_SKIP_THIS
-template void Ioss::Map::map_implicit_data(int *data, size_t count, size_t offset) const;
-template void Ioss::Map::map_implicit_data(int64_t *data, size_t count, size_t offset) const;
+template IOSS_EXPORT void Ioss::Map::map_implicit_data(int *data, size_t count,
+                                                       size_t offset) const;
+template IOSS_EXPORT void Ioss::Map::map_implicit_data(int64_t *data, size_t count,
+                                                       size_t offset) const;
 #endif
 
 template <typename INT>
@@ -340,17 +344,21 @@ void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t c
   }
 }
 
-template size_t Ioss::Map::map_field_to_db_scalar_order(double              *variables,
-                                                        std::vector<double> &db_var,
-                                                        size_t begin_offset, size_t count,
-                                                        size_t stride, size_t offset);
-template size_t Ioss::Map::map_field_to_db_scalar_order(int *variables, std::vector<double> &db_var,
-                                                        size_t begin_offset, size_t count,
-                                                        size_t stride, size_t offset);
-template size_t Ioss::Map::map_field_to_db_scalar_order(int64_t             *variables,
-                                                        std::vector<double> &db_var,
-                                                        size_t begin_offset, size_t count,
-                                                        size_t stride, size_t offset);
+template IOSS_EXPORT size_t Ioss::Map::map_field_to_db_scalar_order(double              *variables,
+                                                                    std::vector<double> &db_var,
+                                                                    size_t begin_offset,
+                                                                    size_t count, size_t stride,
+                                                                    size_t offset);
+template IOSS_EXPORT size_t Ioss::Map::map_field_to_db_scalar_order(int                 *variables,
+                                                                    std::vector<double> &db_var,
+                                                                    size_t begin_offset,
+                                                                    size_t count, size_t stride,
+                                                                    size_t offset);
+template IOSS_EXPORT size_t Ioss::Map::map_field_to_db_scalar_order(int64_t             *variables,
+                                                                    std::vector<double> &db_var,
+                                                                    size_t begin_offset,
+                                                                    size_t count, size_t stride,
+                                                                    size_t offset);
 
 template <typename T>
 size_t Ioss::Map::map_field_to_db_scalar_order(T *variables, std::vector<double> &db_var,
