@@ -20,10 +20,8 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
     HierarchicalDriver
     NAME "HierarchicalDriver-fractionalLaplacian1D"
     ARGS
-    "--xml=1d-mm-global/hierarchical.xml"
-    "--xml=1d-mm-local/hierarchical.xml"
-    "--xml=1d-binary-global/hierarchical.xml"
-    "--xml=1d-binary-local/hierarchical.xml"
+    "--xml=1d-mm/hierarchical.xml --xmlProblem=1d-mm/problem.xml"
+    "--xml=1d-binary/hierarchical.xml --xmlProblem=1d-binary/problem.xml"
     COMM mpi
     NUM_MPI_PROCS 4
     )

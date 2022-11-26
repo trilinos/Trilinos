@@ -1,0 +1,20 @@
+
+            <ParameterList name="1d fractional Laplacian, s=0.75">
+            <Parameter name="read binary" type="bool" value="false"/>
+            <Parameter name="read local" type="bool" value="true"/>
+
+            <Parameter name="right-hand side" type="string" value="1d-mm/RHS"/>
+            <Parameter name="exact solution" type="string" value="1d-mm/X_ex"/>
+
+            <Parameter name="auxiliary operator" type="string" value="1d-mm/auxiliary"/>
+            <Parameter name="aux colmap" type="string" value="1d-mm/auxiliary_colmap"/>
+
+            <Parameter name="mass matrix" type="string" value="1d-mm/mass"/>
+            <Parameter name="drop tolerance" type="double" value="0.1"/>
+            <Parameter name="coordinates" type="string" value="1d-mm/coords"/>
+
+            <ParameterList name="params">
+            <Parameter name="keepTransfers" type="int" value="-1"/>
+            </ParameterList>
+            </ParameterList>
+            

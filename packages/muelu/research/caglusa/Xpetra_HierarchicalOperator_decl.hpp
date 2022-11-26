@@ -2,6 +2,7 @@
 #define XPETRA_HIERARCHICALOPERATOR_DECL_HPP
 
 #include <Tpetra_HierarchicalOperator_decl.hpp>
+#include <Tpetra_HierarchicalOperator_def.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MultiVector.hpp>

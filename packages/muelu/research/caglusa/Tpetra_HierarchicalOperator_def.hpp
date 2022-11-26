@@ -781,7 +781,7 @@ namespace Tpetra {
     }
 
     newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
-                                        kernelApproximations_->blockA_->getRangeMap());
+                                      kernelApproximations_->blockA_->getRangeMap());
     newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
     diffKernelApprox->fillComplete(clusterCoeffMap_,
                                    clusterCoeffMap_);
@@ -894,16 +894,7 @@ namespace Tpetra {
 
       if (hasTransferMatrices()) {
         // construct identity on clusterCoeffMap_
-        RCP<matrix_type> identity = rcp(new matrix_type(clusterCoeffMap_, 1));
-        {
-          Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getLocalElementList ();
-          for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
-            Teuchos::Array<GlobalOrdinal> col (1, *it);
-            Teuchos::Array<Scalar> val (1, ONE);
-            identity->insertGlobalValues (*it, col (), val ());
-          }
-          identity->fillComplete ();
-        }
+        Teuchos::RCP<matrix_type> identity = buildIdentityMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(clusterCoeffMap_);
 
         for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
           RCP<matrix_type> temp = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
