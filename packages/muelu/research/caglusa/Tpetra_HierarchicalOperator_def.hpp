@@ -861,6 +861,7 @@ namespace Tpetra {
         RCP<matrix_type> temp2 = rcp(new matrix_type(P->getDomainMap(), 0));
         MatrixMatrix::Multiply(*P, true, *temp, false, *temp2);
         newNearField = MatrixMatrix::add(ONE, false, *temp2, ONE, false, *diffFarField);
+        newNearField = removeSmallEntries(newNearField, Teuchos::ScalarTraits<MagnitudeType>::eps());
       }
     }
 
