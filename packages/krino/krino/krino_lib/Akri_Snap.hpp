@@ -22,7 +22,8 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const FieldSet & interpolationFields,
     const InterfaceGeometry & geometry,
     const bool globalIDsAreParallelConsistent,
-    const double snappingSharpFeatureAngleInDegrees);
+    const double snappingSharpFeatureAngleInDegrees,
+    const double minIntPtWeightForEstimatingCutQuality);
 
 }
 

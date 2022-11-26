@@ -50,6 +50,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   PyTrilinos
   TrilinosCouplings
   Pike
+  TrilinosInstallTests
   )
 
 IF (NOT ATDM_ENABLE_SPARC_SETTINGS)

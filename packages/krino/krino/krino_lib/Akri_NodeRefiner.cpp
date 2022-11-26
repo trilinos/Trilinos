@@ -41,10 +41,9 @@ void NodeRefiner::create_refined_edge_nodes(stk::mesh::BulkData & mesh, const st
     childNodeRequests.emplace_back(std::vector<stk::mesh::Entity*>{&(edgeParentNodes[0]), &(edgeParentNodes[1])}, &(myRefinedEdgeToChildNodes.second));
   }
 
-  const bool use64Bit = false;
   auto generate_new_ids = [&](stk::topology::rank_t entityRank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds)
   {
-     EntityIdPool::generate_new_ids(mesh, entityRank, numIdsNeeded, requestedIds, !use64Bit, use64Bit);
+     EntityIdPool::generate_new_ids(mesh, entityRank, numIdsNeeded, requestedIds, myAssert32Bit, myForce64Bit);
   };
 
   batch_create_child_nodes(mesh, childNodeRequests, refinedEdgeNodeParts, generate_new_ids);
@@ -168,27 +167,38 @@ std::vector<std::pair<std::array<stk::mesh::EntityKey,2>,std::vector<int>>> get_
   return edgesNodeKeysAndSharingProcs;
 }
 
-static void append_shared_edges_from_other_procs_to_refine(const stk::mesh::BulkData & mesh, typename NodeRefiner::RefinedEdgeMap & edgesToRefine)
+void NodeRefiner::sync_shared_edges_from_other_procs_to_refine(const stk::mesh::BulkData & mesh)
 {
   if (mesh.parallel_size() < 2) return;
 
-  const auto edgesNodeKeysAndSharingProcs = get_shared_edges_and_sharing_procs(mesh, edgesToRefine);
+  const auto edgesNodeKeysAndSharingProcs = get_shared_edges_and_sharing_procs(mesh, myRefinedEdgesToChildNodes);
 
   stk::CommSparse commSparse(mesh.parallel());
   pack_shared_edges_to_refine(edgesNodeKeysAndSharingProcs, commSparse);
-  unpack_shared_edges_to_refine(mesh, edgesToRefine, commSparse);
+  unpack_shared_edges_to_refine(mesh, myRefinedEdgesToChildNodes, commSparse);
 }
 
-void NodeRefiner::find_edges_to_refine(const stk::mesh::BulkData & mesh, const EdgeMarkerInterface & edgeMarker)
+void NodeRefiner::clear_edges_to_refine()
 {
   myRefinedEdgesToChildNodes.clear();
-  edgeMarker.mark_local_edges_to_be_refined();
-  append_shared_edges_from_other_procs_to_refine(mesh, myRefinedEdgesToChildNodes);
 }
 
-void NodeRefiner::mark_edge_for_refinement(const Edge & edge)
+bool NodeRefiner::mark_edge_for_refinement(const Edge & edge)
 {
-  myRefinedEdgesToChildNodes.emplace(edge, stk::mesh::Entity::InvalidEntity);
+  auto result = myRefinedEdgesToChildNodes.emplace(edge, stk::mesh::Entity::InvalidEntity);
+  return result.second;
+}
+
+
+bool NodeRefiner::mark_already_refined_edge(const Edge & edge, const stk::mesh::Entity refinedEdgeNode)
+{
+  auto result = myRefinedEdgesToChildNodes.emplace(edge, refinedEdgeNode);
+  return result.second;
+}
+
+bool NodeRefiner::is_edge_marked_for_refinement(const Edge & edge) const
+{
+  return myRefinedEdgesToChildNodes.end() != myRefinedEdgesToChildNodes.find(edge);
 }
 
 }

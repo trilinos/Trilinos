@@ -25,8 +25,7 @@ std::vector<SnapInfo> find_snap_info_independent_sets(const std::vector<SnapInfo
     stk::ParallelMachine comm)
 {
     SnapInfo::Comparator comparator {qualityMetric};
-    SnapInfo::ConflictFinder conflictFinder;
-    return SnapInfoIndependentSetFinder::find_independent_set(allSnapInfos, comparator, conflictFinder, false, comm);
+    return SnapInfoIndependentSetFinder::find_independent_set(allSnapInfos, comparator, comm);
 }
 
 }

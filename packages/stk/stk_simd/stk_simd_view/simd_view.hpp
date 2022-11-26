@@ -39,6 +39,7 @@
 #include <stk_simd/Traits.hpp>
 #include <stk_simd_view/simd_layout.hpp>
 #include <stk_simd_view/simd_index.hpp>
+#include "stk_util/stk_config.h"
 #include <typeinfo>
 
 #define STK_LAMBDA KOKKOS_LAMBDA
@@ -54,31 +55,33 @@
 namespace stk {
 namespace simd {
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2022-12-28
+
 template<typename T>
-struct remove_pointer {
+struct STK_DEPRECATED remove_pointer {
   typedef typename std::remove_const<T>::type type;
 };
 
 template<typename T>
-struct remove_pointer<T*> {
+struct STK_DEPRECATED remove_pointer<T*> {
   typedef typename std::remove_const<typename remove_pointer<T>::type>::type type;
 };
 
 template<typename T>
-struct remove_pointer<T[]> {
+struct STK_DEPRECATED remove_pointer<T[]> {
   typedef typename std::remove_const<typename remove_pointer<T>::type>::type type;
 };
 
 template<typename T, int N>
-struct remove_pointer<T[N]> {
+struct STK_DEPRECATED remove_pointer<T[N]> {
   typedef typename std::remove_const<typename remove_pointer<T>::type>::type type;
 };
 
 template <class DataType, class ... Properties>
-struct ViewTraits;
+struct STK_DEPRECATED ViewTraits;
 
 template <>
-struct ViewTraits< void >
+struct STK_DEPRECATED ViewTraits< void >
 {
   typedef void array_layout;
   typedef void execution_space;
@@ -86,7 +89,7 @@ struct ViewTraits< void >
 };
 
 template< class ... Prop >
-struct ViewTraits< void , void , Prop ... >
+struct STK_DEPRECATED ViewTraits< void , void , Prop ... >
 {
   // Ignore an extraneous 'void'
   typedef typename ViewTraits<void, Prop...>::array_layout    array_layout ;
@@ -95,7 +98,7 @@ struct ViewTraits< void , void , Prop ... >
 };
 
 template< class ArrayLayout , class ... Prop >
-struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_array_layout<ArrayLayout>::value >::type , ArrayLayout , Prop ... >
+struct STK_DEPRECATED ViewTraits< typename std::enable_if< Kokkos::Impl::is_array_layout<ArrayLayout>::value >::type , ArrayLayout , Prop ... >
 {
   // Specify layout, keep subsequent space and memory traits arguments
   typedef          ArrayLayout                                array_layout ;
@@ -104,7 +107,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_array_layout<ArrayL
 };
 
 template< class Space , class ... Prop >
-struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value >::type , Space , Prop ... >
+struct STK_DEPRECATED ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value >::type , Space , Prop ... >
 {
   // Specify Space, memory traits should be the only subsequent argument.
   typedef void                                              array_layout ;
@@ -113,7 +116,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value
 };
 
 template< class MemoryTraits , class ... Prop >
-struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<MemoryTraits>::value >::type , MemoryTraits , Prop ... >
+struct STK_DEPRECATED ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<MemoryTraits>::value >::type , MemoryTraits , Prop ... >
 {
   // Specify memory trait, should not be any subsequent arguments
   typedef void         array_layout ;
@@ -122,7 +125,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<Memor
 };
 
 template <class DataType, class ... Prop>
-struct ViewTraits {
+struct STK_DEPRECATED ViewTraits {
 
   typedef ViewTraits< void , Prop ... >  prop ;
 
@@ -171,7 +174,7 @@ struct ViewTraits {
  *
 */
 template< class DataType, class ... Prop >
-class View
+class STK_DEPRECATED View
   : public Kokkos::View< DataType,
                          typename ViewTraits<DataType,Prop...>::ArrayLayout,
                          typename ViewTraits<DataType,Prop...>::ExecutionSpace,
@@ -381,22 +384,24 @@ class View
 using Kokkos::create_mirror_view;
 
 template <class DataType, class ... Prop>
-typename View<DataType, Prop...>::HostMirror create_mirror_view( View<DataType, Prop...> viewArg) {
+STK_DEPRECATED typename View<DataType, Prop...>::HostMirror create_mirror_view( View<DataType, Prop...> viewArg) {
   return typename View<DataType, Prop...>::HostMirror(viewArg);
 }
 
 template <typename A, typename B>
-inline void deep_copy(A a, B b) {
+STK_DEPRECATED inline void deep_copy(A a, B b) {
   Kokkos::deep_copy(a, b);
 }
 
 template <typename A>
-inline typename A::HostMirror
+STK_DEPRECATED inline typename A::HostMirror
 copy_from_device(A a) {
   typename A::HostMirror aHost = create_mirror_view(a);
   deep_copy(aHost, a);
   return aHost;
 }
+
+#endif  // STK_HIDE_DEPRECATED_CODE
 
 }}
 

@@ -12,7 +12,8 @@ constexpr int d = 2;
 
 TEST(StkSimd, StkMathFloat_fmadd)
 {
-  EXPECT_EQ( stk::math::fmadd(a,b,c), (a*b)+c );
+  const float epsilon = 1.e-6;
+  EXPECT_NEAR( stk::math::fmadd(a,b,c), (a*b)+c, epsilon );
 }
 
 TEST(StkSimd, StkMathFloat_sqrt)

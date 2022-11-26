@@ -318,7 +318,7 @@ CDFEM_Support::activate_interface_refinement(int minimumLevel, int maximumLevel)
   my_interface_minimum_refinement_level = minimumLevel;
   my_interface_maximum_refinement_level = maximumLevel;
 
-  setup_refinement_marker();
+  setup_refinement_node_marker();
 
   if (maximumLevel > 0)
     set_global_ids_are_NOT_parallel_consistent();
@@ -338,21 +338,16 @@ CDFEM_Support::activate_nonconformal_adaptivity(const int numLevels)
   my_interface_minimum_refinement_level = numLevels;
   my_interface_maximum_refinement_level = numLevels;
 
-  setup_refinement_marker();
+  setup_refinement_node_marker();
 
   if (numLevels > 0)
     set_global_ids_are_NOT_parallel_consistent();
 }
 
 void
-CDFEM_Support::setup_refinement_marker()
+CDFEM_Support::setup_refinement_node_marker()
 {
-  /* %TRACE% */ Traceback trace__("krino::CDFEM_Support::activate_nonconformal_adaptivity(const int num_levels)"); /* %TRACE% */
-
-  my_nonconformal_adapt_marker_name = "CDFEM_NONCONFORMAL_MARKER";
-
-  my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::ELEMENT_RANK, 1, 1, get_universal_part());
-  my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::NODE_RANK, 1, 1, get_universal_part());
+  myNonInterfaceConformingRefinementNodeMarkerField = my_aux_meta.register_field("REFINEMENT_NODE_MARKER", FieldType::INTEGER, stk::topology::NODE_RANK, 1, 1, get_universal_part());
 }
 
 void

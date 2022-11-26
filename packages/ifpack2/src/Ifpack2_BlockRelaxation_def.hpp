@@ -707,6 +707,8 @@ initialize ()
           Teuchos::ArrayRCP<scalar_type> nonOverLapWArray = nonOverLapW.getDataNonConst(0);
           nonOverLapW.putScalar(STS::zero ());
           for (int ii = 0; ii < (int) theImport->getSourceMap()->getLocalNumElements(); ii++)  nonOverLapWArray[ii] = w_ptr[ii];
+          nonOverLapWArray = Teuchos::null;
+          w_ptr = Teuchos::null;
           nonOverLapW.doExport (*W_,         *theImport, Tpetra::ADD);
           W_->doImport(         nonOverLapW, *theImport, Tpetra::INSERT);
         }

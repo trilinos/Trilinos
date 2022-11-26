@@ -19,55 +19,19 @@
 #include <Akri_MOAB_TetRefiner.hpp>
 #include <Akri_TriRefiner.hpp>
 #include <Akri_TransitionElementEdgeMarker.hpp>
+#include <Akri_RefinementInterface.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 
 namespace krino {
 
-class TriRefinement : public StkMeshTriFixture
+void set_refinement_marker_field(FieldRef elementMarkerField, const int value)
 {
-protected:
-};
-
-TEST_F(TriRefinement, canCreateRefinement)
-{
-  Refinement::create(mMesh.mesh_meta_data());
+  stk::mesh::field_fill(value, elementMarkerField, stk::mesh::selectField(elementMarkerField));
 }
 
-TEST_F(TriRefinement, cantCreateRefinementTwice)
+void clear_refinement_marker_field(FieldRef elementMarkerField)
 {
-  Refinement::create(mMesh.mesh_meta_data());
-  EXPECT_ANY_THROW(Refinement::create(mMesh.mesh_meta_data()));
-}
-
-TEST_F(TriRefinement, canCreateThenGet)
-{
-  Refinement::create(mMesh.mesh_meta_data());
-  EXPECT_NO_THROW(Refinement::get(mMesh.mesh_meta_data()));
-}
-
-TEST_F(TriRefinement, cantGetBeforeCreate)
-{
-  EXPECT_ANY_THROW(Refinement::get(mMesh.mesh_meta_data()));
-}
-
-void mark_elements(FieldRef elementMarkerField, const std::vector<stk::mesh::Entity> & elements)
-{
-  for (auto && elem : elements)
-  {
-    int * elemMarker = field_data<int>(elementMarkerField, elem);
-    *elemMarker = Refinement::REFINE;
-  }
-}
-
-void clear_refinement_marker(const stk::mesh::BulkData & mesh, FieldRef elementMarkerField)
-{
-  for ( auto && bucket : mesh.get_buckets( stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part() ) )
-  {
-    for ( auto && elem : *bucket )
-    {
-      int * elemMarker = field_data<int>(elementMarkerField, elem);
-      *elemMarker = Refinement::NOTHING;
-    }
-  }
+  set_refinement_marker_field(elementMarkerField, Refinement::NOTHING);
 }
 
 template<int DIM>
@@ -75,7 +39,7 @@ class RefinementFixture : public StkMeshFixture<DIM>
 {
 public:
   RefinementFixture()
-  : myRefinement(Refinement::create(mesh().mesh_meta_data(), &this->get_aux_meta().active_part()))
+  : myRefinement(mesh().mesh_meta_data(), &this->get_aux_meta().active_part())
   {
     stk::mesh::MetaData & meta = mesh().mesh_meta_data();
     stk::mesh::FieldBase & field = meta.declare_field<int>(stk::topology::ELEMENT_RANK, myElementMarkerFieldName, 1);
@@ -85,6 +49,26 @@ public:
   stk::mesh::BulkData & mesh() { return this->mMesh; }
   StkMeshBuilder<DIM> & builder() { return this->mBuilder; }
   const stk::ParallelMachine & comm() { return this->mComm; }
+  void clear_refinement_marker()
+  {
+    clear_refinement_marker_field(myElementMarkerField);
+  }
+  void mark_elements_for_refinement(const std::vector<stk::mesh::Entity> & elements)
+  {
+    for (auto && elem : elements)
+    {
+      int * elemMarker = field_data<int>(myElementMarkerField, elem);
+      *elemMarker = Refinement::REFINE;
+    }
+  }
+  void mark_elements_for_unrefinement(const std::vector<stk::mesh::Entity> & elements)
+  {
+    for (auto && elem : elements)
+    {
+      int * elemMarker = field_data<int>(myElementMarkerField, elem);
+      *elemMarker = Refinement::COARSEN;
+    }
+  }
   void mark_nonparent_elements()
   {
     for ( auto && bucket : mesh().get_buckets( stk::topology::ELEMENT_RANK, mesh().mesh_meta_data().locally_owned_part() ) )
@@ -97,7 +81,7 @@ public:
   }
   void mark_percept_nonparent_elements()
   {
-    stk::mesh::Part & parentPart = get_refinement_inactive_part(mesh().mesh_meta_data(), stk::topology::ELEMENT_RANK);
+    stk::mesh::Part & parentPart = myPerceptRefinement->parent_part();
     for ( auto && bucket : mesh().get_buckets( stk::topology::ELEMENT_RANK, mesh().mesh_meta_data().locally_owned_part() ) )
     {
       const int markerValue = bucket->member(parentPart) ? Refinement::NOTHING : Refinement::REFINE;
@@ -125,12 +109,14 @@ public:
   }
   void setup_percept_refinement()
   {
-    if (myIsSetupForPercept)
+    if (myPerceptRefinement)
       return;
-    myIsSetupForPercept = true;
-    mesh().mesh_meta_data().enable_late_fields();
-    HAdapt::setup(mesh().mesh_meta_data(), this->get_aux_meta().active_part(), myTimer);
-    mesh().mesh_meta_data().disable_late_fields();
+
+    stk::mesh::MetaData & meta = mesh().mesh_meta_data();
+
+    meta.enable_late_fields();
+    myPerceptRefinement = &create_percept_refinement(meta, myTimer);
+    meta.disable_late_fields();
   }
   void perform_iterations_of_percept_uniform_refinement(const int numIterationsOfUMR)
   {
@@ -195,7 +181,7 @@ public:
 
   void mark_elements_spanning_x_equal_0()
   {
-    clear_refinement_marker(mesh(), myElementMarkerField);
+    clear_refinement_marker();
 
     for ( auto && bucket : mesh().get_buckets( stk::topology::ELEMENT_RANK, mesh().mesh_meta_data().locally_owned_part() ) )
     {
@@ -208,24 +194,28 @@ public:
     }
   }
 
-  void mark_elements_with_given_ids(const std::vector<stk::mesh::EntityId> & idsOfElemsToRefine)
+  std::vector<stk::mesh::Entity> get_elements_with_given_ids(const std::vector<stk::mesh::EntityId> & idsOfElems)
   {
     std::vector<stk::mesh::Entity> elementsToRefine;
-    for (auto && idOfElemToRefine : idsOfElemsToRefine)
+    for (auto && idOfElem : idsOfElems)
     {
-      stk::mesh::Entity elemToRefine = mesh().get_entity(stk::topology::ELEMENT_RANK, idOfElemToRefine);
+      stk::mesh::Entity elemToRefine = mesh().get_entity(stk::topology::ELEMENT_RANK, idOfElem);
       if (mesh().is_valid(elemToRefine) && mesh().bucket(elemToRefine).owned())
         elementsToRefine.push_back(elemToRefine);
     }
+    return elementsToRefine;
+  }
 
-    clear_refinement_marker(mesh(), myElementMarkerField);
-    mark_elements(myElementMarkerField, elementsToRefine);
+  void refine_elements(const bool usePercept, const std::vector<stk::mesh::Entity> & elemsToRefine, const std::string fileName = "")
+  {
+    clear_refinement_marker();
+    mark_elements_for_refinement(elemsToRefine);
+    refine_marked_elements(usePercept, fileName);
   }
 
   void refine_elements_with_given_ids(const bool usePercept, const std::vector<stk::mesh::EntityId> & idsOfElemsToRefine, const std::string fileName = "")
   {
-    mark_elements_with_given_ids(idsOfElemsToRefine);
-    refine_marked_elements(usePercept, fileName);
+    refine_elements(usePercept, get_elements_with_given_ids(idsOfElemsToRefine), fileName);
   }
 
   void refine_elements_with_given_indices(const bool usePercept, const std::vector<unsigned> & indicesOfElemsToRefine, const std::string fileName = "")
@@ -250,6 +240,10 @@ public:
       EXPECT_NEAR(quality, goldQuality, 0.02);
     }
   }
+  void mark_all_elements_for_unrefinement()
+  {
+    set_refinement_marker_field(myElementMarkerField, Refinement::COARSEN);
+  }
   void unrefine_mesh(const bool usePercept)
   {
     if (usePercept)
@@ -258,7 +252,7 @@ public:
       while (!converged)
       {
         const unsigned numElementsBefore = get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK);
-        stk::mesh::Part & parentPart = get_refinement_inactive_part(mesh().mesh_meta_data(), stk::topology::ELEMENT_RANK);
+        stk::mesh::Part & parentPart = myPerceptRefinement->parent_part();
         for ( auto && bucket : mesh().get_buckets( stk::topology::ELEMENT_RANK, mesh().mesh_meta_data().locally_owned_part() ) )
         {
           const int markerValue = bucket->member(parentPart) ? Refinement::NOTHING : Refinement::COARSEN;
@@ -281,10 +275,18 @@ public:
     if (usePercept)
     {
       std::vector<stk::mesh::Entity> children;
-      get_refinement_immediate_children(mesh(), elem, children);
+      myPerceptRefinement->fill_children(elem, children);
       return children;
     }
     return myRefinement.get_children(elem);
+  }
+  unsigned get_num_children(const bool usePercept, const stk::mesh::Entity elem)
+  {
+    if (usePercept)
+    {
+      myPerceptRefinement->get_num_children(elem);
+    }
+    return myRefinement.get_num_children(elem);
   }
   void test_refinement_of_transition_element_leads_to_refinement_of_parent(const bool usePercept, const int indexOfCenterElement)
   {
@@ -326,10 +328,10 @@ public:
 protected:
   stk::diag::TimerSet myTimerSet{sierra::Diag::TIMER_ALL};
   stk::diag::Timer myTimer{stk::diag::createRootTimer("Refinement", myTimerSet)};
-  Refinement & myRefinement;
+  Refinement myRefinement;
   std::string myElementMarkerFieldName{"ELEMENT_MARKER"};
   FieldRef myElementMarkerField;
-  bool myIsSetupForPercept{false};
+  PerceptRefinement * myPerceptRefinement{nullptr};
 };
 
 class RegularTriRefinement : public RefinementFixture<2>
@@ -338,8 +340,7 @@ public:
   RegularTriRefinement()
   {
     RegularTri meshSpec;
-    if(stk::parallel_machine_size(mComm) == 1)
-      StkMeshTriFixture::build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+    StkMeshTriFixture::build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1});
   }
   stk::mesh::Entity get_element()
   {
@@ -356,8 +357,7 @@ public:
   RegularTetRefinement()
   {
     RegularTet meshSpec;
-    if(stk::parallel_machine_size(mComm) == 1)
-      StkMeshTetFixture::build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+    StkMeshTetFixture::build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1});
   }
   stk::mesh::Entity get_element()
   {
@@ -408,7 +408,7 @@ TEST_F(RegularTriRefinement, givenMeshWithNoElementMarked_whenFindingEdgesToRefi
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    clear_refinement_marker(mMesh, myElementMarkerField);
+    clear_refinement_marker();
 
     const TransitionElementEdgeMarker edgeMarker(mesh(), myRefinement, myElementMarkerField.name());
     myRefinement.find_edges_to_refine(edgeMarker);
@@ -421,8 +421,8 @@ TEST_F(RegularTriRefinement, givenMeshWithSingleTriMarked_whenFindingEdgesToRefi
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    clear_refinement_marker(mMesh, myElementMarkerField);
-    mark_elements(myElementMarkerField, {get_element()});
+    clear_refinement_marker();
+    mark_elements_for_refinement({get_element()});
 
     const TransitionElementEdgeMarker edgeMarker(mesh(), myRefinement, myElementMarkerField.name());
     myRefinement.find_edges_to_refine(edgeMarker);
@@ -435,7 +435,7 @@ TEST_F(RegularTriRefinement, givenMeshWithSingleTriMarked_afterRefinement_all3Ed
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    mark_elements(myElementMarkerField, {get_element()});
+    mark_elements_for_refinement({get_element()});
     do_refinement();
     EXPECT_EQ(6u, get_global_num_entities(mMesh, stk::topology::NODE_RANK));
 
@@ -459,7 +459,7 @@ TEST_F(RegularTriRefinement, givenMeshWithSingleTriMarked_afterRefinement_have4C
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    mark_elements(myElementMarkerField, {get_element()});
+    mark_elements_for_refinement({get_element()});
     do_refinement();
 
     EXPECT_EQ(5u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
@@ -494,7 +494,7 @@ TEST_F(RegularTetRefinement, givenMeshWithSingleTetMarked_afterRefinement_have8C
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    mark_elements(myElementMarkerField, {get_element()});
+    mark_elements_for_refinement({get_element()});
     do_refinement();
 
     EXPECT_EQ(9u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
@@ -888,6 +888,136 @@ TEST_F(RightTriSurroundedByEdgeTrisRefinement, afterEachOfThreeRoundsOfRefinemen
   }
 }
 
+TEST_F(RightTriSurroundedByEdgeTrisRefinement, refineCenterElemAndThenChildOfCenterElem_noHangingNodes)
+{
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    stk::mesh::Entity centerElem = mesh().get_entity(stk::topology::ELEMENT_RANK, builder().get_assigned_element_global_ids()[3]);
+
+    std::vector<stk::mesh::Entity> elementsToRefine;
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      elementsToRefine.assign({centerElem});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    elementsToRefine.clear();
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      std::vector<stk::mesh::Entity> childElems = get_children(false, centerElem);
+      ASSERT_EQ(4u, childElems.size());
+      elementsToRefine.assign({childElems[0]});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    EXPECT_FALSE(myRefinement.have_any_hanging_refined_nodes());
+
+    const unsigned goldNumElems = 4 + 4+3*2 + 4+2+2*(6-2);
+    EXPECT_EQ(goldNumElems, get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK));
+  }
+}
+
+TEST_F(RightTriSurroundedByEdgeTrisRefinement, refineCenterElemAndThenMarkTransitionElement_parentOfTransitionElementGetsRefined)
+{
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    stk::mesh::Entity centerElem = mesh().get_entity(stk::topology::ELEMENT_RANK, builder().get_assigned_element_global_ids()[3]);
+    stk::mesh::Entity edgeElem = mesh().get_entity(stk::topology::ELEMENT_RANK, builder().get_assigned_element_global_ids()[0]);
+
+    std::vector<stk::mesh::Entity> elementsToRefine;
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      elementsToRefine.assign({centerElem});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    elementsToRefine.clear();
+    if (mesh().is_valid(edgeElem) && mesh().bucket(edgeElem).owned())
+    {
+      std::vector<stk::mesh::Entity> childElems = get_children(false, edgeElem);
+      ASSERT_EQ(2u, childElems.size());
+      elementsToRefine.assign({childElems[0]});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    EXPECT_FALSE(myRefinement.have_any_hanging_refined_nodes());
+
+    if (mesh().is_valid(edgeElem) && mesh().bucket(edgeElem).owned())
+    {
+      std::vector<stk::mesh::Entity> childElems = get_children(false, edgeElem);
+      EXPECT_EQ(4u, childElems.size());
+      for (auto && childElem : childElems)
+      {
+        EXPECT_EQ(0u, get_num_children(false, childElem));
+      }
+    }
+  }
+}
+
+TEST_F(RightTriSurroundedByEdgeTrisRefinement, refineCenterElemAndThenMarkAllCenterElementChildrenForUnrefinement_perceptAfterUnrefineOriginalMeshObtained)
+{
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    stk::mesh::Entity centerElem = mesh().get_entity(stk::topology::ELEMENT_RANK, builder().get_assigned_element_global_ids()[3]);
+
+    std::vector<stk::mesh::Entity> elementsToRefine;
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      elementsToRefine.assign({centerElem});
+    }
+
+    refine_elements(true, elementsToRefine);
+
+    const unsigned goldNumElemsAfterRefinement = 4 + 4 + 6;
+    EXPECT_EQ(goldNumElemsAfterRefinement, get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK));
+
+    clear_refinement_marker();
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      std::vector<stk::mesh::Entity> childElems = get_children(true, centerElem);
+      EXPECT_EQ(4u, childElems.size());
+      mark_elements_for_unrefinement(childElems);
+    }
+
+    refine_marked_elements(true);
+
+    const unsigned goldNumElemsAfterUnrefinement = 4;
+    EXPECT_EQ(goldNumElemsAfterUnrefinement, get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK));
+  }
+}
+
+TEST_F(RightTetSurroundedByEdgeTetsRefinement, refineCenterElemAndThenChildOfCenterElem_noHangingNodes)
+{
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    stk::mesh::Entity centerElem = mesh().get_entity(stk::topology::ELEMENT_RANK, builder().get_assigned_element_global_ids()[0]);
+
+    std::vector<stk::mesh::Entity> elementsToRefine;
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      elementsToRefine.assign({centerElem});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    elementsToRefine.clear();
+    if (mesh().is_valid(centerElem) && mesh().bucket(centerElem).owned())
+    {
+      std::vector<stk::mesh::Entity> childElems = get_children(false, centerElem);
+      ASSERT_EQ(8u, childElems.size());
+      elementsToRefine.assign({childElems[7]});
+    }
+
+    refine_elements(false, elementsToRefine);
+
+    EXPECT_FALSE(myRefinement.have_any_hanging_refined_nodes());
+  }
+}
+
 TEST_F(RightTetSurroundedByEdgeTetsRefinement, afterEachOfSixRoundsOfRefinementOfEdgeElements_centerElementHasCorrectNumberOfChildren)
 {
   if(stk::parallel_machine_size(mComm) <= 4)
@@ -937,24 +1067,107 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, DISABLED_BECAUSE_SLOW_percept_mar
   test_refinement_of_transition_element_leads_to_refinement_of_parent(usePercept, indexOfCentralElement);
 }
 
-TEST_F(RegularTetRefinement, DISABLED_performanceTest)
+std::string get_filename(const std::string & baseName, int fileIndex)
 {
-  // As of 10/27/2022
-  // Time: 11866 ms
-  // Percept: 78567 ms
+  char counterChar[32] = {'\0'};
+  std::sprintf(counterChar, "%.4d", fileIndex+1);
+  std::string filename = baseName + ".e-s" + std::string(counterChar);
+  return filename;
+}
+
+TEST_F(RegularTriRefinement, refinementThenUnrefinementTest)
+{
+  std::vector<size_t> goldNumElementsByRefinementLevel = {5, 21, 69, 181, 421, 917, 1925};
+
+
+
   if(stk::parallel_machine_size(mComm) <= 4)
   {
-    const unsigned numLevels = 8;
-    for (unsigned i=0; i<numLevels; ++i)
+    for (size_t i=0; i<goldNumElementsByRefinementLevel.size(); ++i)
     {
       mark_elements_spanning_x_equal_0();
 
       refine_marked_elements(false);
 
-      std::cout << "Level " << i << ", num elements = " << get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK) << std::endl;
+      const size_t numElements = get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK);
+      EXPECT_EQ(goldNumElementsByRefinementLevel[i], numElements);
+
+      std::cout << "Refinement Level " << i+1 << ", num elements = " << numElements << std::endl;
     }
 
+    //write_mesh("test.e");
+
+    const bool doUnrefinement = true;
+    if (doUnrefinement)
+    {
+      std::vector<size_t> goldNumElementsByUnrefinementLevel = {917, 421, 181, 69, 21, 5, 1};
+
+      for (size_t i=0; i<goldNumElementsByUnrefinementLevel.size(); ++i)
+      {
+        mark_all_elements_for_unrefinement();
+
+        refine_marked_elements(false);
+
+        const size_t numElements = get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK);
+        EXPECT_EQ(goldNumElementsByUnrefinementLevel[i], numElements);
+
+        std::cout << "Unrefinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+      }
+    }
+  }
+}
+
+TEST_F(RegularTetRefinement, DISABLED_performanceRefinementThenUnrefinementTest)
+{
+  // As of 11/15/2022 (first time with refinement followed by unrefinement)
+  // Time: 19544 ms
+  // Percept: 86114 ms
+  std::vector<size_t> goldNumElementsByRefinementLevel = {9, 73, 513, 2893, 13909, 61147, 255891, 1045095};
+
+  const bool doWriteMesh = false;
+  const bool usePercept = false;
+
+  if (doWriteMesh)
     write_mesh("test.e");
+
+  int count = 0;
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    for (size_t i=0; i<goldNumElementsByRefinementLevel.size(); ++i)
+    {
+      mark_elements_spanning_x_equal_0();
+
+      if (doWriteMesh)
+        refine_marked_elements(usePercept, get_filename("test", ++count));
+      else
+        refine_marked_elements(usePercept);
+
+      const size_t numElements = get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK);
+      EXPECT_EQ(goldNumElementsByRefinementLevel[i], numElements);
+
+      std::cout << "Refinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+    }
+
+    const bool doUnrefinement = true;
+    if (doUnrefinement)
+    {
+      std::vector<size_t> goldNumElementsByUnrefinementLevel = {287809, 76441, 18165, 3649, 577, 73, 9, 1};
+
+      for (size_t i=0; i<goldNumElementsByUnrefinementLevel.size(); ++i)
+      {
+        mark_all_elements_for_unrefinement();
+
+        if (doWriteMesh)
+          refine_marked_elements(usePercept, get_filename("test", ++count));
+        else
+          refine_marked_elements(usePercept);
+
+        const size_t numElements = get_global_num_entities(mesh(), stk::topology::ELEMENT_RANK);
+        EXPECT_EQ(goldNumElementsByUnrefinementLevel[i], numElements);
+
+        std::cout << "Unrefinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+      }
+    }
   }
 }
 

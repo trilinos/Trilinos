@@ -51,6 +51,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -127,7 +128,7 @@ public:
   typedef Kokkos::View<const KeyType*, Kokkos::LayoutLeft, device_type> keys_type;
 
   //! Default constructor; makes an empty table.
-  FixedHashTable ();
+  KOKKOS_DEFAULTED_FUNCTION FixedHashTable() = default;
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
@@ -415,25 +416,31 @@ private:
   ///
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
-  KeyType minKey_;
+  /// @remark It will be set in @ref init.
+  KeyType minKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
 
   /// \brief Maximum key (computed in init()).
   ///
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
-  KeyType maxKey_;
+  /// @remark It will be set in @ref init.
+  KeyType maxKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
+                    ::Kokkos::Details::ArithTraits<KeyType>::min() :
+                   -::Kokkos::Details::ArithTraits<KeyType>::max();
 
   /// \brief Minimum value.
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-  ValueType minVal_;
+  ValueType minVal_ = ::Kokkos::Details::ArithTraits<ValueType>::max();
 
   /// \brief Maximum value.
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-  ValueType maxVal_;
+  ValueType maxVal_ = ::Kokkos::Details::ArithTraits<ValueType>::is_integer ?
+                      ::Kokkos::Details::ArithTraits<ValueType>::min() :
+                     -::Kokkos::Details::ArithTraits<ValueType>::max();
 
   /// \brief First key in any initial contiguous sequence.
   ///
@@ -441,7 +448,7 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType firstContigKey_;
+  KeyType firstContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
 
   /// \brief Last key in any initial contiguous sequence.
   ///
@@ -449,7 +456,9 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_;
+  KeyType lastContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
+                           ::Kokkos::Details::ArithTraits<KeyType>::min() :
+                          -::Kokkos::Details::ArithTraits<KeyType>::max();
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.
@@ -457,19 +466,20 @@ private:
   /// This is false if this object was created using the two-argument
   /// (keys, vals) constructor (that takes lists of both keys and
   /// values), else true.
-  bool contiguousValues_;
+  bool contiguousValues_ = true;
 
   /// \brief Whether the table has checked for duplicate keys.
   ///
   /// This is set at the end of the first call to hasDuplicateKeys().
   /// The results of that method are cached in hasDuplicateKeys_ (see
   /// below).
-  bool checkedForDuplicateKeys_;
+  /// @remark It will be revised in @ref hasDuplicateKeys.
+  bool checkedForDuplicateKeys_ = true;
 
   /// \brief Whether the table noticed any duplicate keys.
   ///
   /// This is only valid if checkedForDuplicateKeys_ (above) is true.
-  bool hasDuplicateKeys_;
+  bool hasDuplicateKeys_ = false;
 
   /// \brief Whether the table has duplicate keys.
   ///

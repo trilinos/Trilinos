@@ -87,12 +87,13 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
                            Sum (% of System)   Min (% of System)   Max (% of System)        \
 SKIP ----- --------------------- --------------------- SKIP SKIP SKIP --------------------- \
 totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKIP           \
-                               0.200 SKIP          0.100 SKIP          0.100 SKIP           \
+                               00:00:00.200 SKIP          00:00:00.100 SKIP          00:00:00.100 SKIP           \
   childTimer1     2            SKIP  SKIP          SKIP  SKIP          SKIP  SKIP           \
-                               0.200 SKIP          0.100 SKIP          0.100 SKIP           \
+                               00:00:00.200 SKIP          00:00:00.100 SKIP          00:00:00.100 SKIP           \
                                                                                             \
 Took SKIP seconds to generate the table above.                                            \
                     ";
+std::cerr<<expectedOutput<<" : "<<outputStream.str()<<std::endl;
       EXPECT_TRUE(stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
     }
 
