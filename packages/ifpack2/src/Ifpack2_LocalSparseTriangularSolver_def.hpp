@@ -576,7 +576,8 @@ compute ()
     // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
     kh_->destroy_sptrsv_handle();
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-    // CuSparse only supports int type ordinals
+    // CuSparse only supports int type ordinals 
+    // and scalar types of float, double, float complex and double complex
     if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
         std::is_same<int, local_ordinal_type>::value &&
        (std::is_same<scalar_type, float>::value ||
