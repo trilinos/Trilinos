@@ -577,7 +577,12 @@ compute ()
     kh_->destroy_sptrsv_handle();
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
     // CuSparse only supports int type ordinals
-    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value && std::is_same<int,local_ordinal_type >::value)
+    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+        std::is_same<int, local_ordinal_type>::value &&
+       (std::is_same<scalar_type, float>::value ||
+        std::is_same<scalar_type, double>::value ||
+        std::is_same<scalar_type, Kokkos::complex<float>>::value ||
+        std::is_same<scalar_type, Kokkos::complex<double>>::value))
     {
       kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
     }
