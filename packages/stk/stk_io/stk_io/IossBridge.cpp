@@ -1374,6 +1374,27 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
+    void declare_stk_aliases(stk::mesh::Part& part, Ioss::GroupingEntity *ge, stk::mesh::MetaData &meta)
+    {
+      meta.add_part_alias(part, part.name());
+
+      if(nullptr != ge && ge->get_database() != nullptr) {
+        Ioss::Region* region = ge->get_database()->get_region();
+
+        if(ge->property_exists("db_name")) {
+          std::string canonName = ge->get_property("db_name").get_string();
+          meta.add_part_alias(part, canonName);
+        }
+
+        const Ioss::AliasMap& ioss_alias_map = region->get_alias_map(ge->type());
+        for(auto&& alias : ioss_alias_map) {
+          if(stk::equal_case(alias.second, part.name())) {
+            meta.add_part_alias(part, alias.first);
+          }
+        }
+      }
+    }
+
     stk::mesh::Part& declare_stk_part(Ioss::GroupingEntity* entity, stk::mesh::MetaData& meta)
     {
       if (entity->type() == Ioss::ASSEMBLY) {
@@ -1388,6 +1409,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     {
       if (include_entity(entity)) {
         stk::mesh::Part & part = declare_stk_part(entity, meta);
+        declare_stk_aliases(part, entity, meta);
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
@@ -1401,6 +1423,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         mesh::EntityRank type = get_entity_rank(entity, meta);
         stk::mesh::Part * part = nullptr;
         part = &meta.declare_part(entity->name(), type);
+        declare_stk_aliases(*part, entity, meta);
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
         }

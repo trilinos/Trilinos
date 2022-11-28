@@ -118,6 +118,26 @@ void copy_surface_to_block_mapping(const stk::mesh::MetaData &oldMeta, stk::mesh
   }
 }
 
+void copy_aliases(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
+{
+  std::map<std::string, unsigned, std::less<std::string> > m_partAlias;
+  std::map<unsigned, std::vector<std::string>> m_partReverseAlias;
+
+  const stk::mesh::PartVector &allParts = oldMeta.get_mesh_parts();
+  for(size_t i = 0; i < allParts.size(); i++)
+  {
+    stk::mesh::Part* partOld = allParts[i];
+    stk::mesh::Part* partNew = get_corresponding_part(newMeta, partOld);
+    if(partNew != nullptr) {
+      std::vector<std::string> aliases = oldMeta.get_part_aliases(*partOld);
+
+      for(auto alias : aliases) {
+        newMeta.add_part_alias(*partNew, alias);
+      }
+    }
+  }
+}
+
 void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &outputMeta)
 {
   // Query the coordinate field, to figure out the final name (if none set by the user)
@@ -129,6 +149,7 @@ void copy_meta(const stk::mesh::MetaData &inputMeta, stk::mesh::MetaData &output
   copy_parts(inputMeta, outputMeta);
   copy_fields(inputMeta, outputMeta);
   copy_surface_to_block_mapping(inputMeta, outputMeta);
+  copy_aliases(inputMeta, outputMeta);
 }
 
 void copy_relations(const stk::mesh::BulkData& oldBulk,
