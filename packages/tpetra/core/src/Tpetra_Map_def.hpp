@@ -70,7 +70,6 @@ namespace { // (anonymous)
   checkMapInputArray (const char ctorName[],
                       const void* indexList,
                       const size_t indexListSize,
-                      const ExecutionSpace& execSpace,
                       const Teuchos::Comm<int>* const comm)
   {
     using Tpetra::Details::Behavior;
@@ -839,7 +838,6 @@ namespace Tpetra {
     Tpetra::Details::initializeKokkos ();
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
-                        Kokkos::DefaultHostExecutionSpace (),
                         comm.getRawPtr ());
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -885,7 +883,6 @@ namespace Tpetra {
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
                         entryList.getRawPtr (), numLclInds,
-                        Kokkos::DefaultHostExecutionSpace (),
                         comm.getRawPtr ());
     // Not quite sure if I trust both ArrayView and View to behave
     // correctly if the pointer is nonnull but the array length is
@@ -952,7 +949,7 @@ namespace Tpetra {
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
                         static_cast<size_t> (entryList.extent (0)),
-                        execution_space (), comm.getRawPtr ());
+                        comm.getRawPtr ());
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
