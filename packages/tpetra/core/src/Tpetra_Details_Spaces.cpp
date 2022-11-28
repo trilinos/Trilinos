@@ -22,7 +22,11 @@ void lazy_init() {
         CUDA_RUNTIME(cudaEventCreateWithFlags(&cudaInfo.execSpaceWaitEvent_, cudaEventDisableTiming));
         CUDA_RUNTIME(cudaDeviceGetStreamPriorityRange(&cudaInfo.lowPrio_, &cudaInfo.highPrio_));
 
-        // lower numbers are higher priorities
+        // We expect 
+        //   medium priority should be 0
+        //   lower numbers to be higher priorities
+        //   low is at least as good as medium
+        //   medium is at least as good as high
         if (!(cudaInfo.lowPrio_ >= cudaInfo.mediumPrio_ && cudaInfo.mediumPrio_ >= cudaInfo.highPrio_)) {
             std::stringstream ss;
             ss << "CUDA stream priority does not follow assumptions."
