@@ -51,6 +51,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Ptr.hpp"
 #include "ROL_ScalarController.hpp"
+#include "ROL_ParameterList.hpp"
 #include <iostream>
 
 /** @ingroup func_group

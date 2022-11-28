@@ -47,6 +47,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Ptr.hpp"
+#include "ROL_LinearOperator.hpp"
 
 /** @ingroup func_group
     \class ROL::QuadraticObjective

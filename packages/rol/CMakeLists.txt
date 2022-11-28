@@ -49,6 +49,10 @@ IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
 
+IF( ROL_ENABLE_PyROL ) 
+ADD_SUBDIRECTORY(PyROL)
+ENDIF()
+
 # Adapters which require use of Teuchos
 
 #GET_PROPERTY( PTR_STRING GLOBAL PROPERTY PTR_IMPL )
