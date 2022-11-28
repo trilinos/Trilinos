@@ -1318,9 +1318,10 @@ public:
     void
     getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
 
-    /// \brief Get offsets of the off-rank entries in the graph.
+    /// \brief Use `space` to get offsets of the off-rank entries in the graph
     void
-    getLocalOffRankOffsets (offset_device_view_type& offsets) const;
+    getLocalOffRankOffsets (offset_device_view_type& offsets, 
+                            const execution_space &space = execution_space()) const;
 
     /// \brief Backwards compatibility overload of the above method.
     ///

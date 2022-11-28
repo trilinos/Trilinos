@@ -99,12 +99,15 @@ public:
                          device_type,
                          ::Kokkos::MemoryUnmanaged> lcl_col_inds_type;
 
+  using execution_space = typename DeviceType::execution_space;
+
   //! Constructor; also runs the functor.
   GetGraphOffRankOffsets (const offsets_type& OffRankOffsets,
                           const local_map_type& lclColMap,
                           const local_map_type& lclDomMap,
                           const row_offsets_type& ptr,
-                          const lcl_col_inds_type& ind);
+                          const lcl_col_inds_type& ind,
+                          const execution_space &space = execution_space());
 
   //! Kokkos::parallel_for loop body.
   KOKKOS_FUNCTION void operator() (const LO& lclRowInd) const;
@@ -127,17 +130,19 @@ void
 getGraphOffRankOffsets (const OffsetsType& OffRankOffsets,
                         const LclMapType& lclColMap,
                         const LclMapType& lclDomMap,
-                        const LclGraphType& lclGraph)
+                        const LclGraphType& lclGraph,
+                        const typename LclMapType::device_type::execution_space &space =
+                         typename LclMapType::device_type::execution_space())
 {
-  typedef typename OffsetsType::non_const_value_type offset_type;
-  typedef typename LclMapType::local_ordinal_type LO;
-  typedef typename LclMapType::global_ordinal_type GO;
-  typedef typename LclMapType::device_type DT;
+  using offset_type = typename OffsetsType::non_const_value_type;
+  using LO = typename LclMapType::local_ordinal_type;
+  using GO = typename LclMapType::global_ordinal_type;
+  using DT = typename LclMapType::device_type;
 
   typedef Impl::GetGraphOffRankOffsets<LO, GO, DT, offset_type> impl_type;
 
   // The functor's constructor runs the functor.
-  impl_type impl (OffRankOffsets, lclColMap, lclDomMap, lclGraph.row_map, lclGraph.entries);
+  impl_type impl (OffRankOffsets, lclColMap, lclDomMap, lclGraph.row_map, lclGraph.entries, space);
 }
 
 } // namespace Details

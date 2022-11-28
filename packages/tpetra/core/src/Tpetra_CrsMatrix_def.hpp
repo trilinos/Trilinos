@@ -84,6 +84,8 @@
 #include <utility>
 #include <vector>
 
+#include <nvToolsExt.h>
+
 namespace Tpetra {
 
 namespace { // (anonymous)
@@ -4781,7 +4783,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Incoming tpetra operations (we may depend on!) are in the default execution space instance
-    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace); // isLocallyFitted syncs defaultSpace
+    Details::Spaces::exec_space_wait(defaultSpace, *onRankSpace);
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOnRank");
       this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
@@ -4799,7 +4801,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Import from the domain Map MV to the column Map MV.
       ProfilingRegion("Tpetra::CrsMatrix::applyNonTransposeOverlapped: beginImport/endImport");
       // make sure other incoming tpetra operations are done before import is started
-      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace); // isLocallyFitted syncs defaultSpace
+      Details::Spaces::exec_space_wait(defaultSpace, *offRankSpace);
       X_colMapNonConst->beginImport (X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMapNonConst->endImport(X_in, *importer, INSERT, false/*restrictedMode*/, *offRankSpace);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
@@ -4872,7 +4874,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (X_in.getNumVectors() != Y_in.getNumVectors()) {
       std::stringstream ss;
-      ss << __FILE__ << ":" << __LINE__ << ": CrsMatrix::applyNonTranpose: x and y have different numbers of vectors!";
+      ss << __FILE__ << ":" << __LINE__ << ": CrsMatrix::applyNonTranspose: x and y have different numbers of vectors!";
       throw std::runtime_error(ss.str());
     }
 
@@ -4895,8 +4897,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       overlap = false;
     }
 
-    // if the domain map has no local entries, X_in may be size 0,
-    // so no point in overlapping
+    // if domain map has no local entries, there's no on-rank data in
+    // X to overlap with
     if (overlap && 0 == getDomainMap()->getLocalNumElements()) {
       overlap = false;
     }
@@ -4917,7 +4919,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // in local indices.
     // on-rank part of SpMV would be wrong.
     if (overlap) {
-#if 0 
+#if 0
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: colmap->isLocallyFitted(dommap)");
       if (!getColMap()->isLocallyFitted(*getDomainMap())) {
         overlap = false;
@@ -4939,9 +4941,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       applyNonTransposeOverlapped(X_in, Y_in, alpha, beta);
       return;
     }
-
- 
-
 
     // If beta == 0, then the output MV will be overwritten; none of
     // its entries should be read.  (Sparse BLAS semantics say that we
@@ -5494,8 +5493,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
-    // std::cerr << "CWP: applyRemoteColumns()" << std::endl;
+    std::cerr << __FILE__ << ":" <<__LINE__ << " call applyRemoteColumns\n";
     matrix_lcl->applyRemoteColumns (execSpace, X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
+    std::cerr << __FILE__ << ":" <<__LINE__ << " CrsMatrix::localApplyOffRank() done\n";
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5578,8 +5578,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
-    getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
-    // std::cerr << "CWP: applyLocalColumns()" << std::endl;
+    getCrsGraph()->getLocalOffRankOffsets(offRankOffsets, execSpace);
     matrix_lcl->applyLocalColumns (execSpace, X_lcl, Y_lcl, mode, alpha, beta, offRankOffsets);
   }
 

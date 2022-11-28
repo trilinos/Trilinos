@@ -6424,7 +6424,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalOffRankOffsets (offset_device_view_type& offsets) const
+  getLocalOffRankOffsets (offset_device_view_type& offsets,
+                          const execution_space &space) const
   {
     using std::endl;
     const char tfecfFuncName[] = "getLocalOffRankOffsets: ";
@@ -6470,7 +6471,7 @@ namespace Tpetra {
       auto lclGraph = this->getLocalGraphDevice ();
       ::Tpetra::Details::getGraphOffRankOffsets (k_offRankOffsets_,
                                                  lclColMap, lclDomMap,
-                                                 lclGraph);
+                                                 lclGraph, space);
       haveLocalOffRankOffsets_ = true;
     }
   }
