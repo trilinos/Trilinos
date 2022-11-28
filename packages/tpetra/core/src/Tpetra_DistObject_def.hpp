@@ -1681,7 +1681,7 @@ namespace Tpetra {
       try {
         this->unpackAndCombine (remoteLIDs, this->imports_,
             this->numImportPacketsPerLID_,
-            constantNumPackets, CM);
+            constantNumPackets, CM, space);
         lclSuccess = true;
       }
       catch (std::exception& e) {
