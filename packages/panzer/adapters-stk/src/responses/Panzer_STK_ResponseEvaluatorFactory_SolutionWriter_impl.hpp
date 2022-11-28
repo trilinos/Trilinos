@@ -313,6 +313,7 @@ void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 scaleField(const std::string & fieldName,double fieldScalar)
 {
   fieldToScalar_[fieldName] = fieldScalar;
+  scaledFieldsHash_.insert(fieldName);
 }
 
 template <typename EvalT>
