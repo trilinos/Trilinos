@@ -149,9 +149,11 @@ evaluateFields(
 
     const WorksetDetails & details = workset;
 
-    int faceOrts[6] = {};
-    for(index_t c=0;c<workset.num_cells;c++) {
+    Kokkos::parallel_for("panzer::DirichletRsidual_FaceBasis::evalauteFields",
+                         workset.num_cells,
+                         KOKKOS_LAMBDA(const index_t c) {
       const auto ort = orientations->at(details.cell_local_ids[c]);
+      Intrepid2::ordinal_type faceOrts[6] = {};
       ort.getFaceOrientation(faceOrts, numFaces); 
 
       // vertex count represent rotation count before it flips
@@ -162,7 +164,7 @@ evaluateFields(
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
         residual(c,b) *= ortVal;
       } 
-    }
+    });
   }
 }
 
