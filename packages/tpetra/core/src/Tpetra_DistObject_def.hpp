@@ -1087,25 +1087,19 @@ namespace Tpetra {
 
       doPackAndPrepare(src, exportLIDs, constantNumPackets, space);
 
-      // TODO: somewhere after this, a sync is inserted with the default execution space
-      // before the MPI communication begins
-      // for now, sync `space` with the default space to be sure that
-      // pack and prepare is done before communication
-      // ideally, we would just sync communication with `space` downstream
-      Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
-
       if (commOnHost) {
         ProfilingRegion region_cp 
           ("Tpetra::DistObject::beginTransfer::sync_host");
-        this->exports_.sync_host();
+        this->exports_.sync_host(space);
       }
       else {
         ProfilingRegion region_cp 
           ("Tpetra::DistObject::beginTransfer::sync_device");
-        this->exports_.sync_device();
+        this->exports_.sync_device(space);
       }
 
       if (verbose) {
+        space.fence("(verbose) sync before verbose output");
         std::ostringstream os;
         os << *prefix << "5.1. After packAndPrepare, "
            << dualViewStatusToString (this->exports_, "exports_")
@@ -1170,6 +1164,8 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
+        // ensure pack/prepare and data transfers actually done
+        space.fence("before doPosts");
         doPosts(distributorPlan, constantNumPackets, commOnHost, prefix, canTryAliasing, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
