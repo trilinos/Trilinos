@@ -65,7 +65,6 @@
 
 namespace { // (anonymous)
 
-  template<class ExecutionSpace>
   void
   checkMapInputArray (const char ctorName[],
                       const void* indexList,
