@@ -5492,7 +5492,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
-    getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
+    getCrsGraph()->getLocalOffRankOffsets(offRankOffsets, execSpace);
     std::cerr << __FILE__ << ":" <<__LINE__ << " call applyRemoteColumns\n";
     matrix_lcl->applyRemoteColumns (execSpace, X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
     std::cerr << __FILE__ << ":" <<__LINE__ << " CrsMatrix::localApplyOffRank() done\n";
