@@ -84,8 +84,6 @@
 #include <utility>
 #include <vector>
 
-#include <nvToolsExt.h>
-
 namespace Tpetra {
 
 namespace { // (anonymous)
