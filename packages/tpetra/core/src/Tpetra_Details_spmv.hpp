@@ -147,7 +147,8 @@ struct SpmvFunctor {
               [&](const ordinal_type& iEntry, y_value_type& lsum) {
                 const value_type val = CONJ ? ATV::conj(row.value(iEntry))
                                                 : row.value(iEntry);
-                lsum += val * x_(row.colidx(iEntry));
+                const ordinal_type xi = row.colidx(iEntry);
+                lsum += val * x_(xi);
               },
               sum);
 
@@ -174,10 +175,15 @@ struct SpmvFunctor {
   template <class execution_space>
   static LaunchParams launch_parameters(ordinal_type numRows, int64_t nnz) {
 
+    TEUCHOS_TEST_FOR_EXCEPTION(nnz <= int64_t(0), std::out_of_range, 
+    "can't determine launch parameters for nnz=" << nnz);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows <= ordinal_type(0), std::out_of_range, 
+    "can't determine launch parameters for numRows=" << nnz);
+
     LaunchParams ret;
 
     int64_t nnzPerRow = nnz / numRows;
-
     if (nnzPerRow < 1) nnzPerRow = 1;
 
     int maxVectorLength = 1;
@@ -189,31 +195,30 @@ struct SpmvFunctor {
     if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
       maxVectorLength = 64;
   #endif
-
     ret.vectorLength = 1;
-    while (ret.vectorLength < maxVectorLength && ret.vectorLength * 6 < nnzPerRow)
+    while (ret.vectorLength < maxVectorLength && ret.vectorLength * 6 < nnzPerRow) {
       ret.vectorLength *= 2;
-
-    // Determine rows per thread
-    if (ret.rowsPerThread < 1) {
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>())
-        ret.rowsPerThread = 1;
-      else {
-        if (nnzPerRow < 20 && nnz > 5000000) {
-          ret.rowsPerThread = 256;
-        } else
-          ret.rowsPerThread = 64;
-      }
     }
 
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
-        ret.teamSize = 256 / ret.vectorLength;
-      } else {
-        ret.teamSize = 1;
-      }
+    // Determine rows per thread
+    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>())
+      ret.rowsPerThread = 1;
+    else {
+      if (nnzPerRow < 20 && nnz > 5000000) {
+        ret.rowsPerThread = 256;
+      } else
+        ret.rowsPerThread = 64;
+    }
+
+    if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+      ret.teamSize = 256 / ret.vectorLength;
+    } else {
+      ret.teamSize = 1;
+    }
 
     ret.rowsPerTeam = ret.rowsPerThread * ret.teamSize;
 
+    // never happens?
     if (ret.rowsPerTeam < 0) {
       int64_t nnzPerTeam = 4096;
       int64_t conc         = execution_space::concurrency();
@@ -221,11 +226,20 @@ struct SpmvFunctor {
         nnzPerTeam /= 2;
       ret.rowsPerTeam = (nnzPerTeam + nnzPerRow - 1) / nnzPerRow;
     }
-
+    
     return ret;
   }
   
-
+  // a kind of crummy scal implementation that we can put in an execution space instance
+  struct ScalTag{};
+  KOKKOS_INLINE_FUNCTION void operator()(const ScalTag&, const ordinal_type i) const {
+    if (i >= ordinal_type(y_.extent(0))) {return;}
+    if (0 == beta_) {
+      y_(i) = 0;
+    } else {
+      y_(i) *= beta_;
+    }
+  }
 
   static void launch(const Alpha &alpha, 
     const AMatrix &A, 
@@ -234,6 +248,20 @@ struct SpmvFunctor {
     YVector &Y,
     const OffsetDeviceViewType &offRankOffsets,
     const execution_space &space) {
+
+    // if there's no matrix, still need to scale beta
+    if (A.numRows() <= 0 || A.nnz() <= 0) {
+      if (1 != beta) {
+        SpmvFunctor op(alpha, A, X, beta, Y, offRankOffsets, /*unused*/ 0);
+        Kokkos::parallel_for("SpmvFunctor scal",
+                            Kokkos::RangePolicy<ScalTag, execution_space>(
+                                space, 0, Y.extent(0)),
+                            op);
+      }
+      return;
+    }
+
+
 
     if (Details::Spaces::is_gpu_exec_space<execution_space>()) {
 
@@ -246,6 +274,9 @@ struct SpmvFunctor {
 
       const bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
       const bool use_static_schedule  = false;  // Forces the use of a static schedule
+      if (params.rowsPerTeam < 1) {
+        throw std::runtime_error("rowsPerTeam was < 1");
+      }
       int64_t worksets = (Y.extent(0) + params.rowsPerTeam - 1) / params.rowsPerTeam;
 
       SpmvFunctor func(alpha, A, X, beta, Y, offRankOffsets, params.rowsPerTeam);
@@ -599,7 +630,6 @@ public:
 
     // still need to scal A.numRows() == 0
     if (0 == A.numRows() || 0 == alpha) {
-      // std::cerr << __FILE__<<":"<<__LINE__<<": SpmvMvFunctor::launch scal only\n";
       // TODO: define a common scal operator
       SpmvMvFunctor op(alpha, A, X, beta, Y, offRankOffsets, 0/*unused*/, 0/*unused*/);
       Kokkos::parallel_for("SpmvMvFunctor scal",
@@ -624,6 +654,9 @@ public:
 #endif
 #endif
 
+    if (A.numRows() < 1) {
+      throw std::runtime_error("A.numRows() < 1");
+    }
     const ordinal_type NNZPerRow = A.nnz() / A.numRows();
 
     ordinal_type vectorLength = 1;
@@ -644,6 +677,9 @@ public:
             .team_size_recommended(op, Kokkos::ParallelForTag());
     std::cerr << __FILE__<<":"<<__LINE__<<": teamSize=" << teamSize << " vectorLength=" << vectorLength << "\n";
     const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
+    if (rowsPerTeam < 1) {
+      throw std::runtime_error("rowsPerTeam < 1");
+    }
     const size_type nteams = (A.numRows() + rowsPerTeam - 1) / rowsPerTeam;
     Kokkos::parallel_for("SpmvMvFunctor",
                         Kokkos::TeamPolicy<execution_space>(
@@ -809,6 +845,9 @@ public:
             rowsPerThread, Kokkos::AUTO, vectorLength)
             .team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rowsPerTeam = rowsPerThread * teamSize;
+    if (rowsPerTeam < 1) {
+      throw std::runtime_error("rowsPerTeam < 1");
+    }
     op.rowsPerTeam_ = rowsPerTeam;
     const size_type nteams = (nrow + rowsPerTeam - 1) / rowsPerTeam;
     Kokkos::parallel_for("SpmvMvTransFunctor",
@@ -930,6 +969,9 @@ static void launch(const Alpha &alpha,
                                               vector_length)
               .team_size_recommended(op, Kokkos::ParallelForTag());
       const ordinal_type rows_per_team = rows_per_thread * team_size;
+      if (rows_per_team <= 0) {
+        throw std::runtime_error("rows_per_team <= 0");
+      }
       op.rows_per_team                 = rows_per_team;
       const ordinal_type nteams           = (nrow + rows_per_team - 1) / rows_per_team;
       Kokkos::parallel_for(
@@ -970,6 +1012,15 @@ const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
   UY uY(Y);
   UR uOffRankOffsets(offRankOffsets);
 
+  // std::cerr << __FILE__ << ":" << __LINE__
+  //           << " "   << Y.extent(0) << "," << Y.extent(1)
+  //           << " = " << A.numRows() << "," << A.numCols()
+  //           << " x " << X.extent(0) << "," << X.extent(1)
+  //           << "\n";
+
+  // TEUCHOS_TEST_FOR_EXCEPTION(Y.extent(1) != X.extent(1), std::logic_error, 
+  // "Y cols " << Y.extent(1) << " != " << " X cols " << X.extent(1));
+
   // launch conjugate / transpose / on-rank / off-rank / vector / multivector SpMV
   switch(mode) {
     case Teuchos::ETransp::TRANS: {
@@ -985,6 +1036,13 @@ const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
       }
     }
     case Teuchos::ETransp::NO_TRANS: {
+
+      // TEUCHOS_TEST_FOR_EXCEPTION(int64_t(Y.extent(0)) != int64_t(A.numRows()), std::logic_error, 
+      // "y rows " << Y.extent(0) << " != " << " A rows " << A.numRows());
+
+      // TEUCHOS_TEST_FOR_EXCEPTION(int64_t(A.numCols()) != int64_t(X.extent(0)), std::logic_error, 
+      // "A cols " << A.numCols() << " != " << " X rows " << X.extent(0));
+
       if (1 == X.extent(1) && 1 == Y.extent(1)) {
         auto X0 = Kokkos::subview(uX, Kokkos::ALL, 0);
         auto Y0 = Kokkos::subview(uY, Kokkos::ALL, 0);
