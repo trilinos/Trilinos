@@ -151,7 +151,7 @@ bool test_element(const std::string &type)
   }
   else {
     if (element->name() != "node") {
-      if (perm->num_permutation_nodes() != element->number_corner_nodes()) {
+      if (static_cast<int>(perm->num_permutation_nodes()) != element->number_corner_nodes()) {
         fmt::print(stderr, "\n\tPermutation node count {} does not match corner node count {}\n.",
                    perm->num_permutation_nodes(), element->number_corner_nodes());
         result = false;

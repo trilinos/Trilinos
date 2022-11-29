@@ -11,7 +11,7 @@
 #include <fmt/format.h>
 
 namespace {
-  std::string filename = "test.hb";
+  std::string tst_filename = "test.hb";
 
   Ioss::DatabaseIO *create_heartbeat(const std::string &filename)
   {
@@ -31,7 +31,7 @@ namespace {
   // BeginDocTest2
   DOCTEST_TEST_CASE("Ioss::write_file")
   {
-    auto *db = create_heartbeat("test.hb");
+    auto *db = create_heartbeat(tst_filename);
     DOCTEST_CHECK(db->ok());
 
     Ioss::Region region(db);
@@ -76,10 +76,10 @@ int main(int argc, char **argv)
 
   while (*++argv) {
     if (std::string(*argv) == "--filename") {
-      filename = *++argv;
+      tst_filename = *++argv;
       break;
     }
-    fmt::print("'{}'\n", filename);
+    fmt::print("'{}'\n", tst_filename);
   }
   return context.run();
 }
