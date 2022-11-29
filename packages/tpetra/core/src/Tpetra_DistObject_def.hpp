@@ -1086,6 +1086,14 @@ namespace Tpetra {
       }
 
       doPackAndPrepare(src, exportLIDs, constantNumPackets, space);
+
+      // TODO: somewhere after this, a sync is inserted with the default execution space
+      // before the MPI communication begins
+      // for now, sync `space` with the default space to be sure that
+      // pack and prepare is done before communication
+      // ideally, we would just sync communication with `space` downstream
+      Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
+
       if (commOnHost) {
         ProfilingRegion region_cp 
           ("Tpetra::DistObject::beginTransfer::sync_host");
@@ -1728,20 +1736,14 @@ namespace Tpetra {
     execution space instance, so just do it in the default instance
     */
 
-    /* if the provided instance is not the default instance, 
-       wait for any operations in the provided instance we may depend on
+    /* wait for any operations in the provided instance we may depend on
        do this in the default instance, then have the
        provided instance wait for the default instance to finish this
        before proceeding */
-    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
 
-    if (instanceIsNotDefault) {
-      Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
-    }
+    Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
     copyAndPermute(a, b, c, d, CM); // default instance
-    if (instanceIsNotDefault) {
-      Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
-    }
+    Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1778,20 +1780,14 @@ namespace Tpetra {
     execution space instance, so just do it in the default instance
     */
 
-    /* if the provided instance is not the default instance, 
-       wait for any operations in the provided instance we may depend on
+    /* wait for any operations in the provided instance we may depend on
        do this in the default instance, then have the
        provided instance wait for the default instance to finish this
        before proceeding */
-    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
 
-    if (instanceIsNotDefault) {
-      Details::Spaces::exec_space_wait(space, execution_space());
-    }
+    Details::Spaces::exec_space_wait(space, execution_space());
     packAndPrepare(source, exportLIDs, exports, numPacketsPerLID, constantNumPackets); // default instance
-    if (instanceIsNotDefault) {
-      Details::Spaces::exec_space_wait(execution_space(), space);
-    }
+    Details::Spaces::exec_space_wait(execution_space(), space);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1846,20 +1842,13 @@ namespace Tpetra {
     execution space instance, so just do it in the default instance
     */
 
-    /* if the provided instance is not the default instance, 
-       wait for any operations in the provided instance we may depend on
+    /* wait for any operations in the provided instance we may depend on
        do this in the default instance, then have the
        provided instance wait for the default instance to finish this
        before proceeding */
-    const bool instanceIsNotDefault = space.impl_instance_id() != execution_space().impl_instance_id();
-
-    if (instanceIsNotDefault) {
-      Details::Spaces::exec_space_wait(space, execution_space());
-    }
+    Details::Spaces::exec_space_wait(space, execution_space());
     unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, CM); // default instance
-    if (instanceIsNotDefault) {
-      Details::Spaces::exec_space_wait(execution_space(), space);
-    }
+    Details::Spaces::exec_space_wait(execution_space(), space);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
