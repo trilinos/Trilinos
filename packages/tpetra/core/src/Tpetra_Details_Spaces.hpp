@@ -364,14 +364,18 @@ template <typename S1, typename S2,
 BothCuda<S1, S2> = true>
 void exec_space_wait(const char */*msg*/, const S1 &waitee, const S2 &waiter) {
     lazy_init();
-    /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
-       the state of a shared event
-       this means we only need one event even if many exec_space_waits are in flight at the same time
-    */
+
 
     // TODO: add profiling hooks
-    CUDA_RUNTIME(cudaEventRecord(cudaInfo.execSpaceWaitEvent_, waitee.cuda_stream()));
-    CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), cudaInfo.execSpaceWaitEvent_, 0 /*flags*/));
+    // if they are the same instance, no sync needed
+    if (waitee.impl_instance_id() != waiter.impl_instance_id()) { // TODO: use instance operator== once available
+        /* cudaStreamWaitEvent is not affected by later calls to cudaEventRecord, even if it overwrites
+        the state of a shared event
+        this means we only need one event even if many exec_space_waits are in flight at the same time
+        */
+        CUDA_RUNTIME(cudaEventRecord(cudaInfo.execSpaceWaitEvent_, waitee.cuda_stream()));
+        CUDA_RUNTIME(cudaStreamWaitEvent(waiter.cuda_stream(), cudaInfo.execSpaceWaitEvent_, 0 /*flags*/));
+    }
 }
 #endif
 
