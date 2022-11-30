@@ -3887,9 +3887,6 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock *eb,
       }
       auto eb_offset =
           eb->get_offset(); // Offset of beginning of the element block elements for this block
-      auto proc_offset = eb->get_optional_property(
-          "_processor_offset", 0); // Offset of this processors elements within that block.
-      auto file_count = eb->get_optional_property("locally_owned_count", my_element_count);
       int  index =
           -1 * (field.get_index() + comp); // Negative since specifying index, not id to exodus API.
 
