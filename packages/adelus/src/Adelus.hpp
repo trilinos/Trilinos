@@ -134,17 +134,17 @@ namespace Adelus {
                        int* my_col ) {
     // This function echoes the multiprocessor distribution of the matrix
 
-    GetDistribution( MPI_COMM_WORLD,
-                     *nprocs_row_,
-                     *number_of_unknowns,
-                     *nrhs_,
-                     *my_rows_,
-                     *my_cols_,
-                     *my_first_row_,
-                     *my_first_col_,
-                     *my_rhs_,
-                     *my_row,
-                     *my_col ) 
+    distmat_( MPI_COMM_WORLD,
+              *nprocs_row_,
+              *number_of_unknowns,
+              *nrhs_,
+              *my_rows_,
+              *my_cols_,
+              *my_first_row_,
+              *my_first_col_,
+              *my_rhs_,
+              *my_row,
+              *my_col ) 
 
     return(0);
 
@@ -206,7 +206,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA, secs );
+    lusolve_(ahandle, AA, secs);
 
   }
 
@@ -397,7 +397,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i_dev, secs );
+    lusolve_( ahandle, AA_i_dev, secs );
 
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
@@ -411,7 +411,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i, secs );
+    lusolve_( ahandle, AA_i, secs );
 #endif
     }
   }
@@ -555,7 +555,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i_dev, secs );
+    lusolve_( ahandle, AA_i_dev, secs );
 
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
@@ -569,7 +569,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i, secs );
+    lusolve_( ahandle, AA_i, secs );
 #endif
     }
   }
@@ -713,7 +713,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i_dev, secs );
+    lusolve_( ahandle, AA_i_dev, secs );
 
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
@@ -727,7 +727,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i, secs );
+    lusolve_( ahandle, AA_i, secs );
 #endif
     }
   }
@@ -871,7 +871,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i_dev, secs );
+    lusolve_( ahandle, AA_i_dev, secs );
 
     Kokkos::deep_copy( AA_i, AA_i_dev );
 #else//OpenMP
@@ -885,7 +885,7 @@ namespace Adelus {
   
     Adelus::AdelusHandle<value_type, execution_space, memory_space> 
       ahandle(0, MPI_COMM_WORLD, *matrix_size, *num_procsr, *num_rhs );
-    FactorSolve( ahandle, AA_i, secs );
+    lusolve_( ahandle, AA_i, secs );
 #endif
     }
   }
