@@ -100,7 +100,6 @@ struct SpmvFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type iRow) const {
-    using y_value_type = typename YVector::non_const_value_type;
     if (iRow >= A_.numRows()) {
       return;
     }
@@ -127,8 +126,6 @@ struct SpmvFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member& dev) const {
-    using y_value_type = typename YVector::non_const_value_type;
-
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(dev, 0, rowsPerTeam_),
         [&](const ordinal_type& loop) {
