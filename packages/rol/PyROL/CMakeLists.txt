@@ -60,6 +60,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PyROL_BINDER_SUPPRESS_ERRORS
   "Enable the suppress errors option of Binder."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(PyROL_BINDER_CMAKE_ERROR
+  PYROL_CMAKE_ERROR
+  "Stop the configuration if binder fails."
+  ON )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(PyROL_ENABLE_Update_Binder
   PYROL_UPDATE_GENERATED_SRC
   "Enable the update of the generated source files with Binder."
@@ -313,7 +318,11 @@ IF (PYROL_GENERATE_SRC)
 
   if(STATUS AND NOT STATUS EQUAL 0)
     message("${OUTPUT_BINDER}")
-    message(FATAL_ERROR "BINDER FAILED: ${STATUS}")
+    if(PYROL_CMAKE_ERROR)
+      message(FATAL_ERROR "BINDER FAILED: ${STATUS}")
+    else()
+      message("BINDER FAILED: ${STATUS}")
+    endif()
   else()
     message(STATUS "BINDER SUCCESS:") 
     message("${OUTPUT_BINDER}")
