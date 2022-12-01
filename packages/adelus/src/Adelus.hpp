@@ -144,7 +144,7 @@ namespace Adelus {
               *my_first_col_,
               *my_rhs_,
               *my_row,
-              *my_col ) 
+              *my_col ); 
 
     return(0);
 
