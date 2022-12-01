@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 ## Bug Report
-@trilinos/package_name
+Trilinos organization members, please @ mention the correct package team.  
+If you are not a member, please refer to https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners to mention the correct parties (because non-members cannot mention Github teams).
 
 ### Description
 What went wrong?  What should have happened?  Do you have an idea what might
