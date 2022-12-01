@@ -11,7 +11,6 @@
 #include <Ioss_CodeTypes.h>
 #include <array>
 #include <cassert>
-#include <fmt/ostream.h>
 #include <string>
 
 #if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
@@ -148,10 +147,3 @@ namespace Ioss {
   IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
 } // namespace Ioss
 
-#if FMT_VERSION >= 90000
-namespace fmt {
-  template <> struct formatter<Ioss::ZoneConnectivity> : ostream_formatter
-  {
-  };
-} // namespace fmt
-#endif
