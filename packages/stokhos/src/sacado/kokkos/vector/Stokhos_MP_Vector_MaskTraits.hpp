@@ -699,7 +699,7 @@ public:
     }
 };
 
-template<typename scalar> KOKKOS_INLINE_FUNCTION std::ostream &operator<<(std::ostream &os, const Mask<scalar>& m) {
+template<typename scalar> std::ostream &operator<<(std::ostream &os, const Mask<scalar>& m) {
     os << "[ ";
     for(std::size_t i=0; i<m.getSize(); ++i)
         os << m.get(i) << " ";
