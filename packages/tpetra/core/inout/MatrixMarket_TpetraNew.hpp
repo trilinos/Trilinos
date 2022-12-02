@@ -581,8 +581,10 @@ readBinary(
       // The header in the binary file contains only numVertices and numEdges
       unsigned int nv = 0;
       unsigned long long ne = 0;
-      fread(&nv, sizeof(unsigned int), 1, fp);
-      fread(&ne, sizeof(unsigned long long), 1, fp);
+      if (fread(&nv, sizeof(unsigned int), 1, fp) != 1)
+           throw std::runtime_error("Error: bad number of read values.");
+      if (fread(&ne, sizeof(unsigned long long), 1, fp) != 1)
+           throw std::runtime_error("Error: bad number of read values.");
       dim[0] = nv;
       dim[1] = dim[0];
       dim[2] = ne;
@@ -812,9 +814,12 @@ readPerProcessBinary(
   // The header in each per-process file:  globalNumRows globalNumCols localNumNonzeros
   unsigned int globalNumRows = 0, globalNumCols = 0;
   unsigned long long localNumNonzeros = 0;
-  fread(&globalNumRows, sizeof(unsigned int), 1, fp);
-  fread(&globalNumCols, sizeof(unsigned int), 1, fp);
-  fread(&localNumNonzeros, sizeof(unsigned long long), 1, fp);
+  if (fread(&globalNumRows, sizeof(unsigned int), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
+  if (fread(&globalNumCols, sizeof(unsigned int), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
+  if (fread(&localNumNonzeros, sizeof(unsigned long long), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
  
   nRow = static_cast<size_t>(globalNumRows);
   nCol = static_cast<size_t>(globalNumCols);
