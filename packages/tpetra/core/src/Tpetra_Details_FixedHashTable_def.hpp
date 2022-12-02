@@ -77,7 +77,7 @@ namespace FHT {
 // we would need experiments to find out.
 template<class ExecSpace>
 bool worthBuildingFixedHashTableInParallel () {
-    return ExecSpace::concurrency() > 1;
+    return ExecSpace().concurrency() > 1;
 }
 
 //

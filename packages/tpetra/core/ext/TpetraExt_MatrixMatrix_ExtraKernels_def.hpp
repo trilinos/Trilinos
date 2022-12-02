@@ -165,7 +165,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -375,7 +375,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -542,7 +542,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -784,7 +784,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -1111,7 +1111,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
         // Get my node / thread info (right from openmp or parameter list)
-        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
             thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -1360,7 +1360,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         }
 
         // Get my node / thread info (right from openmp or parameter list)
-        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
             thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
