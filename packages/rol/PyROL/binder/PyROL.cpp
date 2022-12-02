@@ -33,7 +33,8 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 void bind_unknown_unknown(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_1(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_3(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_Step(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_BundleAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -48,6 +49,9 @@ void bind_ROL_TypeB_Algorithm(std::function< pybind11::module &(std::string cons
 void bind_ROL_ReducedLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_LinMoreAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_SingletonVector(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_TypeU_Algorithm_1(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_ScalarController(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_MoreauYosidaAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_QuasiNewtonAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -59,11 +63,13 @@ void bind_ROL_TypeE_AugmentedLagrangianAlgorithm(std::function< pybind11::module
 void bind_ROL_TypeE_FletcherAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ElasticLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeE_StabilizedLCLAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_Bounds(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_BoundConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeE_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_4(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const &namespace_) > &M);
 
 
 PYBIND11_MODULE(PyROL, root_module) {
@@ -130,7 +136,8 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_unknown_unknown(M);
 	bind_unknown_unknown_1(M);
 	bind_unknown_unknown_2(M);
-	bind_ROL_KrylovFactory(M);
+	bind_unknown_unknown_3(M);
+	bind_ROL_Step(M);
 	bind_ROL_TypeU_Algorithm(M);
 	bind_ROL_ValidParameters(M);
 	bind_ROL_TypeU_BundleAlgorithm(M);
@@ -145,6 +152,9 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_ReducedLinearConstraint(M);
 	bind_ROL_TypeB_LinMoreAlgorithm(M);
 	bind_ROL_SingletonVector(M);
+	bind_ROL_KrylovFactory(M);
+	bind_ROL_TypeU_Algorithm_1(M);
+	bind_ROL_ScalarController(M);
 	bind_ROL_TypeB_MoreauYosidaAlgorithm(M);
 	bind_ROL_TypeB_InteriorPointAlgorithm(M);
 	bind_ROL_TypeB_QuasiNewtonAlgorithm(M);
@@ -156,10 +166,12 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_TypeE_FletcherAlgorithm(M);
 	bind_ROL_ElasticLinearConstraint(M);
 	bind_ROL_TypeE_StabilizedLCLAlgorithm(M);
-	bind_ROL_Bounds(M);
+	bind_ROL_BoundConstraint(M);
 	bind_ROL_TypeE_AlgorithmFactory(M);
 	bind_ROL_TypeG_Algorithm(M);
 	bind_ROL_TrustRegionTypes(M);
 	bind_ROL_KelleySachsModel(M);
+	bind_unknown_unknown_4(M);
+	bind_unknown_unknown_5(M);
 
 }

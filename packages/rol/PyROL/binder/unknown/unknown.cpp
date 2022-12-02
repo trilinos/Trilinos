@@ -34,7 +34,7 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-// ROL::Vector file: line:16
+// ROL::Vector file: line:23
 struct PyCallBack_ROL_Vector_double_t : public ROL::Vector<double> {
 	using ROL::Vector<double>::Vector;
 
@@ -261,7 +261,7 @@ struct PyCallBack_ROL_Vector_double_t : public ROL::Vector<double> {
 	}
 };
 
-// ROL::Objective file: line:19
+// ROL::Objective file: line:26
 struct PyCallBack_ROL_Objective_double_t : public ROL::Objective<double> {
 	using ROL::Objective<double>::Objective;
 
@@ -371,7 +371,7 @@ struct PyCallBack_ROL_Objective_double_t : public ROL::Objective<double> {
 	}
 };
 
-// ROL::QuadraticObjective file: line:20
+// ROL::QuadraticObjective file: line:27
 struct PyCallBack_ROL_QuadraticObjective_double_t : public ROL::QuadraticObjective<double> {
 	using ROL::QuadraticObjective<double>::QuadraticObjective;
 
@@ -483,7 +483,7 @@ struct PyCallBack_ROL_QuadraticObjective_double_t : public ROL::QuadraticObjecti
 
 void bind_unknown_unknown(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	{ // ROL::Vector file: line:16
+	{ // ROL::Vector file: line:23
 		pybind11::class_<ROL::Vector<double>, Teuchos::RCP<ROL::Vector<double>>, PyCallBack_ROL_Vector_double_t> cl(M("ROL"), "Vector_double_t", "");
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Vector_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Vector_double_t const &>());
@@ -508,7 +508,7 @@ void bind_unknown_unknown(std::function< pybind11::module &(std::string const &n
 		cl.def("randomize", (void (ROL::Vector<double>::*)(const double, const double)) &ROL::Vector<double>::randomize, "Set vector to be uniform random between [l,u].\n\n             \n     is a the lower bound.\n             \n\n     is a the upper bound.\n\n             On return the components of \n are uniform\n             random numbers on the interval \n\n.\n       	     The default implementation uses #applyUnary methods for the\n       	     computation. Please overload if a more efficient implementation is\n             needed.\n\n             ---\n\nC++: ROL::Vector<double>::randomize(const double, const double) --> void", pybind11::arg("l"), pybind11::arg("u"));
 		cl.def("assign", (class ROL::Vector<double> & (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::operator=, "C++: ROL::Vector<double>::operator=(const class ROL::Vector<double> &) --> class ROL::Vector<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
-	{ // ROL::Objective file: line:19
+	{ // ROL::Objective file: line:26
 		pybind11::class_<ROL::Objective<double>, Teuchos::RCP<ROL::Objective<double>>, PyCallBack_ROL_Objective_double_t> cl(M("ROL"), "Objective_double_t", "");
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Objective_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Objective_double_t const &>());
@@ -525,7 +525,7 @@ void bind_unknown_unknown(std::function< pybind11::module &(std::string const &n
 		cl.def("precond", (void (ROL::Objective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::Objective<double>::precond, "Apply preconditioner to vector.\n\n      This function applies a preconditioner for the Hessian of the objective function to the vector \n.\n      \n\n  is the action of the Hessian preconditioner on \n.\n      \n\n   is the direction vector.\n      \n\n   is the current iterate.\n      \n\n is a tolerance for inexact objective function computation.\n\nC++: ROL::Objective<double>::precond(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("Pv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
-	{ // ROL::QuadraticObjective file: line:20
+	{ // ROL::QuadraticObjective file: line:27
 		pybind11::class_<ROL::QuadraticObjective<double>, Teuchos::RCP<ROL::QuadraticObjective<double>>, PyCallBack_ROL_QuadraticObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "QuadraticObjective_double_t", "");
 		cl.def( pybind11::init( [](const class Teuchos::RCP<const class ROL::LinearOperator<double> > & a0, const class Teuchos::RCP<const class ROL::Vector<double> > & a1){ return new ROL::QuadraticObjective<double>(a0, a1); }, [](const class Teuchos::RCP<const class ROL::LinearOperator<double> > & a0, const class Teuchos::RCP<const class ROL::Vector<double> > & a1){ return new PyCallBack_ROL_QuadraticObjective_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<const class Teuchos::RCP<const class ROL::LinearOperator<double> > &, const class Teuchos::RCP<const class ROL::Vector<double> > &, double>(), pybind11::arg("H"), pybind11::arg("g"), pybind11::arg("c") );

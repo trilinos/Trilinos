@@ -23,7 +23,8 @@ ROL_ParameterList.cpp
 unknown/unknown.cpp
 unknown/unknown_1.cpp
 unknown/unknown_2.cpp
-ROL_KrylovFactory.cpp
+unknown/unknown_3.cpp
+ROL_Step.cpp
 ROL_TypeU_Algorithm.cpp
 ROL_ValidParameters.cpp
 ROL_TypeU_BundleAlgorithm.cpp
@@ -38,6 +39,9 @@ ROL_TypeB_Algorithm.cpp
 ROL_ReducedLinearConstraint.cpp
 ROL_TypeB_LinMoreAlgorithm.cpp
 ROL_SingletonVector.cpp
+ROL_KrylovFactory.cpp
+ROL_TypeU_Algorithm_1.cpp
+ROL_ScalarController.cpp
 ROL_TypeB_MoreauYosidaAlgorithm.cpp
 ROL_TypeB_InteriorPointAlgorithm.cpp
 ROL_TypeB_QuasiNewtonAlgorithm.cpp
@@ -49,8 +53,10 @@ ROL_TypeE_AugmentedLagrangianAlgorithm.cpp
 ROL_TypeE_FletcherAlgorithm.cpp
 ROL_ElasticLinearConstraint.cpp
 ROL_TypeE_StabilizedLCLAlgorithm.cpp
-ROL_Bounds.cpp
+ROL_BoundConstraint.cpp
 ROL_TypeE_AlgorithmFactory.cpp
 ROL_TypeG_Algorithm.cpp
 ROL_TrustRegionTypes.cpp
 ROL_KelleySachsModel.cpp
+unknown/unknown_4.cpp
+unknown/unknown_5.cpp

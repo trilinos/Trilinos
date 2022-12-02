@@ -7,7 +7,6 @@
 #include <ROL_Bundle_U_AS.hpp>
 #include <ROL_Bundle_U_TT.hpp>
 #include <ROL_CubicInterp_U.hpp>
-#include <ROL_DescentDirection_U.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_GoldenSectionScalarMinimization.hpp>
@@ -548,64 +547,6 @@ struct PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t : public ROL::Scal
 	}
 };
 
-// ROL::DescentDirection_U file:ROL_DescentDirection_U.hpp line:58
-struct PyCallBack_ROL_DescentDirection_U_double_t : public ROL::DescentDirection_U<double> {
-	using ROL::DescentDirection_U<double>::DescentDirection_U;
-
-	void initialize(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::DescentDirection_U<double> *>(this), "initialize");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		return DescentDirection_U::initialize(a0, a1);
-	}
-	void compute(class ROL::Vector<double> & a0, double & a1, double & a2, int & a3, int & a4, const class ROL::Vector<double> & a5, const class ROL::Vector<double> & a6, class ROL::Objective<double> & a7) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::DescentDirection_U<double> *>(this), "compute");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4, a5, a6, a7);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		pybind11::pybind11_fail("Tried to call pure virtual function \"DescentDirection_U::compute\"");
-	}
-	void update(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const double a4, const int a5) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::DescentDirection_U<double> *>(this), "update");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4, a5);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		return DescentDirection_U::update(a0, a1, a2, a3, a4, a5);
-	}
-	std::string printName() const override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::DescentDirection_U<double> *>(this), "printName");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<std::string>::value) {
-				static pybind11::detail::override_caster_t<std::string> caster;
-				return pybind11::detail::cast_ref<std::string>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<std::string>(std::move(o));
-		}
-		return DescentDirection_U::printName();
-	}
-};
-
 void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::BundleStatusTest file:ROL_BundleStatusTest.hpp line:53
@@ -826,14 +767,4 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 	// ROL::LineSearchUFactory(class Teuchos::ParameterList &) file:ROL_LineSearch_U_Factory.hpp line:55
 	M("ROL").def("LineSearchUFactory", (class Teuchos::RCP<class ROL::LineSearch_U<double> > (*)(class Teuchos::ParameterList &)) &ROL::LineSearchUFactory<double>, "C++: ROL::LineSearchUFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::LineSearch_U<double> >", pybind11::arg("parlist"));
 
-	{ // ROL::DescentDirection_U file:ROL_DescentDirection_U.hpp line:58
-		pybind11::class_<ROL::DescentDirection_U<double>, Teuchos::RCP<ROL::DescentDirection_U<double>>, PyCallBack_ROL_DescentDirection_U_double_t> cl(M("ROL"), "DescentDirection_U_double_t", "");
-		cl.def(pybind11::init<PyCallBack_ROL_DescentDirection_U_double_t const &>());
-		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_DescentDirection_U_double_t(); } ) );
-		cl.def("initialize", (void (ROL::DescentDirection_U<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::DescentDirection_U<double>::initialize, "C++: ROL::DescentDirection_U<double>::initialize(const class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("x"), pybind11::arg("g"));
-		cl.def("compute", (void (ROL::DescentDirection_U<double>::*)(class ROL::Vector<double> &, double &, double &, int &, int &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class ROL::Objective<double> &)) &ROL::DescentDirection_U<double>::compute, "C++: ROL::DescentDirection_U<double>::compute(class ROL::Vector<double> &, double &, double &, int &, int &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class ROL::Objective<double> &) --> void", pybind11::arg("s"), pybind11::arg("snorm"), pybind11::arg("sdotg"), pybind11::arg("iter"), pybind11::arg("flag"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"));
-		cl.def("update", (void (ROL::DescentDirection_U<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const double, const int)) &ROL::DescentDirection_U<double>::update, "C++: ROL::DescentDirection_U<double>::update(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const double, const int) --> void", pybind11::arg("x"), pybind11::arg("s"), pybind11::arg("gold"), pybind11::arg("gnew"), pybind11::arg("snorm"), pybind11::arg("iter"));
-		cl.def("printName", (std::string (ROL::DescentDirection_U<double>::*)() const) &ROL::DescentDirection_U<double>::printName, "C++: ROL::DescentDirection_U<double>::printName() const --> std::string");
-		cl.def("assign", (class ROL::DescentDirection_U<double> & (ROL::DescentDirection_U<double>::*)(const class ROL::DescentDirection_U<double> &)) &ROL::DescentDirection_U<double>::operator=, "C++: ROL::DescentDirection_U<double>::operator=(const class ROL::DescentDirection_U<double> &) --> class ROL::DescentDirection_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
-	}
 }

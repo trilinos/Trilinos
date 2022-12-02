@@ -5,7 +5,7 @@ namespace ROL {
 namespace PyROL {
 
   template <typename T>
-  inline void foo(T a){};
+  inline void foo(T a){}
 
 }
 }

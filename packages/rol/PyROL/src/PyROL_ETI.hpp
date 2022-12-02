@@ -12,24 +12,30 @@
 
 #include <PyROL_ETI_helper.hpp>
 
+#define BINDER_ETI_ABSTRACT(CLASS_NAME) \
+  template class CLASS_NAME;
+
+#define BINDER_ETI_WITH_FOO(CLASS_NAME) \
+  template class CLASS_NAME; \
+  template <> inline void PyROL::foo(CLASS_NAME a){}
+
 #define BINDER_ROL_VECTOR(SCALAR) \
-  template class Vector<SCALAR>;
+  BINDER_ETI_ABSTRACT(Vector<SCALAR>)
 
 #define BINDER_ROL_OBJECTIVE(SCALAR) \
-  template class Objective<SCALAR>; \
-  template class QuadraticObjective<SCALAR>; \
-  template <> inline void PyROL::foo(QuadraticObjective<SCALAR> a){};
+  BINDER_ETI_ABSTRACT(Objective<SCALAR>) \
+  BINDER_ETI_WITH_FOO(QuadraticObjective<SCALAR>)
 
 #define BINDER_ROL_CONSTRAINT(SCALAR) \
-  template class Constraint<SCALAR>;
+  BINDER_ETI_ABSTRACT(Constraint<SCALAR>)
 
 #define BINDER_ROL_SOLVER(SCALAR) \
-  template class Solver<SCALAR>; \
-  template class Algorithm<SCALAR>; \
-  template class TrustRegionStep<SCALAR>;
+  BINDER_ETI_ABSTRACT(Solver<SCALAR>) \
+  BINDER_ETI_WITH_FOO(Algorithm<SCALAR>) \
+  BINDER_ETI_WITH_FOO(TrustRegionStep<SCALAR>)
 
 #define BINDER_ROL_PROBLEM(SCALAR) \
-  template class Problem<SCALAR>;
+  BINDER_ETI_ABSTRACT(Problem<SCALAR>)
 
 namespace ROL {
 
