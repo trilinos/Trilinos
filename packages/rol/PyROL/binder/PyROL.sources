@@ -21,6 +21,8 @@ Teuchos_FancyOStream.cpp
 Teuchos_Dependency.cpp
 ROL_ParameterList.cpp
 unknown/unknown.cpp
+unknown/unknown_1.cpp
+unknown/unknown_2.cpp
 ROL_KrylovFactory.cpp
 ROL_TypeU_Algorithm.cpp
 ROL_ValidParameters.cpp

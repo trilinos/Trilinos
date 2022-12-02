@@ -31,6 +31,8 @@ void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string con
 void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_unknown_unknown(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_1(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeU_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -89,6 +91,7 @@ PYBIND11_MODULE(PyROL, root_module) {
 		{"", "ROL"},
 		{"ROL", "Elementwise"},
 		{"ROL", "Exception"},
+		{"ROL", "PyROL"},
 		{"ROL", "TRUtils"},
 		{"ROL", "TypeB"},
 		{"ROL", "TypeE"},
@@ -125,6 +128,8 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_Teuchos_Dependency(M);
 	bind_ROL_ParameterList(M);
 	bind_unknown_unknown(M);
+	bind_unknown_unknown_1(M);
+	bind_unknown_unknown_2(M);
 	bind_ROL_KrylovFactory(M);
 	bind_ROL_TypeU_Algorithm(M);
 	bind_ROL_ValidParameters(M);

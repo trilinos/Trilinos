@@ -10,12 +10,15 @@
 #include <ROL_TrustRegionStep.hpp>
 #include <ROL_Problem.hpp>
 
+#include <PyROL_ETI_helper.hpp>
+
 #define BINDER_ROL_VECTOR(SCALAR) \
   template class Vector<SCALAR>;
 
 #define BINDER_ROL_OBJECTIVE(SCALAR) \
   template class Objective<SCALAR>; \
-  template class QuadraticObjective<SCALAR>;
+  template class QuadraticObjective<SCALAR>; \
+  template <> inline void PyROL::foo(QuadraticObjective<SCALAR> a){};
 
 #define BINDER_ROL_CONSTRAINT(SCALAR) \
   template class Constraint<SCALAR>;
@@ -35,8 +38,6 @@ namespace ROL {
   BINDER_ROL_CONSTRAINT(double)
   BINDER_ROL_SOLVER(double)
   BINDER_ROL_PROBLEM(double)
-
-  inline void foo(QuadraticObjective<double> a){}
 
 }
 
