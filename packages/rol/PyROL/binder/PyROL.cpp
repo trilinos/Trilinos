@@ -25,7 +25,6 @@ void bind_ROL_Types(std::function< pybind11::module &(std::string const &namespa
 void bind_ROL_Elementwise_Reduce(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_UpdateType(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_Teuchos_ScalarTraits(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_ParameterListExceptions(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -119,7 +118,6 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_Elementwise_Reduce(M);
 	bind_ROL_UpdateType(M);
 	bind_Teuchos_DataAccess(M);
-	bind_Teuchos_ScalarTraits(M);
 	bind_Teuchos_ParameterListExceptions(M);
 	bind_Teuchos_iostream_helpers(M);
 	bind_Teuchos_FancyOStream(M);
