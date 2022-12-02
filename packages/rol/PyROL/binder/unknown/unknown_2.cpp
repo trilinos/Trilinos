@@ -158,6 +158,19 @@ struct PyCallBack_ROL_Constraint_double_t : public ROL::Constraint<double> {
 struct PyCallBack_ROL_Algorithm_double_t : public ROL::Algorithm<double> {
 	using ROL::Algorithm<double>::Algorithm;
 
+	void run_void(class ROL::Vector<double> & a0, class ROL::Objective<double> & a1) override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Algorithm<double> *>(this), "run_void");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return Algorithm::run_void(a0, a1);
+	}
 };
 
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M)
@@ -192,6 +205,7 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Algorithm_double_t const &o){ return new PyCallBack_ROL_Algorithm_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Algorithm<double> const &o){ return new ROL::Algorithm<double>(o); } ) );
+		cl.def("run_void", (void (ROL::Algorithm<double>::*)(class ROL::Vector<double> &, class ROL::Objective<double> &)) &ROL::Algorithm<double>::run_void, "Run algorithm on unconstrained problems (Type-U).\n             This is the primary Type-U interface.\n\nC++: ROL::Algorithm<double>::run_void(class ROL::Vector<double> &, class ROL::Objective<double> &) --> void", pybind11::arg("x"), pybind11::arg("obj"));
 		cl.def("getIterHeader", (std::string (ROL::Algorithm<double>::*)()) &ROL::Algorithm<double>::getIterHeader, "C++: ROL::Algorithm<double>::getIterHeader() --> std::string");
 		cl.def("getIterInfo", [](ROL::Algorithm<double> &o) -> std::string { return o.getIterInfo(); }, "");
 		cl.def("getIterInfo", (std::string (ROL::Algorithm<double>::*)(bool)) &ROL::Algorithm<double>::getIterInfo, "C++: ROL::Algorithm<double>::getIterInfo(bool) --> std::string", pybind11::arg("withHeader"));

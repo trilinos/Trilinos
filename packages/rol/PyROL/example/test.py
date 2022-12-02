@@ -71,4 +71,9 @@ problem = ROL.Problem_double_t(obj, x)
 
 #print(params)
 
-#obj = ROL.QuadraticObjective_double_t(op, g)
+obj_q = ROL.QuadraticObjective_double_t(op, g)
+step = ROL.TrustRegionStep_double_t(params)
+status = ROL.StatusTest_double_t(params)
+algo = ROL.Algorithm_double_t(step,status,False)
+
+algo.run_void(x=x, obj=obj_q)
