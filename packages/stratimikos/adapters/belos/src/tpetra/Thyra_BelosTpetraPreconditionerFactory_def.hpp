@@ -76,8 +76,6 @@
 
 namespace Thyra {
 
-using Teuchos::rcp;
-
 // Constructors/initializers/accessors
 
 
@@ -94,8 +92,13 @@ bool BelosTpetraPreconditionerFactory<MatrixType>::isCompatible(
   const LinearOpSourceBase<scalar_type> &fwdOpSrc
   ) const
 {
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+
   const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc.getOp();
-  const auto tpetraFwdOp =  TpetraOperatorVectorExtraction<scalar_type>::getConstTpetraOperator(fwdOp);
+  using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
 
   const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp,true);
 
@@ -118,6 +121,9 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   const ESupportSolveUse /* supportSolveUse */
   ) const
 {
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+
   // Check precondition
 
   TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
@@ -127,7 +133,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
@@ -136,7 +142,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
   // Retrieve wrapped concrete Tpetra matrix from FwdOp
 
-  const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc->getOp();
+  const RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc->getOp();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
@@ -144,7 +150,8 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   typedef typename MatrixType::node_type node_type;
 
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
-  const auto tpetraFwdOp =  TpetraOperatorVectorExtraction<scalar_type>::getConstTpetraOperator(fwdOp);
+  using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
   // Belos-specific typedefs:
@@ -170,9 +177,9 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
   // This check needed to address Issue #535. 
-  Teuchos::RCP<Teuchos::ParameterList> innerParamList;
+  RCP<Teuchos::ParameterList> innerParamList;
   if (paramList_.is_null ()) {
-    innerParamList = Teuchos::rcp(new Teuchos::ParameterList(*getValidParameters()));
+    innerParamList = rcp(new Teuchos::ParameterList(*getValidParameters()));
   }
   else {
     innerParamList = paramList_;
@@ -183,7 +190,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     useHalfPrecision = Teuchos::getParameter<bool>(*innerParamList, "half precision");
 
   const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
-  const Teuchos::RCP<Teuchos::ParameterList> packageParamList = Teuchos::rcpFromRef(innerParamList->sublist("BelosPrec Solver Params"));
+  const RCP<Teuchos::ParameterList> packageParamList = Teuchos::rcpFromRef(innerParamList->sublist("BelosPrec Solver Params"));
 
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
@@ -193,20 +200,20 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
     *out << "\nCreating a new BelosTpetra::Preconditioner object...\n";
   }
-  Teuchos::RCP<LinearOpBase<scalar_type> > thyraPrecOp;
+  RCP<LinearOpBase<scalar_type> > thyraPrecOp;
 
   if (useHalfPrecision) {
 #ifdef THYRA_BELOS_PREC_ENABLE_HALF_PRECISION
     if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
       Teuchos::OSTab(out).o() << "> Creating half precision preconditioner\n";
     }
-    const Teuchos::RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
+    const RCP<const MatrixType> tpetraFwdMatrix = Teuchos::rcp_dynamic_cast<const MatrixType>(tpetraFwdOp);
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdMatrix));
     auto tpetraFwdMatrixHalf = tpetraFwdMatrix->template convert<half_scalar_type>();
 
-    Teuchos::RCP<BelosTpLinProbHalf> belosLinProbHalf = rcp(new BelosTpLinProbHalf());
+    RCP<BelosTpLinProbHalf> belosLinProbHalf = rcp(new BelosTpLinProbHalf());
     belosLinProbHalf->setOperator(tpetraFwdMatrixHalf);
-    Teuchos::RCP<TpetraLinOpHalf> belosOpRCPHalf = rcp(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
+    RCP<TpetraLinOpHalf> belosOpRCPHalf = rcp(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
     RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(belosOpRCPHalf));
 
     thyraPrecOp = Thyra::createLinearOp(wrappedOp);
@@ -215,9 +222,9 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 #endif
   } else {
     // Wrap concrete preconditioner
-    Teuchos::RCP<BelosTpLinProb> belosLinProb = rcp(new BelosTpLinProb());
+    RCP<BelosTpLinProb> belosLinProb = rcp(new BelosTpLinProb());
     belosLinProb->setOperator(tpetraFwdOp);
-    Teuchos::RCP<TpetraLinOp> belosOpRCP = rcp(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
+    RCP<TpetraLinOp> belosOpRCP = rcp(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
     thyraPrecOp = Thyra::createLinearOp(belosOpRCP);
   }
   defaultPrec->initializeUnspecified(thyraPrecOp);
