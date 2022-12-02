@@ -107,6 +107,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
   // Make sure the conn is setup for a nodal connectivity
   panzer::NodalFieldPattern pattern(topology);
   conn.buildConnectivity(pattern);
+  // TODO BWR see the note in IntrepidOrientation which muses on using the base topology (or at least the VERTICES, as requested by the intrepid call)
 
   const int num_owned_cells = owned_cells.extent(0);
   const int num_ghost_cells = ghost_cells.extent(0);

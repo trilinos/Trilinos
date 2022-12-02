@@ -940,10 +940,10 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
       for (size_t l = 0; l < myElements.size(); ++l) {
         auto connSize = connMngr_->getConnectivitySize(myElements[l]);
         const auto * elmtConn = connMngr_->getConnectivity(myElements[l]);
-        int offset=0;
+        int offset=0; // TODO BWR this is ultimately what gives the segfault
+        // TODO BWR the fieldIds size is too small compared to connsize
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
-
           for(std::size_t i=0;i<working.size();i++)
             working[i] = 0;
           for (int n = 0; n < numFields[c]; ++n) {

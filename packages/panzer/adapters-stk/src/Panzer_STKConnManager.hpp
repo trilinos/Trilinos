@@ -235,8 +235,9 @@ protected:
                                 GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                 GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
+   // TODO BWR Document this and is default zero ok?
    LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
-                                         LocalOrdinal idCnt,GlobalOrdinal offset);
+                                         LocalOrdinal idCnt,GlobalOrdinal offset,const unsigned maxIds=0);
 
    void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                     unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);

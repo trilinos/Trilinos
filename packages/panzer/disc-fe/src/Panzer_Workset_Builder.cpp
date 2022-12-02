@@ -114,7 +114,7 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
   if(isSide) {
     const panzer::CellData side_cell_data(num_cells,
                                           details.subcell_index,
-                                          needs.cellData.getCellTopology());
+                                          needs.cellData.getCellTopology());  // TODO BWR is this base topo?
 
     for(std::size_t i=0;i<needs.int_rules.size();i++) 
       int_rules.push_back(rcp(new IntegrationRule(needs.int_rules[i]->cubature_degree,side_cell_data)));

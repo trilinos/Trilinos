@@ -241,12 +241,12 @@ namespace panzer {
    */
   void 
   Intrepid2FieldPattern::
-  getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
+  getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellNodes,
                               Kokkos::DynRankView<double,PHX::Device> & coords) const
   {
-    TEUCHOS_ASSERT(cellVertices.rank()==3);
+    TEUCHOS_ASSERT(cellNodes.rank()==3);
 
-    int numCells = cellVertices.extent(0);
+    int numCells = cellNodes.extent(0);
 
     // grab the local coordinates
     Kokkos::DynRankView<double,PHX::Device> localCoords;
@@ -257,7 +257,9 @@ namespace panzer {
 
     if(numCells>0) {
       Intrepid2::CellTools<PHX::Device> cellTools;
-      cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
+      // TODO BWR Can we actually grab the (not base) topology here?
+      cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,intrepidBasis_->getBaseCellTopology());
+      // meshNodes, meshTopology TODO here
     }
   }
 

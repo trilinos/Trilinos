@@ -129,10 +129,10 @@ namespace panzer {
 
     /** Get the local coordinates for this field.
      *
-     * \param[in] cellVertices   Coordinates associated with this field type.
+     * \param[in] cellNodes   Coordinates of the cell nodes.
      * \param[in,out] coords   Coordinates associated with this field type.
      */
-    void getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
+    void getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellNodes,
                                      Kokkos::DynRankView<double,PHX::Device> & coords) const;
 
     /// Returns the underlying Intrepid2::Basis object

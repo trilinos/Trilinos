@@ -204,6 +204,7 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   {
     const shards::CellTopology & topology = *(mesh.getCellTopology(element_block_name));
     Teuchos::RCP<panzer::FieldPattern> cell_pattern;
+    // TODO BWR Here is another spot to double-check. We are only going to extract lowest order mesh nodes in buildConnectivity
     if(topology.getDimension() == 1){
       cell_pattern = Teuchos::rcp(new panzer::EdgeFieldPattern(topology));
     } else if(topology.getDimension() == 2){

@@ -157,7 +157,7 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 
 ///// END TO BE DEPRECATED
 
-/** Get nodes and local cell IDs of a paricular element block.
+/** Get nodes and local cell IDs of a particular element block.
   *
   * \param[in] mesh Reference to STK_Interface object
   * \param[in] blockId Element block identifier string
