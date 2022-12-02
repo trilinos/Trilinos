@@ -41,6 +41,12 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_TRUSTREGIONFACTORY_H
+
+#include "ROL_TrustRegionFactory.hpp"
+
+#else
+
 #ifndef ROL_CAUCHYPOINT_H
 #define ROL_CAUCHYPOINT_H
 
@@ -276,4 +282,5 @@ private:
 
 }
 
+#endif
 #endif
