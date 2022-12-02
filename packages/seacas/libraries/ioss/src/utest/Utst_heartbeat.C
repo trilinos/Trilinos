@@ -18,8 +18,8 @@ namespace {
     Ioss::Init::Initializer init_db;
 
     Ioss::PropertyManager properties;
-    properties.add(Ioss::Property("SHOW_LABELS", "no"));
-    properties.add(Ioss::Property("SHOW_LEGEND", "yes"));
+    properties.add(Ioss::Property("SHOW_LABELS", 0));
+    properties.add(Ioss::Property("SHOW_LEGEND", 1));
     properties.add(Ioss::Property("SHOW_TIME_STAMP", 1));
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("heartbeat", filename, Ioss::WRITE_HEARTBEAT,
                                                     Ioss::ParallelUtils::comm_world(), properties);
