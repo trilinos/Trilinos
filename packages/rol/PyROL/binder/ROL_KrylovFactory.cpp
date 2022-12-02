@@ -1,5 +1,6 @@
 #include <ROL_BoundConstraint.hpp>
 #include <ROL_BrentsProjection.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_Krylov.hpp>
@@ -10,6 +11,7 @@
 #include <ROL_RiddersProjection.hpp>
 #include <ROL_SemismoothNewtonProjection.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>

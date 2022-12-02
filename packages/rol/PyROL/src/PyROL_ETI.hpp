@@ -36,6 +36,8 @@ namespace ROL {
   BINDER_ROL_SOLVER(double)
   BINDER_ROL_PROBLEM(double)
 
+  inline void foo(QuadraticObjective<double> a){}
+
 }
 
 #endif // PYROL_ETI

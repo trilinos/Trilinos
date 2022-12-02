@@ -10,6 +10,7 @@
 #include <ROL_Newton_U.hpp>
 #include <ROL_NonlinearCG.hpp>
 #include <ROL_NonlinearCG_U.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_QuasiNewton_U.hpp>
 #include <ROL_Secant.hpp>
 #include <ROL_SecantFactory.hpp>
@@ -18,6 +19,7 @@
 #include <ROL_TrustRegion_U_Types.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <ROL_lBFGS.hpp>
 #include <ROL_lDFP.hpp>
 #include <ROL_lSR1.hpp>

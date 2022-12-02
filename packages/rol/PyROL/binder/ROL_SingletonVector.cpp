@@ -5,6 +5,7 @@
 #include <ROL_ScalarController.hpp>
 #include <ROL_SingletonVector.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>

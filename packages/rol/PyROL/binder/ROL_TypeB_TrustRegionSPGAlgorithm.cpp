@@ -1,6 +1,7 @@
 #include <ROL_BoundConstraint.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_Secant.hpp>
 #include <ROL_StatusTest.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
@@ -8,6 +9,7 @@
 #include <ROL_TypeB_ColemanLiAlgorithm.hpp>
 #include <ROL_TypeB_TrustRegionSPGAlgorithm.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>

@@ -1,12 +1,19 @@
 #include <ROL_AugmentedLagrangianObjective.hpp>
 #include <ROL_BoundConstraint.hpp>
+#include <ROL_ColemanLiModel.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_ElasticObjective.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
+#include <ROL_KelleySachsModel.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_Ptr.hpp>
+#include <ROL_Secant.hpp>
+#include <ROL_TrustRegionModel.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
@@ -68,6 +75,15 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	// ROL::constPtrCast(const class Teuchos::RCP<const class ROL::Vector<double> > &) file:ROL_Ptr.hpp line:100
 	M("ROL").def("constPtrCast", (class Teuchos::RCP<class ROL::Vector<double> > (*)(const class Teuchos::RCP<const class ROL::Vector<double> > &)) &ROL::constPtrCast<ROL::Vector<double>,const ROL::Vector<double>>, "C++: ROL::constPtrCast(const class Teuchos::RCP<const class ROL::Vector<double> > &) --> class Teuchos::RCP<class ROL::Vector<double> >", pybind11::arg("r"));
 
+	// ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:106
+	M("ROL").def("dynamicPtrCast", (class Teuchos::RCP<class ROL::KelleySachsModel<double> > (*)(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::KelleySachsModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) --> class Teuchos::RCP<class ROL::KelleySachsModel<double> >", pybind11::arg("r"));
+
+	// ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) file:ROL_Ptr.hpp line:106
+	M("ROL").def("dynamicPtrCast", (class Teuchos::RCP<class ROL::ColemanLiModel<double> > (*)(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &)) &ROL::dynamicPtrCast<ROL::ColemanLiModel<double>,ROL::TrustRegionModel<double>>, "C++: ROL::dynamicPtrCast(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) --> class Teuchos::RCP<class ROL::ColemanLiModel<double> >", pybind11::arg("r"));
+
+	// ROL::is_nullPtr(const class Teuchos::RCP<class ROL::Secant<double> > &) file:ROL_Ptr.hpp line:130
+	M("ROL").def("is_nullPtr", (bool (*)(const class Teuchos::RCP<class ROL::Secant<double> > &)) &ROL::is_nullPtr<ROL::Secant<double>>, "C++: ROL::is_nullPtr(const class Teuchos::RCP<class ROL::Secant<double> > &) --> bool", pybind11::arg("x"));
+
 	// ROL::NumberToString(int) file:ROL_Types.hpp line:81
 	M("ROL").def("NumberToString", (std::string (*)(int)) &ROL::NumberToString<int>, "C++: ROL::NumberToString(int) --> std::string", pybind11::arg("Number"));
 
@@ -124,6 +140,22 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 		cl.def_readwrite("statusFlag", &ROL::AlgorithmState<double>::statusFlag);
 		cl.def("reset", (void (ROL::AlgorithmState<double>::*)()) &ROL::AlgorithmState<double>::reset, "C++: ROL::AlgorithmState<double>::reset() --> void");
 		cl.def("assign", (struct ROL::AlgorithmState<double> & (ROL::AlgorithmState<double>::*)(const struct ROL::AlgorithmState<double> &)) &ROL::AlgorithmState<double>::operator=, "C++: ROL::AlgorithmState<double>::operator=(const struct ROL::AlgorithmState<double> &) --> struct ROL::AlgorithmState<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+	}
+	{ // ROL::StepState file:ROL_Types.hpp line:203
+		pybind11::class_<ROL::StepState<double>, Teuchos::RCP<ROL::StepState<double>>> cl(M("ROL"), "StepState_double_t", "");
+		cl.def( pybind11::init( [](){ return new ROL::StepState<double>(); } ) );
+		cl.def( pybind11::init( [](ROL::StepState<double> const &o){ return new ROL::StepState<double>(o); } ) );
+		cl.def_readwrite("gradientVec", &ROL::StepState<double>::gradientVec);
+		cl.def_readwrite("descentVec", &ROL::StepState<double>::descentVec);
+		cl.def_readwrite("constraintVec", &ROL::StepState<double>::constraintVec);
+		cl.def_readwrite("nfval", &ROL::StepState<double>::nfval);
+		cl.def_readwrite("ngrad", &ROL::StepState<double>::ngrad);
+		cl.def_readwrite("searchSize", &ROL::StepState<double>::searchSize);
+		cl.def_readwrite("flag", &ROL::StepState<double>::flag);
+		cl.def_readwrite("SPiter", &ROL::StepState<double>::SPiter);
+		cl.def_readwrite("SPflag", &ROL::StepState<double>::SPflag);
+		cl.def("reset", [](ROL::StepState<double> &o) -> void { return o.reset(); }, "");
+		cl.def("reset", (void (ROL::StepState<double>::*)(const double)) &ROL::StepState<double>::reset, "C++: ROL::StepState<double>::reset(const double) --> void", pybind11::arg("searchSizeInput"));
 	}
 	{ // ROL::removeSpecialCharacters file:ROL_Types.hpp line:243
 		pybind11::class_<ROL::removeSpecialCharacters, Teuchos::RCP<ROL::removeSpecialCharacters>> cl(M("ROL"), "removeSpecialCharacters", "");

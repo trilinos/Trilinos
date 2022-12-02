@@ -13,16 +13,21 @@
 #include <ROL_BundleStatusTest.hpp>
 #include <ROL_Bundle_U_AS.hpp>
 #include <ROL_Bundle_U_TT.hpp>
+#include <ROL_CauchyPoint.hpp>
 #include <ROL_CauchyPoint_U.hpp>
+#include <ROL_ColemanLiModel.hpp>
 #include <ROL_CombinedStatusTest.hpp>
 #include <ROL_ConjugateGradients.hpp>
 #include <ROL_ConjugateResiduals.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_ConstraintStatusTest.hpp>
 #include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_CubicInterp_U.hpp>
 #include <ROL_DaiFletcherProjection.hpp>
 #include <ROL_DescentDirection_U.hpp>
+#include <ROL_DogLeg.hpp>
 #include <ROL_DogLeg_U.hpp>
+#include <ROL_DoubleDogLeg.hpp>
 #include <ROL_DoubleDogLeg_U.hpp>
 #include <ROL_DouglasRachfordProjection.hpp>
 #include <ROL_DykstraProjection.hpp>
@@ -35,7 +40,10 @@
 #include <ROL_GoldenSectionScalarMinimization.hpp>
 #include <ROL_Gradient_U.hpp>
 #include <ROL_IterationScaling_U.hpp>
+#include <ROL_KelleySachsModel.hpp>
 #include <ROL_Krylov.hpp>
+#include <ROL_LinMore.hpp>
+#include <ROL_LinMoreModel.hpp>
 #include <ROL_LineSearch_U.hpp>
 #include <ROL_LineSearch_U_Types.hpp>
 #include <ROL_LinearConstraint.hpp>
@@ -46,6 +54,7 @@
 #include <ROL_NonlinearCG.hpp>
 #include <ROL_NonlinearCG_U.hpp>
 #include <ROL_NullSpaceOperator.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_PQNObjective.hpp>
 #include <ROL_PartitionedVector.hpp>
 #include <ROL_PathBasedTargetLevel_U.hpp>
@@ -67,7 +76,9 @@
 #include <ROL_SlacklessObjective.hpp>
 #include <ROL_StatusTest.hpp>
 #include <ROL_Stream.hpp>
+#include <ROL_TruncatedCG.hpp>
 #include <ROL_TruncatedCG_U.hpp>
+#include <ROL_TrustRegionModel.hpp>
 #include <ROL_TrustRegionModel_U.hpp>
 #include <ROL_TrustRegion_U_Types.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
@@ -99,6 +110,7 @@
 #include <ROL_TypeU_TrustRegionAlgorithm.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <ROL_VectorController.hpp>
 #include <ROL_lBFGS.hpp>
 #include <ROL_lDFP.hpp>
@@ -177,6 +189,221 @@ struct PyCallBack_Teuchos_m_bad_cast : public Teuchos::m_bad_cast {
 
 void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>> cl(M("Teuchos"), "RCP_ROL_TypeB_InteriorPointAlgorithm_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::TypeB::InteriorPointAlgorithm<double> * a0){ return new Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::TypeB::InteriorPointAlgorithm<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>> const &o){ return new Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::TypeB::InteriorPointAlgorithm<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TypeB::InteriorPointAlgorithm<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TypeB::InteriorPointAlgorithm<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)(const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &)) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator=, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator=(const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &) --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator=, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)(class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &)) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::swap, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::swap(class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::is_null, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::TypeB::InteriorPointAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator->, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator->() const --> class ROL::TypeB::InteriorPointAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::TypeB::InteriorPointAlgorithm<double> & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator*, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::operator*() const --> class ROL::TypeB::InteriorPointAlgorithm<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::TypeB::InteriorPointAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::get, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::get() const --> class ROL::TypeB::InteriorPointAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::TypeB::InteriorPointAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::getRawPtr() const --> class ROL::TypeB::InteriorPointAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::strength, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::strong_count, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::weak_count, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::total_count, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::has_ownership, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::create_weak, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::create_weak() const --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::create_strong, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::create_strong() const --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::reset, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::TypeB::InteriorPointAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::access_private_ptr() const --> class ROL::TypeB::InteriorPointAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::access_private_node, "C++: Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>> cl(M("Teuchos"), "RCP_ROL_TypeB_SpectralGradientAlgorithm_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::TypeB::SpectralGradientAlgorithm<double> * a0){ return new Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::TypeB::SpectralGradientAlgorithm<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>> const &o){ return new Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::TypeB::SpectralGradientAlgorithm<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TypeB::SpectralGradientAlgorithm<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TypeB::SpectralGradientAlgorithm<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)(const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &)) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator=, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator=(const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &) --> class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator=, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)(class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &)) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::swap, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::swap(class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::is_null, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::TypeB::SpectralGradientAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator->, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator->() const --> class ROL::TypeB::SpectralGradientAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::TypeB::SpectralGradientAlgorithm<double> & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator*, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::operator*() const --> class ROL::TypeB::SpectralGradientAlgorithm<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::TypeB::SpectralGradientAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::get, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::get() const --> class ROL::TypeB::SpectralGradientAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::TypeB::SpectralGradientAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::getRawPtr() const --> class ROL::TypeB::SpectralGradientAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::strength, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::strong_count, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::weak_count, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::total_count, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::has_ownership, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::create_weak, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::create_weak() const --> class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::create_strong, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::create_strong() const --> class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::reset, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::TypeB::SpectralGradientAlgorithm<double> * (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::access_private_ptr() const --> class ROL::TypeB::SpectralGradientAlgorithm<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)()) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>::*)() const) &Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::access_private_node, "C++: Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::ReducedLinearConstraint<double>>> cl(M("Teuchos"), "RCP_ROL_ReducedLinearConstraint_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::ReducedLinearConstraint<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("") );
+
+		cl.def( pybind11::init( [](class ROL::ReducedLinearConstraint<double> * a0){ return new Teuchos::RCP<ROL::ReducedLinearConstraint<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::ReducedLinearConstraint<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::ReducedLinearConstraint<double>> const &o){ return new Teuchos::RCP<ROL::ReducedLinearConstraint<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::ReducedLinearConstraint<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::ReducedLinearConstraint<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::ReducedLinearConstraint<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)(const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &)) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator=, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator=(const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &) --> class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator=, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)(class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &)) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::swap, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::swap(class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::is_null, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::ReducedLinearConstraint<double> * (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator->, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator->() const --> class ROL::ReducedLinearConstraint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::ReducedLinearConstraint<double> & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator*, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::operator*() const --> class ROL::ReducedLinearConstraint<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::ReducedLinearConstraint<double> * (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::get, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::get() const --> class ROL::ReducedLinearConstraint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::ReducedLinearConstraint<double> * (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::getRawPtr() const --> class ROL::ReducedLinearConstraint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::strength, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::strong_count, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::weak_count, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::total_count, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)()) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::has_ownership, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::create_weak, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::create_weak() const --> class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::create_strong, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::create_strong() const --> class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::ReducedLinearConstraint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)()) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::reset, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::ReducedLinearConstraint<double> * (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::access_private_ptr() const --> class ROL::ReducedLinearConstraint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)()) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::ReducedLinearConstraint<double>>::*)() const) &Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::access_private_node, "C++: Teuchos::RCP<ROL::ReducedLinearConstraint<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::ReducedLinearConstraint<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::PQNObjective<double>>> cl(M("Teuchos"), "RCP_ROL_PQNObjective_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::PQNObjective<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::PQNObjective<double> * a0){ return new Teuchos::RCP<ROL::PQNObjective<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::PQNObjective<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::PQNObjective<double>> const &o){ return new Teuchos::RCP<ROL::PQNObjective<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::PQNObjective<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::PQNObjective<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::PQNObjective<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)(const class Teuchos::RCP<class ROL::PQNObjective<double> > &)) &Teuchos::RCP<ROL::PQNObjective<double> >::operator=, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::operator=(const class Teuchos::RCP<class ROL::PQNObjective<double> > &) --> class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::PQNObjective<double> >::operator=, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::PQNObjective<double>>::*)(class Teuchos::RCP<class ROL::PQNObjective<double> > &)) &Teuchos::RCP<ROL::PQNObjective<double> >::swap, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::swap(class Teuchos::RCP<class ROL::PQNObjective<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::is_null, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::PQNObjective<double> * (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::operator->, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::operator->() const --> class ROL::PQNObjective<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::PQNObjective<double> & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::operator*, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::operator*() const --> class ROL::PQNObjective<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::PQNObjective<double> * (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::get, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::get() const --> class ROL::PQNObjective<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::PQNObjective<double> * (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::getRawPtr() const --> class ROL::PQNObjective<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::strength, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::strong_count, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::weak_count, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::total_count, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::PQNObjective<double>>::*)()) &Teuchos::RCP<ROL::PQNObjective<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::has_ownership, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::PQNObjective<double> > (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::create_weak, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::create_weak() const --> class Teuchos::RCP<class ROL::PQNObjective<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::PQNObjective<double> > (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::create_strong, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::create_strong() const --> class Teuchos::RCP<class ROL::PQNObjective<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::PQNObjective<double> > & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::PQNObjective<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::PQNObjective<double>>::*)()) &Teuchos::RCP<ROL::PQNObjective<double> >::reset, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::PQNObjective<double> * (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::access_private_ptr() const --> class ROL::PQNObjective<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::PQNObjective<double>>::*)()) &Teuchos::RCP<ROL::PQNObjective<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::PQNObjective<double>>::*)() const) &Teuchos::RCP<ROL::PQNObjective<double> >::access_private_node, "C++: Teuchos::RCP<ROL::PQNObjective<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::PQNObjective<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::ScalarController<double, int>>> cl(M("Teuchos"), "RCP_ROL_ScalarController_double_int_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::ScalarController<double, int>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("") );
+
+		cl.def( pybind11::init( [](class ROL::ScalarController<double, int> * a0){ return new Teuchos::RCP<ROL::ScalarController<double, int>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::ScalarController<double, int> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::ScalarController<double, int>> const &o){ return new Teuchos::RCP<ROL::ScalarController<double, int>>(o); } ) );
+		cl.def( pybind11::init<class ROL::ScalarController<double, int> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::ScalarController<double, int> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::ScalarController<double, int> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)(const class Teuchos::RCP<class ROL::ScalarController<double, int> > &)) &Teuchos::RCP<ROL::ScalarController<double, int> >::operator=, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::operator=(const class Teuchos::RCP<class ROL::ScalarController<double, int> > &) --> class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::ScalarController<double, int> >::operator=, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::ScalarController<double, int>>::*)(class Teuchos::RCP<class ROL::ScalarController<double, int> > &)) &Teuchos::RCP<ROL::ScalarController<double, int> >::swap, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::swap(class Teuchos::RCP<class ROL::ScalarController<double, int> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::is_null, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::ScalarController<double, int> * (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::operator->, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::operator->() const --> class ROL::ScalarController<double, int> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::ScalarController<double, int> & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::operator*, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::operator*() const --> class ROL::ScalarController<double, int> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::ScalarController<double, int> * (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::get, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::get() const --> class ROL::ScalarController<double, int> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::ScalarController<double, int> * (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::getRawPtr, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::getRawPtr() const --> class ROL::ScalarController<double, int> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::strength, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::strong_count, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::weak_count, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::total_count, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::ScalarController<double, int>>::*)()) &Teuchos::RCP<ROL::ScalarController<double, int> >::set_has_ownership, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::has_ownership, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::ScalarController<double, int> > (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::create_weak, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::create_weak() const --> class Teuchos::RCP<class ROL::ScalarController<double, int> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::ScalarController<double, int> > (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::create_strong, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::create_strong() const --> class Teuchos::RCP<class ROL::ScalarController<double, int> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::assert_not_null, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::ScalarController<double, int> > & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::ScalarController<double, int> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::ScalarController<double, int>>::*)()) &Teuchos::RCP<ROL::ScalarController<double, int> >::reset, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::ScalarController<double, int> * (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::access_private_ptr, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::access_private_ptr() const --> class ROL::ScalarController<double, int> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)()) &Teuchos::RCP<ROL::ScalarController<double, int> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::ScalarController<double, int>>::*)() const) &Teuchos::RCP<ROL::ScalarController<double, int> >::access_private_node, "C++: Teuchos::RCP<ROL::ScalarController<double, int> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::ScalarController<double, int>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
 	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
 		pybind11::class_<Teuchos::RCP<ROL::VectorController<double, int>>> cl(M("Teuchos"), "RCP_ROL_VectorController_double_int_t", "");
 		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::VectorController<double, int>>(); } ), "doc" );
@@ -866,6 +1093,393 @@ void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &n
 		cl.def("__str__", [](Teuchos::RCP<ROL::TypeG::StabilizedLCLAlgorithm<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
 	}
 	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::CauchyPoint<double>>> cl(M("Teuchos"), "RCP_ROL_CauchyPoint_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::CauchyPoint<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("") );
+
+		cl.def( pybind11::init( [](class ROL::CauchyPoint<double> * a0){ return new Teuchos::RCP<ROL::CauchyPoint<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::CauchyPoint<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::CauchyPoint<double>> const &o){ return new Teuchos::RCP<ROL::CauchyPoint<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::CauchyPoint<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::CauchyPoint<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::CauchyPoint<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)(const class Teuchos::RCP<class ROL::CauchyPoint<double> > &)) &Teuchos::RCP<ROL::CauchyPoint<double> >::operator=, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::operator=(const class Teuchos::RCP<class ROL::CauchyPoint<double> > &) --> class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::CauchyPoint<double> >::operator=, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::CauchyPoint<double>>::*)(class Teuchos::RCP<class ROL::CauchyPoint<double> > &)) &Teuchos::RCP<ROL::CauchyPoint<double> >::swap, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::swap(class Teuchos::RCP<class ROL::CauchyPoint<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::is_null, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::CauchyPoint<double> * (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::operator->, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::operator->() const --> class ROL::CauchyPoint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::CauchyPoint<double> & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::operator*, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::operator*() const --> class ROL::CauchyPoint<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::CauchyPoint<double> * (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::get, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::get() const --> class ROL::CauchyPoint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::CauchyPoint<double> * (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::getRawPtr() const --> class ROL::CauchyPoint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::strength, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::strong_count, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::weak_count, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::total_count, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::CauchyPoint<double>>::*)()) &Teuchos::RCP<ROL::CauchyPoint<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::has_ownership, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::CauchyPoint<double> > (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::create_weak, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::create_weak() const --> class Teuchos::RCP<class ROL::CauchyPoint<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::CauchyPoint<double> > (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::create_strong, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::create_strong() const --> class Teuchos::RCP<class ROL::CauchyPoint<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::CauchyPoint<double> > & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::CauchyPoint<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::CauchyPoint<double>>::*)()) &Teuchos::RCP<ROL::CauchyPoint<double> >::reset, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::CauchyPoint<double> * (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::access_private_ptr() const --> class ROL::CauchyPoint<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)()) &Teuchos::RCP<ROL::CauchyPoint<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::CauchyPoint<double>>::*)() const) &Teuchos::RCP<ROL::CauchyPoint<double> >::access_private_node, "C++: Teuchos::RCP<ROL::CauchyPoint<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::CauchyPoint<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::DogLeg<double>>> cl(M("Teuchos"), "RCP_ROL_DogLeg_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::DogLeg<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::DogLeg<double> * a0){ return new Teuchos::RCP<ROL::DogLeg<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::DogLeg<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::DogLeg<double>> const &o){ return new Teuchos::RCP<ROL::DogLeg<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::DogLeg<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::DogLeg<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::DogLeg<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)(const class Teuchos::RCP<class ROL::DogLeg<double> > &)) &Teuchos::RCP<ROL::DogLeg<double> >::operator=, "C++: Teuchos::RCP<ROL::DogLeg<double> >::operator=(const class Teuchos::RCP<class ROL::DogLeg<double> > &) --> class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::DogLeg<double> >::operator=, "C++: Teuchos::RCP<ROL::DogLeg<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::DogLeg<double>>::*)(class Teuchos::RCP<class ROL::DogLeg<double> > &)) &Teuchos::RCP<ROL::DogLeg<double> >::swap, "C++: Teuchos::RCP<ROL::DogLeg<double> >::swap(class Teuchos::RCP<class ROL::DogLeg<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::is_null, "C++: Teuchos::RCP<ROL::DogLeg<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::DogLeg<double> * (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::operator->, "C++: Teuchos::RCP<ROL::DogLeg<double> >::operator->() const --> class ROL::DogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::DogLeg<double> & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::operator*, "C++: Teuchos::RCP<ROL::DogLeg<double> >::operator*() const --> class ROL::DogLeg<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::DogLeg<double> * (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::get, "C++: Teuchos::RCP<ROL::DogLeg<double> >::get() const --> class ROL::DogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::DogLeg<double> * (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::DogLeg<double> >::getRawPtr() const --> class ROL::DogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::strength, "C++: Teuchos::RCP<ROL::DogLeg<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::DogLeg<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::strong_count, "C++: Teuchos::RCP<ROL::DogLeg<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::weak_count, "C++: Teuchos::RCP<ROL::DogLeg<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::total_count, "C++: Teuchos::RCP<ROL::DogLeg<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::DogLeg<double>>::*)()) &Teuchos::RCP<ROL::DogLeg<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::DogLeg<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::has_ownership, "C++: Teuchos::RCP<ROL::DogLeg<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::DogLeg<double> > (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::create_weak, "C++: Teuchos::RCP<ROL::DogLeg<double> >::create_weak() const --> class Teuchos::RCP<class ROL::DogLeg<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::DogLeg<double> > (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::create_strong, "C++: Teuchos::RCP<ROL::DogLeg<double> >::create_strong() const --> class Teuchos::RCP<class ROL::DogLeg<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::DogLeg<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::DogLeg<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::DogLeg<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::DogLeg<double> > & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::DogLeg<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::DogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::DogLeg<double>>::*)()) &Teuchos::RCP<ROL::DogLeg<double> >::reset, "C++: Teuchos::RCP<ROL::DogLeg<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::DogLeg<double> * (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::DogLeg<double> >::access_private_ptr() const --> class ROL::DogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::DogLeg<double>>::*)()) &Teuchos::RCP<ROL::DogLeg<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::DogLeg<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::DogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DogLeg<double> >::access_private_node, "C++: Teuchos::RCP<ROL::DogLeg<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::DogLeg<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::DoubleDogLeg<double>>> cl(M("Teuchos"), "RCP_ROL_DoubleDogLeg_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::DoubleDogLeg<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::DoubleDogLeg<double> * a0){ return new Teuchos::RCP<ROL::DoubleDogLeg<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::DoubleDogLeg<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::DoubleDogLeg<double>> const &o){ return new Teuchos::RCP<ROL::DoubleDogLeg<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::DoubleDogLeg<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::DoubleDogLeg<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::DoubleDogLeg<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)(const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &)) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator=, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator=(const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &) --> class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator=, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)(class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &)) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::swap, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::swap(class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::is_null, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::DoubleDogLeg<double> * (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator->, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator->() const --> class ROL::DoubleDogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::DoubleDogLeg<double> & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator*, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::operator*() const --> class ROL::DoubleDogLeg<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::DoubleDogLeg<double> * (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::get, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::get() const --> class ROL::DoubleDogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::DoubleDogLeg<double> * (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::getRawPtr() const --> class ROL::DoubleDogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::strength, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::strong_count, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::weak_count, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::total_count, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)()) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::has_ownership, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::DoubleDogLeg<double> > (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::create_weak, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::create_weak() const --> class Teuchos::RCP<class ROL::DoubleDogLeg<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::DoubleDogLeg<double> > (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::create_strong, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::create_strong() const --> class Teuchos::RCP<class ROL::DoubleDogLeg<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::DoubleDogLeg<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)()) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::reset, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::DoubleDogLeg<double> * (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::access_private_ptr() const --> class ROL::DoubleDogLeg<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)()) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::DoubleDogLeg<double>>::*)() const) &Teuchos::RCP<ROL::DoubleDogLeg<double> >::access_private_node, "C++: Teuchos::RCP<ROL::DoubleDogLeg<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::DoubleDogLeg<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::TruncatedCG<double>>> cl(M("Teuchos"), "RCP_ROL_TruncatedCG_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::TruncatedCG<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::TruncatedCG<double> * a0){ return new Teuchos::RCP<ROL::TruncatedCG<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::TruncatedCG<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::TruncatedCG<double>> const &o){ return new Teuchos::RCP<ROL::TruncatedCG<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::TruncatedCG<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TruncatedCG<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::TruncatedCG<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)(const class Teuchos::RCP<class ROL::TruncatedCG<double> > &)) &Teuchos::RCP<ROL::TruncatedCG<double> >::operator=, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::operator=(const class Teuchos::RCP<class ROL::TruncatedCG<double> > &) --> class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::TruncatedCG<double> >::operator=, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::TruncatedCG<double>>::*)(class Teuchos::RCP<class ROL::TruncatedCG<double> > &)) &Teuchos::RCP<ROL::TruncatedCG<double> >::swap, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::swap(class Teuchos::RCP<class ROL::TruncatedCG<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::is_null, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::TruncatedCG<double> * (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::operator->, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::operator->() const --> class ROL::TruncatedCG<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::TruncatedCG<double> & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::operator*, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::operator*() const --> class ROL::TruncatedCG<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::TruncatedCG<double> * (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::get, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::get() const --> class ROL::TruncatedCG<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::TruncatedCG<double> * (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::getRawPtr() const --> class ROL::TruncatedCG<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::strength, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::strong_count, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::weak_count, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::total_count, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::TruncatedCG<double>>::*)()) &Teuchos::RCP<ROL::TruncatedCG<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::has_ownership, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::TruncatedCG<double> > (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::create_weak, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::create_weak() const --> class Teuchos::RCP<class ROL::TruncatedCG<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::TruncatedCG<double> > (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::create_strong, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::create_strong() const --> class Teuchos::RCP<class ROL::TruncatedCG<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::TruncatedCG<double> > & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::TruncatedCG<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::TruncatedCG<double>>::*)()) &Teuchos::RCP<ROL::TruncatedCG<double> >::reset, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::TruncatedCG<double> * (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::access_private_ptr() const --> class ROL::TruncatedCG<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)()) &Teuchos::RCP<ROL::TruncatedCG<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::TruncatedCG<double>>::*)() const) &Teuchos::RCP<ROL::TruncatedCG<double> >::access_private_node, "C++: Teuchos::RCP<ROL::TruncatedCG<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::TruncatedCG<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::LinMore<double>>> cl(M("Teuchos"), "RCP_ROL_LinMore_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::LinMore<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::LinMore<double> * a0){ return new Teuchos::RCP<ROL::LinMore<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::LinMore<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::LinMore<double>> const &o){ return new Teuchos::RCP<ROL::LinMore<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::LinMore<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::LinMore<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::LinMore<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)(const class Teuchos::RCP<class ROL::LinMore<double> > &)) &Teuchos::RCP<ROL::LinMore<double> >::operator=, "C++: Teuchos::RCP<ROL::LinMore<double> >::operator=(const class Teuchos::RCP<class ROL::LinMore<double> > &) --> class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::LinMore<double> >::operator=, "C++: Teuchos::RCP<ROL::LinMore<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::LinMore<double>>::*)(class Teuchos::RCP<class ROL::LinMore<double> > &)) &Teuchos::RCP<ROL::LinMore<double> >::swap, "C++: Teuchos::RCP<ROL::LinMore<double> >::swap(class Teuchos::RCP<class ROL::LinMore<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::is_null, "C++: Teuchos::RCP<ROL::LinMore<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::LinMore<double> * (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::operator->, "C++: Teuchos::RCP<ROL::LinMore<double> >::operator->() const --> class ROL::LinMore<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::LinMore<double> & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::operator*, "C++: Teuchos::RCP<ROL::LinMore<double> >::operator*() const --> class ROL::LinMore<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::LinMore<double> * (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::get, "C++: Teuchos::RCP<ROL::LinMore<double> >::get() const --> class ROL::LinMore<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::LinMore<double> * (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::LinMore<double> >::getRawPtr() const --> class ROL::LinMore<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::strength, "C++: Teuchos::RCP<ROL::LinMore<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::LinMore<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::strong_count, "C++: Teuchos::RCP<ROL::LinMore<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::weak_count, "C++: Teuchos::RCP<ROL::LinMore<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::total_count, "C++: Teuchos::RCP<ROL::LinMore<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::LinMore<double>>::*)()) &Teuchos::RCP<ROL::LinMore<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::LinMore<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::has_ownership, "C++: Teuchos::RCP<ROL::LinMore<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::LinMore<double> > (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::create_weak, "C++: Teuchos::RCP<ROL::LinMore<double> >::create_weak() const --> class Teuchos::RCP<class ROL::LinMore<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::LinMore<double> > (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::create_strong, "C++: Teuchos::RCP<ROL::LinMore<double> >::create_strong() const --> class Teuchos::RCP<class ROL::LinMore<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::LinMore<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::LinMore<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::LinMore<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::LinMore<double> > & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::LinMore<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::LinMore<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::LinMore<double>>::*)()) &Teuchos::RCP<ROL::LinMore<double> >::reset, "C++: Teuchos::RCP<ROL::LinMore<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::LinMore<double> * (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::LinMore<double> >::access_private_ptr() const --> class ROL::LinMore<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::LinMore<double>>::*)()) &Teuchos::RCP<ROL::LinMore<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::LinMore<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::LinMore<double>>::*)() const) &Teuchos::RCP<ROL::LinMore<double> >::access_private_node, "C++: Teuchos::RCP<ROL::LinMore<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::LinMore<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::lBFGS<double>>> cl(M("Teuchos"), "RCP_ROL_lBFGS_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::lBFGS<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::lBFGS<double> * a0){ return new Teuchos::RCP<ROL::lBFGS<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::lBFGS<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::lBFGS<double>> const &o){ return new Teuchos::RCP<ROL::lBFGS<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::lBFGS<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lBFGS<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lBFGS<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)(const class Teuchos::RCP<class ROL::lBFGS<double> > &)) &Teuchos::RCP<ROL::lBFGS<double> >::operator=, "C++: Teuchos::RCP<ROL::lBFGS<double> >::operator=(const class Teuchos::RCP<class ROL::lBFGS<double> > &) --> class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::lBFGS<double> >::operator=, "C++: Teuchos::RCP<ROL::lBFGS<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::lBFGS<double>>::*)(class Teuchos::RCP<class ROL::lBFGS<double> > &)) &Teuchos::RCP<ROL::lBFGS<double> >::swap, "C++: Teuchos::RCP<ROL::lBFGS<double> >::swap(class Teuchos::RCP<class ROL::lBFGS<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::is_null, "C++: Teuchos::RCP<ROL::lBFGS<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::lBFGS<double> * (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::operator->, "C++: Teuchos::RCP<ROL::lBFGS<double> >::operator->() const --> class ROL::lBFGS<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::lBFGS<double> & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::operator*, "C++: Teuchos::RCP<ROL::lBFGS<double> >::operator*() const --> class ROL::lBFGS<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::lBFGS<double> * (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::get, "C++: Teuchos::RCP<ROL::lBFGS<double> >::get() const --> class ROL::lBFGS<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::lBFGS<double> * (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::lBFGS<double> >::getRawPtr() const --> class ROL::lBFGS<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::strength, "C++: Teuchos::RCP<ROL::lBFGS<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::lBFGS<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::strong_count, "C++: Teuchos::RCP<ROL::lBFGS<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::weak_count, "C++: Teuchos::RCP<ROL::lBFGS<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::total_count, "C++: Teuchos::RCP<ROL::lBFGS<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::lBFGS<double>>::*)()) &Teuchos::RCP<ROL::lBFGS<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::lBFGS<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::has_ownership, "C++: Teuchos::RCP<ROL::lBFGS<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::lBFGS<double> > (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::create_weak, "C++: Teuchos::RCP<ROL::lBFGS<double> >::create_weak() const --> class Teuchos::RCP<class ROL::lBFGS<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::lBFGS<double> > (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::create_strong, "C++: Teuchos::RCP<ROL::lBFGS<double> >::create_strong() const --> class Teuchos::RCP<class ROL::lBFGS<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::lBFGS<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::lBFGS<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::lBFGS<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::lBFGS<double> > & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::lBFGS<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lBFGS<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::lBFGS<double>>::*)()) &Teuchos::RCP<ROL::lBFGS<double> >::reset, "C++: Teuchos::RCP<ROL::lBFGS<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::lBFGS<double> * (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::lBFGS<double> >::access_private_ptr() const --> class ROL::lBFGS<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lBFGS<double>>::*)()) &Teuchos::RCP<ROL::lBFGS<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::lBFGS<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lBFGS<double>>::*)() const) &Teuchos::RCP<ROL::lBFGS<double> >::access_private_node, "C++: Teuchos::RCP<ROL::lBFGS<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::lBFGS<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::lDFP<double>>> cl(M("Teuchos"), "RCP_ROL_lDFP_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::lDFP<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::lDFP<double> * a0){ return new Teuchos::RCP<ROL::lDFP<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::lDFP<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::lDFP<double>> const &o){ return new Teuchos::RCP<ROL::lDFP<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::lDFP<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lDFP<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lDFP<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)(const class Teuchos::RCP<class ROL::lDFP<double> > &)) &Teuchos::RCP<ROL::lDFP<double> >::operator=, "C++: Teuchos::RCP<ROL::lDFP<double> >::operator=(const class Teuchos::RCP<class ROL::lDFP<double> > &) --> class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::lDFP<double> >::operator=, "C++: Teuchos::RCP<ROL::lDFP<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::lDFP<double>>::*)(class Teuchos::RCP<class ROL::lDFP<double> > &)) &Teuchos::RCP<ROL::lDFP<double> >::swap, "C++: Teuchos::RCP<ROL::lDFP<double> >::swap(class Teuchos::RCP<class ROL::lDFP<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::is_null, "C++: Teuchos::RCP<ROL::lDFP<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::lDFP<double> * (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::operator->, "C++: Teuchos::RCP<ROL::lDFP<double> >::operator->() const --> class ROL::lDFP<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::lDFP<double> & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::operator*, "C++: Teuchos::RCP<ROL::lDFP<double> >::operator*() const --> class ROL::lDFP<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::lDFP<double> * (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::get, "C++: Teuchos::RCP<ROL::lDFP<double> >::get() const --> class ROL::lDFP<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::lDFP<double> * (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::lDFP<double> >::getRawPtr() const --> class ROL::lDFP<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::strength, "C++: Teuchos::RCP<ROL::lDFP<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::lDFP<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::strong_count, "C++: Teuchos::RCP<ROL::lDFP<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::weak_count, "C++: Teuchos::RCP<ROL::lDFP<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::total_count, "C++: Teuchos::RCP<ROL::lDFP<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::lDFP<double>>::*)()) &Teuchos::RCP<ROL::lDFP<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::lDFP<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::has_ownership, "C++: Teuchos::RCP<ROL::lDFP<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::lDFP<double> > (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::create_weak, "C++: Teuchos::RCP<ROL::lDFP<double> >::create_weak() const --> class Teuchos::RCP<class ROL::lDFP<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::lDFP<double> > (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::create_strong, "C++: Teuchos::RCP<ROL::lDFP<double> >::create_strong() const --> class Teuchos::RCP<class ROL::lDFP<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::lDFP<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::lDFP<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::lDFP<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::lDFP<double> > & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::lDFP<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lDFP<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::lDFP<double>>::*)()) &Teuchos::RCP<ROL::lDFP<double> >::reset, "C++: Teuchos::RCP<ROL::lDFP<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::lDFP<double> * (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::lDFP<double> >::access_private_ptr() const --> class ROL::lDFP<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lDFP<double>>::*)()) &Teuchos::RCP<ROL::lDFP<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::lDFP<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lDFP<double>>::*)() const) &Teuchos::RCP<ROL::lDFP<double> >::access_private_node, "C++: Teuchos::RCP<ROL::lDFP<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::lDFP<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::lSR1<double>>> cl(M("Teuchos"), "RCP_ROL_lSR1_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::lSR1<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::lSR1<double> * a0){ return new Teuchos::RCP<ROL::lSR1<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::lSR1<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::lSR1<double>> const &o){ return new Teuchos::RCP<ROL::lSR1<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::lSR1<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lSR1<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::lSR1<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)(const class Teuchos::RCP<class ROL::lSR1<double> > &)) &Teuchos::RCP<ROL::lSR1<double> >::operator=, "C++: Teuchos::RCP<ROL::lSR1<double> >::operator=(const class Teuchos::RCP<class ROL::lSR1<double> > &) --> class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::lSR1<double> >::operator=, "C++: Teuchos::RCP<ROL::lSR1<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::lSR1<double>>::*)(class Teuchos::RCP<class ROL::lSR1<double> > &)) &Teuchos::RCP<ROL::lSR1<double> >::swap, "C++: Teuchos::RCP<ROL::lSR1<double> >::swap(class Teuchos::RCP<class ROL::lSR1<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::is_null, "C++: Teuchos::RCP<ROL::lSR1<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::lSR1<double> * (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::operator->, "C++: Teuchos::RCP<ROL::lSR1<double> >::operator->() const --> class ROL::lSR1<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::lSR1<double> & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::operator*, "C++: Teuchos::RCP<ROL::lSR1<double> >::operator*() const --> class ROL::lSR1<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::lSR1<double> * (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::get, "C++: Teuchos::RCP<ROL::lSR1<double> >::get() const --> class ROL::lSR1<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::lSR1<double> * (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::lSR1<double> >::getRawPtr() const --> class ROL::lSR1<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::strength, "C++: Teuchos::RCP<ROL::lSR1<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::lSR1<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::strong_count, "C++: Teuchos::RCP<ROL::lSR1<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::weak_count, "C++: Teuchos::RCP<ROL::lSR1<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::total_count, "C++: Teuchos::RCP<ROL::lSR1<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::lSR1<double>>::*)()) &Teuchos::RCP<ROL::lSR1<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::lSR1<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::has_ownership, "C++: Teuchos::RCP<ROL::lSR1<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::lSR1<double> > (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::create_weak, "C++: Teuchos::RCP<ROL::lSR1<double> >::create_weak() const --> class Teuchos::RCP<class ROL::lSR1<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::lSR1<double> > (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::create_strong, "C++: Teuchos::RCP<ROL::lSR1<double> >::create_strong() const --> class Teuchos::RCP<class ROL::lSR1<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::lSR1<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::lSR1<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::lSR1<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::lSR1<double> > & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::lSR1<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::lSR1<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::lSR1<double>>::*)()) &Teuchos::RCP<ROL::lSR1<double> >::reset, "C++: Teuchos::RCP<ROL::lSR1<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::lSR1<double> * (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::lSR1<double> >::access_private_ptr() const --> class ROL::lSR1<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lSR1<double>>::*)()) &Teuchos::RCP<ROL::lSR1<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::lSR1<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::lSR1<double>>::*)() const) &Teuchos::RCP<ROL::lSR1<double> >::access_private_node, "C++: Teuchos::RCP<ROL::lSR1<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::lSR1<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
+		pybind11::class_<Teuchos::RCP<ROL::BarzilaiBorwein<double>>> cl(M("Teuchos"), "RCP_ROL_BarzilaiBorwein_double_t", "");
+		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::BarzilaiBorwein<double>>(); } ), "doc" );
+		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
+
+		cl.def( pybind11::init( [](class ROL::BarzilaiBorwein<double> * a0){ return new Teuchos::RCP<ROL::BarzilaiBorwein<double>>(a0); } ), "doc" , pybind11::arg("p"));
+		cl.def( pybind11::init<class ROL::BarzilaiBorwein<double> *, bool>(), pybind11::arg("p"), pybind11::arg("has_ownership_in") );
+
+		cl.def( pybind11::init( [](Teuchos::RCP<ROL::BarzilaiBorwein<double>> const &o){ return new Teuchos::RCP<ROL::BarzilaiBorwein<double>>(o); } ) );
+		cl.def( pybind11::init<class ROL::BarzilaiBorwein<double> *, enum Teuchos::ERCPWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::BarzilaiBorwein<double> *, enum Teuchos::ERCPUndefinedWeakNoDealloc>(), pybind11::arg("p"), pybind11::arg("") );
+
+		cl.def( pybind11::init<class ROL::BarzilaiBorwein<double> *, const class Teuchos::RCPNodeHandle &>(), pybind11::arg("p"), pybind11::arg("node") );
+
+		cl.def("assign", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)(const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &)) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator=, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator=(const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &) --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic, pybind11::arg("r_ptr"));
+		cl.def("assign", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)(enum Teuchos::ENull)) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator=, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator=(enum Teuchos::ENull) --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic, pybind11::arg(""));
+		cl.def("swap", (void (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)(class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &)) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::swap, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::swap(class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &) --> void", pybind11::arg("r_ptr"));
+		cl.def("is_null", (bool (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::is_null, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::is_null() const --> bool");
+		cl.def("arrow", (class ROL::BarzilaiBorwein<double> * (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator->, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator->() const --> class ROL::BarzilaiBorwein<double> *", pybind11::return_value_policy::automatic);
+		cl.def("__mul__", (class ROL::BarzilaiBorwein<double> & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator*, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::operator*() const --> class ROL::BarzilaiBorwein<double> &", pybind11::return_value_policy::automatic);
+		cl.def("get", (class ROL::BarzilaiBorwein<double> * (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::get, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::get() const --> class ROL::BarzilaiBorwein<double> *", pybind11::return_value_policy::automatic);
+		cl.def("getRawPtr", (class ROL::BarzilaiBorwein<double> * (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::getRawPtr, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::getRawPtr() const --> class ROL::BarzilaiBorwein<double> *", pybind11::return_value_policy::automatic);
+		cl.def("strength", (enum Teuchos::ERCPStrength (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::strength, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::strength() const --> enum Teuchos::ERCPStrength");
+		cl.def("is_valid_ptr", (bool (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::is_valid_ptr, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::is_valid_ptr() const --> bool");
+		cl.def("strong_count", (int (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::strong_count, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::strong_count() const --> int");
+		cl.def("weak_count", (int (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::weak_count, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::weak_count() const --> int");
+		cl.def("total_count", (int (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::total_count, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::total_count() const --> int");
+		cl.def("set_has_ownership", (void (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)()) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::set_has_ownership, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::set_has_ownership() --> void");
+		cl.def("has_ownership", (bool (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::has_ownership, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::has_ownership() const --> bool");
+		cl.def("create_weak", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::create_weak, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::create_weak() const --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> >");
+		cl.def("create_strong", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::create_strong, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::create_strong() const --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> >");
+		cl.def("assert_not_null", (const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::assert_not_null, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::assert_not_null() const --> const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("assert_valid_ptr", (const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::assert_valid_ptr, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_not_null", (const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::debug_assert_not_null, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::debug_assert_not_null() const --> const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("debug_assert_valid_ptr", (const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::debug_assert_valid_ptr, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::debug_assert_valid_ptr() const --> const class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > &", pybind11::return_value_policy::automatic);
+		cl.def("reset", (void (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)()) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::reset, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::reset() --> void");
+		cl.def("access_private_ptr", (class ROL::BarzilaiBorwein<double> * (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::access_private_ptr, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::access_private_ptr() const --> class ROL::BarzilaiBorwein<double> *", pybind11::return_value_policy::automatic);
+		cl.def("nonconst_access_private_node", (class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)()) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::nonconst_access_private_node, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::nonconst_access_private_node() --> class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+		cl.def("access_private_node", (const class Teuchos::RCPNodeHandle & (Teuchos::RCP<ROL::BarzilaiBorwein<double>>::*)() const) &Teuchos::RCP<ROL::BarzilaiBorwein<double> >::access_private_node, "C++: Teuchos::RCP<ROL::BarzilaiBorwein<double> >::access_private_node() const --> const class Teuchos::RCPNodeHandle &", pybind11::return_value_policy::automatic);
+
+		cl.def("__str__", [](Teuchos::RCP<ROL::BarzilaiBorwein<double>> const &o) -> std::string { std::ostringstream s; s << o; return s.str(); } );
+	}
+	{ // Teuchos::RCP file:Teuchos_RCPDecl.hpp line:429
 		pybind11::class_<Teuchos::RCP<ROL::Constraint_Partitioned<double>>> cl(M("Teuchos"), "RCP_ROL_Constraint_Partitioned_double_t", "");
 		cl.def( pybind11::init( [](){ return new Teuchos::RCP<ROL::Constraint_Partitioned<double>>(); } ), "doc" );
 		cl.def( pybind11::init<enum Teuchos::ENull>(), pybind11::arg("null_arg") );
@@ -1414,26 +2028,6 @@ void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &n
 	M("Teuchos").def("rcp", [](class ROL::QuasiNewton_U<double> * a0) -> Teuchos::RCP<class ROL::QuasiNewton_U<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::QuasiNewton_U<double> > (*)(class ROL::QuasiNewton_U<double> *, bool)) &Teuchos::rcp<ROL::QuasiNewton_U<double>>, "C++: Teuchos::rcp(class ROL::QuasiNewton_U<double> *, bool) --> class Teuchos::RCP<class ROL::QuasiNewton_U<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
 
-	// Teuchos::rcp(class ROL::lBFGS<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::lBFGS<double> * a0) -> Teuchos::RCP<class ROL::lBFGS<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lBFGS<double> > (*)(class ROL::lBFGS<double> *, bool)) &Teuchos::rcp<ROL::lBFGS<double>>, "C++: Teuchos::rcp(class ROL::lBFGS<double> *, bool) --> class Teuchos::RCP<class ROL::lBFGS<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(struct ROL::SecantState<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](struct ROL::SecantState<double> * a0) -> Teuchos::RCP<struct ROL::SecantState<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<struct ROL::SecantState<double> > (*)(struct ROL::SecantState<double> *, bool)) &Teuchos::rcp<ROL::SecantState<double>>, "C++: Teuchos::rcp(struct ROL::SecantState<double> *, bool) --> class Teuchos::RCP<struct ROL::SecantState<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::lDFP<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::lDFP<double> * a0) -> Teuchos::RCP<class ROL::lDFP<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lDFP<double> > (*)(class ROL::lDFP<double> *, bool)) &Teuchos::rcp<ROL::lDFP<double>>, "C++: Teuchos::rcp(class ROL::lDFP<double> *, bool) --> class Teuchos::RCP<class ROL::lDFP<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::lSR1<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::lSR1<double> * a0) -> Teuchos::RCP<class ROL::lSR1<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lSR1<double> > (*)(class ROL::lSR1<double> *, bool)) &Teuchos::rcp<ROL::lSR1<double>>, "C++: Teuchos::rcp(class ROL::lSR1<double> *, bool) --> class Teuchos::RCP<class ROL::lSR1<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::BarzilaiBorwein<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::BarzilaiBorwein<double> * a0) -> Teuchos::RCP<class ROL::BarzilaiBorwein<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > (*)(class ROL::BarzilaiBorwein<double> *, bool)) &Teuchos::rcp<ROL::BarzilaiBorwein<double>>, "C++: Teuchos::rcp(class ROL::BarzilaiBorwein<double> *, bool) --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
 	// Teuchos::rcp(class ROL::Newton_U<double> *, bool) file:Teuchos_RCP.hpp line:622
 	M("Teuchos").def("rcp", [](class ROL::Newton_U<double> * a0) -> Teuchos::RCP<class ROL::Newton_U<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::Newton_U<double> > (*)(class ROL::Newton_U<double> *, bool)) &Teuchos::rcp<ROL::Newton_U<double>>, "C++: Teuchos::rcp(class ROL::Newton_U<double> *, bool) --> class Teuchos::RCP<class ROL::Newton_U<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
@@ -1638,6 +2232,70 @@ void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &n
 	M("Teuchos").def("rcp", [](class ROL::TypeG::StabilizedLCLAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeG::StabilizedLCLAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeG::StabilizedLCLAlgorithm<double> > (*)(class ROL::TypeG::StabilizedLCLAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeG::StabilizedLCLAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeG::StabilizedLCLAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeG::StabilizedLCLAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
 
+	// Teuchos::rcp(struct ROL::AlgorithmState<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](struct ROL::AlgorithmState<double> * a0) -> Teuchos::RCP<struct ROL::AlgorithmState<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<struct ROL::AlgorithmState<double> > (*)(struct ROL::AlgorithmState<double> *, bool)) &Teuchos::rcp<ROL::AlgorithmState<double>>, "C++: Teuchos::rcp(struct ROL::AlgorithmState<double> *, bool) --> class Teuchos::RCP<struct ROL::AlgorithmState<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::CauchyPoint<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::CauchyPoint<double> * a0) -> Teuchos::RCP<class ROL::CauchyPoint<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::CauchyPoint<double> > (*)(class ROL::CauchyPoint<double> *, bool)) &Teuchos::rcp<ROL::CauchyPoint<double>>, "C++: Teuchos::rcp(class ROL::CauchyPoint<double> *, bool) --> class Teuchos::RCP<class ROL::CauchyPoint<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::DogLeg<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::DogLeg<double> * a0) -> Teuchos::RCP<class ROL::DogLeg<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::DogLeg<double> > (*)(class ROL::DogLeg<double> *, bool)) &Teuchos::rcp<ROL::DogLeg<double>>, "C++: Teuchos::rcp(class ROL::DogLeg<double> *, bool) --> class Teuchos::RCP<class ROL::DogLeg<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::DoubleDogLeg<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::DoubleDogLeg<double> * a0) -> Teuchos::RCP<class ROL::DoubleDogLeg<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::DoubleDogLeg<double> > (*)(class ROL::DoubleDogLeg<double> *, bool)) &Teuchos::rcp<ROL::DoubleDogLeg<double>>, "C++: Teuchos::rcp(class ROL::DoubleDogLeg<double> *, bool) --> class Teuchos::RCP<class ROL::DoubleDogLeg<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::TruncatedCG<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TruncatedCG<double> * a0) -> Teuchos::RCP<class ROL::TruncatedCG<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TruncatedCG<double> > (*)(class ROL::TruncatedCG<double> *, bool)) &Teuchos::rcp<ROL::TruncatedCG<double>>, "C++: Teuchos::rcp(class ROL::TruncatedCG<double> *, bool) --> class Teuchos::RCP<class ROL::TruncatedCG<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::LinMore<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::LinMore<double> * a0) -> Teuchos::RCP<class ROL::LinMore<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::LinMore<double> > (*)(class ROL::LinMore<double> *, bool)) &Teuchos::rcp<ROL::LinMore<double>>, "C++: Teuchos::rcp(class ROL::LinMore<double> *, bool) --> class Teuchos::RCP<class ROL::LinMore<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(struct ROL::StepState<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](struct ROL::StepState<double> * a0) -> Teuchos::RCP<struct ROL::StepState<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<struct ROL::StepState<double> > (*)(struct ROL::StepState<double> *, bool)) &Teuchos::rcp<ROL::StepState<double>>, "C++: Teuchos::rcp(struct ROL::StepState<double> *, bool) --> class Teuchos::RCP<struct ROL::StepState<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::lBFGS<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::lBFGS<double> * a0) -> Teuchos::RCP<class ROL::lBFGS<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lBFGS<double> > (*)(class ROL::lBFGS<double> *, bool)) &Teuchos::rcp<ROL::lBFGS<double>>, "C++: Teuchos::rcp(class ROL::lBFGS<double> *, bool) --> class Teuchos::RCP<class ROL::lBFGS<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(struct ROL::SecantState<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](struct ROL::SecantState<double> * a0) -> Teuchos::RCP<struct ROL::SecantState<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<struct ROL::SecantState<double> > (*)(struct ROL::SecantState<double> *, bool)) &Teuchos::rcp<ROL::SecantState<double>>, "C++: Teuchos::rcp(struct ROL::SecantState<double> *, bool) --> class Teuchos::RCP<struct ROL::SecantState<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::lDFP<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::lDFP<double> * a0) -> Teuchos::RCP<class ROL::lDFP<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lDFP<double> > (*)(class ROL::lDFP<double> *, bool)) &Teuchos::rcp<ROL::lDFP<double>>, "C++: Teuchos::rcp(class ROL::lDFP<double> *, bool) --> class Teuchos::RCP<class ROL::lDFP<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::lSR1<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::lSR1<double> * a0) -> Teuchos::RCP<class ROL::lSR1<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::lSR1<double> > (*)(class ROL::lSR1<double> *, bool)) &Teuchos::rcp<ROL::lSR1<double>>, "C++: Teuchos::rcp(class ROL::lSR1<double> *, bool) --> class Teuchos::RCP<class ROL::lSR1<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::BarzilaiBorwein<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::BarzilaiBorwein<double> * a0) -> Teuchos::RCP<class ROL::BarzilaiBorwein<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::BarzilaiBorwein<double> > (*)(class ROL::BarzilaiBorwein<double> *, bool)) &Teuchos::rcp<ROL::BarzilaiBorwein<double>>, "C++: Teuchos::rcp(class ROL::BarzilaiBorwein<double> *, bool) --> class Teuchos::RCP<class ROL::BarzilaiBorwein<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::KelleySachsModel<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::KelleySachsModel<double> * a0) -> Teuchos::RCP<class ROL::KelleySachsModel<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::KelleySachsModel<double> > (*)(class ROL::KelleySachsModel<double> *, bool)) &Teuchos::rcp<ROL::KelleySachsModel<double>>, "C++: Teuchos::rcp(class ROL::KelleySachsModel<double> *, bool) --> class Teuchos::RCP<class ROL::KelleySachsModel<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::ColemanLiModel<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::ColemanLiModel<double> * a0) -> Teuchos::RCP<class ROL::ColemanLiModel<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::ColemanLiModel<double> > (*)(class ROL::ColemanLiModel<double> *, bool)) &Teuchos::rcp<ROL::ColemanLiModel<double>>, "C++: Teuchos::rcp(class ROL::ColemanLiModel<double> *, bool) --> class Teuchos::RCP<class ROL::ColemanLiModel<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::LinMoreModel<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::LinMoreModel<double> * a0) -> Teuchos::RCP<class ROL::LinMoreModel<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::LinMoreModel<double> > (*)(class ROL::LinMoreModel<double> *, bool)) &Teuchos::rcp<ROL::LinMoreModel<double>>, "C++: Teuchos::rcp(class ROL::LinMoreModel<double> *, bool) --> class Teuchos::RCP<class ROL::LinMoreModel<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::TrustRegionModel<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TrustRegionModel<double> * a0) -> Teuchos::RCP<class ROL::TrustRegionModel<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TrustRegionModel<double> > (*)(class ROL::TrustRegionModel<double> *, bool)) &Teuchos::rcp<ROL::TrustRegionModel<double>>, "C++: Teuchos::rcp(class ROL::TrustRegionModel<double> *, bool) --> class Teuchos::RCP<class ROL::TrustRegionModel<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
 	// Teuchos::rcp(class ROL::Constraint_Partitioned<double> *, bool) file:Teuchos_RCP.hpp line:622
 	M("Teuchos").def("rcp", [](class ROL::Constraint_Partitioned<double> * a0) -> Teuchos::RCP<class ROL::Constraint_Partitioned<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::Constraint_Partitioned<double> > (*)(class ROL::Constraint_Partitioned<double> *, bool)) &Teuchos::rcp<ROL::Constraint_Partitioned<double>>, "C++: Teuchos::rcp(class ROL::Constraint_Partitioned<double> *, bool) --> class Teuchos::RCP<class ROL::Constraint_Partitioned<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
@@ -1721,6 +2379,9 @@ void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &n
 	// Teuchos::is_null(const class Teuchos::RCP<class Teuchos::XMLObjectImplem> &) file:Teuchos_RCP.hpp line:715
 	M("Teuchos").def("is_null", (bool (*)(const class Teuchos::RCP<class Teuchos::XMLObjectImplem> &)) &Teuchos::is_null<Teuchos::XMLObjectImplem>, "C++: Teuchos::is_null(const class Teuchos::RCP<class Teuchos::XMLObjectImplem> &) --> bool", pybind11::arg("p"));
 
+	// Teuchos::is_null(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) file:Teuchos_RCP.hpp line:715
+	M("Teuchos").def("is_null", (bool (*)(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &)) &Teuchos::is_null<ROL::TrustRegionModel<double>>, "C++: Teuchos::is_null(const class Teuchos::RCP<class ROL::TrustRegionModel<double> > &) --> bool", pybind11::arg("p"));
+
 	// Teuchos::nonnull(const class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > &) file:Teuchos_RCP.hpp line:723
 	M("Teuchos").def("nonnull", (bool (*)(const class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > &)) &Teuchos::nonnull<Teuchos::basic_FancyOStream<char, std::char_traits<char> >>, "C++: Teuchos::nonnull(const class Teuchos::RCP<class Teuchos::basic_FancyOStream<char, struct std::char_traits<char> > > &) --> bool", pybind11::arg("p"));
 
@@ -1744,6 +2405,12 @@ void bind_Teuchos_RCPDecl(std::function< pybind11::module &(std::string const &n
 	}
 	// Teuchos::dyn_cast_throw_exception(const std::string &, const std::string &, const std::string &) file:Teuchos_dyn_cast.hpp line:70
 	M("Teuchos").def("dyn_cast_throw_exception", (void (*)(const std::string &, const std::string &, const std::string &)) &Teuchos::dyn_cast_throw_exception, "C++: Teuchos::dyn_cast_throw_exception(const std::string &, const std::string &, const std::string &) --> void", pybind11::arg("T_from"), pybind11::arg("T_from_concr"), pybind11::arg("T_to"));
+
+	// Teuchos::dyn_cast(class ROL::TrustRegionModel<double> &) file:Teuchos_dyn_cast.hpp line:173
+	M("Teuchos").def("dyn_cast", (class ROL::KelleySachsModel<double> & (*)(class ROL::TrustRegionModel<double> &)) &Teuchos::dyn_cast<ROL::KelleySachsModel<double>,ROL::TrustRegionModel<double>>, "C++: Teuchos::dyn_cast(class ROL::TrustRegionModel<double> &) --> class ROL::KelleySachsModel<double> &", pybind11::return_value_policy::automatic, pybind11::arg("from"));
+
+	// Teuchos::dyn_cast(class ROL::TrustRegionModel<double> &) file:Teuchos_dyn_cast.hpp line:173
+	M("Teuchos").def("dyn_cast", (class ROL::ColemanLiModel<double> & (*)(class ROL::TrustRegionModel<double> &)) &Teuchos::dyn_cast<ROL::ColemanLiModel<double>,ROL::TrustRegionModel<double>>, "C++: Teuchos::dyn_cast(class ROL::TrustRegionModel<double> &) --> class ROL::ColemanLiModel<double> &", pybind11::return_value_policy::automatic, pybind11::arg("from"));
 
 	// Teuchos::ptrFromRef(class Teuchos::ParameterEntry &) file:Teuchos_PtrDecl.hpp line:298
 	M("Teuchos").def("ptrFromRef", (class Teuchos::Ptr<class Teuchos::ParameterEntry> (*)(class Teuchos::ParameterEntry &)) &Teuchos::ptrFromRef<Teuchos::ParameterEntry>, "C++: Teuchos::ptrFromRef(class Teuchos::ParameterEntry &) --> class Teuchos::Ptr<class Teuchos::ParameterEntry>", pybind11::arg("arg"));

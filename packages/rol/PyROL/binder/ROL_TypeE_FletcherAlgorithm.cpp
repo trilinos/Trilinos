@@ -1,9 +1,12 @@
+#include <ROL_Constraint.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_FletcherObjectiveE.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_TypeE_CompositeStepAlgorithm.hpp>
 #include <ROL_TypeE_FletcherAlgorithm.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>

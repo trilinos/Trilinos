@@ -80,6 +80,7 @@ ELSE()
   MESSAGE("  -- User has set: PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 ENDIF()
 
+
 function(get_all_include_dirs  LIBRARY_NAME all_include_dirs all_visited_libs)
   if (TARGET ${LIBRARY_NAME})
     get_property(depend_libs TARGET ${LIBRARY_NAME} PROPERTY INTERFACE_LINK_LIBRARIES)
@@ -308,6 +309,7 @@ IF (PYROL_GENERATE_SRC)
   list(APPEND BINDER_OPTIONS -I{PyROL_BINDER_clang_include_dirs})
   list(APPEND BINDER_OPTIONS -iwithsysroot${PyROL_BINDER_LibClang_include_dir})
   list(APPEND BINDER_OPTIONS -DNDEBUG)
+  list(APPEND BINDER_OPTIONS -v)
 
   message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
 

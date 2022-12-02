@@ -1,9 +1,12 @@
 #include <ROL_AugmentedLagrangianObjective.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_ElasticLinearConstraint.hpp>
 #include <ROL_ElasticObjective.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>

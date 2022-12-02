@@ -61,6 +61,7 @@ void bind_ROL_Bounds(std::function< pybind11::module &(std::string const &namesp
 void bind_ROL_TypeE_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TrustRegionTypes(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string const &namespace_) > &M);
 
 
 PYBIND11_MODULE(PyROL, root_module) {
@@ -154,5 +155,6 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_TypeE_AlgorithmFactory(M);
 	bind_ROL_TypeG_Algorithm(M);
 	bind_ROL_TrustRegionTypes(M);
+	bind_ROL_KelleySachsModel(M);
 
 }

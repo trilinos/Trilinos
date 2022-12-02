@@ -2,6 +2,7 @@
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_LinearOperator.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_RCPDecl.hpp>
 #include <Teuchos_RCPNode.hpp>

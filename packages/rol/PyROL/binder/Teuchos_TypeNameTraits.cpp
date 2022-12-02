@@ -13,16 +13,21 @@
 #include <ROL_BundleStatusTest.hpp>
 #include <ROL_Bundle_U_AS.hpp>
 #include <ROL_Bundle_U_TT.hpp>
+#include <ROL_CauchyPoint.hpp>
 #include <ROL_CauchyPoint_U.hpp>
+#include <ROL_ColemanLiModel.hpp>
 #include <ROL_CombinedStatusTest.hpp>
 #include <ROL_ConjugateGradients.hpp>
 #include <ROL_ConjugateResiduals.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_ConstraintStatusTest.hpp>
 #include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_CubicInterp_U.hpp>
 #include <ROL_DaiFletcherProjection.hpp>
 #include <ROL_DescentDirection_U.hpp>
+#include <ROL_DogLeg.hpp>
 #include <ROL_DogLeg_U.hpp>
+#include <ROL_DoubleDogLeg.hpp>
 #include <ROL_DoubleDogLeg_U.hpp>
 #include <ROL_DouglasRachfordProjection.hpp>
 #include <ROL_DykstraProjection.hpp>
@@ -35,7 +40,10 @@
 #include <ROL_GoldenSectionScalarMinimization.hpp>
 #include <ROL_Gradient_U.hpp>
 #include <ROL_IterationScaling_U.hpp>
+#include <ROL_KelleySachsModel.hpp>
 #include <ROL_Krylov.hpp>
+#include <ROL_LinMore.hpp>
+#include <ROL_LinMoreModel.hpp>
 #include <ROL_LineSearch_U.hpp>
 #include <ROL_LineSearch_U_Types.hpp>
 #include <ROL_LinearConstraint.hpp>
@@ -46,6 +54,7 @@
 #include <ROL_NonlinearCG.hpp>
 #include <ROL_NonlinearCG_U.hpp>
 #include <ROL_NullSpaceOperator.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_PQNObjective.hpp>
 #include <ROL_PartitionedVector.hpp>
 #include <ROL_PathBasedTargetLevel_U.hpp>
@@ -67,7 +76,9 @@
 #include <ROL_SlacklessObjective.hpp>
 #include <ROL_StatusTest.hpp>
 #include <ROL_Stream.hpp>
+#include <ROL_TruncatedCG.hpp>
 #include <ROL_TruncatedCG_U.hpp>
+#include <ROL_TrustRegionModel.hpp>
 #include <ROL_TrustRegionModel_U.hpp>
 #include <ROL_TrustRegion_U_Types.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
@@ -99,6 +110,7 @@
 #include <ROL_TypeU_TrustRegionAlgorithm.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <ROL_VectorController.hpp>
 #include <ROL_lBFGS.hpp>
 #include <ROL_lDFP.hpp>
@@ -155,6 +167,9 @@ void bind_Teuchos_TypeNameTraits(std::function< pybind11::module &(std::string c
 
 	// Teuchos::typeName(const class Teuchos::any::placeholder &) file:Teuchos_TypeNameTraits.hpp line:115
 	M("Teuchos").def("typeName", (std::string (*)(const class Teuchos::any::placeholder &)) &Teuchos::typeName<Teuchos::any::placeholder>, "C++: Teuchos::typeName(const class Teuchos::any::placeholder &) --> std::string", pybind11::arg("t"));
+
+	// Teuchos::typeName(const class ROL::TrustRegionModel<double> &) file:Teuchos_TypeNameTraits.hpp line:115
+	M("Teuchos").def("typeName", (std::string (*)(const class ROL::TrustRegionModel<double> &)) &Teuchos::typeName<ROL::TrustRegionModel<double>>, "C++: Teuchos::typeName(const class ROL::TrustRegionModel<double> &) --> std::string", pybind11::arg("t"));
 
 	// Teuchos::TestForException_incrThrowNumber() file:Teuchos_TestForException.hpp line:61
 	M("Teuchos").def("TestForException_incrThrowNumber", (void (*)()) &Teuchos::TestForException_incrThrowNumber, "Increment the throw number.  \n\nC++: Teuchos::TestForException_incrThrowNumber() --> void");

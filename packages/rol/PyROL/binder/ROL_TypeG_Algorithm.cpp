@@ -1,6 +1,8 @@
 #include <ROL_BoundConstraint.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_PolyhedralProjection.hpp>
 #include <ROL_Problem.hpp>
 #include <ROL_StatusTest.hpp>
@@ -12,6 +14,7 @@
 #include <ROL_TypeG_StabilizedLCLAlgorithm.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>

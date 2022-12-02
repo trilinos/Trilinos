@@ -51,3 +51,4 @@ ROL_Bounds.cpp
 ROL_TypeE_AlgorithmFactory.cpp
 ROL_TypeG_Algorithm.cpp
 ROL_TrustRegionTypes.cpp
+ROL_KelleySachsModel.cpp

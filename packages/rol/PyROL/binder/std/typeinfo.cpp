@@ -1,11 +1,13 @@
 #include <ROL_BoundConstraint.hpp>
 #include <ROL_Bracketing.hpp>
+#include <ROL_Constraint.hpp>
 #include <ROL_ConstraintAssembler.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_LineSearch_U_Types.hpp>
 #include <ROL_LinearOperator.hpp>
 #include <ROL_NullSpaceOperator.hpp>
+#include <ROL_Objective.hpp>
 #include <ROL_PQNObjective.hpp>
 #include <ROL_PolyhedralProjection.hpp>
 #include <ROL_ReducedLinearConstraint.hpp>
@@ -14,8 +16,10 @@
 #include <ROL_ScalarMinimizationStatusTest.hpp>
 #include <ROL_Secant.hpp>
 #include <ROL_StatusTest.hpp>
+#include <ROL_Step.hpp>
 #include <ROL_Types.hpp>
 #include <ROL_UpdateType.hpp>
+#include <ROL_Vector.hpp>
 #include <ROL_VectorClone.hpp>
 #include <ROL_VectorController.hpp>
 #include <Teuchos_Dependency.hpp>
