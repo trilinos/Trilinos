@@ -7,6 +7,8 @@
 // -*- Mode: c++ -*-
 #pragma once
 
+#include "ioex_export.h"
+
 #include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
 #include <Ioss_Map.h>
@@ -52,7 +54,7 @@ namespace Ioex {
  *  parallel exodus database format.
  */
 namespace Ioex {
-  class DatabaseIO : public Ioex::BaseDatabaseIO
+  class IOEX_EXPORT DatabaseIO : public Ioex::BaseDatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
 
@@ -28,7 +30,7 @@
 #include "Iotm_TextMeshDataTypes.h"
 
 namespace Iotm {
-  class TopologyMapEntry
+  class IOTM_EXPORT TopologyMapEntry
   {
   public:
     using Ordinal     = uint16_t;
@@ -934,7 +936,7 @@ namespace Iotm {
     return out << t.name();
   }
 
-  class IossTopologyMapping : public text_mesh::TopologyMapping<TopologyMapEntry>
+  class IOTM_EXPORT IossTopologyMapping : public text_mesh::TopologyMapping<TopologyMapEntry>
   {
   public:
     TopologyMapEntry invalid_topology() const override { return TopologyMapEntry(); }

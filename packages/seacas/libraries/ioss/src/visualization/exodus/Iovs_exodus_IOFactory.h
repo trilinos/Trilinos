@@ -7,6 +7,8 @@
 #ifndef IOSS_Iovs_exodus_IOFactory_h
 #define IOSS_Iovs_exodus_IOFactory_h
 
+#include "iovs_export.h"
+
 #include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>   // for DatabaseUsage
@@ -18,7 +20,7 @@ namespace Ioss {
 
 namespace Iovs_exodus {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOVS_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();

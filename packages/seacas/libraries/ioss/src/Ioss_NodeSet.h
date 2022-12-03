@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Property.h"   // for Property
 #include <Ioss_EntitySet.h>  // for EntitySet
@@ -23,7 +25,7 @@ namespace Ioss {
 
   /** \brief A collection of nodes.
    */
-  class NodeSet : public EntitySet
+  class IOSS_EXPORT NodeSet : public EntitySet
   {
   public:
     NodeSet(); // Used for template typing only

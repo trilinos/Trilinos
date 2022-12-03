@@ -249,7 +249,7 @@ namespace Ioex {
   void decode_surface_name(Ioex::SideSetMap &fs_map, Ioex::SideSetSet &fs_set,
                            const std::string &name)
   {
-    std::vector<std::string> tokens = Ioss::tokenize(name, "_");
+    auto tokens = Ioss::tokenize(name, "_");
     if (tokens.size() >= 4) {
       // Name of form: "name_eltopo_sidetopo_id" or
       // "name_block_id_sidetopo_id" "name" is typically "surface".
@@ -315,7 +315,7 @@ namespace Ioex {
   // If not of this form, return 0;
   int64_t extract_id(const std::string &name_id)
   {
-    std::vector<std::string> tokens = Ioss::tokenize(name_id, "_");
+    auto tokens = Ioss::tokenize(name_id, "_");
 
     if (tokens.size() == 1) {
       return 0;

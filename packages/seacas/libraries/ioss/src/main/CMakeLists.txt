@@ -10,12 +10,20 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/io_info_lib_export.h")
+
 TRIBITS_ADD_LIBRARY(
   io_info_lib
   HEADERS io_info.h info_interface.h
   SOURCES io_info.C volume.C info_interface.C
   DEPLIBS Ioss
   )
+
+generate_export_header(io_info_lib)
+target_include_directories(io_info_lib
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 ASSERT_DEFINED(TPL_ENABLE_CGNS)
 IF (TPL_ENABLE_CGNS)

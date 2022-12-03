@@ -37,7 +37,8 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
                              const void_int *num_elem_this_blk, const void_int *num_nodes_per_elem,
                              const void_int *num_attr_this_blk, int define_maps)
 {
-  int    i, varid, dimid, dims[2], strdim, *eb_array;
+  size_t i;
+  int    varid, dimid, dims[2], strdim, *eb_array;
   int    temp;
   int    iblk;
   int    status;

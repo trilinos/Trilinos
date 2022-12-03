@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_VariableType.h> // for VariableType
 #include <string>              // for string
 
 namespace Ioss {
-  class StorageInitializer
+  class IOSS_EXPORT StorageInitializer
   {
   public:
     StorageInitializer();
@@ -19,7 +21,7 @@ namespace Ioss {
   };
 
 #define MAKE_CLASS(X)                                                                              \
-  class X : public VariableType                                                                    \
+  class IOSS_EXPORT X : public VariableType                                                                    \
   {                                                                                                \
   public:                                                                                          \
     std::string label(int which, const char suffix_sep = '_') const override;                      \
@@ -32,7 +34,7 @@ namespace Ioss {
     X(const X &);                                                                                  \
   }
 
-  class Invalid_Storage : public VariableType
+  class IOSS_EXPORT Invalid_Storage : public VariableType
   {
   public:
     Invalid_Storage(const Invalid_Storage &) = delete;
@@ -46,7 +48,7 @@ namespace Ioss {
     Invalid_Storage();
   };
 
-  class Scalar : public VariableType
+  class IOSS_EXPORT Scalar : public VariableType
   {
   public:
     Scalar(const Scalar &) = delete;

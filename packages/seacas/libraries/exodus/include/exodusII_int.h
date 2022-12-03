@@ -1,6 +1,6 @@
 /*
 
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -750,7 +750,7 @@ struct ex__obj_stats
 #define EXODUS_EXPORT extern
 #endif /* EXODUS_EXPORT */
 
-EXODUS_EXPORT void ex__iqsort(int v[], int iv[], int N);
+EXODUS_EXPORT void ex__iqsort(int v[], int iv[], size_t N);
 EXODUS_EXPORT void ex__iqsort64(int64_t v[], int64_t iv[], int64_t N);
 
 EXODUS_EXPORT char *ex__catstr(const char * /*string*/, int /*num*/);

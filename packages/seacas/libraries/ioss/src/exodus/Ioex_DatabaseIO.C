@@ -1205,7 +1205,7 @@ namespace Ioex {
         // an empty type which is invalid and will throw an
         // exception in the XBlock constructor. Try to discern
         // the correct X type based on the block_name.
-        std::vector<std::string> tokens = Ioss::tokenize(block_name, "_");
+        auto tokens = Ioss::tokenize(block_name, "_");
         if (tokens.size() >= 2) {
           // Check whether last token names an X topology type...
           const Ioss::ElementTopology *topology =
@@ -1600,7 +1600,7 @@ namespace Ioex {
             topo_map[std::make_pair(std::string("unknown"), mixed_topo)] = number_sides;
           }
           else if (in_fs_map) {
-            std::vector<std::string> tokens = Ioss::tokenize(side_set_name, "_");
+            auto tokens = Ioss::tokenize(side_set_name, "_");
             SMART_ASSERT(tokens.size() >= 4)(tokens.size());
             // The sideset should have only a single topology which is
             // given by the sideset name...
@@ -1779,7 +1779,7 @@ namespace Ioex {
               fmt::print(errmsg,
                          "INTERNAL ERROR: Invalid setting for `split_type` {}. Something is wrong "
                          "in the Ioex::DatabaseIO class. Please report.\n",
-                         split_type);
+                         static_cast<int>(split_type));
               IOSS_ERROR(errmsg);
             }
             assert(elem_topo != nullptr);
@@ -3670,6 +3670,9 @@ int64_t DatabaseIO::read_ss_transient_field(const Ioss::Field &field, int64_t id
 
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
+    if (lowerCaseVariableNames) {
+      Ioss::Utils::fixup_name(var_name);
+    }
 
     // Read the variable...
     int  ierr     = 0;
@@ -4684,8 +4687,8 @@ void DatabaseIO::write_nodal_transient_field(const Ioss::Field &field,
           ex_put_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0, num_out, temp.data());
       if (ierr < 0) {
         std::ostringstream errmsg;
-        fmt::print(errmsg, "Problem outputting nodal variable '{}' with index = {}\n", var_name,
-                   var_index);
+        fmt::print(errmsg, "Problem outputting nodal variable '{}' with index = {} to file '{}'\n",
+                   var_name, var_index, decoded_filename());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, errmsg.str());
       }
     }

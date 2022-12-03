@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h> // for Property
 #include <cstddef>         // for size_t
@@ -29,7 +31,7 @@ namespace Ioss {
 
   /** \brief A collection of Ioss::Property objects
    */
-  class PropertyManager
+  class IOSS_EXPORT PropertyManager
   {
   public:
     PropertyManager() = default;

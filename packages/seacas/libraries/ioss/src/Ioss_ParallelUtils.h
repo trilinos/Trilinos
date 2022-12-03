@@ -6,16 +6,14 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
 #include <Ioss_Utils.h>
 #include <cassert>
 #include <cstddef> // for size_t
 #include <string>  // for string
 #include <vector>  // for vector
-#if IOSS_DEBUG_OUTPUT
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-#endif
 
 #ifdef SEACAS_HAVE_MPI
 #include <Ioss_SerializeIO.h>
@@ -23,7 +21,7 @@
 
 namespace Ioss {
 
-  class ParallelUtils
+  class IOSS_EXPORT ParallelUtils
   {
   public:
     ParallelUtils() = default;
@@ -223,21 +221,6 @@ namespace Ioss {
 //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
 // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
 //    -- call special alltoallv which does point-to-point sends
-#if IOSS_DEBUG_OUTPUT
-    {
-      Ioss::ParallelUtils utils(comm);
-      int                 processor_count = utils.parallel_size();
-
-      int              max_comm = sendcnts[processor_count - 1] + senddisp[processor_count - 1];
-      std::vector<int> comm_size;
-
-      utils.gather(max_comm, comm_size);
-      int my_rank = utils.parallel_rank();
-      if (my_rank == 0) {
-        fmt::print("Send Communication Size: {}\n", fmt::join(comm_size, ", "));
-      }
-    }
-#endif
 #if 1
     int processor_count = 0;
     MPI_Comm_size(comm, &processor_count);
@@ -271,21 +254,6 @@ namespace Ioss {
                    const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
                    Ioss_MPI_Comm comm)
   {
-#if IOSS_DEBUG_OUTPUT
-    {
-      Ioss::ParallelUtils utils(comm);
-      int                 processor_count = utils.parallel_size();
-
-      int              max_comm = sendcnts[processor_count - 1] + senddisp[processor_count - 1];
-      std::vector<int> comm_size;
-
-      utils.gather(max_comm, comm_size);
-      int my_rank = utils.parallel_rank();
-      if (my_rank == 0) {
-        fmt::print("Send Communication Size: {}\n", fmt::join(comm_size, ", "));
-      }
-    }
-#endif
     return MPI_Alltoallv((void *)sendbuf.data(), const_cast<int *>(sendcnts.data()),
                          const_cast<int *>(senddisp.data()), mpi_type(T(0)), recvbuf.data(),
                          const_cast<int *>(recvcnts.data()), const_cast<int *>(recvdisp.data()),

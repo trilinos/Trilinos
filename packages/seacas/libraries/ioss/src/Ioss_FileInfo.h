@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <ctime>       // for time_t
 #include <string>      // for string, operator!=, etc
@@ -26,7 +28,7 @@ namespace Ioss {
    *  file class.
    */
 
-  class FileInfo
+  class IOSS_EXPORT FileInfo
   {
   public:
     //! Empty class referring to no file.

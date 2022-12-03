@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <cctype>                                    // for toupper, isspace, isdigit
@@ -37,7 +39,7 @@ namespace Iotm {
   namespace text_mesh {
     using ErrorHandler = std::function<void(const std::ostringstream &)>;
 
-    class TextMeshLexer
+    class IOTM_EXPORT TextMeshLexer
     {
     public:
       TextMeshLexer() : m_currentIndex(0), m_token(""), m_isNumber(false) {}

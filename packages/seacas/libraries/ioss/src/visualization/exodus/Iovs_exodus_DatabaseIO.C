@@ -874,8 +874,7 @@ namespace {
 
   int64_t extract_id(const std::string &name_id)
   {
-    std::vector<std::string> tokens = Ioss::tokenize(name_id, "_");
-
+    auto tokens = Ioss::tokenize(name_id, "_");
     if (tokens.size() == 1) {
       return 0;
     }

@@ -97,7 +97,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
 
       LOGICAL FFEXST, MATSTR, HELP
 
-      CHARACTER*(128) STRING
+      CHARACTER*(256) STRING
       CHARACTER*(mxlnln) INFREC(*)
       CHARACTER*(mxstln) QAREC(4,*)
       CHARACTER*(mxstln) BLKTYP(*)
@@ -268,6 +268,15 @@ C     --Read command line
       IF (IOSTAT .LT. 0) GOTO 430
       IF (NUMFLD .EQ. 0) GOTO 110
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
+      if (numfld .gt. maxfld) then
+         write (string, 1) numfld, maxfld
+ 1       format('There were ',i3, ' words entered on the command line,'
+     $          ' but only ',i3,' are allowed.')
+         CALL PRTERR ('WARNING', STRING(:LENSTR(STRING)))
+         CALL PRTERR ('CMDSPEC',
+     $        ' Please enter the command on two or more lines')
+         CALL PRTERR ('CMDSPEC',' ')
+      end if
 
       IFLD = 1
       CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)

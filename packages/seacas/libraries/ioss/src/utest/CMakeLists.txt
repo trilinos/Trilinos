@@ -7,6 +7,16 @@ else()
 endif()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	Utst_heartbeat
+	NAME Utst_heartbeat
+	SOURCES Utst_heartbeat.C
+	NOEXEPREFIX
+	${ADD_SUFFIX}
+	INSTALLABLE
+	NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	Utst_utils
 	NAME Utst_utils
 	SOURCES Utst_utils.C
