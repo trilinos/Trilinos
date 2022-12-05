@@ -41,6 +41,11 @@
 #include <stk_unit_test_utils/timer.hpp>
 #include <cstdlib>
 
+size_t size_in_bytes(const stk::mesh::impl::ParallelGraphInfo& pllGraphInfo)
+{
+  return sizeof(stk::mesh::impl::ParallelGraphInfo)+pllGraphInfo.capacity()*sizeof(stk::mesh::impl::ParallelGraphInfo::value_type);
+}
+
 TEST(ParallelGraphInfo, TimingInsertErase)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
@@ -56,10 +61,6 @@ TEST(ParallelGraphInfo, TimingInsertErase)
 
   auto randomId = [&](){ return minId + std::rand()%(maxId-minId); };
 
-  size_t curMemStart = 0, hwm = 0;
-  stk::get_memory_usage(curMemStart, hwm);
-  std::cout<<"Start cur-mem: "<<curMemStart<<std::endl;
-
 #ifndef NDEBUG
   const unsigned numIters = 100000;
 #else
@@ -67,52 +68,84 @@ TEST(ParallelGraphInfo, TimingInsertErase)
 #endif
   const unsigned NUM_RUNS = 5;
 
+  constexpr unsigned insertBatchSize = 1000;
+  constexpr unsigned deleteBatchSize = 1000;
+
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
 
+  size_t memValueToCompareAgainstGold = 0;
+
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
+
+    size_t curMemStart = 0, hwm = 0;
+    stk::get_memory_usage(curMemStart, hwm);
+    std::cout<<"Start cur-mem: "<<curMemStart<<std::endl;
 
     const int proc = 1;
     stk::mesh::ParallelInfoForGraphEdges pllGraphInfo(proc);
   
     const int otherProc = 2;
 
-    for(unsigned i=0; i<numIters; ++i) {
-      {
-        stk::mesh::impl::LocalId localElemId = randomId();
-        int localSide = 1;
-        stk::mesh::impl::LocalId negativeRemoteId = -localElemId;
-        int remoteSide = 4;
-        stk::mesh::GraphEdge graphEdge(localElemId, localSide, negativeRemoteId, remoteSide);
+    {
+      stk::mesh::impl::ParallelGraphInfo insertBatch;
+      std::vector<stk::mesh::GraphEdge> deleteBatch;
 
-        stk::mesh::impl::ParallelInfo parInfo(otherProc, stk::mesh::INVALID_PERMUTATION,
-                                              stk::topology::HEX_8);
+      for(unsigned i=0; i<numIters; ++i) {
+        {
+          stk::mesh::impl::LocalId localElemId = randomId();
+          int localSide = 1;
+          stk::mesh::impl::LocalId negativeRemoteId = -localElemId;
+          int remoteSide = 4;
+          stk::mesh::GraphEdge graphEdge(localElemId, localSide, negativeRemoteId, remoteSide);
 
-        pllGraphInfo.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
-      }
+          stk::mesh::impl::ParallelInfo parInfo(otherProc, stk::mesh::INVALID_PERMUTATION,
+                                                stk::topology::HEX_8);
 
-      {
-        stk::mesh::impl::LocalId localElemId = randomId();
-        int localSide = 1;
-        stk::mesh::impl::LocalId negativeRemoteId = -localElemId;
-        int remoteSide = 4;
-        stk::mesh::GraphEdge graphEdge(localElemId, localSide, negativeRemoteId, remoteSide);
+          if (!pllGraphInfo.find_parallel_info_for_graph_edge(graphEdge)) {
+            insertBatch.push_back(std::make_pair(graphEdge, parInfo));
+          }
+        }
 
-        pllGraphInfo.erase_parallel_info_for_graph_edge(graphEdge);
+        {
+          stk::mesh::impl::LocalId localElemId = randomId();
+          int localSide = 1;
+          stk::mesh::impl::LocalId negativeRemoteId = -localElemId;
+          int remoteSide = 4;
+          stk::mesh::GraphEdge graphEdge(localElemId, localSide, negativeRemoteId, remoteSide);
+
+          if (pllGraphInfo.find_parallel_info_for_graph_edge(graphEdge)) {
+            deleteBatch.push_back(graphEdge);
+          }
+        }
+
+        if (!insertBatch.empty() && i%insertBatchSize == 0) {
+          stk::util::sort_and_unique(insertBatch, stk::mesh::GraphEdgeLessByElem2());
+          pllGraphInfo.insert_sorted_edges(insertBatch);
+          insertBatch.clear();
+        }
+
+        if (!deleteBatch.empty() && i%deleteBatchSize == 0) {
+          stk::util::sort_and_unique(deleteBatch, stk::mesh::GraphEdgeLessByElem2());
+          pllGraphInfo.erase_edges(deleteBatch);
+          deleteBatch.clear();
+        }
       }
     }
 
     size_t curMemEnd = 0;
     stk::get_memory_usage(curMemEnd, hwm);
     size_t curMemUsed = curMemEnd - curMemStart;
-    std::cout << "ParallelInfoForGraphEdges Memory Usage: " << stk::human_bytes(curMemUsed) << std::endl;
+    size_t actualBytes = size_in_bytes(pllGraphInfo.get_parallel_graph_info());
+    memValueToCompareAgainstGold = std::max(actualBytes, memValueToCompareAgainstGold);
+    std::cout << "ParallelInfoForGraphEdges Memory Usage: " << stk::human_bytes(curMemUsed) << " pllGraphInfo bytes: "<<actualBytes<<std::endl;
     size_t nedges = pllGraphInfo.get_parallel_graph_info().size();
-    std::cout << "ParallelInfoForGraphEdges (nedges="<<nedges<<") uses approx "<<(curMemUsed/nedges)<<" bytes per edge"<<std::endl;
+    std::cout << "ParallelInfoForGraphEdges (nedges="<<nedges<<") uses approx "<<(actualBytes/nedges)<<" bytes per edge"<<std::endl;
 
     batchTimer.stop_batch_timer();
   }
 
-  batchTimer.print_batch_timing(numIters);
+  batchTimer.print_batch_timing(numIters, memValueToCompareAgainstGold);
 }
 

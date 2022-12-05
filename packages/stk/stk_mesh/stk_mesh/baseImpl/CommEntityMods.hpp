@@ -79,6 +79,8 @@ private:
   std::vector<EntityParallelState> m_ghostedMods; 
 };
 
+void make_unique(std::vector<EntityParallelState>& pllStates);
+
 }}} // end namepsace stk mesh impl
 
 
