@@ -701,7 +701,7 @@ unpackAndCombineIntoCrsMatrix(
   size_t bytes_per_value = PackTraits<ST>::packValueCount(ST());
 
   // Now do the actual unpack!
-  const bool atomic = XS::concurrency() != 1;
+  const bool atomic = XS().concurrency() != 1;
   using functor = UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap, BufferDeviceType>;
   functor f(
     local_matrix,
