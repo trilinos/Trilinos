@@ -35,8 +35,8 @@ class matrix(ROL.LinearOperator_double_t):
                 Hv[i] -= v[i+1]
 
 op = matrix(10)
-g = vector_type(10, 1.)
-x = vector_type(10, 0.)
+g = vector_type(10, 0.)
+x = vector_type(10, 1.)
 obj = norm2Obj(op, g)
 c = ROL.Constraint_double_t()
 a = vector_type(10, 1.)
@@ -62,7 +62,7 @@ print(obj.value(a, 1e-8))
 
 op.apply(b,a,1e-8)
 print(b[0:3])
-g = vector_type(10, 1.)
+g = vector_type(10, 0.)
 
 params = ROL.getParametersFromXmlFile("input.xml")
 
@@ -76,4 +76,8 @@ step = ROL.TrustRegionStep_double_t(params)
 status = ROL.StatusTest_double_t(params)
 algo = ROL.Algorithm_double_t(step,status,False)
 
+print("before optimization: "+str(obj_q.value(x, 1e-8)))
 algo.run_void(x=x, obj=obj_q)
+print("after optimization: "+str(obj_q.value(x, 1e-8)))
+print(g[:])
+print(x[:])

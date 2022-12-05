@@ -95,11 +95,21 @@ struct PyCallBack_ROL_Vector_double_t : public ROL::Vector<double> {
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Vector<double> *>(this), "clone");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
+			/*
 			if (pybind11::detail::cast_is_temporary_value_reference<class Teuchos::RCP<class ROL::Vector<double> >>::value) {
 				static pybind11::detail::override_caster_t<class Teuchos::RCP<class ROL::Vector<double> >> caster;
 				return pybind11::detail::cast_ref<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o), caster);
 			}
 			else return pybind11::detail::cast_safe<class Teuchos::RCP<class ROL::Vector<double> >>(std::move(o));
+			*/
+			auto self = pybind11::cast(this);
+			auto cloned = self.attr("clone")();
+
+			auto keep_python_state_alive = Teuchos::rcp<pybind11::object>(new pybind11::object(cloned));
+			auto ptr = cloned.cast<PyCallBack_ROL_Vector_double_t*>();
+
+			// aliasing shared_ptr: points to `A_trampoline* ptr` but refcounts the Python object
+			return Teuchos::RCP<class ROL::Vector<double> >(keep_python_state_alive, ptr);		
 		}
 		pybind11::pybind11_fail("Tried to call pure virtual function \"Vector::clone\"");
 	}
