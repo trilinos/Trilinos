@@ -1,9 +1,10 @@
 import numpy as np
 from numpy import linalg as LA
 from PyROL.PyROL import ROL
+from PyROL.getTypeName import *
 
 
-class npVector(ROL.Vector_double_t):
+class npVector(getTypeName('Vector')):
     def __init__(self, dimension=1, default_value=0., values=None):
         if values is None:
             self.values = default_value*np.ones((dimension,))

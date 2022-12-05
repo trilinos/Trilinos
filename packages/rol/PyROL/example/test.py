@@ -1,7 +1,7 @@
-from PyROL.PyROL import ROL
 from PyROL.vectors.npVector import npVector as vector_type
+from PyROL.getTypeName import *
 
-class norm2Obj(ROL.Objective_double_t):
+class norm2Obj(getTypeName('Objective')):
     def __init__(self, H, g, c=0):
         self.H = H
         self.g = g
@@ -22,7 +22,7 @@ class norm2Obj(ROL.Objective_double_t):
         self.H.applyInverse(hv, v, tol)
 
 # Matrix from rol/example/quadratic/example_01.cpp
-class matrix(ROL.LinearOperator_double_t):
+class matrix(getTypeName('LinearOperator')):
     def __init__(self, dim):
         self.dim = dim
         super().__init__()
@@ -71,10 +71,10 @@ problem = ROL.Problem_double_t(obj, x)
 
 #print(params)
 
-obj_q = ROL.QuadraticObjective_double_t(op, g)
-step = ROL.TrustRegionStep_double_t(params)
-status = ROL.StatusTest_double_t(params)
-algo = ROL.Algorithm_double_t(step,status,False)
+obj_q = getTypeName('QuadraticObjective')(op, g)
+step = getTypeName('TrustRegionStep')(params)
+status = getTypeName('StatusTest')(params)
+algo = getTypeName('Algorithm')(step,status,False)
 
 print("before optimization: "+str(obj_q.value(x, 1e-8)))
 algo.run_void(x=x, obj=obj_q)
