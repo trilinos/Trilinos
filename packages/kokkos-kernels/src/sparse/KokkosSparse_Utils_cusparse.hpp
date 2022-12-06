@@ -120,8 +120,8 @@ cudaDataType cuda_data_type_from() {
   // Ifpack2 to more easily support scalar types that cuSPARSE may not.
 
   // compile-time failure with a nice message if called on an unsupported type
-  //static_assert(!std::is_same<T, T>::value,
-  //                "cuSparse TPL does not support scalar type");
+  // static_assert(!std::is_same<T, T>::value,
+  //               "cuSparse TPL does not support scalar type");
   // static_assert(false, ...) is allowed to error even if the code is not
   // instantiated. obfuscate the predicate Despite this function being
   // uncompilable, the compiler may decide that a return statement is missing,
@@ -154,7 +154,7 @@ inline cudaDataType cuda_data_type_from<Kokkos::complex<float>>() {
 }
 template <>
 inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
-  return CUDA_C_32F;
+  return CUDA_C_64F;
 }
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
