@@ -53,6 +53,18 @@ struct EntityParallelState {
   { return comm_info.key < rhs.comm_info.key; }
 };
 
+inline
+bool operator<(const EntityKey& key, const EntityParallelState& rhs)
+{
+  return key < rhs.comm_info.key;
+}
+
+inline
+bool operator<(const EntityParallelState& lhs, const EntityKey& key)
+{
+  return lhs.comm_info.key < key;
+}
+
 }
 }
 
