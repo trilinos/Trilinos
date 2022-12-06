@@ -50,10 +50,7 @@ def get_launch_cmd(build_name : str, system : str):
   Returns:
       str: The command used to launch the driver.
   """
-  if system == "weaver" or system == "ats2":
-    cmd = "bsub -Is -J " + build_name + " -W 12:00"
-  else:
-    cmd = ""
+  cmd = ""
 
   return cmd + " "
 
