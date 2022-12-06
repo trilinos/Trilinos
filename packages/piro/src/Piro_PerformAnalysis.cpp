@@ -554,11 +554,11 @@ Piro::PerformROLAnalysis(
       *out << "Piro::PerformROLAnalysis: End of the computation of H_pp" << std::endl;
 
     int numBlocks = bH->productRange()->numBlocks();
-   std::vector<Teko::LinearOp> diag(numBlocks);
+    std::vector<Teko::LinearOp> diag(numBlocks);
     for (int i=0; i<numBlocks; ++i) {
-          auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
-          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH)));
-          diag[i] = Thyra::nonconstInverse(linOp);
+      auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
+      Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH)));
+      diag[i] = Thyra::nonconstInverse(linOp);
     }
 
     H = Teko::toLinearOp(bH);
