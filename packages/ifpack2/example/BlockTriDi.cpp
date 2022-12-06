@@ -348,10 +348,6 @@ main (int argc, char* argv[])
   X = rcp(new MV(Ablock->getRangeMap(),1));
   X->putScalar(Teuchos::ScalarTraits<SC>::zero());
     
-  // Sanity check
-  if(line_info.is_null()) 
-    throw std::runtime_error("ERROR: No line info.");    
-
   // Initial diagnostics
   Teuchos::Array<MT> normx(1),normb(1); 
   X->norm2(normx);
@@ -384,7 +380,7 @@ main (int argc, char* argv[])
       LO block_num = line_ids[i];
       parts[block_num].push_back(block_lid);     
     }      
-    std::cout<<"On "<<line_ids.size()<<" local DOFs, detected "<<num_local_lines<<" lines"<<std::endl;
+    //    std::cout<<"On "<<line_ids.size()<<" local DOFs, detected "<<num_local_lines<<" lines"<<std::endl;
   }
 
 
