@@ -7,13 +7,15 @@
 // -*- Mode: c++ -*-
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
 
 // STL Includes
 
 namespace Ioss {
-  class Tri4a : public Ioss::ElementTopology
+  class IOSS_EXPORT Tri4a : public Ioss::ElementTopology
   {
 
   public:

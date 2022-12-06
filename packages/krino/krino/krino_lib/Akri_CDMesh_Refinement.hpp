@@ -8,7 +8,7 @@
 
 #ifndef KRINO_INCLUDE_AKRI_CDMESH_REFINEMENT_H_
 #define KRINO_INCLUDE_AKRI_CDMESH_REFINEMENT_H_
-#include <Akri_AuxMetaData.hpp>
+
 #include <Akri_CDFEM_Snapper.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -19,21 +19,19 @@ class InterfaceGeometry;
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
-      const AuxMetaData& aux_meta,
       const CDFEM_Support & cdfem_support,
-      const std::string & marker_field_name,
       const int numRefinements);
 
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const std::vector<InterfaceID> & active_interface_ids,
       const CDFEM_Snapper & snapper,
-      const AuxMetaData& aux_meta,
       const CDFEM_Support & cdfem_support,
       const FieldRef coords_field,
-      const std::string & marker_field_name,
       const int num_refinements);
 
 }

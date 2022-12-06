@@ -25,15 +25,15 @@
       <Parameter name="Mesh Type" type="string" value="tet"/>
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
-        <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
-        <!-- <Parameter name="Y Procs" type="int" value="-1" /> -->
-        <!-- <Parameter name="Z Procs" type="int" value="-1" /> -->
+        <Parameter name="X Procs" type="int" value="-1" />
+        <Parameter name="Y Procs" type="int" value="-1" />
+        <Parameter name="Z Procs" type="int" value="-1" />
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="5" />
-        <Parameter name="Y Elements" type="int" value="5" />
-        <Parameter name="Z Elements" type="int" value="5" />
+        <Parameter name="X Elements" type="int" value="2" />
+        <Parameter name="Y Elements" type="int" value="2" />
+        <Parameter name="Z Elements" type="int" value="2" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
@@ -60,14 +60,14 @@
 
   <ParameterList name="Physics Blocks">
     <!-- The 2x2 Maxwell system -->
-    <!-- Gets epsilon, sigma and 1/mu from closure model 'electromagnetics' -->
     <ParameterList name="Maxwell Physics">
       <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Maxwell"/>
         <Parameter name="Model ID"             type="string" value="electromagnetics"/>
         <Parameter name="Permittivity"         type="string" value="epsilon"/>
         <Parameter name="Conductivity"         type="string" value="sigma"/>
-        <Parameter name="Inverse Permeability" type="string" value="1/mu"/>
+        <Parameter name="Permeability"         type="string" value="mu"/>
+        <Parameter name="Current"              type="string" value="J"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -76,7 +76,8 @@
     <!-- Quantities for the Maxwell equations -->
     <!-- Note: 1/dt is added at runtime -->
     <ParameterList name="electromagnetics">
-      <ParameterList name="CURRENT">
+      <!-- Current source -->
+      <ParameterList name="J">
         <Parameter name="Type" type="string" value="RANDOM"/>
         <Parameter name="seed" type="unsigned int" value="0"/>
         <Parameter name="range min" type="double" value="0"/>
@@ -84,9 +85,7 @@
       </ParameterList>
       <!-- Permittivity -->
       <ParameterList name="epsilon">
-        <Parameter name="Type" type="string" value="PERMITTIVITY"/>
-        <Parameter name="epsilon" type="double" value="8.854187817e-12"/>
-        <Parameter name="DoF Name" type="string" value="E_edge"/>
+        <Parameter name="Value" type="double" value="8.854187817e-12"/>
       </ParameterList>
       <!-- Conductivity -->
       <ParameterList name="sigma">
@@ -97,11 +96,9 @@
         <Parameter name="betaz" type="double" value="0.0"/>
         <Parameter name="DoF Name" type="string" value="E_edge"/>
       </ParameterList>
-      <!-- Inverse of the permeability -->
-      <ParameterList name="1/mu">
-        <Parameter name="Type" type="string" value="INVERSE PERMEABILITY"/>
-        <Parameter name="mu" type="double" value="1.2566370614e-6"/>
-        <Parameter name="DoF Name" type="string" value="B_face"/>
+      <!-- Permeability -->
+      <ParameterList name="mu">
+        <Parameter name="Value" type="double" value="1.2566370614e-6"/>
       </ParameterList>
       <!-- Add 1/2 * ((E, epsilon * E) + (B, 1/mu * B)) and  -->
       <!--     1/2/dt^2 * ((E, epsilon * E) + (B, 1/mu * B)) -->
@@ -109,50 +106,23 @@
         <Parameter name="Type" type="string" value="ELECTROMAGNETIC ENERGY"/>
       </ParameterList>
     </ParameterList>
-    <!-- Quantities for the solver -->
-    <!-- Note: dt and 1/dt are added at runtime -->
-    <ParameterList name="electromagnetics_aux">
-      <!-- Permeability -->
-      <ParameterList name="mu">
-        <Parameter name="Value" type="double" value="1.2566370614e-6"/>
-      </ParameterList>
-      <!-- Inverse of the permeability -->
-      <ParameterList name="1/mu">
-        <Parameter name="Type" type="string" value="INVERSE PERMEABILITY"/>
-        <Parameter name="mu" type="double" value="1.2566370614e-6"/>
-        <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
-      </ParameterList>
-      <ParameterList name="epsilon">
-        <Parameter name="Type" type="string" value="PERMITTIVITY"/>
-        <Parameter name="epsilon" type="double" value="8.854187817e-12"/>
-        <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Operators">
-    <ParameterList name="Discrete Curl">
-      <Parameter name="Source" type="string" value="E_edge"/>
-      <Parameter name="Target" type="string" value="B_face"/>
-      <Parameter name="Op" type="string" value="curl"/>
-    </ParameterList>
   </ParameterList>
 
   <ParameterList name="Responses">
-    <!-- <ParameterList name="Electromagnetic Energy"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList name="Electromagnetic Energy/dt^2"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
+    <ParameterList name="Electromagnetic Energy">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="EM_ENERGY"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
+    <ParameterList name="Electromagnetic Energy/dt^2">
+      <Parameter name="Type" type="string" value="Functional"/>
+      <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/>
+      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">

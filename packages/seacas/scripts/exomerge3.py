@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -54,7 +54,7 @@ if sys.version_info[0] < 3:
 # (exodus.py should be in the same directory as this file)
 try:
     import exodus
-except:
+except Exception:
     import exodus3 as exodus
 
 # informal version number of this module
@@ -6621,7 +6621,7 @@ class ExodusModel(object):
                 last = [
                     '_' + str(x + 1) for x in range(integration_point_count)
                 ]
-            all_names = [base_name + m + l for l in last for m in mid]
+            all_names = [base_name + m + s for s in last for m in mid]
             if set(all_names).issubset(field_names):
                 sorted_field_names[all_names[0]] = all_names
                 field_names = field_names - set(all_names)

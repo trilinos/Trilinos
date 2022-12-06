@@ -67,7 +67,8 @@ public:
   LOCASolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
+      const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy = Teuchos::null);
 
   ~LOCASolver();
   //@}
@@ -119,7 +120,8 @@ Teuchos::RCP<LOCASolver<Scalar> >
 observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
 
 } // namespace Piro
 

@@ -208,7 +208,7 @@ namespace MueLu {
     size_t Nn=NodeMatrix->getLocalNumRows();
 
     // Upper bound on local number of coarse edges
-    size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn +1) / 2;      
+    size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn +1) / 2;
     ArrayRCP<size_t>  D0_rowptr(Ne+1);
     ArrayRCP<LO>      D0_colind(max_edges);
     ArrayRCP<SC>      D0_values(max_edges);
@@ -308,7 +308,7 @@ namespace MueLu {
     // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
     // We check that here.
     TEUCHOS_TEST_FOR_EXCEPTION( (num_coarse_edges > 0  && CoarseNodeMatrix.is_null()) ||
-                                (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null()) 
+                                (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null())
                                 , Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Mismatched num_coarse_edges and NodeMatrix repartition.");
     
 
@@ -318,7 +318,7 @@ namespace MueLu {
 
 
     // NOTE:  This only works because of the assumptions above
-    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap(); 
+    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
     RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();
 
     // Create the coarse D0
@@ -341,7 +341,7 @@ namespace MueLu {
       D0_coarse->setAllValues(ia, ja, val);
 
 #if 0
-      { 
+      {
         char fname[80];
         printf("[%d] D0: ia.size() = %d ja.size() = %d\n",MyPID,(int)ia.size(),(int)ja.size());
         printf("[%d] D0: ia  :",MyPID);
@@ -353,7 +353,7 @@ namespace MueLu {
         printf("\n[%d] D0: local ja  :",MyPID);
         for(int i=0; i<(int)ja.size(); i++)
           printf("%d ",(int)ja[i]);
-        printf("\n");        
+        printf("\n");
 
         sprintf(fname,"D0_global_ja_%d_%d.dat",MyPID,fineLevel.GetLevelID());
         FILE * f = fopen(fname,"w");
@@ -395,10 +395,10 @@ namespace MueLu {
 
       // TODO: Something like this *might* work.  But this specifically, doesn;'t
       // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0_coarse_m,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
-    }  
+    }
 
     /* Weed out the +/- entries */
-    { 
+    {
       SubFactoryMonitor m2(*this, "Generate Pe (post-fix)", coarseLevel);
       Pe->resumeFill();
       SC one = Teuchos::ScalarTraits<SC>::one();
@@ -449,9 +449,9 @@ namespace MueLu {
     coarseLevel.AddKeepFlag("D0",NoFactory::get(), MueLu::Final);
     coarseLevel.RemoveKeepFlag("D0",NoFactory::get(), MueLu::UserData);
    
-#if 0 
+#if 0
   {
-    int numProcs = Pe->getRowMap()->getComm()->getSize();       
+    int numProcs = Pe->getRowMap()->getComm()->getSize();
     char fname[80];
 
     sprintf(fname,"Pe_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*Pe);
@@ -465,7 +465,7 @@ namespace MueLu {
 
  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
  void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
- CheckCommutingProperty(const Matrix & Pe, const Matrix & D0_c, const Matrix& D0_f, const Matrix & Pn) const {   
+ CheckCommutingProperty(const Matrix & Pe, const Matrix & D0_c, const Matrix& D0_f, const Matrix & Pn) const {
    if(IsPrint(Statistics0)) {
      using XMM = Xpetra::MatrixMatrix<SC,LO,GO,NO>;
      using MT   = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -473,17 +473,17 @@ namespace MueLu {
      SC zero = Teuchos::ScalarTraits<SC>::zero();
 
      RCP<Matrix> dummy;
-     Teuchos::FancyOStream &out0=GetBlackHole();     
+     Teuchos::FancyOStream &out0=GetBlackHole();
      RCP<Matrix> left  = XMM::Multiply(Pe,false,D0_c,false,dummy,out0);
      RCP<Matrix> right = XMM::Multiply(D0_f,false,Pn,false,dummy,out0);
      
      // We need a non-FC matrix for the add, sadly
-     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
+     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());
      RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
      XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
      XMM::TwoMatrixAdd(*right, false, -one, *summation, one);
      
-     MT norm = summation->getFrobeniusNorm();     
+     MT norm = summation->getFrobeniusNorm();
      GetOStream(Statistics0) << "CheckCommutingProperty: ||Pe D0_c - D0_f Pn || = "<<norm<<std::endl;
     
    }

@@ -546,6 +546,18 @@ public:
   template<class T2>
   inline RCP(const RCP<T2>& r_ptr);
 
+  /** \brief Aliasing constructor: Construct using the ownership of a <tt>RCP<T2></tt> and from a raw pointer.
+   * 
+   * Constructs a <tt>RCP<T></tt> which shares ownership information with the initial 
+   * value of r_ptr, but holds an unrelated and unmanaged pointer ptr.
+   * 
+   * This constructor corresponds to the constructor 
+   * template< class Y > shared_ptr( const shared_ptr<Y>& r, element_type* ptr ) noexcept;
+   * of the std::shared_ptr.
+   */
+  template<class T2>
+  inline RCP(const RCP<T2>& r_ptr, T* ptr);
+
   /** \brief Removes a reference to a dynamically allocated object and possibly deletes
    * the object if owned.
    *

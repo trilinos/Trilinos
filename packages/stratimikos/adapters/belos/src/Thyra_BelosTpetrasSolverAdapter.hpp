@@ -76,7 +76,7 @@ namespace Thyra {
     BelosTpetraKrylov() = default;
 
     //! clone for Inverted Injection (DII)
-    virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const = 0;
+    virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const override = 0;
 
     //! set/get problem
     void setProblem( const Teuchos::RCP<Belos::LinearProblem<SC, MV, OP> > &problem ) override {

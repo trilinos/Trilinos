@@ -41,7 +41,9 @@
 #include <Akri_MeshDiagnostics.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
+#include <Akri_RefinementInterface.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_SnapToNode.hpp>
 #include <Akri_SubElementChildNodeAncestry.hpp>
@@ -290,13 +292,16 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
   if (cdfemSnapField.valid())
     stk::mesh::field_copy(my_cdfem_support.get_coords_field(), cdfemSnapField);
 
+  const double minIntPtWeightForEstimatingCutQuality = get_snapper().get_edge_tolerance();
+
   const stk::mesh::Selector parentElementSelector = get_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
   nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(stk_bulk(),
       parentElementSelector,
       snapFields,
       interfaceGeometry,
       my_cdfem_support.get_global_ids_are_parallel_consistent(),
-      my_cdfem_support.get_snapping_sharp_feature_angle_in_degrees());
+      my_cdfem_support.get_snapping_sharp_feature_angle_in_degrees(),
+      minIntPtWeightForEstimatingCutQuality);
 
   if (cdfemSnapField.valid())
     stk::mesh::field_axpby(+1.0, my_cdfem_support.get_coords_field(), -1.0, cdfemSnapField);
@@ -376,7 +381,7 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 
   {
     const ScaledJacobianQualityMetric qualityMetric;
-    krinolog << "After cutting quality is " << determine_quality(mesh, the_new_mesh->get_active_part(), qualityMetric) << stk::diag::dendl;
+    krinolog << "After cutting quality is " << compute_mesh_quality(mesh, the_new_mesh->get_active_part(), qualityMetric) << stk::diag::dendl;
   }
 
 
@@ -389,13 +394,6 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 
   const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
   return status;
-}
-
-static void rebuild_mesh_sidesets(stk::mesh::BulkData & mesh)
-{
-  for (auto && part : mesh.mesh_meta_data().get_parts())
-    if (part->primary_entity_rank() == mesh.mesh_meta_data().side_rank())
-      stk::mesh::reconstruct_sideset(mesh, *part);
 }
 
 bool
@@ -417,10 +415,9 @@ CDMesh::modify_mesh()
   if (modificationIsNeeded)
   {
     stk::mesh::toggle_sideset_updaters(stk_bulk(), false);
-
     stk_bulk().modification_begin();
     create_node_entities();
-    std::vector<SideRequest> side_requests;
+    std::vector<SideDescription> side_requests;
     create_element_and_side_entities(side_requests);
     destroy_custom_ghostings(stk_bulk());
     delete_mesh_entities(stk_bulk(), unused_old_child_elems);
@@ -566,32 +563,37 @@ CDMesh::decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
 }
 
 void
-CDMesh::mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry, const std::string & marker_field_name, const int num_refinements)
-{/* %TRACE[SPEC]% */ Tracespec trace__("CDMesh::mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const std::string & marker_field_name, const int num_refinements)"); /* %TRACE% */
-
+CDMesh::mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry, const int num_refinements)
+{
   CDMesh cdmesh(mesh, std::shared_ptr<CDMesh>());
   const std::vector<InterfaceID> activeInterfaceIds = cdmesh.active_interface_ids(interfaceGeometry.get_surface_identifiers());
-  krino::mark_interface_elements_for_adaptivity(cdmesh.stk_bulk(), interfaceGeometry, activeInterfaceIds, cdmesh.get_snapper(), cdmesh.aux_meta(), cdmesh.get_cdfem_support(), cdmesh.get_coords_field(), marker_field_name, num_refinements);
+  krino::mark_interface_elements_for_adaptivity(cdmesh.stk_bulk(),
+      cdmesh.get_cdfem_support().get_non_interface_conforming_refinement(),
+      interfaceGeometry,
+      activeInterfaceIds,
+      cdmesh.get_snapper(),
+      cdmesh.get_cdfem_support(),
+      cdmesh.get_coords_field(),
+      num_refinements);
 }
 
 void
 CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry)
-{/* %TRACE[SPEC]% */ Tracespec trace__("CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh)"); /* %TRACE% */
+{
   const auto & cdfem_support = CDFEM_Support::get(mesh.mesh_meta_data());
   stk::diag::TimeBlock timer__(cdfem_support.get_timer_adapt());
 
   stk::log_with_time_and_memory(mesh.parallel(), "Begin Nonconformal Adaptivity.");
 
-  const std::string & marker_name = cdfem_support.get_nonconformal_adapt_marker_name();
-  auto & h_adapt = cdfem_support.get_nonconformal_hadapt();
+  auto & refinement = cdfem_support.get_non_interface_conforming_refinement();
 
-  std::function<void(const std::string &, int)> marker_function =
-      [&mesh, &interfaceGeometry](const std::string & marker_field_name, int num_refinements)
+  std::function<void(int)> marker_function =
+      [&mesh, &interfaceGeometry](int num_refinements)
       {
-        mark_interface_elements_for_adaptivity(mesh, interfaceGeometry, marker_field_name, num_refinements);
+        mark_interface_elements_for_adaptivity(mesh, interfaceGeometry, num_refinements);
       };
 
-  perform_multilevel_adaptivity(mesh, marker_name, marker_function, h_adapt, cdfem_do_not_refine_or_unrefine_selector(cdfem_support));
+  perform_multilevel_adaptivity(refinement, mesh, marker_function, cdfem_do_not_refine_or_unrefine_selector(cdfem_support));
 
   stk::log_with_time_and_memory(mesh.parallel(), "End Nonconformal Adaptivity.");
 }
@@ -648,8 +650,6 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   the_new_mesh->stk_bulk().modification_end();
 
   delete_extraneous_inactive_sides(mesh, the_new_mesh->get_parent_part(), the_new_mesh->get_active_part());
-
-  rebuild_mesh_sidesets(mesh);
 
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
@@ -2400,7 +2400,7 @@ void
 CDMesh::attach_existing_and_identify_missing_subelement_sides(
     const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems,
-    std::vector<SideRequest> & side_requests)
+    std::vector<SideDescription> & side_requests)
 {
   stk::mesh::BulkData & stk_mesh = stk_bulk();
   const bool build_internal_sides = my_cdfem_support.use_internal_face_stabilization();
@@ -2445,8 +2445,7 @@ CDMesh::attach_existing_and_identify_missing_subelement_sides(
       else
       {
         ThrowRequire(sides.size() == 1);
-        stk::mesh::Entity elem_side_entity = sides[0];
-        attach_entity_to_elements(stk_bulk(), elem_side_entity);
+        attach_entity_to_element(stk_bulk(), stk_meta().side_rank(), sides[0], subelem->entity());
       }
     }
   }
@@ -2540,7 +2539,7 @@ bool have_multiple_conformal_volume_parts_in_common(const stk::mesh::BulkData & 
 }
 
 void
-CDMesh::add_possible_interface_sides(std::vector<SideRequest> & sideRequests) const
+CDMesh::add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const
 {
   // This will add sides that *might be* interface sides.
   // Because this probes the nodes, it will add "keyhole" sides that aren't actually on an interface
@@ -2773,6 +2772,14 @@ CDMesh::determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::Pa
     }
   }
 
+  if (volume_parts.size() > 2)
+  {
+    krinolog << "Found side with more than 2 volume parts:" << stk::diag::dendl;
+    krinolog << debug_entity_1line(stk_bulk(), side) << stk::diag::dendl;
+    for (auto elem : StkMeshEntities{stk_bulk().begin_elements(side), stk_bulk().end_elements(side)})
+      krinolog << " " << debug_entity_1line(stk_bulk(), elem) << stk::diag::dendl;
+  }
+
   ThrowRequire(volume_parts.size() <= 2); // Can be zero for inactive elements supporting a face
 
   if (conformal_volume_parts.empty())
@@ -2865,7 +2872,7 @@ CDMesh::element_side_should_be_active(const stk::mesh::Entity side) const
   return active;
 }
 void
-CDMesh::handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideRequest> & side_requests)
+CDMesh::handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests)
 {
   stk::mesh::Entity elem_entity = elem.entity();
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "single coincident subelement for elem #" << stk_bulk().identifier(elem_entity) << " with phase " << subelem->get_phase() << stk::diag::dendl;
@@ -3155,6 +3162,8 @@ double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)
 
   const stk::mesh::Selector interfaceSideSelector = my_phase_support.get_all_conformal_surfaces_selector();
 
+  get_coords_field().field().sync_to_host();
+
   std::function<double(stk::mesh::Entity)> get_length_scale_for_side;
   if (my_cdfem_support.get_length_scale_type_for_interface_CFL() == CONSTANT_LENGTH_SCALE)
   {
@@ -3191,6 +3200,8 @@ double CDMesh::compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)
 
 double CDMesh::compute_cdfem_displacement_cfl() const
 {
+  get_cdfem_displacements_field().field().sync_to_host();
+
   auto get_side_displacement = build_get_side_displacement_from_cdfem_displacements_function(stk_bulk(), get_cdfem_displacements_field());
 
   return compute_cdfem_cfl(get_side_displacement);
@@ -3198,6 +3209,7 @@ double CDMesh::compute_cdfem_displacement_cfl() const
 
 double CDMesh::compute_interface_velocity_cfl(const FieldRef velocityField, const double dt) const
 {
+  velocityField.field().sync_to_host();
 
   auto get_side_displacement = build_get_side_displacement_from_velocity_function(stk_bulk(), velocityField, dt);
 
@@ -3207,14 +3219,16 @@ double CDMesh::compute_interface_velocity_cfl(const FieldRef velocityField, cons
 void
 CDMesh::update_adaptivity_parent_entities()
 {
-  if (my_cdfem_support.get_interface_maximum_refinement_level() <= 0)
+  if (my_cdfem_support.get_interface_maximum_refinement_level() <= 0 || !my_cdfem_support.has_non_interface_conforming_refinement())
   {
     return;
   }
 
+  const RefinementInterface & refinement = my_cdfem_support.get_non_interface_conforming_refinement();
+
   stk::mesh::BulkData& stk_mesh = stk_bulk();
 
-  stk::mesh::Part & refine_inactive_part = get_refinement_inactive_part(stk_meta(), stk::topology::ELEMENT_RANK);
+  stk::mesh::Part & refine_inactive_part = refinement.parent_part();
   stk::mesh::Selector adaptive_parent_locally_owned_selector = get_locally_owned_part() & refine_inactive_part;
 
   stk::mesh::PartVector add_parts;
@@ -3226,7 +3240,7 @@ CDMesh::update_adaptivity_parent_entities()
   for( auto&& parent : parents )
   {
     std::vector<stk::mesh::Entity> leaf_children;
-    get_refinement_leaf_children(stk_mesh, parent, leaf_children);
+    fill_leaf_children(refinement, parent, leaf_children);
     std::set<const stk::mesh::Part *> child_element_parts;
     for (auto&& child : leaf_children)
     {
@@ -3341,7 +3355,7 @@ CDMesh::create_node_entities()
 //--------------------------------------------------------------------------------
 
 void
-CDMesh::create_element_and_side_entities(std::vector<SideRequest> & side_requests)
+CDMesh::create_element_and_side_entities(std::vector<SideDescription> & side_requests)
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::create_element_and_side_entities(void)"); /* %TRACE% */
 
   // Count how many we need to set pool size
@@ -3416,7 +3430,9 @@ CDMesh::prolongation()
   double proc_padding = 0.0;
   if (guess_and_check_proc_padding)
   {
-    const double max_elem_size = compute_maximum_element_size(stk_bulk());
+    // NOTE: Decomposed elements will have some nodes that are not yet prolonged, so limit ourselves to nonconforming elements when calculating the max element size
+    const stk::mesh::Selector parentElementSelector = get_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+    const double max_elem_size = compute_maximum_element_size(stk_bulk(), parentElementSelector);
     proc_padding = 3.0*max_elem_size;
     proc_target_bbox.pad(proc_padding);
   }
@@ -3452,22 +3468,26 @@ CDMesh::prolongation()
       }
     }
 
-    const double max_cdfem_displacement = get_maximum_cdfem_displacement();
-    if (guess_and_check_proc_padding && (my_missing_remote_prolong_facets || max_cdfem_displacement > proc_padding))
+    if (guess_and_check_proc_padding)
     {
-      const double growth_multiplier = 1.5;
-      krinolog << "Must redo ghosting for prolongation. New size = " << growth_multiplier*max_cdfem_displacement <<"\n";
-      proc_target_bbox.pad(growth_multiplier*max_cdfem_displacement-proc_padding);
-      proc_padding = growth_multiplier*max_cdfem_displacement;
-      done = false;
-
-      for (size_t i = facet_precomm_size; i < my_old_mesh->my_prolong_facets.size(); i++ )
-        delete my_old_mesh->my_prolong_facets[i];
-      my_old_mesh->my_prolong_facets.resize(facet_precomm_size);
-
-      for (auto && node : nodes)
+      const double max_cdfem_displacement = get_maximum_cdfem_displacement();
+      const bool mustRedoGhosting = max_cdfem_displacement > proc_padding || stk::is_true_on_any_proc(stk_bulk().parallel(), my_missing_remote_prolong_facets);
+      if (mustRedoGhosting)
       {
-        node->set_prolonged_flag(false);
+        const double growth_multiplier = 1.5;
+        krinolog << "Must redo ghosting for prolongation. New size = " << growth_multiplier*max_cdfem_displacement << std::endl;
+        proc_target_bbox.pad(growth_multiplier*max_cdfem_displacement-proc_padding);
+        proc_padding = growth_multiplier*max_cdfem_displacement;
+        done = false;
+
+        for (size_t i = facet_precomm_size; i < my_old_mesh->my_prolong_facets.size(); i++ )
+          delete my_old_mesh->my_prolong_facets[i];
+        my_old_mesh->my_prolong_facets.resize(facet_precomm_size);
+
+        for (auto && node : nodes)
+        {
+          node->set_prolonged_flag(false);
+        }
       }
     }
   }

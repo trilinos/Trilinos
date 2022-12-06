@@ -121,7 +121,7 @@ namespace percept {
                 if (is_surface_topology(part.topology()))
                   {
                     stk::mesh::put_field_on_mesh(*m_eMesh.m_node_normals, part, 3, nullptr);
-                    stk::io::set_field_output_type(*m_eMesh.m_node_normals, "Vector_3D");
+                    stk::io::set_field_output_type(*m_eMesh.m_node_normals, stk::io::FieldOutputType::VECTOR_3D);
                   }
 
                 if (!in_surface_sets(part.name()))

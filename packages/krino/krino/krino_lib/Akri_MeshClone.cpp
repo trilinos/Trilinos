@@ -539,11 +539,7 @@ MeshClone::translate_selector(const stk::mesh::Selector & in_selector, const stk
   {
     return in_selector;
   }
-  ThrowRequireMsg(in_selector.is_all_unions(), "Cannot translate selector " << in_selector);
-  stk::mesh::PartVector in_parts, out_parts;
-  in_selector.get_parts(in_parts);
-  translate_parts(in_parts, out_meta, out_parts);
-  return stk::mesh::selectUnion(out_parts);
+  return in_selector.clone_for_different_mesh(out_meta);
 }
 
 stk::mesh::Part *

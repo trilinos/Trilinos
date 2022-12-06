@@ -40,6 +40,7 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include <numeric>
 
 namespace Tpetra {
@@ -118,10 +119,12 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
   using std::endl;
+  const char rawPrefix[] = "Tpetra::DistributorPlan::createFromSends";
 
   const size_t numExports = exportProcIDs.size();
   const int myProcID = comm_->getRank();
   const int numProcs = comm_->getSize();
+  const bool debug = Details::Behavior::debug("Distributor");
 
   // exportProcIDs tells us the communication pattern for this
   // distributor.  It dictates the way that the export data will be
@@ -158,6 +161,27 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Check to see if values are grouped by procs without gaps
   // If so, indices_to -> 0.
 
+  if (debug) {
+    // Test whether any process in the communicator got an invalid
+    // process ID.  If badID != -1 on this process, then it equals
+    // this process' rank.  The max of all badID over all processes
+    // is the max rank which has an invalid process ID.
+    int badID = -1;
+    for (size_t i = 0; i < numExports; ++i) {
+      const int exportID = exportProcIDs[i];
+      if (exportID >= numProcs || exportID < 0) {
+        badID = myProcID;
+        break;
+      }
+    }
+    int gbl_badID;
+    reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
+        << gbl_badID << ", perhaps among other processes, got a bad "
+        "send process ID.");
+  }
+
   // Set up data structures for quick traversal of arrays.
   // This contains the number of sends for each process ID.
   //
@@ -175,7 +199,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // numActive is the number of sends that are not Null
   size_t numActive = 0;
   int needSendBuff = 0; // Boolean
-
+  
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
     if (exportID >= 0) {
@@ -246,7 +270,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -254,7 +278,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }
@@ -507,7 +530,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -515,7 +538,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }

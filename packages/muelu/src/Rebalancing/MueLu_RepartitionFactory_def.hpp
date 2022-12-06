@@ -375,7 +375,7 @@ namespace MueLu {
       SubFactoryMonitor m1(*this, "Blocking newRowMap and Importer", currentLevel);
       RCP<const BlockedMap> blockedTargetMap = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GeneratedBlockedTargetMap(*blockedRowMap,*rowMapImporter);
 
-      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to 
+      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to
       // build sub-importers rather than generating new ones ex nihilo
       size_t numBlocks = blockedRowMap->getNumMaps();
       std::vector<RCP<const Import> > subImports(numBlocks);

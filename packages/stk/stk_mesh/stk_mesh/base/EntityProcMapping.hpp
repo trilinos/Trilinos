@@ -37,6 +37,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/MCSR.hpp>
 
 #include <vector>
 #include <set>
@@ -44,94 +45,48 @@
 namespace stk {
 namespace mesh {
 
-struct EntityAndProcs
+constexpr unsigned s_initialCapacity = 128;
+constexpr int s_invalidProc = -1;
+
+class EntityProcMapping
 {
-  EntityAndProcs(const EntityProc& entityProc)
-  : entity(entityProc.first),
-    proc(entityProc.second)
-  {}
-
-  EntityAndProcs(Entity ent, int p)
-  : entity(ent),
-    proc(p)
-  {}
-
-  size_t get_num_procs() const
-  {
-    return proc<0 ? procs.size() : 1;
-  }
-
-  bool find_proc(int p) const
-  {
-    return ((proc == p) ||
-            ((proc < 0) && (std::find(procs.begin(), procs.end(), p) != procs.end())));
-  }
-
-  void add_proc(int p)
-  {
-    if (proc < 0) {
-      stk::util::insert_keep_sorted_and_unique(p, procs);
-    }
-    else if (proc != p) {
-      procs.reserve(2);
-      procs.push_back(proc);
-      stk::util::insert_keep_sorted_and_unique(p, procs);
-      proc = -1;
-    }
-  }
-
-  void erase_proc(int p)
-  {
-    if (proc == p) {
-      proc = -1;
-    }
-    else if (proc < 0) {
-      std::vector<int>::iterator iter = std::find(procs.begin(), procs.end(), p);
-      if (iter != procs.end()) {
-        procs.erase(iter);
-        if (procs.empty()) {
-          proc = -1;
-        }
-        else if (procs.size() == 1) {
-          proc = procs[0];
-          procs.clear();
-        }
-      }
-    }
-  }
-
-  Entity entity;
-  int proc;
-  std::vector<int> procs;
-};
-
-class EntityProcMapping {
 public:
   EntityProcMapping(unsigned sizeOfEntityIndexSpace = 1024)
   : entityOffsets(sizeOfEntityIndexSpace, -1),
-    entitiesAndProcs()
+    entities(),
+    entityProcs(0, s_invalidProc)
   {}
 
   void reset(unsigned sizeOfEntityIndexSpace)
   {
-    for(int& n : entityOffsets) {
-      if (n != -1) {
-        n = -1;
-      }
-    }
+    std::fill(entityOffsets.begin(), entityOffsets.end(), -1);
     entityOffsets.resize(sizeOfEntityIndexSpace, -1);
-    entitiesAndProcs.clear();
+    entities.clear();
+    entityProcs.clear(s_initialCapacity);
   }
  
+  void deallocate()
+  {
+    std::vector<int> tmpInts;
+    entityOffsets.swap(tmpInts);
+    EntityVector tmpEntities;
+    entities.swap(tmpEntities);
+    entityProcs.clear(0);
+  }
+
   void addEntityProc(Entity entity, int proc)
   {
     const int offset = entityOffsets[entity.local_offset()];
     if (offset < 0) {
-      entityOffsets[entity.local_offset()] = entitiesAndProcs.size();
-      entitiesAndProcs.emplace_back(entity, proc);
+      unsigned newOffset = entityProcs.num_rows();
+      entityOffsets[entity.local_offset()] = newOffset;
+      entities.push_back(entity);
+      ThrowAssert(entities.size() == newOffset+1);
+      entityProcs.add_row();
+      entityProcs.add_item(newOffset, proc);
     }
     else {
-      entitiesAndProcs[offset].add_proc(proc);
+      entityProcs.add_item(offset, proc);
     }
   }
 
@@ -147,7 +102,7 @@ public:
       return;
     }
     else {
-      entitiesAndProcs[offset].erase_proc(proc);
+      entityProcs.remove_item(offset, proc);
     }
   }
 
@@ -156,12 +111,17 @@ public:
     eraseEntityProc(entityProc.first, entityProc.second);
   }
 
-  size_t get_num_entities() const { return entitiesAndProcs.size(); }
+  size_t get_num_entities() const { return entityProcs.num_rows(); }
 
   bool find(Entity entity, int proc) const
   {
     const int offset = entityOffsets[entity.local_offset()];
-    return (offset >= 0) ? entitiesAndProcs[offset].find_proc(proc) : false;
+    if (offset >= 0) {
+      const int* beg = entityProcs.begin(offset);
+      const int* end = entityProcs.end(offset);
+      return std::find(beg, end, proc) != end;
+    }
+    return false;
   }
 
   bool find(const EntityProc& entityProc) const
@@ -174,23 +134,11 @@ public:
     return (entityOffsets[entity.local_offset()] >= 0);
   }
 
-  EntityAndProcs* find_entity_procs(Entity entity)
-  {
-    const int offset = entityOffsets[entity.local_offset()];
-    return  offset >= 0 ? &entitiesAndProcs[offset] : nullptr;
-  }
-
-  const EntityAndProcs* find_entity_procs(Entity entity) const
-  {
-    const int offset = entityOffsets[entity.local_offset()];
-    return  offset >= 0 ? &entitiesAndProcs[offset] : nullptr;
-  }
-
   size_t get_num_procs(Entity entity) const
   {
     const int offset = entityOffsets[entity.local_offset()];
-    if (offset >= 0 && entitiesAndProcs[offset].entity == entity) {
-      return entitiesAndProcs[offset].get_num_procs();
+    if (offset >= 0) {
+      return entityProcs.size(offset);
     }
     return 0;
   }
@@ -198,14 +146,12 @@ public:
   template<class Alg>
   void visit_entity_procs(const Alg& alg)
   {
-    for(const EntityAndProcs& entProcs : entitiesAndProcs) {
-      if (entProcs.proc >= 0) {
-        alg(entProcs.entity, entProcs.proc);
-      }
-      else {
-        for(int p : entProcs.procs) {
-          alg(entProcs.entity, p);
-        }
+    ThrowAssert(entities.size() == entityProcs.num_rows());
+    for(unsigned i=0; i<entities.size(); ++i) {
+      const unsigned numProcs = entityProcs.size(i);
+      const int* procs = entityProcs.begin(i);
+      for(unsigned p=0; p<numProcs; ++p) {
+        alg(entities[i], procs[p]);
       }
     }
   }
@@ -220,15 +166,15 @@ public:
   template<typename VecType>
   void fill_vec(VecType& entityProcVec)
   {
-    size_t lengthEstimate = static_cast<size_t>(std::floor(1.2*entitiesAndProcs.size()));
-    entityProcVec.reserve(lengthEstimate);
+    entityProcVec.reserve(entityProcs.total_num_items());
     entityProcVec.clear();
     visit_entity_procs([&entityProcVec](Entity ent, int proc){entityProcVec.push_back(EntityProc(ent,proc));});
   }
 
 private:
   std::vector<int> entityOffsets;
-  std::vector<EntityAndProcs> entitiesAndProcs;
+  stk::mesh::EntityVector entities;
+  stk::util::MCSR<int> entityProcs;
 };
 
 }

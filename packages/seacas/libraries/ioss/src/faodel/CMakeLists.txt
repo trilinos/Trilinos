@@ -11,6 +11,9 @@ INCLUDE_DIRECTORIES(
   ${Boost_INCLUDE_DIR}
   )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/iofaodel_export.h")
+
 TRIBITS_ADD_LIBRARY(
   Iofaodel
   HEADERS ${HEADERS}
@@ -18,6 +21,11 @@ TRIBITS_ADD_LIBRARY(
   DEPLIBS
   Ioss
   )
+
+generate_export_header(Iofaodel)
+target_include_directories(Iofaodel
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 IF (BUILD_TESTING)
   ENABLE_TESTING()

@@ -49,6 +49,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_MTGS_calore1_mm.xml
   test_RILUK_calore1_mm.xml 
   test_Cheby_calore1_mm.xml
+  test_Cheby_calore1_nospectralradius_mm.xml
   test_FILU_calore1_mm.xml
   test_FILU_calore1_mm_sptrsv.xml
   test_FIC_calore1_mm.xml
@@ -707,6 +708,17 @@ TRIBITS_ADD_TEST(
   tif_belos
   NAME Cheby_belos
   ARGS "--xml_file=test_Cheby_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+# GH 04 Nov 2022: Test the non-spectral
+# radius route of the power method for robustness
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Cheby_belos_nospectralradius
+  ARGS "--xml_file=test_Cheby_calore1_nospectralradius_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

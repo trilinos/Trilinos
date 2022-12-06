@@ -347,7 +347,7 @@ int cpy_global_att(int in_exoid, int out_exoid)
   EXCHECKI(nc_inq(in_exoid, NULL, NULL, &ngatts, NULL));
 
   /* copy global attributes */
-  for (size_t i = 0; i < (size_t)ngatts; i++) {
+  for (int i = 0; i < ngatts; i++) {
 
     EXCHECKI(nc_inq_attname(in_exoid, NC_GLOBAL, i, att.name));
 

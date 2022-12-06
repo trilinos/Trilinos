@@ -3,7 +3,7 @@
   <!--
     For a generic symmetric scalar problem, these are the recommended settings for MueLu.
   -->
-  <!-- Configuration of the Xpetra operator (fine level) 
+  <!-- Configuration of the Xpetra operator (fine level)
   <ParameterList name="Matrix">
     <Parameter name="number of equations"                   type="int" value="3"/>
   </ParameterList>

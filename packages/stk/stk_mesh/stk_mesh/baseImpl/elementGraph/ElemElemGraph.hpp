@@ -93,20 +93,21 @@ public:
     SharedSidesCommunication(stk::mesh::BulkData& bulkData,
                              const impl::ElemSideProcVector & elementSidesToSend)
     : m_bulkData(bulkData),
+      m_commSparse(bulkData.parallel()),
       m_elementSidesToSend(elementSidesToSend)
     {
-        communicate_element_sides();
     }
 
-    SideNodeToReceivedElementDataMap get_received_element_sides() const { return m_elementSidesReceived; }
-private:
     void communicate_element_sides();
-    void pack_shared_side_nodes_of_elements(stk::CommSparse &comm) const;
-    void unpack_side_data(stk::CommSparse &comm);
+    void unpack_side_data_map(SideNodeToReceivedElementDataMap& elementSidesReceived);
+    void unpack_side_data_vec(impl::ParallelElementDataVector& elementSidesReceived);
+
 private:
+    void pack_shared_side_nodes_of_elements(stk::CommSparse& comm) const;
+
     stk::mesh::BulkData& m_bulkData;
+    stk::CommSparse m_commSparse;
     const impl::ElemSideProcVector & m_elementSidesToSend;
-    SideNodeToReceivedElementDataMap m_elementSidesReceived;
 };
 
 
@@ -223,13 +224,14 @@ public:
 
 protected:
     void fill_graph();
-    void fill_parallel_graph(impl::ElemSideProcVector & elementSidesToSend, SideNodeToReceivedElementDataMap & elementSidesReceived);
+    void fill_parallel_graph(impl::ElemSideProcVector & elementSidesToSend, impl::ParallelElementDataVector & elementSidesReceived);
     void create_parallel_graph_edge(const impl::ParallelElementData &elementData,
                                     const stk::mesh::impl::ParallelElementData &remoteElementData,
                                     impl::ElemSideProcVector & elementSidesToSend,
                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend);
+    void communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend,
+                                  impl::ParallelElementDataVector& elementSidesReceived);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 

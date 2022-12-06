@@ -1,12 +1,12 @@
-#include <math.h> 
+#include <math.h>
 
 
 int coloring2D(int mypid, int ndx)
 {
 
   //INPUT: mypid is the MPI id of the processor
-  //INPUT: ndx is the nuber of domains along x-direction 
-  //INPUT: ndy is the nuber of domains along y-direction 
+  //INPUT: ndx is the nuber of domains along x-direction
+  //INPUT: ndy is the nuber of domains along y-direction
   //OUTPUT: color label associated with the current MPI processor (=subdomain)
 
   //detect the row of the domain grid where the current subdomain is located
@@ -42,11 +42,11 @@ int coloring3D(int mypid, int ndx, int ndy)
 {
 
   //INPUT: mypid is the MPI id of the processor
-  //INPUT: ndx is the nuber of domains along x-direction 
-  //INPUT: ndy is the nuber of domains along y-direction 
+  //INPUT: ndx is the nuber of domains along x-direction
+  //INPUT: ndy is the nuber of domains along y-direction
   //OUTPUT: color label associated with the current MPI processor (=subdomain)
  
-  //detect the plane of the domain grid where the current subdomain resides 
+  //detect the plane of the domain grid where the current subdomain resides
   int grid_plane = std::ceil( static_cast<double>(mypid)/(ndx*ndy) );
 
   //On the given plane, find the local id of the current subdomain

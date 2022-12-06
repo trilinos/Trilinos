@@ -210,6 +210,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   (void) verbose;
   (void) debug;
 
+  Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
   //
   // mfh 19 Apr 2012: If you want to change the template parameters of
   // these typedefs, modify the typedefs (ST, LO, GO, Node) near the
@@ -621,7 +623,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         ++oidx;
       }
     }
-    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm));
+    globalMapG = rcp (new map_type (INVALID_GO, ownedGIDs (), 0, comm));
   }
 
   /**********************************************************************************/
@@ -642,7 +644,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
 
     //Generate overlapped Map for nodes.
-    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm));
+    overlappedMapG = rcp (new map_type (INVALID_GO, overlappedGIDs (), 0, comm));
 
     // Build Tpetra Export from overlapped to owned Map.
     exporter = rcp (new export_type (overlappedMapG, globalMapG));

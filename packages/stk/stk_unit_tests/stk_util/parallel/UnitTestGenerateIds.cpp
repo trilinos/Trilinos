@@ -718,7 +718,7 @@ TEST(GeneratedIds, multiPerf) {
     for(int iter=0; iter<64; ++iter) {
       MPI_Barrier(MPI_COMM_WORLD);
       double startTime = stk::wall_time();
-      new32a = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32a, numNew, MPI_COMM_WORLD);
+      new32a = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32a, numNew, MPI_COMM_WORLD, inUse32a.back());
       MPI_Barrier(MPI_COMM_WORLD);
       double endTime = stk::wall_time();
       timeGenerateParallelUniqueA += (endTime-startTime);

@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include "iotr_export.h"
+
 /** \brief A namespace for Ioss transformations.
  */
 namespace Iotr {
-  class Initializer
+  class IOTR_EXPORT Initializer
   {
   public:
     Initializer();

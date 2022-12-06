@@ -1,6 +1,7 @@
 #ifndef stk_util_parallel_IAllreduceReplacement
 #define stk_util_parallel_IAllreduceReplacement
 
+#include <stddef.h>
 #include <functional>
 #include "Parallel.hpp"
 #include "TreeReductionIndexer.hpp"

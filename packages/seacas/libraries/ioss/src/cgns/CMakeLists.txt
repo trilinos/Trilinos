@@ -28,12 +28,20 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/iocgns_export.h")
+
 TRIBITS_ADD_LIBRARY(
 	Iocgns
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS Ioss
 )
+
+generate_export_header(Iocgns)
+target_include_directories(Iocgns
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 IF (BUILD_TESTING)
   ENABLE_TESTING()

@@ -1,22 +1,3 @@
-#ifndef STK_CHECK_COMM_LIST_H
-#define STK_CHECK_COMM_LIST_H
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/EntityCommListInfo.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <iostream>
-
-namespace stk {
-namespace mesh {
-namespace impl {
-
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list);
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::ostream& error_msg);
-
-} //namespace impl
-} //namespace mesh
-} //namespace stk
-
 // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
@@ -49,6 +30,30 @@ bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const Ent
  // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#ifndef STK_CHECK_COMM_LIST_H
+#define STK_CHECK_COMM_LIST_H
+
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/EntityCommListInfo.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <iostream>
+
+namespace stk {
+namespace mesh {
+namespace impl {
+
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
+                                      const EntityCommDatabase& commDB,
+                                      const EntityCommListInfoVector& comm_list);
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
+                                      const EntityCommDatabase& commDB,
+                                      const EntityCommListInfoVector& comm_list,
+                                      std::ostream& error_msg);
+
+} //namespace impl
+} //namespace mesh
+} //namespace stk
 
 #endif
 

@@ -27,7 +27,7 @@ class SurfaceElementCutter : public ElementCutter
 public:
   SurfaceElementCutter(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
-    const Surface & surface,
+    const std::vector<const Surface *> & surfaces,
     const double edgeTol);
   virtual ~SurfaceElementCutter() {}
 
@@ -36,7 +36,7 @@ public:
   virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const override;
   virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const override
-    { std::vector<int> interfaceSigns(1,0); return interfaceSigns; }
+    { std::vector<int> interfaceSigns(myElementSigns.size(),0); return interfaceSigns; }
   virtual void fill_tetrahedron_face_interior_intersections(const std::array<Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
@@ -48,28 +48,34 @@ public:
   virtual int sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override { return 0; }
 
-  int get_element_sign() const { return myElementSign; }
+  const std::vector<int> & get_element_signs() const { return myElementSigns; }
 
 private:
+  const Surface & get_surface(const InterfaceID interface) const;
   Vector3d parametric_to_global_coordinates(const Vector3d & pCoords) const;
 
   const MasterElement & myMasterElem;
   std::vector<Vector3d> myElementNodeCoords;
-  const Surface & mySurface;
+  const std::vector<const Surface*> & mySurfaces;
   double myEdgeCrossingTol;
-  int myElementSign{0};
+  std::vector<int> myElementSigns;
 };
 
 class AnalyticSurfaceInterfaceGeometry : public InterfaceGeometry {
 
 public:
-  AnalyticSurfaceInterfaceGeometry(const Surface_Identifier surfaceIdentifier,
-    const Surface & surface,
+  AnalyticSurfaceInterfaceGeometry(const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport,
+    const Phase_Support & phaseSupport);
+  AnalyticSurfaceInterfaceGeometry(const std::vector<Surface_Identifier> & surfaceIdentifiers,
+    const std::vector<const Surface*> & surfaces,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport);
 
   virtual ~AnalyticSurfaceInterfaceGeometry() {}
+
+  void add_surface(const Surface_Identifier surfaceIdentifier, const Surface & surface);
 
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
@@ -104,8 +110,13 @@ public:
 
   const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
 
+protected:
+  const stk::mesh::Part & get_active_part() const { return myActivePart; }
+  const CDFEM_Support & get_cdfem_support() const { return myCdfemSupport; }
+  const Phase_Support & get_phase_support() const { return myPhaseSupport; }
+
 private:
-  const Surface & mySurface;
+  std::vector<const Surface*> mySurfaces;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;

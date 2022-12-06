@@ -364,44 +364,50 @@ void Ioss::GroupingEntity::property_update(const std::string &property,
 
 bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool quiet) const
 {
+  bool same = true;
   if (this->entityName.compare(rhs.entityName) != 0) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityName mismatch ({} vs. {})\n",
-                 this->entityName, rhs.entityName);
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityName mismatch ({} vs. {})\n",
+               this->entityName, rhs.entityName);
+    same = false;
   }
 
   if (this->entityCount != rhs.entityCount) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityCount mismatch ([] vs. [])\n",
-                 this->entityCount, rhs.entityCount);
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityCount mismatch ([] vs. [])\n",
+               this->entityCount, rhs.entityCount);
+    same = false;
   }
 
   if (this->attributeCount != rhs.attributeCount) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: attributeCount mismatch ([] vs. [])\n",
-                 this->attributeCount, rhs.attributeCount);
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: attributeCount mismatch ([] vs. [])\n",
+               this->attributeCount, rhs.attributeCount);
+    same = false;
   }
 
   if (this->entityState != rhs.entityState) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityState mismatch ([] vs. [])\n",
-                 this->entityState, rhs.entityState);
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: entityState mismatch ([] vs. [])\n",
+               static_cast<int>(this->entityState), static_cast<int>(rhs.entityState));
+    same = false;
   }
 
   if (this->hash_ != rhs.hash_) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: hash_ mismatch ({} vs. {})\n", this->hash_,
-                 rhs.hash_);
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: hash_ mismatch ({} vs. {})\n", this->hash_,
+               rhs.hash_);
+    same = false;
   }
 
   /* COMPARE properties */
@@ -409,11 +415,12 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool qu
   Ioss::NameList rhs_properties = rhs.property_describe();
 
   if (lhs_properties.size() != rhs_properties.size()) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "GroupingEntity: NUMBER of properties are different ({} vs. {})\n",
-                 lhs_properties.size(), rhs_properties.size());
+    if (quiet) {
+      return false;
     }
-    return false;
+    fmt::print(Ioss::OUTPUT(), "GroupingEntity: NUMBER of properties are different ({} vs. {})\n",
+               lhs_properties.size(), rhs_properties.size());
+    same = false;
   }
 
   for (auto &lhs_property : lhs_properties) {
@@ -439,7 +446,23 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool qu
       }
       else {
         if (!quiet) {
-          fmt::print(Ioss::OUTPUT(), "{}: PROPERTY ({}) mismatch\n", name(), lhs_property);
+          auto lhs_prop = this->properties.get(lhs_property);
+          auto rhs_prop = rhs.properties.get(lhs_property);
+          if (lhs_prop.get_type() == Ioss::Property::STRING) {
+            auto p1_value = lhs_prop.get_string();
+            auto p2_value = rhs_prop.get_string();
+            fmt::print(Ioss::OUTPUT(),
+                       "{}: PROPERTY value mismatch [STRING] ({}): ('{}' vs '{}')\n", name(),
+                       lhs_property, p1_value, p2_value);
+          }
+          else if (lhs_prop.get_type() == Ioss::Property::INTEGER) {
+            fmt::print(Ioss::OUTPUT(), "{}: PROPERTY value mismatch [INTEGER] ({}): ({} vs {})\n",
+                       name(), lhs_property, lhs_prop.get_int(), rhs_prop.get_int());
+          }
+          else {
+            fmt::print(Ioss::OUTPUT(), "{}: PROPERTY value mismatch ({}): unsupported type\n",
+                       name(), lhs_property);
+          }
         }
         return false;
       }
@@ -460,12 +483,11 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool qu
   Ioss::NameList lhs_fields = this->field_describe();
   Ioss::NameList rhs_fields = rhs.field_describe();
 
-  bool the_same = true;
   if (lhs_fields.size() != rhs_fields.size()) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n{}: NUMBER of fields are different ({} vs. {})\n", name(),
+      fmt::print(Ioss::OUTPUT(), "\n{}: NUMBER of fields is different ({} vs. {})\n", name(),
                  lhs_fields.size(), rhs_fields.size());
-      the_same = false;
+      same = false;
     }
     else {
       return false;
@@ -479,16 +501,16 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool qu
         const auto &f2 = rhs.fields.get(field);
         if (!f1.equal(f2)) {
           fmt::print(Ioss::OUTPUT(), "{}: FIELD ({}) mismatch\n", name(), field);
-          the_same = false;
+          same = false;
         }
       }
       else {
         fmt::print(Ioss::OUTPUT(), "{}: FIELD ({}) not found in input #2\n", name(), field);
-        the_same = false;
+        same = false;
       }
     }
     else {
-      if (this->fields.get(field) != rhs.fields.get(field)) {
+      if (!this->fields.get(field).equal(rhs.fields.get(field))) {
         return false;
       }
     }
@@ -496,14 +518,15 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, const bool qu
 
   if (rhs_fields.size() > lhs_fields.size()) {
     // See which fields are missing from input #1...
+    // NOTE: `quiet` mode has already exited by this point.
     for (auto &field : rhs_fields) {
       if (!this->field_exists(field)) {
         fmt::print(Ioss::OUTPUT(), "{}: FIELD ({}) not found in input #1\n", name(), field);
-        the_same = false;
+        same = false;
       }
     }
   }
-  return the_same;
+  return same;
 }
 
 bool Ioss::GroupingEntity::operator==(const Ioss::GroupingEntity &rhs) const

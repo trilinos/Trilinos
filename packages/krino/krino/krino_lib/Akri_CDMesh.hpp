@@ -46,7 +46,7 @@ class InterpolationEdge;
 class LevelSet;
 class Phase_Support;
 class AuxMetaData;
-struct SideRequest;
+struct SideDescription;
 class InterfaceGeometry;
 
 typedef std::vector< const SubElementNode * > NodeVec;
@@ -76,7 +76,7 @@ public:
       const int step_count,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs );
   static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
-  static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry, const std::string & marker_field_name, const int num_refinements);
+  static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry, const int num_refinements);
   void delete_cdfem_parent_elements();
   static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
@@ -244,12 +244,12 @@ private:
 
   bool modify_mesh();
   void update_adaptivity_parent_entities();
-  void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideRequest> & side_requests);
+  void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests);
   void create_subelement_mesh_entities(const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems);
   void attach_existing_and_identify_missing_subelement_sides(const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems,
-    std::vector<SideRequest> & side_requests);
+    std::vector<SideDescription> & side_requests);
   void update_uncut_element(const Mesh_Element & elem);
 
   void get_unused_old_child_elements(std::vector<stk::mesh::Entity> & unused_old_child_elems);
@@ -257,13 +257,13 @@ private:
   bool set_entities_for_existing_child_elements();
   void create_new_mesh_entities();
   void create_node_entities();
-  void create_element_and_side_entities(std::vector<SideRequest> & side_requests);
+  void create_element_and_side_entities(std::vector<SideDescription> & side_requests);
 
   void prolongation();
   void rebase_cdfem_displacements();
   double get_maximum_cdfem_displacement() const;
 
-  void add_possible_interface_sides(std::vector<SideRequest> & sideRequests) const;
+  void add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const;
   bool check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const;
   void update_element_side_parts();
 

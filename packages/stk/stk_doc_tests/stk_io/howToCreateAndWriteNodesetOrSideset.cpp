@@ -186,7 +186,7 @@ TEST_F(MeshWithNodeset, createAndWriteNodesetWithField)
         get_meta().declare_field<double>(stk::topology::NODE_RANK, fieldName, numStates);
 
     stk::mesh::put_field_on_mesh(newField, nodesetPart, fieldLength, initialValue);
-    stk::io::set_field_output_type(newField, "Vector_3D");
+    stk::io::set_field_output_type(newField, stk::io::FieldOutputType::VECTOR_3D);
 
     stk::io::fill_mesh("generated:1x1x1", get_bulk());
 
@@ -234,7 +234,7 @@ TEST_F(MeshWithSideset, createAndWriteSidesetWithField)
         get_meta().declare_field<double>(get_meta().side_rank(), fieldName, numStates);
 
     stk::mesh::put_field_on_mesh(newField, sidesetPart, fieldLength, initialValue);
-    stk::io::set_field_output_type(newField, "Vector_3D");
+    stk::io::set_field_output_type(newField, stk::io::FieldOutputType::VECTOR_3D);
 
     stk::io::fill_mesh("generated:1x1x1", get_bulk());
 

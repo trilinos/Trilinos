@@ -383,6 +383,8 @@ int main(int argc, char *argv[])
   if (int_size == 4) {
     // Open input files.
     ExoII_Read<int> file1(file1_name);
+    file1.modify_time_values(interFace.time_value_scale, interFace.time_value_offset);
+
     ExoII_Read<int> file2(file2_name);
     diff_flag = exodiff(file1, file2);
   }

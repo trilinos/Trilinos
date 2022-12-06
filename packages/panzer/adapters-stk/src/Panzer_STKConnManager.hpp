@@ -63,6 +63,8 @@ class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager::GlobalOrdinal GlobalOrdinal;
+   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::HostMirror GlobalOrdinalView;
+   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::HostMirror LocalOrdinalView;
 
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
 
@@ -109,6 +111,15 @@ public:
      */
    virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const
    { return connSize_[localElmtId]; }
+
+   const GlobalOrdinalView getConnectivityView()
+   { return GlobalOrdinalView(connectivity_.data(), connectivity_.size()); }
+
+   const LocalOrdinalView getConnectivitySizeView()
+   { return LocalOrdinalView(connSize_.data(), connSize_.size()); }
+
+   const LocalOrdinalView getElementLidToConnView()
+   { return LocalOrdinalView(elmtLidToConn_.data(), elmtLidToConn_.size()); }
 
    /** Get the block ID for a particular element.
      *

@@ -6,16 +6,21 @@
 
 #pragma once
 
-#include "Ioss_VariableType.h" // for VariableType
+#include "iotr_export.h"
+
 #include <Ioss_Transform.h>    // for Transform, Factory
-#include <string>              // for string
+#include <Ioss_VariableType.h> // for VariableType
+#include <transform/Iotr_Factory.h>
+
+#include <string> // for string
+
 namespace Ioss {
   class Field;
 } // namespace Ioss
 
 namespace Iotr {
 
-  class MinMax_Factory : public Factory
+  class IOTR_EXPORT MinMax_Factory : public Factory
   {
   public:
     static const MinMax_Factory *factory();
@@ -25,7 +30,7 @@ namespace Iotr {
     Ioss::Transform *make(const std::string &type) const override;
   };
 
-  class MinMax : public Ioss::Transform
+  class IOTR_EXPORT MinMax : public Ioss::Transform
   {
     friend class MinMax_Factory;
 

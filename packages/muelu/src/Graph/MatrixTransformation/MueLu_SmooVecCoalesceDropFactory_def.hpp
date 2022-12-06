@@ -132,7 +132,7 @@ namespace MueLu {
     Input(currentLevel, "A");
     if (currentLevel.IsAvailable("PreSmoother")) {    // rst: totally unsure that this is legal
       Input(currentLevel, "PreSmoother");             //      my guess is that this is not yet available
-    }                                                 //      so this always comes out false. 
+    }                                                 //      so this always comes out false.
     else if (currentLevel.IsAvailable("PostSmoother")) {  // perhaps we can look on the param list?
       Input(currentLevel, "PostSmoother");
     }
@@ -162,16 +162,16 @@ namespace MueLu {
 #endif
    size_t numRandom= as<size_t>(pL.get<int>("aggregation: number of random vectors"));
    testVecs = MultiVectorFactory::Build(A->getRowMap(), numRandom, true);
-   // use random test vectors but should be positive in order to not get 
+   // use random test vectors but should be positive in order to not get
    // crummy results ... so take abs() of randomize().
-   testVecs->randomize();    
+   testVecs->randomize();
    for (size_t kk = 0; kk < testVecs->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = testVecs->getDataNonConst(kk);
      for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
    }
    nearNull = MultiVectorFactory::Build(A->getRowMap(), nPDEs, true);
 
-   // initialize null space to constants 
+   // initialize null space to constants
    for (size_t kk = 0; kk < nearNull->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = nearNull->getDataNonConst(kk);
      for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii += nearNull->getNumVectors() ) curVec[ii] = Teuchos::ScalarTraits<Scalar>::one();
@@ -196,7 +196,7 @@ namespace MueLu {
      for (size_t ii = 0; ii < nInvokeSmoother; ii++) postSmoo->Apply(*testVecs,*zeroVec_TVecs,false);
      for (size_t ii = 0; ii < nInvokeSmoother; ii++) postSmoo->Apply(*nearNull, *zeroVec_Null,false);
    }
-   else 
+   else
      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must set a smoother");
 
    Teuchos::ArrayRCP<Scalar> penaltyPolyCoef(5);
@@ -209,7 +209,7 @@ namespace MueLu {
    penaltyPolyCoef[poly4thOrderCoef] = 0.0;
 
    if(pL.isParameter("aggregation: penalty parameters") && pL.get<Teuchos::Array<double> >("aggregation: penalty parameters").size() > 0) {
-      if (pL.get<Teuchos::Array<double> >("aggregation: penalty parameters").size() > penaltyPolyCoef.size()) 
+      if (pL.get<Teuchos::Array<double> >("aggregation: penalty parameters").size() > penaltyPolyCoef.size())
          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Number of penalty parameters must be " << penaltyPolyCoef.size() << " or less");
       inputPolyCoef = pL.get<Teuchos::Array<double> >("aggregation: penalty parameters")();
  
@@ -246,19 +246,19 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar> & penaltyPolyCoef , LO nPDEs, const MultiVector& testVecs, const MultiVector& nearNull, RCP<GraphBase>& filteredGraph) const {
-  /* 
-   * Compute coalesce/drop graph (in filteredGraph) for A. The basic idea is to 
-   * balance trade-offs associated with 
+  /*
+   * Compute coalesce/drop graph (in filteredGraph) for A. The basic idea is to
+   * balance trade-offs associated with
    *
    *           (I - P inv(R P) R ) testVecs
    *
-   * being worse for larger aggregates (less dropping) while MG cycle costs are  
-   * cheaper with larger aggregates. MG costs are "penalties" in the 
-   * optimization while (I - P inv(R P) R ) is the "fit" (how well a 
-   * a fine grid function can be approximated on the coarse grid). 
+   * being worse for larger aggregates (less dropping) while MG cycle costs are
+   * cheaper with larger aggregates. MG costs are "penalties" in the
+   * optimization while (I - P inv(R P) R ) is the "fit" (how well a
+   * a fine grid function can be approximated on the coarse grid).
    *
    * For MG costs, we don't actually approximate the cost. Instead, we
-   * have just hardwired penalties below. Specifically, 
+   * have just hardwired penalties below. Specifically,
    *
    *     penalties[j] is the cost if aggregates are of size j+1, where right
    *                  now a linear function of the form const*(60-j) is used.
@@ -266,18 +266,18 @@ namespace MueLu {
    * (I - P inv(P^T P) P^T ) testVecs is estimated by just looking locally at
    * the vector portion corresponding to a possible aggregate defined by
    * all non-dropped connections in the ith row.  A tentative prolognator is
-   * used for P. This prolongator corresponds to a null space vector given 
-   * by 'nearNull', which is provided to dropper(). In initial testing, nearNull is 
-   * first set as a vector of all 1's and then smoothed with a relaxation 
-   * method applied to a nice matrix (with the same sparsity pattern as A). 
-   * Originally, nearNull was used to handle Dir bcs where relaxation of the 
-   * vector of 1's has a more pronounced effect. 
+   * used for P. This prolongator corresponds to a null space vector given
+   * by 'nearNull', which is provided to dropper(). In initial testing, nearNull is
+   * first set as a vector of all 1's and then smoothed with a relaxation
+   * method applied to a nice matrix (with the same sparsity pattern as A).
+   * Originally, nearNull was used to handle Dir bcs where relaxation of the
+   * vector of 1's has a more pronounced effect.
    *
    * For PDE systems, fit only considers the same dof at each node. That is,
    * it effectively assumes that we have a tentative prolongator with no
    * coupling between different dof types. When checking the fit for the kth
    * dof at a paritcular node, it only considers the kth dof of this node
-   * and neighboring nodes. 
+   * and neighboring nodes.
    *
    * Note: testVecs is supplied by the user, but normally is the result of
    * applying a relaxation scheme to Au = 0 where u is initial random.
@@ -287,7 +287,7 @@ namespace MueLu {
   size_t nLoc     = Amat.getRowMap()->getLocalNumElements();
 
   size_t nBlks    = nLoc/nPDEs;
-  if (nBlks*nPDEs != nLoc ) 
+  if (nBlks*nPDEs != nLoc )
      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Number of local dofs not divisible by BlkSize");
 
   Teuchos::ArrayRCP<LO>   newRowPtr(nBlks+1); /* coalesce & drop matrix     */
@@ -300,7 +300,7 @@ namespace MueLu {
 
   LO   maxNzPerRow = 200;
   Teuchos::ArrayRCP<Scalar> penalties(maxNzPerRow); /* Penalty function */
-                                                    /* described above. */ 
+                                                    /* described above. */
                                     
   Teuchos::ArrayRCP<bool> keepStatus(nBlks,true);  /* accumulated keepOrNot info */
   Teuchos::ArrayRCP<LO>   bColList(nBlks);         /* accumulated bcols info     */
@@ -322,7 +322,7 @@ namespace MueLu {
 
 
   for (LO i = 0; i <  maxNzPerRow; i++)
-    penalties[i] = penaltyPolyCoef[poly0thOrderCoef] + 
+    penalties[i] = penaltyPolyCoef[poly0thOrderCoef] +
                    penaltyPolyCoef[poly1stOrderCoef]*(as<Scalar>(i)) +
                    penaltyPolyCoef[poly2ndOrderCoef]*(as<Scalar>(i*i)) +
                   (penaltyPolyCoef[poly3rdOrderCoef]*(as<Scalar>(i*i))*(as<Scalar>(i)))  +  //perhaps avoids overflow?
@@ -347,14 +347,14 @@ namespace MueLu {
           maxNzPerRow = indices.size() + 100;
           penalties.resize(as<size_t>(maxNzPerRow),0.0);
           for (LO k = oldSize; k < maxNzPerRow; k++)
-            penalties[k] = penaltyPolyCoef[poly0thOrderCoef] + 
+            penalties[k] = penaltyPolyCoef[poly0thOrderCoef] +
                    penaltyPolyCoef[poly1stOrderCoef]*(as<Scalar>(i)) +
                    penaltyPolyCoef[poly2ndOrderCoef]*(as<Scalar>(i*i)) +
-                  (penaltyPolyCoef[poly3rdOrderCoef]*(as<Scalar>(i*i))*(as<Scalar>(i)))  + 
+                  (penaltyPolyCoef[poly3rdOrderCoef]*(as<Scalar>(i*i))*(as<Scalar>(i)))  +
                   (penaltyPolyCoef[poly4thOrderCoef]*(as<Scalar>(i*i))*(as<Scalar>(i*i)));
        }
        badGuysDropfunc(row, indices, vals, testVecs, nPDEs, penalties, nearNull, bcols,keepOrNot,Nbcols,nLoc);
-       for (LO k=0; k < Nbcols; k++) { 
+       for (LO k=0; k < Nbcols; k++) {
          bcol = bcols[k];
 
          /* add to bColList if not already on it */
@@ -365,7 +365,7 @@ namespace MueLu {
          }
          /* drop if any pt row within block indicates entry should be dropped */
 
-         if (keepOrNot[k] == false) keepStatus[bcol] = false; 
+         if (keepOrNot[k] == false) keepStatus[bcol] = false;
 
        }  /* for (k=0; k < Nbcols; k++)   */
      } /* for (j = 0; i < nPDEs; j++)  */
@@ -376,8 +376,8 @@ namespace MueLu {
      if ( numBCols < 2) boundaryNodes[i] = true;
      for (LO j=0; j < numBCols; j++) {
        bcol = bColList[j];
-       if (keepStatus[bcol] == true) { 
-         newCols[nzTotal] = bColList[j]; 
+       if (keepStatus[bcol] == true) {
+         newCols[nzTotal] = bColList[j];
          newRowPtr[i+1]++;
          nzTotal = nzTotal + 1;
        }
@@ -390,10 +390,10 @@ namespace MueLu {
 
    /* create array of the correct size and copy over newCols to it */
 
-   Teuchos::ArrayRCP<LO> finalCols(nzTotal);   
+   Teuchos::ArrayRCP<LO> finalCols(nzTotal);
    for (LO i = 0; i < nzTotal; i++) finalCols[i] = newCols[i];
 
-   // Not using column map because we do not allow for any off-proc stuff. 
+   // Not using column map because we do not allow for any off-proc stuff.
    // Not sure if this is okay.  FIXME
 
    RCP<const Map> rowMap = Amat.getRowMap(); // , colMap = Amat.getColMap();
@@ -408,7 +408,7 @@ namespace MueLu {
    }
    GO nAmalgNodesGlobal = rowMap->getGlobalNumElements();
    GO nBlkGlobal       = nAmalgNodesGlobal/nPDEs;
-   if (nBlkGlobal*nPDEs != nAmalgNodesGlobal) 
+   if (nBlkGlobal*nPDEs != nAmalgNodesGlobal)
      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Number of global dofs not divisible by BlkSize");
 
    Teuchos::RCP<Map> AmalgRowMap = MapFactory::Build(rowMap->lib(), nBlkGlobal,
@@ -442,10 +442,10 @@ namespace MueLu {
   /* the testVec entry associated with each off-diagonal entry.                */
 
 
-  for (LO i = 0; i < nLeng; i++) keepOrNot[i] = false;   
+  for (LO i = 0; i < nLeng; i++) keepOrNot[i] = false;
 
   LO diagInd = -1;
-  Nbcols     = 0; 
+  Nbcols     = 0;
   LO rowDof  =  row  -  blkRow*nPDEs;
   Teuchos::ArrayRCP< const Scalar > oneNull = nearNull.getData( as<size_t>(rowDof));
 
@@ -471,8 +471,8 @@ namespace MueLu {
           }
         }
         else {
-          badGuy[   Nbcols] = 1.; 
-          keepOrNot[Nbcols] = true; 
+          badGuy[   Nbcols] = 1.;
+          keepOrNot[Nbcols] = true;
           diagInd            = Nbcols;
         }
         (Nbcols)++;
@@ -485,8 +485,8 @@ namespace MueLu {
   if (diagInd == -1) {
     Bcols[    Nbcols] = (row - rowDof)/nPDEs;
     subNull[  Nbcols] = 1.;
-    badGuy[   Nbcols] = 1.; 
-    keepOrNot[Nbcols] = true; 
+    badGuy[   Nbcols] = 1.;
+    keepOrNot[Nbcols] = true;
     diagInd            = Nbcols;
     (Nbcols)++;
   }
@@ -506,7 +506,7 @@ namespace MueLu {
 
   LO nKeep = 1, flag  = 1, minId;
   Scalar minFit, minFitRP = 0., minFitRTimesBadGuy = 0.;
-  Scalar newRP, newRTimesBadGuy; 
+  Scalar newRP, newRTimesBadGuy;
 
   while (flag == 1) {
     /* compute a fit for each possible off-diagonal neighbor */
@@ -516,14 +516,14 @@ namespace MueLu {
     minId  = -1;
 
     for (LO i=0; i < Nbcols; i++) {
-      if (keepOrNot[i] == false) { 
+      if (keepOrNot[i] == false) {
         keepOrNot[i] = true;  /* temporarily view i as non-dropped neighbor */
         newRP          = currentRP           + subNull[i]*subNull[i];
         newRTimesBadGuy= currentRTimesBadGuy + subNull[i]*badGuy[i];
         Scalar ratio = newRTimesBadGuy/newRP;
 
         Scalar newFit = 0.0;
-        for (LO k=0; k < Nbcols; k++) { 
+        for (LO k=0; k < Nbcols; k++) {
           if (keepOrNot[k] == true) {
              Scalar diff = badGuy[k] - ratio*subNull[k];
              newFit = newFit + diff*diff;
@@ -538,7 +538,7 @@ namespace MueLu {
         keepOrNot[i] = false;
       }
     }
-    if (minId == -1) flag = 0; 
+    if (minId == -1) flag = 0;
     else {
       minFit = sqrt(minFit);
       Scalar newScore = penalties[nKeep] + minFit;

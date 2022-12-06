@@ -39,11 +39,26 @@ namespace Compadre {
         ChainedStaggeredLaplacianOfScalarPointEvaluation,
         //! Point evaluation of Gaussian curvature
         GaussianCurvaturePointEvaluation,
-        //! Average of values in a face of a cell using quadrature
-        //! 2D in 3D problem, 1D in 2D problem
-        ScalarFaceAverageEvaluation,
+        //! Average values of a cell using quadrature
+        //! Supported on 2D faces in 3D problems (manifold) and 2D cells in 2D problems
+        CellAverageEvaluation,
+        //! Integral values over cell using quadrature
+        //! Supported on 2D faces in 3D problems (manifold) and 2D cells in 2D problems
+        CellIntegralEvaluation,
+        //! Average value of vector dotted with normal direction
+        //! Supported on 1D edges in 3D problems (2D-manifold) and 1D edges on 2D cells
+        FaceNormalAverageEvaluation,
+        //! Integral value of vector dotted with normal direction
+        //! Supported on 1D edges in 3D problems (2D-manifold) and 1D edges on 2D cells
+        FaceNormalIntegralEvaluation,
+        //! Average value of vector dotted with tangent directions
+        //! Supported on 1D edges in 3D problems (2D-manifold) and 1D edges on 2D cells
+        EdgeTangentAverageEvaluation,
+        //! Integral value of vector dotted with tangent directions
+        //! Supported on 1D edges in 3D problems (2D-manifold) and 1D edges on 2D cells
+        EdgeTangentIntegralEvaluation,
         //! Should be the total count of all available target functionals
-        COUNT=15,
+        COUNT=20,
     };
 
     //! Rank of target functional output for each TargetOperation 
@@ -66,7 +81,12 @@ namespace Compadre {
             0, ///< PartialZOfScalarPointEvaluation
             0, ///< ChainedStaggeredLaplacianOfScalarPointEvaluation
             0, ///< GaussianCurvaturePointEvaluation
-            0, ///< ScalarFaceAverageEvaluation
+            0, ///< CellAverageEvaluation
+            0, ///< CellIntegralEvaluation
+            0, ///< FaceNormalAverageEvaluation
+            0, ///< FaceNormalIntegralEvaluation
+            0, ///< EdgeTangentAverageEvaluation
+            0, ///< EdgeTangentIntegralEvaluation
         };
         return TargetOutputTensorRank[index];
     }
@@ -171,16 +191,19 @@ namespace Compadre {
         FaceNormalIntegralSample = make_sampling_functional(1,0,false,false,(int)Identity),
 
         //! For polynomial dotted with normal on edge
-        FaceNormalPointSample = make_sampling_functional(1,0,false,false,(int)Identity),
+        FaceNormalAverageSample = make_sampling_functional(1,0,false,false,(int)Identity),
 
         //! For integrating polynomial dotted with tangent over an edge
-        FaceTangentIntegralSample = make_sampling_functional(1,0,false,false,(int)Identity),
+        EdgeTangentIntegralSample = make_sampling_functional(1,0,false,false,(int)Identity),
 
         //! For polynomial dotted with tangent
-        FaceTangentPointSample = make_sampling_functional(1,0,false,false,(int)Identity),
+        EdgeTangentAverageSample = make_sampling_functional(1,0,false,false,(int)Identity),
 
-        //! For polynomial integrated on faces
-        ScalarFaceAverageSample = make_sampling_functional(0,0,false,false,(int)DifferentEachNeighbor);
+        //! For polynomial integrated on cells
+        CellAverageSample = make_sampling_functional(0,0,false,false,(int)DifferentEachNeighbor),
+
+        //! For polynomial integrated on cells
+        CellIntegralSample = make_sampling_functional(0,0,false,false,(int)DifferentEachNeighbor);
 
     //! Dense solver type
     enum DenseSolverType {

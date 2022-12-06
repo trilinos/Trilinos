@@ -66,10 +66,10 @@ namespace MueLu {
 
   // compute Y = alpha*R*X + beta*Y
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X, 
-                                          MultiVector &Y, 
-                                          Teuchos::ETransp mode, 
-                                          Scalar alpha, 
+  void MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
+                                          MultiVector &Y,
+                                          Teuchos::ETransp mode,
+                                          Scalar alpha,
                                           Scalar beta) const {
 
     using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -92,7 +92,7 @@ namespace MueLu {
 
       // Step 2: Compute Y=Y+alpha*R*X
       // recall R*X is an average of X over aggregates
-      Kokkos::parallel_for("MueLu:MatrixFreeTentativeR_kokkos:apply", md_range_type({0,0},{numCols,numNodes}), 
+      Kokkos::parallel_for("MueLu:MatrixFreeTentativeR_kokkos:apply", md_range_type({0,0},{numCols,numNodes}),
         KOKKOS_LAMBDA(const int colIdx, const int NodeIdx) {
           LO aggIdx = vertex2AggIdView(NodeIdx,0);
           if(aggIdx != -1) { // depending on maps, vertex2agg
@@ -106,19 +106,19 @@ namespace MueLu {
 
       // Step 2: Compute Y=Y+alpha*P*X
       // recall P*X is essentially injection of X, but sum if a node belongs to multiple aggregates
-      Kokkos::parallel_for("MueLu:MatrixFreeTentativeP_kokkos:apply", md_range_type({0,0},{numCols,numNodes}), 
+      Kokkos::parallel_for("MueLu:MatrixFreeTentativeP_kokkos:apply", md_range_type({0,0},{numCols,numNodes}),
         KOKKOS_LAMBDA(const int colIdx, const int fineIdx) {
           LO aggIdx = vertex2AggView(fineIdx,0);
           kokkos_view_Y(fineIdx,colIdx) += implAlpha*kokkos_view_X(aggIdx,colIdx)/Kokkos::sqrt(aggSizes(aggIdx));
         });
     }
-  } 
+  }
 
   // I don't care
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void MatrixFreeTentativeP_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"MatrixFreeTentativeP residual would make no sense as the operator is not square!");
-  }  
+  }
 
 } //namespace MueLu
 

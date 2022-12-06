@@ -39,7 +39,7 @@ using namespace std;
  *  van der Pol problem is a nonlinear electrical circuit, and is a
  *  canonical equation of a nonlinear oscillator (Hairer, Norsett,
  *  and Wanner, pp. 111-115, and Hairer and Wanner, pp. 4-5) for an
- *  electrical circuit.  The explicit ODE form, \f$ \dot{x} = f(x,t) \f$,
+ *  electrical circuit.  The explicit ODE form, \f$ \dot{x} = f(x,t)\f$,
  *  of the scaled problem is
  *  \f{eqnarray*}{
  *    \dot{x}_0(t) & = & f_0 = x_1(t) \\
@@ -208,7 +208,7 @@ using namespace std;
  *  and introduce Tempus and Trilinos capabilities in the following
  *  examples.
  *
- *  \subsection example-01_Next Links
+ *  \subsection example-00_Next Links
  *
  *  - Back to: \ref tutorials
  *  - Next: \ref example-01

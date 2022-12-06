@@ -62,6 +62,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
+  SET(CTEST_DROP_SITE "testing.sandia.gov")
+
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
 
   IF(COMM_TYPE STREQUAL MPI)

@@ -547,7 +547,7 @@ namespace MueLu {
 
    Xpetra::global_size_t     itemp = GNdofs/nz;
     coarseMap = StridedMapFactory::Build(rowMap->lib(),
-        NCLayers*itemp, 
+        NCLayers*itemp,
         NCLayers*NVertLines*DofsPerNode,
         0, /* index base */
         stridingInfo_,
@@ -984,13 +984,13 @@ namespace MueLu {
       for (size_t j =0; j < nnz; j++) {
         if (Teuchos::ScalarTraits<SC>::magnitude(vals[ j ]) >= Teuchos::ScalarTraits<SC>::magnitude(largestValue)) {
           if ( inds[j]%BlkSize == rowDof ) {
-            largestValue = vals[j]; 
+            largestValue = vals[j];
             largestIndex = (int) j;
           }
         }
         vals[j] = ZERO;
       }
-      if (largestIndex != -1) vals[largestIndex] = ONE; 
+      if (largestIndex != -1) vals[largestIndex] = ONE;
       else
         TEUCHOS_TEST_FOR_EXCEPTION(nnz > 0, Exceptions::RuntimeError, "no nonzero column associated with a proper dof within node.");
 

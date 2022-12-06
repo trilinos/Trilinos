@@ -64,7 +64,7 @@ protected:
   }
 };
 
-class TestTextMeshGraph : public stk::unit_test_util::TextMeshFixture
+class TestTextMeshGraph : public stk::unit_test_util::simple_fields::TextMeshFixture
 {
  protected:
   TestTextMeshGraph() : TextMeshFixture(3) {}

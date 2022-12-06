@@ -92,6 +92,14 @@ stk::mesh::Entity StkMeshBuilder<DIM>::get_side_with_nodes(const std::vector<stk
 }
 
 template <int DIM>
+stk::math::Vector3d StkMeshBuilder<DIM>::get_node_coordinates(const stk::mesh::Entity node) const
+{
+    const double* nodeCoordsData = (double*)stk::mesh::field_data(*mMesh.mesh_meta_data().coordinate_field(), node);
+    stk::math::Vector3d nodeCoords(nodeCoordsData, DIM);
+    return nodeCoords;
+}
+
+template <int DIM>
 void StkMeshBuilder<DIM>::set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc)
 {
     double* node_coords = (double*)stk::mesh::field_data(*mMesh.mesh_meta_data().coordinate_field(), node);
@@ -132,6 +140,18 @@ stk::mesh::Part * get_block_part(const stk::mesh::MetaData &meta, const unsigned
 }
 
 template <int DIM>
+std::vector<stk::mesh::EntityId> StkMeshBuilder<DIM>::get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const
+{
+  std::vector<stk::mesh::EntityId> elemIds;
+  elemIds.reserve(elemIndices.size());
+  for (auto && elemIndex : elemIndices)
+  {
+    elemIds.push_back(mAssignedGlobalElementIdsforAllElements[elemIndex]);
+  }
+  return elemIds;
+}
+
+template <int DIM>
 void StkMeshBuilder<DIM>::create_boundary_sides()
 {
     stk::mesh::create_exposed_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), {&mAuxMeta.exposed_boundary_part()});
@@ -146,7 +166,7 @@ bool StkMeshBuilder<DIM>::check_boundary_sides() const
 template <int DIM>
 void StkMeshBuilder<DIM>::create_block_boundary_sides()
 {
-  stk::mesh::create_exposed_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), {&mAuxMeta.block_boundary_part()});
+  stk::mesh::create_interior_block_boundary_sides(mMesh, mMesh.mesh_meta_data().universal_part(), {&mAuxMeta.block_boundary_part()});
 }
 
 template <int DIM>
@@ -202,15 +222,14 @@ std::vector<stk::mesh::Entity>
 StkMeshBuilder<DIM>::create_parallel_elements(const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
     const std::vector<int> &elementProcOwners,
-    const std::vector<stk::mesh::Entity>& nodesWhichAreValidIfTheyExistOnProc)
+    const std::vector<stk::mesh::Entity>& nodesWhichAreValidIfTheyExistOnProc,
+    const std::vector<stk::mesh::EntityId> & assignedGlobalElementIdsforAllElements)
 {
     const int proc = stk::parallel_machine_rank(mComm);
 
     size_t numOwnedElements = 0;
     for (int elemProc : elementProcOwners)
       if (elemProc == proc) ++numOwnedElements;
-
-    std::vector<stk::mesh::EntityId> elementIds = get_ids_available_for_rank(mMesh, stk::topology::ELEM_RANK, numOwnedElements);
 
     std::vector<stk::mesh::Entity> ownedElems;
     for (size_t iElem=0; iElem<elementConn.size(); ++iElem)
@@ -219,14 +238,11 @@ StkMeshBuilder<DIM>::create_parallel_elements(const std::vector<std::array<unsig
         {
             ThrowRequireWithSierraHelpMsg((size_t)NPE == elementConn[iElem].size());
 
-            stk::mesh::EntityId elementId = elementIds.back();
-            elementIds.pop_back();
-
             std::vector<stk::mesh::Entity> oneElementConnWithLocalIds(NPE);
             for(unsigned i = 0; i < NPE; i++)
               oneElementConnWithLocalIds[i] = nodesWhichAreValidIfTheyExistOnProc[elementConn[iElem][i]];
 
-            stk::mesh::Entity elem = create_element(oneElementConnWithLocalIds, elementId, elementBlockIDs[iElem]);
+            stk::mesh::Entity elem = create_element(oneElementConnWithLocalIds, assignedGlobalElementIdsforAllElements[iElem], elementBlockIDs[iElem]);
             ownedElems.push_back(elem);
         }
     }
@@ -319,6 +335,10 @@ void StkMeshBuilder<DIM>::build_mesh_nodes_and_elements(
     for (unsigned iNode=0; iNode<mAssignedGlobalNodeIdsforAllNodes.size(); ++iNode)
       mAssignedGlobalNodeIdsforAllNodes[iNode] = iNode+101;
 
+    mAssignedGlobalElementIdsforAllElements.resize(numGlobalElems, stk::mesh::InvalidEntityId);
+    for (unsigned iElem=0; iElem<mAssignedGlobalElementIdsforAllElements.size(); ++iElem)
+      mAssignedGlobalElementIdsforAllElements[iElem] = iElem+1001;
+
     const std::map<unsigned,std::vector<int>> nodeIndicesWithSharingProcs =
         (0 == numGlobalElems) ?
         build_node_sharing_procs_for_all_nodes_on_all_procs(nodeLocs.size(), stk::parallel_machine_size(mComm)) :
@@ -326,8 +346,11 @@ void StkMeshBuilder<DIM>::build_mesh_nodes_and_elements(
 
     mMesh.modification_begin();
     const auto nodeHandlesWhichAreValidForNodesThatExistOnProc = create_parallel_nodes(nodeLocs, nodeIndicesWithSharingProcs, mAssignedGlobalNodeIdsforAllNodes);
-    mOwnedElems = create_parallel_elements(elementConn, elementBlockIDs, elementProcOwners, nodeHandlesWhichAreValidForNodesThatExistOnProc);
+    mOwnedElems = create_parallel_elements(elementConn, elementBlockIDs, elementProcOwners, nodeHandlesWhichAreValidForNodesThatExistOnProc, mAssignedGlobalElementIdsforAllElements);
     mMesh.modification_end();
+
+    mMesh.batch_change_entity_parts(mMesh.mesh_meta_data().universal_part(), stk::topology::NODE_RANK, {&get_aux_meta().active_part()}, {});
+    mMesh.batch_change_entity_parts(mMesh.mesh_meta_data().universal_part(), stk::topology::ELEMENT_RANK, {&get_aux_meta().active_part()}, {});
 
     create_boundary_sides();
     create_block_boundary_sides();

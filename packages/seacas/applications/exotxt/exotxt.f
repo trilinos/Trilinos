@@ -60,6 +60,8 @@ C.
      &   'EXODUSII DATABASE TO TEXT FILE TRANSLATOR',
      &   ' ', ' ')
 
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
       CALL MDINIT (A)
       CALL MCINIT (C)
       CALL MDSTAT (NERR, MEM)
@@ -589,6 +591,8 @@ C     Delete dynamic memory
       CLOSE (NTXT, IOSTAT=K)
       if (ndb .ne. 11 .and. ndb .gt. 0) call exclos(ndb, ierr)
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
       CALL WRAPUP (QAINFO(1))
 
       END

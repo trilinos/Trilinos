@@ -35,6 +35,7 @@
 #ifndef stk_util_parallel_ManagedBufferBase_hpp
 #define stk_util_parallel_ManagedBufferBase_hpp
 
+#include <stddef.h>
 #include <vector>
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 #include "stk_util/parallel/CommBuffer.hpp"
@@ -134,6 +135,8 @@ class ManagedCommBufferBase
 
     stk::CommBuffer& get_send_buf(int rank)
     {
+      if (m_sendBuffersDeallocated)
+        throw std::runtime_error("send buffers deallocated!");
       if (m_sendsInProgress)
         throw std::runtime_error("cannot access send buffers while sends are in progress (did you forget to complete the sends?)");
 
@@ -142,6 +145,8 @@ class ManagedCommBufferBase
 
     const stk::CommBuffer& get_send_buf(int rank) const
     { 
+      if (m_sendBuffersDeallocated)
+        throw std::runtime_error("send buffers deallocated!");
       return m_sendBufs[rank];
     }
 
@@ -167,6 +172,8 @@ class ManagedCommBufferBase
 
     void clear_recv_bufs();
 
+    void deallocate_send_bufs();
+
   protected:
 
     void set_recv_buffer_storage();
@@ -188,6 +195,7 @@ class ManagedCommBufferBase
     bool m_sendsInProgress = false;
     bool m_recvsInProgress = false;
     bool m_sendBuffersAllocated = false;
+    bool m_sendBuffersDeallocated = false;
     MPI_Comm m_comm;
 };
 

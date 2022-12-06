@@ -12,7 +12,7 @@
         <Parameter name="relaxation: sweeps"                type="int"    value="5"/>
         <Parameter name="relaxation: damping factor"        type="double" value="0.6"/>
       </ParameterList>
-    </ParameterList>  
+    </ParameterList>
     
     <ParameterList name="ForwardGaussSeidel">
       <Parameter name="factory"                        type="string" value="TrilinosSmoother"/>

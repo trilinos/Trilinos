@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <ctype.h>                                   // for toupper
@@ -53,7 +55,7 @@ namespace Iotm {
       std::unordered_map<std::string, Topology> m_nameToTopology;
     };
 
-    class PartIdMapping
+    class IOTM_EXPORT PartIdMapping
     {
     public:
       PartIdMapping() : m_idsAssigned(false)

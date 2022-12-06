@@ -359,7 +359,6 @@ namespace FROSch {
                     break;
                 default:
                     FROSCH_ASSERT(false,"FROSch::InterfaceEntity: Specify a valid Distance Function.");
-                    break;
             }
 
             // In the last "row", we store the sum of the distances for all coarse nodes

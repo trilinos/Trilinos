@@ -44,6 +44,7 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
+#include <Ifpack2_ReorderFilter_decl.hpp>
 #include <Ifpack2_Details_OneLevelFactory_decl.hpp>
 
 // FROSch
@@ -90,6 +91,7 @@ namespace FROSch {
 
         // Ifpack2
         using Ifpack2PreconditionerPtr          = RCP<Ifpack2::Preconditioner<SC,LO,GO,NO> >;
+        using TRowMatrixFilterType              = Ifpack2::ReorderFilter<TRowMatrix>;
 
     public:
 
@@ -124,6 +126,12 @@ namespace FROSch {
                                     string description);
 
         Ifpack2PreconditionerPtr Ifpack2Preconditioner_ = null;
+
+        bool useRILUK;
+        bool useZoltan2;
+        bool needToApplyPerm;
+        Teuchos::ArrayRCP<LO>    perm;
+        Teuchos::ArrayRCP<LO>    revperm;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

@@ -116,9 +116,12 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus,
 
 template <typename T>
 cudaDataType cuda_data_type_from() {
+  // Note:  compile-time failure is disabled to allow for packages such as
+  // Ifpack2 to more easily support scalar types that cuSPARSE may not.
+
   // compile-time failure with a nice message if called on an unsupported type
-  static_assert(!std::is_same<T, T>::value,
-                "cuSparse TPL does not support scalar type");
+  //static_assert(!std::is_same<T, T>::value,
+  //                "cuSparse TPL does not support scalar type");
   // static_assert(false, ...) is allowed to error even if the code is not
   // instantiated. obfuscate the predicate Despite this function being
   // uncompilable, the compiler may decide that a return statement is missing,

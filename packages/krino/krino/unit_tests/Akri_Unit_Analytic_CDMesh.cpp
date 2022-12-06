@@ -82,12 +82,16 @@ public:
   {
     NodeToCapturedDomainsMap nodesToCapturedDomains;
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+    {
+      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
           cdfemSupport.get_interpolation_fields(),
           interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees());
+          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
+          minIntPtWeightForEstimatingCutQuality);
+    }
     interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
     if(!krino_mesh->my_old_mesh)
@@ -181,7 +185,7 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
-    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&mySphere}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
@@ -250,7 +254,7 @@ public:
       myCube.add( std::move(facet) );
     }
 
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }

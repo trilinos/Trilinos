@@ -26,7 +26,7 @@
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
 #endif
 #else
-#include <sys/unistd.h>
+#include <unistd.h>
 #if defined(__APPLE__) && defined(__MACH__)
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -41,9 +41,6 @@
 
 #include <cstdio>
 #include <sys/stat.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
 
 namespace {
   bool internal_access(const std::string &name, int mode);

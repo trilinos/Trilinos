@@ -35,6 +35,7 @@
 #include <stk_mesh/baseImpl/CommEntityMods.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 namespace stk {
@@ -43,10 +44,12 @@ namespace mesh {
 namespace impl {
 
 CommEntityMods::CommEntityMods(const BulkData& bulkData,
+                               const EntityCommDatabase& commDB,
                                const EntityCommListInfoVector& commList)
  : m_bulkData(bulkData),
    m_commSparse(bulkData.parallel()),
-   m_commList(commList)
+   m_commList(commList),
+   m_commDB(commDB)
 {
 }
 
@@ -97,14 +100,14 @@ void CommEntityMods::pack_entity_mods()
 
   for ( EntityCommListInfoVector::const_iterator
         i = m_commList.begin() ; i != m_commList.end() ; ++i ) { 
-    if (i->entity_comm != nullptr) {
+    if (i->entity_comm != -1) {
       Entity entity = i->entity;
       EntityState status = m_bulkData.is_valid(entity) ? m_bulkData.state(entity) : Deleted;
 
       if ( status == Modified || status == Deleted ) { 
         int owned_closure_int = m_bulkData.owned_closure(entity) ? 1 : 0;
 
-        for ( PairIterEntityComm ec(i->entity_comm->comm_map); ! ec.empty() ; ++ec )
+        for ( PairIterEntityComm ec = m_commDB.comm(i->entity_comm); ! ec.empty() ; ++ec )
         {   
           if ( ( packGhosted && ec->ghost_id > BulkData::SHARED ) || ( packShared && ec->ghost_id == BulkData::SHARED ) )
           {

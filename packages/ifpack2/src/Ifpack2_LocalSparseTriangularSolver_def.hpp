@@ -576,8 +576,14 @@ compute ()
     // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
     kh_->destroy_sptrsv_handle();
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-    // CuSparse only supports int type ordinals
-    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value && std::is_same<int,local_ordinal_type >::value)
+    // CuSparse only supports int type ordinals 
+    // and scalar types of float, double, float complex and double complex
+    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+        std::is_same<int, local_ordinal_type>::value &&
+       (std::is_same<scalar_type, float>::value ||
+        std::is_same<scalar_type, double>::value ||
+        std::is_same<scalar_type, Kokkos::complex<float>>::value ||
+        std::is_same<scalar_type, Kokkos::complex<double>>::value))
     {
       kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
     }
@@ -1009,6 +1015,14 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     if (Teuchos::nonnull (htsImpl_))
       htsImpl_->reset ();
   } // pointers are not the same
+
+  //NOTE (Nov-09-2022): 
+  //For Cuda >= 11.3 (using cusparseSpSV), always call compute before apply,
+  //even when matrix values are changed with the same sparsity pattern.
+  //So, force isComputed_ to FALSE here
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+  isComputed_ = false;
+#endif
 }
 
 } // namespace Ifpack2

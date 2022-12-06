@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
+#include <iostream>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -17,10 +20,11 @@ namespace Ioss {
 
     template <class charT> class Automata;
 
-    class Error : public std::exception
+    class IOSS_EXPORT Error : public std::exception
     {
     public:
-      Error(const std::string &msg) : msg_{msg} {}
+      explicit Error(const std::string &msg) : msg_{msg} {}
+      ~Error();
 
       const char *what() const throw() override { return msg_.c_str(); }
 
@@ -85,7 +89,7 @@ namespace Ioss {
     template <class charT> class StateFail : public State<charT>
     {
     public:
-      StateFail(Automata<charT> &states) : State<charT>(StateType::FAIL, states) {}
+      explicit StateFail(Automata<charT> &states) : State<charT>(StateType::FAIL, states) {}
 
       bool Check(const String<charT> &, size_t) override { return false; }
 
@@ -98,7 +102,7 @@ namespace Ioss {
     template <class charT> class StateMatch : public State<charT>
     {
     public:
-      StateMatch(Automata<charT> &states) : State<charT>(StateType::MATCH, states) {}
+      explicit StateMatch(Automata<charT> &states) : State<charT>(StateType::MATCH, states) {}
 
       bool Check(const String<charT> &, size_t) override { return true; }
 
@@ -257,7 +261,7 @@ namespace Ioss {
       using State<charT>::GetAutomata;
 
     public:
-      StateAny(Automata<charT> &states) : State<charT>(StateType::QUESTION, states) {}
+      explicit StateAny(Automata<charT> &states) : State<charT>(StateType::QUESTION, states) {}
 
       bool Check(const String<charT> &, size_t) override
       {
@@ -279,7 +283,7 @@ namespace Ioss {
       using State<charT>::GetAutomata;
 
     public:
-      StateStar(Automata<charT> &states) : State<charT>(StateType::MULT, states) {}
+      explicit StateStar(Automata<charT> &states) : State<charT>(StateType::MULT, states) {}
 
       bool Check(const String<charT> &, size_t) override
       {
@@ -323,7 +327,7 @@ namespace Ioss {
     template <class charT> class SetItemChar : public SetItem<charT>
     {
     public:
-      SetItemChar(charT c) : c_{c} {}
+      explicit SetItemChar(charT c) : c_{c} {}
 
       bool Check(charT c) const override { return c == c_; }
 
@@ -867,7 +871,7 @@ namespace Ioss {
     template <class charT> class CharNode : public AstNode<charT>
     {
     public:
-      CharNode(charT c) : AstNode<charT>(AstNode<charT>::Type::CHAR), c_{c} {}
+      explicit CharNode(charT c) : AstNode<charT>(AstNode<charT>::Type::CHAR), c_{c} {}
 
       virtual void Accept(AstVisitor<charT> *visitor) { visitor->VisitCharNode(this); }
 
@@ -900,7 +904,7 @@ namespace Ioss {
     template <class charT> class SetItemsNode : public AstNode<charT>
     {
     public:
-      SetItemsNode(std::vector<AstNodePtr<charT>> &&items)
+      explicit SetItemsNode(std::vector<AstNodePtr<charT>> &&items)
           : AstNode<charT>(AstNode<charT>::Type::SET_ITEMS), items_{std::move(items)}
       {
       }
@@ -916,7 +920,7 @@ namespace Ioss {
     template <class charT> class PositiveSetNode : public AstNode<charT>
     {
     public:
-      PositiveSetNode(AstNodePtr<charT> &&set)
+      explicit PositiveSetNode(AstNodePtr<charT> &&set)
           : AstNode<charT>(AstNode<charT>::Type::POS_SET), set_{std::move(set)}
       {
       }
@@ -932,7 +936,7 @@ namespace Ioss {
     template <class charT> class NegativeSetNode : public AstNode<charT>
     {
     public:
-      NegativeSetNode(AstNodePtr<charT> &&set)
+      explicit NegativeSetNode(AstNodePtr<charT> &&set)
           : AstNode<charT>(AstNode<charT>::Type::NEG_SET), set_{std::move(set)}
       {
       }
@@ -986,7 +990,7 @@ namespace Ioss {
     template <class charT> class ConcatNode : public AstNode<charT>
     {
     public:
-      ConcatNode(std::vector<AstNodePtr<charT>> &&basic_glob)
+      explicit ConcatNode(std::vector<AstNodePtr<charT>> &&basic_glob)
           : AstNode<charT>(AstNode<charT>::Type::CONCAT_GLOB), basic_glob_{std::move(basic_glob)}
       {
       }
@@ -1002,7 +1006,7 @@ namespace Ioss {
     template <class charT> class UnionNode : public AstNode<charT>
     {
     public:
-      UnionNode(std::vector<AstNodePtr<charT>> &&items)
+      explicit UnionNode(std::vector<AstNodePtr<charT>> &&items)
           : AstNode<charT>(AstNode<charT>::Type::UNION), items_{std::move(items)}
       {
       }
@@ -1018,7 +1022,7 @@ namespace Ioss {
     template <class charT> class GlobNode : public AstNode<charT>
     {
     public:
-      GlobNode(AstNodePtr<charT> &&glob)
+      explicit GlobNode(AstNodePtr<charT> &&glob)
           : AstNode<charT>(AstNode<charT>::Type::GLOB), glob_{std::move(glob)}
       {
       }
@@ -1036,7 +1040,9 @@ namespace Ioss {
     public:
       Parser() = delete;
 
-      Parser(std::vector<Token<charT>> &&tok_vec) : tok_vec_{std::move(tok_vec)}, pos_{0} {}
+      explicit Parser(std::vector<Token<charT>> &&tok_vec) : tok_vec_{std::move(tok_vec)}, pos_{0}
+      {
+      }
 
       AstNodePtr<charT> GenAst() { return ParserGlob(); }
 
@@ -1550,7 +1556,7 @@ namespace Ioss {
     template <class charT, class globT = extended_glob<charT>> class BasicGlob
     {
     public:
-      BasicGlob(const String<charT> &pattern) : glob_{pattern} {}
+      explicit BasicGlob(const String<charT> &pattern) : glob_{pattern} {}
 
       BasicGlob(const BasicGlob &)      = delete;
       BasicGlob &operator=(BasicGlob &) = delete;

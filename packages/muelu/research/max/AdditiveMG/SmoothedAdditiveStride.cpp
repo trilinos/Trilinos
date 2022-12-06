@@ -218,16 +218,16 @@ int main(int argc, char *argv[]) {
 		Teuchos::ArrayView<const global_ordinal_type> elementList (ind);
 		xpetraMap = MapFactory::Build(Xpetra::UseTpetra,matrixParameters.GetNumGlobalElements(), elementList, indexBase, comm);
    }
-   else if( comm->getSize()==1 )   
+   else if( comm->getSize()==1 )
 	xpetraMap = MapFactory::Build(Xpetra::UseTpetra, matrixParameters.GetNumGlobalElements(), indexBase, comm);
 
   RCP<MultiVector> coordinates;
 
-  if (problem_type == "ADR1D") 
+  if (problem_type == "ADR1D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("1D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR2D") 
+  else if (problem_type == "ADR2D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("2D", xpetraMap, matrixParameters.GetParameterList());
-  else if (problem_type == "ADR3D") 
+  else if (problem_type == "ADR3D")
   	coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<scalar_type,local_ordinal_type,global_ordinal_type,Map,MultiVector>("3D", xpetraMap, matrixParameters.GetParameterList());
 
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
@@ -237,13 +237,13 @@ int main(int argc, char *argv[]) {
   RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
 
  // ===================================================
- // 	Domain Decomposition Preconditioner 
+ // 	Domain Decomposition Preconditioner
  // 	===================================
 
   //Creation of the MueLu list for the DD preconditioner
   RCP<Teuchos::ParameterList> dd_list = rcp(new Teuchos::ParameterList());
   dd_list->setName("MueLu");
-  dd_list->set("verbosity", "low"); 
+  dd_list->set("verbosity", "low");
   dd_list->set("number of equations", 1);
   dd_list->set("max levels", 1);
   dd_list->set("coarse: type", "SCHWARZ"); //FOR A ONE LEVEL PRECONDITIONER THE COARSE LEVEL IS INTERPRETED AS SMOOTHING LEVEL
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
   RCP<muelu_tpetra_operator_type> B_DD = MueLu::CreateTpetraPreconditioner( (RCP<operator_type>)A, *dd_list );
 
  // ===================================================
- // 	Multi Grid Preconditioner 
+ // 	Multi Grid Preconditioner
  // 	===================================
   RCP<muelu_tpetra_operator_type> M;
 
@@ -271,8 +271,8 @@ int main(int argc, char *argv[]) {
   RCP<MueLu::Hierarchy<scalar_type> > H = mueLuFactory.CreateHierarchy();
   H->setVerbLevel(Teuchos::VERB_HIGH);
 	
-  H->GetLevel(0)->Set("A", xpetraA); 
-  H->GetLevel(0)->Set("Coordinates", coordinates); 
+  H->GetLevel(0)->Set("A", xpetraA);
+  H->GetLevel(0)->Set("Coordinates", coordinates);
 
   // Multigrid setup phase
   mueLuFactory.SetupHierarchy(*H);	
@@ -281,10 +281,10 @@ int main(int argc, char *argv[]) {
 
   RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> prolong, restr;
 
-  if (L->IsAvailable("P")) 
+  if (L->IsAvailable("P"))
     prolong = L->template Get< RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> >("P");
 
-  if (L->IsAvailable("R")) 
+  if (L->IsAvailable("R"))
     restr = L->template Get< RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>> >("R");
 
   RCP<crs_matrix_type> tpetra_prolong = MueLuUtilities::Op2NonConstTpetraCrs(prolong);
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
   typedef typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator iter_type;
 
 for(int trial = 1; trial<=number_runs; ++trial)
-{ 
+{
     for(int j = 0; j<tpetra_prolong->getGlobalNumCols(); ++j)
     {
         int color = j%3;
@@ -342,7 +342,7 @@ for(int trial = 1; trial<=number_runs; ++trial)
   Teuchos::ArrayView<const global_ordinal_type> elementListBAP (indBAPcolMap);
   Teuchos::RCP< Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > > BAPcolMap = rcp( new Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type >( static_cast<size_t>(tpetra_prolong->getGlobalNumCols()), elementListBAP, indexBase, comm ) );
 
-   RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), BAPcolMap, tpetra_prolong->getGlobalNumCols() ) ); 
+   RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), BAPcolMap, tpetra_prolong->getGlobalNumCols() ) );
    Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getLocalElementList();
 
   for(int color = 0; color<3; ++color)
@@ -378,9 +378,9 @@ for(int trial = 1; trial<=number_runs; ++trial)
   BAP->fillComplete( tpetra_prolong->getDomainMap(), tpetra_prolong->getRangeMap() );
 
   //=============================================================================================================
-  RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP); 
+  RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP);
   mueluPbar = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Pbar);
-  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile("Pbar.mtx", Pbar); //Auxiliary prints introduced to generate pictures 
+  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile("Pbar.mtx", Pbar); //Auxiliary prints introduced to generate pictures
 }
   H->GetLevel(1)->Set("Pbar", mueluPbar);
 
@@ -393,7 +393,7 @@ for(int trial = 1; trial<=number_runs; ++trial)
   Teuchos::TimeMonitor::zeroOutTimers();
   //======================================================================================================================
 
-  // Linear Solver  
+  // Linear Solver
     
   RCP<multivector_type> X_muelu = rcp(new multivector_type(map,1));
   RCP<multivector_type> B = rcp(new multivector_type(map,1));
@@ -448,7 +448,7 @@ for(int trial = 1; trial<=number_runs; ++trial)
     std::cout << "number of iterations with MueLu preconditioner= " << numIterations_muelu << std::endl;
     std::cout << "||Residual|| = " << normVec_muelu[0] << std::endl;
  }
-} 
+}
 
   Teuchos::TimeMonitor::summarize ();
 

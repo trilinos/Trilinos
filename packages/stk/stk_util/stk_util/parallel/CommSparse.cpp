@@ -338,8 +338,9 @@ void CommSparse::verify_send_buffers_filled()
 #endif
 }
 
-void CommSparse::communicate()
+bool CommSparse::communicate(bool deallocateSendBuffers)
 {
+  bool returnValue = false;
 #ifdef STK_HAS_MPI
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
@@ -356,7 +357,21 @@ void CommSparse::communicate()
       communicate_any( m_comm , m_send , m_recv, m_send_procs, m_recv_procs );
     }
   }
+
+  for (int i=0; i < parallel_size(); ++i) {
+    if (send_buffer(i).capacity() > 0 || recv_buffer(i).capacity() > 0) {
+      returnValue = true;
+      break;
+    }
+  }
+
+  if (deallocateSendBuffers) {
+    if (m_exchanger) {
+      m_exchanger->deallocate_send_bufs();
+    }
+  }
 #endif
+  return returnValue;
 }
 
 void CommSparse::communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor)

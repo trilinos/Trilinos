@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "io_info_lib_export.h"
+
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <iosfwd>            // for ostream
 #include <string>            // for string
@@ -14,7 +16,7 @@
 /** \brief A special namespace for the io_info demonstration program interFace.
  */
 namespace Info {
-  class Interface
+  class IO_INFO_LIB_EXPORT Interface
   {
   public:
     Interface();

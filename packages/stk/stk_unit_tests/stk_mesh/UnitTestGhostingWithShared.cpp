@@ -93,9 +93,9 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
 
-  stk::mesh::EntityLess my_less(bulk);
-  std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> entitiesWithClosure(my_less);
+  stk::mesh::EntityProcVec entitiesWithClosure;
   bulk.my_add_closure_entities(custom_shared_ghosting, ownedEntitiesToGhost, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId == 1)
   {
@@ -113,14 +113,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -130,6 +128,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
   stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(bulk, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId==0)
   {
@@ -141,14 +140,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -163,14 +160,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }

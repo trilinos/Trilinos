@@ -84,7 +84,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false);
 
   //@}
 
@@ -181,6 +181,9 @@ class MockModelEval_A_Tpetra
    Thyra::ModelEvaluatorBase::InArgs<double> nominalValues;
    Thyra::ModelEvaluatorBase::InArgs<double> lowerBounds;
    Thyra::ModelEvaluatorBase::InArgs<double> upperBounds;
+
+   //whether to compute the adjoint model
+   bool adjointModel;
 
 };
 

@@ -109,13 +109,13 @@ allReduceView (const OutputViewType& output,
   }
 
   // we must ensure MPI can handle the pointers we pass it
-  // if CudaAware, we are done
-  // otherwise, if the views use Cuda, then we should copy them
+  // if GPUAware, we are done
+  // otherwise, if the views use GPUs, then we should copy them
   using Layout = typename TempView::UnifiedContiguousLayout<InputViewType, OutputViewType>::type;
   //if one or both is already in the correct layout, toLayout returns the same view
   auto inputContig = TempView::toLayout<InputViewType, Layout>(input);
   auto outputContig = TempView::toLayout<InputViewType, Layout>(output);
-  if(Tpetra::Details::Behavior::assumeMpiIsCudaAware())
+  if(Tpetra::Details::Behavior::assumeMpiIsGPUAware())
   {
     allReduceRawContiguous(outputContig, inputContig, comm);
 

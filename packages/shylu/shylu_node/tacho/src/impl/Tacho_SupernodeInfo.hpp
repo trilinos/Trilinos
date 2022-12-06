@@ -334,8 +334,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
               const ordinal_type i = aj(k), j = row;
               {
                 const ordinal_type lbeg = ap(i), lend = ap(i + 1);
-                ordinal_type *first = &aj(lbeg);
-                ordinal_type *last = &aj(lend);
+                ordinal_type *first = aj.data() + lbeg;
+                ordinal_type *last  = aj.data() + lend;
                 ordinal_type *loc =
                     lower_bound(first, last, j, [](ordinal_type left, ordinal_type right) { return left < right; });
                 TACHO_TEST_FOR_ABORT(*loc != j, "transpose fail");

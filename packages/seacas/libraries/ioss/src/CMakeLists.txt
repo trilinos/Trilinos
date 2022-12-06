@@ -71,11 +71,21 @@ IF (NOT TPL_ENABLE_fmt)
   INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/private_copy_fmt")
 ENDIF()
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/ioss_export.h")
+
 TRIBITS_ADD_LIBRARY(
   Ioss
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+include(GenerateExportHeader)
+generate_export_header(Ioss)
+target_include_directories(Ioss
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
+
 IF (MINGW)
   target_link_libraries(Ioss PUBLIC psapi)
 ENDIF ()

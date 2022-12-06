@@ -25,6 +25,10 @@ unique design feature of Trilinos is its focus on packages.
 
 - [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
 
+- To ensure appropriate parties receive your issues, please direct issues by mentioning the
+  [Trilinos package owners](https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners).
+  External users may not mention Github teams, but may mention individual owners instead.
+
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
   right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
@@ -39,5 +43,4 @@ documentation of each package.
 
 We appreciate your willingness to contribute to the Trilinos project.  Please
 familiarize yourself with our [contributing
-guidelines](https://github.com/trilinos/Trilinos/blob/master/CONTRIBUTING.md)
-.
+guidelines](https://github.com/trilinos/Trilinos/blob/master/CONTRIBUTING.md).

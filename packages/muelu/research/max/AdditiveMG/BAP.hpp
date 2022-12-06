@@ -75,7 +75,7 @@ void BAP2D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
                 int neighbour = -1;
 	        Teuchos::ArrayRCP<const double> localBAP = BAP_shrunk->getData(color);
 
-                //The following if statements control the neighbours of a subdomain in a 2D brick partitioned mesh 
+                //The following if statements control the neighbours of a subdomain in a 2D brick partitioned mesh
 		if( coloring2D( brick_id, ndx )==color && (shifted_id)>= 0 && (shifted_id)<tpetra_prolong->getGlobalNumCols() )
 		  neighbour = (shifted_id);
 
@@ -104,7 +104,7 @@ void BAP2D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
 			neighbour = (shifted_id+ndx+1);
 
                 //in case neighbour>=0, it means that the current MPI processor (=subdomain) has a neighbour with the color analyzed at the current for-loop iteration
-                //otherwise the current MPI processor sits on the boundary of the mesh and it has less than 8 neighbours. 
+                //otherwise the current MPI processor sits on the boundary of the mesh and it has less than 8 neighbours.
                 if(neighbour>=0)
                 {
 			for (iterator_type it = myLocalElements.begin(); it != myLocalElements.end(); ++it)
@@ -140,7 +140,7 @@ void BAP3D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
   //INPUT: BAP_shrunk = Tpetra:MultiVector contatining the shrunk version of B_DD * A_h * Ptentative resulting from domain decomposition with coloring
   //INPUT: comm = MPI communicator (MPI_COMM_WORLD)
   //INPUT: ndx = number of domains along x-direction
-  //INPUT: ndy = number of domains along y-direction 
+  //INPUT: ndy = number of domains along y-direction
 
   Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getLocalElementList();
   int mypid = comm->getRank();
@@ -154,7 +154,7 @@ void BAP3D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
 		int neighbour = -1;
 		Teuchos::ArrayRCP<const double> localBAP = BAP_shrunk->getData(color);
 
-                //The following if statements control the neighbours of a subdomain in a 3D brick partitioned mesh 
+                //The following if statements control the neighbours of a subdomain in a 3D brick partitioned mesh
                 //Each subdomains is incorporated in a 3x3x3 cube which is sliced into 3 squares living on three different planes
                 //The neighbours of a subdomain are checked plane by plane: in total there are three planes to span
                 //
@@ -219,7 +219,7 @@ void BAP3D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
 			neighbour = (shifted_id+ndx+1+ndx*ndy);
 
                 //in case neighbour>=0, it means that the current MPI processor (=subdomain) has a neighbour with the color analyzed at the current for-loop iteration
-                //otherwise the current MPI processor sits on the boundary of the mesh and it has less than 26 neighbours. 
+                //otherwise the current MPI processor sits on the boundary of the mesh and it has less than 26 neighbours.
                 if(neighbour>=0)
                 {
 			for (iterator_type it = myLocalElements.begin(); it != myLocalElements.end(); ++it)

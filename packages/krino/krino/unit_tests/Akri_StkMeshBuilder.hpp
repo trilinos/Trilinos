@@ -40,6 +40,8 @@ public:
 
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mOwnedElems; }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mAssignedGlobalNodeIdsforAllNodes; }
+    const std::vector<size_t> & get_assigned_element_global_ids() const { return mAssignedGlobalElementIdsforAllElements; }
+    std::vector<stk::mesh::EntityId> get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const;
 
     bool check_boundary_sides() const;
     bool check_block_boundary_sides() const;
@@ -54,6 +56,7 @@ public:
     void add_sides_to_sidesets(const std::vector<stk::mesh::Entity> &sides, const std::vector<std::vector<unsigned>> &sidesetIdsPerSide);
     stk::mesh::Entity get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const;
     void create_block_parts(const std::vector<unsigned> &elementBlockIDs);
+    stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const;
 
 private:
     stk::mesh::BulkData & mMesh;
@@ -61,6 +64,7 @@ private:
     Phase_Support & mPhaseSupport;
     const stk::ParallelMachine mComm;
     std::vector<stk::mesh::EntityId> mAssignedGlobalNodeIdsforAllNodes;
+    std::vector<stk::mesh::EntityId> mAssignedGlobalElementIdsforAllElements;
     std::vector<stk::mesh::Entity> mOwnedElems;
 
     void declare_coordinates();
@@ -79,7 +83,8 @@ private:
     std::vector<stk::mesh::Entity> create_parallel_elements(const std::vector<std::array<unsigned, NPE>> &elementConn,
         const std::vector<unsigned> &elementBlockIDs,
         const std::vector<int> &elementProcOwners,
-        const std::vector<stk::mesh::Entity>& nodesWhichAreValidIfTheyExistOnProc);
+        const std::vector<stk::mesh::Entity>& nodesWhichAreValidIfTheyExistOnProc,
+        const std::vector<stk::mesh::EntityId> & assignedGlobalElementIdsforAllElements);
 
     std::map<unsigned,std::vector<int>> build_node_sharing_procs(const std::vector<std::array<unsigned, NPE>> &elementConn,
         const std::vector<int> &elementProcOwners) const;

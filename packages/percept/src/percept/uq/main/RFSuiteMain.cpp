@@ -56,6 +56,8 @@ int main(int argc,  char **argv)
 {
   stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
 
+  Kokkos::initialize(argc, argv);
+
   int proc_rank = stk::parallel_machine_rank(comm);
 
   std::string input_mesh = "";
@@ -193,6 +195,7 @@ int main(int argc,  char **argv)
   }
   mesh_data.end_output_step(result_output_index);
 
+  Kokkos::finalize();
   stk::parallel_machine_finalize();
 
   return 0;

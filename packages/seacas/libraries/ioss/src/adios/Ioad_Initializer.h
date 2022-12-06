@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioad_export.h"
+
 namespace Ioad {
   /** \brief Initialization of the adios database parts of the Ioss library.
    *
@@ -13,7 +15,7 @@ namespace Ioad {
    *  must be created before using any other functions or methods in the
    *  Ioss library except Ioss::Init::Initializer().
    */
-  class Initializer
+  class IOAD_EXPORT Initializer
   {
   public:
     Initializer();

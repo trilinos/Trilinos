@@ -45,7 +45,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
 namespace {
 
@@ -67,7 +67,7 @@ TEST(selector_timings, selector_timings)
 #endif
 
   const unsigned NUM_RUNS = 5;
-  stk::performance_tests::BatchTimer batchTimer(MPI_COMM_WORLD);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     VariableSelectorFixture fix(N);

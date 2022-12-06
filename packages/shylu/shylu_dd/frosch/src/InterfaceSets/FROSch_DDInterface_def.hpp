@@ -833,7 +833,6 @@ namespace FROSch {
 
             default:
                 FROSCH_ASSERT(false,"FROSch::DDInterface: Specify a valid communication strategy.");
-                break;
         }
 
         componentsSubdomainsUnique = IntVecVec(NumMyNodes_);

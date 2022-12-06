@@ -5,6 +5,8 @@
 // See packages/seacas/LICENSE for details
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 
 namespace Ioss {
@@ -51,7 +53,7 @@ namespace Ioss {
    *   - all ranks clear the Destructor and go to next step.
    *
    */
-  class SerializeIO
+  class IOSS_EXPORT SerializeIO
   {
   public:
     /**
