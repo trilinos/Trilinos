@@ -16,6 +16,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Rand_Solver_Driver
+  SOURCES jenn_rand_driver.cpp 
+  ARGS 
+    "--verbose"
+  COMM serial mpi
+  )
+
 IF (Tpetra_INST_COMPLEX_DOUBLE)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
   IF (${PACKAGE_NAME}_ENABLE_Triutils)

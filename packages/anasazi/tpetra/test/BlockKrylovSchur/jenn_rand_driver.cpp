@@ -42,23 +42,15 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
-
 #include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziOrthoManager.hpp"
-#include "AnasaziSVQBOrthoManager.hpp"
-#include "AnasaziBasicOrthoManager.hpp"
-#include "AnasaziICGSOrthoManager.hpp"
+#include "AnasaziRandomizedSolMgr.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_LAPACK.hpp>
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-
-using Tpetra::CrsMatrix;
-using Tpetra::Map;
 
 template <class ST>
 void print(std::vector<ST> const &a) {
@@ -73,11 +65,12 @@ int main(int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
+  using Tpetra::CrsMatrix;
+  using Tpetra::Map;
   using std::cout;
   using std::endl;
 
   typedef double                              ST;
-  typedef int                                 OT;
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
   typedef Tpetra::MultiVector<ST>             MV;
@@ -91,10 +84,10 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   const int MyPID = comm->getRank ();
-  const int NumImages = comm->getSize ();
 
   bool testFailed;
   bool verbose = true;
+  bool debug = false;
   std::string ortho("ICGS");
   std::string filename("bcsstk12.mtx");
   int nev = 4;
@@ -103,6 +96,8 @@ int main(int argc, char *argv[])
   MT tol = 1.0e-2;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("ortho",&ortho,"Orthogonalization method (DGKS, ICGS, or SVQB)");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("nsteps",&nsteps,"Number of times to apply A. ('q' parameter)");
@@ -117,131 +112,67 @@ int main(int argc, char *argv[])
     blockSize = nev;
   }
 
-  const int ROWS_PER_PROC = 10;
-  int dim = ROWS_PER_PROC * NumImages;
-  RCP<CrsMatrix<ST>> A;
-  A = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
+  RCP<CrsMatrix<ST>> A = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
   RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
   // Create initial vectors
   RCP<MV> randVecs = rcp(new MV(map,blockSize));
   randVecs->randomize();
-  //std::cout << "Printing orig rand vec: " << std::endl;
-  //MVT::MvPrint(*randVecs, std::cout);
 
-  for( int i = 0; i < nsteps; i++ ){
-    OPT::Apply( *A, *randVecs, *randVecs );
-  }
-  //std::cout << "Printing rand vec after " << nsteps << " applies of A." << std::endl;
-  //MVT::MvPrint(*randVecs, std::cout);
-  //std::cout << "Print randVecs BEFORE orthog:" << std::endl;
-  //MVT::MvPrint(*randVecs, std::cout);
-
-  // Set up Orthomanager and orthonormalize random vecs. 
-  Teuchos::RCP<Anasazi::OrthoManager<ST,MV> > orthoMgr;
-  if (ortho=="SVQB") {
-    orthoMgr = Teuchos::rcp( new Anasazi::SVQBOrthoManager<ST,MV,OP>());
-  } else if (ortho=="DGKS") {
-    //if (ortho_kappa_ <= 0) {
-    //  orthoMgr= Teuchos::rcp( new Anasazi::BasicOrthoManager<ST,MV,OP>();
-    //} else {
-      orthoMgr = Teuchos::rcp( new Anasazi::BasicOrthoManager<ST,MV,OP>());
-    //}   
-  } else if (ortho=="ICGS") {
-    orthoMgr = Teuchos::rcp( new Anasazi::ICGSOrthoManager<ST,MV,OP>());
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(ortho!="SVQB"&&ortho!="DGKS"&&ortho!="ICGS",std::logic_error,"Anasazi::RandomSolver Invalid orthogonalization type.");
+  // Create eigenproblem
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp (new Anasazi::BasicEigenproblem<ST,MV,OP> (A, randVecs));
+  problem->setNEV (nev);
+  // Inform the eigenproblem that you are done passing it information
+  bool boolret = problem->setProblem ();
+  if (! boolret) {
+    if (MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;
+    }
+    return -1;
   }
 
-  int rank = orthoMgr->normalize(*randVecs);
-  if( rank < blockSize ){
-    std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
+  // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
+  if (verbose) {
+    verbosity += Anasazi::IterationDetails;
   }
-  //std::cout << "Print randVecs after orthog:" << std::endl;
-  //MVT::MvPrint(*randVecs, std::cout);
-
-  //Compute H = Q^TAQ. (RR projection) 
-  RCP<MV> EigenVecs = rcp(new MV(map,blockSize));
-  Teuchos::SerialDenseMatrix<OT,ST> H (blockSize, blockSize);
-
-  OPT::Apply( *A, *randVecs, *EigenVecs ); //EigenVecs used for temp storage here. 
-  MVT::MvTransMv(ONE, *randVecs, *EigenVecs, H);
-  //std::cout << "printing H: " << std::endl;
-  //H.print(std::cout);
-
-  // Solve projected eigenvalue problem.
-  Teuchos::LAPACK<OT,ST> lapack;
-  Teuchos::SerialDenseMatrix<OT,ST> evects (blockSize, blockSize);
-  std::vector<MT> evals_real(blockSize);
-  std::vector<MT> evals_imag(blockSize);
-
-  int info = -1000; 
-  ST* vlr = 0; 
-  const int ldv = 1; 
-
-  // Size of workspace and workspace for DGEEV
-  int lwork = -1;
-  std::vector<ST> work(1);
-  std::vector<MT> rwork(2*blockSize);
-
-  //Find workspace size for DGEEV:
-
-  // 'N' no left eigenvectors. 
-  // 'V' to compute right eigenvectors. 
-  // blockSize = dimension of H
-  // H matrix
-  // H.stride = leading dimension of H
-  // Array to store evals, real parts
-  // Array to store evals, imag parts
-  // vlr -> stores left evects, so don't need this
-  // lead dim of vlr
-  // evects =  array to store right evects
-  // evects.stride = lead dim ovf evects
-  // work = work array
-  // lwork -1 means to query for array size
-  // rwork - not referenced because ST is not complex
-  //std::cout << "Eigenvalse BEFORE LAPACK, real parts are:" << std::endl;
-  //print(evals_real);
-  //std::cout << std::endl;
-  std::cout << "Starting Harm Ritz val solve." << std::endl;
-  lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
-  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ST>::real (work[0])));
-  work.resize( lwork );
-  // Solve for Harmonic Ritz Values:
-  lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
-  //std::cout << "Resulting eigenvalues are: " << std::endl;
-  //print(evals_real);
-  //std::cout << std::endl;
-  if(info != 0){
-    std::cout << "Warning!! Anasazi::RandomSolver GEEV solve : info = " << info << std::endl;
+  if (debug) {
+    verbosity += Anasazi::Debug;
   }
-  std::cout << "Past Harm Ritz val solve." << std::endl;
-  // Compute the eigenvalues and eigenvectors from the original eigenproblem
-  Anasazi::Eigensolution<ST,MV> sol;
-  std::vector<Anasazi::Value<ST>> EigenVals(blockSize);
-  for( int i = 0; i < blockSize; i++){
-    EigenVals[i].realpart = evals_real[i];
-    EigenVals[i].imagpart = evals_imag[i];
+
+  // Eigensolver parameters
+  //
+  // Create parameter list to pass into the solver manager
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Maximum Iterations", nsteps );
+  MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Orthogonalization", ortho ); 
+  //
+  // Create the solver manager
+  Anasazi::Experimental::RandomizedSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+  std::cout << "DEBUG: Created solver manager. Calling solve." << std::endl;
+  //int numItsSlvr = MySolverMgr.getNumIters();
+  //std::cout << "DEBUG: Num iters is : " << numItsSlvr << std::endl;
+
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  testFailed = false;
+  if (returnCode != Anasazi::Converged) {
+    testFailed = true;
   }
-  sol.Evals = EigenVals;
-  MVT::MvTimesMatAddMv(ONE,*randVecs,evects,0.0,*EigenVecs);
-  sol.Evecs = EigenVecs;
-  sol.numVecs = blockSize;
-  //TODO: Do evals change much if we compute the Rayleigh Quotient for them? ... But we didn't do that in Matlab, did we... didn't use those.
-
-
-
-
 
   // Extract evects/evals from solution
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   std::cout << "Verifying Eigenvector residuals" << std::endl;
   // Verify Evec residuals by hand. 
   if (numev > 0) {
-  //std::cout << "In the numev>0 if" << std::endl;
-  // Verify Evec residuals by hand. 
     std::ostringstream os;
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
