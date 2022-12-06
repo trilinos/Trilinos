@@ -45,7 +45,7 @@ struct PyCallBack_ROL_TypeE_AugmentedLagrangianAlgorithm_double_t : public ROL::
 void bind_ROL_TypeE_AugmentedLagrangianAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeE::AugmentedLagrangianAlgorithm file:ROL_TypeE_AugmentedLagrangianAlgorithm.hpp line:59
-		pybind11::class_<ROL::TypeE::AugmentedLagrangianAlgorithm<double>, Teuchos::RCP<ROL::TypeE::AugmentedLagrangianAlgorithm<double>>, PyCallBack_ROL_TypeE_AugmentedLagrangianAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "AugmentedLagrangianAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeE::AugmentedLagrangianAlgorithm<double>, Teuchos::RCP<ROL::TypeE::AugmentedLagrangianAlgorithm<double>>, PyCallBack_ROL_TypeE_AugmentedLagrangianAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "AugmentedLagrangianAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeE_AugmentedLagrangianAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeE_AugmentedLagrangianAlgorithm_double_t(o); } ) );

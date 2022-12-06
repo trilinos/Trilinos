@@ -79,7 +79,7 @@ struct PyCallBack_ROL_TypeG_StabilizedLCLAlgorithm_double_t : public ROL::TypeG:
 void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeG::AlgorithmState file:ROL_TypeG_Algorithm.hpp line:62
-		pybind11::class_<ROL::TypeG::AlgorithmState<double>, Teuchos::RCP<ROL::TypeG::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeG"), "AlgorithmState_double_t", "");
+		pybind11::class_<ROL::TypeG::AlgorithmState<double>, Teuchos::RCP<ROL::TypeG::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeG"), "AlgorithmState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::TypeG::AlgorithmState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::TypeG::AlgorithmState<double> const &o){ return new ROL::TypeG::AlgorithmState<double>(o); } ) );
 		cl.def_readwrite("searchSize", &ROL::TypeG::AlgorithmState<double>::searchSize);
@@ -109,14 +109,14 @@ void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("assign", (struct ROL::AlgorithmState<double> & (ROL::AlgorithmState<double>::*)(const struct ROL::AlgorithmState<double> &)) &ROL::AlgorithmState<double>::operator=, "C++: ROL::AlgorithmState<double>::operator=(const struct ROL::AlgorithmState<double> &) --> struct ROL::AlgorithmState<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::TypeG::Algorithm file:ROL_TypeG_Algorithm.hpp line:90
-		pybind11::class_<ROL::TypeG::Algorithm<double>, Teuchos::RCP<ROL::TypeG::Algorithm<double>>> cl(M("ROL::TypeG"), "Algorithm_double_t", "");
+		pybind11::class_<ROL::TypeG::Algorithm<double>, Teuchos::RCP<ROL::TypeG::Algorithm<double>>> cl(M("ROL::TypeG"), "Algorithm_double_t", "", pybind11::module_local());
 		cl.def("setStatusTest", [](ROL::TypeG::Algorithm<double> &o, const class Teuchos::RCP<class ROL::StatusTest<double> > & a0) -> void { return o.setStatusTest(a0); }, "", pybind11::arg("status"));
 		cl.def("setStatusTest", (void (ROL::TypeG::Algorithm<double>::*)(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool)) &ROL::TypeG::Algorithm<double>::setStatusTest, "C++: ROL::TypeG::Algorithm<double>::setStatusTest(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool) --> void", pybind11::arg("status"), pybind11::arg("combineStatus"));
 		cl.def("getState", (class Teuchos::RCP<const struct ROL::TypeG::AlgorithmState<double> > (ROL::TypeG::Algorithm<double>::*)() const) &ROL::TypeG::Algorithm<double>::getState, "C++: ROL::TypeG::Algorithm<double>::getState() const --> class Teuchos::RCP<const struct ROL::TypeG::AlgorithmState<double> >");
 		cl.def("reset", (void (ROL::TypeG::Algorithm<double>::*)()) &ROL::TypeG::Algorithm<double>::reset, "C++: ROL::TypeG::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeG::AugmentedLagrangianAlgorithm file:ROL_TypeG_AugmentedLagrangianAlgorithm.hpp line:60
-		pybind11::class_<ROL::TypeG::AugmentedLagrangianAlgorithm<double>, Teuchos::RCP<ROL::TypeG::AugmentedLagrangianAlgorithm<double>>, PyCallBack_ROL_TypeG_AugmentedLagrangianAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "AugmentedLagrangianAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeG::AugmentedLagrangianAlgorithm<double>, Teuchos::RCP<ROL::TypeG::AugmentedLagrangianAlgorithm<double>>, PyCallBack_ROL_TypeG_AugmentedLagrangianAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "AugmentedLagrangianAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeG_AugmentedLagrangianAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeG_AugmentedLagrangianAlgorithm_double_t(o); } ) );
@@ -127,7 +127,7 @@ void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("reset", (void (ROL::TypeG::Algorithm<double>::*)()) &ROL::TypeG::Algorithm<double>::reset, "C++: ROL::TypeG::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeG::MoreauYosidaAlgorithm file:ROL_TypeG_MoreauYosidaAlgorithm.hpp line:58
-		pybind11::class_<ROL::TypeG::MoreauYosidaAlgorithm<double>, Teuchos::RCP<ROL::TypeG::MoreauYosidaAlgorithm<double>>, PyCallBack_ROL_TypeG_MoreauYosidaAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "MoreauYosidaAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeG::MoreauYosidaAlgorithm<double>, Teuchos::RCP<ROL::TypeG::MoreauYosidaAlgorithm<double>>, PyCallBack_ROL_TypeG_MoreauYosidaAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "MoreauYosidaAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeG_MoreauYosidaAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeG_MoreauYosidaAlgorithm_double_t(o); } ) );
@@ -138,7 +138,7 @@ void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("reset", (void (ROL::TypeG::Algorithm<double>::*)()) &ROL::TypeG::Algorithm<double>::reset, "C++: ROL::TypeG::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeG::InteriorPointAlgorithm file:ROL_TypeG_InteriorPointAlgorithm.hpp line:58
-		pybind11::class_<ROL::TypeG::InteriorPointAlgorithm<double>, Teuchos::RCP<ROL::TypeG::InteriorPointAlgorithm<double>>, PyCallBack_ROL_TypeG_InteriorPointAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "InteriorPointAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeG::InteriorPointAlgorithm<double>, Teuchos::RCP<ROL::TypeG::InteriorPointAlgorithm<double>>, PyCallBack_ROL_TypeG_InteriorPointAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "InteriorPointAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeG_InteriorPointAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeG_InteriorPointAlgorithm_double_t(o); } ) );
@@ -149,7 +149,7 @@ void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("reset", (void (ROL::TypeG::Algorithm<double>::*)()) &ROL::TypeG::Algorithm<double>::reset, "C++: ROL::TypeG::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeG::StabilizedLCLAlgorithm file:ROL_TypeG_StabilizedLCLAlgorithm.hpp line:61
-		pybind11::class_<ROL::TypeG::StabilizedLCLAlgorithm<double>, Teuchos::RCP<ROL::TypeG::StabilizedLCLAlgorithm<double>>, PyCallBack_ROL_TypeG_StabilizedLCLAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "StabilizedLCLAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeG::StabilizedLCLAlgorithm<double>, Teuchos::RCP<ROL::TypeG::StabilizedLCLAlgorithm<double>>, PyCallBack_ROL_TypeG_StabilizedLCLAlgorithm_double_t, ROL::TypeG::Algorithm<double>> cl(M("ROL::TypeG"), "StabilizedLCLAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeG_StabilizedLCLAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeG_StabilizedLCLAlgorithm_double_t(o); } ) );
@@ -160,7 +160,7 @@ void bind_ROL_TypeG_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("reset", (void (ROL::TypeG::Algorithm<double>::*)()) &ROL::TypeG::Algorithm<double>::reset, "C++: ROL::TypeG::Algorithm<double>::reset() --> void");
 	}
 	// ROL::TypeG::EAlgorithmG file:ROL_TypeG_AlgorithmFactory.hpp line:64
-	pybind11::enum_<ROL::TypeG::EAlgorithmG>(M("ROL::TypeG"), "EAlgorithmG", pybind11::arithmetic(), "Enumeration of generally constrained algorithm types.\n\n    \n    ALGORITHM_G_AUGMENTEDLAGRANGIAN describe\n    \n\n    ALGORITHM_G_MOREAUYOSIDA        describe\n    \n\n    ALGORITHM_G_INTERIORPOINT       describe\n    \n\n    ALGORITHM_G_STABILIZEDLCL       describe")
+	pybind11::enum_<ROL::TypeG::EAlgorithmG>(M("ROL::TypeG"), "EAlgorithmG", pybind11::arithmetic(), "Enumeration of generally constrained algorithm types.\n\n    \n    ALGORITHM_G_AUGMENTEDLAGRANGIAN describe\n    \n\n    ALGORITHM_G_MOREAUYOSIDA        describe\n    \n\n    ALGORITHM_G_INTERIORPOINT       describe\n    \n\n    ALGORITHM_G_STABILIZEDLCL       describe", pybind11::module_local())
 		.value("ALGORITHM_G_AUGMENTEDLAGRANGIAN", ROL::TypeG::ALGORITHM_G_AUGMENTEDLAGRANGIAN)
 		.value("ALGORITHM_G_MOREAUYOSIDA", ROL::TypeG::ALGORITHM_G_MOREAUYOSIDA)
 		.value("ALGORITHM_G_INTERIORPOINT", ROL::TypeG::ALGORITHM_G_INTERIORPOINT)

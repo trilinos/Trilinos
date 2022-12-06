@@ -272,7 +272,7 @@ struct PyCallBack_ROL_DescentDirection_U_double_t : public ROL::DescentDirection
 void bind_ROL_Step(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Step file:ROL_Step.hpp line:68
-		pybind11::class_<ROL::Step<double>, Teuchos::RCP<ROL::Step<double>>, PyCallBack_ROL_Step_double_t> cl(M("ROL"), "Step_double_t", "");
+		pybind11::class_<ROL::Step<double>, Teuchos::RCP<ROL::Step<double>>, PyCallBack_ROL_Step_double_t> cl(M("ROL"), "Step_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Step<double>(); }, [](){ return new PyCallBack_ROL_Step_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Step_double_t const &o){ return new PyCallBack_ROL_Step_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Step<double> const &o){ return new ROL::Step<double>(o); } ) );
@@ -296,7 +296,7 @@ void bind_ROL_Step(std::function< pybind11::module &(std::string const &namespac
 		cl.def("assign", (class ROL::Step<double> & (ROL::Step<double>::*)(const class ROL::Step<double> &)) &ROL::Step<double>::operator=, "C++: ROL::Step<double>::operator=(const class ROL::Step<double> &) --> class ROL::Step<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::DescentDirection_U file:ROL_DescentDirection_U.hpp line:58
-		pybind11::class_<ROL::DescentDirection_U<double>, Teuchos::RCP<ROL::DescentDirection_U<double>>, PyCallBack_ROL_DescentDirection_U_double_t> cl(M("ROL"), "DescentDirection_U_double_t", "");
+		pybind11::class_<ROL::DescentDirection_U<double>, Teuchos::RCP<ROL::DescentDirection_U<double>>, PyCallBack_ROL_DescentDirection_U_double_t> cl(M("ROL"), "DescentDirection_U_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_DescentDirection_U_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_DescentDirection_U_double_t(); } ) );
 		cl.def("initialize", (void (ROL::DescentDirection_U<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::DescentDirection_U<double>::initialize, "C++: ROL::DescentDirection_U<double>::initialize(const class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("x"), pybind11::arg("g"));

@@ -39,7 +39,7 @@
 void bind_ROL_TypeU_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::TypeU::EAlgorithmU file:ROL_TypeU_AlgorithmFactory.hpp line:62
-	pybind11::enum_<ROL::TypeU::EAlgorithmU>(M("ROL::TypeU"), "EAlgorithmU", pybind11::arithmetic(), "Enumeration of unconstrained algorithm types.\n\n    \n    ALGORITHM_U_BUNDLE         describe\n    \n\n    ALGORITHM_U_LINESEARCH     describe\n    \n\n    ALGORITHM_U_TRUSTREGION    describe")
+	pybind11::enum_<ROL::TypeU::EAlgorithmU>(M("ROL::TypeU"), "EAlgorithmU", pybind11::arithmetic(), "Enumeration of unconstrained algorithm types.\n\n    \n    ALGORITHM_U_BUNDLE         describe\n    \n\n    ALGORITHM_U_LINESEARCH     describe\n    \n\n    ALGORITHM_U_TRUSTREGION    describe", pybind11::module_local())
 		.value("ALGORITHM_U_BUNDLE", ROL::TypeU::ALGORITHM_U_BUNDLE)
 		.value("ALGORITHM_U_LINESEARCH", ROL::TypeU::ALGORITHM_U_LINESEARCH)
 		.value("ALGORITHM_U_TRUSTREGION", ROL::TypeU::ALGORITHM_U_TRUSTREGION)

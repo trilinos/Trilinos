@@ -48,7 +48,7 @@ struct PyCallBack_ROL_TypeB_QuasiNewtonAlgorithm_double_t : public ROL::TypeB::Q
 void bind_ROL_TypeB_QuasiNewtonAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeB::QuasiNewtonAlgorithm file:ROL_TypeB_QuasiNewtonAlgorithm.hpp line:58
-		pybind11::class_<ROL::TypeB::QuasiNewtonAlgorithm<double>, Teuchos::RCP<ROL::TypeB::QuasiNewtonAlgorithm<double>>, PyCallBack_ROL_TypeB_QuasiNewtonAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "QuasiNewtonAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::QuasiNewtonAlgorithm<double>, Teuchos::RCP<ROL::TypeB::QuasiNewtonAlgorithm<double>>, PyCallBack_ROL_TypeB_QuasiNewtonAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "QuasiNewtonAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::QuasiNewtonAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_QuasiNewtonAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 

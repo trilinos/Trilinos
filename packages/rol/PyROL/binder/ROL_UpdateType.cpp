@@ -105,7 +105,7 @@ struct PyCallBack_ROL_LinearOperator_double_t : public ROL::LinearOperator<doubl
 void bind_ROL_UpdateType(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::UpdateType file:ROL_UpdateType.hpp line:52
-	pybind11::enum_<ROL::UpdateType>(M("ROL"), "UpdateType", "")
+	pybind11::enum_<ROL::UpdateType>(M("ROL"), "UpdateType", "", pybind11::module_local())
 		.value("Initial", ROL::UpdateType::Initial)
 		.value("Accept", ROL::UpdateType::Accept)
 		.value("Revert", ROL::UpdateType::Revert)
@@ -118,7 +118,7 @@ void bind_ROL_UpdateType(std::function< pybind11::module &(std::string const &na
 	M("ROL").def("UpdateTypeToString", (std::string (*)(const enum ROL::UpdateType &)) &ROL::UpdateTypeToString, "C++: ROL::UpdateTypeToString(const enum ROL::UpdateType &) --> std::string", pybind11::arg("type"));
 
 	{ // ROL::LinearOperator file:ROL_LinearOperator.hpp line:71
-		pybind11::class_<ROL::LinearOperator<double>, Teuchos::RCP<ROL::LinearOperator<double>>, PyCallBack_ROL_LinearOperator_double_t> cl(M("ROL"), "LinearOperator_double_t", "");
+		pybind11::class_<ROL::LinearOperator<double>, Teuchos::RCP<ROL::LinearOperator<double>>, PyCallBack_ROL_LinearOperator_double_t> cl(M("ROL"), "LinearOperator_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_LinearOperator_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_LinearOperator_double_t(); } ) );
 		cl.def("update", [](ROL::LinearOperator<double> &o, const class ROL::Vector<double> & a0) -> void { return o.update(a0); }, "", pybind11::arg("x"));

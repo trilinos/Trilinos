@@ -213,7 +213,7 @@ struct PyCallBack_ROL_SPGTrustRegion_U_double_t : public ROL::SPGTrustRegion_U<d
 void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::CauchyPoint_U file:ROL_CauchyPoint_U.hpp line:57
-		pybind11::class_<ROL::CauchyPoint_U<double>, Teuchos::RCP<ROL::CauchyPoint_U<double>>, PyCallBack_ROL_CauchyPoint_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "CauchyPoint_U_double_t", "");
+		pybind11::class_<ROL::CauchyPoint_U<double>, Teuchos::RCP<ROL::CauchyPoint_U<double>>, PyCallBack_ROL_CauchyPoint_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "CauchyPoint_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::CauchyPoint_U<double>(); }, [](){ return new PyCallBack_ROL_CauchyPoint_U_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_CauchyPoint_U_double_t const &o){ return new PyCallBack_ROL_CauchyPoint_U_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::CauchyPoint_U<double> const &o){ return new ROL::CauchyPoint_U<double>(o); } ) );
@@ -225,7 +225,7 @@ void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::TrustRegion_U<double> & (ROL::TrustRegion_U<double>::*)(const class ROL::TrustRegion_U<double> &)) &ROL::TrustRegion_U<double>::operator=, "C++: ROL::TrustRegion_U<double>::operator=(const class ROL::TrustRegion_U<double> &) --> class ROL::TrustRegion_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::DogLeg_U file:ROL_DogLeg_U.hpp line:57
-		pybind11::class_<ROL::DogLeg_U<double>, Teuchos::RCP<ROL::DogLeg_U<double>>, PyCallBack_ROL_DogLeg_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "DogLeg_U_double_t", "");
+		pybind11::class_<ROL::DogLeg_U<double>, Teuchos::RCP<ROL::DogLeg_U<double>>, PyCallBack_ROL_DogLeg_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "DogLeg_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::DogLeg_U<double>(); }, [](){ return new PyCallBack_ROL_DogLeg_U_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_DogLeg_U_double_t const &o){ return new PyCallBack_ROL_DogLeg_U_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::DogLeg_U<double> const &o){ return new ROL::DogLeg_U<double>(o); } ) );
@@ -237,7 +237,7 @@ void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::TrustRegion_U<double> & (ROL::TrustRegion_U<double>::*)(const class ROL::TrustRegion_U<double> &)) &ROL::TrustRegion_U<double>::operator=, "C++: ROL::TrustRegion_U<double>::operator=(const class ROL::TrustRegion_U<double> &) --> class ROL::TrustRegion_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::DoubleDogLeg_U file:ROL_DoubleDogLeg_U.hpp line:57
-		pybind11::class_<ROL::DoubleDogLeg_U<double>, Teuchos::RCP<ROL::DoubleDogLeg_U<double>>, PyCallBack_ROL_DoubleDogLeg_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "DoubleDogLeg_U_double_t", "");
+		pybind11::class_<ROL::DoubleDogLeg_U<double>, Teuchos::RCP<ROL::DoubleDogLeg_U<double>>, PyCallBack_ROL_DoubleDogLeg_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "DoubleDogLeg_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::DoubleDogLeg_U<double>(); }, [](){ return new PyCallBack_ROL_DoubleDogLeg_U_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_DoubleDogLeg_U_double_t const &o){ return new PyCallBack_ROL_DoubleDogLeg_U_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::DoubleDogLeg_U<double> const &o){ return new ROL::DoubleDogLeg_U<double>(o); } ) );
@@ -249,7 +249,7 @@ void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::TrustRegion_U<double> & (ROL::TrustRegion_U<double>::*)(const class ROL::TrustRegion_U<double> &)) &ROL::TrustRegion_U<double>::operator=, "C++: ROL::TrustRegion_U<double>::operator=(const class ROL::TrustRegion_U<double> &) --> class ROL::TrustRegion_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::TruncatedCG_U file:ROL_TruncatedCG_U.hpp line:57
-		pybind11::class_<ROL::TruncatedCG_U<double>, Teuchos::RCP<ROL::TruncatedCG_U<double>>, PyCallBack_ROL_TruncatedCG_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "TruncatedCG_U_double_t", "");
+		pybind11::class_<ROL::TruncatedCG_U<double>, Teuchos::RCP<ROL::TruncatedCG_U<double>>, PyCallBack_ROL_TruncatedCG_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "TruncatedCG_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TruncatedCG_U_double_t const &o){ return new PyCallBack_ROL_TruncatedCG_U_double_t(o); } ) );
@@ -262,7 +262,7 @@ void bind_ROL_CauchyPoint_U(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::TrustRegion_U<double> & (ROL::TrustRegion_U<double>::*)(const class ROL::TrustRegion_U<double> &)) &ROL::TrustRegion_U<double>::operator=, "C++: ROL::TrustRegion_U<double>::operator=(const class ROL::TrustRegion_U<double> &) --> class ROL::TrustRegion_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::SPGTrustRegion_U file:ROL_SPGTrustRegion_U.hpp line:59
-		pybind11::class_<ROL::SPGTrustRegion_U<double>, Teuchos::RCP<ROL::SPGTrustRegion_U<double>>, PyCallBack_ROL_SPGTrustRegion_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "SPGTrustRegion_U_double_t", "");
+		pybind11::class_<ROL::SPGTrustRegion_U<double>, Teuchos::RCP<ROL::SPGTrustRegion_U<double>>, PyCallBack_ROL_SPGTrustRegion_U_double_t, ROL::TrustRegion_U<double>> cl(M("ROL"), "SPGTrustRegion_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_SPGTrustRegion_U_double_t const &o){ return new PyCallBack_ROL_SPGTrustRegion_U_double_t(o); } ) );

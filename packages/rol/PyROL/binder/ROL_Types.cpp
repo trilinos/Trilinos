@@ -42,7 +42,7 @@ struct PyCallBack_ROL_Exception_NotImplemented : public ROL::Exception::NotImple
 void bind_ROL_Types(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Exception::NotImplemented file:ROL_Types.hpp line:914
-		pybind11::class_<ROL::Exception::NotImplemented, Teuchos::RCP<ROL::Exception::NotImplemented>, PyCallBack_ROL_Exception_NotImplemented, std::logic_error> cl(M("ROL::Exception"), "NotImplemented", "");
+		pybind11::class_<ROL::Exception::NotImplemented, Teuchos::RCP<ROL::Exception::NotImplemented>, PyCallBack_ROL_Exception_NotImplemented, std::logic_error> cl(M("ROL::Exception"), "NotImplemented", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Exception_NotImplemented const &o){ return new PyCallBack_ROL_Exception_NotImplemented(o); } ) );

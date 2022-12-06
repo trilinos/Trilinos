@@ -62,7 +62,7 @@ struct PyCallBack_ROL_TypeB_ColemanLiAlgorithm_double_t : public ROL::TypeB::Col
 void bind_ROL_TypeB_TrustRegionSPGAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeB::TrustRegionSPGAlgorithm file:ROL_TypeB_TrustRegionSPGAlgorithm.hpp line:59
-		pybind11::class_<ROL::TypeB::TrustRegionSPGAlgorithm<double>, Teuchos::RCP<ROL::TypeB::TrustRegionSPGAlgorithm<double>>, PyCallBack_ROL_TypeB_TrustRegionSPGAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "TrustRegionSPGAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::TrustRegionSPGAlgorithm<double>, Teuchos::RCP<ROL::TypeB::TrustRegionSPGAlgorithm<double>>, PyCallBack_ROL_TypeB_TrustRegionSPGAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "TrustRegionSPGAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::TrustRegionSPGAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_TrustRegionSPGAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 
@@ -74,7 +74,7 @@ void bind_ROL_TypeB_TrustRegionSPGAlgorithm(std::function< pybind11::module &(st
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeB::ColemanLiAlgorithm file:ROL_TypeB_ColemanLiAlgorithm.hpp line:61
-		pybind11::class_<ROL::TypeB::ColemanLiAlgorithm<double>, Teuchos::RCP<ROL::TypeB::ColemanLiAlgorithm<double>>, PyCallBack_ROL_TypeB_ColemanLiAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "ColemanLiAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::ColemanLiAlgorithm<double>, Teuchos::RCP<ROL::TypeB::ColemanLiAlgorithm<double>>, PyCallBack_ROL_TypeB_ColemanLiAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "ColemanLiAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::ColemanLiAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_ColemanLiAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 
@@ -86,7 +86,7 @@ void bind_ROL_TypeB_TrustRegionSPGAlgorithm(std::function< pybind11::module &(st
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	// ROL::TypeB::EAlgorithmB file:ROL_TypeB_AlgorithmFactory.hpp line:74
-	pybind11::enum_<ROL::TypeB::EAlgorithmB>(M("ROL::TypeB"), "EAlgorithmB", pybind11::arithmetic(), "Enumeration of bound constrained algorithm types.\n\n    \n    ALGORITHM_B_LINESEARCH          describe\n    \n\n    ALGORITHM_B_TRUSTREGION         describe\n    \n\n    ALGORITHM_B_MOREAUYOSIDA        describe\n    \n\n    ALGORITHM_B_PRIMALDUALACTIVESET describe\n    \n\n    ALGORITHM_B_INTERIORPOINT       describe\n    \n\n    ALGORITHM_B_SPECTRALGRADIENT    describe")
+	pybind11::enum_<ROL::TypeB::EAlgorithmB>(M("ROL::TypeB"), "EAlgorithmB", pybind11::arithmetic(), "Enumeration of bound constrained algorithm types.\n\n    \n    ALGORITHM_B_LINESEARCH          describe\n    \n\n    ALGORITHM_B_TRUSTREGION         describe\n    \n\n    ALGORITHM_B_MOREAUYOSIDA        describe\n    \n\n    ALGORITHM_B_PRIMALDUALACTIVESET describe\n    \n\n    ALGORITHM_B_INTERIORPOINT       describe\n    \n\n    ALGORITHM_B_SPECTRALGRADIENT    describe", pybind11::module_local())
 		.value("ALGORITHM_B_LINESEARCH", ROL::TypeB::ALGORITHM_B_LINESEARCH)
 		.value("ALGORITHM_B_TRUSTREGION", ROL::TypeB::ALGORITHM_B_TRUSTREGION)
 		.value("ALGORITHM_B_MOREAUYOSIDA", ROL::TypeB::ALGORITHM_B_MOREAUYOSIDA)

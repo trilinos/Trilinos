@@ -39,7 +39,7 @@
 void bind_ROL_TypeE_AlgorithmFactory(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::TypeE::EAlgorithmE file:ROL_TypeE_AlgorithmFactory.hpp line:59
-	pybind11::enum_<ROL::TypeE::EAlgorithmE>(M("ROL::TypeE"), "EAlgorithmE", pybind11::arithmetic(), "Enumeration of equality constrained algorithm types.")
+	pybind11::enum_<ROL::TypeE::EAlgorithmE>(M("ROL::TypeE"), "EAlgorithmE", pybind11::arithmetic(), "Enumeration of equality constrained algorithm types.", pybind11::module_local())
 		.value("ALGORITHM_E_AUGMENTEDLAGRANGIAN", ROL::TypeE::ALGORITHM_E_AUGMENTEDLAGRANGIAN)
 		.value("ALGORITHM_E_FLETCHER", ROL::TypeE::ALGORITHM_E_FLETCHER)
 		.value("ALGORITHM_E_COMPOSITESTEP", ROL::TypeE::ALGORITHM_E_COMPOSITESTEP)

@@ -4,17 +4,19 @@ std/typeinfo.cpp
 std/locale_classes.cpp
 ROL_Elementwise_Function.cpp
 std/istream_tcc.cpp
-Teuchos_TypeNameTraits.cpp
+Teuchos_ConstTypeTraits.cpp
+ROL_ScalarTraits.cpp
 Teuchos_any.cpp
 Teuchos_ENull.cpp
-Teuchos_RCPDecl.cpp
 Teuchos_Ptr.cpp
 Teuchos_RCP.cpp
 ROL_Ptr.cpp
 ROL_Types.cpp
 ROL_Elementwise_Reduce.cpp
+ROL_UnaryFunctions.cpp
 ROL_UpdateType.cpp
 Teuchos_DataAccess.cpp
+Teuchos_ScalarTraits.cpp
 Teuchos_ParameterListExceptions.cpp
 Teuchos_iostream_helpers.cpp
 Teuchos_FancyOStream.cpp
@@ -43,6 +45,7 @@ ROL_KrylovFactory.cpp
 ROL_TypeU_Algorithm_1.cpp
 ROL_ScalarController.cpp
 ROL_TypeB_MoreauYosidaAlgorithm.cpp
+ROL_InteriorPointObjective.cpp
 ROL_TypeB_InteriorPointAlgorithm.cpp
 ROL_TypeB_QuasiNewtonAlgorithm.cpp
 ROL_PQNObjective.cpp
@@ -50,6 +53,7 @@ ROL_TypeB_TrustRegionSPGAlgorithm.cpp
 ROL_TypeE_Algorithm.cpp
 ROL_ConstraintStatusTest.cpp
 ROL_TypeE_AugmentedLagrangianAlgorithm.cpp
+ROL_FletcherObjectiveBase.cpp
 ROL_TypeE_FletcherAlgorithm.cpp
 ROL_ElasticLinearConstraint.cpp
 ROL_TypeE_StabilizedLCLAlgorithm.cpp

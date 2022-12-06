@@ -176,7 +176,7 @@ struct PyCallBack_ROL_Algorithm_double_t : public ROL::Algorithm<double> {
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Constraint file: line:30
-		pybind11::class_<ROL::Constraint<double>, Teuchos::RCP<ROL::Constraint<double>>, PyCallBack_ROL_Constraint_double_t> cl(M("ROL"), "Constraint_double_t", "");
+		pybind11::class_<ROL::Constraint<double>, Teuchos::RCP<ROL::Constraint<double>>, PyCallBack_ROL_Constraint_double_t> cl(M("ROL"), "Constraint_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Constraint_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Constraint_double_t const &>());
 		cl.def("update", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
@@ -195,8 +195,19 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 		cl.def("isActivated", (bool (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::isActivated, "Check if constraints are on\n\nC++: ROL::Constraint<double>::isActivated() --> bool");
 		cl.def("assign", (class ROL::Constraint<double> & (ROL::Constraint<double>::*)(const class ROL::Constraint<double> &)) &ROL::Constraint<double>::operator=, "C++: ROL::Constraint<double>::operator=(const class ROL::Constraint<double> &) --> class ROL::Constraint<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
+	{ // ROL::Solver file: line:33
+		pybind11::class_<ROL::Solver<double>, Teuchos::RCP<ROL::Solver<double>>> cl(M("ROL"), "Solver_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Problem<double> > &, class Teuchos::ParameterList &>(), pybind11::arg("opt"), pybind11::arg("parlist") );
+
+		cl.def( pybind11::init( [](ROL::Solver<double> const &o){ return new ROL::Solver<double>(o); } ) );
+		cl.def("solve", [](ROL::Solver<double> &o) -> int { return o.solve(); }, "");
+		cl.def("solve", [](ROL::Solver<double> &o, const class Teuchos::RCP<class ROL::StatusTest<double> > & a0) -> int { return o.solve(a0); }, "", pybind11::arg("status"));
+		cl.def("solve", (int (ROL::Solver<double>::*)(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool)) &ROL::Solver<double>::solve, "Solve optimization problem with no iteration output.\n\n      \n          is a user-defined StatusTest\n      \n\n   if true, the user-defined StatusTest will be combined with the default StatusTest\n\n      ---\n\nC++: ROL::Solver<double>::solve(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool) --> int", pybind11::arg("status"), pybind11::arg("combineStatus"));
+		cl.def("getAlgorithmState", (class Teuchos::RCP<const struct ROL::AlgorithmState<double> > (ROL::Solver<double>::*)() const) &ROL::Solver<double>::getAlgorithmState, "C++: ROL::Solver<double>::getAlgorithmState() const --> class Teuchos::RCP<const struct ROL::AlgorithmState<double> >");
+		cl.def("reset", (void (ROL::Solver<double>::*)()) &ROL::Solver<double>::reset, "Reset both Algorithm and Step.\n\n      This function will reset the AlgorithmState and reinitialize the\n      Step.  This function does not permit changing the Step specified\n      upon construction.  To change the Step, reinitialize the\n      OptimizationSolver.\n\n      ---\n\nC++: ROL::Solver<double>::reset() --> void");
+	}
 	{ // ROL::Algorithm file: line:34
-		pybind11::class_<ROL::Algorithm<double>, Teuchos::RCP<ROL::Algorithm<double>>, PyCallBack_ROL_Algorithm_double_t> cl(M("ROL"), "Algorithm_double_t", "");
+		pybind11::class_<ROL::Algorithm<double>, Teuchos::RCP<ROL::Algorithm<double>>, PyCallBack_ROL_Algorithm_double_t> cl(M("ROL"), "Algorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Step<double> > & a0, const class Teuchos::RCP<class ROL::StatusTest<double> > & a1){ return new ROL::Algorithm<double>(a0, a1); }, [](const class Teuchos::RCP<class ROL::Step<double> > & a0, const class Teuchos::RCP<class ROL::StatusTest<double> > & a1){ return new PyCallBack_ROL_Algorithm_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Step<double> > &, const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool>(), pybind11::arg("step"), pybind11::arg("status"), pybind11::arg("printHeader") );
 

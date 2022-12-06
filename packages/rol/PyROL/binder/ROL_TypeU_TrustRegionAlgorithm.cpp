@@ -47,7 +47,7 @@ struct PyCallBack_ROL_TypeU_TrustRegionAlgorithm_double_t : public ROL::TypeU::T
 void bind_ROL_TypeU_TrustRegionAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeU::TrustRegionAlgorithm file:ROL_TypeU_TrustRegionAlgorithm.hpp line:62
-		pybind11::class_<ROL::TypeU::TrustRegionAlgorithm<double>, Teuchos::RCP<ROL::TypeU::TrustRegionAlgorithm<double>>, PyCallBack_ROL_TypeU_TrustRegionAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "TrustRegionAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeU::TrustRegionAlgorithm<double>, Teuchos::RCP<ROL::TypeU::TrustRegionAlgorithm<double>>, PyCallBack_ROL_TypeU_TrustRegionAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "TrustRegionAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeU::TrustRegionAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeU_TrustRegionAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("parlist"), pybind11::arg("secant") );
 

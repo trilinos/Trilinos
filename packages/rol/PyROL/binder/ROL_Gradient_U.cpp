@@ -1246,7 +1246,7 @@ struct PyCallBack_ROL_TrustRegion_U_double_t : public ROL::TrustRegion_U<double>
 void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Gradient_U file:ROL_Gradient_U.hpp line:60
-		pybind11::class_<ROL::Gradient_U<double>, Teuchos::RCP<ROL::Gradient_U<double>>, PyCallBack_ROL_Gradient_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "Gradient_U_double_t", "");
+		pybind11::class_<ROL::Gradient_U<double>, Teuchos::RCP<ROL::Gradient_U<double>>, PyCallBack_ROL_Gradient_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "Gradient_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Gradient_U<double>(); }, [](){ return new PyCallBack_ROL_Gradient_U_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Gradient_U_double_t const &o){ return new PyCallBack_ROL_Gradient_U_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Gradient_U<double> const &o){ return new ROL::Gradient_U<double>(o); } ) );
@@ -1260,7 +1260,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::DescentDirection_U<double> & (ROL::DescentDirection_U<double>::*)(const class ROL::DescentDirection_U<double> &)) &ROL::DescentDirection_U<double>::operator=, "C++: ROL::DescentDirection_U<double>::operator=(const class ROL::DescentDirection_U<double> &) --> class ROL::DescentDirection_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	// ROL::ESecantMode file:ROL_Secant.hpp line:57
-	pybind11::enum_<ROL::ESecantMode>(M("ROL"), "ESecantMode", pybind11::arithmetic(), "")
+	pybind11::enum_<ROL::ESecantMode>(M("ROL"), "ESecantMode", pybind11::arithmetic(), "", pybind11::module_local())
 		.value("SECANTMODE_FORWARD", ROL::SECANTMODE_FORWARD)
 		.value("SECANTMODE_INVERSE", ROL::SECANTMODE_INVERSE)
 		.value("SECANTMODE_BOTH", ROL::SECANTMODE_BOTH)
@@ -1269,7 +1269,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 ;
 
 	{ // ROL::SecantState file:ROL_Secant.hpp line:64
-		pybind11::class_<ROL::SecantState<double>, Teuchos::RCP<ROL::SecantState<double>>> cl(M("ROL"), "SecantState_double_t", "");
+		pybind11::class_<ROL::SecantState<double>, Teuchos::RCP<ROL::SecantState<double>>> cl(M("ROL"), "SecantState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<int, enum ROL::ESecantMode>(), pybind11::arg("M"), pybind11::arg("sm") );
 
 		cl.def( pybind11::init( [](ROL::SecantState<double> const &o){ return new ROL::SecantState<double>(o); } ) );
@@ -1284,7 +1284,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def_readwrite("mode", &ROL::SecantState<double>::mode);
 	}
 	{ // ROL::Secant file:ROL_Secant.hpp line:79
-		pybind11::class_<ROL::Secant<double>, Teuchos::RCP<ROL::Secant<double>>, PyCallBack_ROL_Secant_double_t, ROL::LinearOperator<double>> cl(M("ROL"), "Secant_double_t", "");
+		pybind11::class_<ROL::Secant<double>, Teuchos::RCP<ROL::Secant<double>>, PyCallBack_ROL_Secant_double_t, ROL::LinearOperator<double>> cl(M("ROL"), "Secant_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Secant_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0){ return new PyCallBack_ROL_Secant_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0, bool const & a1){ return new PyCallBack_ROL_Secant_double_t(a0, a1); } ), "doc");
@@ -1309,7 +1309,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::LinearOperator<double> & (ROL::LinearOperator<double>::*)(const class ROL::LinearOperator<double> &)) &ROL::LinearOperator<double>::operator=, "C++: ROL::LinearOperator<double>::operator=(const class ROL::LinearOperator<double> &) --> class ROL::LinearOperator<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::lBFGS file:ROL_lBFGS.hpp line:56
-		pybind11::class_<ROL::lBFGS<double>, Teuchos::RCP<ROL::lBFGS<double>>, PyCallBack_ROL_lBFGS_double_t, ROL::Secant<double>> cl(M("ROL"), "lBFGS_double_t", "");
+		pybind11::class_<ROL::lBFGS<double>, Teuchos::RCP<ROL::lBFGS<double>>, PyCallBack_ROL_lBFGS_double_t, ROL::Secant<double>> cl(M("ROL"), "lBFGS_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](int const & a0){ return new ROL::lBFGS<double>(a0); }, [](int const & a0){ return new PyCallBack_ROL_lBFGS_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0, bool const & a1){ return new ROL::lBFGS<double>(a0, a1); }, [](int const & a0, bool const & a1){ return new PyCallBack_ROL_lBFGS_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<int, bool, double>(), pybind11::arg("M"), pybind11::arg("useDefaultScaling"), pybind11::arg("Bscaling") );
@@ -1335,7 +1335,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::LinearOperator<double> & (ROL::LinearOperator<double>::*)(const class ROL::LinearOperator<double> &)) &ROL::LinearOperator<double>::operator=, "C++: ROL::LinearOperator<double>::operator=(const class ROL::LinearOperator<double> &) --> class ROL::LinearOperator<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::lDFP file:ROL_lDFP.hpp line:56
-		pybind11::class_<ROL::lDFP<double>, Teuchos::RCP<ROL::lDFP<double>>, PyCallBack_ROL_lDFP_double_t, ROL::Secant<double>> cl(M("ROL"), "lDFP_double_t", "");
+		pybind11::class_<ROL::lDFP<double>, Teuchos::RCP<ROL::lDFP<double>>, PyCallBack_ROL_lDFP_double_t, ROL::Secant<double>> cl(M("ROL"), "lDFP_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](int const & a0){ return new ROL::lDFP<double>(a0); }, [](int const & a0){ return new PyCallBack_ROL_lDFP_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0, bool const & a1){ return new ROL::lDFP<double>(a0, a1); }, [](int const & a0, bool const & a1){ return new PyCallBack_ROL_lDFP_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<int, bool, double>(), pybind11::arg("M"), pybind11::arg("useDefaultScaling"), pybind11::arg("Bscaling") );
@@ -1363,7 +1363,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::LinearOperator<double> & (ROL::LinearOperator<double>::*)(const class ROL::LinearOperator<double> &)) &ROL::LinearOperator<double>::operator=, "C++: ROL::LinearOperator<double>::operator=(const class ROL::LinearOperator<double> &) --> class ROL::LinearOperator<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::lSR1 file:ROL_lSR1.hpp line:57
-		pybind11::class_<ROL::lSR1<double>, Teuchos::RCP<ROL::lSR1<double>>, PyCallBack_ROL_lSR1_double_t, ROL::Secant<double>> cl(M("ROL"), "lSR1_double_t", "");
+		pybind11::class_<ROL::lSR1<double>, Teuchos::RCP<ROL::lSR1<double>>, PyCallBack_ROL_lSR1_double_t, ROL::Secant<double>> cl(M("ROL"), "lSR1_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](int const & a0){ return new ROL::lSR1<double>(a0); }, [](int const & a0){ return new PyCallBack_ROL_lSR1_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0, bool const & a1){ return new ROL::lSR1<double>(a0, a1); }, [](int const & a0, bool const & a1){ return new PyCallBack_ROL_lSR1_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init( [](int const & a0, bool const & a1, double const & a2){ return new ROL::lSR1<double>(a0, a1, a2); }, [](int const & a0, bool const & a1, double const & a2){ return new PyCallBack_ROL_lSR1_double_t(a0, a1, a2); } ), "doc");
@@ -1393,7 +1393,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::LinearOperator<double> & (ROL::LinearOperator<double>::*)(const class ROL::LinearOperator<double> &)) &ROL::LinearOperator<double>::operator=, "C++: ROL::LinearOperator<double>::operator=(const class ROL::LinearOperator<double> &) --> class ROL::LinearOperator<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::BarzilaiBorwein file:ROL_BarzilaiBorwein.hpp line:61
-		pybind11::class_<ROL::BarzilaiBorwein<double>, Teuchos::RCP<ROL::BarzilaiBorwein<double>>, PyCallBack_ROL_BarzilaiBorwein_double_t, ROL::Secant<double>> cl(M("ROL"), "BarzilaiBorwein_double_t", "");
+		pybind11::class_<ROL::BarzilaiBorwein<double>, Teuchos::RCP<ROL::BarzilaiBorwein<double>>, PyCallBack_ROL_BarzilaiBorwein_double_t, ROL::Secant<double>> cl(M("ROL"), "BarzilaiBorwein_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::BarzilaiBorwein<double>(); }, [](){ return new PyCallBack_ROL_BarzilaiBorwein_double_t(); } ), "doc");
 		cl.def( pybind11::init<int>(), pybind11::arg("type") );
 
@@ -1418,7 +1418,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::LinearOperator<double> & (ROL::LinearOperator<double>::*)(const class ROL::LinearOperator<double> &)) &ROL::LinearOperator<double>::operator=, "C++: ROL::LinearOperator<double>::operator=(const class ROL::LinearOperator<double> &) --> class ROL::LinearOperator<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::QuasiNewton_U file:ROL_QuasiNewton_U.hpp line:61
-		pybind11::class_<ROL::QuasiNewton_U<double>, Teuchos::RCP<ROL::QuasiNewton_U<double>>, PyCallBack_ROL_QuasiNewton_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "QuasiNewton_U_double_t", "");
+		pybind11::class_<ROL::QuasiNewton_U<double>, Teuchos::RCP<ROL::QuasiNewton_U<double>>, PyCallBack_ROL_QuasiNewton_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "QuasiNewton_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::QuasiNewton_U<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_QuasiNewton_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("parlist"), pybind11::arg("secant") );
 
@@ -1435,7 +1435,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::DescentDirection_U<double> & (ROL::DescentDirection_U<double>::*)(const class ROL::DescentDirection_U<double> &)) &ROL::DescentDirection_U<double>::operator=, "C++: ROL::DescentDirection_U<double>::operator=(const class ROL::DescentDirection_U<double> &) --> class ROL::DescentDirection_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::NonlinearCGState file:ROL_NonlinearCG.hpp line:77
-		pybind11::class_<ROL::NonlinearCGState<double>, Teuchos::RCP<ROL::NonlinearCGState<double>>> cl(M("ROL"), "NonlinearCGState_double_t", "");
+		pybind11::class_<ROL::NonlinearCGState<double>, Teuchos::RCP<ROL::NonlinearCGState<double>>> cl(M("ROL"), "NonlinearCGState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](ROL::NonlinearCGState<double> const &o){ return new ROL::NonlinearCGState<double>(o); } ) );
 		cl.def( pybind11::init( [](){ return new ROL::NonlinearCGState<double>(); } ) );
 		cl.def_readwrite("grad", &ROL::NonlinearCGState<double>::grad);
@@ -1445,7 +1445,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def_readwrite("nlcg_type", &ROL::NonlinearCGState<double>::nlcg_type);
 	}
 	{ // ROL::NonlinearCG file:ROL_NonlinearCG.hpp line:86
-		pybind11::class_<ROL::NonlinearCG<double>, Teuchos::RCP<ROL::NonlinearCG<double>>, PyCallBack_ROL_NonlinearCG_double_t> cl(M("ROL"), "NonlinearCG_double_t", "");
+		pybind11::class_<ROL::NonlinearCG<double>, Teuchos::RCP<ROL::NonlinearCG<double>>, PyCallBack_ROL_NonlinearCG_double_t> cl(M("ROL"), "NonlinearCG_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](enum ROL::ENonlinearCG const & a0){ return new ROL::NonlinearCG<double>(a0); }, [](enum ROL::ENonlinearCG const & a0){ return new PyCallBack_ROL_NonlinearCG_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<enum ROL::ENonlinearCG, int>(), pybind11::arg("type"), pybind11::arg("restart") );
 
@@ -1455,7 +1455,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::NonlinearCG<double> & (ROL::NonlinearCG<double>::*)(const class ROL::NonlinearCG<double> &)) &ROL::NonlinearCG<double>::operator=, "C++: ROL::NonlinearCG<double>::operator=(const class ROL::NonlinearCG<double> &) --> class ROL::NonlinearCG<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::NonlinearCG_U file:ROL_NonlinearCG_U.hpp line:62
-		pybind11::class_<ROL::NonlinearCG_U<double>, Teuchos::RCP<ROL::NonlinearCG_U<double>>, PyCallBack_ROL_NonlinearCG_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "NonlinearCG_U_double_t", "");
+		pybind11::class_<ROL::NonlinearCG_U<double>, Teuchos::RCP<ROL::NonlinearCG_U<double>>, PyCallBack_ROL_NonlinearCG_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "NonlinearCG_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::NonlinearCG_U<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_NonlinearCG_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::NonlinearCG<double> > &>(), pybind11::arg("parlist"), pybind11::arg("nlcg") );
 
@@ -1471,7 +1471,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::DescentDirection_U<double> & (ROL::DescentDirection_U<double>::*)(const class ROL::DescentDirection_U<double> &)) &ROL::DescentDirection_U<double>::operator=, "C++: ROL::DescentDirection_U<double>::operator=(const class ROL::DescentDirection_U<double> &) --> class ROL::DescentDirection_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Newton_U file:ROL_Newton_U.hpp line:59
-		pybind11::class_<ROL::Newton_U<double>, Teuchos::RCP<ROL::Newton_U<double>>, PyCallBack_ROL_Newton_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "Newton_U_double_t", "");
+		pybind11::class_<ROL::Newton_U<double>, Teuchos::RCP<ROL::Newton_U<double>>, PyCallBack_ROL_Newton_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "Newton_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Newton_U<double>(); }, [](){ return new PyCallBack_ROL_Newton_U_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Newton_U_double_t const &o){ return new PyCallBack_ROL_Newton_U_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Newton_U<double> const &o){ return new ROL::Newton_U<double>(o); } ) );
@@ -1485,7 +1485,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::DescentDirection_U<double> & (ROL::DescentDirection_U<double>::*)(const class ROL::DescentDirection_U<double> &)) &ROL::DescentDirection_U<double>::operator=, "C++: ROL::DescentDirection_U<double>::operator=(const class ROL::DescentDirection_U<double> &) --> class ROL::DescentDirection_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::NewtonKrylov_U file:ROL_NewtonKrylov_U.hpp line:63
-		pybind11::class_<ROL::NewtonKrylov_U<double>, Teuchos::RCP<ROL::NewtonKrylov_U<double>>, PyCallBack_ROL_NewtonKrylov_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "NewtonKrylov_U_double_t", "");
+		pybind11::class_<ROL::NewtonKrylov_U<double>, Teuchos::RCP<ROL::NewtonKrylov_U<double>>, PyCallBack_ROL_NewtonKrylov_U_double_t, ROL::DescentDirection_U<double>> cl(M("ROL"), "NewtonKrylov_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Krylov<double> > & a1, class Teuchos::RCP<class ROL::Secant<double> > & a2){ return new ROL::NewtonKrylov_U<double>(a0, a1, a2); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Krylov<double> > & a1, class Teuchos::RCP<class ROL::Secant<double> > & a2){ return new PyCallBack_ROL_NewtonKrylov_U_double_t(a0, a1, a2); } ), "doc");
@@ -1507,7 +1507,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 	M("ROL").def("DescentDirectionUFactory", (class Teuchos::RCP<class ROL::DescentDirection_U<double> > (*)(class Teuchos::ParameterList &)) &ROL::DescentDirectionUFactory<double>, "C++: ROL::DescentDirectionUFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::DescentDirection_U<double> >", pybind11::arg("parlist"));
 
 	// ROL::ETrustRegionU file:ROL_TrustRegion_U_Types.hpp line:63
-	pybind11::enum_<ROL::ETrustRegionU>(M("ROL"), "ETrustRegionU", pybind11::arithmetic(), "Enumeration of trust-region solver types.\n\n      \n    TRUSTREGION_U_CAUCHYPOINT     describe\n      \n\n    TRUSTREGION_U_TRUNCATEDCG     describe\n      \n\n    TRUSTREGION_U_SPG             describe\n      \n\n    TRUSTREGION_U_DOGLEG          describe\n      \n\n    TRUSTREGION_U_DOUBLEDOGLEG    describe")
+	pybind11::enum_<ROL::ETrustRegionU>(M("ROL"), "ETrustRegionU", pybind11::arithmetic(), "Enumeration of trust-region solver types.\n\n      \n    TRUSTREGION_U_CAUCHYPOINT     describe\n      \n\n    TRUSTREGION_U_TRUNCATEDCG     describe\n      \n\n    TRUSTREGION_U_SPG             describe\n      \n\n    TRUSTREGION_U_DOGLEG          describe\n      \n\n    TRUSTREGION_U_DOUBLEDOGLEG    describe", pybind11::module_local())
 		.value("TRUSTREGION_U_CAUCHYPOINT", ROL::TRUSTREGION_U_CAUCHYPOINT)
 		.value("TRUSTREGION_U_TRUNCATEDCG", ROL::TRUSTREGION_U_TRUNCATEDCG)
 		.value("TRUSTREGION_U_SPG", ROL::TRUSTREGION_U_SPG)
@@ -1528,7 +1528,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 	M("ROL").def("StringToETrustRegionU", (enum ROL::ETrustRegionU (*)(std::string)) &ROL::StringToETrustRegionU, "C++: ROL::StringToETrustRegionU(std::string) --> enum ROL::ETrustRegionU", pybind11::arg("s"));
 
 	{ // ROL::TrustRegionModel_U file:ROL_TrustRegionModel_U.hpp line:66
-		pybind11::class_<ROL::TrustRegionModel_U<double>, Teuchos::RCP<ROL::TrustRegionModel_U<double>>, PyCallBack_ROL_TrustRegionModel_U_double_t, ROL::Objective<double>> cl(M("ROL"), "TrustRegionModel_U_double_t", "");
+		pybind11::class_<ROL::TrustRegionModel_U<double>, Teuchos::RCP<ROL::TrustRegionModel_U<double>>, PyCallBack_ROL_TrustRegionModel_U_double_t, ROL::Objective<double>> cl(M("ROL"), "TrustRegionModel_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TrustRegionModel_U<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TrustRegionModel_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1){ return new ROL::TrustRegionModel_U<double>(a0, a1); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1){ return new PyCallBack_ROL_TrustRegionModel_U_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &, enum ROL::ESecantMode>(), pybind11::arg("list"), pybind11::arg("secant"), pybind11::arg("mode") );
@@ -1567,7 +1567,7 @@ void bind_ROL_Gradient_U(std::function< pybind11::module &(std::string const &na
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::TrustRegion_U file:ROL_TrustRegion_U.hpp line:57
-		pybind11::class_<ROL::TrustRegion_U<double>, Teuchos::RCP<ROL::TrustRegion_U<double>>, PyCallBack_ROL_TrustRegion_U_double_t> cl(M("ROL"), "TrustRegion_U_double_t", "");
+		pybind11::class_<ROL::TrustRegion_U<double>, Teuchos::RCP<ROL::TrustRegion_U<double>>, PyCallBack_ROL_TrustRegion_U_double_t> cl(M("ROL"), "TrustRegion_U_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_TrustRegion_U_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_TrustRegion_U_double_t(); } ) );
 		cl.def("initialize", (void (ROL::TrustRegion_U<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::TrustRegion_U<double>::initialize, "C++: ROL::TrustRegion_U<double>::initialize(const class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("x"), pybind11::arg("g"));

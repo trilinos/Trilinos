@@ -70,7 +70,7 @@ struct PyCallBack_ROL_BrentsProjection_double_t : public ROL::BrentsProjection<d
 void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::EKrylov file:ROL_KrylovFactory.hpp line:66
-	pybind11::enum_<ROL::EKrylov>(M("ROL"), "EKrylov", pybind11::arithmetic(), "Enumeration of Krylov methods.\n\n      \n    CG          Conjugate Gradient Method\n      \n\n    CR          Conjugate Residual Method\n      \n\n    GMRES       Generalized Minimum Residual Method\n      \n\n    MINRES      Minimum Residual Method\n      \n\n    USERDEFINED User defined Krylov method\n      \n\n    LAST        Dummy type")
+	pybind11::enum_<ROL::EKrylov>(M("ROL"), "EKrylov", pybind11::arithmetic(), "Enumeration of Krylov methods.\n\n      \n    CG          Conjugate Gradient Method\n      \n\n    CR          Conjugate Residual Method\n      \n\n    GMRES       Generalized Minimum Residual Method\n      \n\n    MINRES      Minimum Residual Method\n      \n\n    USERDEFINED User defined Krylov method\n      \n\n    LAST        Dummy type", pybind11::module_local())
 		.value("KRYLOV_CG", ROL::KRYLOV_CG)
 		.value("KRYLOV_CR", ROL::KRYLOV_CR)
 		.value("KRYLOV_GMRES", ROL::KRYLOV_GMRES)
@@ -94,7 +94,7 @@ void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const 
 	M("ROL").def("KrylovFactory", (class Teuchos::RCP<class ROL::Krylov<double> > (*)(class Teuchos::ParameterList &)) &ROL::KrylovFactory<double>, "C++: ROL::KrylovFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::Krylov<double> >", pybind11::arg("parlist"));
 
 	{ // ROL::SemismoothNewtonProjection file:ROL_SemismoothNewtonProjection.hpp line:55
-		pybind11::class_<ROL::SemismoothNewtonProjection<double>, Teuchos::RCP<ROL::SemismoothNewtonProjection<double>>, PyCallBack_ROL_SemismoothNewtonProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "SemismoothNewtonProjection_double_t", "");
+		pybind11::class_<ROL::SemismoothNewtonProjection<double>, Teuchos::RCP<ROL::SemismoothNewtonProjection<double>>, PyCallBack_ROL_SemismoothNewtonProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "SemismoothNewtonProjection_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res") );
 
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res"), pybind11::arg("list") );
@@ -107,7 +107,7 @@ void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const 
 		cl.def("getResidual", (const class Teuchos::RCP<class ROL::Vector<double> > (ROL::PolyhedralProjection<double>::*)() const) &ROL::PolyhedralProjection<double>::getResidual, "C++: ROL::PolyhedralProjection<double>::getResidual() const --> const class Teuchos::RCP<class ROL::Vector<double> >");
 	}
 	{ // ROL::RiddersProjection file:ROL_RiddersProjection.hpp line:54
-		pybind11::class_<ROL::RiddersProjection<double>, Teuchos::RCP<ROL::RiddersProjection<double>>, PyCallBack_ROL_RiddersProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "RiddersProjection_double_t", "");
+		pybind11::class_<ROL::RiddersProjection<double>, Teuchos::RCP<ROL::RiddersProjection<double>>, PyCallBack_ROL_RiddersProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "RiddersProjection_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res") );
 
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res"), pybind11::arg("list") );
@@ -120,7 +120,7 @@ void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const 
 		cl.def("getResidual", (const class Teuchos::RCP<class ROL::Vector<double> > (ROL::PolyhedralProjection<double>::*)() const) &ROL::PolyhedralProjection<double>::getResidual, "C++: ROL::PolyhedralProjection<double>::getResidual() const --> const class Teuchos::RCP<class ROL::Vector<double> >");
 	}
 	{ // ROL::BrentsProjection file:ROL_BrentsProjection.hpp line:54
-		pybind11::class_<ROL::BrentsProjection<double>, Teuchos::RCP<ROL::BrentsProjection<double>>, PyCallBack_ROL_BrentsProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "BrentsProjection_double_t", "");
+		pybind11::class_<ROL::BrentsProjection<double>, Teuchos::RCP<ROL::BrentsProjection<double>>, PyCallBack_ROL_BrentsProjection_double_t, ROL::PolyhedralProjection<double>> cl(M("ROL"), "BrentsProjection_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res") );
 
 		cl.def( pybind11::init<const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("xprim"), pybind11::arg("xdual"), pybind11::arg("bnd"), pybind11::arg("con"), pybind11::arg("mul"), pybind11::arg("res"), pybind11::arg("list") );
@@ -133,7 +133,7 @@ void bind_ROL_KrylovFactory(std::function< pybind11::module &(std::string const 
 		cl.def("getResidual", (const class Teuchos::RCP<class ROL::Vector<double> > (ROL::PolyhedralProjection<double>::*)() const) &ROL::PolyhedralProjection<double>::getResidual, "C++: ROL::PolyhedralProjection<double>::getResidual() const --> const class Teuchos::RCP<class ROL::Vector<double> >");
 	}
 	// ROL::EPolyProjAlgo file:ROL_PolyhedralProjectionFactory.hpp line:65
-	pybind11::enum_<ROL::EPolyProjAlgo>(M("ROL"), "EPolyProjAlgo", pybind11::arithmetic(), "Enumeration of polyhedral projecdtion algorithm types.\n\n    \n    PPA_DAIFLETCHER describe\n    \n\n    PPA_DYKSTRA     describe\n    \n\n    PPA_NEWTON      describe\n    \n\n    PPA_RIDDERS     describe")
+	pybind11::enum_<ROL::EPolyProjAlgo>(M("ROL"), "EPolyProjAlgo", pybind11::arithmetic(), "Enumeration of polyhedral projecdtion algorithm types.\n\n    \n    PPA_DAIFLETCHER describe\n    \n\n    PPA_DYKSTRA     describe\n    \n\n    PPA_NEWTON      describe\n    \n\n    PPA_RIDDERS     describe", pybind11::module_local())
 		.value("PPA_DAIFLETCHER", ROL::PPA_DAIFLETCHER)
 		.value("PPA_DYKSTRA", ROL::PPA_DYKSTRA)
 		.value("PPA_DOUGLASRACHFORD", ROL::PPA_DOUGLASRACHFORD)

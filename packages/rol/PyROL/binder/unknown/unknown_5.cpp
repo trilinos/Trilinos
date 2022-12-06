@@ -403,7 +403,7 @@ struct PyCallBack_ROL_Constraint_Partitioned_double_t : public ROL::Constraint_P
 void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Problem file: line:38
-		pybind11::class_<ROL::Problem<double>, Teuchos::RCP<ROL::Problem<double>>, PyCallBack_ROL_Problem_double_t> cl(M("ROL"), "Problem_double_t", "");
+		pybind11::class_<ROL::Problem<double>, Teuchos::RCP<ROL::Problem<double>>, PyCallBack_ROL_Problem_double_t> cl(M("ROL"), "Problem_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Objective<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1){ return new ROL::Problem<double>(a0, a1); }, [](const class Teuchos::RCP<class ROL::Objective<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1){ return new PyCallBack_ROL_Problem_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Vector<double> > &, const class Teuchos::RCP<class ROL::Vector<double> > &>(), pybind11::arg("obj"), pybind11::arg("x"), pybind11::arg("g") );
 
@@ -441,7 +441,7 @@ void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Problem<double> & (ROL::Problem<double>::*)(const class ROL::Problem<double> &)) &ROL::Problem<double>::operator=, "C++: ROL::Problem<double>::operator=(const class ROL::Problem<double> &) --> class ROL::Problem<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::PartitionedVector file:ROL_PartitionedVector.hpp line:60
-		pybind11::class_<ROL::PartitionedVector<double>, Teuchos::RCP<ROL::PartitionedVector<double>>, PyCallBack_ROL_PartitionedVector_double_t, ROL::Vector<double>> cl(M("ROL"), "PartitionedVector_double_t", "");
+		pybind11::class_<ROL::PartitionedVector<double>, Teuchos::RCP<ROL::PartitionedVector<double>>, PyCallBack_ROL_PartitionedVector_double_t, ROL::Vector<double>> cl(M("ROL"), "PartitionedVector_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_PartitionedVector_double_t const &o){ return new PyCallBack_ROL_PartitionedVector_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::PartitionedVector<double> const &o){ return new ROL::PartitionedVector<double>(o); } ) );
 		cl.def("set", (void (ROL::PartitionedVector<double>::*)(const class ROL::Vector<double> &)) &ROL::PartitionedVector<double>::set, "C++: ROL::PartitionedVector<double>::set(const class ROL::Vector<double> &) --> void", pybind11::arg("x"));
@@ -491,7 +491,7 @@ void bind_unknown_unknown_5(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Vector<double> & (ROL::Vector<double>::*)(const class ROL::Vector<double> &)) &ROL::Vector<double>::operator=, "C++: ROL::Vector<double>::operator=(const class ROL::Vector<double> &) --> class ROL::Vector<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Constraint_Partitioned file:ROL_Constraint_Partitioned.hpp line:56
-		pybind11::class_<ROL::Constraint_Partitioned<double>, Teuchos::RCP<ROL::Constraint_Partitioned<double>>, PyCallBack_ROL_Constraint_Partitioned_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_Partitioned_double_t", "");
+		pybind11::class_<ROL::Constraint_Partitioned<double>, Teuchos::RCP<ROL::Constraint_Partitioned<double>>, PyCallBack_ROL_Constraint_Partitioned_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_Partitioned_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_Constraint_Partitioned_double_t const &o){ return new PyCallBack_ROL_Constraint_Partitioned_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Constraint_Partitioned<double> const &o){ return new ROL::Constraint_Partitioned<double>(o); } ) );
 		cl.def("applyAdjointJacobian", [](ROL::Constraint_Partitioned<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, double & a4) -> void { return o.applyAdjointJacobian(a0, a1, a2, a3, a4); }, "", pybind11::arg("ajv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualv"), pybind11::arg("tol"));

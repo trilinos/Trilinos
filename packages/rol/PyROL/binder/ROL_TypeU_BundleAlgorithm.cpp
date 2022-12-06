@@ -47,7 +47,7 @@ struct PyCallBack_ROL_TypeU_BundleAlgorithm_double_t : public ROL::TypeU::Bundle
 void bind_ROL_TypeU_BundleAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeU::BundleAlgorithm file:ROL_TypeU_BundleAlgorithm.hpp line:60
-		pybind11::class_<ROL::TypeU::BundleAlgorithm<double>, Teuchos::RCP<ROL::TypeU::BundleAlgorithm<double>>, PyCallBack_ROL_TypeU_BundleAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "BundleAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeU::BundleAlgorithm<double>, Teuchos::RCP<ROL::TypeU::BundleAlgorithm<double>>, PyCallBack_ROL_TypeU_BundleAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "BundleAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeU::BundleAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeU_BundleAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::LineSearch_U<double> > &>(), pybind11::arg("parlist"), pybind11::arg("lineSearch") );
 

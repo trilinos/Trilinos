@@ -53,7 +53,7 @@ struct PyCallBack_ROL_TypeE_CompositeStepAlgorithm_double_t : public ROL::TypeE:
 void bind_ROL_TypeE_FletcherAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeE::FletcherAlgorithm file:ROL_TypeE_FletcherAlgorithm.hpp line:59
-		pybind11::class_<ROL::TypeE::FletcherAlgorithm<double>, Teuchos::RCP<ROL::TypeE::FletcherAlgorithm<double>>, PyCallBack_ROL_TypeE_FletcherAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "FletcherAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeE::FletcherAlgorithm<double>, Teuchos::RCP<ROL::TypeE::FletcherAlgorithm<double>>, PyCallBack_ROL_TypeE_FletcherAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "FletcherAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeE_FletcherAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeE_FletcherAlgorithm_double_t(o); } ) );
@@ -64,7 +64,7 @@ void bind_ROL_TypeE_FletcherAlgorithm(std::function< pybind11::module &(std::str
 		cl.def("reset", (void (ROL::TypeE::Algorithm<double>::*)()) &ROL::TypeE::Algorithm<double>::reset, "C++: ROL::TypeE::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeE::CompositeStepAlgorithm file:ROL_TypeE_CompositeStepAlgorithm.hpp line:59
-		pybind11::class_<ROL::TypeE::CompositeStepAlgorithm<double>, Teuchos::RCP<ROL::TypeE::CompositeStepAlgorithm<double>>, PyCallBack_ROL_TypeE_CompositeStepAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "CompositeStepAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeE::CompositeStepAlgorithm<double>, Teuchos::RCP<ROL::TypeE::CompositeStepAlgorithm<double>>, PyCallBack_ROL_TypeE_CompositeStepAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "CompositeStepAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeE_CompositeStepAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeE_CompositeStepAlgorithm_double_t(o); } ) );

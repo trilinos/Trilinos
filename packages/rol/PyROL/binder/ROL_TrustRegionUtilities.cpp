@@ -44,7 +44,7 @@
 void bind_ROL_TrustRegionUtilities(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::TRUtils::ETRFlag file:ROL_TrustRegionUtilities.hpp line:62
-	pybind11::enum_<ROL::TRUtils::ETRFlag>(M("ROL::TRUtils"), "ETRFlag", pybind11::arithmetic(), "Enumation of flags used by trust-region solvers.\n\n    \n SUCCESS        Actual and predicted reductions are positive \n    \n\n POSPREDNEG     Reduction is positive, predicted negative (impossible)\n    \n\n NPOSPREDPOS    Reduction is nonpositive, predicted positive\n    \n\n NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)\n    \n\n TRNAN          Actual and/or predicted reduction is NaN")
+	pybind11::enum_<ROL::TRUtils::ETRFlag>(M("ROL::TRUtils"), "ETRFlag", pybind11::arithmetic(), "Enumation of flags used by trust-region solvers.\n\n    \n SUCCESS        Actual and predicted reductions are positive \n    \n\n POSPREDNEG     Reduction is positive, predicted negative (impossible)\n    \n\n NPOSPREDPOS    Reduction is nonpositive, predicted positive\n    \n\n NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)\n    \n\n TRNAN          Actual and/or predicted reduction is NaN", pybind11::module_local())
 		.value("SUCCESS", ROL::TRUtils::SUCCESS)
 		.value("POSPREDNEG", ROL::TRUtils::POSPREDNEG)
 		.value("NPOSPREDPOS", ROL::TRUtils::NPOSPREDPOS)

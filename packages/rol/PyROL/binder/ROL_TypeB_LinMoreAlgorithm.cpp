@@ -48,7 +48,7 @@ struct PyCallBack_ROL_TypeB_LinMoreAlgorithm_double_t : public ROL::TypeB::LinMo
 void bind_ROL_TypeB_LinMoreAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeB::LinMoreAlgorithm file:ROL_TypeB_LinMoreAlgorithm.hpp line:61
-		pybind11::class_<ROL::TypeB::LinMoreAlgorithm<double>, Teuchos::RCP<ROL::TypeB::LinMoreAlgorithm<double>>, PyCallBack_ROL_TypeB_LinMoreAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "LinMoreAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::LinMoreAlgorithm<double>, Teuchos::RCP<ROL::TypeB::LinMoreAlgorithm<double>>, PyCallBack_ROL_TypeB_LinMoreAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "LinMoreAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::LinMoreAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_LinMoreAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 

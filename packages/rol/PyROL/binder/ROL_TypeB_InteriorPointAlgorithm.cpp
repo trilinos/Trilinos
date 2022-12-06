@@ -80,7 +80,7 @@ struct PyCallBack_ROL_TypeB_LSecantBAlgorithm_double_t : public ROL::TypeB::LSec
 void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeB::InteriorPointAlgorithm file:ROL_TypeB_InteriorPointAlgorithm.hpp line:58
-		pybind11::class_<ROL::TypeB::InteriorPointAlgorithm<double>, Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>, PyCallBack_ROL_TypeB_InteriorPointAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "InteriorPointAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::InteriorPointAlgorithm<double>, Teuchos::RCP<ROL::TypeB::InteriorPointAlgorithm<double>>, PyCallBack_ROL_TypeB_InteriorPointAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "InteriorPointAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeB_InteriorPointAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeB_InteriorPointAlgorithm_double_t(o); } ) );
@@ -91,7 +91,7 @@ void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeB::PrimalDualActiveSetAlgorithm file:ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp line:59
-		pybind11::class_<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>, Teuchos::RCP<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, PyCallBack_ROL_TypeB_PrimalDualActiveSetAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "PrimalDualActiveSetAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>, Teuchos::RCP<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, PyCallBack_ROL_TypeB_PrimalDualActiveSetAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "PrimalDualActiveSetAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::PrimalDualActiveSetAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_PrimalDualActiveSetAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 
@@ -103,7 +103,7 @@ void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeB::KelleySachsAlgorithm file:ROL_TypeB_KelleySachsAlgorithm.hpp line:61
-		pybind11::class_<ROL::TypeB::KelleySachsAlgorithm<double>, Teuchos::RCP<ROL::TypeB::KelleySachsAlgorithm<double>>, PyCallBack_ROL_TypeB_KelleySachsAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "KelleySachsAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::KelleySachsAlgorithm<double>, Teuchos::RCP<ROL::TypeB::KelleySachsAlgorithm<double>>, PyCallBack_ROL_TypeB_KelleySachsAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "KelleySachsAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::KelleySachsAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_KelleySachsAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 
@@ -115,7 +115,7 @@ void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeB::SpectralGradientAlgorithm file:ROL_TypeB_SpectralGradientAlgorithm.hpp line:57
-		pybind11::class_<ROL::TypeB::SpectralGradientAlgorithm<double>, Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>, PyCallBack_ROL_TypeB_SpectralGradientAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "SpectralGradientAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::SpectralGradientAlgorithm<double>, Teuchos::RCP<ROL::TypeB::SpectralGradientAlgorithm<double>>, PyCallBack_ROL_TypeB_SpectralGradientAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "SpectralGradientAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeB_SpectralGradientAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeB_SpectralGradientAlgorithm_double_t(o); } ) );
@@ -126,7 +126,7 @@ void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std
 		cl.def("reset", (void (ROL::TypeB::Algorithm<double>::*)()) &ROL::TypeB::Algorithm<double>::reset, "C++: ROL::TypeB::Algorithm<double>::reset() --> void");
 	}
 	{ // ROL::TypeB::LSecantBAlgorithm file:ROL_TypeB_LSecantBAlgorithm.hpp line:61
-		pybind11::class_<ROL::TypeB::LSecantBAlgorithm<double>, Teuchos::RCP<ROL::TypeB::LSecantBAlgorithm<double>>, PyCallBack_ROL_TypeB_LSecantBAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "LSecantBAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::LSecantBAlgorithm<double>, Teuchos::RCP<ROL::TypeB::LSecantBAlgorithm<double>>, PyCallBack_ROL_TypeB_LSecantBAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "LSecantBAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeB::LSecantBAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeB_LSecantBAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 

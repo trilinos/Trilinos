@@ -174,7 +174,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 	M("ROL").def("getValidSOLParameters", (class Teuchos::RCP<const class Teuchos::ParameterList> (*)()) &ROL::getValidSOLParameters, "C++: ROL::getValidSOLParameters() --> class Teuchos::RCP<const class Teuchos::ParameterList>");
 
 	{ // ROL::Bundle_U file:ROL_Bundle_U.hpp line:59
-		pybind11::class_<ROL::Bundle_U<double>, Teuchos::RCP<ROL::Bundle_U<double>>, PyCallBack_ROL_Bundle_U_double_t> cl(M("ROL"), "Bundle_U_double_t", "");
+		pybind11::class_<ROL::Bundle_U<double>, Teuchos::RCP<ROL::Bundle_U<double>>, PyCallBack_ROL_Bundle_U_double_t> cl(M("ROL"), "Bundle_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Bundle_U_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0){ return new PyCallBack_ROL_Bundle_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0, const double & a1){ return new PyCallBack_ROL_Bundle_U_double_t(a0, a1); } ), "doc");
@@ -201,7 +201,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 		cl.def("assign", (class ROL::Bundle_U<double> & (ROL::Bundle_U<double>::*)(const class ROL::Bundle_U<double> &)) &ROL::Bundle_U<double>::operator=, "C++: ROL::Bundle_U<double>::operator=(const class ROL::Bundle_U<double> &) --> class ROL::Bundle_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ScalarFunction file:ROL_ScalarFunction.hpp line:56
-		pybind11::class_<ROL::ScalarFunction<double>, Teuchos::RCP<ROL::ScalarFunction<double>>, PyCallBack_ROL_ScalarFunction_double_t> cl(M("ROL"), "ScalarFunction_double_t", "");
+		pybind11::class_<ROL::ScalarFunction<double>, Teuchos::RCP<ROL::ScalarFunction<double>>, PyCallBack_ROL_ScalarFunction_double_t> cl(M("ROL"), "ScalarFunction_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_ScalarFunction_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_ScalarFunction_double_t(); } ) );
 		cl.def("value", (double (ROL::ScalarFunction<double>::*)(const double)) &ROL::ScalarFunction<double>::value, "C++: ROL::ScalarFunction<double>::value(const double) --> double", pybind11::arg("alpha"));
@@ -209,7 +209,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 		cl.def("assign", (class ROL::ScalarFunction<double> & (ROL::ScalarFunction<double>::*)(const class ROL::ScalarFunction<double> &)) &ROL::ScalarFunction<double>::operator=, "C++: ROL::ScalarFunction<double>::operator=(const class ROL::ScalarFunction<double> &) --> class ROL::ScalarFunction<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	// ROL::EDescentU file:ROL_LineSearch_U_Types.hpp line:64
-	pybind11::enum_<ROL::EDescentU>(M("ROL"), "EDescentU", pybind11::arithmetic(), "Enumeration of descent direction types.\n\n      \n    DESCENT_U_STEEPEST        describe\n      \n\n    DESCENT_U_NONLINEARCG     describe\n      \n\n    DESCENT_U_SECANT          describe\n      \n\n    DESCENT_U_NEWTON          describe \n      \n\n    DESCENT_U_NEWTONKRYLOV    describe\n      \n\n    DESCENT_U_SECANTPRECOND   describe")
+	pybind11::enum_<ROL::EDescentU>(M("ROL"), "EDescentU", pybind11::arithmetic(), "Enumeration of descent direction types.\n\n      \n    DESCENT_U_STEEPEST        describe\n      \n\n    DESCENT_U_NONLINEARCG     describe\n      \n\n    DESCENT_U_SECANT          describe\n      \n\n    DESCENT_U_NEWTON          describe \n      \n\n    DESCENT_U_NEWTONKRYLOV    describe\n      \n\n    DESCENT_U_SECANTPRECOND   describe", pybind11::module_local())
 		.value("DESCENT_U_STEEPEST", ROL::DESCENT_U_STEEPEST)
 		.value("DESCENT_U_NONLINEARCG", ROL::DESCENT_U_NONLINEARCG)
 		.value("DESCENT_U_SECANT", ROL::DESCENT_U_SECANT)
@@ -231,7 +231,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 	M("ROL").def("StringToEDescentU", (enum ROL::EDescentU (*)(std::string)) &ROL::StringToEDescentU, "C++: ROL::StringToEDescentU(std::string) --> enum ROL::EDescentU", pybind11::arg("s"));
 
 	// ROL::ELineSearchU file:ROL_LineSearch_U_Types.hpp line:144
-	pybind11::enum_<ROL::ELineSearchU>(M("ROL"), "ELineSearchU", pybind11::arithmetic(), "Enumeration of line-search types.\n\n      \n    LINESEARCH_U_BACKTRACKING    describe\n      \n\n    LINESEARCH_U_BISECTION       describe\n      \n\n    LINESEARCH_U_GOLDENSECTION   describe\n      \n\n    LINESEARCH_U_CUBICINTERP     describe\n      \n\n    LINESEARCH_U_BRENTS          describe\n      \n\n    LINESEARCH_U_USERDEFINED     describe")
+	pybind11::enum_<ROL::ELineSearchU>(M("ROL"), "ELineSearchU", pybind11::arithmetic(), "Enumeration of line-search types.\n\n      \n    LINESEARCH_U_BACKTRACKING    describe\n      \n\n    LINESEARCH_U_BISECTION       describe\n      \n\n    LINESEARCH_U_GOLDENSECTION   describe\n      \n\n    LINESEARCH_U_CUBICINTERP     describe\n      \n\n    LINESEARCH_U_BRENTS          describe\n      \n\n    LINESEARCH_U_USERDEFINED     describe", pybind11::module_local())
 		.value("LINESEARCH_U_ITERATIONSCALING", ROL::LINESEARCH_U_ITERATIONSCALING)
 		.value("LINESEARCH_U_PATHBASEDTARGETLEVEL", ROL::LINESEARCH_U_PATHBASEDTARGETLEVEL)
 		.value("LINESEARCH_U_BACKTRACKING", ROL::LINESEARCH_U_BACKTRACKING)
@@ -255,7 +255,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 	M("ROL").def("StringToELineSearchU", (enum ROL::ELineSearchU (*)(std::string)) &ROL::StringToELineSearchU, "C++: ROL::StringToELineSearchU(std::string) --> enum ROL::ELineSearchU", pybind11::arg("s"));
 
 	// ROL::ECurvatureConditionU file:ROL_LineSearch_U_Types.hpp line:227
-	pybind11::enum_<ROL::ECurvatureConditionU>(M("ROL"), "ECurvatureConditionU", pybind11::arithmetic(), "Enumeration of line-search curvature conditions.\n\n      \n    CURVATURECONDITION_U_WOLFE           describe\n      \n\n    CURVATURECONDITION_U_STRONGWOLFE     describe\n      \n\n    CURVATURECONDITION_U_GOLDSTEIN       describe")
+	pybind11::enum_<ROL::ECurvatureConditionU>(M("ROL"), "ECurvatureConditionU", pybind11::arithmetic(), "Enumeration of line-search curvature conditions.\n\n      \n    CURVATURECONDITION_U_WOLFE           describe\n      \n\n    CURVATURECONDITION_U_STRONGWOLFE     describe\n      \n\n    CURVATURECONDITION_U_GOLDSTEIN       describe", pybind11::module_local())
 		.value("CURVATURECONDITION_U_WOLFE", ROL::CURVATURECONDITION_U_WOLFE)
 		.value("CURVATURECONDITION_U_STRONGWOLFE", ROL::CURVATURECONDITION_U_STRONGWOLFE)
 		.value("CURVATURECONDITION_U_GENERALIZEDWOLFE", ROL::CURVATURECONDITION_U_GENERALIZEDWOLFE)
@@ -277,7 +277,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 	M("ROL").def("StringToECurvatureConditionU", (enum ROL::ECurvatureConditionU (*)(std::string)) &ROL::StringToECurvatureConditionU, "C++: ROL::StringToECurvatureConditionU(std::string) --> enum ROL::ECurvatureConditionU", pybind11::arg("s"));
 
 	{ // ROL::LineSearch_U file:ROL_LineSearch_U.hpp line:61
-		pybind11::class_<ROL::LineSearch_U<double>, Teuchos::RCP<ROL::LineSearch_U<double>>, PyCallBack_ROL_LineSearch_U_double_t> cl(M("ROL"), "LineSearch_U_double_t", "");
+		pybind11::class_<ROL::LineSearch_U<double>, Teuchos::RCP<ROL::LineSearch_U<double>>, PyCallBack_ROL_LineSearch_U_double_t> cl(M("ROL"), "LineSearch_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def(pybind11::init<PyCallBack_ROL_LineSearch_U_double_t const &>());

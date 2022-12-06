@@ -550,7 +550,7 @@ struct PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t : public ROL::Scal
 void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::BundleStatusTest file:ROL_BundleStatusTest.hpp line:53
-		pybind11::class_<ROL::BundleStatusTest<double>, Teuchos::RCP<ROL::BundleStatusTest<double>>, PyCallBack_ROL_BundleStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "BundleStatusTest_double_t", "");
+		pybind11::class_<ROL::BundleStatusTest<double>, Teuchos::RCP<ROL::BundleStatusTest<double>>, PyCallBack_ROL_BundleStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "BundleStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](){ return new ROL::BundleStatusTest<double>(); }, [](){ return new PyCallBack_ROL_BundleStatusTest_double_t(); } ), "doc");
@@ -565,7 +565,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::StatusTest<double> & (ROL::StatusTest<double>::*)(const class ROL::StatusTest<double> &)) &ROL::StatusTest<double>::operator=, "C++: ROL::StatusTest<double>::operator=(const class ROL::StatusTest<double> &) --> class ROL::StatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Bundle_U_AS file:ROL_Bundle_U_AS.hpp line:56
-		pybind11::class_<ROL::Bundle_U_AS<double>, Teuchos::RCP<ROL::Bundle_U_AS<double>>, PyCallBack_ROL_Bundle_U_AS_double_t, ROL::Bundle_U<double>> cl(M("ROL"), "Bundle_U_AS_double_t", "");
+		pybind11::class_<ROL::Bundle_U_AS<double>, Teuchos::RCP<ROL::Bundle_U_AS<double>>, PyCallBack_ROL_Bundle_U_AS_double_t, ROL::Bundle_U<double>> cl(M("ROL"), "Bundle_U_AS_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Bundle_U_AS<double>(); }, [](){ return new PyCallBack_ROL_Bundle_U_AS_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0){ return new ROL::Bundle_U_AS<double>(a0); }, [](const unsigned int & a0){ return new PyCallBack_ROL_Bundle_U_AS_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0, const double & a1){ return new ROL::Bundle_U_AS<double>(a0, a1); }, [](const unsigned int & a0, const double & a1){ return new PyCallBack_ROL_Bundle_U_AS_double_t(a0, a1); } ), "doc");
@@ -598,7 +598,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::Bundle_U<double> & (ROL::Bundle_U<double>::*)(const class ROL::Bundle_U<double> &)) &ROL::Bundle_U<double>::operator=, "C++: ROL::Bundle_U<double>::operator=(const class ROL::Bundle_U<double> &) --> class ROL::Bundle_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Bundle_U_TT file:ROL_Bundle_U_TT.hpp line:61
-		pybind11::class_<ROL::Bundle_U_TT<double>, Teuchos::RCP<ROL::Bundle_U_TT<double>>, PyCallBack_ROL_Bundle_U_TT_double_t, ROL::Bundle_U<double>> cl(M("ROL"), "Bundle_U_TT_double_t", "");
+		pybind11::class_<ROL::Bundle_U_TT<double>, Teuchos::RCP<ROL::Bundle_U_TT<double>>, PyCallBack_ROL_Bundle_U_TT_double_t, ROL::Bundle_U<double>> cl(M("ROL"), "Bundle_U_TT_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Bundle_U_TT<double>(); }, [](){ return new PyCallBack_ROL_Bundle_U_TT_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0){ return new ROL::Bundle_U_TT<double>(a0); }, [](const unsigned int & a0){ return new PyCallBack_ROL_Bundle_U_TT_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0, const double & a1){ return new ROL::Bundle_U_TT<double>(a0, a1); }, [](const unsigned int & a0, const double & a1){ return new PyCallBack_ROL_Bundle_U_TT_double_t(a0, a1); } ), "doc");
@@ -630,7 +630,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::Bundle_U<double> & (ROL::Bundle_U<double>::*)(const class ROL::Bundle_U<double> &)) &ROL::Bundle_U<double>::operator=, "C++: ROL::Bundle_U<double>::operator=(const class ROL::Bundle_U<double> &) --> class ROL::Bundle_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::IterationScaling_U file:ROL_IterationScaling_U.hpp line:56
-		pybind11::class_<ROL::IterationScaling_U<double>, Teuchos::RCP<ROL::IterationScaling_U<double>>, PyCallBack_ROL_IterationScaling_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "IterationScaling_U_double_t", "");
+		pybind11::class_<ROL::IterationScaling_U<double>, Teuchos::RCP<ROL::IterationScaling_U<double>>, PyCallBack_ROL_IterationScaling_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "IterationScaling_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_IterationScaling_U_double_t const &o){ return new PyCallBack_ROL_IterationScaling_U_double_t(o); } ) );
@@ -644,7 +644,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::LineSearch_U<double> & (ROL::LineSearch_U<double>::*)(const class ROL::LineSearch_U<double> &)) &ROL::LineSearch_U<double>::operator=, "C++: ROL::LineSearch_U<double>::operator=(const class ROL::LineSearch_U<double> &) --> class ROL::LineSearch_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::PathBasedTargetLevel_U file:ROL_PathBasedTargetLevel_U.hpp line:56
-		pybind11::class_<ROL::PathBasedTargetLevel_U<double>, Teuchos::RCP<ROL::PathBasedTargetLevel_U<double>>, PyCallBack_ROL_PathBasedTargetLevel_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "PathBasedTargetLevel_U_double_t", "");
+		pybind11::class_<ROL::PathBasedTargetLevel_U<double>, Teuchos::RCP<ROL::PathBasedTargetLevel_U<double>>, PyCallBack_ROL_PathBasedTargetLevel_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "PathBasedTargetLevel_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_PathBasedTargetLevel_U_double_t const &o){ return new PyCallBack_ROL_PathBasedTargetLevel_U_double_t(o); } ) );
@@ -658,7 +658,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::LineSearch_U<double> & (ROL::LineSearch_U<double>::*)(const class ROL::LineSearch_U<double> &)) &ROL::LineSearch_U<double>::operator=, "C++: ROL::LineSearch_U<double>::operator=(const class ROL::LineSearch_U<double> &) --> class ROL::LineSearch_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::BackTracking_U file:ROL_BackTracking_U.hpp line:56
-		pybind11::class_<ROL::BackTracking_U<double>, Teuchos::RCP<ROL::BackTracking_U<double>>, PyCallBack_ROL_BackTracking_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "BackTracking_U_double_t", "");
+		pybind11::class_<ROL::BackTracking_U<double>, Teuchos::RCP<ROL::BackTracking_U<double>>, PyCallBack_ROL_BackTracking_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "BackTracking_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_BackTracking_U_double_t const &o){ return new PyCallBack_ROL_BackTracking_U_double_t(o); } ) );
@@ -672,7 +672,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::LineSearch_U<double> & (ROL::LineSearch_U<double>::*)(const class ROL::LineSearch_U<double> &)) &ROL::LineSearch_U<double>::operator=, "C++: ROL::LineSearch_U<double>::operator=(const class ROL::LineSearch_U<double> &) --> class ROL::LineSearch_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::CubicInterp_U file:ROL_CubicInterp_U.hpp line:56
-		pybind11::class_<ROL::CubicInterp_U<double>, Teuchos::RCP<ROL::CubicInterp_U<double>>, PyCallBack_ROL_CubicInterp_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "CubicInterp_U_double_t", "");
+		pybind11::class_<ROL::CubicInterp_U<double>, Teuchos::RCP<ROL::CubicInterp_U<double>>, PyCallBack_ROL_CubicInterp_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "CubicInterp_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_CubicInterp_U_double_t const &o){ return new PyCallBack_ROL_CubicInterp_U_double_t(o); } ) );
@@ -686,7 +686,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::LineSearch_U<double> & (ROL::LineSearch_U<double>::*)(const class ROL::LineSearch_U<double> &)) &ROL::LineSearch_U<double>::operator=, "C++: ROL::LineSearch_U<double>::operator=(const class ROL::LineSearch_U<double> &) --> class ROL::LineSearch_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ScalarMinimizationStatusTest file:ROL_ScalarMinimizationStatusTest.hpp line:54
-		pybind11::class_<ROL::ScalarMinimizationStatusTest<double>, Teuchos::RCP<ROL::ScalarMinimizationStatusTest<double>>, PyCallBack_ROL_ScalarMinimizationStatusTest_double_t> cl(M("ROL"), "ScalarMinimizationStatusTest_double_t", "");
+		pybind11::class_<ROL::ScalarMinimizationStatusTest<double>, Teuchos::RCP<ROL::ScalarMinimizationStatusTest<double>>, PyCallBack_ROL_ScalarMinimizationStatusTest_double_t> cl(M("ROL"), "ScalarMinimizationStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_ScalarMinimizationStatusTest_double_t const &o){ return new PyCallBack_ROL_ScalarMinimizationStatusTest_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::ScalarMinimizationStatusTest<double> const &o){ return new ROL::ScalarMinimizationStatusTest<double>(o); } ) );
 		cl.def( pybind11::init( [](){ return new ROL::ScalarMinimizationStatusTest<double>(); }, [](){ return new PyCallBack_ROL_ScalarMinimizationStatusTest_double_t(); } ) );
@@ -695,7 +695,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::ScalarMinimizationStatusTest<double> & (ROL::ScalarMinimizationStatusTest<double>::*)(const class ROL::ScalarMinimizationStatusTest<double> &)) &ROL::ScalarMinimizationStatusTest<double>::operator=, "C++: ROL::ScalarMinimizationStatusTest<double>::operator=(const class ROL::ScalarMinimizationStatusTest<double> &) --> class ROL::ScalarMinimizationStatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ScalarMinimization file:ROL_ScalarMinimization.hpp line:59
-		pybind11::class_<ROL::ScalarMinimization<double>, Teuchos::RCP<ROL::ScalarMinimization<double>>, PyCallBack_ROL_ScalarMinimization_double_t> cl(M("ROL"), "ScalarMinimization_double_t", "");
+		pybind11::class_<ROL::ScalarMinimization<double>, Teuchos::RCP<ROL::ScalarMinimization<double>>, PyCallBack_ROL_ScalarMinimization_double_t> cl(M("ROL"), "ScalarMinimization_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_ScalarMinimization_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_ScalarMinimization_double_t(); } ) );
 		cl.def("run", (void (ROL::ScalarMinimization<double>::*)(double &, double &, int &, int &, class ROL::ScalarFunction<double> &, const double, const double) const) &ROL::ScalarMinimization<double>::run, "C++: ROL::ScalarMinimization<double>::run(double &, double &, int &, int &, class ROL::ScalarFunction<double> &, const double, const double) const --> void", pybind11::arg("fx"), pybind11::arg("x"), pybind11::arg("nfval"), pybind11::arg("ngrad"), pybind11::arg("f"), pybind11::arg("A"), pybind11::arg("B"));
@@ -703,7 +703,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::ScalarMinimization<double> & (ROL::ScalarMinimization<double>::*)(const class ROL::ScalarMinimization<double> &)) &ROL::ScalarMinimization<double>::operator=, "C++: ROL::ScalarMinimization<double>::operator=(const class ROL::ScalarMinimization<double> &) --> class ROL::ScalarMinimization<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::BrentsScalarMinimization file:ROL_BrentsScalarMinimization.hpp line:60
-		pybind11::class_<ROL::BrentsScalarMinimization<double>, Teuchos::RCP<ROL::BrentsScalarMinimization<double>>, PyCallBack_ROL_BrentsScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "BrentsScalarMinimization_double_t", "");
+		pybind11::class_<ROL::BrentsScalarMinimization<double>, Teuchos::RCP<ROL::BrentsScalarMinimization<double>>, PyCallBack_ROL_BrentsScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "BrentsScalarMinimization_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_BrentsScalarMinimization_double_t const &o){ return new PyCallBack_ROL_BrentsScalarMinimization_double_t(o); } ) );
@@ -715,7 +715,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::ScalarMinimization<double> & (ROL::ScalarMinimization<double>::*)(const class ROL::ScalarMinimization<double> &)) &ROL::ScalarMinimization<double>::operator=, "C++: ROL::ScalarMinimization<double>::operator=(const class ROL::ScalarMinimization<double> &) --> class ROL::ScalarMinimization<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::BisectionScalarMinimization file:ROL_BisectionScalarMinimization.hpp line:60
-		pybind11::class_<ROL::BisectionScalarMinimization<double>, Teuchos::RCP<ROL::BisectionScalarMinimization<double>>, PyCallBack_ROL_BisectionScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "BisectionScalarMinimization_double_t", "");
+		pybind11::class_<ROL::BisectionScalarMinimization<double>, Teuchos::RCP<ROL::BisectionScalarMinimization<double>>, PyCallBack_ROL_BisectionScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "BisectionScalarMinimization_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_BisectionScalarMinimization_double_t const &o){ return new PyCallBack_ROL_BisectionScalarMinimization_double_t(o); } ) );
@@ -727,7 +727,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::ScalarMinimization<double> & (ROL::ScalarMinimization<double>::*)(const class ROL::ScalarMinimization<double> &)) &ROL::ScalarMinimization<double>::operator=, "C++: ROL::ScalarMinimization<double>::operator=(const class ROL::ScalarMinimization<double> &) --> class ROL::ScalarMinimization<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::GoldenSectionScalarMinimization file:ROL_GoldenSectionScalarMinimization.hpp line:59
-		pybind11::class_<ROL::GoldenSectionScalarMinimization<double>, Teuchos::RCP<ROL::GoldenSectionScalarMinimization<double>>, PyCallBack_ROL_GoldenSectionScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "GoldenSectionScalarMinimization_double_t", "");
+		pybind11::class_<ROL::GoldenSectionScalarMinimization<double>, Teuchos::RCP<ROL::GoldenSectionScalarMinimization<double>>, PyCallBack_ROL_GoldenSectionScalarMinimization_double_t, ROL::ScalarMinimization<double>> cl(M("ROL"), "GoldenSectionScalarMinimization_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_GoldenSectionScalarMinimization_double_t const &o){ return new PyCallBack_ROL_GoldenSectionScalarMinimization_double_t(o); } ) );
@@ -739,7 +739,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::ScalarMinimization<double> & (ROL::ScalarMinimization<double>::*)(const class ROL::ScalarMinimization<double> &)) &ROL::ScalarMinimization<double>::operator=, "C++: ROL::ScalarMinimization<double>::operator=(const class ROL::ScalarMinimization<double> &) --> class ROL::ScalarMinimization<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Bracketing file:ROL_Bracketing.hpp line:57
-		pybind11::class_<ROL::Bracketing<double>, Teuchos::RCP<ROL::Bracketing<double>>, PyCallBack_ROL_Bracketing_double_t> cl(M("ROL"), "Bracketing_double_t", "");
+		pybind11::class_<ROL::Bracketing<double>, Teuchos::RCP<ROL::Bracketing<double>>, PyCallBack_ROL_Bracketing_double_t> cl(M("ROL"), "Bracketing_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Bracketing<double>(); }, [](){ return new PyCallBack_ROL_Bracketing_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Bracketing_double_t const &o){ return new PyCallBack_ROL_Bracketing_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Bracketing<double> const &o){ return new ROL::Bracketing<double>(o); } ) );
@@ -748,7 +748,7 @@ void bind_ROL_BundleStatusTest(std::function< pybind11::module &(std::string con
 		cl.def("assign", (class ROL::Bracketing<double> & (ROL::Bracketing<double>::*)(const class ROL::Bracketing<double> &)) &ROL::Bracketing<double>::operator=, "C++: ROL::Bracketing<double>::operator=(const class ROL::Bracketing<double> &) --> class ROL::Bracketing<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ScalarMinimizationLineSearch_U file:ROL_ScalarMinimizationLineSearch_U.hpp line:62
-		pybind11::class_<ROL::ScalarMinimizationLineSearch_U<double>, Teuchos::RCP<ROL::ScalarMinimizationLineSearch_U<double>>, PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "ScalarMinimizationLineSearch_U_double_t", "");
+		pybind11::class_<ROL::ScalarMinimizationLineSearch_U<double>, Teuchos::RCP<ROL::ScalarMinimizationLineSearch_U<double>>, PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t, ROL::LineSearch_U<double>> cl(M("ROL"), "ScalarMinimizationLineSearch_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::ScalarMinimizationLineSearch_U<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::ScalarMinimization<double> > & a1){ return new ROL::ScalarMinimizationLineSearch_U<double>(a0, a1); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::ScalarMinimization<double> > & a1){ return new PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::ScalarMinimization<double> > & a1, const class Teuchos::RCP<class ROL::Bracketing<double> > & a2){ return new ROL::ScalarMinimizationLineSearch_U<double>(a0, a1, a2); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::ScalarMinimization<double> > & a1, const class Teuchos::RCP<class ROL::Bracketing<double> > & a2){ return new PyCallBack_ROL_ScalarMinimizationLineSearch_U_double_t(a0, a1, a2); } ), "doc");

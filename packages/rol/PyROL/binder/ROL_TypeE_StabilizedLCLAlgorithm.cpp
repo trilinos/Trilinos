@@ -49,7 +49,7 @@ struct PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t : public ROL::TypeE:
 void bind_ROL_TypeE_StabilizedLCLAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeE::StabilizedLCLAlgorithm file:ROL_TypeE_StabilizedLCLAlgorithm.hpp line:62
-		pybind11::class_<ROL::TypeE::StabilizedLCLAlgorithm<double>, Teuchos::RCP<ROL::TypeE::StabilizedLCLAlgorithm<double>>, PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "StabilizedLCLAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeE::StabilizedLCLAlgorithm<double>, Teuchos::RCP<ROL::TypeE::StabilizedLCLAlgorithm<double>>, PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "StabilizedLCLAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t(o); } ) );

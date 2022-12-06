@@ -264,7 +264,7 @@ struct PyCallBack_ROL_ElasticObjective_double_t : public ROL::ElasticObjective<d
 void bind_ROL_ElasticLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::ElasticLinearConstraint file:ROL_ElasticLinearConstraint.hpp line:60
-		pybind11::class_<ROL::ElasticLinearConstraint<double>, Teuchos::RCP<ROL::ElasticLinearConstraint<double>>, PyCallBack_ROL_ElasticLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ElasticLinearConstraint_double_t", "");
+		pybind11::class_<ROL::ElasticLinearConstraint<double>, Teuchos::RCP<ROL::ElasticLinearConstraint<double>>, PyCallBack_ROL_ElasticLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ElasticLinearConstraint_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class Teuchos::RCP<const class ROL::Vector<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const class Teuchos::RCP<const class ROL::Vector<double> > &>(), pybind11::arg("x"), pybind11::arg("con"), pybind11::arg("c") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_ElasticLinearConstraint_double_t const &o){ return new PyCallBack_ROL_ElasticLinearConstraint_double_t(o); } ) );
@@ -297,7 +297,7 @@ void bind_ROL_ElasticLinearConstraint(std::function< pybind11::module &(std::str
 		cl.def("assign", (class ROL::Constraint<double> & (ROL::Constraint<double>::*)(const class ROL::Constraint<double> &)) &ROL::Constraint<double>::operator=, "C++: ROL::Constraint<double>::operator=(const class ROL::Constraint<double> &) --> class ROL::Constraint<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ElasticObjective file:ROL_ElasticObjective.hpp line:83
-		pybind11::class_<ROL::ElasticObjective<double>, Teuchos::RCP<ROL::ElasticObjective<double>>, PyCallBack_ROL_ElasticObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "ElasticObjective_double_t", "");
+		pybind11::class_<ROL::ElasticObjective<double>, Teuchos::RCP<ROL::ElasticObjective<double>>, PyCallBack_ROL_ElasticObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "ElasticObjective_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("sigma"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const int>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("sigma"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("scaleLagrangian"), pybind11::arg("HessianApprox") );

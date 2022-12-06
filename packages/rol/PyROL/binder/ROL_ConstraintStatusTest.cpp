@@ -172,7 +172,7 @@ struct PyCallBack_ROL_AugmentedLagrangianObjective_double_t : public ROL::Augmen
 void bind_ROL_ConstraintStatusTest(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::ConstraintStatusTest file:ROL_ConstraintStatusTest.hpp line:58
-		pybind11::class_<ROL::ConstraintStatusTest<double>, Teuchos::RCP<ROL::ConstraintStatusTest<double>>, PyCallBack_ROL_ConstraintStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "ConstraintStatusTest_double_t", "");
+		pybind11::class_<ROL::ConstraintStatusTest<double>, Teuchos::RCP<ROL::ConstraintStatusTest<double>>, PyCallBack_ROL_ConstraintStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "ConstraintStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](){ return new ROL::ConstraintStatusTest<double>(); }, [](){ return new PyCallBack_ROL_ConstraintStatusTest_double_t(); } ), "doc");
@@ -189,7 +189,7 @@ void bind_ROL_ConstraintStatusTest(std::function< pybind11::module &(std::string
 		cl.def("assign", (class ROL::StatusTest<double> & (ROL::StatusTest<double>::*)(const class ROL::StatusTest<double> &)) &ROL::StatusTest<double>::operator=, "C++: ROL::StatusTest<double>::operator=(const class ROL::StatusTest<double> &) --> class ROL::StatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::AugmentedLagrangianObjective file:ROL_AugmentedLagrangianObjective.hpp line:88
-		pybind11::class_<ROL::AugmentedLagrangianObjective<double>, Teuchos::RCP<ROL::AugmentedLagrangianObjective<double>>, PyCallBack_ROL_AugmentedLagrangianObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "AugmentedLagrangianObjective_double_t", "");
+		pybind11::class_<ROL::AugmentedLagrangianObjective<double>, Teuchos::RCP<ROL::AugmentedLagrangianObjective<double>>, PyCallBack_ROL_AugmentedLagrangianObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "AugmentedLagrangianObjective_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::Constraint<double> > &, const double, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const int>(), pybind11::arg("obj"), pybind11::arg("con"), pybind11::arg("penaltyParameter"), pybind11::arg("dualOptVec"), pybind11::arg("primConVec"), pybind11::arg("dualConVec"), pybind11::arg("scaleLagrangian"), pybind11::arg("HessianApprox") );

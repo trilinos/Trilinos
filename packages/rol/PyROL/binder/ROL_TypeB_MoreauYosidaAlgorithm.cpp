@@ -45,7 +45,7 @@ struct PyCallBack_ROL_TypeB_MoreauYosidaAlgorithm_double_t : public ROL::TypeB::
 void bind_ROL_TypeB_MoreauYosidaAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeB::MoreauYosidaAlgorithm file:ROL_TypeB_MoreauYosidaAlgorithm.hpp line:58
-		pybind11::class_<ROL::TypeB::MoreauYosidaAlgorithm<double>, Teuchos::RCP<ROL::TypeB::MoreauYosidaAlgorithm<double>>, PyCallBack_ROL_TypeB_MoreauYosidaAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "MoreauYosidaAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeB::MoreauYosidaAlgorithm<double>, Teuchos::RCP<ROL::TypeB::MoreauYosidaAlgorithm<double>>, PyCallBack_ROL_TypeB_MoreauYosidaAlgorithm_double_t, ROL::TypeB::Algorithm<double>> cl(M("ROL::TypeB"), "MoreauYosidaAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeB_MoreauYosidaAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeB_MoreauYosidaAlgorithm_double_t(o); } ) );

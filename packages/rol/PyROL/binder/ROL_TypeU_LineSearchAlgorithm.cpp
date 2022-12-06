@@ -48,7 +48,7 @@ struct PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t : public ROL::TypeU::Li
 void bind_ROL_TypeU_LineSearchAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeU::LineSearchAlgorithm file:ROL_TypeU_LineSearchAlgorithm.hpp line:100
-		pybind11::class_<ROL::TypeU::LineSearchAlgorithm<double>, Teuchos::RCP<ROL::TypeU::LineSearchAlgorithm<double>>, PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "LineSearchAlgorithm_double_t", "");
+		pybind11::class_<ROL::TypeU::LineSearchAlgorithm<double>, Teuchos::RCP<ROL::TypeU::LineSearchAlgorithm<double>>, PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "LineSearchAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a1){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0, a1); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a1){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > &, const class Teuchos::RCP<class ROL::LineSearch_U<double> > &>(), pybind11::arg("parlist"), pybind11::arg("descent"), pybind11::arg("lineSearch") );

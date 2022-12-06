@@ -91,7 +91,7 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 	M("ROL").def("getParametersFromXmlFile", (class Teuchos::RCP<class Teuchos::ParameterList> (*)(const std::string &)) &ROL::getParametersFromXmlFile, "C++: ROL::getParametersFromXmlFile(const std::string &) --> class Teuchos::RCP<class Teuchos::ParameterList>", pybind11::arg("filename"));
 
 	{ // ROL::StatusTest file:ROL_StatusTest.hpp line:58
-		pybind11::class_<ROL::StatusTest<double>, Teuchos::RCP<ROL::StatusTest<double>>, PyCallBack_ROL_StatusTest_double_t> cl(M("ROL"), "StatusTest_double_t", "");
+		pybind11::class_<ROL::StatusTest<double>, Teuchos::RCP<ROL::StatusTest<double>>, PyCallBack_ROL_StatusTest_double_t> cl(M("ROL"), "StatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](){ return new ROL::StatusTest<double>(); }, [](){ return new PyCallBack_ROL_StatusTest_double_t(); } ), "doc");
@@ -106,7 +106,7 @@ void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::StatusTest<double> & (ROL::StatusTest<double>::*)(const class ROL::StatusTest<double> &)) &ROL::StatusTest<double>::operator=, "C++: ROL::StatusTest<double>::operator=(const class ROL::StatusTest<double> &) --> class ROL::StatusTest<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::CombinedStatusTest file:ROL_CombinedStatusTest.hpp line:57
-		pybind11::class_<ROL::CombinedStatusTest<double>, Teuchos::RCP<ROL::CombinedStatusTest<double>>, PyCallBack_ROL_CombinedStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "CombinedStatusTest_double_t", "");
+		pybind11::class_<ROL::CombinedStatusTest<double>, Teuchos::RCP<ROL::CombinedStatusTest<double>>, PyCallBack_ROL_CombinedStatusTest_double_t, ROL::StatusTest<double>> cl(M("ROL"), "CombinedStatusTest_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::CombinedStatusTest<double>(); }, [](){ return new PyCallBack_ROL_CombinedStatusTest_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_CombinedStatusTest_double_t const &o){ return new PyCallBack_ROL_CombinedStatusTest_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::CombinedStatusTest<double> const &o){ return new ROL::CombinedStatusTest<double>(o); } ) );

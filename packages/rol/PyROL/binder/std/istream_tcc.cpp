@@ -190,9 +190,23 @@ struct PyCallBack_std_stringbuf : public std::stringbuf {
 void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // std::basic_istream file:bits/istream.tcc line:1048
-		pybind11::class_<std::istream, Teuchos::RCP<std::istream>> cl(M("std"), "istream", "");
+		pybind11::class_<std::istream, Teuchos::RCP<std::istream>> cl(M("std"), "istream", "", pybind11::module_local());
 		cl.def( pybind11::init<class std::basic_streambuf<char> *>(), pybind11::arg("__sb") );
 
+		cl.def("__rshift__", (std::istream & (std::istream::*)(bool &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(bool &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(short &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(short &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned short &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned short &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(int &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(int &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned int &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned int &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned long long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned long long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(float &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(float &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(double &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(double &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long double &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long double &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(void *&)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(void *&) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__p"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(class std::basic_streambuf<char> *)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(class std::basic_streambuf<char> *) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__sb"));
 		cl.def("gcount", (long (std::istream::*)() const) &std::basic_istream<char, std::char_traits<char> >::gcount, "C++: std::basic_istream<char, std::char_traits<char> >::gcount() const --> long");
 		cl.def("get", (int (std::istream::*)()) &std::basic_istream<char, std::char_traits<char> >::get, "C++: std::basic_istream<char, std::char_traits<char> >::get() --> int");
 		cl.def("get", (std::istream & (std::istream::*)(char &)) &std::basic_istream<char, std::char_traits<char> >::get, "C++: std::basic_istream<char, std::char_traits<char> >::get(char &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__c"));
@@ -217,7 +231,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 
 		{ // std::basic_istream<char, std::char_traits<char> >::sentry file:istream line:107
 			auto & enclosing_class = cl;
-			pybind11::class_<std::basic_istream<char, std::char_traits<char> >::sentry, Teuchos::RCP<std::basic_istream<char, std::char_traits<char> >::sentry>> cl(enclosing_class, "sentry", "");
+			pybind11::class_<std::basic_istream<char, std::char_traits<char> >::sentry, Teuchos::RCP<std::basic_istream<char, std::char_traits<char> >::sentry>> cl(enclosing_class, "sentry", "", pybind11::module_local());
 			cl.def( pybind11::init( [](std::istream & a0){ return new std::basic_istream<char, std::char_traits<char> >::sentry(a0); } ), "doc" , pybind11::arg("__is"));
 			cl.def( pybind11::init<std::istream &, bool>(), pybind11::arg("__is"), pybind11::arg("__noskipws") );
 
@@ -225,7 +239,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 
 	}
 	{ // std::basic_stringbuf file:bits/sstream.tcc line:291
-		pybind11::class_<std::stringbuf, Teuchos::RCP<std::stringbuf>, PyCallBack_std_stringbuf, std::streambuf> cl(M("std"), "stringbuf", "");
+		pybind11::class_<std::stringbuf, Teuchos::RCP<std::stringbuf>, PyCallBack_std_stringbuf, std::streambuf> cl(M("std"), "stringbuf", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::stringbuf(); }, [](){ return new PyCallBack_std_stringbuf(); } ), "doc");
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 
@@ -257,7 +271,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 		cl.def("__safe_pbump", (void (std::streambuf::*)(long)) &std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump, "C++: std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump(long) --> void", pybind11::arg("__n"));
 	}
 	{ // std::basic_istringstream file:bits/sstream.tcc line:292
-		pybind11::class_<std::istringstream, Teuchos::RCP<std::istringstream>, std::istream> cl(M("std"), "istringstream", "");
+		pybind11::class_<std::istringstream, Teuchos::RCP<std::istringstream>, std::istream> cl(M("std"), "istringstream", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::istringstream(); } ), "doc" );
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 
@@ -268,6 +282,20 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 		cl.def("rdbuf", (class std::basic_stringbuf<char> * (std::istringstream::*)() const) &std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::rdbuf, "C++: std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::rdbuf() const --> class std::basic_stringbuf<char> *", pybind11::return_value_policy::automatic);
 		cl.def("str", (std::string (std::istringstream::*)() const) &std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::str, "C++: std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::str() const --> std::string");
 		cl.def("str", (void (std::istringstream::*)(const std::string &)) &std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::str, "C++: std::basic_istringstream<char, std::char_traits<char>, std::allocator<char> >::str(const std::string &) --> void", pybind11::arg("__s"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(bool &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(bool &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(short &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(short &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned short &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned short &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(int &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(int &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned int &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned int &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(unsigned long long &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(unsigned long long &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__n"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(float &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(float &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(double &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(double &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(long double &)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(long double &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__f"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(void *&)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(void *&) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__p"));
+		cl.def("__rshift__", (std::istream & (std::istream::*)(class std::basic_streambuf<char> *)) &std::basic_istream<char, std::char_traits<char> >::operator>>, "C++: std::basic_istream<char, std::char_traits<char> >::operator>>(class std::basic_streambuf<char> *) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__sb"));
 		cl.def("gcount", (long (std::istream::*)() const) &std::basic_istream<char, std::char_traits<char> >::gcount, "C++: std::basic_istream<char, std::char_traits<char> >::gcount() const --> long");
 		cl.def("get", (int (std::istream::*)()) &std::basic_istream<char, std::char_traits<char> >::get, "C++: std::basic_istream<char, std::char_traits<char> >::get() --> int");
 		cl.def("get", (std::istream & (std::istream::*)(char &)) &std::basic_istream<char, std::char_traits<char> >::get, "C++: std::basic_istream<char, std::char_traits<char> >::get(char &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("__c"));
@@ -291,7 +319,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 		cl.def("seekg", (std::istream & (std::istream::*)(long, enum std::_Ios_Seekdir)) &std::basic_istream<char, std::char_traits<char> >::seekg, "C++: std::basic_istream<char, std::char_traits<char> >::seekg(long, enum std::_Ios_Seekdir) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg(""), pybind11::arg(""));
 	}
 	{ // std::basic_ostringstream file:bits/sstream.tcc line:293
-		pybind11::class_<std::ostringstream, Teuchos::RCP<std::ostringstream>> cl(M("std"), "ostringstream", "");
+		pybind11::class_<std::ostringstream, Teuchos::RCP<std::ostringstream>> cl(M("std"), "ostringstream", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::ostringstream(); } ), "doc" );
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 

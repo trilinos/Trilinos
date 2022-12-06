@@ -19,7 +19,7 @@
 void bind_ROL_TypeU_Algorithm_1(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeU::AlgorithmState file:ROL_TypeU_Algorithm.hpp line:60
-		pybind11::class_<ROL::TypeU::AlgorithmState<double>, Teuchos::RCP<ROL::TypeU::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeU"), "AlgorithmState_double_t", "");
+		pybind11::class_<ROL::TypeU::AlgorithmState<double>, Teuchos::RCP<ROL::TypeU::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeU"), "AlgorithmState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::TypeU::AlgorithmState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::TypeU::AlgorithmState<double> const &o){ return new ROL::TypeU::AlgorithmState<double>(o); } ) );
 		cl.def_readwrite("searchSize", &ROL::TypeU::AlgorithmState<double>::searchSize);

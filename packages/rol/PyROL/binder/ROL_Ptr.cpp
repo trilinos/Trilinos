@@ -103,7 +103,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("ROL_UNDERFLOW", (double (*)()) &ROL::ROL_UNDERFLOW<double>, "C++: ROL::ROL_UNDERFLOW() --> double");
 
 	// ROL::EExitStatus file:ROL_Types.hpp line:117
-	pybind11::enum_<ROL::EExitStatus>(M("ROL"), "EExitStatus", pybind11::arithmetic(), "Enum for algorithm termination.")
+	pybind11::enum_<ROL::EExitStatus>(M("ROL"), "EExitStatus", pybind11::arithmetic(), "Enum for algorithm termination.", pybind11::module_local())
 		.value("EXITSTATUS_CONVERGED", ROL::EXITSTATUS_CONVERGED)
 		.value("EXITSTATUS_MAXITER", ROL::EXITSTATUS_MAXITER)
 		.value("EXITSTATUS_STEPTOL", ROL::EXITSTATUS_STEPTOL)
@@ -118,7 +118,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("EExitStatusToString", (std::string (*)(enum ROL::EExitStatus)) &ROL::EExitStatusToString, "C++: ROL::EExitStatusToString(enum ROL::EExitStatus) --> std::string", pybind11::arg("tr"));
 
 	{ // ROL::AlgorithmState file:ROL_Types.hpp line:143
-		pybind11::class_<ROL::AlgorithmState<double>, Teuchos::RCP<ROL::AlgorithmState<double>>> cl(M("ROL"), "AlgorithmState_double_t", "");
+		pybind11::class_<ROL::AlgorithmState<double>, Teuchos::RCP<ROL::AlgorithmState<double>>> cl(M("ROL"), "AlgorithmState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::AlgorithmState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::AlgorithmState<double> const &o){ return new ROL::AlgorithmState<double>(o); } ) );
 		cl.def_readwrite("iter", &ROL::AlgorithmState<double>::iter);
@@ -142,7 +142,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 		cl.def("assign", (struct ROL::AlgorithmState<double> & (ROL::AlgorithmState<double>::*)(const struct ROL::AlgorithmState<double> &)) &ROL::AlgorithmState<double>::operator=, "C++: ROL::AlgorithmState<double>::operator=(const struct ROL::AlgorithmState<double> &) --> struct ROL::AlgorithmState<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::StepState file:ROL_Types.hpp line:203
-		pybind11::class_<ROL::StepState<double>, Teuchos::RCP<ROL::StepState<double>>> cl(M("ROL"), "StepState_double_t", "");
+		pybind11::class_<ROL::StepState<double>, Teuchos::RCP<ROL::StepState<double>>> cl(M("ROL"), "StepState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::StepState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::StepState<double> const &o){ return new ROL::StepState<double>(o); } ) );
 		cl.def_readwrite("gradientVec", &ROL::StepState<double>::gradientVec);
@@ -158,7 +158,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 		cl.def("reset", (void (ROL::StepState<double>::*)(const double)) &ROL::StepState<double>::reset, "C++: ROL::StepState<double>::reset(const double) --> void", pybind11::arg("searchSizeInput"));
 	}
 	{ // ROL::removeSpecialCharacters file:ROL_Types.hpp line:243
-		pybind11::class_<ROL::removeSpecialCharacters, Teuchos::RCP<ROL::removeSpecialCharacters>> cl(M("ROL"), "removeSpecialCharacters", "");
+		pybind11::class_<ROL::removeSpecialCharacters, Teuchos::RCP<ROL::removeSpecialCharacters>> cl(M("ROL"), "removeSpecialCharacters", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::removeSpecialCharacters(); } ) );
 		cl.def( pybind11::init( [](ROL::removeSpecialCharacters const &o){ return new ROL::removeSpecialCharacters(o); } ) );
 		cl.def("__call__", (bool (ROL::removeSpecialCharacters::*)(char)) &ROL::removeSpecialCharacters::operator(), "C++: ROL::removeSpecialCharacters::operator()(char) --> bool", pybind11::arg("c"));
@@ -167,7 +167,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("removeStringFormat", (std::string (*)(std::string)) &ROL::removeStringFormat, "C++: ROL::removeStringFormat(std::string) --> std::string", pybind11::arg("s"));
 
 	// ROL::EProblem file:ROL_Types.hpp line:257
-	pybind11::enum_<ROL::EProblem>(M("ROL"), "EProblem", pybind11::arithmetic(), "")
+	pybind11::enum_<ROL::EProblem>(M("ROL"), "EProblem", pybind11::arithmetic(), "", pybind11::module_local())
 		.value("TYPE_U", ROL::TYPE_U)
 		.value("TYPE_B", ROL::TYPE_B)
 		.value("TYPE_E", ROL::TYPE_E)
@@ -178,7 +178,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 ;
 
 	// ROL::EStep file:ROL_Types.hpp line:276
-	pybind11::enum_<ROL::EStep>(M("ROL"), "EStep", pybind11::arithmetic(), "Enumeration of step types.\n\n      \n    AUGMENTEDLAGRANGIAN     describe\n      \n\n    BUNDLE                  describe\n      \n\n    COMPOSITESTEP           describe\n      \n\n    LINESEARCH              describe\n      \n\n    MOREAUYOSIDAPENALTY     describe\n      \n\n    PRIMALDUALACTIVESET     describe\n      \n\n    TRUSTREGION             describe")
+	pybind11::enum_<ROL::EStep>(M("ROL"), "EStep", pybind11::arithmetic(), "Enumeration of step types.\n\n      \n    AUGMENTEDLAGRANGIAN     describe\n      \n\n    BUNDLE                  describe\n      \n\n    COMPOSITESTEP           describe\n      \n\n    LINESEARCH              describe\n      \n\n    MOREAUYOSIDAPENALTY     describe\n      \n\n    PRIMALDUALACTIVESET     describe\n      \n\n    TRUSTREGION             describe", pybind11::module_local())
 		.value("STEP_AUGMENTEDLAGRANGIAN", ROL::STEP_AUGMENTEDLAGRANGIAN)
 		.value("STEP_BUNDLE", ROL::STEP_BUNDLE)
 		.value("STEP_COMPOSITESTEP", ROL::STEP_COMPOSITESTEP)
@@ -209,7 +209,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToEStep", (enum ROL::EStep (*)(std::string)) &ROL::StringToEStep, "C++: ROL::StringToEStep(std::string) --> enum ROL::EStep", pybind11::arg("s"));
 
 	// ROL::EDescent file:ROL_Types.hpp line:411
-	pybind11::enum_<ROL::EDescent>(M("ROL"), "EDescent", pybind11::arithmetic(), "Enumeration of descent direction types.\n\n      \n    STEEPEST        describe\n      \n\n    NONLINEARCG     describe\n      \n\n    SECANT          describe\n      \n\n    NEWTON          describe \n      \n\n    NEWTONKRYLOV    describe\n      \n\n    SECANTPRECOND   describe")
+	pybind11::enum_<ROL::EDescent>(M("ROL"), "EDescent", pybind11::arithmetic(), "Enumeration of descent direction types.\n\n      \n    STEEPEST        describe\n      \n\n    NONLINEARCG     describe\n      \n\n    SECANT          describe\n      \n\n    NEWTON          describe \n      \n\n    NEWTONKRYLOV    describe\n      \n\n    SECANTPRECOND   describe", pybind11::module_local())
 		.value("DESCENT_STEEPEST", ROL::DESCENT_STEEPEST)
 		.value("DESCENT_NONLINEARCG", ROL::DESCENT_NONLINEARCG)
 		.value("DESCENT_SECANT", ROL::DESCENT_SECANT)
@@ -230,7 +230,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToEDescent", (enum ROL::EDescent (*)(std::string)) &ROL::StringToEDescent, "C++: ROL::StringToEDescent(std::string) --> enum ROL::EDescent", pybind11::arg("s"));
 
 	// ROL::ESecant file:ROL_Types.hpp line:486
-	pybind11::enum_<ROL::ESecant>(M("ROL"), "ESecant", pybind11::arithmetic(), "Enumeration of secant update algorithms.\n\n      \n    LBFGS           describe\n      \n\n    LDFP            describe\n      \n\n    LSR1            describe \n      \n\n    BARZILAIBORWEIN describe")
+	pybind11::enum_<ROL::ESecant>(M("ROL"), "ESecant", pybind11::arithmetic(), "Enumeration of secant update algorithms.\n\n      \n    LBFGS           describe\n      \n\n    LDFP            describe\n      \n\n    LSR1            describe \n      \n\n    BARZILAIBORWEIN describe", pybind11::module_local())
 		.value("SECANT_LBFGS", ROL::SECANT_LBFGS)
 		.value("SECANT_LDFP", ROL::SECANT_LDFP)
 		.value("SECANT_LSR1", ROL::SECANT_LSR1)
@@ -251,7 +251,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToESecant", (enum ROL::ESecant (*)(std::string)) &ROL::StringToESecant, "C++: ROL::StringToESecant(std::string) --> enum ROL::ESecant", pybind11::arg("s"));
 
 	// ROL::ENonlinearCG file:ROL_Types.hpp line:566
-	pybind11::enum_<ROL::ENonlinearCG>(M("ROL"), "ENonlinearCG", pybind11::arithmetic(), "Enumeration of nonlinear CG algorithms.\n\n      \n    HESTENES_STIEFEL   \n\n      \n    FLETCHER_REEVES    \n\n      \n    DANIEL             \n\n      \n    POLAK_RIBIERE      \n\n      \n    FLETCHER_CONJDESC  \n\n      \n    LIU_STOREY         \n\n      \n    DAI_YUAN           \n\n      \n    HAGER_ZHANG        \n\n      \n    OREN_LUENBERGER    \n ")
+	pybind11::enum_<ROL::ENonlinearCG>(M("ROL"), "ENonlinearCG", pybind11::arithmetic(), "Enumeration of nonlinear CG algorithms.\n\n      \n    HESTENES_STIEFEL   \n\n      \n    FLETCHER_REEVES    \n\n      \n    DANIEL             \n\n      \n    POLAK_RIBIERE      \n\n      \n    FLETCHER_CONJDESC  \n\n      \n    LIU_STOREY         \n\n      \n    DAI_YUAN           \n\n      \n    HAGER_ZHANG        \n\n      \n    OREN_LUENBERGER    \n ", pybind11::module_local())
 		.value("NONLINEARCG_HESTENES_STIEFEL", ROL::NONLINEARCG_HESTENES_STIEFEL)
 		.value("NONLINEARCG_FLETCHER_REEVES", ROL::NONLINEARCG_FLETCHER_REEVES)
 		.value("NONLINEARCG_DANIEL", ROL::NONLINEARCG_DANIEL)
@@ -277,7 +277,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToENonlinearCG", (enum ROL::ENonlinearCG (*)(std::string)) &ROL::StringToENonlinearCG, "C++: ROL::StringToENonlinearCG(std::string) --> enum ROL::ENonlinearCG", pybind11::arg("s"));
 
 	// ROL::ELineSearch file:ROL_Types.hpp line:658
-	pybind11::enum_<ROL::ELineSearch>(M("ROL"), "ELineSearch", pybind11::arithmetic(), "Enumeration of line-search types.\n\n      \n    BACKTRACKING    describe\n      \n\n    BISECTION       describe\n      \n\n    GOLDENSECTION   describe\n      \n\n    CUBICINTERP     describe\n      \n\n    BRENTS          describe\n      \n\n    USERDEFINED     describe")
+	pybind11::enum_<ROL::ELineSearch>(M("ROL"), "ELineSearch", pybind11::arithmetic(), "Enumeration of line-search types.\n\n      \n    BACKTRACKING    describe\n      \n\n    BISECTION       describe\n      \n\n    GOLDENSECTION   describe\n      \n\n    CUBICINTERP     describe\n      \n\n    BRENTS          describe\n      \n\n    USERDEFINED     describe", pybind11::module_local())
 		.value("LINESEARCH_ITERATIONSCALING", ROL::LINESEARCH_ITERATIONSCALING)
 		.value("LINESEARCH_PATHBASEDTARGETLEVEL", ROL::LINESEARCH_PATHBASEDTARGETLEVEL)
 		.value("LINESEARCH_BACKTRACKING", ROL::LINESEARCH_BACKTRACKING)
@@ -301,7 +301,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToELineSearch", (enum ROL::ELineSearch (*)(std::string)) &ROL::StringToELineSearch, "C++: ROL::StringToELineSearch(std::string) --> enum ROL::ELineSearch", pybind11::arg("s"));
 
 	// ROL::ECurvatureCondition file:ROL_Types.hpp line:741
-	pybind11::enum_<ROL::ECurvatureCondition>(M("ROL"), "ECurvatureCondition", pybind11::arithmetic(), "Enumeration of line-search curvature conditions.\n\n      \n    WOLFE           describe\n      \n\n    STRONGWOLFE     describe\n      \n\n    GOLDSTEIN       describe")
+	pybind11::enum_<ROL::ECurvatureCondition>(M("ROL"), "ECurvatureCondition", pybind11::arithmetic(), "Enumeration of line-search curvature conditions.\n\n      \n    WOLFE           describe\n      \n\n    STRONGWOLFE     describe\n      \n\n    GOLDSTEIN       describe", pybind11::module_local())
 		.value("CURVATURECONDITION_WOLFE", ROL::CURVATURECONDITION_WOLFE)
 		.value("CURVATURECONDITION_STRONGWOLFE", ROL::CURVATURECONDITION_STRONGWOLFE)
 		.value("CURVATURECONDITION_GENERALIZEDWOLFE", ROL::CURVATURECONDITION_GENERALIZEDWOLFE)
@@ -323,7 +323,7 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	M("ROL").def("StringToECurvatureCondition", (enum ROL::ECurvatureCondition (*)(std::string)) &ROL::StringToECurvatureCondition, "C++: ROL::StringToECurvatureCondition(std::string) --> enum ROL::ECurvatureCondition", pybind11::arg("s"));
 
 	// ROL::ECGFlag file:ROL_Types.hpp line:821
-	pybind11::enum_<ROL::ECGFlag>(M("ROL"), "ECGFlag", pybind11::arithmetic(), "Enumation of flags used by conjugate gradient methods.\n\n    \n CG_FLAG_SUCCESS     Residual Tolerance Met\n    \n\n CG_FLAG_ITEREXCEED  Iteration Limit Exceeded\n    \n\n CG_FLAG_NEGCURVE    Negative Curvature Detected\n    \n\n CG_FLAG_TRRADEX     Trust-Region Radius Exceeded\n    \n\n CG_FLAG_ZERORHS     Initiali Right Hand Side is Zero\n\n  ")
+	pybind11::enum_<ROL::ECGFlag>(M("ROL"), "ECGFlag", pybind11::arithmetic(), "Enumation of flags used by conjugate gradient methods.\n\n    \n CG_FLAG_SUCCESS     Residual Tolerance Met\n    \n\n CG_FLAG_ITEREXCEED  Iteration Limit Exceeded\n    \n\n CG_FLAG_NEGCURVE    Negative Curvature Detected\n    \n\n CG_FLAG_TRRADEX     Trust-Region Radius Exceeded\n    \n\n CG_FLAG_ZERORHS     Initiali Right Hand Side is Zero\n\n  ", pybind11::module_local())
 		.value("CG_FLAG_SUCCESS", ROL::CG_FLAG_SUCCESS)
 		.value("CG_FLAG_ITEREXCEED", ROL::CG_FLAG_ITEREXCEED)
 		.value("CG_FLAG_NEGCURVE", ROL::CG_FLAG_NEGCURVE)
@@ -337,4 +337,9 @@ void bind_ROL_Ptr(std::function< pybind11::module &(std::string const &namespace
 	// ROL::ECGFlagToString(enum ROL::ECGFlag) file:ROL_Types.hpp line:831
 	M("ROL").def("ECGFlagToString", (std::string (*)(enum ROL::ECGFlag)) &ROL::ECGFlagToString, "C++: ROL::ECGFlagToString(enum ROL::ECGFlag) --> std::string", pybind11::arg("cgf"));
 
+	{ // ROL::TypeCaster file:ROL_Types.hpp line:895
+		pybind11::class_<ROL::TypeCaster<double,float>, Teuchos::RCP<ROL::TypeCaster<double,float>>> cl(M("ROL"), "TypeCaster_double_float_t", "", pybind11::module_local());
+		cl.def( pybind11::init( [](){ return new ROL::TypeCaster<double,float>(); } ) );
+		cl.def_static("ElementToReal", (double (*)(const float &)) &ROL::TypeCaster<double, float>::ElementToReal, "C++: ROL::TypeCaster<double, float>::ElementToReal(const float &) --> double", pybind11::arg("val"));
+	}
 }

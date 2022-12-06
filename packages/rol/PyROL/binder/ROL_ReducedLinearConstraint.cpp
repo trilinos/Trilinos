@@ -146,7 +146,7 @@ struct PyCallBack_ROL_ReducedLinearConstraint_double_t : public ROL::ReducedLine
 void bind_ROL_ReducedLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::ReducedLinearConstraint file:ROL_ReducedLinearConstraint.hpp line:67
-		pybind11::class_<ROL::ReducedLinearConstraint<double>, Teuchos::RCP<ROL::ReducedLinearConstraint<double>>, PyCallBack_ROL_ReducedLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ReducedLinearConstraint_double_t", "");
+		pybind11::class_<ROL::ReducedLinearConstraint<double>, Teuchos::RCP<ROL::ReducedLinearConstraint<double>>, PyCallBack_ROL_ReducedLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ReducedLinearConstraint_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Constraint<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<const class ROL::Vector<double> > &>(), pybind11::arg("con"), pybind11::arg("bnd"), pybind11::arg("x") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_ReducedLinearConstraint_double_t const &o){ return new PyCallBack_ROL_ReducedLinearConstraint_double_t(o); } ) );

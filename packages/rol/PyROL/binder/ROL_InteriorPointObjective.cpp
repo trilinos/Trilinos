@@ -1,14 +1,20 @@
+#include <ROL_BoundConstraint.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
+#include <ROL_InteriorPointObjective.hpp>
 #include <ROL_Objective.hpp>
-#include <ROL_PQNObjective.hpp>
-#include <ROL_Secant.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
 #include <Teuchos_ENull.hpp>
+#include <Teuchos_FilteredIterator.hpp>
+#include <Teuchos_ParameterEntry.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
 #include <Teuchos_RCPNode.hpp>
+#include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <cwchar>
+#include <deque>
 #include <ios>
 #include <iterator>
 #include <memory>
@@ -33,13 +39,26 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-// ROL::PQNObjective file:ROL_PQNObjective.hpp line:70
-struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
-	using ROL::PQNObjective<double>::PQNObjective;
+// ROL::InteriorPointObjective file:ROL_InteriorPointObjective.hpp line:64
+struct PyCallBack_ROL_InteriorPointObjective_double_t : public ROL::InteriorPointObjective<double> {
+	using ROL::InteriorPointObjective<double>::InteriorPointObjective;
 
+	void update(const class ROL::Vector<double> & a0, enum ROL::UpdateType a1, int a2) override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "update");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
+			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
+				static pybind11::detail::override_caster_t<void> caster;
+				return pybind11::detail::cast_ref<void>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<void>(std::move(o));
+		}
+		return InteriorPointObjective::update(a0, a1, a2);
+	}
 	double value(const class ROL::Vector<double> & a0, double & a1) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "value");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "value");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1);
 			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
@@ -48,11 +67,11 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 			}
 			else return pybind11::detail::cast_safe<double>(std::move(o));
 		}
-		return PQNObjective::value(a0, a1);
+		return InteriorPointObjective::value(a0, a1);
 	}
 	void gradient(class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, double & a2) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "gradient");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "gradient");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
 			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
@@ -61,11 +80,11 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 			}
 			else return pybind11::detail::cast_safe<void>(std::move(o));
 		}
-		return PQNObjective::gradient(a0, a1, a2);
+		return InteriorPointObjective::gradient(a0, a1, a2);
 	}
 	void hessVec(class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, double & a3) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "hessVec");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "hessVec");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3);
 			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
@@ -74,24 +93,11 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 			}
 			else return pybind11::detail::cast_safe<void>(std::move(o));
 		}
-		return PQNObjective::hessVec(a0, a1, a2, a3);
-	}
-	void update(const class ROL::Vector<double> & a0, enum ROL::UpdateType a1, int a2) override {
-		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "update");
-		if (overload) {
-			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
-			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
-				static pybind11::detail::override_caster_t<void> caster;
-				return pybind11::detail::cast_ref<void>(std::move(o), caster);
-			}
-			else return pybind11::detail::cast_safe<void>(std::move(o));
-		}
-		return Objective::update(a0, a1, a2);
+		return InteriorPointObjective::hessVec(a0, a1, a2, a3);
 	}
 	void update(const class ROL::Vector<double> & a0, bool a1, int a2) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "update");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "update");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
 			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
@@ -104,7 +110,7 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 	}
 	double dirDeriv(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, double & a2) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "dirDeriv");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "dirDeriv");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2);
 			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
@@ -117,7 +123,7 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 	}
 	void invHessVec(class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, double & a3) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "invHessVec");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "invHessVec");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3);
 			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
@@ -130,7 +136,7 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 	}
 	void precond(class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, double & a3) override {
 		pybind11::gil_scoped_acquire gil;
-		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::PQNObjective<double> *>(this), "precond");
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::InteriorPointObjective<double> *>(this), "precond");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3);
 			if (pybind11::detail::cast_is_temporary_value_reference<void>::value) {
@@ -143,18 +149,26 @@ struct PyCallBack_ROL_PQNObjective_double_t : public ROL::PQNObjective<double> {
 	}
 };
 
-void bind_ROL_PQNObjective(std::function< pybind11::module &(std::string const &namespace_) > &M)
+void bind_ROL_InteriorPointObjective(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	{ // ROL::PQNObjective file:ROL_PQNObjective.hpp line:70
-		pybind11::class_<ROL::PQNObjective<double>, Teuchos::RCP<ROL::PQNObjective<double>>, PyCallBack_ROL_PQNObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "PQNObjective_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Secant<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &>(), pybind11::arg("secant"), pybind11::arg("x"), pybind11::arg("g") );
+	{ // ROL::InteriorPointObjective file:ROL_InteriorPointObjective.hpp line:64
+		pybind11::class_<ROL::InteriorPointObjective<double>, Teuchos::RCP<ROL::InteriorPointObjective<double>>, PyCallBack_ROL_InteriorPointObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "InteriorPointObjective_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const double, const double>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("useLinearDamping"), pybind11::arg("kappaD"), pybind11::arg("mu") );
 
-		cl.def( pybind11::init( [](PyCallBack_ROL_PQNObjective_double_t const &o){ return new PyCallBack_ROL_PQNObjective_double_t(o); } ) );
-		cl.def( pybind11::init( [](ROL::PQNObjective<double> const &o){ return new ROL::PQNObjective<double>(o); } ) );
-		cl.def("value", (double (ROL::PQNObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::PQNObjective<double>::value, "C++: ROL::PQNObjective<double>::value(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("gradient", (void (ROL::PQNObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::PQNObjective<double>::gradient, "C++: ROL::PQNObjective<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("hessVec", (void (ROL::PQNObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::PQNObjective<double>::hessVec, "C++: ROL::PQNObjective<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("setAnchor", (void (ROL::PQNObjective<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &)) &ROL::PQNObjective<double>::setAnchor, "C++: ROL::PQNObjective<double>::setAnchor(const class ROL::Vector<double> &, const class ROL::Vector<double> &) --> void", pybind11::arg("x"), pybind11::arg("g"));
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("parlist") );
+
+		cl.def( pybind11::init( [](PyCallBack_ROL_InteriorPointObjective_double_t const &o){ return new PyCallBack_ROL_InteriorPointObjective_double_t(o); } ) );
+		cl.def( pybind11::init( [](ROL::InteriorPointObjective<double> const &o){ return new ROL::InteriorPointObjective<double>(o); } ) );
+		cl.def("getObjectiveValue", (double (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::getObjectiveValue, "C++: ROL::InteriorPointObjective<double>::getObjectiveValue(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("getObjectiveGradient", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::getObjectiveGradient, "C++: ROL::InteriorPointObjective<double>::getObjectiveGradient(const class ROL::Vector<double> &, double &) --> const class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("getNumberFunctionEvaluations", (int (ROL::InteriorPointObjective<double>::*)() const) &ROL::InteriorPointObjective<double>::getNumberFunctionEvaluations, "C++: ROL::InteriorPointObjective<double>::getNumberFunctionEvaluations() const --> int");
+		cl.def("getNumberGradientEvaluations", (int (ROL::InteriorPointObjective<double>::*)() const) &ROL::InteriorPointObjective<double>::getNumberGradientEvaluations, "C++: ROL::InteriorPointObjective<double>::getNumberGradientEvaluations() const --> int");
+		cl.def("updatePenalty", (void (ROL::InteriorPointObjective<double>::*)(const double)) &ROL::InteriorPointObjective<double>::updatePenalty, "C++: ROL::InteriorPointObjective<double>::updatePenalty(const double) --> void", pybind11::arg("mu"));
+		cl.def("update", [](ROL::InteriorPointObjective<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
+		cl.def("update", (void (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, enum ROL::UpdateType, int)) &ROL::InteriorPointObjective<double>::update, "C++: ROL::InteriorPointObjective<double>::update(const class ROL::Vector<double> &, enum ROL::UpdateType, int) --> void", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
+		cl.def("value", (double (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::value, "C++: ROL::InteriorPointObjective<double>::value(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("gradient", (void (ROL::InteriorPointObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::gradient, "C++: ROL::InteriorPointObjective<double>::gradient(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("g"), pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("hessVec", (void (ROL::InteriorPointObjective<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::hessVec, "C++: ROL::InteriorPointObjective<double>::hessVec(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("hv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("update", [](ROL::Objective<double> &o, const class ROL::Vector<double> & a0, enum ROL::UpdateType const & a1) -> void { return o.update(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("type"));
 		cl.def("update", (void (ROL::Objective<double>::*)(const class ROL::Vector<double> &, enum ROL::UpdateType, int)) &ROL::Objective<double>::update, "Update objective function. \n\n      This function updates the objective function at new iterations. \n      \n\n      is the new iterate. \n      \n\n   is the type of update requested.\n      \n\n   is the outer algorithm iterations count.\n\nC++: ROL::Objective<double>::update(const class ROL::Vector<double> &, enum ROL::UpdateType, int) --> void", pybind11::arg("x"), pybind11::arg("type"), pybind11::arg("iter"));
 		cl.def("update", [](ROL::Objective<double> &o, const class ROL::Vector<double> & a0) -> void { return o.update(a0); }, "", pybind11::arg("x"));

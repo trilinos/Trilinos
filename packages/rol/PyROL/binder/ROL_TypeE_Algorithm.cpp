@@ -41,7 +41,7 @@
 void bind_ROL_TypeE_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::TypeE::AlgorithmState file:ROL_TypeE_Algorithm.hpp line:60
-		pybind11::class_<ROL::TypeE::AlgorithmState<double>, Teuchos::RCP<ROL::TypeE::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeE"), "AlgorithmState_double_t", "");
+		pybind11::class_<ROL::TypeE::AlgorithmState<double>, Teuchos::RCP<ROL::TypeE::AlgorithmState<double>>, ROL::AlgorithmState<double>> cl(M("ROL::TypeE"), "AlgorithmState_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::TypeE::AlgorithmState<double>(); } ) );
 		cl.def( pybind11::init( [](ROL::TypeE::AlgorithmState<double> const &o){ return new ROL::TypeE::AlgorithmState<double>(o); } ) );
 		cl.def_readwrite("searchSize", &ROL::TypeE::AlgorithmState<double>::searchSize);
@@ -71,7 +71,7 @@ void bind_ROL_TypeE_Algorithm(std::function< pybind11::module &(std::string cons
 		cl.def("assign", (struct ROL::AlgorithmState<double> & (ROL::AlgorithmState<double>::*)(const struct ROL::AlgorithmState<double> &)) &ROL::AlgorithmState<double>::operator=, "C++: ROL::AlgorithmState<double>::operator=(const struct ROL::AlgorithmState<double> &) --> struct ROL::AlgorithmState<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::TypeE::Algorithm file:ROL_TypeE_Algorithm.hpp line:88
-		pybind11::class_<ROL::TypeE::Algorithm<double>, Teuchos::RCP<ROL::TypeE::Algorithm<double>>> cl(M("ROL::TypeE"), "Algorithm_double_t", "");
+		pybind11::class_<ROL::TypeE::Algorithm<double>, Teuchos::RCP<ROL::TypeE::Algorithm<double>>> cl(M("ROL::TypeE"), "Algorithm_double_t", "", pybind11::module_local());
 		cl.def("setStatusTest", [](ROL::TypeE::Algorithm<double> &o, const class Teuchos::RCP<class ROL::StatusTest<double> > & a0) -> void { return o.setStatusTest(a0); }, "", pybind11::arg("status"));
 		cl.def("setStatusTest", (void (ROL::TypeE::Algorithm<double>::*)(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool)) &ROL::TypeE::Algorithm<double>::setStatusTest, "C++: ROL::TypeE::Algorithm<double>::setStatusTest(const class Teuchos::RCP<class ROL::StatusTest<double> > &, bool) --> void", pybind11::arg("status"), pybind11::arg("combineStatus"));
 		cl.def("getState", (class Teuchos::RCP<const struct ROL::TypeE::AlgorithmState<double> > (ROL::TypeE::Algorithm<double>::*)() const) &ROL::TypeE::Algorithm<double>::getState, "C++: ROL::TypeE::Algorithm<double>::getState() const --> class Teuchos::RCP<const struct ROL::TypeE::AlgorithmState<double> >");
