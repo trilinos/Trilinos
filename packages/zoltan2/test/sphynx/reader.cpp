@@ -12,7 +12,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_View.hpp>
 
 using namespace Teuchos;
 using Tpetra::Operator;

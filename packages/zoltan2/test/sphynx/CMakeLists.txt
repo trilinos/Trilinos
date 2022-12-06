@@ -16,6 +16,12 @@ TRIBITS_ADD_EXECUTABLE(
     COMM serial mpi
 )
 
+TRIBITS_ADD_EXECUTABLE(
+    LargestComp
+    SOURCES SeherlargestComponent2Binary.cpp
+    COMM serial mpi
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Sphynx
   SOURCES Test_Sphynx.cpp

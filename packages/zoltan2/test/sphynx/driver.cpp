@@ -387,11 +387,13 @@ int main(int narg, char *arg[])
     std::string mtx = ".mtx", lc = ".largestComp";
     if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {
       tmatrix  = readMatrixFromFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
+      std::cout << "Used Seher's reader for Largest Comp." << std::endl;
     }
     else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
       reader_type r;
       tmatrix = r.readSparseFile(matrix_file, pComm);
+      std::cout << "Used standard reader." << std::endl;
     }
     else {
       int meshdim = 100;
@@ -406,18 +408,24 @@ int main(int narg, char *arg[])
     if(me == 0)
       std::cout << "Done with reading/creating the matrix." << std::endl;
   Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
+  
   using ST = double;
   using MultiVector  = Tpetra::MultiVector<ST>;
-    typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
-  Teuchos::RCP<MultiVector > V = Teuchos::rcp(new MultiVector(map, 10));
-  V->randomize();
-  std::cout << "Randomized some pretend evects." << std::endl;
-   //MVT::MvPrint(*V,std::cout);
-   // TODO Insert MultiVector Reader 
-  /*if(vector_file ~= ""){
-  else{
+  typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
+ 
+  Teuchos::RCP<MultiVector > V;
+  if (vector_file ==""){
+    V = Teuchos::rcp(new MultiVector(map, 10));
+    V->randomize();
+    // std::cout << "Randomized some pretend evects." << std::endl;
   }
-  }*/
+  else{
+    V = Tpetra::MatrixMarket::Reader<MultiVector >::readDenseFile(vector_file,pComm,map);
+    Teuchos::RCP<const Tpetra::Map<> > vector_map = V->getMap();
+    if(me == 0)
+      std::cout << "Done with reading/creating the eigenvector." << std::endl;
+  }
+   // TODO Insert MultiVector Reader 
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
     
@@ -478,15 +486,30 @@ int main(int narg, char *arg[])
 	{
 	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
 	  problem = Teuchos::rcp(new problem_type(adapter, params, Tpetra::getDefaultComm()));
-	}//TODO: Change constructor problem_type to take in vector_file *if it exists*//
-	{
-	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-	  problem->solve(V);
 	}
+  {
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+    if (vector_file ==""){
+       if(me == 0)
+           std::cout << "LOBPCG will be used to solve the partitioning problem." << std::endl;
+       problem->solve();
+    }
+    else{
+       problem->solve(V);
+    }
+  }
 	pComm->barrier();
       }
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
+      /*
+      const int *SolArray = solution.getPartListView();
+      std::cout << "Pointer is: " << SolArray << std::endl;
+      int numparts = int(V->getGlobalLength());
+      for(int i=0;i<numparts;i++)
+        std::cout << *(SolArray+i) << std::endl;
+       */
+    // TODO: Uncomment the above lines and use >> out.txt to isolate the solution array file
     }
     stacked_timer->stopBaseTimer();       
 
@@ -498,7 +521,6 @@ int main(int narg, char *arg[])
 
     Teuchos::TimeMonitor::summarize();
     
-  } //End Tpetra scope guard
-
-  return 0;
+  } //End Tpetra scope  guard
+ return 0;
 } 
