@@ -371,7 +371,6 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
                                      Vector<Real> &dwa, Vector<Real> &dwa1,
                                      std::ostream &outStream) {
   const Real half(0.5);
-  // const Real zero(0); // Unused
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   bool interp = false;
   Real gs(0), snorm(0);
@@ -383,7 +382,6 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
   else {
     model.hessVec(dwa,s,x,tol); nhess_++;
     gs = s.dot(g);
-    //q  = half * s.dot(dwa.dual()) + gs;
     q  = half * s.apply(dwa) + gs;
     interp = (q > mu0_*gs);
   }
@@ -391,17 +389,20 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
   int cnt = 0;
   if (interp) {
     bool search = true;
-    while (search) {
+    while (search && cnt < redlim_) {
       alpha *= interpf_;
-      snorm = dgpstep(s,g,x,-alpha,outStream);
+      snorm  = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        //q  = half * s.dot(dwa.dual()) + gs;
         q  = half * s.apply(dwa) + gs;
-        search = (q > mu0_*gs) && (cnt < redlim_);
+        search = (q > mu0_*gs);
       }
       cnt++;
+    }
+    if (cnt >= redlim_ && q > mu0_*gs) {
+      outStream << "Cauchy point: The interpolation limit was met without producing sufficient decrease." << std::endl;
+      outStream << "              Lin-More trust-region algorithm may not converge!" << std::endl;
     }
   }
   else {
@@ -411,11 +412,10 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
     dwa1.set(dwa);
     while (search) {
       alpha *= extrapf_;
-      snorm = dgpstep(s,g,x,-alpha,outStream);
+      snorm  = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del && cnt < explim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        //q  = half * s.dot(dwa.dual()) + gs;
         q  = half * s.apply(dwa) + gs;
         if (q <= mu0_*gs && std::abs(q-qs) > qtol_*std::abs(qs)) {
           dwa1.set(dwa);
