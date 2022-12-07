@@ -18,13 +18,16 @@ jobs:
 
     steps:
     - name: Mention MueLu
-      uses: ben-z/actions-comment-on-issue@1.0.2
+      uses: peter-evans/create-or-update-comment@v2
       if: contains(github.event.label.name, 'MueLu') || contains(github.event.issue.title, 'MueLu')  
       with:
-        message: "Automatic mention of the @trilinos/muelu team"
+        issue-number: ${{ github.event.issue.number }}  
+        body: |
+          Automatic mention of the @trilinos/muelu team
     - name: Mention Ifpack2
-      uses: ben-z/actions-comment-on-issue@1.0.2
+      uses: peter-evans/create-or-update-comment@v2
       if: contains(github.event.label.name, 'Ifpack2') || contains(github.event.issue.title, 'Ifpack2')  
       with:
-        message: "Automatic mention of the @trilinos/ifpack2 team"
-        
+        issue-number: ${{ github.event.issue.number }}  
+        body: |
+          Automatic mention of the @trilinos/ifpack2 team
