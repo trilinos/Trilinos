@@ -1140,7 +1140,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     */
 
     const Mag absTol = testingTol<Mag>() * A1->getGlobalNumEntries();
-    std::cerr << __FILE__<<":"<<__LINE__<<": TOLERANCE=" << absTol << "\n";
+    CWP_CERR(__FILE__<<":"<<__LINE__<<": TOLERANCE=" << absTol << "\n");
 
     // Do a std::vector version 
     {

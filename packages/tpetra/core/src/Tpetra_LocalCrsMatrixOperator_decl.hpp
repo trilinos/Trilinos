@@ -168,7 +168,6 @@ namespace Tpetra {
            const mv_scalar_type beta,
            const OffsetDeviceViewType &offRankOffsets) const {
       using RowViewer = Tpetra::Details::OnRankRowViewer<local_matrix_device_type, OffsetDeviceViewType>;
-
       Tpetra::Details::spmv<RowViewer>(execSpace, alpha, *A_, X, beta, Y, mode, offRankOffsets);
     }
 

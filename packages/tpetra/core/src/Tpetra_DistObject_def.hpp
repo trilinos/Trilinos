@@ -1071,10 +1071,24 @@ namespace Tpetra {
              << endl;
           std::cerr << os.str ();
         }
+
+        // reallocArraysForNumPacketsPerLid fences the default space
+        // before possibly reallocating.
+        // TODO: provide an instance to reallocArraysForNumPacketsPerLid
+        // to sync with
+        Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
+
         // This only reallocates if necessary, that is, if the sizes
         // don't match.
-        this->reallocArraysForNumPacketsPerLid (exportLIDs.extent (0),
-                                                remoteLIDs.extent (0));
+        bool anyReallocated = this->reallocArraysForNumPacketsPerLid (
+             exportLIDs.extent (0), remoteLIDs.extent (0));
+
+
+        // reallocArrays happens in the default space, so let's make sure
+        // it's done before moving on
+        if (anyReallocated) {
+          Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
+        }
       }
 
       if (verbose) {
@@ -1116,7 +1130,14 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+
+        // reallocImportsIfNeeded happens in the default instance
+        Tpetra::Details::Spaces::exec_space_wait(space, execution_space());
+        bool reallocated = reallocImportsIfNeeded (
+          rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+        if (reallocated) {
+          Tpetra::Details::Spaces::exec_space_wait(execution_space(), space);
+        }
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -1333,7 +1354,13 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+
+        Tpetra::Details::Spaces::exec_space_wait("before reallocImportsIfNeeded", space, execution_space());
+        const bool reallocated = reallocImportsIfNeeded (
+          rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+        if (reallocated) {
+          Tpetra::Details::Spaces::exec_space_wait("reallocImportsIfNeeded reallocated", execution_space(), space);
+        }
       }
 
       // Do we need to do communication (via doPostsAndWaits)?

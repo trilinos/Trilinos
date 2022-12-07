@@ -61,6 +61,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "Tpetra_Details_debug_cwp.hpp"
+
 namespace Tpetra {
 namespace KokkosRefactor {
 namespace Details {
@@ -207,6 +209,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         ++lclErrCount;
         return;
       }
+      if (k >= static_cast<size_type> (dst.extent(0))) {
+        ++lclErrCount;
+        return;
+      }
       const index_type lclRow = idx(k);
       if (lclRow < static_cast<index_type> (0) ||
           lclRow >= static_cast<index_type> (src.extent (0)) || 
@@ -285,6 +291,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                             const bool debug,
                             const typename DstView::execution_space &space)
   {
+    using execution_space = typename DstView::execution_space;
+
     static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
     static_assert (Kokkos::is_view<SrcView>::value,
@@ -298,13 +306,28 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (IdxView::rank) == 1,
                    "IdxView must be a rank-1 Kokkos::View.");
 
-    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column\n";
+    static_assert (Kokkos::SpaceAccessibility<execution_space,
+                     typename DstView::memory_space>::accessible,
+                   "DstView not accessible");
+    static_assert (Kokkos::SpaceAccessibility<execution_space,
+                     typename SrcView::memory_space>::accessible,
+                   "SrcView not accessible");
+    static_assert (Kokkos::SpaceAccessibility<execution_space,
+                     typename IdxView::memory_space>::accessible,
+                   "IdxView not accessible");
+
+    // std::cerr << __FILE__ << ":" << __LINE__ << " "
+    //           << " pack_array_single_column"
+    //           << " " << dst.size()
+    //           << " " << src.size()
+    //           << " " << idx.size()
+    //           << "\n";
 
     if (debug) {
-      std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column debug\n";
+      // std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column debug\n";
       using impl_type = PackArraySingleColumnWithBoundsCheck<DstView,SrcView,IdxView>;
       impl_type::pack (dst, src, idx, col, space);
-      std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column done\n";
+      // std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_single_column debug done\n";
     }
     else {
       using impl_type = PackArraySingleColumn<DstView, SrcView, IdxView>;
@@ -498,7 +521,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (IdxView::rank) == 1,
                    "IdxView must be a rank-1 Kokkos::View.");
 
-    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_multi_column\n";
+    CWP_CERR(__FILE__ << ":" << __LINE__ << ": pack_array_multi_column\n");
 
     if (debug) {
       typedef PackArrayMultiColumnWithBoundsCheck<DstView,
@@ -774,7 +797,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (ColView::rank) == 1,
                    "ColView must be a rank-1 Kokkos::View.");
 
-    std::cerr << __FILE__ << ":" << __LINE__ << ": pack_array_multi_column_variable_stride\n";
+    CWP_CERR(__FILE__ << ":" << __LINE__ << ": pack_array_multi_column_variable_stride\n");
 
     if (debug) {
       typedef PackArrayMultiColumnVariableStrideWithBoundsCheck<DstView,
@@ -1534,10 +1557,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     static_assert (static_cast<int> (ColView::rank) == 1,
                    "ColView must be a rank-1 Kokkos::View.");
 
-    std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride\n";
+    CWP_CERR(__FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride\n");
 
     if (debug) {
-      std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (DEBUG)\n";
+      CWP_CERR(__FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (DEBUG)\n");
       using impl_type =
         UnpackArrayMultiColumnVariableStrideWithBoundsCheck<ExecutionSpace,
           DstView, SrcView, IdxView, ColView, Op>;
@@ -1545,7 +1568,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                          use_atomic_updates);
     }
     else {
-      std::cerr << __FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (NO DEBUG)\n";
+      CWP_CERR(__FILE__ << ":" << __LINE__ << ": unpack_array_multi_column_variable_stride (NO DEBUG)\n");
       using impl_type = UnpackArrayMultiColumnVariableStride<ExecutionSpace,
         DstView, SrcView, IdxView, ColView, Op>;
       impl_type::unpack (execSpace, dst, src, idx, col, op, numCols,

@@ -65,6 +65,8 @@
 
 #include "Tpetra_Core.hpp"
 
+#include "Tpetra_Details_debug_cwp.hpp"
+
 /*!	
   \class Belos::CGIter
   
@@ -432,21 +434,21 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     {
       std::vector<ScalarType> rr(1);
       MVT::MvDot(*R_, *R_, rr);
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << "init: rr[0]=" << rr[0] << "\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ");
+      CWP_CERR("init: rr[0]=" << rr[0] << "\n");
     }
 
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << "lp_->applyLeftPrec( *R_, *Z_ )\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ");
+        CWP_CERR("lp_->applyLeftPrec( *R_, *Z_ )\n");
         lp_->applyLeftPrec( *R_, *Z_ );
         if ( lp_->getRightPrec() != Teuchos::null ) {
           Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Z_ );
-          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-          std::cerr << "lp_->applyRightPrec( *tmp, *Z_ )\n";
+          CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ");
+          CWP_CERR("lp_->applyRightPrec( *tmp, *Z_ )\n");
           lp_->applyRightPrec( *tmp, *Z_ );
         }
       }
@@ -454,19 +456,19 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
         MVT::MvPrint(*R_, std::cerr);
 
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
-                  << "lp_->applyRightPrec( *R_, *Z_ )...\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << "lp_->applyRightPrec( *R_, *Z_ )...\n");
         lp_->applyRightPrec( *R_, *Z_ );
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
-                  << "done lp_->applyRightPrec( *R_, *Z_ )\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << "done lp_->applyRightPrec( *R_, *Z_ )\n");
 
         MVT::MvPrint(*Z_, std::cerr);
 
         {
           std::vector<ScalarType> zz(1);
           MVT::MvDot(*Z_, *Z_, zz);
-          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-          std::cerr << "init: zz[0]=" << zz[0] << "\n";
+          CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                   << "init: zz[0]=" << zz[0] << "\n");
         }
 
       } 
@@ -536,35 +538,34 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Increment the iteration
       iter_++;
 
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
       // Multiply the current direction vector by A and store in AP_
 
       {
         std::vector<ScalarType> pp(1);
         MVT::MvDot(*P_, *P_, pp);
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << " pp[0]=" << pp[0] << "\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << " pp[0]=" << pp[0] << "\n");
       }
 
-      std::cerr << " lp_->applyOp(*P, *AP_)\n";
+      CWP_CERR(" lp_->applyOp(*P, *AP_)\n");
       lp_->applyOp( *P_, *AP_ );
       
       {
         std::vector<ScalarType> apap(1);
         MVT::MvDot(*AP_, *AP_, apap);
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << " apap[0]=" << apap[0] << "\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                 << " apap[0]=" << apap[0] << "\n");
       }
 
       // exit(EXIT_FAILURE);
 
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << " MVT::MvDot( *P_, *AP_, pAp )\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                << " MVT::MvDot( *P_, *AP_, pAp )\n");
       // Compute alpha := <R_,Z_> / <P_,AP_>
       MVT::MvDot( *P_, *AP_, pAp );
       alpha[0] = rHz[0] / pAp[0];
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << " alpha[0] = rHz[0] / pAp[0] alpha[0]=" << alpha[0] << " rHz[0]=" << rHz[0] << " pAp[0]="  << pAp[0] << "\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                << " alpha[0] = rHz[0] / pAp[0] alpha[0]=" << alpha[0] << " rHz[0]=" << rHz[0] << " pAp[0]="  << pAp[0] << "\n");
       
       // Check that alpha is a positive number!
       if(assertPositiveDefiniteness_) {
@@ -572,8 +573,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
                                     "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       }
 
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << " MVT::MvAddMv( one, *cur_soln_vec, alpha[0], *P_, *cur_soln_vec )\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                << " MVT::MvAddMv( one, *cur_soln_vec, alpha[0], *P_, *cur_soln_vec )\n");
       //
       // Update the solution vector x := x + alpha * P_
       //
@@ -584,8 +585,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       //
       rHz_old[0] = rHz[0];
 
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << " MVT::MvAddMv( one, *R_, -alpha[0], *AP_, *R_ ) (R = one*R + -alpha[0] * AP), -alpha[0]=" << -alpha[0] << "\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                << " MVT::MvAddMv( one, *R_, -alpha[0], *AP_, *R_ ) (R = one*R + -alpha[0] * AP), -alpha[0]=" << -alpha[0] << "\n");
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
@@ -598,14 +599,14 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
         lp_->applyLeftPrec( *R_, *Z_ );
         if ( lp_->getRightPrec() != Teuchos::null ) {
           Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Z_);
-          std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-          std::cerr << " lp_->applyRightPrec( *tmp, *Z_ )\n";
+          CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                    << " lp_->applyRightPrec( *tmp, *Z_ )\n");
           lp_->applyRightPrec( *tmp, *Z_ );
         }
       }
       else if ( lp_->getRightPrec() != Teuchos::null ) {
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << " lp_->applyRightPrec( *R_, *Z_ ) (x=*_R, A=prec, y=*Z_)\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << " lp_->applyRightPrec( *R_, *Z_ ) (x=*_R, A=prec, y=*Z_)\n");
         lp_->applyRightPrec( *R_, *Z_ );
       } 
       else {
@@ -613,21 +614,21 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       }
       //
       if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << " MVT::MvTransMv( one, *R_, *S_, rHs )\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << " MVT::MvTransMv( one, *R_, *S_, rHs )\n");
         MVT::MvTransMv( one, *R_, *S_, rHs );
         rHr_ = rHs(0,0);
         rHz[0] = rHs(0,1);
       } else {
-        std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-        std::cerr << " MVT::MvDot( *R_, *Z_, rHz )\n";
+        CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                  << " MVT::MvDot( *R_, *Z_, rHz )\n");
         MVT::MvDot( *R_, *Z_, rHz );
       }
       //
       beta[0] = rHz[0] / rHz_old[0];
 
-      std::cerr << __FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", ";
-      std::cerr << " MVT::MvAddMv( one, *Z_, beta[0], *P_, *P_ )\n";
+      CWP_CERR(__FILE__<<":"<<__LINE__<<": " << Tpetra::getDefaultComm()->getRank() << ", "
+                << " MVT::MvAddMv( one, *Z_, beta[0], *P_, *P_ )\n");
       //
       MVT::MvAddMv( one, *Z_, beta[0], *P_, *P_ );
      

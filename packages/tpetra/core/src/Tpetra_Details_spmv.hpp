@@ -3,6 +3,8 @@
 
 #include "KokkosBlas1_scal.hpp"
 
+#include "Tpetra_Details_debug_cwp.hpp"
+
 namespace Tpetra {
 namespace Details {
 
@@ -20,9 +22,43 @@ struct OnRankRowViewer {
       const RowOffsetView &aOff,
       const typename CrsMatrix::ordinal_type i
   ) {
+    if (size_t(i) >= A.graph.row_map.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.graph.row_map.extent(0) %d i\n",
+      __FILE__, __LINE__, int(A.graph.row_map.extent(0)), int(i));
+    }
+
     const typename CrsMatrix::size_type start = A.graph.row_map(i);
     const typename CrsMatrix::ordinal_type stride = 1;
-    const typename CrsMatrix::ordinal_type length = aOff[i] - start;
+
+    if (size_t(i) >= aOff.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d aOff.extent(0) %d i\n",
+      __FILE__, __LINE__, int(aOff.extent(0)), int(i));
+    }
+    if (start > aOff(i)) {
+      CWP_PRINTF("%s:%d BAD SUB %d aOff(i) - %d start\n",
+      __FILE__, __LINE__, int(aOff(i)), int(start));
+    }
+
+    const typename CrsMatrix::ordinal_type length = aOff(i) - start;
+
+    if (size_t(start) >= A.values.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.values.extent(0) %d start\n",
+      __FILE__, __LINE__, int(A.values.extent(0)), int(start));
+    }
+    if (size_t(start) >= A.graph.entries.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.graph.entries.extent(0) %d start\n",
+      __FILE__, __LINE__, int(A.graph.entries.extent(0)), int(start));
+    }
+
+    if (size_t(start+length) > A.values.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.values.extent(0) %d start+length\n",
+      __FILE__, __LINE__, int(A.values.extent(0)), int(start+length));
+    }
+    if (size_t(start+length) > A.graph.entries.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.graph.entries.extent(0) %d start+length\n",
+      __FILE__, __LINE__, int(A.graph.entries.extent(0)), int(start+length));
+    }
+
     return KokkosSparse::SparseRowViewConst<CrsMatrix> (
       &A.values(start),
       &A.graph.entries(start),
@@ -46,9 +82,36 @@ struct OffRankRowViewer {
       const RowOffsetView &aOff,
       const typename CrsMatrix::ordinal_type i
   ) {
-    const typename CrsMatrix::size_type start = aOff[i];
+
+    if (size_t(i) >= aOff.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d aOff.extent(0) %d i\n",
+      __FILE__, __LINE__, int(aOff.extent(0)), int(i));
+    }
+    if (size_t(i+1) >= A.graph.row_map.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.graph.row_map.extent(0) %d i+1\n",
+      __FILE__, __LINE__, int(A.graph.row_map.extent(0)), int(i+1));
+    }
+
+    const typename CrsMatrix::size_type start = aOff(i);
+
+    if (start > A.graph.row_map(i+1)) {
+      CWP_PRINTF("%s:%d BAD SUB %d A.graph.row_map(i+1) - %d start\n",
+      __FILE__, __LINE__, int(A.graph.row_map(i+1)), int(start));
+    }
+
+
     const typename CrsMatrix::ordinal_type stride = 1;
     const typename CrsMatrix::ordinal_type length = A.graph.row_map(i+1) - start;
+
+    if (size_t(start) >= A.values.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.values.extent(0) %d start\n",
+      __FILE__, __LINE__, int(A.values.extent(0)), int(start));
+    }
+    if (size_t(start) >= A.graph.entries.extent(0)) {
+      CWP_PRINTF("%s:%d BAD ACCESS %d A.graph.entries.extent(0) %d start\n",
+      __FILE__, __LINE__, int(A.graph.entries.extent(0)), int(start));
+    }
+
     return KokkosSparse::SparseRowViewConst<CrsMatrix> (
       &A.values(start),
       &A.graph.entries(start),
@@ -126,6 +189,10 @@ struct SpmvFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member& dev) const {
+    if (dev.team_rank() == 0 && dev.league_rank() == 0) {
+      CWP_PRINTF("%s:%d inside SpmvFunctor\n",
+      __FILE__, __LINE__);
+    }
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(dev, 0, rowsPerTeam_),
         [&](const ordinal_type& loop) {
@@ -136,21 +203,54 @@ struct SpmvFunctor {
             return;
           }
           const auto row = RowViewer::view(A_, offRankOffsets_, iRow);
+          CWP_PRINTF("%s:%d %d,%d got view\n", __FILE__, __LINE__, dev.league_rank(), dev.team_rank());
           const ordinal_type row_length = static_cast<ordinal_type>(row.length);
 
           y_value_type sum = 0;
+
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(dev, row_length),
               [&](const ordinal_type& iEntry, y_value_type& lsum) {
+                if (size_t(iEntry) >= row.length) {
+                  CWP_PRINTF("%s:%d BAD ACCESS %d row.length %d iEntry\n",
+                  __FILE__, __LINE__, int(row.length), int(iEntry));
+                }
                 const value_type val = CONJ ? ATV::conj(row.value(iEntry))
                                                 : row.value(iEntry);
+
                 const ordinal_type xi = row.colidx(iEntry);
+                if (size_t(xi) >= x_.extent(0)) {
+                  CWP_PRINTF("%s:%d BAD ACCESS %d x_.extent(0) %d xi\n",
+                  __FILE__, __LINE__, int(x_.extent(0)), int(xi));
+                }
+                if (xi < 0) {
+                  CWP_PRINTF("%s:%d BAD ACCESS %d x_.extent(0) %d xi\n",
+                  __FILE__, __LINE__, int(x_.extent(0)), int(xi));
+                }
                 lsum += val * x_(xi);
               },
               sum);
 
+          CWP_PRINTF("%s:%d %d,%d did pps\n", __FILE__, __LINE__, dev.league_rank(), dev.team_rank());
+
           Kokkos::single(Kokkos::PerThread(dev), [&]() {
             sum *= alpha_;
+
+            CWP_PRINTF("%s:%d %d,%d did *=\n", __FILE__, __LINE__, dev.league_rank(), dev.team_rank());
+
+            if (size_t(iRow) >= y_.extent(0)) {
+              CWP_PRINTF("%s:%d BAD ACCESS %d y_.extent(0_) %d iRow\n", 
+              __FILE__, __LINE__, int(y_.extent(0)), int(iRow));
+              return;
+            }
+            if (iRow < 0) {
+              CWP_PRINTF("%s:%d BAD ACCESS %d y_.extent(0_) %d iRow\n", 
+              __FILE__, __LINE__, int(y_.extent(0)), int(iRow));
+              return;
+            }
+            CWP_PRINTF("%s:%d %d,%d iRow=%d y_.extent(0)=%d\n", 
+            __FILE__, __LINE__, int(dev.league_rank()), int(dev.team_rank()),
+            int(iRow), int(y_.extent(0)));
 
             if (0 == beta_) {
               y_(iRow) = sum;
@@ -158,6 +258,8 @@ struct SpmvFunctor {
               y_(iRow) = beta_ * y_(iRow) + sum;
             }
           });
+
+          CWP_PRINTF("%s:%d %d,%d did loop\n", __FILE__, __LINE__, dev.league_rank(), dev.team_rank());
         });
   }
 
@@ -246,6 +348,11 @@ struct SpmvFunctor {
     const OffsetDeviceViewType &offRankOffsets,
     const execution_space &space) {
 
+    CWP_CERR(__FILE__ << ":" << __LINE__
+        << " A.numRows()=" << A.numRows()
+        << " A.nnz()=" << A.nnz()
+        << "\n");
+
     // if there's no matrix, still need to scale beta
     if (A.numRows() <= 0 || A.nnz() <= 0) {
       if (1 != beta) {
@@ -260,14 +367,14 @@ struct SpmvFunctor {
 
 
 
-    if (Details::Spaces::is_gpu_exec_space<execution_space>()) {
+    if constexpr (Details::Spaces::is_gpu_exec_space<execution_space>()) {
 
       LaunchParams params = launch_parameters<execution_space>(A.numRows(), A.nnz());
 
-      // std::cerr << __FILE__ << ":" << __LINE__ << ": rowsPerTeam=" << params.rowsPerTeam
-      //           << " vectorLength=" << params.vectorLength
-      //           << " teamSize=" << params.teamSize
-      //           << "\n";
+      CWP_CERR(__FILE__ << ":" << __LINE__ << ": rowsPerTeam=" << params.rowsPerTeam
+                << " vectorLength=" << params.vectorLength
+                << " teamSize=" << params.teamSize
+                << "\n");
 
       const bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
       const bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -992,6 +1099,15 @@ typename Beta, typename YVector, typename RowOffsetView>
 void spmv(const typename AMatrix::execution_space &execSpace, const Alpha &alpha, const AMatrix &A, const XVector &X, const Beta &beta, const YVector &Y,
 const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
 
+  using execution_space = typename AMatrix::execution_space;
+
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename AMatrix::memory_space>::accessible,
+  "execution space must be able to access A");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
+  "execution space must be able to access X");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YVector::memory_space>::accessible,
+  "execution space must be able to access Y");
+
   // unmanaged versions
   using UX = Kokkos::View<typename XVector::data_type, typename XVector::array_layout,
         typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -1009,11 +1125,11 @@ const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
   UY uY(Y);
   UR uOffRankOffsets(offRankOffsets);
 
-  // std::cerr << __FILE__ << ":" << __LINE__
-  //           << " "   << Y.extent(0) << "," << Y.extent(1)
-  //           << " = " << A.numRows() << "," << A.numCols()
-  //           << " x " << X.extent(0) << "," << X.extent(1)
-  //           << "\n";
+  std::cerr << __FILE__ << ":" << __LINE__
+            << " "   << Y.extent(0) << "," << Y.extent(1)
+            << " = " << A.numRows() << "," << A.numCols()
+            << " x " << X.extent(0) << "," << X.extent(1)
+            << "\n";
 
   // TEUCHOS_TEST_FOR_EXCEPTION(Y.extent(1) != X.extent(1), std::logic_error, 
   // "Y cols " << Y.extent(1) << " != " << " X cols " << X.extent(1));
@@ -1040,11 +1156,22 @@ const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
       // TEUCHOS_TEST_FOR_EXCEPTION(int64_t(A.numCols()) != int64_t(X.extent(0)), std::logic_error, 
       // "A cols " << A.numCols() << " != " << " X rows " << X.extent(0));
 
+       if(int64_t(Y.extent(0)) != int64_t(A.numRows())) {
+        CWP_CERR(__FILE__ <<":" << __LINE__ << " y rows " << Y.extent(0) << " != " << " A rows " << A.numRows() << "\n");
+       }
+
+       if(int64_t(A.numCols()) != int64_t(X.extent(0))) {
+        CWP_CERR(__FILE__ <<":" << __LINE__ << " A cols " << A.numCols() << " != " << " X rows " << X.extent(0) << "\n");
+       }
+
       if (1 == X.extent(1) && 1 == Y.extent(1)) {
+        CWP_CERR(__FILE__ << ":" << __LINE__ << "\n");
         auto X0 = Kokkos::subview(uX, Kokkos::ALL, 0);
         auto Y0 = Kokkos::subview(uY, Kokkos::ALL, 0);
         using Op = SpmvFunctor<Alpha, AMatrix, decltype(X0), Beta, decltype(Y0), RowOffsetView, RowViewer, false>;
+        CWP_CERR(__FILE__ << ":" << __LINE__ << "\n");
         Op::launch(alpha, uA, X0, beta, Y0, uOffRankOffsets, execSpace);
+        CWP_CERR(__FILE__ << ":" << __LINE__ << "\n");
       } else {
         using Op = SpmvMvFunctor<Alpha, AMatrix, XVector, Beta, YVector, RowOffsetView, RowViewer, false>;
         Op::launch(alpha, uA, uX, beta, uY, uOffRankOffsets, execSpace);

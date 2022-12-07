@@ -4698,7 +4698,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Y_in,
                      Scalar alpha,
                      Scalar beta) const {
-
+    CWP_CERR(__FILE__<<":"<<__LINE__<<" applyNonTranposeOverlapped()\n");
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -4742,6 +4742,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const MV> X_colMap;
     RCP<MV> X_colMapNonConst;
 
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     if (!mustImport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: X");
       if (! X_in.isConstantStride ()) {
@@ -4768,6 +4769,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // FIXME cwp Oct 25 2022: I think we can skip this if export is not needed
     RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     if (!mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Y");
       if (!Y_in.isConstantStride() || xyDefinitelyAlias) {
@@ -4790,10 +4792,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (!Y_in.isConstantStride () || xyDefinitelyAlias) {
         this->localApplyOnRank(*onRankSpace, X_in, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       } else {
+        CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
         this->localApplyOnRank(*onRankSpace, X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     } 
 
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     // actually do the import if necessary
     if (mustImport) {
       // Import from the domain Map MV to the column Map MV.
@@ -4805,7 +4809,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     } 
 
-
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     if (mustExport) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTransposeOverlapped: localApplyOffRank");
       Details::Spaces::exec_space_wait(*onRankSpace, defaultSpace); // wait for local SpMV
@@ -4845,6 +4849,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"\n");
     // If the range Map is a locally replicated Map, sum up
     // contributions from each process.  We set beta = 0 on all
     // processes but Proc 0 initially, so this will handle the scaling
@@ -4853,6 +4858,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ProfilingRegion regionReduce ("Tpetra::CrsMatrix::applyNonTransposeOverlapped: Reduce Y");
       Y_in.reduce ();
     }
+    CWP_CERR(__FILE__<<":"<<__LINE__<<"applyNonTransposeOverlapped done\n");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5491,9 +5497,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets, execSpace);
-    std::cerr << __FILE__ << ":" <<__LINE__ << " call applyRemoteColumns\n";
+    CWP_CERR(__FILE__ << ":" <<__LINE__ << " call applyRemoteColumns\n");
     matrix_lcl->applyRemoteColumns (execSpace, X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
-    std::cerr << __FILE__ << ":" <<__LINE__ << " CrsMatrix::localApplyOffRank() done\n";
+    CWP_CERR(__FILE__ << ":" <<__LINE__ << " CrsMatrix::localApplyOffRank() done\n");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5577,7 +5583,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets, execSpace);
+    CWP_CERR(__FILE__ << ":" << __LINE__ << "\n");
     matrix_lcl->applyLocalColumns (execSpace, X_lcl, Y_lcl, mode, alpha, beta, offRankOffsets);
+    CWP_CERR(__FILE__ << ":" << __LINE__ << "\n");
   }
 
 
@@ -5590,7 +5598,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
          Scalar alpha,
          Scalar beta) const
   {
-    // std::cerr << __FILE__ << ":" << __LINE__ << ": CrsMatrix::apply\n";
+    // CWP_CERR(__FILE__ << ":" << __LINE__ << ": CrsMatrix::apply\n");
 
     using Tpetra::Details::ProfilingRegion;
     const char fnName[] = "Tpetra::CrsMatrix::apply";
