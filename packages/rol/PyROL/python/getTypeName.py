@@ -12,5 +12,5 @@ def getTypeName(class_name, scalar_type=getDefaultScalarType()):
     for i in range(0, len(ROL_classes)):
         if ROL_classes[i][0].lower().find(class_name_scalar) == 0:
             return ROL_classes[i][1]
-    print("Warning: Unknown type, the function returns None.")
+    print("Warning: Unknown type \"{}\", the function returns None.".format(class_name))
     return None

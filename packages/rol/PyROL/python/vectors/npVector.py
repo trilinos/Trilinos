@@ -5,12 +5,16 @@ from PyROL.getTypeName import *
 
 
 class npVector(getTypeName('Vector')):
-    def __init__(self, dimension=1, default_value=0., values=None):
-        if values is None:
-            self.values = default_value*np.ones((dimension,))
-        else:
-            self.values = values
+    def __init__(self, values=None):
+        assert isinstance(values, np.ndarray)
+        assert values.ndim == 1
+        self.values = values
         super().__init__()
+
+    @staticmethod
+    def full(dimension=1, default_value=0.):
+        values = np.full((dimension,), fill_value=default_value)
+        return npVector(values)
 
     def plus(self, b):
         self.values += b.values
@@ -19,16 +23,17 @@ class npVector(getTypeName('Vector')):
         self.values *= scale_factor
 
     def dot(self, b):
-        return np.dot(self.values, b.values)
+        return np.vdot(self.values, b.values)
 
     def norm(self):
         return LA.norm(self.values)
 
     def clone(self):
-        return npVector(dimension=len(self.values))
+        return npVector(np.empty_like(self.values))
 
     def axpy(self, scale_factor, x):
         ax = x.clone()
+        ax.zero()
         ax.plus(x)
         ax.scale(scale_factor)
         self.plus(ax)
@@ -44,4 +49,3 @@ class npVector(getTypeName('Vector')):
 
     def __setitem__(self, index, val):
         self.values[index] = val
-
