@@ -287,7 +287,7 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
 #ifdef KOKKOS_ENABLE_CUDA
   if (std::is_same<execution_space,Kokkos::Cuda>::value &&
       std::is_same<FadType,Sacado::Fad::DFad<double> >::value) {
-    const size_t concurrency = execution_space::concurrency();
+    const size_t concurrency = execution_space().concurrency();
     const size_t mem = std::min(m,concurrency) * p * sizeof(double);
     //std::cout << "mem = " << mem / (1024*1024) << " MB" << std::endl;
     cudaDeviceSetLimit(cudaLimitMallocHeapSize, mem);
