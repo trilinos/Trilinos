@@ -44,7 +44,7 @@
 #include <vector>
 #include <unistd.h>
 
-class MeshFixtureM2NDecomposer : public stk::unit_test_util::MeshFixture
+class MeshFixtureM2NDecomposer : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   MeshFixtureM2NDecomposer()

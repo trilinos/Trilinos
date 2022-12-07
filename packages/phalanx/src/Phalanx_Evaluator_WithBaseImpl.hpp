@@ -52,7 +52,6 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Kokkos_View.hpp"
 
 namespace PHX {
 
@@ -102,10 +101,11 @@ namespace PHX {
 
     virtual void addDependentField(const PHX::FieldTag& ft);
 
-    // DEPRECATED: use new const version below
+    /// Add a non-const dependent field. Dependent fields should
+    /// normally be const, but there are use cases that make this
+    /// difficult. This method should only be used as a last resort.
     template<typename DataT,typename...Props>
-    PHALANX_DEPRECATED
-    void addDependentField(const PHX::MDField<DataT,Props...>& f);
+    void addNonConstDependentField(const PHX::MDField<DataT,Props...>& f);
 
     template<typename DataT,typename...Props>
     void addDependentField(const PHX::MDField<const DataT,Props...>& f);

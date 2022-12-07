@@ -246,7 +246,7 @@ namespace MueLu {
         std::vector<std::vector<LO> > agg2vertex(numLocalAggregates);
         auto vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
         for(LO i=0; i<(LO)numRows; i++) {
-          if(aggStat[i] != AGGREGATED) 
+          if(aggStat[i] != AGGREGATED)
             continue;
           LO agg=vertex2AggId[i];
           agg2vertex[agg].push_back(i);
@@ -269,8 +269,8 @@ namespace MueLu {
           for (LO colidx = 0; colidx < static_cast<LO>(nnz); colidx++) {
             bool found = false;
             if(indices[colidx] < numRows) {
-              for(LO j=0; j<(LO)myagg.size(); j++) 
-                if (vertex2AggId[indices[colidx]] == agg) 
+              for(LO j=0; j<(LO)myagg.size(); j++)
+                if (vertex2AggId[indices[colidx]] == agg)
                   found=true;
             }
             if(!found) {
@@ -457,7 +457,7 @@ namespace MueLu {
 	    best_idx = col;
             *out << "[" << current_idx << "] Column     UPDATED " << col << ": "
                  << "aii - si + ajj - sj = " << aii << " - " << si << " + " << ajj << " - " << sj
-                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;            
+                 << " = " << aii - si + ajj - sj<< ", aij = "<<aij << ", mu = " << mu << std::endl;
 	  }
           else {
           *out << "[" << current_idx << "] Column NOT UPDATED " << col << ": "

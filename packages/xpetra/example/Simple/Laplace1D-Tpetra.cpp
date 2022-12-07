@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  typedef double Scalar;
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::CrsMatrix<Scalar> crs_matrix_type;
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::Map<>::global_ordinal_type GO;

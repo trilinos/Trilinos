@@ -168,6 +168,8 @@ namespace ROL {
       flag(false),
       iterateVec(ROL::nullPtr), lagmultVec(ROL::nullPtr), minIterVec(ROL::nullPtr),
       statusFlag(EXITSTATUS_LAST) {}
+    
+    virtual ~AlgorithmState() {}
 
     void reset(void) {
       iter                  = 0;

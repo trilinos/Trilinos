@@ -67,6 +67,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
@@ -74,6 +75,7 @@
 
 namespace
 {
+using stk::unit_test_util::build_mesh;
 
 //BEGIN_DOC1
 TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
@@ -86,7 +88,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -113,7 +115,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -141,7 +143,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -167,7 +169,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -190,8 +192,9 @@ TEST(IntegrationTest, PartChangeGenerated)
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
     if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
@@ -232,8 +235,9 @@ TEST(IntegrationTest, ShellPartChangeCylinder)
   const std::string exodusFileName = "cyl_3block.g";
 
   const int spatialDim = 3;
-  stk::mesh::MetaData stkMeshMetaData(spatialDim);
-  stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+  stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
   stk::mesh::PartVector add_parts {&stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK)};
 
   stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -257,8 +261,9 @@ TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
     const std::string exodusFileName = "ALefLRA.e";
 
     const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
     if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;

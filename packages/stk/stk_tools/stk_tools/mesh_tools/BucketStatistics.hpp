@@ -40,7 +40,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk {
 namespace tools
 {
-    void dump_bucket_statistics(const stk::mesh::BulkData& bulk, std::ostream& os);
+void dump_bucket_statistics(const stk::mesh::BulkData& bulk, std::ostream& os);
 }
 }
 

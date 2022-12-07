@@ -1,3 +1,6 @@
+#ifndef _MiniEM_DiscreteGradient_hpp_
+#define _MiniEM_DiscreteGradient_hpp_
+
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
@@ -69,8 +72,8 @@ void addDiscreteGradientToRequestHandler(
     typedef GlobalOrdinalTpetra GlobalOrdinal;
     typedef panzer::GlobalIndexer UGI;
     typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> linObjContainer;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> matrix;
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> map;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> matrix;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,panzer::TpetraNodeType> map;
 
     RCP<const panzer::BlockedDOFManager> blockedDOFMngr = tblof->getGlobalIndexer();
 
@@ -264,3 +267,5 @@ void addDiscreteGradientToRequestHandler(
     TEUCHOS_ASSERT(false);
   
 }
+
+#endif

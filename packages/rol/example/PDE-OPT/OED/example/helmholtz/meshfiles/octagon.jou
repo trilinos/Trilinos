@@ -1,0 +1,101 @@
+reset
+reset aprepro
+
+#{r=1.5}             # octagon radius
+#{a=2*r/(1+sqrt(2))} # octagon side length
+#{sz=0.0125}         # mesh size
+#{w=0.875}           # piston fraction of loudspeaker cabinent
+#{w1=w}
+#{w2=1-w}
+#{b=r-0.5*a}
+#{c=r+0.5*a}
+
+# create vertices of octagon
+create vertex {     -0.5*a} {         -r} 0 
+create vertex { (0.5-w1)*a} {         -r} 0
+create vertex { (w1-0.5)*a} {         -r} 0
+create vertex {      0.5*a} {         -r} 0 
+create vertex { 0.5*a+w2*b} {    -r+w2*b} 0
+create vertex { 0.5*a+w1*b} {    -r+w1*b} 0
+create vertex {          r} {     -0.5*a} 0 
+create vertex {          r} { (0.5-w1)*a} 0
+create vertex {          r} { (w1-0.5)*a} 0
+create vertex {          r} {      0.5*a} 0 
+create vertex {     r-w2*b} { 0.5*a+w2*b} 0
+create vertex {      0.5*c} {      0.5*c} 0
+create vertex {     r-w1*b} { 0.5*a+w1*b} 0
+create vertex {      0.5*a} {          r} 0 
+create vertex { (w1-0.5)*a} {          r} 0
+create vertex { (0.5-w1)*a} {          r} 0
+create vertex {     -0.5*a} {          r} 0 
+create vertex {-0.5*a-w2*b} {     r-w2*b} 0
+create vertex {-0.5*a-w1*b} {     r-w1*b} 0
+create vertex {         -r} {      0.5*a} 0 
+create vertex {         -r} { (w1-0.5)*a} 0
+create vertex {         -r} { (0.5-w1)*a} 0
+create vertex {         -r} {     -0.5*a} 0 
+create vertex {    -r+w2*b} {-0.5*a-w2*b} 0
+create vertex {     -0.5*c} {     -0.5*c} 0
+create vertex {    -r+w1*b} {-0.5*a-w1*b} 0
+
+# create curves to define sidesets
+create curve 1, 2
+create curve 2, 3
+create curve 3, 4
+create curve 4, 5
+create curve 5, 6
+create curve 6, 7
+create curve 7, 8
+create curve 8, 9
+create curve 9, 10
+create curve 10, 11
+create curve 11, 12
+create curve 12, 13
+create curve 13, 14
+create curve 14, 15
+create curve 15, 16
+create curve 16, 17
+create curve 17, 18
+create curve 18, 19
+create curve 19, 20
+create curve 20, 21
+create curve 21, 22
+create curve 22, 23
+create curve 23, 24
+create curve 24, 25
+create curve 25, 26
+create curve 26, 1
+create curve 25, 12
+
+# create octagon surface
+create surface curve 1 to 11, 27, 26, 25
+#{octagon1 = Id("surface")}
+create surface curve 12 to 24, 27
+#{octagon2 = Id("surface")}
+
+surface {octagon1} {octagon2} size auto factor {sz}
+surface {octagon1} {octagon2} Scheme TriMesh
+mesh surface {octagon1} {octagon2}
+
+merge all
+imprint all
+
+block 1 surface {octagon1} {octagon2}
+block 1 element type TRI
+
+# smooth mesh
+#surface {octagon} smooth scheme Smart Laplacian
+#smooth surface {octagon}
+
+# set sidesets
+Sideset 1 add curve 2
+Sideset 2 add curve 5
+Sideset 3 add curve 8
+Sideset 4 add curve 11, 12
+Sideset 5 add curve 15
+Sideset 6 add curve 18
+Sideset 7 add curve 21
+Sideset 8 add curve 24, 25
+Sideset 9 add curve 1, 3, 4, 6, 7, 9, 10, 13, 14, 16, 17, 19, 20, 22, 23, 26
+
+export mesh "octagon.exo" overwrite

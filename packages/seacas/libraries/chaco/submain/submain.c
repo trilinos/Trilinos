@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,11 +16,11 @@
 extern void reflect_input(int    nvtxs,         /* number of vertices in graph */
                           int    nedges,        /* number of edges in graph */
                           int    igeom,         /* geometric dimension for inertial method */
-                          char * graphname,     /* name of graph input file */
-                          char * geomname,      /* name of geometry input file */
-                          char * inassignname,  /* name of assignment input file */
-                          char * outassignname, /* name of assignment output file */
-                          char * outfilename,   /* name of information output file */
+                          char  *graphname,     /* name of graph input file */
+                          char  *geomname,      /* name of geometry input file */
+                          char  *inassignname,  /* name of assignment input file */
+                          char  *outassignname, /* name of assignment output file */
+                          char  *outfilename,   /* name of information output file */
                           int    architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
                           int    ndims_tot,     /* total number of cuts to make */
                           int    mesh_dims[3],  /* size of mesh */
@@ -31,7 +31,7 @@ extern void reflect_input(int    nvtxs,         /* number of vertices in graph *
                           int    ndims,         /* partitioning level */
                           double eigtol,        /* tolerance on eigenvectors */
                           long   seed,          /* random number seed */
-                          FILE * outfile);       /* file to write output to */
+                          FILE  *outfile);       /* file to write output to */
 
 double *SQRTS; /* precomputed square roots for efficiency */
 
@@ -52,11 +52,11 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
             int               using_vwgts,   /* are vertex weights being used? */
             int               using_ewgts,   /* are edge weights being used? */
             int               igeom,         /* geometry dimension if using inertial method */
-            float **          coords,        /* coordinates of vertices if used */
-            char *            outassignname, /* name of assignment output file */
-            char *            outfilename,   /* in which to print output metrics */
-            int *             assignment,    /* set number of each vtx (length n) */
-            double *          goal,          /* desired sizes for each set */
+            float           **coords,        /* coordinates of vertices if used */
+            char             *outassignname, /* name of assignment output file */
+            char             *outfilename,   /* in which to print output metrics */
+            int              *assignment,    /* set number of each vtx (length n) */
+            double           *goal,          /* desired sizes for each set */
             int               architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
             int               ndims_tot,     /* total number hypercube dimensions */
             int               mesh_dims[3],  /* extent of mesh in 3 directions */
@@ -97,13 +97,13 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   extern double     kernel_time;               /* time spent benchmarking kernels */
   extern double     count_time;                /* time spent evaluating the answer */
   extern double     print_assign_time;         /* time spent writing output file */
-  FILE *            outfile;                   /* output file */
+  FILE             *outfile;                   /* output file */
   struct vtx_data **graph2;                    /* data structure for graph */
   int               hop_mtx[MAXSETS][MAXSETS]; /* between-set hop cost for KL */
-  double *          vwsqrt;                    /* sqrt of vertex weights (length nvtxs+1) */
+  double           *vwsqrt;                    /* sqrt of vertex weights (length nvtxs+1) */
   double            time, time1;               /* timing variables */
-  char *            graphname, *geomname;      /* names of input files */
-  char *            inassignname;              /* name of assignment input file */
+  char             *graphname, *geomname;      /* names of input files */
+  char             *inassignname;              /* name of assignment input file */
   int               old_nsqrts;                /* old value of NSQRTS */
   int               append;                    /* append output to existing file? */
   int               nsets;                     /* number of sets created by each divide */
@@ -112,14 +112,14 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   int               flag;                      /* return code from check_input */
   int               old_perturb = 0;           /* saves original perturbation flag */
   int               i, j, k;                   /* loop counters */
-  double            seconds();
+  double            seconds(void);
   void              setrandom(long int seed);
   int               check_input(), refine_part();
   void              connect_enforce();
   void              makevwsqrt(), balance(), countup();
   void              force_internal(), sequence(), reflect_input();
   void              machine_params(), assign_out(), refine_map();
-  void              time_out(), time_kernels(), strout();
+  void              time_out(), time_kernels(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering submain>\n");

@@ -24,48 +24,35 @@ class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
 public:
   MultipleCriteriaSettings(stk::mesh::BulkData & stkMeshBulkData,
       const std::vector<stk::mesh::Field<double> *> critFields,
+      const unsigned max_num_nodal_rebal_iters,
       const double default_weight = 0.0)
-      : m_stkMeshBulkData(stkMeshBulkData),
-        m_critFields(critFields),
-        m_defaultWeight(default_weight)
+      : m_stkMeshBulkData(stkMeshBulkData)
   {
-    method = "rcb";
+    m_method = "rcb";
     setUseNodeBalancer(true);
     setNodeBalancerTargetLoadBalance(getImbalanceTolerance());
-    setNodeBalancerMaxIterations(10);
+    setNodeBalancerMaxIterations(max_num_nodal_rebal_iters);
+    setNumCriteria(critFields.size());
+    setVertexWeightMethod(stk::balance::VertexWeightMethod::FIELD);
+    for (unsigned i = 0; i < critFields.size(); ++i) {
+      setVertexWeightFieldName(critFields[i]->name(), i);
+    }
+    setDefaultFieldWeight(default_weight);
   }
-  virtual ~MultipleCriteriaSettings() = default;
+  virtual ~MultipleCriteriaSettings() override = default;
 
   virtual double
   getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override
   {
     return 1.0;
   }
-  virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
   virtual bool includeSearchResultsInGraph() const override { return false; }
   virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
-  virtual void setDecompMethod(const std::string & input_method) override { method = input_method; }
-  virtual std::string getDecompMethod() const override { return method; }
-  virtual int getNumCriteria() const override { return m_critFields.size(); }
+  virtual void setDecompMethod(const std::string & input_method) override { m_method = input_method; }
+  virtual std::string getDecompMethod() const override { return m_method; }
   virtual bool isMultiCriteriaRebalance() const override { return true; }
   virtual bool shouldFixMechanisms() const override { return false; }
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
-  {
-    ThrowRequireWithSierraHelpMsg(
-        criteria_index >= 0 && static_cast<size_t>(criteria_index) < m_critFields.size());
-    const double * weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
-    if (weight != nullptr)
-    {
-      ThrowRequireWithSierraHelpMsg(*weight >= 0);
-      return *weight;
-    }
-    else
-    {
-      return m_defaultWeight;
-    }
-  }
 
 protected:
   MultipleCriteriaSettings() = delete;
@@ -73,20 +60,22 @@ protected:
   MultipleCriteriaSettings & operator=(const MultipleCriteriaSettings &) = delete;
 
   const stk::mesh::BulkData & m_stkMeshBulkData;
-  const std::vector<stk::mesh::Field<double> *> m_critFields;
-  const double m_defaultWeight;
 };
 
 class CDFEMRebalance final : public MultipleCriteriaSettings
 {
 public:
   CDFEMRebalance(stk::mesh::BulkData & bulk_data,
+      const RefinementInterface * refinement,
       CDMesh * cdmesh,
       const std::string & coordinates_field_name,
       const std::vector<stk::mesh::Field<double> *> & weights_fields,
       const double imbalance_threshold,
+      const unsigned max_num_nodal_rebal_iters,
       const double default_weight = 0.)
-      : MultipleCriteriaSettings(bulk_data, weights_fields, default_weight),
+      : MultipleCriteriaSettings(
+            bulk_data, weights_fields, max_num_nodal_rebal_iters, default_weight),
+        myRefinement(refinement),
         my_cdmesh(cdmesh),
         my_bulk_data(bulk_data),
         my_coordinates_field_name(coordinates_field_name),
@@ -102,13 +91,14 @@ public:
   bool shouldPrintMetrics() const override { return true; }
   bool isIncrementalRebalance() const override { return true; }
 
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
+  virtual double getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const override
   {
     double scaleVertexWeightForTestingDueToSmallMesh = 12;
-    return scaleVertexWeightForTestingDueToSmallMesh*MultipleCriteriaSettings::getGraphVertexWeight(entity, criteria_index);
+    return scaleVertexWeightForTestingDueToSmallMesh*MultipleCriteriaSettings::getFieldVertexWeight(bulkData, entity, criteria_index);
   }
 
 private:
+  const RefinementInterface * myRefinement;
   CDMesh * my_cdmesh;
   stk::mesh::BulkData & my_bulk_data;
   std::string my_coordinates_field_name;
@@ -125,7 +115,10 @@ void CDFEMRebalance::modifyDecomposition(stk::balance::DecompositionChangeList &
    *    the parent destination.
    */
 
-  impl::update_rebalance_for_adaptivity(decomp_changes, my_bulk_data);
+  if (myRefinement)
+  {
+    impl::update_rebalance_for_adaptivity(decomp_changes, *myRefinement, my_bulk_data);
+  }
 
   if(my_cdmesh)
   {
@@ -138,6 +131,7 @@ void CDFEMRebalance::modifyDecomposition(stk::balance::DecompositionChangeList &
 void
 update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
     stk::mesh::Field<double> & element_weights_field,
+    const RefinementInterface * refinement,
     const CDMesh * cdmesh)
 {
   // First sum CDFEM child weights to their CDFEM parents, then adaptivity children to
@@ -148,14 +142,19 @@ update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
     impl::accumulate_cdfem_child_weights_to_parents(bulk_data, element_weights_field, *cdmesh);
   }
 
-  impl::accumulate_adaptivity_child_weights_to_parents(bulk_data, element_weights_field);
+  if (refinement)
+  {
+    impl::accumulate_adaptivity_child_weights_to_parents(bulk_data, *refinement, element_weights_field);
+  }
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
     const std::vector<stk::mesh::Selector> & selections_to_rebalance_separately,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method,
     const double imbalance_threshold)
 {
@@ -166,12 +165,17 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
       << " to use for rebalance weights.");
   const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
-  update_parent_child_rebalance_weights(bulk_data, *element_weights_field, cdmesh);
+  update_parent_child_rebalance_weights(bulk_data, *element_weights_field, refinement, cdmesh);
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  CDFEMRebalance balancer(
-      bulk_data, cdmesh, coordinates_field_name, {element_weights_field}, imbalance_threshold);
+  CDFEMRebalance balancer(bulk_data,
+      refinement,
+      cdmesh,
+      coordinates_field_name,
+      {element_weights_field},
+      imbalance_threshold,
+      max_num_nodal_rebal_iters);
   balancer.setDecompMethod(decomp_method);
   const bool rebalanced =
           stk::balance::balanceStkMesh(balancer, bulk_data, selections_to_rebalance_separately);
@@ -187,9 +191,11 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method,
     const double imbalance_threshold)
 {
@@ -203,14 +209,19 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
         "Failed to find element rank field " << field_name << " to use for rebalance weights.");
     const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
-    update_parent_child_rebalance_weights(bulk_data, *element_weights_field, cdmesh);
+    update_parent_child_rebalance_weights(bulk_data, *element_weights_field, refinement, cdmesh);
     weights_fields.push_back(element_weights_field);
   }
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  CDFEMRebalance balancer(
-      bulk_data, cdmesh, coordinates_field_name, weights_fields, imbalance_threshold);
+  CDFEMRebalance balancer(bulk_data,
+      refinement,
+      cdmesh,
+      coordinates_field_name,
+      weights_fields,
+      imbalance_threshold,
+      max_num_nodal_rebal_iters);
   balancer.setDecompMethod(decomp_method);
   const bool rebalanced = stk::balance::balanceStkMesh(balancer, bulk_data);
   if (rebalanced)

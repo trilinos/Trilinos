@@ -48,36 +48,24 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
 #include <armpl.h>
 
-template<typename Scalar>
-void armpl_matvec_wrapper(armpl_spmat_t A, Scalar* x, Scalar* y)
-{
-  throw std::runtime_error("Can't use ArmPL mat-vec for scalar types other than double and float.");
-}
-
-template<>
-void armpl_matvec_wrapper<float>(armpl_spmat_t A, float* x, float* y)
-{
+void armpl_matvec_wrapper(armpl_spmat_t A, float* x, float* y) {
   const float alpha = 1.0;
   const float beta  = 0.0;
-  armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS,
-		    alpha, A, x, beta, y);
+  armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
 }
 
-template<>
-void armpl_matvec_wrapper<double>(armpl_spmat_t A, double* x, double* y)
-{
+void armpl_matvec_wrapper(armpl_spmat_t A, double* x, double* y) {
   const double alpha = 1.0;
   const double beta  = 0.0;
-  armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS,
-		    alpha, A, x, beta, y);
+  armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
 }
 
-template<typename AType, typename XType, typename YType>
+template <typename AType, typename XType, typename YType>
 void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data) {
-  using Scalar = typename AType::non_const_value_type;
-  //Run armpl spmv corresponding to scalar type
-  armpl_matvec_wrapper<Scalar>(data->A, x.data(), y.data());
+  // using Scalar = typename AType::non_const_value_type;
+  // Run armpl spmv corresponding to scalar type
+  armpl_matvec_wrapper(data->A, x.data(), y.data());
 }
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#endif // ARMPL_SPMV_HPP_
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#endif  // ARMPL_SPMV_HPP_

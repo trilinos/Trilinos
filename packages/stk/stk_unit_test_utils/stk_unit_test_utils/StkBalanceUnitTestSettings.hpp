@@ -18,6 +18,12 @@ public:
   virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
 };
 
+namespace simple_fields {
+
+class StkBalanceUnitTestSettings : public stk::unit_test_util::StkBalanceUnitTestSettings {};
+
+} // namespace simple_fields
+
 } }
 
 #endif // STKBALANCEUNITTESTSETTINGS_HPP

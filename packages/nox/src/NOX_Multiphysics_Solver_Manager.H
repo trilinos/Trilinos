@@ -120,7 +120,7 @@ public:
                  const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual void reset();
-  virtual NOX::StatusTest::StatusType getStatus();
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;

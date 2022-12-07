@@ -71,10 +71,10 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 
   try {
-    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
+    RealT tol = 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
-    list.sublist("Status Test").set("Gradient Tolerance",1e-8);
+    list.sublist("Status Test").set("Gradient Tolerance",1e-7);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
     list.sublist("Status Test").set("Iteration Limit", 250);

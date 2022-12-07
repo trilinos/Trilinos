@@ -53,99 +53,101 @@ void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification,
 
 TEST(PartToBucket, hex)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x1";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  const std::string generatedMeshSpecification = "generated:1x1x1";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
 
-    stkMeshIoBroker.populate_bulk_data();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 1;
-    EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t expectedNodeBuckets = 1;
+  EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
 
-    const stk::mesh::Part& locallyOwned = stkMeshMetaData.locally_owned_part();
-    const stk::mesh::Part& globallyShared = stkMeshMetaData.globally_shared_part();
-    const stk::mesh::Part& universal = stkMeshMetaData.universal_part();
+  const stk::mesh::Part& locallyOwned = stkMeshMetaData.locally_owned_part();
+  const stk::mesh::Part& globallyShared = stkMeshMetaData.globally_shared_part();
+  const stk::mesh::Part& universal = stkMeshMetaData.universal_part();
 
-    const stk::mesh::Bucket& nodeBucket = *nodeBuckets[0];
+  const stk::mesh::Bucket& nodeBucket = *nodeBuckets[0];
 
-    EXPECT_TRUE(nodeBucket.member(locallyOwned));
-    EXPECT_TRUE(nodeBucket.member(universal));
-    EXPECT_FALSE(nodeBucket.member(globallyShared));
+  EXPECT_TRUE(nodeBucket.member(locallyOwned));
+  EXPECT_TRUE(nodeBucket.member(universal));
+  EXPECT_FALSE(nodeBucket.member(globallyShared));
 
-    const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-    size_t expectedElemBuckets = 1;
-    EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
+  const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  size_t expectedElemBuckets = 1;
+  EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
 
-    const stk::mesh::Bucket& elemBucket = *elemBuckets[0];
+  const stk::mesh::Bucket& elemBucket = *elemBuckets[0];
 
-    EXPECT_TRUE(elemBucket.member(locallyOwned));
-    EXPECT_TRUE(elemBucket.member(universal));
-    EXPECT_FALSE(elemBucket.member(globallyShared));
+  EXPECT_TRUE(elemBucket.member(locallyOwned));
+  EXPECT_TRUE(elemBucket.member(universal));
+  EXPECT_FALSE(elemBucket.member(globallyShared));
 
-    const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
-    size_t expectedEdgeBuckets = 0;
-    EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
+  const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+  size_t expectedEdgeBuckets = 0;
+  EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
 
-    const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
-    size_t expectedFaceBuckets = 0;
-    EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
+  const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
+  size_t expectedFaceBuckets = 0;
+  EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 }
 
 TEST(PartToBucket, hexWithSingleSideset)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x1|sideset:X";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  const std::string generatedMeshSpecification = "generated:1x1x1|sideset:X";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
 
-    stkMeshIoBroker.populate_bulk_data();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector surface1NodesSelector(surface1Part);
+  stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
+  stk::mesh::Selector surface1NodesSelector(surface1Part);
 
-    const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
-    size_t expectedSurface1NodeBuckets = 1;
-    EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
+  const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
+  size_t expectedSurface1NodeBuckets = 1;
+  EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
-    size_t numNodesInBoundary = 4;
-    EXPECT_EQ(numNodesInBoundary, surface1NodeBuckets[0]->size());
+  size_t numNodesInBoundary = 4;
+  EXPECT_EQ(numNodesInBoundary, surface1NodeBuckets[0]->size());
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 2;
-    EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t expectedNodeBuckets = 2;
+  EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
 
-    const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-    size_t expectedElemBuckets = 1;
-    EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
+  const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  size_t expectedElemBuckets = 1;
+  EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
 
-    const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
-    size_t expectedEdgeBuckets = 0;
-    EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
+  const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+  size_t expectedEdgeBuckets = 0;
+  EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
 
-    const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
-    size_t expectedFaceBuckets = 1;
-    EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
+  const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
+  size_t expectedFaceBuckets = 1;
+  EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 
-    size_t numFacesInBucket = 1;
-    EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
+  size_t numFacesInBucket = 1;
+  EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
 }
 
 /*
@@ -165,46 +167,47 @@ TEST(PartToBucket, hexWithSingleSideset)
 
 TEST(PartToBucket, hexWithTwoSidesets)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XY";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XY";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
 
-    stkMeshIoBroker.populate_bulk_data();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector surface1NodesSelector(surface1Part);
+  stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
+  stk::mesh::Selector surface1NodesSelector(surface1Part);
 
-    const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
-    size_t expectedSurface1NodeBuckets = 2;
-    EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
+  const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
+  size_t expectedSurface1NodeBuckets = 2;
+  EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 4; // A,B,C,D in above picture
-    EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t expectedNodeBuckets = 4; // A,B,C,D in above picture
+  EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
 
-    const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-    size_t expectedElemBuckets = 1;
-    EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
+  const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  size_t expectedElemBuckets = 1;
+  EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
 
-    const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
-    size_t expectedEdgeBuckets = 0;
-    EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
+  const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+  size_t expectedEdgeBuckets = 0;
+  EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
 
-    const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
-    size_t expectedFaceBuckets = 2;
-    EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
+  const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
+  size_t expectedFaceBuckets = 2;
+  EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 
-    size_t numFacesInBucket = 1;
-    EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
+  size_t numFacesInBucket = 1;
+  EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
 }
 
 /*
@@ -230,43 +233,44 @@ TEST(PartToBucket, hexWithTwoSidesets)
 */
 TEST(PartToBucket, twoHex)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x2";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  const std::string generatedMeshSpecification = "generated:1x1x2";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNumNodeBuckets = 1;
-    EXPECT_EQ(expectedNumNodeBuckets, nodeBuckets.size());
-    size_t expectedNumNodes = 12;
-    EXPECT_EQ(expectedNumNodes, nodeBuckets[0]->size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t expectedNumNodeBuckets = 1;
+  EXPECT_EQ(expectedNumNodeBuckets, nodeBuckets.size());
+  size_t expectedNumNodes = 12;
+  EXPECT_EQ(expectedNumNodes, nodeBuckets[0]->size());
 
-    stk::mesh::Selector locallyOwnedSelector(stkMeshMetaData.locally_owned_part());
-    stk::mesh::Selector globallySharedSelector(stkMeshMetaData.globally_shared_part());
-    stk::mesh::Selector ghostedSelector(!(stkMeshMetaData.locally_owned_part() | stkMeshMetaData.globally_shared_part()));
+  stk::mesh::Selector locallyOwnedSelector(stkMeshMetaData.locally_owned_part());
+  stk::mesh::Selector globallySharedSelector(stkMeshMetaData.globally_shared_part());
+  stk::mesh::Selector ghostedSelector(!(stkMeshMetaData.locally_owned_part() | stkMeshMetaData.globally_shared_part()));
 
-    const stk::mesh::BucketVector &locallyOwnedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locallyOwnedSelector);
-    const stk::mesh::BucketVector &globallySharedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, globallySharedSelector);
-    const stk::mesh::BucketVector &ghostedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, ghostedSelector);
-    EXPECT_EQ(1u, locallyOwnedNodeBuckets.size());
-    EXPECT_EQ(0u, globallySharedNodeBuckets.size());
-    EXPECT_EQ(0u, ghostedNodeBuckets.size());
+  const stk::mesh::BucketVector &locallyOwnedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locallyOwnedSelector);
+  const stk::mesh::BucketVector &globallySharedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, globallySharedSelector);
+  const stk::mesh::BucketVector &ghostedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, ghostedSelector);
+  EXPECT_EQ(1u, locallyOwnedNodeBuckets.size());
+  EXPECT_EQ(0u, globallySharedNodeBuckets.size());
+  EXPECT_EQ(0u, ghostedNodeBuckets.size());
 
-    const stk::mesh::BucketVector &locallyOwnedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, locallyOwnedSelector);
-    const stk::mesh::BucketVector &globallySharedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, globallySharedSelector);
-    const stk::mesh::BucketVector &ghostedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, ghostedSelector);
-    EXPECT_EQ(1u, locallyOwnedElementBuckets.size());
-    EXPECT_EQ(0u, globallySharedElementBuckets.size());
-    EXPECT_EQ(0u, ghostedElementBuckets.size());
+  const stk::mesh::BucketVector &locallyOwnedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, locallyOwnedSelector);
+  const stk::mesh::BucketVector &globallySharedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, globallySharedSelector);
+  const stk::mesh::BucketVector &ghostedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, ghostedSelector);
+  EXPECT_EQ(1u, locallyOwnedElementBuckets.size());
+  EXPECT_EQ(0u, globallySharedElementBuckets.size());
+  EXPECT_EQ(0u, ghostedElementBuckets.size());
 }
 
 /*
@@ -332,9 +336,9 @@ TEST(PartToBucket, twoHex)
 */
 TEST(PartToBucket, np2TwoHex)
 {
-    const std::string generatedMeshSpecification = "generated:1x1x2";
-    size_t expectedNumBucketsPerSlice = 1;
-    runTwoHexParallelBucketTests(generatedMeshSpecification, expectedNumBucketsPerSlice);
+  const std::string generatedMeshSpecification = "generated:1x1x2";
+  size_t expectedNumBucketsPerSlice = 1;
+  runTwoHexParallelBucketTests(generatedMeshSpecification, expectedNumBucketsPerSlice);
 }
 
 /*
@@ -374,84 +378,85 @@ TEST(PartToBucket, np2TwoHex)
 */
 TEST(PartToBucket, np2TwoHexTwoSidesets)
 {
-    const std::string generatedMeshSpecification = "generated:1x1x2|sideset:XY";
-    size_t expectedNumBucketsPerSlice = 4;
-    runTwoHexParallelBucketTests(generatedMeshSpecification, expectedNumBucketsPerSlice);
+  const std::string generatedMeshSpecification = "generated:1x1x2|sideset:XY";
+  size_t expectedNumBucketsPerSlice = 4;
+  runTwoHexParallelBucketTests(generatedMeshSpecification, expectedNumBucketsPerSlice);
 }
 
 void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t expectedNumBucketsPerSlice)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 2)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 2)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t numSlices = 3;
-    size_t expectedNodeBuckets = numSlices * expectedNumBucketsPerSlice;
-    ASSERT_EQ(expectedNodeBuckets, nodeBuckets.size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t numSlices = 3;
+  size_t expectedNodeBuckets = numSlices * expectedNumBucketsPerSlice;
+  ASSERT_EQ(expectedNodeBuckets, nodeBuckets.size());
 
-    size_t numNodesPerSlice = 4;
-    size_t expectedNumNodesInEveryBucket = numNodesPerSlice / expectedNumBucketsPerSlice;
-    for(size_t i=0; i<nodeBuckets.size(); i++)
-    {
-        EXPECT_EQ(expectedNumNodesInEveryBucket, nodeBuckets[i]->size());
-    }
+  size_t numNodesPerSlice = 4;
+  size_t expectedNumNodesInEveryBucket = numNodesPerSlice / expectedNumBucketsPerSlice;
+  for(size_t i=0; i<nodeBuckets.size(); i++)
+  {
+    EXPECT_EQ(expectedNumNodesInEveryBucket, nodeBuckets[i]->size());
+  }
 
-    const stk::mesh::Part& locallyOwned = stkMeshMetaData.locally_owned_part();
-    const stk::mesh::Part& globallyShared = stkMeshMetaData.globally_shared_part();
-    stk::mesh::Selector locallyOwnedSelector(locallyOwned);
-    stk::mesh::Selector globallySharedSelector(globallyShared);
-    stk::mesh::Selector ghostedSelector(!(locallyOwned | globallyShared));
-    const stk::mesh::BucketVector &locallyOwnedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locallyOwnedSelector);
-    const stk::mesh::BucketVector &globallySharedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, globallySharedSelector);
-    const stk::mesh::BucketVector &ghostedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, ghostedSelector);
+  const stk::mesh::Part& locallyOwned = stkMeshMetaData.locally_owned_part();
+  const stk::mesh::Part& globallyShared = stkMeshMetaData.globally_shared_part();
+  stk::mesh::Selector locallyOwnedSelector(locallyOwned);
+  stk::mesh::Selector globallySharedSelector(globallyShared);
+  stk::mesh::Selector ghostedSelector(!(locallyOwned | globallyShared));
+  const stk::mesh::BucketVector &locallyOwnedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locallyOwnedSelector);
+  const stk::mesh::BucketVector &globallySharedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, globallySharedSelector);
+  const stk::mesh::BucketVector &ghostedNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, ghostedSelector);
 
-    size_t expectedNumLocallyOwnedNodeBuckets = 0;
-    size_t expectedNumGloballySharedNodeBuckets = 0;
-    size_t expectedNumGhostedNodeBuckets = 0;
-    if(stk::parallel_machine_rank(communicator) == 0)
-    {
-        expectedNumLocallyOwnedNodeBuckets = 2 * expectedNumBucketsPerSlice;
-        expectedNumGloballySharedNodeBuckets = expectedNumBucketsPerSlice;
-        expectedNumGhostedNodeBuckets = expectedNumBucketsPerSlice;
-    }
-    else
-    {
-        expectedNumLocallyOwnedNodeBuckets = expectedNumBucketsPerSlice;
-        expectedNumGloballySharedNodeBuckets = expectedNumBucketsPerSlice;
-        expectedNumGhostedNodeBuckets = expectedNumBucketsPerSlice;
-    }
-    EXPECT_EQ(expectedNumLocallyOwnedNodeBuckets, locallyOwnedNodeBuckets.size());
-    EXPECT_EQ(expectedNumGloballySharedNodeBuckets, globallySharedNodeBuckets.size());
-    EXPECT_EQ(expectedNumGhostedNodeBuckets, ghostedNodeBuckets.size());
+  size_t expectedNumLocallyOwnedNodeBuckets = 0;
+  size_t expectedNumGloballySharedNodeBuckets = 0;
+  size_t expectedNumGhostedNodeBuckets = 0;
+  if(stk::parallel_machine_rank(communicator) == 0)
+  {
+    expectedNumLocallyOwnedNodeBuckets = 2 * expectedNumBucketsPerSlice;
+    expectedNumGloballySharedNodeBuckets = expectedNumBucketsPerSlice;
+    expectedNumGhostedNodeBuckets = expectedNumBucketsPerSlice;
+  }
+  else
+  {
+    expectedNumLocallyOwnedNodeBuckets = expectedNumBucketsPerSlice;
+    expectedNumGloballySharedNodeBuckets = expectedNumBucketsPerSlice;
+    expectedNumGhostedNodeBuckets = expectedNumBucketsPerSlice;
+  }
+  EXPECT_EQ(expectedNumLocallyOwnedNodeBuckets, locallyOwnedNodeBuckets.size());
+  EXPECT_EQ(expectedNumGloballySharedNodeBuckets, globallySharedNodeBuckets.size());
+  EXPECT_EQ(expectedNumGhostedNodeBuckets, ghostedNodeBuckets.size());
 
 
-    const stk::mesh::BucketVector &locallyOwnedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, locallyOwnedSelector);
-    const stk::mesh::BucketVector &globallySharedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, globallySharedSelector);
-    const stk::mesh::BucketVector &ghostedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, ghostedSelector);
-    EXPECT_EQ(1u, locallyOwnedElementBuckets.size());
-    EXPECT_EQ(0u, globallySharedElementBuckets.size());
-    EXPECT_EQ(1u, ghostedElementBuckets.size());
+  const stk::mesh::BucketVector &locallyOwnedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, locallyOwnedSelector);
+  const stk::mesh::BucketVector &globallySharedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, globallySharedSelector);
+  const stk::mesh::BucketVector &ghostedElementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, ghostedSelector);
+  EXPECT_EQ(1u, locallyOwnedElementBuckets.size());
+  EXPECT_EQ(0u, globallySharedElementBuckets.size());
+  EXPECT_EQ(1u, ghostedElementBuckets.size());
 }
 
 void checkNodeInSelectedBucket(stk::mesh::Selector selectNode, stk::mesh::EntityId expectedGlobalId, stk::mesh::BulkData &stkMeshBulkData)
 {
-    const stk::mesh::BucketVector &node1BucketVector = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, selectNode);
-    size_t expectedNumBucketsForAnyNode = 1;
-    EXPECT_EQ(expectedNumBucketsForAnyNode, node1BucketVector.size());
-    size_t expectedNumNodesPerBucket = 1;
-    EXPECT_EQ(expectedNumNodesPerBucket, node1BucketVector[0]->size());
-    const stk::mesh::Bucket &node1Bucket = *node1BucketVector[0];
-    EXPECT_EQ(expectedGlobalId, stkMeshBulkData.identifier(node1Bucket[0]));
+  const stk::mesh::BucketVector &node1BucketVector = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, selectNode);
+  size_t expectedNumBucketsForAnyNode = 1;
+  EXPECT_EQ(expectedNumBucketsForAnyNode, node1BucketVector.size());
+  size_t expectedNumNodesPerBucket = 1;
+  EXPECT_EQ(expectedNumNodesPerBucket, node1BucketVector[0]->size());
+  const stk::mesh::Bucket &node1Bucket = *node1BucketVector[0];
+  EXPECT_EQ(expectedGlobalId, stkMeshBulkData.identifier(node1Bucket[0]));
 }
 /*
          7--------------8
@@ -469,93 +474,94 @@ void checkNodeInSelectedBucket(stk::mesh::Selector selectNode, stk::mesh::Entity
 */
 TEST(PartToBucket, hexWithThreeSidesets)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
-    {
-        return;
-    }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1)
+  {
+    return;
+  }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
 
-    //generated-mesh 'sideset:xYz' syntax adds face surfaces on 3 sides of the mesh,
-    //(minimum 'x' side, maximum 'y' side, minimum 'z' side)
-    //and the IO system will create corresponding stk::mesh::Parts named 'surface_1',
-    //'surface_2' and 'surface_3', respectively, which are referenced in code below.
-    const std::string generatedMeshSpecification = "generated:1x1x1|sideset:xYz";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  //generated-mesh 'sideset:xYz' syntax adds face surfaces on 3 sides of the mesh,
+  //(minimum 'x' side, maximum 'y' side, minimum 'z' side)
+  //and the IO system will create corresponding stk::mesh::Parts named 'surface_1',
+  //'surface_2' and 'surface_3', respectively, which are referenced in code below.
+  const std::string generatedMeshSpecification = "generated:1x1x1|sideset:xYz";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part *surface1PartPtr = stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Part *surface2PartPtr = stkMeshMetaData.get_part("surface_2");
-    stk::mesh::Part *surface3PartPtr = stkMeshMetaData.get_part("surface_3");
+  stk::mesh::Part *surface1PartPtr = stkMeshMetaData.get_part("surface_1");
+  stk::mesh::Part *surface2PartPtr = stkMeshMetaData.get_part("surface_2");
+  stk::mesh::Part *surface3PartPtr = stkMeshMetaData.get_part("surface_3");
 
-    EXPECT_TRUE(surface1PartPtr != NULL);
-    EXPECT_TRUE(surface2PartPtr != NULL);
-    EXPECT_TRUE(surface3PartPtr != NULL);
+  EXPECT_TRUE(surface1PartPtr != NULL);
+  EXPECT_TRUE(surface2PartPtr != NULL);
+  EXPECT_TRUE(surface3PartPtr != NULL);
 
-    stk::mesh::Part &surface1Part = *surface1PartPtr;
-    stk::mesh::Part &surface2Part = *surface2PartPtr;
-    stk::mesh::Part &surface3Part = *surface3PartPtr;
+  stk::mesh::Part &surface1Part = *surface1PartPtr;
+  stk::mesh::Part &surface2Part = *surface2PartPtr;
+  stk::mesh::Part &surface3Part = *surface3PartPtr;
 
-    stk::mesh::Selector surface1Selector(surface1Part);
-    const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1Selector);
-    size_t expectedSurface1NodeBuckets = 4;
-    EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
+  stk::mesh::Selector surface1Selector(surface1Part);
+  const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1Selector);
+  size_t expectedSurface1NodeBuckets = 4;
+  EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
-    stk::mesh::Selector selectNode1 = surface1Part & (!surface2Part) & surface3Part;
-    stk::mesh::EntityId expectedGlobalId = 1;
-    checkNodeInSelectedBucket(selectNode1, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode1 = surface1Part & (!surface2Part) & surface3Part;
+  stk::mesh::EntityId expectedGlobalId = 1;
+  checkNodeInSelectedBucket(selectNode1, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode2 = (!surface1Part) & (!surface2Part) & surface3Part;
-    expectedGlobalId = 2;
-    checkNodeInSelectedBucket(selectNode2, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode2 = (!surface1Part) & (!surface2Part) & surface3Part;
+  expectedGlobalId = 2;
+  checkNodeInSelectedBucket(selectNode2, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode3 = surface1Part & surface2Part & surface3Part;
-    expectedGlobalId = 3;
-    checkNodeInSelectedBucket(selectNode3, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode3 = surface1Part & surface2Part & surface3Part;
+  expectedGlobalId = 3;
+  checkNodeInSelectedBucket(selectNode3, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode4 = (!surface1Part) & surface2Part & surface3Part;
-    expectedGlobalId = 4;
-    checkNodeInSelectedBucket(selectNode4, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode4 = (!surface1Part) & surface2Part & surface3Part;
+  expectedGlobalId = 4;
+  checkNodeInSelectedBucket(selectNode4, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode5 = surface1Part & (!surface2Part) & (!surface3Part);
-    expectedGlobalId = 5;
-    checkNodeInSelectedBucket(selectNode5, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode5 = surface1Part & (!surface2Part) & (!surface3Part);
+  expectedGlobalId = 5;
+  checkNodeInSelectedBucket(selectNode5, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Part *block1PartPtr = stkMeshMetaData.get_part("block_1");
-    EXPECT_TRUE(block1PartPtr != NULL);
+  stk::mesh::Part *block1PartPtr = stkMeshMetaData.get_part("block_1");
+  EXPECT_TRUE(block1PartPtr != NULL);
 
-    stk::mesh::Part &block1Part = *block1PartPtr;
-    stk::mesh::Selector selectNode6 = block1Part & (!surface1Part) & (!surface2Part) & (!surface3Part);
-    expectedGlobalId = 6;
-    checkNodeInSelectedBucket(selectNode6, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Part &block1Part = *block1PartPtr;
+  stk::mesh::Selector selectNode6 = block1Part & (!surface1Part) & (!surface2Part) & (!surface3Part);
+  expectedGlobalId = 6;
+  checkNodeInSelectedBucket(selectNode6, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode7 = surface1Part & surface2Part & (!surface3Part);
-    expectedGlobalId = 7;
-    checkNodeInSelectedBucket(selectNode7, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode7 = surface1Part & surface2Part & (!surface3Part);
+  expectedGlobalId = 7;
+  checkNodeInSelectedBucket(selectNode7, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode8 = (!surface1Part) & surface2Part & (!surface3Part);
-    expectedGlobalId = 8;
-    checkNodeInSelectedBucket(selectNode8, expectedGlobalId, stkMeshBulkData);
+  stk::mesh::Selector selectNode8 = (!surface1Part) & surface2Part & (!surface3Part);
+  expectedGlobalId = 8;
+  checkNodeInSelectedBucket(selectNode8, expectedGlobalId, stkMeshBulkData);
 
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 8;
-    EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
+  const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
+  size_t expectedNodeBuckets = 8;
+  EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
 
-    const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-    size_t expectedElemBuckets = 1;
-    EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
+  const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  size_t expectedElemBuckets = 1;
+  EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
 
-    const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
-    size_t expectedEdgeBuckets = 0;
-    EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
+  const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+  size_t expectedEdgeBuckets = 0;
+  EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
 
-    const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
-    size_t expectedFaceBuckets = 3;
-    EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
+  const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
+  size_t expectedFaceBuckets = 3;
+  EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 }
 
 }

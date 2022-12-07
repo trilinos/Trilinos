@@ -60,8 +60,12 @@
 
 // Evaluators
 #include "Panzer_Neumann_Residual.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_ScatterResidual_Epetra.hpp"
+#endif
+
 #include "Panzer_Normals.hpp"
 
 // ***********************************************************************
@@ -72,7 +76,7 @@ BCStrategy_Neumann_DefaultImpl(const panzer::BC& bc,
   panzer::BCStrategy<EvalT>(bc),
   panzer::GlobalDataAcceptorDefaultImpl(global_data)
 {
-  
+
 }
 
 // ***********************************************************************
@@ -80,7 +84,7 @@ template <typename EvalT>
 panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::
 ~BCStrategy_Neumann_DefaultImpl()
 {
-  
+
 }
 
 // ***********************************************************************
@@ -115,7 +119,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data);
 
   // Iterate over each residual contribution
-  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
+  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq =
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
 
     const string& residual_name = std::get<0>(*eq);
@@ -134,9 +138,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set<int>("Side ID",pb.cellData().side());
       p.set< Teuchos::RCP<panzer::IntegrationRule> >("IR", Teuchos::rcp_const_cast<panzer::IntegrationRule>(ir));
       p.set<bool>("Normalize",true);
-      
+
       RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Normals<EvalT,panzer::Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
@@ -149,10 +153,10 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("Normal Name", "Side Normal");
       p.set("Basis", basis);
       p.set("IR", ir);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
 	rcp(new panzer::NeumannResidual<EvalT,panzer::Traits>(p));
-    
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
@@ -176,7 +180,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using std::pair;
 
   // Iterate over each residual contribution
-  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
+  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq =
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
 
     const string& residual_name = std::get<0>(*eq);
@@ -187,28 +191,28 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     // Scatter evaluator
     {
       ParameterList p("Scatter: " + residual_name + " to " + dof_name);
-    
+
       // Set name
-      string scatter_field_name = "Dummy Scatter: " + this->m_bc.identifier() + residual_name; 
+      string scatter_field_name = "Dummy Scatter: " + this->m_bc.identifier() + residual_name;
       p.set("Scatter Name", scatter_field_name);
       p.set("Basis", basis);
 
       RCP<vector<string> > residual_names = rcp(new vector<string>);
       residual_names->push_back(residual_name);
       p.set("Dependent Names", residual_names);
-      
+
       RCP<map<string,string> > names_map = rcp(new map<string,string>);
       names_map->insert(std::pair<string,string>(residual_name,dof_name));
       p.set("Dependent Map", names_map);
 
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
-    
+
       this->template registerEvaluator<EvalT>(fm, op);
-      
+
       // Require variables
       {
 	using panzer::Dummy;
-	PHX::Tag<typename EvalT::ScalarT> tag(scatter_field_name, 
+	PHX::Tag<typename EvalT::ScalarT> tag(scatter_field_name,
 					      rcp(new PHX::MDALayout<Dummy>(0)));
 	fm.template requireField<EvalT>(tag);
       }
@@ -238,7 +242,7 @@ addResidualContribution(const std::string residual_name,
   Teuchos::RCP<panzer::PureBasis> basis = this->getBasis(dof_name,side_pb);
 
   Teuchos::RCP<panzer::IntegrationRule> ir = buildIntegrationRule(integration_order,side_pb);
-  
+
   m_residual_contributions.push_back(std::make_tuple(residual_name,
 						     dof_name,
 						     flux_name,
@@ -257,18 +261,18 @@ panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::getResidualContributionData() con
 
 // ***********************************************************************
 template <typename EvalT>
-Teuchos::RCP<panzer::PureBasis> 
+Teuchos::RCP<panzer::PureBasis>
 panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::
 getBasis(const std::string dof_name,const panzer::PhysicsBlock& side_pb) const
 {
   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >& dofBasisPair = side_pb.getProvidedDOFs();
   Teuchos::RCP<panzer::PureBasis> basis;
-  for (std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >::const_iterator it = 
+  for (std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >::const_iterator it =
 	 dofBasisPair.begin(); it != dofBasisPair.end(); ++it) {
     if (it->first == dof_name)
       basis = it->second;
   }
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(basis), std::runtime_error,
 			     "Error the name \"" << dof_name
 			     << "\" is not a valid DOF for the boundary condition:\n"

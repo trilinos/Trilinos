@@ -47,22 +47,17 @@ namespace SpatialDimension { const unsigned three = 3; }
 //BEGINHowToGetFields
 TEST(stkMeshHowTo, getFields)
 {
-    stk::mesh::MetaData metaData(SpatialDimension::three);
+  stk::mesh::MetaData metaData(SpatialDimension::three);
+  metaData.use_simple_fields();
 
-    typedef stk::mesh::Field<double> ScalarField;
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
+  typedef stk::mesh::Field<double> DoubleFieldType;
 
-    const std::string pressureFieldName = "pressure";
-    const std::string displacementsFieldName = "displacements";
-    ScalarField *pressureField = &metaData.declare_field<ScalarField>(stk::topology::ELEM_RANK, pressureFieldName);
-    VectorField *displacementsField = &metaData.declare_field<VectorField>(stk::topology::NODE_RANK, displacementsFieldName);
-    metaData.commit();
+  const std::string pressureFieldName = "pressure";
+  DoubleFieldType *pressureField = &metaData.declare_field<double>(stk::topology::ELEM_RANK, pressureFieldName);
+  metaData.commit();
 
-    EXPECT_EQ(pressureField, metaData.get_field<ScalarField>(stk::topology::ELEM_RANK, pressureFieldName));
-    EXPECT_EQ(pressureField, metaData.get_field(stk::topology::ELEM_RANK, pressureFieldName));
-
-    EXPECT_EQ(displacementsField, metaData.get_field<VectorField>(stk::topology::NODE_RANK, displacementsFieldName));
-    EXPECT_EQ(displacementsField, metaData.get_field(stk::topology::NODE_RANK, displacementsFieldName));
+  EXPECT_EQ(pressureField, metaData.get_field<double>(stk::topology::ELEM_RANK, pressureFieldName));
+  EXPECT_EQ(pressureField, metaData.get_field(stk::topology::ELEM_RANK, pressureFieldName));
 }
 //ENDHowToGetFields
 

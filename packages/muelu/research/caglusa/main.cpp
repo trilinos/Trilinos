@@ -46,506 +46,161 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
+#include <MatrixMarket_Tpetra.hpp>
+
+#include <Tpetra_BlockedMap_decl.hpp>
+#include <Tpetra_BlockedMap_def.hpp>
+
+#include <Tpetra_BlockedMatrix_decl.hpp>
+#include <Tpetra_BlockedMatrix_def.hpp>
+
+#include <Tpetra_HierarchicalOperator_decl.hpp>
+#include <Tpetra_HierarchicalOperator_def.hpp>
+
+#include <Xpetra_TpetraBlockedMap.hpp>
+#include <Xpetra_TpetraBlockedMatrix.hpp>
+
+#include <Xpetra_HierarchicalOperator_decl.hpp>
+#include <Xpetra_HierarchicalOperator_def.hpp>
+
 
 #include <Xpetra_IO.hpp>
 
 #include <MueLu.hpp>
+#include <MueLu_Level.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
 #include "MueLu_Exceptions.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#include <BelosXpetraAdapter.hpp>
+#include <BelosMueLuAdapter.hpp>
 #endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
-namespace Tpetra {
 
-  template <class Scalar = Tpetra::Operator<>::scalar_type,
-            class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class HierarchicalOperator : public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+struct IOhelpers {
 
-  public:
-    using matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using vec_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-    using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  static
+  Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Read(const std::string&   filename,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+       RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > domainMap        = Teuchos::null,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rangeMap         = Teuchos::null,
+       const bool           callFillComplete = true,
+       const bool           binary           = false,
+       const bool           readLocal        = false) {
+    using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
+    if (readLocal)
+      A = IO::ReadLocal(filename, rowMap, colMap, domainMap, rangeMap, callFillComplete, binary);
+    else
+      A = IO::Read(filename, rowMap, colMap, domainMap, rangeMap, callFillComplete, binary);
+    return A;
+  }
 
-    //! The RowMatrix representing the base class of CrsMatrix
-    using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  static
+  Teuchos::RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Read(Teuchos::ParameterList& hierarchicalParams,
+       RCP< const Teuchos::Comm<int> >& comm) {
+    using HOp = Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using blocked_matrix_type = typename HOp::blocked_matrix_type;
+    using blocked_map_type = typename blocked_matrix_type::blocked_map_type;
+    using matrix_type = typename HOp::matrix_type;
+    using map_type = typename HOp::map_type;
+    using lo_vec_type = typename blocked_map_type::lo_vec_type;
 
-    using impl_scalar_type = typename row_matrix_type::impl_scalar_type;
-    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
+    auto  lib = Xpetra::UseTpetra;
+    RCP<HOp>                       op;
+    RCP<const map_type>            map, near_colmap, clusterCoeffMap, ghosted_clusterCoeffMap, clusterMap, ghosted_clusterMap;
+    RCP<matrix_type>               nearField, basisMatrix, kernelApproximations, kernelBlockGraph;
 
-    using local_inds_device_view_type =
-          typename row_matrix_type::local_inds_device_view_type;
-    using local_inds_host_view_type =
-          typename row_matrix_type::local_inds_host_view_type;
-    using nonconst_local_inds_host_view_type =
-          typename row_matrix_type::nonconst_local_inds_host_view_type;
+    std::vector<RCP<blocked_matrix_type> > transferMatrices;
+    RCP<lo_vec_type>               clusterSizes;
+    RCP<blocked_map_type>          blockedClusterMap, ghosted_blockedClusterMap;
+    RCP<blocked_matrix_type>       blockKernelApproximations;
 
-    using global_inds_device_view_type =
-          typename row_matrix_type::global_inds_device_view_type;
-    using global_inds_host_view_type =
-          typename row_matrix_type::global_inds_host_view_type;
-    using nonconst_global_inds_host_view_type =
-          typename row_matrix_type::nonconst_global_inds_host_view_type;
+    const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
+    const bool readLocal = hierarchicalParams.get<bool>("read local", false);
 
-    using values_device_view_type =
-          typename row_matrix_type::values_device_view_type;
-    using values_host_view_type =
-          typename row_matrix_type::values_host_view_type;
-    using nonconst_values_host_view_type =
-          typename row_matrix_type::nonconst_values_host_view_type;
+    using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
-    //! @name Constructor/Destructor
-    //@{
+    // row, domain and range map of the operator
+    map = IO::ReadMap(hierarchicalParams.get<std::string>("map"), lib, comm, readBinary);
+    // colmap of near field
+    near_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("near colmap"), lib, comm, readBinary);
+    // 1-to-1 map for the cluster coefficients
+    clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("coefficient map"), lib, comm, readBinary);
+    // overlapping map for the cluster coefficients
+    ghosted_clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted coefficient map"), lib, comm, readBinary);
+    // 1-to-1 map for the clusters
+    clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("cluster map"), lib, comm, readBinary);
+    // overlapping map for the clusters
+    ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm, readBinary);
 
-    //! Constructor
-    HierarchicalOperator(const RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nearField,
-                         const RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& kernelApproximations,
-                         const RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& basisMatrix,
-                         std::vector<RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& transferMatrices)
-      :
-      nearField_(nearField),
-      kernelApproximations_(kernelApproximations),
-      basisMatrix_(basisMatrix),
-      transferMatrices_(transferMatrices)
+    // blocked cluster map
+    clusterSizes = Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
+    blockedClusterMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
+
+    // near field interactions
+    nearField = Read(hierarchicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary, readLocal);
+
+    // far field basis expansion coefficients
+    basisMatrix = IOhelpers::Read(hierarchicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary, readLocal);
+
+    // far field interactions
+    kernelApproximations = IOhelpers::Read(hierarchicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary, readLocal);
+    // block graph of far field interactions
+    kernelBlockGraph = IOhelpers::Read(hierarchicalParams.get<std::string>("far field interaction matrix")+".block", clusterMap, ghosted_clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
+
     {
-      auto map = nearField_->getDomainMap();
-      clusterCoeffMap_ = basisMatrix_->getDomainMap();
-      TEUCHOS_ASSERT(map->isSameAs(*nearField_->getRangeMap()));
-      TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRangeMap()));
-      // TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getDomainMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getDomainMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRangeMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRowMap()));
-
-      for (size_t i = 0; i<transferMatrices_.size(); i++) {
-        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getDomainMap()));
-        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getRangeMap()));
-      }
-
-      allocateMemory(1);
+      auto import = kernelBlockGraph->getCrsGraph()->getImporter();
+      RCP<lo_vec_type> ghosted_clusterSizes = Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(ghosted_clusterMap);
+      ghosted_clusterSizes->doImport(*clusterSizes, *import, Xpetra::INSERT);
+      ghosted_blockedClusterMap = rcp(new blocked_map_type(ghosted_clusterCoeffMap, ghosted_clusterSizes));
     }
 
-    //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
-      return nearField_->getDomainMap();
+    blockKernelApproximations = rcp(new blocked_matrix_type(kernelApproximations, kernelBlockGraph, blockedClusterMap, ghosted_blockedClusterMap));
+
+    // Transfer matrices
+    auto transfersList = hierarchicalParams.sublist("shift coefficient matrices");
+    for (int i = 0; i < transfersList.numParams(); i++) {
+      std::string filename = transfersList.get<std::string>(std::to_string(i));
+      auto transferPoint = IOhelpers::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary, readLocal);
+      auto transferBlock = IOhelpers::Read(filename+".block", clusterMap, clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
+      auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockedClusterMap));
+      transferMatrices.push_back(transfer);
     }
 
-    //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
-      return nearField_->getRangeMap();
-    }
+    op = rcp(new HOp(nearField, blockKernelApproximations, basisMatrix, transferMatrices));
 
-    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
-    /*!
-      \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-      \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.
-    */
-    void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const {
-      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    return op;
+  }
 
-      allocateMemory(X.getNumVectors());
-
-      // near field
-      nearField_->apply(X, Y, mode, alpha, beta);
-
-      // auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
-      // Y.describe(*out, Teuchos::VERB_EXTREME);
-
-      // upward pass
-      basisMatrix_->apply(X, *coefficients_, Teuchos::TRANS);
-
-      bool flip = true;
-      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
-        if (flip) {
-          coefficients2_->assign(*coefficients_);
-          transferMatrices_[i]->apply(*coefficients_, *coefficients2_, Teuchos::NO_TRANS, one, one);
-          flip = false;
-        } else {
-          coefficients_->assign(*coefficients2_);
-          transferMatrices_[i]->apply(*coefficients2_, *coefficients_, Teuchos::NO_TRANS, one, one);
-          flip = true;
-        }
-
-      if (flip)
-        kernelApproximations_->apply(*coefficients_, *coefficients2_, mode, alpha);
-      else
-        kernelApproximations_->apply(*coefficients2_, *coefficients_, mode, alpha);
-      // coefficients2_->describe(*out, Teuchos::VERB_EXTREME);
-
-      // downward pass
-      for (size_t i = 0; i<transferMatrices_.size(); i++)
-        if (flip) {
-          coefficients_->assign(*coefficients2_);
-          transferMatrices_[i]->apply(*coefficients2_, *coefficients_, Teuchos::TRANS, one, one);
-          flip = false;
-        } else {
-          coefficients2_->assign(*coefficients_);
-          transferMatrices_[i]->apply(*coefficients_, *coefficients2_, Teuchos::TRANS, one, one);
-          flip = true;
-        }
-      if (flip)
-        basisMatrix_->apply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
-      else
-        basisMatrix_->apply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
-    }
-
-
-    RCP<HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > restrict(const RCP<matrix_type>& P) {
-
-      RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
-      MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
-      RCP<matrix_type> newNearField = rcp(new matrix_type(P->getDomainMap(), 0));
-      MatrixMatrix::Multiply(*P, true, *temp, false, *newNearField);
-
-      RCP<matrix_type> newBasisMatrix = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
-      MatrixMatrix::Multiply(*P, true, *basisMatrix_, false, *newBasisMatrix);
-
-      return rcp(new HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(newNearField, kernelApproximations_, newBasisMatrix, transferMatrices_));
-    }
-
-    RCP<matrix_type> toMatrix() {
-      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-
-      // construct identity on clusterCoeffMap_
-      RCP<matrix_type> identity = rcp(new matrix_type(clusterCoeffMap_, 1));
-      Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getLocalElementList ();
-      for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
-        Teuchos::Array<GlobalOrdinal> col (1, *it);
-        Teuchos::Array<Scalar> val (1, one);
-        identity->insertGlobalValues (*it, col (), val ());
-      }
-      identity->fillComplete ();
-
-      // transfer = basisMatrix_ * (identity + transferMatrices_[0]) * ... * (identity + transferMatrices_[n-1])
-      RCP<matrix_type> transfer = rcp(new matrix_type(*basisMatrix_));
-      for (size_t i = 0; i<transferMatrices_.size(); i++) {
-        RCP<matrix_type> temp = MatrixMatrix::add(one, false, *identity, one, false, *transferMatrices_[i]);
-        RCP<matrix_type> temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-        transfer = temp2;
-      }
-
-      // farField = transfer * kernelApproximations_ * transfer^T
-      RCP<matrix_type> temp = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-      MatrixMatrix::Multiply(*transfer, false, *kernelApproximations_, false, *temp);
-      RCP<matrix_type> farField = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-      MatrixMatrix::Multiply(*temp, false, *transfer, true, *farField);
-
-      // nearField_ + farField
-      return MatrixMatrix::add(one, false, *nearField_, one, false, *farField);
-
-    }
-
-    double getCompression() {
-      size_t nnz = (nearField_->getGlobalNumEntries() +
-                    kernelApproximations_->getGlobalNumEntries() +
-                    basisMatrix_->getGlobalNumEntries());
-      for (size_t i = 0; i < transferMatrices_.size(); i++)
-        nnz += transferMatrices_[i]->getGlobalNumEntries();
-      return Teuchos::as<double>(nnz) / (getDomainMap()->getGlobalNumElements()*getDomainMap()->getGlobalNumElements());
-    }
-
-    // Fake RowMatrix interface
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const {
-      return nearField_->getRowMap();
-    }
-
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const {
-      return nearField_->getColMap();
-    }
-
-    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {
-      return nearField_->getDomainMap()->getComm();
-    }
-
-    Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const {
-      return nearField_->getCrsGraph();
-    }
-
-    global_size_t getGlobalNumRows() const {
-      return nearField_->getGlobalNumRows();
-    }
-
-    global_size_t getGlobalNumCols() const {
-      return nearField_->getGlobalNumCols();
-    }
-
-    size_t getLocalNumRows() const {
-      return nearField_->getLocalNumRows();
-    }
-
-    size_t getLocalNumCols() const {
-      return nearField_->getLocalNumCols();
-    }
-
-    GlobalOrdinal getIndexBase() const {
-      return nearField_->getIndexBase();
-    }
-
-    global_size_t getGlobalNumEntries() const {
-      return nearField_->getGlobalNumEntries();
-    }
-
-    size_t getLocalNumEntries() const {
-      return nearField_->getLocalNumEntries();
-    }
-
-    size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    size_t getGlobalMaxNumRowEntries () const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    size_t getLocalMaxNumRowEntries () const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    bool hasColMap () const {
-      return false;
-    }
-
-    bool isLocallyIndexed() const {
-      return true;
-    }
-
-    bool isGloballyIndexed() const {
-      return true;
-    }
-
-    bool isFillComplete() const {
-      return true;
-    }
-
-    bool supportsRowViews() const {
-      return false;
-    }
-
-    void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      nonconst_global_inds_host_view_type &Indices,
-                      nonconst_values_host_view_type &Values,
-                      size_t& NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                      const Teuchos::ArrayView<Scalar> &Values,
-                      size_t &NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
-    void
-    getLocalRowCopy (LocalOrdinal LocalRow,
-                     nonconst_local_inds_host_view_type &Indices,
-                     nonconst_values_host_view_type &Values,
-                     size_t& NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getLocalRowCopy (LocalOrdinal LocalRow,
-                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                     const Teuchos::ArrayView<Scalar> &Values,
-                     size_t &NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
-    void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      global_inds_host_view_type &indices,
-                      values_host_view_type &values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                      Teuchos::ArrayView<const Scalar> &values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
-    void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     local_inds_host_view_type & indices,
-                     values_host_view_type & values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     Teuchos::ArrayView<const Scalar>& values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
-    void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const {
-      nearField_->getLocalDiagCopy(diag);
-    }
-
-    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-
-    mag_type getFrobeniusNorm() const {
-      return 0.;
-    }
-
-  private:
-
-    void allocateMemory(size_t numVectors) const {
-      if (coefficients_.is_null() || coefficients_->getNumVectors() != numVectors) {
-        coefficients_  = rcp(new vec_type(clusterCoeffMap_, numVectors));
-        coefficients2_ = rcp(new vec_type(clusterCoeffMap_, numVectors));
-      }
-    }
-
-    RCP<matrix_type> nearField_;
-    RCP<matrix_type> kernelApproximations_;
-    RCP<matrix_type> basisMatrix_;
-    std::vector<RCP<matrix_type> > transferMatrices_;
-    RCP<const map_type> clusterCoeffMap_;
-    mutable RCP<vec_type> coefficients_, coefficients2_;
-  };
-
-}
-
-namespace Xpetra {
-
-  template<class Scalar,
-           class LocalOrdinal,
-           class GlobalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class HierarchicalOperator : public TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-
-  public:
-    using tHOp = Tpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-    using map_type = Map<LocalOrdinal,GlobalOrdinal,Node>;
-    using vec_type = MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-    using matrix_type = Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
-    //! @name Constructor/Destructor
-    //@{
-
-    //! Constructor
-    HierarchicalOperator(const RCP<tHOp>& op) : op_(op) { }
-
-    HierarchicalOperator(const RCP<matrix_type>& nearField,
-                         const RCP<matrix_type>& kernelApproximations,
-                         const RCP<matrix_type>& basisMatrix,
-                         std::vector<RCP<matrix_type> >& transferMatrices) {
-      using TpCrs = TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-      using CrsWrap = CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-
-      std::vector<RCP<typename tHOp::matrix_type> > tTransferMatrices;
-      for (size_t i = 0; i<transferMatrices.size(); i++) {
-        auto transferT = rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(transferMatrices[i])->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst();
-        tTransferMatrices.push_back(transferT);
-      }
-
-      op_ = rcp(new tHOp(rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(nearField)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
-                         rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(kernelApproximations)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
-                         rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(basisMatrix)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
-                         tTransferMatrices));
-    }
-
-    //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const map_type> getDomainMap() const {
-      return toXpetra(op_->getDomainMap());
-    }
-
-    //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const map_type> getRangeMap() const {
-      return toXpetra(op_->getRangeMap());
-    }
-
-    //! \brief Computes the operator-multivector application.
-    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-        vary according to the values of \c alpha and \c beta. Specifically
-        - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-        - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-     */
-    void apply (const vec_type& X, vec_type& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {
-      op_->apply(Xpetra::toTpetra(X), Xpetra::toTpetra(Y), mode, alpha, beta);
-    }
-
-    //! Compute a residual R = B - (*this) * X
-    void residual(const vec_type & X,
-                  const vec_type & B,
-                  vec_type& R) const {
-      Tpetra::Details::residual(*op_, toTpetra(X), toTpetra(B), toTpetra(R));
-    }
-
-    RCP<HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > restrict(const RCP<matrix_type>& P) {
-      return rcp(new HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(op_->restrict(rcp_dynamic_cast<TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcp_dynamic_cast<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(P)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst())));
-    }
-
-    RCP<matrix_type> toMatrix() {
-      auto tpMat = rcp(new TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(op_->toMatrix()));
-      return rcp(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rcp_dynamic_cast<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpMat)));
-    }
-
-    double getCompression() {
-      return op_->getCompression();
-    }
-
-    //! Gets the operator out
-    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() { return op_; }
-
-    RCP<const Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const { return op_; }
-
-  private:
-    RCP<tHOp> op_;
-  };
-}
+};
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   #include "MueLu_UseShortNames.hpp"
 
-  std::string xmlHierachical  = "hierarchical.xml";
+  std::string xmlHierarchical  = "hierarchical-1d-mm-global.xml";
   std::string xmlMueLu        = "muelu.xml";
-  std::string xmlAuxHierarchy = "aux.xml";
-  clp.setOption("xml",    &xmlHierachical);
+  std::string xmlAuxHierarchy = "auxiliary.xml";
+  clp.setOption("xml",    &xmlHierarchical);
   clp.setOption("xmlMueLu", &xmlMueLu);
   clp.setOption("xmlAux", &xmlAuxHierarchy);
+  bool printTimings  = true; clp.setOption("timings", "notimings", &printTimings,  "print timings to screen");
+  bool doTests       = true; clp.setOption("tests",   "notests",   &doTests,       "Test operator using known LHS & RHS.");
+  bool doUnPrecSolve = true; clp.setOption("unPrec",  "noUnPrec",  &doUnPrecSolve, "Solve unpreconditioned");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -554,7 +209,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
+  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("Hierarchical Driver"));
+  Teuchos::RCP<Teuchos::FancyOStream> verbose_out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+  verbose_out->setShowProcRank(true);
+  stacked_timer->setVerboseOstream(verbose_out);
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
   using HOp = Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using blocked_matrix_type = typename HOp::blocked_matrix_type;
+  using blocked_map_type = typename blocked_matrix_type::blocked_map_type;
+  using matrix_type = typename HOp::matrix_type;
+  using map_type = typename HOp::map_type;
+  using mv_type = typename HOp::mv_type;
+  using lo_vec_type = typename blocked_map_type::lo_vec_type;
+  using coord_mv = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>;
+  using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using IOhelpers = IOhelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
@@ -562,78 +235,95 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = true;
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::ParameterList         hierarchicalParams;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierarchical, Teuchos::Ptr<Teuchos::ParameterList>(&hierarchicalParams), *comm);
 
-  Teuchos::ParameterList hierachicalParams;
-  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierachical, Teuchos::Ptr<Teuchos::ParameterList>(&hierachicalParams), *comm);
-
-  // row, domain and range map of the operator
-  auto map = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
-  // 1-to-1 map for the cluster coefficients
-  auto clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("coefficient map"), lib, comm);
-  // overlapping map for the cluster coefficients
-  auto ghosted_clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
-
-  // near field interactions
-  auto nearField = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("near field matrix"), map);
-
-  // far field basis expansion coefficients
-  auto basisMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map);
-  // far field interactions
-  auto kernelApproximations = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
-
-  auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
-  std::vector<RCP<typename HOp::matrix_type> > transferMatrices;
-  for (int i = 0; i < transfersList.numParams(); i++) {
-    std::string filename = transfersList.get<std::string>(std::to_string(i));
-    auto transfer = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
-    transferMatrices.push_back(transfer);
+  RCP<HOp> op;
+  {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read hierarchical matrix")));
+    op = IOhelpers::Read(hierarchicalParams, comm);
   }
-
-  auto op = rcp(new HOp(nearField, kernelApproximations, basisMatrix, transferMatrices));
 
   out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
 
-  auto X_ex = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
-  auto RHS  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
-  auto X    = MultiVectorFactory::Build(map, 1);
-
+  RCP<const map_type> map = op->getDomainMap();
+  RCP<matrix_type>    auxOp;
+  RCP<mv_type>        X_ex, RHS, X;
+  RCP<coord_mv>       coords;
   {
-    op->apply(*X_ex, *X);
+    // Read in auxiliary stuff
 
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
-    X->update(one, *RHS, -one);
-    out << "|op*X_ex - RHS| = " << X->getVector(0)->norm2() << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff.mtx", *X);
+    const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
+    const bool readLocal = hierarchicalParams.get<bool>("read local", false);
+
+    // Auxiliary matrix used for multigrid construction
+    const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
+    if (auxOpStr == "near")
+      auxOp = op->nearFieldMatrix();
+    else {
+      // colmap of auxiliary operator
+      RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm, readBinary);
+
+      auxOp  = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
+    }
+
+    X_ex = IO::ReadMultiVector(hierarchicalParams.get<std::string>("exact solution"), map);
+    RHS  = IO::ReadMultiVector(hierarchicalParams.get<std::string>("right-hand side"), map);
+    X    = MultiVectorFactory::Build(map, 1);
+
+    coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
   }
 
-  {
-    op->apply(*X_ex, *X, Teuchos::NO_TRANS, -one);
+  if (doTests) {
+    // Some simple apply tests
+    Scalar opX_exRHS, MopX_exRHS, MopTX_exRHS;
+    {
+      op->apply(*X_ex, *X);
 
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
-    X->update(one, *RHS, one);
-    out << "|(-op)*X_ex + RHS| = " << X->getVector(0)->norm2() << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
-  }
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
+      X->update(one, *RHS, -one);
+      opX_exRHS = X->getVector(0)->norm2();
+      out << "|op*X_ex - RHS| = " << opX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff.mtx", *X);
+    }
 
-  {
-    op->apply(*X_ex, *X, Teuchos::TRANS, -one);
+    {
+      op->apply(*X_ex, *X, Teuchos::NO_TRANS, -one);
 
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
-    X->update(one, *RHS, one);
-    out << "|(-op^T)*X_ex + RHS| = " << X->getVector(0)->norm2() << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
+      X->update(one, *RHS, one);
+      MopX_exRHS = X->getVector(0)->norm2();
+      out << "|(-op)*X_ex + RHS| = " << MopX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    }
+
+    {
+      op->apply(*X_ex, *X, Teuchos::TRANS, -one);
+
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
+      X->update(one, *RHS, one);
+      MopTX_exRHS = X->getVector(0)->norm2();
+      out << "|(-op^T)*X_ex + RHS| = " << MopTX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    }
+
+    TEUCHOS_ASSERT(opX_exRHS < tol);
+    TEUCHOS_ASSERT(MopX_exRHS < tol);
+    TEUCHOS_ASSERT(MopTX_exRHS < tol);
   }
 
 #ifdef HAVE_MUELU_BELOS
-  {
+  if (doUnPrecSolve) {
     // Solve linear system using unpreconditioned Krylov method
     out << "\n*********************************************************\n";
     out << "Unpreconditioned Krylov method\n";
     out << "*********************************************************\n\n";
 
-    using MV = typename HOp::vec_type;
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Unpreconditioned solve")));
+
+    using MV = typename HOp::mv_type;
     using OP = Belos::OperatorT<MV>;
 
     X->putScalar(zero);
@@ -677,106 +367,127 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   {
     // Solve linear system using a AMG preconditioned Krylov method
 
-    ////////////////////////////////////////////////////////////////
-    // Build the auxiliary hierachy
-    out << "\n*********************************************************\n";
-    out << "Building the auxiliary hierachy\n";
-    out << "*********************************************************\n\n";
+    RCP<Hierarchy> auxH, H;
 
-    auto auxOp  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("auxiliary operator"), map);
-    auto coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("coordinates"), map);
+    {
+      ////////////////////////////////////////////////////////////////
+      // Build the auxiliary hierarchy
+      out << "\n*********************************************************\n";
+      out << "Building the auxiliary hierarchy\n";
+      out << "*********************************************************\n\n";
 
-    Teuchos::ParameterList auxParams;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
-    auxParams.sublist("user data").set("Coordinates", coords);
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary hierarchy")));
 
-    auto auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
+      Teuchos::ParameterList auxParams;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
+      auxParams.sublist("user data").set("Coordinates", coords);
+      // TEUCHOS_ASSERT_EQUALITY(auxParams.get("multigrid algorithm", "unsmoothed"), "unsmoothed");
 
-    ////////////////////////////////////////////////////////////////
-    // Construct the main hierarchy
-    out << "\n*********************************************************\n";
-    out << "Building the main hierachy\n";
-    out << "*********************************************************\n\n";
-
-    Teuchos::ParameterList params;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
-    params.set("coarse: max size", 1);
-    params.set("max levels", auxH->GetNumLevels());
-
-    auto H = rcp(new Hierarchy());
-    RCP<Level> lvl = H->GetLevel(0);
-    lvl->Set("A", rcp_dynamic_cast<Operator>(op));
-    lvl->Set("Coordinates", coords);
-    for(int lvlNo = 1; lvlNo<auxH->GetNumLevels(); lvlNo++) {
-      H->AddNewLevel();
-      RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
-      // auto mgr = auxLvl->GetFactoryManager();
-      // auxLvl->print(std::cout, MueLu::Debug);
-      RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
-      lvl = H->GetLevel(lvlNo);
-      auto P = auxLvl->Get<RCP<Matrix> >("P");
-      lvl->Set("P", P);
-      params.sublist("level "+std::to_string(lvlNo)).set("P", P);
-
-      auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
-      auto coarseA = fineA->restrict(P);
-      if (lvlNo+1 == auxH->GetNumLevels())
-        lvl->Set("A", coarseA->toMatrix());
-      else
-        lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+      auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
     }
 
-    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
-    H->setlib(op->getDomainMap()->lib());
-    H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
-    mueLuFactory->SetupHierarchy(*H);
-    H->IsPreconditioner(true);
+    {
+      ////////////////////////////////////////////////////////////////
+      // Construct the main hierarchy
+      out << "\n*********************************************************\n";
+      out << "Building the main hierarchy\n";
+      out << "*********************************************************\n\n";
+
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct hierarchy")));
+
+      Teuchos::ParameterList params;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
+      params.set("coarse: max size", 1);
+      params.set("max levels", auxH->GetNumLevels());
+
+      op->describe(out, Teuchos::VERB_EXTREME);
+
+      H = rcp(new Hierarchy());
+      RCP<Level> lvl = H->GetLevel(0);
+      lvl->Set("A", rcp_dynamic_cast<Operator>(op));
+      lvl->Set("Coordinates", coords);
+      for(int lvlNo = 1; lvlNo < auxH->GetNumLevels(); lvlNo++) {
+        H->AddNewLevel();
+        RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
+        // auto mgr = auxLvl->GetFactoryManager();
+        // auxLvl->print(std::cout, MueLu::Debug);
+        RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
+        lvl = H->GetLevel(lvlNo);
+        auto P = auxLvl->Get<RCP<Matrix> >("P");
+        auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
+        lvl->Set("P", P);
+        params.sublist("level "+std::to_string(lvlNo)).set("P", P);
+
+        auto coarseA = fineA->restrict(P);
+        coarseA->describe(out, Teuchos::VERB_EXTREME);
+        if (lvlNo+1 == auxH->GetNumLevels())
+          lvl->Set("A", coarseA->toMatrix());
+        else
+          lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+      }
+
+      RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
+      H->setlib(op->getDomainMap()->lib());
+      H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
+      mueLuFactory->SetupHierarchy(*H);
+      H->IsPreconditioner(true);
+    }
 
 
 #ifdef HAVE_MUELU_BELOS
-    ////////////////////////////////////////////////////////////////
-    // Set up the Krylov solver
+    {
+      ////////////////////////////////////////////////////////////////
+      // Set up the Krylov solver
 
-    using MV = typename HOp::vec_type;
-    using OP = Belos::OperatorT<MV>;
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Preconditioned solve")));
 
-    X->putScalar(zero);
-    RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
-    RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
-    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
+      using MV = typename HOp::mv_type;
+      using OP = Belos::OperatorT<MV>;
 
-    std::string belosType = "Pseudoblock CG";
-    RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-    belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
-    belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
-    belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList->set("Output Frequency",      1);
-    belosList->set("Output Style",          Belos::Brief);
+      X->putScalar(zero);
+      RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
+      RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
-    belosProblem->setRightPrec(belosPrec);
+      std::string belosType = "Pseudoblock CG";
+      RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
+      belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
+      belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
+      belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList->set("Output Frequency",      1);
+      belosList->set("Output Style",          Belos::Brief);
 
-    bool set = belosProblem->setProblem();
-    if (set == false) {
-      throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      belosProblem->setRightPrec(belosPrec);
+
+      bool set = belosProblem->setProblem();
+      if (set == false) {
+        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      }
+
+      // Create an iterative solver manager
+      Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+      RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
+      solver->setProblem(belosProblem);
+
+      // Perform solve
+      Belos::ReturnType ret = solver->solve();
+      int numIts = solver->getNumIters();
+
+      // Get the number of iterations for this solve.
+      out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
+      X->update(one, *X_ex, -one);
+      out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl;
+
+      success &= (ret == Belos::Converged);
     }
 
-    // Create an iterative solver manager
-    Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-    RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
-    solver->setProblem(belosProblem);
-
-    // Perform solve
-    Belos::ReturnType ret = solver->solve();
-    int numIts = solver->getNumIters();
-
-    // Get the number of iterations for this solve.
-    out << "Number of iterations performed for this solve: " << numIts << std::endl;
-
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
-    X->update(one, *X_ex, -one);
-    out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl;
-
-    success &= (ret == Belos::Converged);
+    stacked_timer->stop("Hierarchical Driver");
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    if (printTimings)
+      stacked_timer->report(out, comm, options);
 
 #endif // HAVE_MUELU_BELOS
   }

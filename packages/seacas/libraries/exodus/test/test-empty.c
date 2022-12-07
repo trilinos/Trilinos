@@ -9,7 +9,7 @@
 #include <exodusII.h>
 #include <stdio.h>
 
-int main()
+int main(int argc, char **argv)
 {
   float version = 0.0;
 

@@ -4,4 +4,4 @@
 #include "Test_OpenMPTarget.hpp"
 #include "Test_Batched_Sparse.hpp"
 
-#endif // TEST_OPENMPTARGET_BATCHED_SPARSE_CPP
+#endif  // TEST_OPENMPTARGET_BATCHED_SPARSE_CPP

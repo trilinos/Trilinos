@@ -527,8 +527,8 @@ namespace BlockCrsTest {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void join(volatile       scan_value_type &update,
-              volatile const scan_value_type &input) const {
+    void join(scan_value_type &update,
+              const scan_value_type &input) const {
       update += input;
     }
 

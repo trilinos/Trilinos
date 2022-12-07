@@ -10,6 +10,14 @@ RUN apt-get update && apt-get install -y \
 
 ENV PATH=/opt/rocm/bin:$PATH
 
+RUN KEYDUMP_URL=https://cloud.cees.ornl.gov/download && \
+    KEYDUMP_FILE=keydump && \
+    wget --quiet ${KEYDUMP_URL}/${KEYDUMP_FILE} && \
+    wget --quiet ${KEYDUMP_URL}/${KEYDUMP_FILE}.sig && \
+    gpg --import ${KEYDUMP_FILE} && \
+    gpg --verify ${KEYDUMP_FILE}.sig ${KEYDUMP_FILE} && \
+    rm ${KEYDUMP_FILE}*
+
 ARG CMAKE_VERSION=3.18.5
 ENV CMAKE_DIR=/opt/cmake
 RUN CMAKE_KEY=2D2CEF1034921684 && \
@@ -19,7 +27,6 @@ RUN CMAKE_KEY=2D2CEF1034921684 && \
     wget --quiet ${CMAKE_URL}/${CMAKE_SHA256} && \
     wget --quiet ${CMAKE_URL}/${CMAKE_SHA256}.asc && \
     wget --quiet ${CMAKE_URL}/${CMAKE_SCRIPT} && \
-    gpg --keyserver pool.sks-keyservers.net --recv-keys ${CMAKE_KEY} && \
     gpg --verify ${CMAKE_SHA256}.asc ${CMAKE_SHA256} && \
     grep ${CMAKE_SCRIPT} ${CMAKE_SHA256} | sha256sum --check && \
     mkdir -p ${CMAKE_DIR} && \

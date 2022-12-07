@@ -41,19 +41,26 @@
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/timer.hpp>
 
-class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
+class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshChangeElementPartMembership()
-    : stk::unit_test_util::MeshFixture(),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       newPartName("block2")
   { }
 
-  void setup_host_mesh()
+  void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
-    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+#ifdef NDEBUG
+    numElements = 750000;
+    setup_mesh("generated:300x250x10", auraOption);
+#else
+    numElements = 10000;
+    setup_mesh("generated:10x10x100", auraOption);
+#endif
     get_meta().declare_part(newPartName);
   }
 
@@ -75,8 +82,10 @@ public:
 private:
   stk::mesh::Entity get_element(int cycle)
   {
-    stk::mesh::EntityId elemId = cycle+1;
-    return get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::EntityId firstLocalElemId = get_parallel_rank()*numElements/2 + 1;
+    stk::mesh::EntityId elemId = firstLocalElemId + cycle;
+    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    return elem;
   }
 
   stk::mesh::Part* get_part()
@@ -85,13 +94,14 @@ private:
   }
 
   std::string newPartName;
+  unsigned numElements;
 };
 
-class NgpMeshCreateEntity : public stk::unit_test_util::MeshFixture
+class NgpMeshCreateEntity : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshCreateEntity()
-    : stk::unit_test_util::MeshFixture(),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       numElements(1000000)
   { }
 
@@ -117,19 +127,24 @@ private:
   int numElements;
 };
 
-class NgpMeshGhosting : public stk::unit_test_util::MeshFixture
+class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshGhosting()
-    : stk::unit_test_util::MeshFixture(),
-      numElements(1000000),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       ghostingName("testGhosting")
   { }
 
 protected:
-  void setup_host_mesh()
+  void setup_host_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
-    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+#ifdef NDEBUG
+    numElements = 1000000;
+    setup_mesh("generated:400x250x10", auraOption);
+#else
+    numElements = 10000;
+    setup_mesh("generated:10x10x100", auraOption);
+#endif
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
     get_bulk().modification_end();
@@ -162,76 +177,149 @@ TEST_F( NgpMeshChangeElementPartMembership, Timing )
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 200;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 200;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh();
-
-  for (int i=0; i<NUM_RUNS; i++) {
-    change_element_part_membership(i);
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    batchTimer.start_batch_timer();
+  
+    for (int i = 0; i < NUM_ITERS; i++) {
+      change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F( NgpMeshChangeElementPartMembership, TimingWithAura )
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 50;
+    
+  stk::parallel_machine_barrier(get_comm());
+
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
+    batchTimer.start_batch_timer();
+  
+    for (int i = 0; i < NUM_ITERS; i++) {
+      change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 400;
+  const unsigned NUM_RUNS = 5;
+  const int NUM_ITERS = 200;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh();
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-  for (int i=0; i<NUM_RUNS; i++) {
-    batch_change_element_part_membership(i);
+    for (int i = 0; i < NUM_ITERS; i++) {
+      batch_change_element_part_membership(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F( NgpMeshCreateEntity, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 100;
+  const unsigned NUM_RUNS = 5;
+  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  const int NUM_ITERS = 100;
+  #else
+  const int NUM_ITERS = 5000;
+  #endif
+  const int NUM_FAKE_ITERS = 5000;
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh();
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
 
-  for (int i=0; i<NUM_RUNS; i++) {
-    create_entity(i);
+    for (int i=0; i<NUM_ITERS; i++) {
+      create_entity(i);
+    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-  timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  batchTimer.print_batch_timing(NUM_FAKE_ITERS);
 }
 
 TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  const int NUM_OUTER_RUNS = 5;
-  const int NUM_INNER_RUNS = 100;
+  std::string perfCheck = stk::unit_test_util::simple_fields::get_option("-perf_check", "PERF_CHECK");
+#ifdef NDEBUG
+  const int NUM_INNER_ITERS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
+#else
+  const int NUM_INNER_ITERS = 1;
+#endif
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
 
-  for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
-    setup_host_mesh();
-
-    for (int i=0; i<NUM_INNER_RUNS; i++) {
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  
+    for (int i = 0; i < NUM_INNER_ITERS; i++) {
       ghost_element(i);
     }
 
-    const bool lastIteration = outer == (NUM_OUTER_RUNS-1);
-    if (!lastIteration) {
-      reset_mesh();
-    }
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
+  batchTimer.print_batch_timing(NUM_INNER_ITERS);
+}
 
-  timer.update_timing();
-  timer.print_timing(NUM_OUTER_RUNS * NUM_INNER_RUNS);
+TEST_F( NgpMeshGhosting, TimingWithAura )
+{
+  if (get_parallel_size() != 2) return;
+
+#ifdef NDEBUG
+  const int NUM_INNER_ITERS = 50;
+#else
+  const int NUM_INNER_ITERS = 1;
+#endif
+
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh(stk::mesh::BulkData::AUTO_AURA);
+    batchTimer.start_batch_timer();
+
+    for (int i = 0; i < NUM_INNER_ITERS; i++) {
+      ghost_element(i);
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_INNER_ITERS);
 }

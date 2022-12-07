@@ -14,4 +14,3 @@ TEST_CASE_METHOD(CatalystTestFixture,
     runParaViewGuiScriptTest("aero_blunt_wedge_pv590_script_1.py", "aero_blunt_wedge_test3.cgns");
     checkTestOutputFileExists("test8_000004.png");
 }
-

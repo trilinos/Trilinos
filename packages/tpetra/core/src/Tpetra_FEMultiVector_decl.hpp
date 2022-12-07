@@ -111,6 +111,11 @@ namespace Tpetra {
 
     /// \brief Basic constructor.
     ///
+    /// The vector is constructed in "owned plus shared" and "closed" fill state.
+    /// You must first call beginAssembly or beginModify if you wish to change
+    /// its entries (the difference between these two can be found elsewhere in
+    /// the documentation).
+    ///
     /// \param map [in] Map describing the distribution of rows of the
     ///   resulting MultiVector.  If the importer is not null, this
     ///   must be the same as importer->getSourceMap().

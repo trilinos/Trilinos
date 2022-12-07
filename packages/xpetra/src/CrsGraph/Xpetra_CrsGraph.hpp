@@ -246,11 +246,6 @@ namespace Xpetra {
     /// (global) graph is fill complete.
     virtual typename local_graph_type::HostMirror getLocalGraphHost () const = 0;
     virtual local_graph_type getLocalGraphDevice () const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual typename local_graph_type::HostMirror getLocalGraph () const {
-      return getLocalGraphHost();
-    }
-#endif
 
 #else
 #ifdef __GNUC__
@@ -269,34 +264,6 @@ namespace Xpetra {
 
     //! Print the object with some verbosity level to an FancyOStream object.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumCols() const {
-      return getLocalNumCols();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
 
     //@}
 

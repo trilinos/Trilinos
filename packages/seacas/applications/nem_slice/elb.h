@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,7 +37,9 @@
 
 #define MAX_INP_LINE 10240
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
+#if (__cplusplus >= 201703L)
+#define FALL_THROUGH [[fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
@@ -83,19 +85,19 @@ template <typename INT> struct LB_Description
   int *vertex2proc{nullptr};
 
   /* Nodal */
-  std::vector<std::vector<INT>> int_nodes;
-  std::vector<std::vector<INT>> bor_nodes;
-  std::vector<std::vector<INT>> ext_nodes;
-  std::vector<std::vector<INT>> ext_procs;
+  std::vector<std::vector<INT>> int_nodes{};
+  std::vector<std::vector<INT>> bor_nodes{};
+  std::vector<std::vector<INT>> ext_nodes{};
+  std::vector<std::vector<INT>> ext_procs{};
 
   /* Elemental */
   std::vector<std::vector<std::vector<INT>>> born_procs{};
-  std::vector<std::vector<INT>>              int_elems;
-  std::vector<std::vector<INT>>              bor_elems;
-  std::vector<std::vector<INT>>              e_cmap_elems;
-  std::vector<std::vector<INT>>              e_cmap_sides;
-  std::vector<std::vector<INT>>              e_cmap_procs;
-  std::vector<std::vector<INT>>              e_cmap_neigh;
+  std::vector<std::vector<INT>>              int_elems{};
+  std::vector<std::vector<INT>>              bor_elems{};
+  std::vector<std::vector<INT>>              e_cmap_elems{};
+  std::vector<std::vector<INT>>              e_cmap_sides{};
+  std::vector<std::vector<INT>>              e_cmap_procs{};
+  std::vector<std::vector<INT>>              e_cmap_neigh{};
 
   LB_Description() = default;
 };

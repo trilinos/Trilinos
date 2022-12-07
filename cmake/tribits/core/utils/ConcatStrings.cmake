@@ -40,7 +40,6 @@
 include(PrintVar)
 
 
-#
 # @FUNCTION: concat_strings()
 #
 # Concatenate a set of string arguments.

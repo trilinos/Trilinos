@@ -576,7 +576,7 @@ int OrientationQuad(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HGRAD_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order-1,POINTTYPE_GAUSS);
+          Basis_HVOL_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order-1,POINTTYPE_GAUSS);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-1);
           lineBasis.getDofCoords(lineDofCoords);
@@ -940,7 +940,7 @@ int OrientationQuad(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> sideBasis(order-1, POINTTYPE_GAUSS);
+          Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> sideBasis(order-1, POINTTYPE_GAUSS);
           ordinal_type sideBasisCardinality = sideBasis.getCardinality();
           ordinal_type numInternalDofs = sideBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(sideDofCoords, sideBasisCardinality, dim-1);

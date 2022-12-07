@@ -121,6 +121,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -171,7 +172,9 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #include <Stratimikos_MueLuHelpers.hpp>
+#endif
 #endif
 
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
@@ -2889,7 +2892,7 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;
-  Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+  Stratimikos::enableMueLuRefMaxwell<double,LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
 #endif
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);

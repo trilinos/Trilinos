@@ -152,4 +152,3 @@ C ... IF NOT EXODUS, THEN CORDSP CONTAINS COORDINATES
      *   ,13X,3(2X,1PE12.5),'  Maximum',/
      *   ,13X,3(2X,1PE12.5),'  Range',/)
       END
-

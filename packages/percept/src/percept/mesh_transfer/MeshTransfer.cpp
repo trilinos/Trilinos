@@ -226,7 +226,7 @@ void MeshTransfer::run(int argc, char** argv)
     // apply rotations/translations
     applyRotation(dstMesh.get_coordinates_field(), xrot, yrot, zrot);
     if (toDim==dstMesh.get_spatial_dim()) {
-      applyRotation(dynamic_cast<stk::mesh::Field<double, stk::mesh::Cartesian>* >(toField), xrot, yrot, zrot);
+      applyRotation(toField, xrot, yrot, zrot);
     }
 
     applyTranslation(dstMesh.get_coordinates_field(), xtrans, ytrans, ztrans);

@@ -182,7 +182,10 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 /** This function loops over the passed in set of entities and looks
  * at their related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
- * the entitiy is.  This will return both local and ghosted entities.
+ * the entitiy is. It also collects the element indices related to
+ * the set of entities that do not belong to the requested element 
+ * block and its neighbor is ghosted. This will return both local 
+ * and ghosted entities.
  *
  * \param[in] mesh STK mesh interface
  * \param[in] blockId Requested element block identifier
@@ -194,6 +197,10 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
  * \param[out] elements On output this will contain the elements associated
  *             with each entity in the requested block. Assumed that on input
  *             <code>elements.size()==0</code>
+ * \param[out] missingElementIndices On output this will contain the elements
+ *             associated with each entity in the passed set, but it is not in the 
+ *             requested block and its neighbor belonging the to the block is a
+ *             ghost element. Assumed that on input <code>entities.size()==0</code>
  *
  * \note Some elements may be repeated in the lists, however the
  *       local entity ID should be distinct for each of those.
@@ -202,7 +209,8 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 				 const std::string & blockId, 
 				 const std::vector<stk::mesh::Entity> & entities,
 				 std::vector<std::size_t> & localEntityIds, 
-				 std::vector<stk::mesh::Entity> & elements);
+				 std::vector<stk::mesh::Entity> & elements,
+				 std::vector<std::size_t> & missingElementIndices);
 
 /** This function loops over the passed in set of "Sides" and looks
  * at there related elements. It is then determined which elements

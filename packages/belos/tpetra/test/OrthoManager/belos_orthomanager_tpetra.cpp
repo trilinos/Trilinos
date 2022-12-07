@@ -91,13 +91,14 @@ static void
 getCmdLineArgs (const Teuchos::Comm<int>& comm, int argc, char* argv[])
 {
   using Teuchos::CommandLineProcessor;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
 
   // Define a OrthoManagerFactory to use to get the names of valid
   // orthogonalization manager types.  We won't use this factory to
   // create them, so we should be able to pick the Scalar, MV, and
   // OP template parameters as we wish.
   typedef Belos::OrthoManagerFactory<double,
-    Tpetra::MultiVector<double>, Tpetra::Operator<double> > factory_type;
+    Tpetra::MultiVector<ST>, Tpetra::Operator<ST> > factory_type;
   factory_type factory;
 
   ////////////////////////////////////////////////////////////////////
@@ -243,7 +244,7 @@ public:
     // modify numRows to be the number of rows in the sparse matrix.
     // Otherwise, it will leave numRows alone.
     std::pair<Teuchos::RCP<map_type>, Teuchos::RCP<matrix_type> > results =
-      Belos::Test::loadSparseMatrix<LocalOrdinalType,
+      Belos::Test::loadSparseMatrix<typename matrix_type::scalar_type,LocalOrdinalType,
       GlobalOrdinalType,
       NodeType> (comm, filename, numRows, debugOut);
     map = results.first;
@@ -407,7 +408,7 @@ main (int argc, char *argv[])
     typedef Tpetra::Map<>::node_type node_type;
 
     {
-      typedef double scalar_type;
+      typedef Tpetra::MultiVector<>::scalar_type scalar_type;
       success = runTest<scalar_type, local_ordinal_type,
               global_ordinal_type, node_type> (comm);
       if (success) {
@@ -425,7 +426,7 @@ main (int argc, char *argv[])
     }
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
     {
-      typedef std::complex<double> scalar_type;
+      typedef std::complex<Tpetra::MultiVector<>::scalar_type> scalar_type;
       success = runTest<scalar_type, local_ordinal_type,
               global_ordinal_type, node_type> (comm);
       if (success) {

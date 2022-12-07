@@ -1,7 +1,7 @@
 include(MessageWrapper)
 include(Split)
 
-#
+
 # @FUNCTION: tribits_dir_is_basedir()
 #
 # Function to determine if a given path is a base dir of another path.
@@ -49,7 +49,6 @@ function(tribits_dir_is_basedir  absBaseDir  absFullDir  isBaseDirVarOut)
 endfunction()
 
 
-#
 # @FUNCTION: tribits_get_dir_array_below_base_dir()
 #
 # Returns the array of directories below a base directory.

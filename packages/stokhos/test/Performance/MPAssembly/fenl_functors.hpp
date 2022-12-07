@@ -476,7 +476,7 @@ public:
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( unsigned & update , const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };
@@ -1309,8 +1309,8 @@ public:
   { response = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & response ,
-             volatile const value_type & input ) const
+  void join( value_type & response ,
+             const value_type & input ) const
   { response += input ; }
 
 }; /* ResponseComputation */

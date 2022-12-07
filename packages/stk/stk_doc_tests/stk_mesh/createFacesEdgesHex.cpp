@@ -59,316 +59,321 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //Example1 (for documentation)
-  TEST(StkMeshHowTo, CreateFacesEdgesHex)
-  {
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkIo(communicator);
+TEST(StkMeshHowTo, CreateFacesEdgesHex)
+{
+  // ============================================================
+  // INITIALIZATION
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
 
-    const std::string generatedFileName = "generated:8x8x8";
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
+  const std::string generatedFileName = "generated:8x8x8";
+  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
 
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the faces..
-    stk::mesh::create_faces(stkIo.bulk_data());
+  // ============================================================
+  //+ EXAMPLE
+  //+ Create the faces..
+  stk::mesh::create_faces(stkIo.bulk_data());
 
-    //+ Create the edges..
-    stk::mesh::create_edges(stkIo.bulk_data());
+  //+ Create the edges..
+  stk::mesh::create_edges(stkIo.bulk_data());
 
-    // ==================================================
-    // VERIFICATION
-    stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
-    EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
-    EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
-    // MAKE SURE FACES ARE HOOKED TO EDGES
-    // this should happen if create_faces is called before create_edges
-    stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
-    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
-      stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
-      const unsigned num_expected_edges = bucket.topology().num_edges();
-      EXPECT_EQ(4u, num_expected_edges);
-      for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
-        stk::mesh::Entity face = bucket[face_count];
-        EXPECT_EQ(num_expected_edges, stkIo.bulk_data().num_edges(face));
-      }
+  // ==================================================
+  // VERIFICATION
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
+  // MAKE SURE FACES ARE HOOKED TO EDGES
+  // this should happen if create_faces is called before create_edges
+  stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
+  for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
+    stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
+    const unsigned num_expected_edges = bucket.topology().num_edges();
+    EXPECT_EQ(4u, num_expected_edges);
+    for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
+      stk::mesh::Entity face = bucket[face_count];
+      EXPECT_EQ(num_expected_edges, stkIo.bulk_data().num_edges(face));
     }
   }
+}
 //End Example1 (for documentation)
 
-  //for now, this is just a copy of above with a different order of create_edges and create_faces
-  TEST(StkMeshHowTo, CreateEdgesFacesHex)
-  {
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkIo(communicator);
+//for now, this is just a copy of above with a different order of create_edges and create_faces
+TEST(StkMeshHowTo, CreateEdgesFacesHex)
+{
+  // ============================================================
+  // INITIALIZATION
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
 
-    const std::string generatedFileName = "generated:8x8x8";
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
+  const std::string generatedFileName = "generated:8x8x8";
+  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
 
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the edges..
-    stk::mesh::create_edges(stkIo.bulk_data());
+  // ============================================================
+  //+ EXAMPLE
+  //+ Create the edges..
+  stk::mesh::create_edges(stkIo.bulk_data());
 
-    //+ Create the faces..
-    stk::mesh::create_faces(stkIo.bulk_data(), true);
-    // ==================================================
-    // VERIFICATION
-    stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
-    EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
-    EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
-    // MAKE SURE FACES ARE HOOKED TO EDGES
-    // this should happen if create_faces is called before create_edges
-    stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
-    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
-      stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
-      const unsigned num_expected_edges = bucket.topology().num_edges();
-      EXPECT_EQ(4u, num_expected_edges);
-      for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
-        stk::mesh::Entity face = bucket[face_count];
-        EXPECT_EQ(num_expected_edges, stkIo.bulk_data().num_edges(face));
-      }
+  //+ Create the faces..
+  stk::mesh::create_faces(stkIo.bulk_data(), true);
+  // ==================================================
+  // VERIFICATION
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
+  // MAKE SURE FACES ARE HOOKED TO EDGES
+  // this should happen if create_faces is called before create_edges
+  stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
+  for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
+    stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
+    const unsigned num_expected_edges = bucket.topology().num_edges();
+    EXPECT_EQ(4u, num_expected_edges);
+    for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
+      stk::mesh::Entity face = bucket[face_count];
+      EXPECT_EQ(num_expected_edges, stkIo.bulk_data().num_edges(face));
     }
   }
+}
 
-  //for now, this is just a copy of above with a different order of create_edges and create_faces and false
-  //passed in to create_faces for connect_faces_to_edges so we don't connect them together
-  TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnect)
-  {
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkIo(communicator);
+//for now, this is just a copy of above with a different order of create_edges and create_faces and false
+//passed in to create_faces for connect_faces_to_edges so we don't connect them together
+TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnect)
+{
+  // ============================================================
+  // INITIALIZATION
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
 
-    const std::string generatedFileName = "generated:8x8x8";
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
+  const std::string generatedFileName = "generated:8x8x8";
+  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
 
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the edges..
-    stk::mesh::create_edges(stkIo.bulk_data());
+  // ============================================================
+  //+ EXAMPLE
+  //+ Create the edges..
+  stk::mesh::create_edges(stkIo.bulk_data());
 
-    //+ Create the faces..
-    stk::mesh::create_faces(stkIo.bulk_data(), false); //false means don't connect faces to edges
-    // ==================================================
-    // VERIFICATION
-    stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
-    EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
-    EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
-    // MAKE SURE FACES ARE NOT HOOKED TO EDGES
-    stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
-    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
-      stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
-      const unsigned num_expected_edges = bucket.topology().num_edges();
-      EXPECT_EQ(4u, num_expected_edges);
-      for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
-        stk::mesh::Entity face = bucket[face_count];
-        EXPECT_EQ(0u, stkIo.bulk_data().num_edges(face));  //expect no edges now
-      }
+  //+ Create the faces..
+  stk::mesh::create_faces(stkIo.bulk_data(), false); //false means don't connect faces to edges
+  // ==================================================
+  // VERIFICATION
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
+  // MAKE SURE FACES ARE NOT HOOKED TO EDGES
+  stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
+  for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
+    stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
+    const unsigned num_expected_edges = bucket.topology().num_edges();
+    EXPECT_EQ(4u, num_expected_edges);
+    for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
+      stk::mesh::Entity face = bucket[face_count];
+      EXPECT_EQ(0u, stkIo.bulk_data().num_edges(face));  //expect no edges now
     }
   }
+}
 
-  Iogn::ExodusData createExodusData(int numberOfHexes, stk::mesh::EntityId* globalIds);
-  void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exodusFileName);
+Iogn::ExodusData createExodusData(int numberOfHexes, stk::mesh::EntityId* globalIds);
+void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exodusFileName);
 
-  TEST(StkMeshHowTo, UnderstandEdgeAndFaceOrdering)
+TEST(StkMeshHowTo, UnderstandEdgeAndFaceOrdering)
+{
+  int oneHex=1;
+  stk::mesh::EntityId globalIdsHex[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  Iogn::ExodusData exoData = createExodusData(oneHex, globalIdsHex);
+  Iogn::ExodusMesh* exoMesh = new Iogn::ExodusMesh(exoData);
+  std::string exodusFileName = "oneElem.exo";
+  // No Need To Delete ExoMesh When Using 'writeExodusFile'
+  writeExodusFile(exoMesh, exodusFileName);
+
+  // ============================================================
+  // INITIALIZATION
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
+  const std::string generatedFileName = exodusFileName;
+  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
+
+  stk::mesh::BulkData &bulkData = stkIo.bulk_data();
+
+  // BEGIN EXAMPLE 2
+  // ============================================================
+  //+ EXAMPLE
+  //+ Create the faces..
+  stk::mesh::create_faces(bulkData);
+
+  unsigned goldValuesForHexFaceNodesFromStkTopology[6][4] = {
+    {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 5, 8, 4}, {1, 4, 3, 2}, {5, 6, 7, 8} };
+
+  // Lexicographical smallest permutation per face leads from topology ordering (above) for face to ordering below
+
+  unsigned goldValuesForHexFaceNodesFromCreateFaces[6][4] = {
+    {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 4, 8, 5}, {1, 2, 3, 4}, {5, 6, 7, 8} };
+
+  //+ Create the edges..
+  stk::mesh::create_edges(bulkData);
+
+  unsigned goldValuesHexEdgeNodesFromStkTopology[12][2] = {
+    {1, 2}, {2, 3}, {3, 4}, {4, 1}, {5, 6}, {6, 7}, {7, 8}, {8, 5}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
+
+  // Lexicographical smallest permutation per edge leads from topology ordering (above) for edge to ordering below
+
+  unsigned goldValuesHexEdgeNodesFromCreateEdges[12][2] = {
+    {1, 2}, {2, 3}, {3, 4}, {1, 4}, {5, 6}, {6, 7}, {7, 8}, {5, 8}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
+
+  // END EXAMPLE 2
+
+  // ==================================================
+  // VERIFICATION
+
+  unsigned elementId=1;
+  stk::mesh::Entity element=bulkData.get_entity(stk::topology::ELEMENT_RANK, elementId);
+  const stk::mesh::Entity *edges = bulkData.begin_edges(element);
+  stk::topology hex = stk::topology::HEXAHEDRON_8;
+  unsigned edgeNodeIds[2];
+
+  for (unsigned i=0;i<bulkData.num_edges(element);i++)
   {
-    int oneHex=1;
-    stk::mesh::EntityId globalIdsHex[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    Iogn::ExodusData exoData = createExodusData(oneHex, globalIdsHex);
-    Iogn::ExodusMesh* exoMesh = new Iogn::ExodusMesh(exoData);
-    std::string exodusFileName = "oneElem.exo";
-    // No Need To Delete ExoMesh When Using 'writeExodusFile'
-    writeExodusFile(exoMesh, exodusFileName);
+    const stk::mesh::Entity *edgeNodes = bulkData.begin_nodes(edges[i]);
+    EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][0], bulkData.identifier(edgeNodes[0]));
+    EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][1], bulkData.identifier(edgeNodes[1]));
 
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::io::StkMeshIoBroker stkIo(communicator);
-    const std::string generatedFileName = exodusFileName;
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
+    hex.edge_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)edgeNodeIds);
+    EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][0], edgeNodeIds[0]);
+    EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][1], edgeNodeIds[1]);
+  }
 
-    stk::mesh::BulkData &bulkData = stkIo.bulk_data();
+  const stk::mesh::Entity *faces = bulkData.begin_faces(element);
+  unsigned faceNodeIds[4];
+  for (unsigned i=0;i<bulkData.num_faces(element);i++)
+  {
+    const stk::mesh::Entity *faceNodes = bulkData.begin_nodes(faces[i]);
+    EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][0], bulkData.identifier(faceNodes[0])) << "failed for face " << i << std::endl;
+    EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][1], bulkData.identifier(faceNodes[1])) << "failed for face " << i << std::endl;
+    EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][2], bulkData.identifier(faceNodes[2])) << "failed for face " << i << std::endl;
+    EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][3], bulkData.identifier(faceNodes[3])) << "failed for face " << i << std::endl;
 
-    // BEGIN EXAMPLE 2
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the faces..
-    stk::mesh::create_faces(bulkData);
+    hex.face_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)faceNodeIds);
+    EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][0], faceNodeIds[0]);
+    EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][1], faceNodeIds[1]);
+    EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][2], faceNodeIds[2]);
+    EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][3], faceNodeIds[3]);
+  }
 
-    unsigned goldValuesForHexFaceNodesFromStkTopology[6][4] = {
-        {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 5, 8, 4}, {1, 4, 3, 2}, {5, 6, 7, 8} };
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  EXPECT_EQ(1u, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(6u, entityCounts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(12u, entityCounts[stk::topology::EDGE_RANK]);
 
-    // Lexicographical smallest permutation per face leads from topology ordering (above) for face to ordering below
+  unlink(exodusFileName.c_str());
+}
 
-    unsigned goldValuesForHexFaceNodesFromCreateFaces[6][4] = {
-        {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 4, 8, 5}, {1, 2, 3, 4}, {5, 6, 7, 8} };
-
-    //+ Create the edges..
-    stk::mesh::create_edges(bulkData);
-
-    unsigned goldValuesHexEdgeNodesFromStkTopology[12][2] = {
-      {1, 2}, {2, 3}, {3, 4}, {4, 1}, {5, 6}, {6, 7}, {7, 8}, {8, 5}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
-
-    // Lexicographical smallest permutation per edge leads from topology ordering (above) for edge to ordering below
-
-    unsigned goldValuesHexEdgeNodesFromCreateEdges[12][2] = {
-      {1, 2}, {2, 3}, {3, 4}, {1, 4}, {5, 6}, {6, 7}, {7, 8}, {5, 8}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
-
-    // END EXAMPLE 2
-
-    // ==================================================
-    // VERIFICATION
-
-    unsigned elementId=1;
-    stk::mesh::Entity element=bulkData.get_entity(stk::topology::ELEMENT_RANK, elementId);
-    const stk::mesh::Entity *edges = bulkData.begin_edges(element);
-    stk::topology hex = stk::topology::HEXAHEDRON_8;
-    unsigned edgeNodeIds[2];
-
-    for (unsigned i=0;i<bulkData.num_edges(element);i++)
+Iogn::ExodusData createExodusData(int numberOfHexes, stk::mesh::EntityId* globalIds)
+{
+  int numberOfElementBlocks = numberOfHexes;
+  int numberOfNodesInEachElementBlock = 8;
+  int globalNumberOfNodes = numberOfElementBlocks * numberOfNodesInEachElementBlock;
+  std::vector<double> coordinates(globalNumberOfNodes*3);
+  std::vector< std::vector<int> > elementBlockConnectivity(numberOfElementBlocks);
+  for(int blockIndex=0; blockIndex < numberOfElementBlocks; blockIndex++)
+  {
+    elementBlockConnectivity[blockIndex].resize(numberOfNodesInEachElementBlock);
+  }
+  int numberOfElementsInEachBlock = 1;
+  std::vector<int> globalNumberOfElementsInBlock(numberOfElementBlocks, numberOfElementsInEachBlock);
+  std::vector<int> localNumberOfElementsInBlock(numberOfElementBlocks, numberOfElementsInEachBlock);
+  std::vector<Iogn::Topology> blockTopologicalData(numberOfElementBlocks, Iogn::Hex8);
+  int numberOfTotalElements = numberOfElementsInEachBlock * numberOfElementBlocks;
+  std::vector<int> globalIdsOfLocalElements(numberOfTotalElements);
+  std::vector<int> globalIdsOfLocalNodes(globalNumberOfNodes);
+  for(int i=0; i < numberOfTotalElements; i++)
+  {
+    globalIdsOfLocalElements[i] = i+1;
+  }
+  for(int i=0; i < globalNumberOfNodes; i++)
+  {
+    //          globalIdsOfLocalNodes[i] = i+1;
+    globalIdsOfLocalNodes[i] = globalIds[i];
+  }
+  for(int blockIndex=0; blockIndex < numberOfElementBlocks; blockIndex++)
+  {
+    int elementBlockOffset = numberOfNodesInEachElementBlock * blockIndex;
+    for(int i=0; i < numberOfNodesInEachElementBlock; i++)
     {
-        const stk::mesh::Entity *edgeNodes = bulkData.begin_nodes(edges[i]);
-        EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][0], bulkData.identifier(edgeNodes[0]));
-        EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][1], bulkData.identifier(edgeNodes[1]));
-
-        hex.edge_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)edgeNodeIds);
-        EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][0], edgeNodeIds[0]);
-        EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][1], edgeNodeIds[1]);
+      elementBlockConnectivity[blockIndex][i] = elementBlockOffset+i+1;
     }
+  }
 
-    const stk::mesh::Entity *faces = bulkData.begin_faces(element);
-    unsigned faceNodeIds[4];
-    for (unsigned i=0;i<bulkData.num_faces(element);i++)
+  double coords[] = {
+    0, 0, 0,
+    1, 0, 0,
+    1, 1, 0,
+    0, 1, 0,
+    0, 0, 1,
+    1, 0, 1,
+    1, 1, 1,
+    0, 1, 1,
+  };
+
+  coordinates.clear();
+  coordinates.resize(globalNumberOfNodes*3);
+  for (int i=0;i<numberOfElementBlocks;i++)
+  {
+    int offset = 3*numberOfNodesInEachElementBlock*i;
+    for (int j=0;j<numberOfNodesInEachElementBlock;j++)
     {
-        const stk::mesh::Entity *faceNodes = bulkData.begin_nodes(faces[i]);
-        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][0], bulkData.identifier(faceNodes[0])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][1], bulkData.identifier(faceNodes[1])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][2], bulkData.identifier(faceNodes[2])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][3], bulkData.identifier(faceNodes[3])) << "failed for face " << i << std::endl;
-
-        hex.face_nodes((stk::mesh::EntityId*)globalIdsHex, i, (unsigned*)faceNodeIds);
-        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][0], faceNodeIds[0]);
-        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][1], faceNodeIds[1]);
-        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][2], faceNodeIds[2]);
-        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][3], faceNodeIds[3]);
+      coordinates[offset+3*j + 0] = coords[3*j+0]+i;
+      coordinates[offset+3*j + 1] = coords[3*j+1];
+      coordinates[offset+3*j + 2] = coords[3*j+2];
     }
-
-    stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
-    EXPECT_EQ(1u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(6u, entityCounts[stk::topology::FACE_RANK]);
-    EXPECT_EQ(12u, entityCounts[stk::topology::EDGE_RANK]);
-
-    unlink(exodusFileName.c_str());
   }
 
-  Iogn::ExodusData createExodusData(int numberOfHexes, stk::mesh::EntityId* globalIds)
-  {
-      int numberOfElementBlocks = numberOfHexes;
-      int numberOfNodesInEachElementBlock = 8;
-      int globalNumberOfNodes = numberOfElementBlocks * numberOfNodesInEachElementBlock;
-      std::vector<double> coordinates(globalNumberOfNodes*3);
-      std::vector< std::vector<int> > elementBlockConnectivity(numberOfElementBlocks);
-      for(int blockIndex=0; blockIndex < numberOfElementBlocks; blockIndex++)
-      {
-          elementBlockConnectivity[blockIndex].resize(numberOfNodesInEachElementBlock);
-      }
-      int numberOfElementsInEachBlock = 1;
-      std::vector<int> globalNumberOfElementsInBlock(numberOfElementBlocks, numberOfElementsInEachBlock);
-      std::vector<int> localNumberOfElementsInBlock(numberOfElementBlocks, numberOfElementsInEachBlock);
-      std::vector<Iogn::Topology> blockTopologicalData(numberOfElementBlocks, Iogn::Hex8);
-      int numberOfTotalElements = numberOfElementsInEachBlock * numberOfElementBlocks;
-      std::vector<int> globalIdsOfLocalElements(numberOfTotalElements);
-      std::vector<int> globalIdsOfLocalNodes(globalNumberOfNodes);
-      for(int i=0; i < numberOfTotalElements; i++)
-      {
-          globalIdsOfLocalElements[i] = i+1;
-      }
-      for(int i=0; i < globalNumberOfNodes; i++)
-      {
-//          globalIdsOfLocalNodes[i] = i+1;
-          globalIdsOfLocalNodes[i] = globalIds[i];
-      }
-      for(int blockIndex=0; blockIndex < numberOfElementBlocks; blockIndex++)
-      {
-          int elementBlockOffset = numberOfNodesInEachElementBlock * blockIndex;
-          for(int i=0; i < numberOfNodesInEachElementBlock; i++)
-          {
-              elementBlockConnectivity[blockIndex][i] = elementBlockOffset+i+1;
-          }
-      }
+  return Iogn::ExodusData(coordinates, elementBlockConnectivity, globalNumberOfElementsInBlock, localNumberOfElementsInBlock,
+                          blockTopologicalData, globalNumberOfNodes, globalIdsOfLocalElements, globalIdsOfLocalNodes);
+}
 
-      double coords[] = {
-          0, 0, 0,
-          1, 0, 0,
-          1, 1, 0,
-          0, 1, 0,
-          0, 0, 1,
-          1, 0, 1,
-          1, 1, 1,
-          0, 1, 1,
-      };
+void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exodusFileName)
+{
+  Ioss::Init::Initializer io;
 
-      coordinates.clear();
-      coordinates.resize(globalNumberOfNodes*3);
-      for (int i=0;i<numberOfElementBlocks;i++)
-      {
-          int offset = 3*numberOfNodesInEachElementBlock*i;
-          for (int j=0;j<numberOfNodesInEachElementBlock;j++)
-          {
-              coordinates[offset+3*j + 0] = coords[3*j+0]+i;
-              coordinates[offset+3*j + 1] = coords[3*j+1];
-              coordinates[offset+3*j + 2] = coords[3*j+2];
-          }
-      }
+  Ioss::DatabaseIO *database = Ioss::IOFactory::create("generated", "2x3x3", Ioss::READ_MODEL, MPI_COMM_WORLD);
+  Iogn::DatabaseIO *iognDatabase = dynamic_cast<Iogn::DatabaseIO *>(database);
+  iognDatabase->setGeneratedMesh(generatedMesh);
 
-      return Iogn::ExodusData(coordinates, elementBlockConnectivity, globalNumberOfElementsInBlock, localNumberOfElementsInBlock,
-              blockTopologicalData, globalNumberOfNodes, globalIdsOfLocalElements, globalIdsOfLocalNodes);
-  }
-
-  void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exodusFileName)
-  {
-      Ioss::Init::Initializer io;
-
-      Ioss::DatabaseIO *database = Ioss::IOFactory::create("generated", "2x3x3", Ioss::READ_MODEL, MPI_COMM_WORLD);
-      Iogn::DatabaseIO *iognDatabase = dynamic_cast<Iogn::DatabaseIO *>(database);
-      iognDatabase->setGeneratedMesh(generatedMesh);
-
-      Ioss::Region* io_region = new Ioss::Region(database);
-      stk::io::StkMeshIoBroker meshData;
-      Teuchos::RCP<Ioss::Region> junk; junk.reset(io_region, false);
-      meshData.add_mesh_database(junk);
-      meshData.create_input_mesh();
-      meshData.populate_bulk_data();
-      size_t result_file_index = meshData.create_output_mesh(exodusFileName, stk::io::WRITE_RESULTS);
-      meshData.write_output_mesh(result_file_index);
-      delete io_region;
-  }
+  Ioss::Region* io_region = new Ioss::Region(database);
+  stk::io::StkMeshIoBroker meshData;
+  meshData.use_simple_fields();
+  Teuchos::RCP<Ioss::Region> junk; junk.reset(io_region, false);
+  meshData.add_mesh_database(junk);
+  meshData.create_input_mesh();
+  meshData.populate_bulk_data();
+  size_t result_file_index = meshData.create_output_mesh(exodusFileName, stk::io::WRITE_RESULTS);
+  meshData.write_output_mesh(result_file_index);
+  delete io_region;
+}
 
 }
 

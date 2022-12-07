@@ -45,9 +45,6 @@
 #include <vector>                       // for vector
 #include "stk_util/parallel/CommSparse.hpp"  // for CommSparse
 
-
-
-
 using stk::mesh::DataTraits;
 using stk::mesh::data_traits;
 using stk::CommSparse;
@@ -65,7 +62,7 @@ TEST(TestDataTraits, testVoid)
 
   const DataTraits & traits = data_traits<void>();
 
-  ASSERT_TRUE(       traits.type_info        == typeid(void) );
+  ASSERT_TRUE( traits.type_info        == typeid(void) );
   ASSERT_EQ( traits.size_of           , size_t(0) );
   ASSERT_EQ( traits.alignment_of      , size_t(0) );
   ASSERT_EQ( traits.stride_of         , size_t(0) );
@@ -561,11 +558,11 @@ TEST(TestDataTraits, testClass)
 
   const Vec3 a = { 1.0 , 2.0 , 3.0 };
   const size_t dx = reinterpret_cast<const unsigned char *>( & a.x ) -
-                    reinterpret_cast<const unsigned char *>( & a );
+      reinterpret_cast<const unsigned char *>( & a );
   const size_t dy = reinterpret_cast<const unsigned char *>( & a.y ) -
-                    reinterpret_cast<const unsigned char *>( & a );
+      reinterpret_cast<const unsigned char *>( & a );
   const size_t dz = reinterpret_cast<const unsigned char *>( & a.z ) -
-                    reinterpret_cast<const unsigned char *>( & a );
+      reinterpret_cast<const unsigned char *>( & a );
 
   ASSERT_EQ( traits.class_info.size() , size_t(3) );
   ASSERT_EQ( (traits.class_info[0].name == "x"), true );

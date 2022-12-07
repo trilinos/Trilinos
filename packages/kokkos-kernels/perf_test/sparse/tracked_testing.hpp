@@ -9,13 +9,13 @@
 
 namespace test {
 namespace sparse {
-void build_executor(rajaperf::Executor& exec, int , char* [], const rajaperf::RunParams& params) {
+void build_executor(rajaperf::Executor& exec, int, char*[],
+                    const rajaperf::RunParams& params) {
   exec.registerGroup("Sparse");
-  for(auto* kernel : make_spmv_kernel_base(params)) {
+  for (auto* kernel : make_spmv_kernel_base(params)) {
     exec.registerKernel("Sparse", kernel);
   }
-
 }
-} // namespace sparse
+}  // namespace sparse
 }  // namespace test
 #endif  // KOKKOSKERNELS_TRACKED_TESTING_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,14 +19,14 @@ static void free_klv();
 
 void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex */
               int               nvtxs,     /* number of vertices in graph */
-              int *             sets,      /* local partitioning of vtxs */
-              double *          goal,      /* desired set sizes */
+              int              *sets,      /* local partitioning of vtxs */
+              double           *goal,      /* desired set sizes */
               int               max_dev,   /* largest deviation from balance allowed */
-              int **            bndy_list, /* list of vertices on boundary (0 ends) */
-              double *          weights    /* vertex weights in each set */
+              int             **bndy_list, /* list of vertices on boundary (0 ends) */
+              double           *weights    /* vertex weights in each set */
 )
 {
-  extern FILE *   Output_File; /* output file or null */
+  extern FILE    *Output_File; /* output file or null */
   extern int      DEBUG_TRACE; /* debug flag for Kernighan-Lin */
   extern int      DEBUG_KL;    /* debug flag for Kernighan-Lin */
   extern double   kl_total_time;
@@ -34,17 +34,17 @@ void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex
   extern double   nway_kl_time;
   struct bilist **lbuckets;    /* space for bucket sorts for left moves */
   struct bilist **rbuckets;    /* space for bucket sorts for right moves */
-  struct bilist * llistspace;  /* space for all left bidirectional elements */
-  struct bilist * rlistspace;  /* space for all right bidirectional elements */
-  int *           ldvals;      /* change in penalty for each possible move */
-  int *           rdvals;      /* change in penalty for each possible move */
-  int *           edges;       /* loops through neighbor lists */
+  struct bilist  *llistspace;  /* space for all left bidirectional elements */
+  struct bilist  *rlistspace;  /* space for all right bidirectional elements */
+  int            *ldvals;      /* change in penalty for each possible move */
+  int            *rdvals;      /* change in penalty for each possible move */
+  int            *edges;       /* loops through neighbor lists */
   double          time, time1; /* timing variables */
   int             dval;        /* largest transition cost for a vertex */
   int             maxdval;     /* largest transition cost for all vertices */
   int             error;       /* out of space? */
   int             i, j;        /* loop counters */
-  double          seconds();
+  double          seconds(void);
   int             klv_init(), nway_klv();
   void            countup_vtx_sep();
 
@@ -113,10 +113,10 @@ static void free_klv(
     /* Free everything malloc'd for KLV. */
     struct bilist **lbuckets,   /* space for bucket sorts */
     struct bilist **rbuckets,   /* space for bucket sorts */
-    struct bilist * llistspace, /* space for all bidirectional elements */
-    struct bilist * rlistspace, /* space for all bidirectional elements */
-    int *           ldvals,     /* change in penalty for each possible move */
-    int *           rdvals      /* change in penalty for each possible move */
+    struct bilist  *llistspace, /* space for all bidirectional elements */
+    struct bilist  *rlistspace, /* space for all bidirectional elements */
+    int            *ldvals,     /* change in penalty for each possible move */
+    int            *rdvals      /* change in penalty for each possible move */
 )
 {
   sfree(rlistspace);

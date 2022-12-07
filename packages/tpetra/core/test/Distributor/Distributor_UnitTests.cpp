@@ -68,6 +68,7 @@ namespace {
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
+  int numRuns = 1;
 
   int generateValue(int x, int y) {
     // formula for z(x,y) = 0.5(x^2 + y^2 + 3x + y) + xy
@@ -85,6 +86,9 @@ namespace {
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
+    clp.setOption(
+        "num-runs", &numRuns,
+        "Number of runs to use for timings" );
   }
 
   RCP<const Comm<int> > getDefaultComm()
@@ -173,7 +177,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -214,7 +218,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -272,9 +276,6 @@ namespace {
     myOut << "Create Distributor from sends (mix of contiguous and noncontiguous)" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     TEST_NOTHROW( numImports = distributor.createFromSends(exportImageIDs) );
 
     myOut << "Test the resulting Distributor" << endl;
@@ -304,7 +305,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
@@ -313,7 +313,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -407,7 +407,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -493,7 +493,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -584,7 +584,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -628,9 +628,6 @@ namespace {
     myOut << "Create Distributor from noncontiguous sends" << endl;
 
     Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
     numImports = distributor.createFromSends(exportImageIDs);
 
     myOut << "Test the resulting Distributor" << endl;
@@ -665,7 +662,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-#endif
 
     myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
@@ -674,7 +670,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -797,7 +793,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -811,100 +807,99 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    // send data to each image, including myself
-    size_t numRemoteIDs = 0;
-    // exportImageIDs = {0, 1, 2, ..., numImages-1, 0, 1, 2, ..., numImages-1}
-    //
-    // on root node only, put some invalid nodes in the middle, corresponding to untouched data in import/export buffers
-    // like so:
-    // exportImageIDs = {0, 1, 2, ..., numImages-1, -1, -1, 0, 1, 2, ..., numImages-1}
-    Array<int> exportImageIDs;
-    if (myImageID == 0) {
-      exportImageIDs.reserve(2*numImages+2);
-      for(int i=0; i < numImages; ++i) {
-        exportImageIDs.push_back(i);
-      }
-      exportImageIDs.push_back(-1);
-      exportImageIDs.push_back(-1);
-      for(int i=0; i < numImages; ++i) {
-        exportImageIDs.push_back(i);
-      }
-    }
-    else {
-      exportImageIDs.reserve(2*numImages);
-      for(int i=0; i < numImages; ++i) {
-        exportImageIDs.push_back(i);
-      }
-      for(int i=0; i < numImages; ++i) {
-        exportImageIDs.push_back(i);
-      }
-    }
-    Distributor distributor(comm);
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( numRemoteIDs = distributor.createFromSends(exportImageIDs), std::runtime_error );
-#else
-    numRemoteIDs = distributor.createFromSends(exportImageIDs);
 
-    // Make sure that Distributor output doesn't cause a hang.
-    distributor.describe (out, Teuchos::VERB_EXTREME);
+    for (int run=0; run<numRuns; run++) {
+      // send data to each image, including myself
+      size_t numRemoteIDs = 0;
+      // exportImageIDs = {0, 1, 2, ..., numImages-1, 0, 1, 2, ..., numImages-1}
+      //
+      // on root node only, put some invalid nodes in the middle, corresponding to untouched data in import/export buffers
+      // like so:
+      // exportImageIDs = {0, 1, 2, ..., numImages-1, -1, -1, 0, 1, 2, ..., numImages-1}
+      Array<int> exportImageIDs;
+      if (myImageID == 0) {
+        exportImageIDs.reserve(2*numImages+2);
+        for(int i=0; i < numImages; ++i) {
+          exportImageIDs.push_back(i);
+        }
+        exportImageIDs.push_back(-1);
+        exportImageIDs.push_back(-1);
+        for(int i=0; i < numImages; ++i) {
+          exportImageIDs.push_back(i);
+        }
+      }
+      else {
+        exportImageIDs.reserve(2*numImages);
+        for(int i=0; i < numImages; ++i) {
+          exportImageIDs.push_back(i);
+        }
+        for(int i=0; i < numImages; ++i) {
+          exportImageIDs.push_back(i);
+        }
+      }
+      Distributor distributor(comm);
+      numRemoteIDs = distributor.createFromSends(exportImageIDs);
 
-    TEST_EQUALITY(numRemoteIDs, as<size_t>(2*numImages));
-    // generate global random data set: each image sends 2 packets to each image
-    // we need 2*numImages*numImages "unique" values (we don't want redundant data allowing false positives)
-    // root node generates all values, sends them to the others.
-    Array<Packet> exports(numImages*2*numImages);
-    if (myImageID == 0) {
-      for (int i=0; i<2*numImages*numImages; ++i) {
-        exports[i] = PT::random();
+      // Make sure that Distributor output doesn't cause a hang.
+      distributor.describe (out, Teuchos::VERB_EXTREME);
+
+      TEST_EQUALITY(numRemoteIDs, as<size_t>(2*numImages));
+      // generate global random data set: each image sends 2 packets to each image
+      // we need 2*numImages*numImages "unique" values (we don't want redundant data allowing false positives)
+      // root node generates all values, sends them to the others.
+      Array<Packet> exports(numImages*2*numImages);
+      if (myImageID == 0) {
+        for (int i=0; i<2*numImages*numImages; ++i) {
+          exports[i] = PT::random();
+        }
       }
-    }
-    // broadcast
-    broadcast(*comm,0,exports());
-    // pick a subset of entries to post
-    Array<Packet> myExports(0);
-    if (myImageID == 0) {
-      myExports.resize(2*numImages+2,PT::zero());
-      for (int i=0; i<numImages; ++i) {
-        myExports[i] = exports[i];
+      // broadcast
+      broadcast(*comm,0,exports());
+      // pick a subset of entries to post
+      Array<Packet> myExports(0);
+      if (myImageID == 0) {
+        myExports.resize(2*numImages+2,PT::zero());
+        for (int i=0; i<numImages; ++i) {
+          myExports[i] = exports[i];
+        }
+        for (int i=0; i<numImages; ++i) {
+          myExports[numImages+2+i] = exports[numImages+i];
+        }
       }
-      for (int i=0; i<numImages; ++i) {
-        myExports[numImages+2+i] = exports[numImages+i];
+      else {
+        myExports.resize(2*numImages,PT::zero());
+        std::copy(exports.begin()+myImageID*2*numImages, exports.begin()+(myImageID+1)*2*numImages, myExports.begin() );
       }
-    }
-    else {
-      myExports.resize(2*numImages,PT::zero());
-      std::copy(exports.begin()+myImageID*2*numImages, exports.begin()+(myImageID+1)*2*numImages, myExports.begin() );
-    }
-    // do posts, one Packet to each image
-    Kokkos::View<Packet*, Kokkos::HostSpace> imports("imports", 1*distributor.getTotalReceiveLength());
-    Kokkos::View<const Packet*, Kokkos::HostSpace> myExportsConst(myExports.data(), myExports.size());
-    distributor.doPostsAndWaits(myExportsConst, 1, imports);
-    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
-    // it corresponds to element i*numImages+myImageID in the global export vector
-    // make a copy of the corresponding entries in the global vector, then compare these against the
-    // entries that I received
-    Array<Packet> expectedImports(2*numImages,PT::zero());
-    {
-      typename Array<Packet>::iterator eI = expectedImports.begin(),
-                                        E = exports.begin()+myImageID;
-      for (int i=0; i<numImages-1; ++i) {
+      // do posts, one Packet to each image
+      Kokkos::View<Packet*, Kokkos::HostSpace> imports("imports", 1*distributor.getTotalReceiveLength());
+      Kokkos::View<const Packet*, Kokkos::HostSpace> myExportsConst(myExports.data(), myExports.size());
+      distributor.doPostsAndWaits(myExportsConst, 1, imports);
+      // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
+      // it corresponds to element i*numImages+myImageID in the global export vector
+      // make a copy of the corresponding entries in the global vector, then compare these against the
+      // entries that I received
+      Array<Packet> expectedImports(2*numImages,PT::zero());
+      {
+        typename Array<Packet>::iterator eI = expectedImports.begin(),
+                 E = exports.begin()+myImageID;
+        for (int i=0; i<numImages-1; ++i) {
+          (*eI++) = *E;
+          E += numImages;
+          (*eI++) = *E;
+          E += numImages;
+        }
         (*eI++) = *E;
         E += numImages;
         (*eI++) = *E;
-        E += numImages;
       }
-      (*eI++) = *E;
-      E += numImages;
-      (*eI++) = *E;
+      // check the values
+      TEST_COMPARE_ARRAYS(expectedImports,imports);
+      // All procs fail if any proc fails
+      int globalSuccess_int = -1;
+      reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
     }
-    // check the values
-    TEST_COMPARE_ARRAYS(expectedImports,imports);
-#endif
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -957,7 +952,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif
@@ -1003,7 +998,7 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 #endif

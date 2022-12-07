@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,27 +9,27 @@
 #include "smalloc.h" // for smalloc, sfree
 #include "structs.h"
 
-void coarsen1(struct vtx_data ** graph,      /* array of vtx data for graph */
+void coarsen1(struct vtx_data  **graph,      /* array of vtx data for graph */
               int                nvtxs,      /* number of vertices in graph */
               int                nedges,     /* number of edges in graph */
               struct vtx_data ***pcgraph,    /* coarsened version of graph */
-              int *              pcnvtxs,    /* number of vtxs in coarsened graph */
-              int *              pcnedges,   /* number of edges in coarsened graph */
-              int **             pv2cv,      /* pointer to v2cv */
+              int               *pcnvtxs,    /* number of vtxs in coarsened graph */
+              int               *pcnedges,   /* number of edges in coarsened graph */
+              int              **pv2cv,      /* pointer to v2cv */
               int                igeom,      /* dimension for geometric information */
-              float **           coords,     /* coordinates for vertices */
-              float **           ccoords,    /* coordinates for coarsened vertices */
+              float            **coords,     /* coordinates for vertices */
+              float            **ccoords,    /* coordinates for coarsened vertices */
               int                using_ewgts /* are edge weights being used? */
 )
 {
   extern double coarsen_time;
   extern double match_time;
   double        time;    /* time routine is entered */
-  int *         v2cv;    /* maps from vtxs to cvtxs */
-  int *         mflag;   /* flag indicating vtx matched or not */
+  int          *v2cv;    /* maps from vtxs to cvtxs */
+  int          *mflag;   /* flag indicating vtx matched or not */
   int           cnvtxs;  /* number of vtxs in coarse graph */
   int           nmerged; /* number of edges contracted */
-  double        seconds();
+  double        seconds(void);
   int           maxmatch();
   void          makev2cv(), makefgraph();
 

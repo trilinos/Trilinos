@@ -22,6 +22,7 @@ const int NVals = 4096;  // use fixed number of elements to simplify this
 // send only to self
 void doCommunication(MPI_Comm comm)
 {
+  MPI_Barrier(comm);
   int comm_size, comm_rank, tag=7;
   MPI_Comm_size(comm, &comm_size);
   MPI_Comm_rank(comm, &comm_rank);
@@ -64,6 +65,7 @@ void doCommunication(MPI_Comm comm)
     if (send_buf[i] != recv_buf[i])
       throw std::runtime_error("recv buffer value not correct");
 
+  MPI_Barrier(comm);
 }
 
 }

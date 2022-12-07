@@ -31,18 +31,16 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
-  cout << "basker_test: filename, numthreads should be passed as command line args" << endl; 
+  cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 
 
   std::string fname = std::string(argv[1]);
-  Int numthreads = atoi(argv[2]);
+  Int nthreads = atoi(argv[2]);
   //std::string rhsname = std::string(argv[2]);
-  //Int numthreads = atoi(argv[3]);
+  //Int nthreads = atoi(argv[3]);
   //std::string fname = "matrix1.mtx";
  
-  cout << "basker_test: using " << numthreads << "threads" << endl;
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = numthreads;
-  Kokkos::initialize( init_args );
+  cout << "basker_test: using " << nthreads << "threads" << endl;
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
 
   {
   #ifdef BASKER_KOKKOS
@@ -186,7 +184,7 @@ int main(int argc, char* argv[])
   mybasker.Options.realloc   = true;
   mybasker.Options.btf       = true;
 
-  mybasker.SetThreads(numthreads);
+  mybasker.SetThreads(nthreads);
   cout << "--------------Done Setting Threads----------" << endl;
   mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done SFactor------------------" << endl;

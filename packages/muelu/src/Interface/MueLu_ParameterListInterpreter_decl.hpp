@@ -73,6 +73,7 @@
 #include "MueLu_InitialBlockNumberFactory_fwd.hpp"
 #include "MueLu_LineDetectionFactory_fwd.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_fwd.hpp"
+#include "MueLu_LowPrecisionFactory_fwd.hpp"
 #include "MueLu_NotayAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
@@ -231,11 +232,13 @@ namespace MueLu {
                                           int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Repartition(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                           int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
+    void UpdateFactoryManager_LowPrecision(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                           int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                         int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
-    void UpdateFactoryManager_BlockNumber(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, 
+    void UpdateFactoryManager_BlockNumber(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList,
                                           FactoryManager& manager,int levelID, std::vector<keep_pair>& keeps) const;
-    void UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, 
+    void UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList,
                                            FactoryManager& manager,int levelID, std::vector<keep_pair>& keeps) const;
 
     // Algorithm-specific components for UpdateFactoryManager

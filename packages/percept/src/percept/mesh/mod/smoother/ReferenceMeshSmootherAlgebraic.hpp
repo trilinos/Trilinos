@@ -27,14 +27,13 @@
       ///   are too far from the boundary
       ReferenceMeshSmootherAlgebraic(PerceptMesh *eMesh,
                             stk::mesh::Selector *stk_select=0,
-                            StructuredGrid::MTSelector *sgrid_select=0,
                             MeshGeometry *meshGeometry=0,
                             int inner_iterations = 100,
                             double grad_norm =1.e-8,
                              double *drop_off_coeffs = 0,
                              int nlayers_drop_off = 0,
                             int parallel_iterations = 20)
-        : ReferenceMeshSmootherConjugateGradientImpl<STKMesh>(eMesh, stk_select, sgrid_select, meshGeometry, inner_iterations, grad_norm, parallel_iterations),
+        : ReferenceMeshSmootherConjugateGradientImpl<STKMesh>(eMesh, stk_select, meshGeometry, inner_iterations, grad_norm, parallel_iterations),
           m_drop_off_coeffs(drop_off_coeffs), m_nlayers_drop_off(nlayers_drop_off)
       {
         //std::cout << "ReferenceMeshSmootherAlgebraic: m_nlayers_drop_off= " << m_nlayers_drop_off << std::endl;
@@ -49,7 +48,7 @@
       virtual void get_step();
       virtual double run_one_iteration();
       virtual int get_num_stages() { return 1; }
-      int find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, CoordinatesFieldType *coord_field_orig);
+      int find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase *coord_field_orig);
       void get_wall_distances();
 
     };

@@ -8,7 +8,7 @@ SET(EXEC_SPACES
   EXECSPACE_SYCL
   EXECSPACE_OPENMPTARGET
   EXECSPACE_OPENMP
-  EXECSPACE_PTHREAD
+  EXECSPACE_THREADS
   EXECSPACE_SERIAL
 )
 SET(EXECSPACE_CUDA_CPP_TYPE         Kokkos::Cuda)
@@ -16,7 +16,7 @@ SET(EXECSPACE_HIP_CPP_TYPE          Kokkos::Experimental::HIP)
 SET(EXECSPACE_SYCL_CPP_TYPE         Kokkos::Experimental::SYCL)
 SET(EXECSPACE_OPENMPTARGET_CPP_TYPE Kokkos::Experimental::OpenMPTarget)
 SET(EXECSPACE_OPENMP_CPP_TYPE       Kokkos::OpenMP)
-SET(EXECSPACE_PTHREAD_CPP_TYPE      Kokkos::Threads)
+SET(EXECSPACE_THREADS_CPP_TYPE      Kokkos::Threads)
 SET(EXECSPACE_SERIAL_CPP_TYPE       Kokkos::Serial)
 
 SET(MEM_SPACES
@@ -41,19 +41,29 @@ SET(MEMSPACE_HBWSPACE_CPP_TYPE          Kokkos::HBWSpace)
 IF(KOKKOS_ENABLE_CUDA)
  KOKKOSKERNELS_ADD_OPTION(
    INST_EXECSPACE_CUDA
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ON
    BOOL
    "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
+
+ # By default, instantiate only for Cuda's default memory space (either CudaSpace, or CudaUVMSpace).
+ IF(KOKKOS_ENABLE_CUDA_UVM)
+   SET(CUDA_CUDAUVMSPACE_DEFAULT ON)
+   SET(CUDA_CUDASPACE_DEFAULT OFF)
+ ELSE()
+   SET(CUDA_CUDAUVMSPACE_DEFAULT OFF)
+   SET(CUDA_CUDASPACE_DEFAULT ON)
+ ENDIF()
+
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDAUVMSPACE
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ${CUDA_CUDAUVMSPACE_DEFAULT}
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDASPACE
-   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
+   ${CUDA_CUDASPACE_DEFAULT}
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
@@ -174,17 +184,17 @@ ENDIF()
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_THREADS
-  ${KOKKOSKERNELS_INST_EXECSPACE_PTHREAD_DEFAULT}
+  ${KOKKOSKERNELS_INST_EXECSPACE_THREADS_DEFAULT}
   BOOL
-  "Whether to build kernels for the execution space Kokkos::Threads.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_PTHREAD is enabled may increase build times. Default: ON if Kokkos is Threads-enabled, OFF otherwise."
+  "Whether to build kernels for the execution space Kokkos::Threads.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_THREADS is enabled may increase build times. Default: ON if Kokkos is Threads-enabled, OFF otherwise."
 )
 #There continues to be name ambiguity with threads vs pthreads
-SET(KOKKOSKERNELS_INST_EXECSPACE_PTHREAD ${KOKKOSKERNELS_INST_EXECSPACE_THREADS})
+SET(KOKKOSKERNELS_INST_EXECSPACE_THREADS ${KOKKOSKERNELS_INST_EXECSPACE_THREADS})
 
-IF(KOKKOSKERNELS_INST_EXECSPACE_PTHREAD AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+IF(KOKKOSKERNELS_INST_EXECSPACE_THREADS AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
   LIST(APPEND DEVICE_LIST "<Threads,HostSpace>")
-  IF(NOT KOKKOS_ENABLE_PTHREAD)
-    MESSAGE(FATAL_ERROR "Set ETI on for PTHREAD, but Kokkos was not configured with the PTHREAD backend")
+  IF(NOT KOKKOS_ENABLE_THREADS)
+    MESSAGE(FATAL_ERROR "Set ETI on for THREADS, but Kokkos was not configured with the THREADS backend")
   ENDIF()
 ENDIF()
 
@@ -201,7 +211,7 @@ SET(EXECSPACE_SYCL_VALID_MEM_SPACES               SYCLSPACE SYCLSHAREDSPACE)
 SET(EXECSPACE_OPENMPTARGET_VALID_MEM_SPACES       OPENMPTARGETSPACE)
 SET(EXECSPACE_SERIAL_VALID_MEM_SPACES             HBWSPACE HOSTSPACE)
 SET(EXECSPACE_OPENMP_VALID_MEM_SPACES             HBWSPACE HOSTSPACE)
-SET(EXECSPACE_PTHREAD_VALID_MEM_SPACES            HBWSPACE HOSTSPACE)
+SET(EXECSPACE_THREADS_VALID_MEM_SPACES            HBWSPACE HOSTSPACE)
 SET(DEVICES)
 FOREACH(EXEC ${EXEC_SPACES})
   IF (KOKKOSKERNELS_INST_${EXEC})

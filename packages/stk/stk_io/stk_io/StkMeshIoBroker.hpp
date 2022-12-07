@@ -40,7 +40,9 @@
 #include <Ioss_PropertyManager.h>           // for PropertyManager
       // file exists and is readable and will throw an exception if not.
 #include <cstddef>                          // for size_t
+#include "Teuchos_RCPDecl.hpp"              // for RCP
 #include <Teuchos_RCP.hpp>                  // for RCP::operator->, RCP::RCP<T>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
 #include <stk_io/Heartbeat.hpp>             // for Heartbeat, HeartbeatType
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
@@ -50,10 +52,10 @@
 #include <stk_mesh/base/Selector.hpp>       // for Selector
 #include <stk_util/parallel/Parallel.hpp>   // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>  // for Parameter, Type
+#include <memory>
 #include <string>                           // for string
 #include <utility>                          // for move, swap
 #include <vector>                           // for vector
-#include "Teuchos_RCPDecl.hpp"              // for RCP
 #include "mpi.h"                            // for ompi_communicator_t
 #include "stk_io/FieldAndName.hpp"          // for DataLocation
 #include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
@@ -163,6 +165,9 @@ namespace stk {
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
       void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
+      void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
+      void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
+
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
 
@@ -174,7 +179,7 @@ namespace stk {
       // created automatically using the communicator of the m_input_region.
       // If meta data is not already set, then set the meta data from the
       // bulk data's metadata
-      void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
+      void set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data);
       void set_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
       // Replace the current bulk data directly with your own bulk data.
@@ -185,7 +190,7 @@ namespace stk {
       // this, only if needed, after you are completely done accessing
       // the input mesh and before any access to the output mesh and only
       // if the output mesh needs a different bulk data than the input mesh.
-      void replace_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
+      void replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data);
       void replace_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
       enum SideSetFaceCreationBehavior {
@@ -209,6 +214,9 @@ namespace stk {
       {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
+
+      bool get_filter_empty_input_entity_blocks() const;
+      bool get_filter_empty_input_entity_blocks(size_t input_file_index) const;
 
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
@@ -603,6 +611,8 @@ namespace stk {
       void process_heartbeat_output_write(size_t index, int step, double time);
       void process_heartbeat_output_post_write(size_t index, int step, double time);
 
+      void use_simple_fields() { m_useSimpleFields = true; }
+
       bool is_meta_data_null() const;
       bool is_bulk_data_null() const;
       stk::mesh::MetaData &meta_data();
@@ -610,13 +620,11 @@ namespace stk {
       const stk::mesh::MetaData &meta_data() const;
       const stk::mesh::BulkData &bulk_data() const;
 
-      // Special RCP getters for meta_data and bulk_data. Use these to handoff
-      // meta/bulk data to classes that also track meta/bulk data via RCP.
-      Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return m_metaData; }
-      Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return m_bulkData; }
+      std::shared_ptr<stk::mesh::MetaData> meta_data_ptr() { return m_metaData; }
+      std::shared_ptr<stk::mesh::BulkData> bulk_data_ptr() { return m_bulkData; }
 
-      Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return m_metaData; }
-      Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return m_bulkData; }
+      std::shared_ptr<const stk::mesh::MetaData> meta_data_ptr() const { return m_metaData; }
+      std::shared_ptr<const stk::mesh::BulkData> bulk_data_ptr() const { return m_bulkData; }
 
       // Return the coordinate field for this mesh.
       stk::mesh::FieldBase const& get_coordinate_field() const;
@@ -732,8 +740,8 @@ namespace stk {
       stk::ParallelMachine m_communicator;
       std::vector<std::string>       m_rankNames; // Optional rank name vector.
 
-      Teuchos::RCP<stk::mesh::MetaData>  m_metaData;
-      Teuchos::RCP<stk::mesh::BulkData>  m_bulkData;
+      std::shared_ptr<stk::mesh::MetaData>  m_metaData;
+      std::shared_ptr<stk::mesh::BulkData>  m_bulkData;
 
 
       stk::mesh::Selector m_activeSelector;
@@ -759,6 +767,7 @@ namespace stk {
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
+      bool m_useSimpleFields;
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) const {
@@ -847,6 +856,16 @@ namespace stk {
       m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
     }
 
+    inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_entity_blocks(filterEmptyEntityBlocks);
+    }
+
+    inline void StkMeshIoBroker::set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks) {
+      validate_output_file_index(output_file_index);
+      m_outputFiles[output_file_index]->set_filter_empty_assembly_entity_blocks(filterEmptyAssemblyEntityBlocks);
+    }
+
     inline stk::mesh::Selector StkMeshIoBroker::get_active_selector() const {
       return m_activeSelector;
     }
@@ -864,10 +883,14 @@ namespace stk {
     }
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
-    { set_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+    {
+      set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+    }
 
     inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
-    { replace_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+    {
+      replace_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+    }
 
     inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
                                                          const std::string &name,
@@ -939,35 +962,35 @@ namespace stk {
 
     inline bool StkMeshIoBroker::is_meta_data_null() const
     {
-      return Teuchos::is_null(m_metaData);
+      return m_metaData == nullptr;
     }
 
     inline bool StkMeshIoBroker::is_bulk_data_null() const
     {
-      return Teuchos::is_null(m_bulkData);
+      return m_bulkData == nullptr;
     }
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowAssert( !Teuchos::is_null(m_metaData)) ;
+      ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowAssert( !Teuchos::is_null(m_bulkData)) ;
+      ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowAssert( !Teuchos::is_null(m_metaData)) ;
+      ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowAssert( !Teuchos::is_null(m_bulkData)) ;
+      ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
   }

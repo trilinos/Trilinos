@@ -41,7 +41,7 @@ public:
 
   BoundingBox get_surface_bounding_box() { return surface_list.get_bounding_box(); }
 
-  void execute(const double time, const bool requires_additional_initialization);
+  void execute(const double time);
 private:
   void compute_IC_error_indicator();
 private:

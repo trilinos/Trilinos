@@ -87,15 +87,16 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
             // TODO: Discuss decltype
             // TODO: Ask KK what values they want tested?
             setup_test<Kokkos::DefaultExecutionSpace,
-                       Kokkos::DefaultExecutionSpace::array_layout>(m, repeat, 1));
+                       Kokkos::DefaultExecutionSpace::array_layout>(m, repeat,
+                                                                    1));
       },
-      [&](const int , const int , test_data_type& data) {
+      [&](const int, const int, test_data_type& data) {
         Kokkos::parallel_for(
             "TeamDotUsage_RPS",
             test_data_type::policy(data.numberOfTeams, Kokkos::AUTO),
             KOKKOS_LAMBDA(const test_data_type::member_type& team) {
               // loop body
-                  KokkosBlas::Experimental::dot(team, data.x, data.y);
+              KokkosBlas::Experimental::dot(team, data.x, data.y);
             });
       }));
 

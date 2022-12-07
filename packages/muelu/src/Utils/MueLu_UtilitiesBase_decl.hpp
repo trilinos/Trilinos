@@ -59,6 +59,8 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
+#include <Xpetra_CrsGraphFactory_fwd.hpp>
+#include <Xpetra_CrsGraph_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
@@ -78,6 +80,8 @@
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
 
@@ -110,15 +114,17 @@ namespace MueLu {
 #undef MUELU_UTILITIESBASE_SHORT
 //#include "MueLu_UseShortNames.hpp"
   private:
-    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
-    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
-    typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-    typedef Xpetra::BlockedVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedVector;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
-    typedef Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedMultiVector;
-    typedef Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node> BlockedMap;
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+    using CrsGraph = Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>;
+    using CrsGraphFactory = Xpetra::CrsGraphFactory<LocalOrdinal,GlobalOrdinal,Node>;
+    using CrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using CrsMatrix = Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Matrix = Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using Vector = Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedVector = Xpetra::BlockedVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using MultiVector = Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedMultiVector = Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using BlockedMap = Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>;
+    using Map = Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
@@ -127,6 +133,98 @@ namespace MueLu {
       if (Op.is_null())
         return Teuchos::null;
       return rcp(new CrsMatrixWrap(Op));
+    }
+
+    /*! @brief Threshold a matrix
+
+    Returns matrix filtered with a threshold value.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<CrsMatrixWrap> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Scalar threshold, const bool keepDiagonal=true, const GlobalOrdinal expectedNNZperRow=-1) {
+
+      RCP<const Map> rowmap = Ain->getRowMap();
+      RCP<const Map> colmap = Ain->getColMap();
+      RCP<CrsMatrixWrap> Aout = rcp(new CrsMatrixWrap(rowmap, expectedNNZperRow <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow));
+      // loop over local rows
+      for(size_t row=0; row<Ain->getLocalNumRows(); row++)
+      {
+        size_t nnz = Ain->getNumEntriesInLocalRow(row);
+
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> vals;
+        Ain->getLocalRowView(row, indices, vals);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
+
+        Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<GlobalOrdinal>::zero());
+        Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
+        size_t nNonzeros = 0;
+        if (keepDiagonal) {
+          GlobalOrdinal glbRow = rowmap->getGlobalElement(row);
+          LocalOrdinal lclColIdx = colmap->getLocalElement(glbRow);
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold) || indices[i]==lclColIdx) {
+              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
+          }
+        } else
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold)) {
+              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
+          }
+
+        indout.resize(nNonzeros);
+        valout.resize(nNonzeros);
+
+        Aout->insertGlobalValues(Ain->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
+      }
+      Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
+
+      return Aout;
+    }
+
+    /*! @brief Threshold a graph
+
+    Returns graph filtered with a threshold value.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow=-1) {
+
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      RCP<CrsGraph> sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), expectedNNZperRow <= 0 ? A->getGlobalMaxNumRowEntries() : expectedNNZperRow);
+
+      RCP<Vector> diag = GetMatrixOverlappedDiagonal(*A);
+      ArrayRCP<const Scalar> D = diag->getData(0);
+
+      for(size_t row=0; row<A->getLocalNumRows(); row++)
+      {
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> vals;
+        A->getLocalRowView(row, indices, vals);
+
+        GlobalOrdinal globalRow = A->getRowMap()->getGlobalElement(row);
+        LocalOrdinal col = A->getColMap()->getLocalElement(globalRow);
+
+        const Scalar Dk = STS::magnitude(D[col]) > 0.0 ? STS::magnitude(D[col]) : 1.0;
+        Array<GlobalOrdinal> indicesNew;
+
+        for(size_t i=0; i<size_t(indices.size()); i++)
+          // keep diagonal per default
+          if(col == indices[i] || STS::magnitude(STS::squareroot(Dk)*vals[i]*STS::squareroot(Dk)) > STS::magnitude(threshold))
+            indicesNew.append(A->getColMap()->getGlobalElement(indices[i]));
+
+        sparsityPattern->insertGlobalIndices(globalRow, ArrayView<const GlobalOrdinal>(indicesNew.data(), indicesNew.length()));
+      }
+      sparsityPattern->fillComplete();
+
+      return sparsityPattern;
     }
 
     /*! @brief Extract Matrix Diagonal
@@ -277,7 +375,7 @@ namespace MueLu {
      * @ret: vector containing max_{i\not=k}(-a_ik)
     */
 
-    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { 
+    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) {
       size_t numRows = A.getRowMap()->getLocalNumElements();
       Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
       Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
@@ -290,7 +388,7 @@ namespace MueLu {
           if (Teuchos::as<size_t>(cols[j]) != i) {
             mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
           }
-        }          
+        }
         maxvec[i] = mymax;
       }
       return maxvec;
@@ -313,8 +411,8 @@ namespace MueLu {
           if (Teuchos::as<size_t>(cols[j]) != i && block_id[i] == block_id[cols[j]]) {
             mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
           }
-        }          
-        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax); 
+        }
+        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax);
 
         maxvec[i] = mymax;
       }
@@ -649,10 +747,11 @@ namespace MueLu {
     */
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::ArrayView<double> & weight,const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1) {
       const size_t numVectors = v.size();
+      using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
       Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
       for (size_t j = 0; j < numVectors; j++) {
-        d += weight[j]*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
+        d += Teuchos::as<MT>(weight[j])*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
       }
       return Teuchos::ScalarTraits<Scalar>::magnitude(d);
     }
@@ -754,7 +853,7 @@ namespace MueLu {
     }
 
     /*! @brief Find non-zero values in an ArrayRCP
-      Compares the value to 2 * machine epsilon 
+      Compares the value to 2 * machine epsilon
 
       @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
       @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero

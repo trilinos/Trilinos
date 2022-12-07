@@ -1,7 +1,6 @@
 #ifndef __KOKKOSBATCHED_GEMM_TEAM_IMPL_HPP__
 #define __KOKKOSBATCHED_GEMM_TEAM_IMPL_HPP__
 
-
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
@@ -9,255 +8,170 @@
 
 namespace KokkosBatched {
 
-  ///
-  /// Team Impl
-  /// =========
+///
+/// Team Impl
+/// =========
 
-  ///
-  /// Implemented:
-  /// NT/NT, T/NT, NT/T, T/T
-  ///
-  /// Not yet implemented (ConjTranspose)
-  /// CT/NT, NT/CT, CT/CT
-  ///
+///
+/// Implemented:
+/// NT/NT, T/NT, NT/T, T/T
+///
+/// Not yet implemented (ConjTranspose)
+/// CT/NT, NT/CT, CT/CT
+///
 
-  ///
-  /// NT/NT
-  ///
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
+///
+/// NT/NT
+///
 
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member,
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(1),
-               alpha, 
-               A.data(), A.stride_0(), A.stride_1(),
-               B.data(), B.stride_0(), B.stride_1(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked> {
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Blocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(1),
-               alpha, 
-               A.data(), A.stride_0(), A.stride_1(),
-               B.data(), B.stride_0(), B.stride_1(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose,
+                Algo::Gemm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
-  ///
-  /// T/NT
-  ///
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::NoTranspose, Trans::NoTranspose,
+                Algo::Gemm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member,
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(0),
-               alpha, 
-               A.data(), A.stride_1(), A.stride_0(),
-               B.data(), B.stride_0(), B.stride_1(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Blocked> {
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Blocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(0),
-               alpha, 
-               A.data(), A.stride_1(), A.stride_0(),
-               B.data(), B.stride_0(), B.stride_1(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
+///
+/// T/NT
+///
 
-  ///
-  /// NT/T
-  ///
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Unblocked> {
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::Transpose, Trans::NoTranspose,
+                Algo::Gemm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member,
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(1),
-               alpha, 
-               A.data(), A.stride_0(), A.stride_1(),
-               B.data(), B.stride_1(), B.stride_0(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Blocked> {
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Blocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(1),
-               alpha, 
-               A.data(), A.stride_0(), A.stride_1(),
-               B.data(), B.stride_1(), B.stride_0(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::Transpose, Trans::NoTranspose,
+                Algo::Gemm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
-  ///
-  /// T/T
-  ///
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::Transpose,Trans::Transpose,Algo::Gemm::Unblocked> {
+///
+/// NT/T
+///
 
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member,
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(0),
-               alpha, 
-               A.data(), A.stride_1(), A.stride_0(),
-               B.data(), B.stride_1(), B.stride_0(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
-    
-  template<typename MemberType>
-  struct TeamGemm<MemberType,Trans::Transpose,Trans::Transpose,Algo::Gemm::Blocked> {
-    template<typename ScalarType,
-             typename AViewType,
-             typename BViewType,
-             typename CViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const BViewType &B,
-           const ScalarType beta,
-           const CViewType &C) {
-      // C = beta C + alpha A B
-      // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Blocked>::
-        invoke(member,
-               C.extent(0), C.extent(1), A.extent(0),
-               alpha, 
-               A.data(), A.stride_1(), A.stride_0(),
-               B.data(), B.stride_1(), B.stride_0(),
-               beta,
-               C.data(), C.stride_0(), C.stride_1());
-    }
-  };
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::NoTranspose, Trans::Transpose,
+                Algo::Gemm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
-}
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::NoTranspose, Trans::Transpose,
+                Algo::Gemm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
 
+///
+/// T/T
+///
+
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::Transpose, Trans::Transpose,
+                Algo::Gemm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
+
+template <typename MemberType>
+struct TeamGemm<MemberType, Trans::Transpose, Trans::Transpose,
+                Algo::Gemm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    // C = beta C + alpha A B
+    // C (m x n), A(m x k), B(k x n)
+    return TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        member, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta,
+        C.data(), C.stride_0(), C.stride_1());
+  }
+};
+
+}  // namespace KokkosBatched
 
 #endif

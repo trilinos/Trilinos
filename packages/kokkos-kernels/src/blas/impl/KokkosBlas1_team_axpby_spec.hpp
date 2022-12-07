@@ -54,36 +54,36 @@ namespace KokkosBlas {
 namespace Experimental {
 namespace Impl {
 
-template<class XV, class YV>
+template <class XV, class YV>
 struct team_axpby_tpl_spec_avail {
   constexpr static bool value = false;
 };
 
-
 // Unification and Specialization layer
-template<class TeamType, class XVector, class YVector,
-         bool tpl_spec_avail = team_axpby_tpl_spec_avail<XVector,YVector>::value>
+template <class TeamType, class XVector, class YVector,
+          bool tpl_spec_avail =
+              team_axpby_tpl_spec_avail<XVector, YVector>::value>
 struct TeamAXPBY {
-  static KOKKOS_INLINE_FUNCTION void team_axpby (const TeamType& team,
-      const typename XVector::non_const_value_type& a, const XVector& x,
-      const typename YVector::non_const_value_type& b, const YVector& y);
+  static KOKKOS_INLINE_FUNCTION void team_axpby(
+      const TeamType& team, const typename XVector::non_const_value_type& a,
+      const XVector& x, const typename YVector::non_const_value_type& b,
+      const YVector& y);
 };
 
-template<class TeamType, class XVector, class YVector>
-struct TeamAXPBY<TeamType, XVector, YVector, false>
-{
-  static KOKKOS_INLINE_FUNCTION void team_axpby (const TeamType& team,
-      const typename XVector::non_const_value_type& a, const XVector& x,
-      const typename YVector::non_const_value_type& b, const YVector& y) {
+template <class TeamType, class XVector, class YVector>
+struct TeamAXPBY<TeamType, XVector, YVector, false> {
+  static KOKKOS_INLINE_FUNCTION void team_axpby(
+      const TeamType& team, const typename XVector::non_const_value_type& a,
+      const XVector& x, const typename YVector::non_const_value_type& b,
+      const YVector& y) {
     const int N = x.extent(0);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& i) {
-      y(i) = b*y(i) + a*x(i);
-    });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                         [&](const int& i) { y(i) = b * y(i) + a * x(i); });
   }
 };
 
-}
-}
-}
+}  // namespace Impl
+}  // namespace Experimental
+}  // namespace KokkosBlas
 
 #endif

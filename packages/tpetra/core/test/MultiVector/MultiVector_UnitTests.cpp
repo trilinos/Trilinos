@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_DeepCopyCounter.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -4030,37 +4031,6 @@ namespace {
       }
     }
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
-    // enabled isn't enough; we have to make sure that the Node type
-    // is one of the new Kokkos Nodes.
-
-    // // Make sure that the Views have the right dimensions.
-    // {
-    //   typedef typename MV::dual_view_type dual_view_type;
-    //   typedef typename dual_view_type::t_dev device_view_type;
-    //   typedef typename dual_view_type::t_host host_view_type;
-
-    //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::execution_space> ();
-    //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::execution_space> ();
-
-    //   if (comm->getRank () == 0) {
-    //     TEST_EQUALITY( X_dev.extent (0), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_dev.extent (1), numCols );
-    //     TEST_EQUALITY( X_host.extent (0), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_host.extent (1), numCols );
-    //   }
-    //   else { // my rank is not zero
-    //     TEST_EQUALITY( X_dev.extent (0), lclNumRows );
-    //     TEST_EQUALITY( X_dev.extent (1), numCols );
-    //     TEST_EQUALITY( X_host.extent (0), lclNumRows );
-    //     TEST_EQUALITY( X_host.extent (1), numCols );
-    //   }
-    // }
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
-
     //
     // Replace the MultiVector's subset Map with its original Map.
     //
@@ -4073,28 +4043,6 @@ namespace {
     TEST_EQUALITY( X.getLocalLength (), lclNumRows );
     TEST_EQUALITY( X.getGlobalLength (), gblNumRows );
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
-    // enabled isn't enough; we have to make sure that the Node type
-    // is one of the new Kokkos Nodes.
-
-    // // Make sure that the Views have the right dimensions.
-    // {
-    //   typedef typename MV::dual_view_type dual_view_type;
-    //   typedef typename dual_view_type::t_dev device_view_type;
-    //   typedef typename dual_view_type::t_host host_view_type;
-
-    //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::execution_space> ();
-    //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::execution_space> ();
-
-    //   TEST_EQUALITY( X_dev.extent (0), lclNumRows );
-    //   TEST_EQUALITY( X_dev.extent (1), numCols );
-    //   TEST_EQUALITY( X_host.extent (0), lclNumRows );
-    //   TEST_EQUALITY( X_host.extent (1), numCols );
-    // }
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
     // Make sure that the test passed on all processes, not just Proc 0.
     int lclSuccess = success ? 1 : 0;
@@ -5255,6 +5203,67 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyCounterCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    using device_view = typename MV::dual_view_type::t_dev;
+    using host_view   = typename MV::dual_view_type::t_host;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+    x.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+
+    const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    host_view y_h = create_mirror_view(x_d);  
+
+    size_t correct_count;
+    // Check to see if we'll be deep_copy-ing between memory spaces
+    if(std::is_same<typename device_view::memory_space,typename host_view::memory_space>::value) {
+      correct_count = 0;
+    }
+    else {
+      correct_count = 1;
+    }
+
+
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::DeepCopyCounter::reset();   
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    size_t count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::DeepCopyCounter::reset();   
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,0);
+
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // This guy should not get counted, since the counter is stopped
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,2*correct_count);
+          
+  }
+
+
 
 #ifdef KOKKOS_ENABLE_OPENMP
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
@@ -5327,7 +5336,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyCounterCheck, LO, GO, SCALAR, NODE )
 
 #ifdef KOKKOS_ENABLE_OPENMP
   // Add special test for OpenMP

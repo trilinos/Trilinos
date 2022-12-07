@@ -346,7 +346,6 @@ struct SacadoViewFill<
     const size_t n4 = output.extent(4);
     const size_t n5 = output.extent(5);
     const size_t n6 = output.extent(6);
-    const size_t n7 = output.extent(7);
 
     for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
     for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
@@ -354,9 +353,8 @@ struct SacadoViewFill<
     for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
-    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
-    }}}}}}}
+      output.access(i0,i1,i2,i3,i4,i5,i6) = input_stride ;
+    }}}}}}
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -418,9 +416,8 @@ struct SacadoViewFill<
     for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
-    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input_stride ;
-    }}}}}}}
+      output.access(i0,i1,i2,i3,i4,i5,i6) = input_stride ;
+    }}}}}}
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1133,7 +1130,8 @@ public:
   template< class ... P >
   SharedAllocationRecord<> *
   allocate_shared( ViewCtorProp< P... > const & prop
-                 , typename Traits::array_layout const & local_layout )
+                 , typename Traits::array_layout const & local_layout
+                 , bool execution_space_specified)
   {
     typedef ViewCtorProp< P... > ctor_prop ;
 
@@ -1184,11 +1182,17 @@ public:
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
-        record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                        , (fad_value_type *) m_impl_handle
-                                        , m_array_offset.span()
-                                        , record->get_label()
-                                        );
+        if (execution_space_specified)
+          record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+                                          , (fad_value_type *) m_impl_handle
+                                          , m_array_offset.span()
+                                          , record->get_label()
+                                          );
+        else
+          record->m_destroy = functor_type((fad_value_type *) m_impl_handle
+                                          , m_array_offset.span()
+                                          , record->get_label()
+                                          );
 
         // Construct values
         record->m_destroy.construct_shared_allocation();

@@ -37,7 +37,6 @@
 #include "stk_util/stk_config.h"
 #include "stk_util/util/StridedArray.hpp"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_MemoryPool.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 

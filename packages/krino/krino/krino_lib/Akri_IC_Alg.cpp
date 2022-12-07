@@ -33,7 +33,7 @@ double relative_crossing_position(const double ls0, const double ls1)
 }
 
 //----------------------------------------------------------------
-void IC_Alg::execute(const double time, const bool requires_additional_initialization)
+void IC_Alg::execute(const double time)
 { /* %TRACE[ON]% */ Trace trace__("krino::IC_Analytic_Alg::execute()"); /* %TRACE% */
 
   if (surface_list.size() == 0 && my_calculators.empty())
@@ -85,11 +85,6 @@ void IC_Alg::execute(const double time, const bool requires_additional_initializ
   for (auto && calc : my_calculators)
   {
     calc->compute_signed_distance(levelSet);
-  }
-
-  if (!levelSet.get_keep_IC_surfaces() && !requires_additional_initialization)
-  {
-    clear();
   }
 }
 

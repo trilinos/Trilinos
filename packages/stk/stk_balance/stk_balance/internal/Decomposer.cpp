@@ -36,6 +36,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
+#include <stk_balance/internal/balanceCoincidentElements.hpp>
 
 namespace stk {
 namespace balance {
@@ -62,7 +63,7 @@ DefaultDecomposer::DefaultDecomposer(stk::mesh::BulkData & bulkData,
 {
 }
 
-stk::mesh::EntityProcVec
+DecompositionChangeList
 DefaultDecomposer::get_partition()
 {
   stk::mesh::EntityProcVec decomp;
@@ -70,7 +71,19 @@ DefaultDecomposer::get_partition()
   stk::balance::internal::calculateGeometricOrGraphBasedDecomp(m_bulkData, selectors, m_bulkData.parallel(),
                                                                m_balanceSettings.get_num_output_processors(),
                                                                m_balanceSettings, decomp);
-  return decomp;
+
+  DecompositionChangeList changeList(m_bulkData, decomp);
+  m_balanceSettings.modifyDecomposition(changeList);
+
+  internal::logMessage(m_bulkData.parallel(), "Moving coincident elements to the same processor");
+  keep_coincident_elements_together(m_bulkData, changeList);
+
+  if (m_balanceSettings.shouldFixSpiders()) {
+    internal::logMessage(m_bulkData.parallel(), "Fixing spider elements");
+    stk::balance::internal::fix_spider_elements(m_balanceSettings, m_bulkData, changeList);
+  }
+
+  return changeList;
 }
 
 std::vector<unsigned>
@@ -100,7 +113,7 @@ NestedDecomposer::NestedDecomposer(stk::mesh::BulkData& bulkData,
   m_numFinalSubdomainsPerProc = numFinalSubdomains / numInitialSubdomains;
 }
 
-stk::mesh::EntityProcVec
+DecompositionChangeList
 NestedDecomposer::get_partition()
 {
   declare_all_initial_subdomain_parts();
@@ -121,7 +134,18 @@ NestedDecomposer::get_partition()
     targetProc += m_bulkData.parallel_rank()*m_numFinalSubdomainsPerProc;
   }
 
-  return decomp;
+  DecompositionChangeList changeList(m_bulkData, decomp);
+  m_balanceSettings.modifyDecomposition(changeList);
+
+  internal::logMessage(m_bulkData.parallel(), "Moving coincident elements to the same processor");
+  keep_coincident_elements_together(m_bulkData, changeList);
+
+  if (m_balanceSettings.shouldFixSpiders()) {
+    internal::logMessage(m_bulkData.parallel(), "Fixing spider elements");
+    stk::balance::internal::fix_spider_elements(m_balanceSettings, m_bulkData, changeList);
+  }
+
+  return changeList;
 }
 
 std::vector<unsigned>

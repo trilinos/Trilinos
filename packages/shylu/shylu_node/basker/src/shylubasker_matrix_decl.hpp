@@ -119,6 +119,8 @@ namespace BaskerNS
     BASKER_INLINE
     void print();
 
+    BASKER_INLINE
+    void print_matrix(const char *filename);
 
     //Note: These need to be reordered to make better use of 
     //Class size.

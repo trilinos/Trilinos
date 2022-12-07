@@ -32,74 +32,61 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/CPUTime.hpp>
 #include <gtest/gtest.h>
-#include <stk_util/environment/perf_util.hpp>
-
-#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
-
-#include <sstream>
+#include <stk_unit_test_utils/timer.hpp>
 
 TEST(many_parts, many_parts)
 {
-  // vector of mesh-dimensions holds the number of elements in each dimension.
-  // Hard-wired to 3. This test can run with spatial-dimension less than 3,
-  // (if generated-mesh can do that) but not greater than 3.
-  //
-  // Doesn't really matter what the mesh size is since we never commit
-  std::vector<int> mesh_dims(3, 42);
+  const unsigned NUM_RUNS = 5;
+  unsigned num_parts = 3000;
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
 
-  std::ostringstream oss;
-  oss << mesh_dims[0] << "x" << mesh_dims[1] << "x" << mesh_dims[2];
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
 
-  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str());
-  stk::mesh::MetaData& meta = fixture.getMetaData();
+    stk::mesh::Part& super1 = meta.declare_part("super1");
+    stk::mesh::Part& super2 = meta.declare_part("super2");
+    stk::mesh::Part& super3 = meta.declare_part("super3");
+    stk::mesh::Part& super4 = meta.declare_part("super4");
 
-  stk::performance_tests::Timer timer(MPI_COMM_WORLD);
-  timer.start_timing();
+    stk::mesh::Part& sub1 = meta.declare_part("sub1");
+    stk::mesh::Part& sub2 = meta.declare_part("sub2");
+    stk::mesh::Part& sub3 = meta.declare_part("sub3");
+    stk::mesh::Part& sub4 = meta.declare_part("sub4");
 
-  stk::mesh::Part& super1 = meta.declare_part("super1");
-  stk::mesh::Part& super2 = meta.declare_part("super2");
-  stk::mesh::Part& super3 = meta.declare_part("super3");
-  stk::mesh::Part& super4 = meta.declare_part("super4");
+    stk::mesh::PartVector parts;
+    for(unsigned i=0; i<num_parts; ++i) {
+      std::string partName = "part_" + std::to_string(i);
+      stk::mesh::Part& part = meta.declare_part(partName);
+      meta.declare_part_subset(super1, part);
+      meta.declare_part_subset(super2, part);
+      meta.declare_part_subset(super3, part);
+      meta.declare_part_subset(part, sub1);
+      meta.declare_part_subset(part, sub2);
+      meta.declare_part_subset(part, sub3);
+      parts.push_back(&part);
+    }
 
-  stk::mesh::Part& sub1 = meta.declare_part("sub1");
-  stk::mesh::Part& sub2 = meta.declare_part("sub2");
-  stk::mesh::Part& sub3 = meta.declare_part("sub3");
-  stk::mesh::Part& sub4 = meta.declare_part("sub4");
+    typedef stk::mesh::Field<double> VectorField;
+    VectorField& field = meta.declare_field<double>(stk::topology::NODE_RANK, "field");
+    for(size_t i=0; i<parts.size(); ++i) {
+      const stk::mesh::Part& part = *parts[i];
+      stk::mesh::put_field_on_mesh(field, part, 3, nullptr);
+    }
 
-  stk::mesh::PartVector parts;
-  unsigned num_parts = 5000;
-  for(unsigned i=0; i<num_parts; ++i) {
-    std::ostringstream ossname;
-    ossname << "part_"<<i;
-    stk::mesh::Part& part = meta.declare_part(ossname.str());
-    meta.declare_part_subset(super1, part);
-    meta.declare_part_subset(super2, part);
-    meta.declare_part_subset(super3, part);
-    meta.declare_part_subset(part, sub1);
-    meta.declare_part_subset(part, sub2);
-    meta.declare_part_subset(part, sub3);
-    parts.push_back(&part);
+    for(size_t i=0; i<parts.size(); ++i) {
+      meta.declare_part_subset(super4, *parts[i]);
+      meta.declare_part_subset(*parts[i], sub4);
+    }
+
+    batchTimer.stop_batch_timer();
   }
-
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
-  VectorField& field = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "field");
-  for(size_t i=0; i<parts.size(); ++i) {
-    const stk::mesh::Part& part = *parts[i];
-    stk::mesh::put_field_on_mesh(field, part, 3, nullptr);
-  }
-
-  for(size_t i=0; i<parts.size(); ++i) {
-    meta.declare_part_subset(super4, *parts[i]);
-    meta.declare_part_subset(*parts[i], sub4);
-  }
-
-  timer.update_timing();
-  timer.print_timing(num_parts);
+  batchTimer.print_batch_timing(num_parts);
 }

@@ -108,11 +108,6 @@ struct V_Nrm2w_Functor {
     update += source;
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type& update,
-                                   const volatile value_type& source) const {
-    update += source;
-  }
-
   KOKKOS_INLINE_FUNCTION void final(value_type& update) const {
     if (m_take_sqrt)
       update =
@@ -199,7 +194,8 @@ void MV_Nrm2w_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      execution_space(), r,
+      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
@@ -230,7 +226,7 @@ void MV_Nrm2w_Invoke(
           r.extent(0));
   MV_Nrm2w_Invoke<decltype(tempResult), XV, size_type>(tempResult, x, w,
                                                        take_sqrt);
-  Kokkos::deep_copy(r, tempResult);
+  Kokkos::deep_copy(typename XV::execution_space(), r, tempResult);
 }
 
 }  // namespace Impl

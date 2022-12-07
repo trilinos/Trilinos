@@ -300,7 +300,9 @@ chebyshev_kernel_vector
 
 template<class TpetraOperatorType>
 ChebyshevKernel<TpetraOperatorType>::
-ChebyshevKernel (const Teuchos::RCP<const operator_type>& A)
+ChebyshevKernel (const Teuchos::RCP<const operator_type>& A,
+                   const bool useNativeSpMV):
+  useNativeSpMV_(useNativeSpMV)
 {
   setMatrix (A);
 }
@@ -388,6 +390,11 @@ bool
 ChebyshevKernel<TpetraOperatorType>::
 canFuse (const multivector_type& B) const
 {
+  // If override is enabled
+  if(useNativeSpMV_)
+    return false;
+
+  // Some criteria must be met for fused kernel
   return B.getNumVectors () == size_t (1) &&
     ! A_crs_.is_null () &&
     exp_.is_null ();

@@ -7,6 +7,8 @@
 #include "io_info.h"
 #include <Ioss_Hex8.h>
 #include <Ioss_Sort.h>
+#include <tokenize.h>
+#define FMT_DEPRECATED_OSTREAM
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #if defined(SEACAS_HAVE_CGNS)
@@ -107,9 +109,9 @@ namespace {
     }
   }
 
+#if defined(SEACAS_HAVE_EXODUS)
   int print_groups(int exoid, std::string prefix)
   {
-#if defined(SEACAS_HAVE_EXODUS)
     int   idum;
     float rdum;
     char  group_name[33];
@@ -124,9 +126,9 @@ namespace {
     for (int i = 0; i < num_children; i++) {
       print_groups(children[i], prefix);
     }
-#endif
     return 0;
   }
+#endif
 
   void group_info(Info::Interface &interFace)
   {
@@ -153,6 +155,14 @@ namespace {
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
     Ioss::PropertyManager properties = set_properties(interFace);
+
+    const auto custom_field = interFace.custom_field();
+    if (!custom_field.empty()) {
+      auto suffices = Ioss::tokenize(custom_field, ",");
+      if (suffices.size() > 1) {
+        Ioss::VariableType::create_named_suffix_field_type("UserDefined", suffices);
+      }
+    }
 
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
                                                     Ioss::ParallelUtils::comm_world(), properties);
@@ -195,8 +205,9 @@ namespace {
     if (!nb.is_nonglobal_nodeblock()) {
       info_aliases(region, &nb, false, true);
     }
-    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ");
-    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ");
+    Ioss::Utils::info_fields(&nb, Ioss::Field::MAP, prefix + "\tMap Fields: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::ATTRIBUTE, prefix + "\tAttributes: ", "\n\t\t" + prefix);
+    Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ", "\n\t\t" + prefix);
 
     if (interFace.compute_bbox()) {
       print_bbox(nb);
@@ -315,6 +326,7 @@ namespace {
 
       info_aliases(region, eb, true, false);
       fmt::print("\n");
+      Ioss::Utils::info_fields(eb, Ioss::Field::MAP, "\n\tMap Fields: ");
       Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
@@ -421,8 +433,9 @@ namespace {
         fmt::print("\t{}, {:8} sides, {:3d} attributes, {:8} distribution factors.\n", name(fb),
                    fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
         info_df(fb, "\t\t");
-        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
-        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
+        Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ", "\n\t\t");
+        Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION,
+                                 "\t\tTransient (Reduction):  ", "\n\t\t");
       }
     }
   }
@@ -549,7 +562,9 @@ namespace Ioss {
       dbi->set_use_generic_canonical_name(true);
     }
 
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    if (interFace.surface_split_scheme() != Ioss::SPLIT_INVALID) {
+      dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    }
     dbi->set_field_separator(interFace.field_suffix_separator());
     dbi->set_field_recognition(!interFace.disable_field_recognition());
     if (interFace.ints_64_bit()) {

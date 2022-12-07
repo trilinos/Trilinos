@@ -13,8 +13,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
+#include <Akri_InterfaceGeometry.hpp>
 
 namespace krino {
 
@@ -78,14 +77,6 @@ bool domains_already_snapped_to_node_are_also_at_intersection_point(const NodeTo
   return first_sorted_vector_of_domains_contains_all_domains_in_second_vector(intersectionPointDomains, iter->second);
 }
 
-static bool any_entity_in_first_vector_is_contained_in_second_sorted_vector(const std::vector<stk::mesh::Entity> & firstVec, const std::vector<stk::mesh::Entity> & secondVec)
-{
-  for (auto && first : firstVec)
-    if (std::binary_search(secondVec.begin(), secondVec.end(), first))
-      return true;
-  return false;
-}
-
 IntersectionPointFilter
 keep_all_intersection_points_filter()
 {
@@ -99,14 +90,16 @@ keep_all_intersection_points_filter()
 
 static
 void pack_intersection_points_for_owners_of_nodes(const stk::mesh::BulkData & mesh,
+    const size_t indexOfFirstToCommunicate,
     const std::vector<IntersectionPoint> & intersectionPoints,
     stk::CommSparse &commSparse)
 {
   std::vector<int> intersectionPointNodeOwners;
   stk::pack_and_communicate(commSparse,[&]()
   {
-    for (auto && intersectionPoint : intersectionPoints)
+    for (size_t intPtIndex=indexOfFirstToCommunicate; intPtIndex<intersectionPoints.size(); ++intPtIndex)
     {
+      const auto & intersectionPoint = intersectionPoints[intPtIndex];
       intersectionPointNodeOwners.clear();
       for (auto && node : intersectionPoint.get_nodes())
       {
@@ -170,11 +163,16 @@ void unpack_intersection_points(const stk::mesh::BulkData & mesh,
   });
 }
 
-void communicate_intersection_points(const stk::mesh::BulkData & mesh, std::vector<IntersectionPoint> & intersectionPoints)
+static void communicate_intersection_points(const stk::mesh::BulkData & mesh, const size_t indexOfFirstToCommunicate, std::vector<IntersectionPoint> & intersectionPoints)
 {
   stk::CommSparse commSparse(mesh.parallel());
-  pack_intersection_points_for_owners_of_nodes(mesh, intersectionPoints, commSparse);
+  pack_intersection_points_for_owners_of_nodes(mesh, indexOfFirstToCommunicate, intersectionPoints, commSparse);
   unpack_intersection_points(mesh, intersectionPoints, commSparse);
+}
+
+static void communicate_all_intersection_points(const stk::mesh::BulkData & mesh, std::vector<IntersectionPoint> & intersectionPoints)
+{
+  communicate_intersection_points(mesh, 0, intersectionPoints);
 }
 
 static std::vector<IntersectionPoint> build_intersection_points(const stk::mesh::BulkData & mesh,
@@ -187,7 +185,7 @@ static std::vector<IntersectionPoint> build_intersection_points(const stk::mesh:
 
   std::vector<IntersectionPoint> intersectionPoints;
   geometry.append_element_intersection_points(mesh, nodesToCapturedDomains, elementsToIntersect, intersectionPointFilter, intersectionPoints);
-  communicate_intersection_points(mesh, intersectionPoints);
+  communicate_all_intersection_points(mesh, intersectionPoints);
 
   return intersectionPoints;
 }
@@ -243,25 +241,40 @@ std::vector<stk::mesh::Entity> get_owned_elements_using_nodes_knowing_that_nodes
   return nodeElements;
 }
 
-void update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
+std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
     const InterfaceGeometry & geometry,
     const std::vector<stk::mesh::Entity> & iterationSortedSnapNodes,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
   const auto intersectionPointFilter = filter_intersection_points_to_those_using_previous_iteration_snap_nodes_but_not_already_handled(nodesToCapturedDomains, iterationSortedSnapNodes);
+  const size_t badIndex = std::numeric_limits<size_t>::max();
 
+  std::vector<size_t> oldToNewIntPts;
+  oldToNewIntPts.reserve(intersectionPoints.size());
   size_t newSize=0;
   for (auto && intersectionPoint : intersectionPoints)
   {
-    if (intersectionPoint.is_owned() && !any_entity_in_first_vector_is_contained_in_second_sorted_vector(intersectionPoint.get_nodes(), iterationSortedSnapNodes))
-      intersectionPoints[newSize++] = intersectionPoint; // FIXME use custom swap?
+    if (!any_entity_in_first_vector_is_contained_in_second_sorted_vector(intersectionPoint.get_nodes(), iterationSortedSnapNodes))
+    {
+      oldToNewIntPts.push_back(newSize);
+      std::swap(intersectionPoint, intersectionPoints[newSize++]);
+    }
+    else
+    {
+      oldToNewIntPts.push_back(badIndex);
+    }
   }
   intersectionPoints.erase(intersectionPoints.begin()+newSize, intersectionPoints.end());
 
-  const std::vector<stk::mesh::Entity> updateElements = get_owned_elements_using_nodes_knowing_that_nodes_dont_have_common_elements(mesh, iterationSortedSnapNodes);
-  geometry.append_element_intersection_points(mesh, nodesToCapturedDomains, updateElements, intersectionPointFilter, intersectionPoints);
-  communicate_intersection_points(mesh, intersectionPoints);
+  if (geometry.snapped_elements_may_have_new_intersections())
+  {
+    const std::vector<stk::mesh::Entity> updateElements = get_owned_elements_using_nodes_knowing_that_nodes_dont_have_common_elements(mesh, iterationSortedSnapNodes);
+    geometry.append_element_intersection_points(mesh, nodesToCapturedDomains, updateElements, intersectionPointFilter, intersectionPoints);
+    communicate_intersection_points(mesh, newSize, intersectionPoints);
+  }
+
+  return oldToNewIntPts;
 }
 
 }

@@ -10,17 +10,13 @@
 #endif
 
 class openmptarget : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory openmptarget
 #define TestExecSpace Kokkos::Experimental::OpenMPTarget
 
-#endif // TEST_OPENMPTARGET_HPP
+#endif  // TEST_OPENMPTARGET_HPP

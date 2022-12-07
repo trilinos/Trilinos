@@ -133,7 +133,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+IF(Tpetra_INST_DOUBLE AND ${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BlockTriDiContainerUnitAndPerfTests
     SOURCES

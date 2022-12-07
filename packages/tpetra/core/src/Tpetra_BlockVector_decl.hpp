@@ -315,33 +315,6 @@ public:
   ///   is invalid on the calling process.
   bool sumIntoGlobalValues (const GO globalRowIndex, const Scalar vals[]);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a local index.
-  ///
-  /// \param localRowIndex [in] Local index of the mesh point.
-  /// \param vals [in] Input values with which to replace whatever
-  ///   existing values are at the mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given local index of the mesh point
-  ///   is invalid on the calling process.
-  bool getLocalRowView (const LO localRowIndex, Scalar*& vals);
-
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a global index.
-  ///
-  /// \param globalRowIndex [in] Global index of the mesh point.
-  /// \param vals [in] Input values with which to replace whatever
-  ///   existing values are at the mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given global index of the mesh point
-  ///   is invalid on the calling process.
-  bool getGlobalRowView (const GO globalRowIndex, Scalar*& vals);
-
-#endif //TPETRA_ENABLE_DEPRECATED_CODE
-
   /// \brief Get a view of the degrees of freedom at the given mesh point,
   ///   using a local index.
   ///
@@ -351,10 +324,6 @@ public:
   /// different types to implement little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED 
-  little_host_vec_type getLocalBlock (const LO localRowIndex);
-#endif
   const_little_host_vec_type getLocalBlockHost (const LO localRowIndex,
                                                 Access::ReadOnlyStruct) const;
   little_host_vec_type getLocalBlockHost (const LO localRowIndex,

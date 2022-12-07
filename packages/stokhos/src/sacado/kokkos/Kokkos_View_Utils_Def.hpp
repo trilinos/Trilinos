@@ -43,8 +43,8 @@
 #define KOKKOS_VIEW_UTILS_DEF_HPP
 
 #include "Kokkos_View_Utils.hpp"
-#include "Kokkos_ExecPolicy.hpp"
-#include "Kokkos_Parallel.hpp"
+//#include "Kokkos_ExecPolicy.hpp"
+//#include "Kokkos_Parallel.hpp"
 
 namespace Kokkos {
 

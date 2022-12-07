@@ -60,6 +60,7 @@
 #include "MueLu_AmesosSmoother_fwd.hpp"
 #include "MueLu_BelosSmoother_fwd.hpp"
 #include "MueLu_StratimikosSmoother_fwd.hpp"
+#include "MueLu_RefMaxwellSmoother_fwd.hpp"
 
 // Note: DirectSolver is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
@@ -150,13 +151,13 @@ namespace MueLu {
     //
 
     //! Smoother
-    RCP<SmootherPrototype> sEpetra_, sTpetra_, sBelos_, sStratimikos_;
+    RCP<SmootherPrototype> sEpetra_, sTpetra_, sBelos_, sStratimikos_, sRefMaxwell_;
     mutable
       RCP<SmootherPrototype> s_;
 
     // Records for the case if something goes wrong
-    bool triedEpetra_, triedTpetra_, triedBelos_, triedStratimikos_;
-    std::string errorEpetra_, errorTpetra_, errorBelos_, errorStratimikos_;
+    bool triedEpetra_, triedTpetra_, triedBelos_, triedStratimikos_, triedRefMaxwell_;
+    std::string errorEpetra_, errorTpetra_, errorBelos_, errorStratimikos_, errorRefMaxwell_;
 
   }; // class DirectSolver
 

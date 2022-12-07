@@ -126,7 +126,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<PHX::UnmanagedView<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -412,13 +412,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       }
     }
     else {
@@ -427,13 +427,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       }
     }
   } // end of evaluateFields()

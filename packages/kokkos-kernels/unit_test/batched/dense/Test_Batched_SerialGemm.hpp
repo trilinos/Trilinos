@@ -48,15 +48,8 @@ struct Functor_TestBatchedSerialGemm {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::SerialGemm");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value    ? "::Float"
-         : std::is_same<value_type, double>::value ? "::Double"
-         : std::is_same<value_type, Kokkos::complex<float> >::value
-             ? "::ComplexFloat"
-         : std::is_same<value_type, Kokkos::complex<double> >::value
-             ? "::ComplexDouble"
-             : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _c.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -132,8 +125,10 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
   mag_type eps = ats::epsilon();
 
-  eps *=
-      std::is_same<value_type, Kokkos::Experimental::half_t>::value ? 4 : 1e3;
+  eps *= std::is_same<value_type, Kokkos::Experimental::half_t>::value ||
+                 std::is_same<value_type, Kokkos::Experimental::bhalf_t>::value
+             ? 4
+             : 1e3;
 
   for (int k = 0; k < N; ++k)
     for (int i = 0; i < matCdim1; ++i)
@@ -143,7 +138,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
       }
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
-}
+}  // namespace Gemm
 }  // namespace Test
 
 template <typename DeviceType, typename ValueType, typename ScalarType,
@@ -187,10 +182,18 @@ int test_batched_gemm() {
                         KokkosBatched::Trans::Transpose>::value) &&
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::NoTranspose>::value)) {
-        Test::Gemm::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimK, dimN, dimM, dimN); }
-      if ((std::is_same<typename ParamTagType::transA,KokkosBatched::Trans::Transpose>::value) &&
-        (std::is_same<typename ParamTagType::transB,KokkosBatched::Trans::Transpose>::value)) {
-          Test::Gemm::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024, dimK, dimM, dimN, dimK, dimM, dimN); }
+        Test::Gemm::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                           ParamTagType, AlgoTagType>(
+            1024, dimK, dimM, dimK, dimN, dimM, dimN);
+      }
+      if ((std::is_same<typename ParamTagType::transA,
+                        KokkosBatched::Trans::Transpose>::value) &&
+          (std::is_same<typename ParamTagType::transB,
+                        KokkosBatched::Trans::Transpose>::value)) {
+        Test::Gemm::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                           ParamTagType, AlgoTagType>(
+            1024, dimK, dimM, dimN, dimK, dimM, dimN);
+      }
     }
   }
 #endif

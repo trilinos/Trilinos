@@ -308,7 +308,7 @@ namespace MueLu {
     if(type == "BLOCK_RELAXATION" ||
        type == "BLOCK RELAXATION" ||
        type == "BLOCKRELAXATION" ||
-       // Banded       
+       // Banded
        type == "BANDED_RELAXATION" ||
        type == "BANDED RELAXATION" ||
        type == "BANDEDRELAXATION" ||

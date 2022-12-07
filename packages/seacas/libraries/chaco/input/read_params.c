@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -100,7 +100,7 @@ void read_params(FILE *pfile /* file with new user parameters */
   extern int    NSQRTS;          /* # square roots to precompute if coarsening */
   extern int    MAKE_VWGTS;      /* impose vertex weights = vertex degree */
   extern int    FREE_GRAPH;      /* free data after reformatting? */
-  extern char * PARAMS_FILENAME; /* name of parameters file */
+  extern char  *PARAMS_FILENAME; /* name of parameters file */
 
   extern int DEBUG_EVECS;       /* debug flag for eigenvector generation */
   extern int DEBUG_KL;          /* debug flag for Kernighan-Lin */
@@ -312,14 +312,14 @@ void read_params(FILE *pfile /* file with new user parameters */
                               &STARTUP_COST,      &CUT_TO_HOP_COST,  &KL_IMBALANCE};
 
   char       line[LINE_LENGTH + 1]; /* line from parameters file */
-  char *     ptr, *idptr;           /* loops through input line */
+  char      *ptr, *idptr;           /* loops through input line */
   char       id[25];                /* parameter identifier being modified */
   static int linenum = 0;           /* line number within parameter file */
   int        flag;                  /* return flag for number scanning routines */
   int        matched;               /* has character string been matched? */
   int        comment;               /* should input line be ignored? */
   int        i;                     /* loop counters */
-  char *     true_or_false();
+  char      *true_or_false(int flag);
 
   if (DEBUG_TRACE) {
     printf("<Entering read_params>\n");
@@ -511,7 +511,7 @@ void read_params(FILE *pfile /* file with new user parameters */
 }
 
 static int read_intTF(char *ptr, /* pointer to string to parse */
-                      int * val  /* value returned */
+                      int  *val  /* value returned */
 )
 {
   int nvals; /* number of values successfully read */
@@ -536,7 +536,7 @@ static int read_intTF(char *ptr, /* pointer to string to parse */
   return (TRUE);
 }
 
-static int read_double(char *  ptr, /* pointer to string to parse */
+static int read_double(char   *ptr, /* pointer to string to parse */
                        double *val  /* value returned */
 )
 {

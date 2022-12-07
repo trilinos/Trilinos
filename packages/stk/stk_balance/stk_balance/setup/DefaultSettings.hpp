@@ -39,25 +39,49 @@
 namespace stk {
 namespace balance {
 
+enum class VertexWeightMethod
+{
+  CONSTANT = 0,
+  TOPOLOGY,
+  CONNECTIVITY,
+  FIELD
+};
+
+std::string vertex_weight_method_name(VertexWeightMethod method);
+
 struct DefaultSettings {
   static constexpr const char * logFile {"stk_balance.log"};
   static constexpr const char * outputDirectory {"."};
   static constexpr const char * decompMethod {"parmetis"};
-  static constexpr const char * contactSearch {"on"};
+
   static constexpr bool useContactSearch {true};
+  static constexpr bool fixMechanisms {false};
 
   static constexpr double faceSearchRelTol {0.15};
   static constexpr double faceSearchAbsTol {0.0001};
 
   static constexpr double particleSearchTol {3.0};
 
-  static constexpr double faceSearchVertexMultiplier {5.0};
-  static constexpr double faceSearchEdgeWeight {15.0};
+  static constexpr VertexWeightMethod vertexWeightMethod {VertexWeightMethod::CONSTANT};
+  static constexpr double graphEdgeWeightMultiplier {1.0};
+  static constexpr double faceSearchVertexMultiplier {1.0};
+  static constexpr double faceSearchEdgeWeight {1.0};
+  static constexpr bool fixSpiders {false};
 
-  static constexpr double smFaceSearchVertexMultiplier {10.0};
-  static constexpr double smFaceSearchEdgeWeight {3.0};
+  static constexpr VertexWeightMethod sdVertexWeightMethod {VertexWeightMethod::CONNECTIVITY};
+  static constexpr double sdGraphEdgeWeightMultiplier {10.0};
+  static constexpr double sdFaceSearchVertexMultiplier {2.0};
+  static constexpr double sdFaceSearchEdgeWeight {1.0};
+  static constexpr bool sdFixSpiders {true};
+
+  static constexpr VertexWeightMethod smVertexWeightMethod {VertexWeightMethod::CONSTANT};
+  static constexpr double smGraphEdgeWeightMultiplier {1.0};
+  static constexpr double smFaceSearchVertexMultiplier {3.0};
+  static constexpr double smFaceSearchEdgeWeight {1.0};
+  static constexpr bool smFixSpiders {false};
 
   static constexpr const char * vertexWeightBlockMultiplier {""};
+
 };
 
 } }

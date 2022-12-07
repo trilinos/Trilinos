@@ -427,7 +427,7 @@ int main(int argc, char *argv[]) {
 
     // Compute mean for mean-based preconditioner
     if (prec_method == MEAN) {
-      size_t nrows = J->getNodeNumRows();
+      size_t nrows = J->getLocalNumRows();
       ArrayView<const LocalOrdinal> indices;
       ArrayView<const Scalar> values;
       J0->resumeFill();

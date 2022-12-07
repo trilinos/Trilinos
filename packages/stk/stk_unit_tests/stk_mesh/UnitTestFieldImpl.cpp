@@ -51,11 +51,6 @@
 #include "stk_mesh/base/Types.hpp"  // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-
-
-
-
-
 namespace stk {
 namespace mesh {
 
@@ -100,22 +95,21 @@ void UnitTestFieldImpl::testFieldRestriction()
   std::vector< std::string > dummy_names(4, "dummy");
 
   MetaData meta_data(3 /*dim*/,dummy_names);
+  meta_data.use_simple_fields();
 
   const FieldVector  & allocated_fields = meta_data.get_fields();
 
   //------------------------------
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
+  typedef stk::mesh::Field<double> VectorField;
 
-  FieldBase * const f2 =
-    &meta_data.declare_field<VectorField>( stk::topology::NODE_RANK, std::string("F2"), 1/* # states */ );
+  FieldBase * const f2 = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("F2"), 1/* # states */ );
 
   //------------------------------
 
-//  FieldBase * const f3 = &meta_data.declare_field<VectorField>( std::string("F3"), 2/* #states*/);
-  FieldBase * const nodeField = &meta_data.declare_field<VectorField>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
-  FieldBase * const edgeField = &meta_data.declare_field<VectorField>( stk::topology::EDGE_RANK, std::string("edgeField"), 2/* #states*/);
-  FieldBase * const faceField = &meta_data.declare_field<VectorField>( stk::topology::FACE_RANK, std::string("faceField"), 2/* #states*/);
+  FieldBase * const nodeField = &meta_data.declare_field<double>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+  FieldBase * const edgeField = &meta_data.declare_field<double>( stk::topology::EDGE_RANK, std::string("edgeField"), 2/* #states*/);
+  FieldBase * const faceField = &meta_data.declare_field<double>( stk::topology::FACE_RANK, std::string("faceField"), 2/* #states*/);
 
   FieldBase * const f3_old = nodeField->field_state( StateOld ) ;
 
@@ -146,21 +140,18 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Declare three restrictions:
 
-  meta_data.declare_field_restriction(*nodeField, pA , stride[nodeField->field_array_rank()-1], stride[0] );
-  meta_data.declare_field_restriction(*edgeField, pB , stride[edgeField->field_array_rank()], stride[1] );
-  meta_data.declare_field_restriction(*faceField, pC , stride[faceField->field_array_rank()+1], stride[2] );
+  meta_data.declare_field_restriction(*nodeField, pA, stride[0], stride[0]);
+  meta_data.declare_field_restriction(*edgeField, pB, stride[1], stride[1]);
+  meta_data.declare_field_restriction(*faceField, pC, stride[2], stride[2]);
 
   // Check for correctness of restrictions:
 
   ASSERT_TRUE( nodeField->restrictions().size() == 1 );
-  ASSERT_TRUE( nodeField->restrictions()[0] ==
-                  FieldRestriction( pA ) );
-  ASSERT_TRUE( edgeField->restrictions()[0] ==
-                  FieldRestriction( pB ) );
-  ASSERT_TRUE( faceField->restrictions()[0] ==
-                  FieldRestriction( pC ) );
+  ASSERT_TRUE( nodeField->restrictions()[0] == FieldRestriction( pA ) );
+  ASSERT_TRUE( edgeField->restrictions()[0] == FieldRestriction( pB ) );
+  ASSERT_TRUE( faceField->restrictions()[0] == FieldRestriction( pC ) );
 
-  meta_data.declare_field_restriction(*nodeField , pB , stride[nodeField->field_array_rank()], stride[1] );
+  meta_data.declare_field_restriction(*nodeField, pB, stride[1], stride[1]);
 
   ASSERT_EQ( nodeField->max_size( stk::topology::NODE_RANK ) , 20u );
 
@@ -168,20 +159,14 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check for error detection of bad stride:
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
-    ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField , pA, 5*4*6 , bad_stride[0] ),
-      std::runtime_error
-    );
+    ASSERT_THROW(meta_data.declare_field_restriction(*nodeField , pA, 5*4*6 , bad_stride[0] ), std::runtime_error);
     ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
   // Check for error detection in re-declaring an incompatible
   // field restriction.
   {
-    ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField , pA , stride[nodeField->field_array_rank()], stride[1] ),
-      std::runtime_error
-    );
+    ASSERT_THROW(meta_data.declare_field_restriction(*nodeField, pA, stride[1], stride[1]), std::runtime_error);
     ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
@@ -190,8 +175,8 @@ void UnitTestFieldImpl::testFieldRestriction()
   ASSERT_TRUE( nodeField->restrictions().size() == 2 );
 
 #ifndef NDEBUG
-//The following checking/cleaning of restrictions can be expensive, so it
-//is only done in debug mode.
+  //The following checking/cleaning of restrictions can be expensive, so it
+  //is only done in debug mode.
   //------------------------------
   // Introduce a redundant restriction, clean it, and
   // check that it was cleaned.
@@ -199,8 +184,8 @@ void UnitTestFieldImpl::testFieldRestriction()
   std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
 
   meta_data.declare_part_subset( pD, pA );
-  meta_data.declare_field_restriction(*f2 , pA , stride[f2->field_array_rank()-1], stride[0] );
-  meta_data.declare_field_restriction(*f2 , pD , stride[f2->field_array_rank()-1], stride[0] );
+  meta_data.declare_field_restriction(*f2, pA, stride[0], stride[0]);
+  meta_data.declare_field_restriction(*f2, pD, stride[0], stride[0]);
 
   unsigned expected = 1;
   ASSERT_TRUE( f2->restrictions().size() == expected );
@@ -219,11 +204,8 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    meta_data.declare_field_restriction(*f2 , pB , stride[f2->field_array_rank()], stride[1] );
-    ASSERT_THROW(
-      meta_data.declare_part_subset( pD, pB ),
-      std::runtime_error
-    );
+    meta_data.declare_field_restriction(*f2, pB, stride[1], stride[1]);
+    ASSERT_THROW(meta_data.declare_part_subset(pD, pB), std::runtime_error);
   }
 
   //Coverage for error from print_restriction in FieldBaseImpl.cpp when there is no stride (!stride[i])
@@ -234,10 +216,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[0] = 1;
     arg_no_stride[1] = 0;
 
-    ASSERT_THROW(
-      meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]),
-      std::runtime_error
-    );
+    ASSERT_THROW(meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]), std::runtime_error);
   }
 #endif
 }

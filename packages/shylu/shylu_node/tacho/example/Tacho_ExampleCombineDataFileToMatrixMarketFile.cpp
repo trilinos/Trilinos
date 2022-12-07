@@ -1,13 +1,31 @@
+// clang-format off
+/* =====================================================================================
+Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
+certain rights in this software.
+
+SCR#:2790.0
+
+This file is part of Tacho. Tacho is open source software: you can redistribute it
+and/or modify it under the terms of BSD 2-Clause License
+(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
+provided under the main directory
+
+Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
+
+Sandia National Laboratories, Albuquerque, NM, USA
+===================================================================================== */
+// clang-format on
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_Timer.hpp>
 
-#include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
+#include "Tacho_Internal.hpp"
 
 using namespace Tacho;
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   CommandLineParser opts("This example program combines data file into a single matrix market file");
 
   std::string graph_data_file = "graph.dat";
@@ -19,14 +37,15 @@ int main (int argc, char *argv[]) {
   opts.set_option<std::string>("matrix-market-file", "Output matrixmarket file", &matrix_market_file);
 
   const bool r_parse = opts.parse(argc, argv);
-  if (r_parse) return 0; // print help return
+  if (r_parse)
+    return 0; // print help return
 
   Kokkos::initialize(argc, argv);
 
   typedef Kokkos::DefaultHostExecutionSpace host_space;
   {
     typedef double value_type;
-    typedef CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
+    typedef CrsMatrixBase<value_type, host_space> CrsMatrixBaseTypeHost;
 
     CrsMatrixBaseTypeHost A;
     using ordinal_type_array = typename CrsMatrixBaseTypeHost::ordinal_type_array;
@@ -46,13 +65,13 @@ int main (int argc, char *argv[]) {
       }
 
       in >> m;
-      ap = size_type_array("ap", m+1);
-      for (ordinal_type i=0;i<(m+1);++i) 
+      ap = size_type_array("ap", m + 1);
+      for (ordinal_type i = 0; i < (m + 1); ++i)
         in >> ap(i);
 
       nnz = ap(m);
       aj = ordinal_type_array("aj", nnz);
-      for (ordinal_type k=0;k<nnz;++k) 
+      for (ordinal_type k = 0; k < nnz; ++k)
         in >> aj(k);
     }
     {
@@ -62,9 +81,9 @@ int main (int argc, char *argv[]) {
         std::cout << "Failed in open the file: " << value_data_file << std::endl;
         return -1;
       }
-      
+
       ax = value_type_array("ax", nnz);
-      for (ordinal_type k=0;k<nnz;++k) 
+      for (ordinal_type k = 0; k < nnz; ++k)
         in >> ax(k);
     }
 

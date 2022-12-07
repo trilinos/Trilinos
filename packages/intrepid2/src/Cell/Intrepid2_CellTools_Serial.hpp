@@ -167,35 +167,35 @@ public:
       // NMAX = 27, MAXDIM = 3
       value_type buf[27*3 + 27 + 9 + 9 + 9 + 9 + 3 + 3] = {}, *ptr = &buf[0];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> grads(ptr, numNodes, refDim); ptr += numNodes*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> vals(ptr, numNodes); ptr += numNodes;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> jac(ptr, physDim, refDim); ptr += physDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> metric(ptr, refDim, refDim); ptr += refDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> invMetric(ptr, refDim, refDim); ptr += refDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> invDf(ptr, refDim, physDim); ptr += refDim*physDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> tmpPhysPoint(ptr, physDim); ptr += physDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> oldRefPoint(ptr, refDim); ptr += refDim;
 
       // set initial guess
@@ -285,7 +285,7 @@ public:
       typedef typename ParamViewType::non_const_value_type value_type;
       const ordinal_type dim = edgeParametrization.extent(1);
       value_type buf[3];
-      Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::DynRankView<value_type, Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> refEdgeTangent(&buf[0], dim);
 
       getReferenceEdgeTangent(refEdgeTangent, edgeParametrization, edgeOrdinal);
@@ -306,7 +306,7 @@ public:
           "computing face tangents requires dimension 3.");
       value_type buf[6];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> refFaceTanU(&buf[0], dim), refFaceTanV(&buf[3], dim);
 
       getReferenceFaceTangent(refFaceTanU,
@@ -332,7 +332,7 @@ public:
           "computing face normal requires dimension 3.");
       value_type buf[6];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> faceTanU(&buf[0], dim), faceTanV(&buf[3], dim);
 
       getPhysicalFaceTangents(faceTanU, faceTanV,
@@ -355,7 +355,7 @@ public:
       case 2: {
         value_type buf[3];
         Kokkos::DynRankView<value_type,
-        Kokkos::Impl::ActiveExecutionMemorySpace,
+        Kokkos::AnonymousSpace,
         Kokkos::MemoryUnmanaged> edgeTangent(&buf[0], dim);
         getPhysicalEdgeTangent(edgeTangent, sideParametrization, jacobian, sideOrdinal);
         sideNormal(0) =  edgeTangent(1);

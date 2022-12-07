@@ -113,7 +113,8 @@ namespace MueLu {
   public:
     using TST                   = Teuchos::ScalarTraits<SC>;
     using Magnitude             = typename TST::magnitudeType;
-    using RealValuedMultiVector = Xpetra::MultiVector<Magnitude,LO,GO,NO>;
+    using CoordinateType        = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LO,GO,NO>;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -354,7 +355,8 @@ namespace MueLu {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
+    using CoordinateType        = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<CoordinateType,LocalOrdinal,GlobalOrdinal,Node>;
 
   private:
 #undef MUELU_UTILITIES_KOKKOS_SHORT
@@ -412,9 +414,8 @@ namespace MueLu {
 
       return diag;
     }
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
-      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
-    }
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false);
+
     static RCP<Vector> GetLumpedMatrixDiagonal(Matrix const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false, const bool useAverageAbsDiagVal = false) {
       return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero, useAverageAbsDiagVal);
     }

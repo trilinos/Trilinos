@@ -161,7 +161,7 @@ def parse_args():
     optional.add_argument('--pullrequest-gen-config-file',
                           dest='pullrequest_gen_config_file',
                           action='store',
-                          default=os.path.join(cwd, "pr_config/gen-config.ini"),
+                          default=os.path.join(cwd, "../GenConfig/src/gen-config.ini"),
                           help="The Trilinos PR driver configuration file " + \
                                "containing job mappings to cmake specifications. Default=%(default)s",
                           required=False)

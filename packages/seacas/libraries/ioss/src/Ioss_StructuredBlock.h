@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityBlock.h>
@@ -29,7 +31,7 @@ using IOSS_SB_INT = int;
 namespace Ioss {
   class Region;
 
-  struct BoundaryCondition
+  struct IOSS_EXPORT BoundaryCondition
   {
     BoundaryCondition(std::string name, std::string fam_name, Ioss::IJK_t range_beg,
                       Ioss::IJK_t range_end)
@@ -84,11 +86,13 @@ namespace Ioss {
     bool equal_(const Ioss::BoundaryCondition &rhs, bool quiet) const;
   };
 
+  IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc);
+
   class DatabaseIO;
 
   /** \brief A structured zone -- i,j,k
    */
-  class StructuredBlock : public EntityBlock
+  class IOSS_EXPORT StructuredBlock : public EntityBlock
   {
   public:
     StructuredBlock(DatabaseIO *io_database, const std::string &my_name, int index_dim, int ni,
@@ -270,7 +274,7 @@ namespace Ioss {
         }
       }
 
-      for (auto idx_id : m_globalIdMap) {
+      for (const auto &idx_id : m_globalIdMap) {
         idata[idx_id.first] = idx_id.second;
       }
 

@@ -367,13 +367,25 @@ public:
     }
 
   public:
-    //! For use with Data object into which a value will be stored.
+    //! For use with Data object into which a value will be stored.  We use passThroughBlockDiagonalArgs = true for storeInPlaceCombination().
+    template<bool passThroughBlockDiagonalArgs>
     struct FullArgExtractorWritableData
     {
       template<class ViewType, class ...IntArgs>
       static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
-        return view.getWritableEntry(intArgs...);
+        return view.getWritableEntryWithPassThroughOption(passThroughBlockDiagonalArgs, intArgs...);
+      }
+    };
+    
+    //! For use with Data object into which a value will be stored.  We use passThroughBlockDiagonalArgs = true for storeInPlaceCombination().
+    template<bool passThroughBlockDiagonalArgs>
+    struct FullArgExtractorData
+    {
+      template<class ViewType, class ...IntArgs>
+      static KOKKOS_INLINE_FUNCTION const_reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        return view.getEntryWithPassThroughOption(passThroughBlockDiagonalArgs, intArgs...);
       }
     };
     
@@ -475,8 +487,8 @@ public:
       const ConstantArgExtractor<reference_type> constArg;
       
       const FullArgExtractor<reference_type> fullArgs;
-      const FullArgExtractor<const_reference_type> fullArgsConst;
-      const FullArgExtractorWritableData fullArgsWritable;
+      const FullArgExtractorData<true> fullArgsData; // true: pass through block diagonal args.  This is due to the behavior of dataExtentRangePolicy() for block diagonal args.
+      const FullArgExtractorWritableData<true> fullArgsWritable; // true: pass through block diagonal args.  This is due to the behavior of dataExtentRangePolicy() for block diagonal args.
       
       const SingleArgExtractor<reference_type,0> arg0;
       const SingleArgExtractor<reference_type,1> arg1;
@@ -539,7 +551,7 @@ public:
           }
           else // this_full, not B_full: B may have modular data, etc.
           {
-            auto BAE = fullArgsConst;
+            auto BAE = fullArgsData;
             storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
           }
         }
@@ -567,7 +579,7 @@ public:
           {
             // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
             auto thisAE = fullArgsWritable;
-            auto BAE    = fullArgsConst;
+            auto BAE    = fullArgsData;
             storeInPlaceCombination(policy, thisData, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
           }
         }
@@ -590,7 +602,7 @@ public:
           else  // this_full, not A_full: A may have modular data, etc.
           {
             // use A (the Data object).  This could be further optimized by using A's underlying View and an appropriately-defined ArgExtractor.
-            auto AAE = fullArgsConst;
+            auto AAE = fullArgsData;
             storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
         }
@@ -618,7 +630,7 @@ public:
           {
             // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
             auto thisAE = fullArgsWritable;
-            auto AAE    = fullArgsConst;
+            auto AAE    = fullArgsData;
             storeInPlaceCombination(policy, thisData, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
         }
@@ -661,12 +673,12 @@ public:
             // B is not full-extent in dimension argThis; use the Data object
             switch (argThis)
             {
-              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg0, arg0, fullArgsConst); break;
-              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg1, arg1, fullArgsConst); break;
-              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg2, arg2, fullArgsConst); break;
-              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg3, arg3, fullArgsConst); break;
-              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg4, arg4, fullArgsConst); break;
-              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg5, arg5, fullArgsConst); break;
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg0, arg0, fullArgsData); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg1, arg1, fullArgsData); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg2, arg2, fullArgsData); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg3, arg3, fullArgsData); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg4, arg4, fullArgsData); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg5, arg5, fullArgsData); break;
               default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
             }
           }
@@ -675,12 +687,12 @@ public:
             // A is not full-extent in dimension argThis; use the Data object
             switch (argThis)
             {
-              case 0: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg0, fullArgsConst, arg0); break;
-              case 1: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg1, fullArgsConst, arg1); break;
-              case 2: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg2, fullArgsConst, arg2); break;
-              case 3: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg3, fullArgsConst, arg3); break;
-              case 4: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg4, fullArgsConst, arg4); break;
-              case 5: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg5, fullArgsConst, arg5); break;
+              case 0: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg0, fullArgsData, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg1, fullArgsData, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg2, fullArgsData, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg3, fullArgsData, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg4, fullArgsData, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg5, fullArgsData, arg5); break;
               default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
             }
           }
@@ -715,7 +727,7 @@ public:
             {
               // A is full; B is not full, but not constant or full-extent 1D
               // unoptimized in B access:
-              auto BAE = fullArgsConst;
+              auto BAE = fullArgsData;
               storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
             }
           }
@@ -742,7 +754,7 @@ public:
               }
               else
               {
-                auto BAE = fullArgsConst;
+                auto BAE = fullArgsData;
                 switch (argIndex)
                 {
                   case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg0, BAE); break;
@@ -758,8 +770,8 @@ public:
             else // A not full, and not full-extent 1D
             {
               // unoptimized in A, B accesses.
-              auto AAE    = fullArgsConst;
-              auto BAE    = fullArgsConst;
+              auto AAE    = fullArgsData;
+              auto BAE    = fullArgsData;
               storeInPlaceCombination(policy, this_underlying, A, B, binaryOperator, thisAE, AAE, BAE);
             }
           }
@@ -768,8 +780,8 @@ public:
         {
           // completely un-optimized case: we use Data objects for this, A, B.
           auto thisAE = fullArgsWritable;
-          auto AAE    = fullArgsConst;
-          auto BAE    = fullArgsConst;
+          auto AAE    = fullArgsData;
+          auto BAE    = fullArgsData;
           storeInPlaceCombination(policy, thisData, A, B, binaryOperator, thisAE, AAE, BAE);
         }
       }
@@ -783,7 +795,7 @@ public:
       auto policy = dataExtentRangePolicy<rank>();
       
       using DataType = Data<DataScalar,DeviceType>;
-      using ThisAE = FullArgExtractorWritableData;
+      using ThisAE = FullArgExtractorWritableData<true>;
       using AAE    = FullArgExtractor<const_reference_type>;
       using BAE    = FullArgExtractor<const_reference_type>;
       
@@ -897,108 +909,126 @@ public:
           INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unsupported data rank");
       }
     }
+
+    //! Returns an l-value reference to the specified logical entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.  If passThroughBlockDiagonalArgs is TRUE, the corresponding arguments are interpreted as entries in the 1D packed matrix rather than as logical 2D matrix row and column.
+    template<class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    reference_type getWritableEntryWithPassThroughOption(const bool &passThroughBlockDiagonalArgs, const IntArgs... intArgs) const
+    {
+  #ifdef INTREPID2_HAVE_DEBUG
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numArgs != rank_, std::invalid_argument, "getWritableEntry() should have the same number of arguments as the logical rank.");
+  #endif
+        constexpr int numArgs = sizeof...(intArgs);
+        if (underlyingMatchesLogical_)
+        {
+          // in this case, we require that numArgs == dataRank_
+          return getUnderlyingView<numArgs>()(intArgs...);
+        }
+        
+        // extract the type of the first argument; use that for the arrays below
+        using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
+        
+        const Kokkos::Array<int_type, numArgs+1> args {intArgs...,0}; // we pad with one extra entry (0) to avoid gcc compiler warnings about references beyond the bounds of the array (the [d+1]'s below)
+        Kokkos::Array<int_type, 7> refEntry;
+        for (int d=0; d<numArgs; d++)
+        {
+          switch (variationType_[d])
+          {
+            case CONSTANT: refEntry[d] = 0;                              break;
+            case GENERAL:  refEntry[d] = args[d];                        break;
+            case MODULAR:  refEntry[d] = args[d] % variationModulus_[d]; break;
+            case BLOCK_PLUS_DIAGONAL:
+            {
+              if (passThroughBlockDiagonalArgs)
+              {
+                refEntry[d]   = args[d];
+                refEntry[d+1] = args[d+1]; // this had better be == 0
+                INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(args[d+1] != 0, std::invalid_argument, "getWritableEntry() called with passThroughBlockDiagonalArgs = true, but nonzero second matrix argument.");
+              }
+              else
+              {
+                const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
+                
+                const int_type &i = args[d];
+                if (d+1 >= numArgs)
+                {
+                  INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "BLOCK_PLUS_DIAGONAL must be present for two dimensions; here, encountered only one");
+                }
+                else
+                {
+                  const int_type &j = args[d+1];
+                  
+                  if ((i > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)) || (j > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)))
+                  {
+                    if (i != j)
+                    {
+                      // off diagonal: zero
+                      return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
+                    }
+                    else
+                    {
+                      refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+                    }
+                  }
+                  else
+                  {
+                    refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
+                  }
+
+                  // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
+                  refEntry[d+1] = 0;
+                }
+              }
+              d++;
+            }
+          }
+        }
+         // refEntry should be zero-filled beyond numArgs, for cases when rank_ < dataRank_ (this only is allowed if the extra dimensions each has extent 1).
+        for (int d=numArgs; d<7; d++)
+        {
+          refEntry[d] = 0;
+        }
+        
+        if (dataRank_ == 1)
+        {
+          return data1_(refEntry[activeDims_[0]]);
+        }
+        else if (dataRank_ == 2)
+        {
+          return data2_(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
+        }
+        else if (dataRank_ == 3)
+        {
+          return data3_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
+        }
+        else if (dataRank_ == 4)
+        {
+          return data4_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
+        }
+        else if (dataRank_ == 5)
+        {
+          return data5_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+                        refEntry[activeDims_[4]]);
+        }
+        else if (dataRank_ == 6)
+        {
+          return data6_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+                        refEntry[activeDims_[4]],refEntry[activeDims_[5]]);
+        }
+        else // dataRank_ == 7
+        {
+          return data7_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+                        refEntry[activeDims_[4]],refEntry[activeDims_[5]],refEntry[activeDims_[6]]);
+        }
+      
+    }
     
-    //! Returns an l-value reference to the specified logical entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
+    //! Returns an l-value reference to the specified logical entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.  If passThroughBlockDiagonalArgs is TRUE, the corresponding arguments are interpreted as entries in the 1D packed matrix rather than as logical 2D matrix row and column.
     template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
     reference_type getWritableEntry(const IntArgs... intArgs) const
     {
-#ifdef INTREPID2_HAVE_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numArgs != rank_, std::invalid_argument, "getWritableEntry() should have the same number of arguments as the logical rank.");
-#endif
-      constexpr int numArgs = sizeof...(intArgs);
-      if (underlyingMatchesLogical_)
-      {
-        // in this case, we require that numArgs == dataRank_
-        return getUnderlyingView<numArgs>()(intArgs...);
-      }
-      
-      // extract the type of the first argument; use that for the arrays below
-      using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
-      
-      const Kokkos::Array<int_type, numArgs> args {intArgs...};
-      Kokkos::Array<int_type, 7> refEntry;
-      for (int d=0; d<numArgs; d++)
-      {
-        switch (variationType_[d])
-        {
-          case CONSTANT: refEntry[d] = 0;                              break;
-          case GENERAL:  refEntry[d] = args[d];                        break;
-          case MODULAR:  refEntry[d] = args[d] % variationModulus_[d]; break;
-          case BLOCK_PLUS_DIAGONAL:
-          {
-            const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
-            
-            const int_type &i = args[d];
-            if (d+1 >= numArgs)
-            {
-              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "BLOCK_PLUS_DIAGONAL must be present for two dimensions; here, encountered only one");
-            }
-            else
-            {
-              const int_type &j = args[d+1];
-              
-              if ((i > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)) || (j > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)))
-              {
-                if (i != j)
-                {
-                  // off diagonal: zero
-                  return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
-                }
-                else
-                {
-                  refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
-                }
-              }
-              else
-              {
-                refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
-              }
-
-              // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-              refEntry[d+1] = 0;
-            }
-            d++;
-          }
-        }
-      }
-       // refEntry should be zero-filled beyond numArgs, for cases when rank_ < dataRank_ (this only is allowed if the extra dimensions each has extent 1).
-      for (int d=numArgs; d<7; d++)
-      {
-        refEntry[d] = 0;
-      }
-      
-      if (dataRank_ == 1)
-      {
-        return data1_(refEntry[activeDims_[0]]);
-      }
-      else if (dataRank_ == 2)
-      {
-        return data2_(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
-      }
-      else if (dataRank_ == 3)
-      {
-        return data3_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
-      }
-      else if (dataRank_ == 4)
-      {
-        return data4_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
-      }
-      else if (dataRank_ == 5)
-      {
-        return data5_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]]);
-      }
-      else if (dataRank_ == 6)
-      {
-        return data6_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]]);
-      }
-      else // dataRank_ == 7
-      {
-        return data7_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]],refEntry[activeDims_[6]]);
-      }
+      return getWritableEntryWithPassThroughOption(false, intArgs...);
     }
   public:
     //! Generic data copying method to allow construction of Data object from DynRankViews for which deep_copy() to the underlying view would be disallowed.  This method made public to allow CUDA compilation (because it contains a Kokkos lambda).
@@ -1058,7 +1088,7 @@ public:
       {
         std::vector<int> dataExtents;
 
-        bool blockPlusDiagonalEncountered = true;
+        bool blockPlusDiagonalEncountered = false;
         for (int d=0; d<rank_; d++)
         {
           const DimensionInfo & dimInfo = dimInfoVector[d];
@@ -1704,7 +1734,7 @@ public:
     //! returns the true extent of the data corresponding to the logical dimension provided; if the data does not vary in that dimension, returns 1
     KOKKOS_INLINE_FUNCTION int getDataExtent(const ordinal_type &d) const
     {
-      for (unsigned i=0; i<activeDims_.size(); i++)
+      for (int i=0; i<numActiveDims_; i++)
       {
         if (activeDims_[i] == d)
         {
@@ -1742,12 +1772,20 @@ public:
       return variationType_;
     }
     
+    //! Returns a (read-only) value corresponding to the specified logical data location.  If passThroughBlockDiagonalArgs is TRUE, the corresponding arguments are interpreted as entries in the 1D packed matrix rather than as logical 2D matrix row and column.
+    template<class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    return_type getEntryWithPassThroughOption(const bool &passThroughBlockDiagonalArgs, const IntArgs&... intArgs) const
+    {
+      return getWritableEntryWithPassThroughOption(passThroughBlockDiagonalArgs, intArgs...);
+    }
+    
     //! Returns a (read-only) value corresponding to the specified logical data location.
     template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
     return_type getEntry(const IntArgs&... intArgs) const
     {
-      return getWritableEntry(intArgs...);
+      return getEntryWithPassThroughOption(false, intArgs...);
     }
     
     template <bool...> struct bool_pack;
@@ -1804,6 +1842,14 @@ public:
       else if (numBlockPlusDiagonalTypes == 0) return false; // no BLOCK_PLUS_DIAGONAL --> not a diagonal matrix
       else INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Unexpected number of ranks marked as BLOCK_PLUS_DIAGONAL (should be 0 or 2)");
       return false; // statement should be unreachable; included because compilers don't necessarily recognize that fact...
+    }
+    
+    //! Constructs a container with extents matching this, with a single-value underlying View, CONSTANT in each dimension.
+    //! \param value  [in] - the constant value.
+    //! \return A container with the same logical shape as this, with a single-value underlying View.
+    Data<DataScalar,DeviceType> allocateConstantData( const DataScalar &value )
+    {
+      return Data<DataScalar,DeviceType>(value, this->getExtents());
     }
     
     //! Constructs a container suitable for storing the result of an in-place combination of the two provided data containers.  The two containers must have the same logical shape.
@@ -2181,6 +2227,23 @@ public:
       using ExecutionSpace = typename DeviceType::execution_space;
       Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,getDataExtent(0));
       return policy;
+    }
+    
+    //! Creates a new Data object with the same underlying view, but with the specified logical rank, extents, and variation types.
+    Data shallowCopy(const int rank, const Kokkos::Array<int,7> &extents, const Kokkos::Array<DataVariationType,7> &variationTypes)
+    {
+      switch (dataRank_)
+      {
+        case 1: return Data(data1_, extents, variationTypes);
+        case 2: return Data(data2_, extents, variationTypes);
+        case 3: return Data(data3_, extents, variationTypes);
+        case 4: return Data(data4_, extents, variationTypes);
+        case 5: return Data(data5_, extents, variationTypes);
+        case 6: return Data(data6_, extents, variationTypes);
+        case 7: return Data(data7_, extents, variationTypes);
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled dataRank_");
+      }
     }
     
     //! Places the result of an in-place combination (e.g., entrywise sum) into this data container.

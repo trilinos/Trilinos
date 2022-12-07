@@ -26,7 +26,13 @@
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
 #endif
 #else
-#include <sys/unistd.h>
+#include <unistd.h>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
+#include <sys/statfs.h>
+#endif
 #endif
 
 #ifdef SEACAS_HAVE_MPI
@@ -35,9 +41,6 @@
 
 #include <cstdio>
 #include <sys/stat.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
 
 namespace {
   bool internal_access(const std::string &name, int mode);
@@ -86,7 +89,7 @@ namespace Ioss {
   {
     PAR_UNUSED(communicator);
     PAR_UNUSED(where);
-    int                 sum = exists_ ? 1 : 0;
+    int sum = exists_ ? 1 : 0;
 
 #ifdef SEACAS_HAVE_MPI
     Ioss::ParallelUtils pu(communicator);
@@ -98,13 +101,13 @@ namespace Ioss {
       pu.all_gather(sum, result);
       sum = std::accumulate(result.begin(), result.end(), 0);
       if (my_rank == 0 && sum < my_size) {
-	std::vector<size_t> procs;
-	for (int i = 0; i < my_size; i++) {
-	  if (result[i] == 0) {
-	    procs.push_back(i);
-	  }
-	}
-	where = Ioss::Utils::format_id_list(procs, "--");
+        std::vector<size_t> procs;
+        for (int i = 0; i < my_size; i++) {
+          if (result[i] == 0) {
+            procs.push_back(i);
+          }
+        }
+        where = Ioss::Utils::format_id_list(procs, "--");
       }
     }
 #endif
@@ -157,6 +160,39 @@ namespace Ioss {
     };
     if (lstat(filename_.c_str(), &s) == 0) {
       return S_ISLNK(s.st_mode);
+    }
+#endif
+    return false;
+  }
+
+  //: Return TRUE if file is on an NFS filesystem...
+  bool FileInfo::is_nfs() const
+  {
+#if !defined(__IOSS_WINDOWS__)
+#define NFS_FS	0x6969  /* statfs defines that 0x6969 is NFS filesystem */
+    auto tmp_path = pathname();
+    if (tmp_path.empty()) {
+      char *current_cwd   = getcwd(nullptr, 0);
+      tmp_path = std::string(current_cwd);
+      free(current_cwd);
+    }
+#if defined(__IOSS_WINDOWS__)
+    char *path = _fullpath(nullptr, tmp_path.c_str(), _MAX_PATH);
+#else
+    char *path = ::realpath(tmp_path.c_str(), nullptr);
+#endif
+    if (path != nullptr) {
+
+      struct statfs stat_fs;
+      // We want to run `statfs` on the path; not the filename since it might not exist.
+      if (statfs(path, &stat_fs) == -1) {
+	free(path);
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
+	IOSS_ERROR(errmsg);
+      }
+      free(path);
+      return (stat_fs.f_type == NFS_FS);
     }
 #endif
     return false;
@@ -294,9 +330,7 @@ namespace Ioss {
       free(path);
       return temp;
     }
-    {
-      return filename_;
-    }
+    return filename_;
   }
 
   bool FileInfo::remove_file()

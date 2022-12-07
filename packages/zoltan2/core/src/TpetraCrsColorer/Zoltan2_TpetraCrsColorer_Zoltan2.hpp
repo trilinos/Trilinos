@@ -110,17 +110,22 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 // Specialization of Tpetra::Zoltan2CrsColorer for BlockCrsMatrix
-// Zoltan2 does not support BlockCrs, so this just throws an error
+// Zoltan2 does not directly support BlockCrs, so this implementation
+// creates a point matrix from the graph of the BlockCrs matrix
 template <typename SC, typename LO, typename GO, typename NO>
 class Zoltan2CrsColorer<Tpetra::BlockCrsMatrix<SC, LO, GO, NO> > 
 {
 public:
   typedef Tpetra::BlockCrsMatrix<SC, LO, GO, NO> matrix_t;
   typedef typename matrix_t::crs_graph_type graph_t;
+  typedef typename matrix_t::node_type node_t;
+  typedef typename node_t::device_type device_t;
+  typedef Kokkos::View<int *, device_t> list_of_colors_t;
+  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
 
   // Constructor
   Zoltan2CrsColorer(const Teuchos::RCP<matrix_t> &matrix_) 
-    : matrix(matrix_), graph(matrix_->getCrsGraph())
+    : matrix(matrix_), graph(Teuchos::rcp(&(matrix->getCrsGraph()), false))
   {}
 
   // Destructor
@@ -128,11 +133,19 @@ public:
 
   // Compute coloring data
   void
-  computeColoring(Teuchos::ParameterList &coloring_params) 
+  computeColoring(
+    Teuchos::ParameterList &coloring_params,
+    int &num_colors,
+    list_of_colors_host_t &list_of_colors_host,
+    list_of_colors_t &list_of_colors)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "Zoltan2 colorer does not support "
-                               "Tpetra::BlockCrsMatrix!");
+    using point_matrix_t = Tpetra::CrsMatrix<SC,LO,GO,NO>;
+    Teuchos::RCP<point_matrix_t> point_matrix = Teuchos::rcp(new point_matrix_t(graph));
+    point_matrix->setAllToScalar(1.0);
+    point_matrix->fillComplete();
+    Zoltan2CrsColorer<point_matrix_t> point_colorer(point_matrix);
+    point_colorer.computeColoring(coloring_params, num_colors,
+                                  list_of_colors_host, list_of_colors);
   }
 
 private:

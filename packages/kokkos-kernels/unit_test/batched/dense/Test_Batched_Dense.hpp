@@ -2,6 +2,9 @@
 #define TEST_BATCHED_DENSE_HPP
 
 // Serial kernels
+#include "Test_Batched_SerialAxpy.hpp"
+#include "Test_Batched_SerialAxpy_Real.hpp"
+#include "Test_Batched_SerialAxpy_Complex.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGemm.hpp"
@@ -13,15 +16,14 @@
 #include "Test_Batched_SerialGemv.hpp"
 #include "Test_Batched_SerialGemv_Real.hpp"
 #include "Test_Batched_SerialGemv_Complex.hpp"
+#include "Test_Batched_SerialGesv.hpp"
+#include "Test_Batched_SerialGesv_Real.hpp"
 #include "Test_Batched_SerialInverseLU.hpp"
 #include "Test_Batched_SerialInverseLU_Real.hpp"
 #include "Test_Batched_SerialInverseLU_Complex.hpp"
 #include "Test_Batched_SerialLU.hpp"
 #include "Test_Batched_SerialLU_Real.hpp"
 #include "Test_Batched_SerialLU_Complex.hpp"
-#include "Test_Batched_SerialMatUtil.hpp"
-#include "Test_Batched_SerialMatUtil_Real.hpp"
-#include "Test_Batched_SerialMatUtil_Complex.hpp"
 #include "Test_Batched_SerialSolveLU.hpp"
 #include "Test_Batched_SerialSolveLU_Real.hpp"
 #include "Test_Batched_SerialSolveLU_Complex.hpp"
@@ -40,21 +42,23 @@
 #include "Test_Batched_SerialSVD.hpp"
 
 // Team Kernels
+#include "Test_Batched_TeamAxpy.hpp"
+#include "Test_Batched_TeamAxpy_Real.hpp"
+#include "Test_Batched_TeamAxpy_Complex.hpp"
 #include "Test_Batched_TeamGemm.hpp"
 #include "Test_Batched_TeamGemm_Real.hpp"
 #include "Test_Batched_TeamGemm_Complex.hpp"
 #include "Test_Batched_TeamGemv.hpp"
 #include "Test_Batched_TeamGemv_Real.hpp"
 #include "Test_Batched_TeamGemv_Complex.hpp"
+#include "Test_Batched_TeamGesv.hpp"
+#include "Test_Batched_TeamGesv_Real.hpp"
 #include "Test_Batched_TeamInverseLU.hpp"
 #include "Test_Batched_TeamInverseLU_Real.hpp"
 #include "Test_Batched_TeamInverseLU_Complex.hpp"
 #include "Test_Batched_TeamLU.hpp"
 #include "Test_Batched_TeamLU_Real.hpp"
 #include "Test_Batched_TeamLU_Complex.hpp"
-#include "Test_Batched_TeamMatUtil.hpp"
-#include "Test_Batched_TeamMatUtil_Real.hpp"
-#include "Test_Batched_TeamMatUtil_Complex.hpp"
 #include "Test_Batched_TeamSolveLU.hpp"
 #include "Test_Batched_TeamSolveLU_Real.hpp"
 #include "Test_Batched_TeamSolveLU_Complex.hpp"
@@ -66,11 +70,16 @@
 #include "Test_Batched_TeamTrsv_Complex.hpp"
 
 // TeamVector Kernels
+#include "Test_Batched_TeamVectorAxpy.hpp"
+#include "Test_Batched_TeamVectorAxpy_Real.hpp"
+#include "Test_Batched_TeamVectorAxpy_Complex.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition_Real.hpp"
 #include "Test_Batched_TeamVectorGemm.hpp"
 #include "Test_Batched_TeamVectorGemm_Real.hpp"
 #include "Test_Batched_TeamVectorGemm_Complex.hpp"
+#include "Test_Batched_TeamVectorGesv.hpp"
+#include "Test_Batched_TeamVectorGesv_Real.hpp"
 #include "Test_Batched_TeamVectorQR.hpp"
 #include "Test_Batched_TeamVectorQR_Real.hpp"
 #include "Test_Batched_TeamVectorQR_WithColumnPivoting.hpp"
@@ -82,7 +91,6 @@
 #include "Test_Batched_TeamVectorUTV.hpp"
 #include "Test_Batched_TeamVectorUTV_Real.hpp"
 
-
 // Vector Kernels
 #include "Test_Batched_VectorArithmatic.hpp"
 #include "Test_Batched_VectorLogical.hpp"
@@ -91,4 +99,4 @@
 #include "Test_Batched_VectorRelation.hpp"
 #include "Test_Batched_VectorView.hpp"
 
-#endif // TEST_BATCHED_DENSE_HPP
+#endif  // TEST_BATCHED_DENSE_HPP

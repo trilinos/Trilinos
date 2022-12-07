@@ -1,7 +1,7 @@
-#ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_TEXTMESHSTKTOPOLOGYMAPPING_HPP_
-#define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_TEXTMESHSTKTOPOLOGYMAPPING_HPP_
+#ifndef TextMeshStkTopologyMapping_hpp
+#define TextMeshStkTopologyMapping_hpp
 
-#include "TextMeshUtils.hpp"
+#include "TextMeshDataTypes.hpp"
 
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
@@ -15,6 +15,12 @@ namespace stk
 namespace unit_test_util
 {
 struct StkTopologyMapEntry {
+  using Ordinal = stk::mesh::ConnectivityOrdinal;
+  using Permutation = unsigned;
+
+  static constexpr Ordinal InvalidOrdinal = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+  static constexpr Permutation InvalidPermutation = stk::mesh::INVALID_PERMUTATION;
+
   stk::topology topology;
 
   StkTopologyMapEntry() : topology(stk::topology::INVALID_TOPOLOGY) {}
@@ -39,6 +45,8 @@ struct StkTopologyMapEntry {
 
   bool operator!=(const StkTopologyMapEntry &rhs) const { return !(*this == rhs); }
 
+  int num_sides() const { return topology.num_sides(); }
+
   bool valid_side(unsigned side) const
   {
     unsigned numSides = topology.num_sides();
@@ -55,6 +63,15 @@ struct StkTopologyMapEntry {
     return sideTopology.name();
   }
 
+  StkTopologyMapEntry side_topology(unsigned side) const
+  {
+    if (!valid_side(side)) return StkTopologyMapEntry();
+
+    unsigned ordinal = side - 1;
+    stk::topology sideTopology = topology.side_topology(ordinal);
+    return StkTopologyMapEntry(sideTopology);
+  }
+
   unsigned side_topology_num_nodes(unsigned side) const
   {
     if (!valid_side(side)) return 0;
@@ -63,7 +80,49 @@ struct StkTopologyMapEntry {
     stk::topology sideTopology = topology.side_topology(ordinal);
     return sideTopology.num_nodes();
   }
+
+  std::vector<Ordinal> side_topology_node_indices(unsigned side) const
+  {
+    if (!valid_side(side)) return std::vector<Ordinal>();
+
+    unsigned sideOrdinal = side - 1;
+    stk::topology sideTopology = topology.side_topology(sideOrdinal);
+    std::vector<Ordinal> elementNodeOrdinalVector(sideTopology.num_nodes());
+    topology.side_node_ordinals(sideOrdinal, elementNodeOrdinalVector.data());
+    return elementNodeOrdinalVector;
+  }
+
+  bool is_shell() const { return topology.is_shell(); }
+
+  unsigned num_permutations() const { return topology.num_permutations(); }
+
+  unsigned num_positive_permutations() const { return topology.num_positive_permutations(); }
+
+  bool is_positive_polarity(Permutation permutation) const { return topology.is_positive_polarity(permutation); }
+
+  bool valid_permutation(Permutation permutation) const { return permutation < num_permutations(); }
+
+  bool fill_permutation_indices(Permutation permutation, std::vector<Ordinal>& nodeOrdinalVector) const
+  {
+    if (!valid_permutation(permutation)) return false;
+
+    nodeOrdinalVector.resize(topology.num_nodes());
+    topology.permutation_node_ordinals(permutation, nodeOrdinalVector.data());
+    return true;
+  }
+
+  std::vector<Ordinal> permutation_indices(Permutation permutation) const
+  {
+    std::vector<Ordinal> nodeOrdinalVector;
+    fill_permutation_indices(permutation, nodeOrdinalVector);
+    return nodeOrdinalVector;
+  }
 };
+
+inline std::ostream& operator<<(std::ostream& out, const StkTopologyMapEntry& t)
+{
+  return out << t.name();
+}
 
 class StkTopologyMapping : public text_mesh::TopologyMapping<StkTopologyMapEntry>
 {
@@ -122,7 +181,15 @@ class StkTopologyMapping : public text_mesh::TopologyMapping<StkTopologyMapEntry
   }
 };
 
+namespace simple_fields {
+
+struct StkTopologyMapEntry : public stk::unit_test_util::StkTopologyMapEntry {};
+
+class StkTopologyMapping : public stk::unit_test_util::StkTopologyMapping {};
+
+} // namespace simple_fields
+
 } // namespace unit_test_util
 } // namespace stk
 
-#endif /* STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_TEXTMESHSTKTOPOLOGYMAPPING_HPP_ */
+#endif

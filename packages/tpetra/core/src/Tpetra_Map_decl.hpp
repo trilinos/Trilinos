@@ -585,12 +585,6 @@ namespace Tpetra {
     size_t getLocalNumElements () const {
       return numLocalElements_;
     }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    size_t getNodeNumElements () const {
-      return numLocalElements_;
-    }
-#endif
 
     /// \brief The index base for this Map.
     ///
@@ -804,9 +798,6 @@ namespace Tpetra {
     /// calling this if the calling process owns a very large number
     /// of global indices.
     Teuchos::ArrayView<const global_ordinal_type> getLocalElementList() const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED Teuchos::ArrayView<const global_ordinal_type> getNodeElementList() const;
-#endif
 
     //@}
     //! @name Boolean tests

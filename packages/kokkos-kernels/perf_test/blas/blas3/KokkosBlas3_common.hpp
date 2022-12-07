@@ -65,6 +65,7 @@
 #define DEFAULT_BATCH_SIZE_LAST_DIM 0
 #define DEFAULT_VERIFY 1
 #define DEFAULT_NINTER 4
+#define DEFAULT_USE_SIMD 0
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -213,6 +214,7 @@ struct perf_test_options {
   std::string blas_routines;
   bool verify;
   int ninter;
+  bool use_simd;
 };
 typedef struct perf_test_options options_t;
 

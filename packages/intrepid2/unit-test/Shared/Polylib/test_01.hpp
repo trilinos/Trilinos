@@ -179,13 +179,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -238,13 +231,13 @@ namespace Intrepid2 {
       const ValueType tol = 1000.0 * tolerence();
 
       try {
-        Kokkos::View<ValueType*,HostSpaceType> 
+        Kokkos::View<ValueType*,Kokkos::HostSpace> 
           z("z", npUpper), 
           w("w", npUpper), 
           p("p", npUpper),
           null;
         
-        Kokkos::View<ValueType**,HostSpaceType> 
+        Kokkos::View<ValueType**,Kokkos::HostSpace> 
           d("d", npUpper, npUpper);
 
         const EPolyType ps[] = {

@@ -237,7 +237,7 @@ namespace MueLu {
 // that the view is to the actual data. So this macro directs the code to do
 // const_cast, and modify the entries directly. This allows us to avoid
 // replaceLocalValues() call which is quite expensive due to all the searches.
-#define ASSUME_DIRECT_ACCESS_TO_ROW
+//#define ASSUME_DIRECT_ACCESS_TO_ROW // See github issue 10883#issuecomment-1256676340
 
   // Both Epetra and Tpetra matrix-matrix multiply use the following trick:
   // if an entry of the left matrix is zero, it does not compute or store the

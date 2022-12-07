@@ -82,7 +82,7 @@ class PhactoriMarkCellSurfaceStatus2(PhactoriOperationSpecifics):
       self.OffsetIndex = 0
 
     keyval10 = "output cell variable name"
-    if keyval10 in inJson: 
+    if keyval10 in inJson:
       self.OutputCellVariableName = inJson[keyval10]
 
     keyval11 = "do operation in createparaview method"

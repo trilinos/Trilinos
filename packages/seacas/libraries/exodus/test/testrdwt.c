@@ -123,13 +123,13 @@ int main(int argc, char **argv)
 
   int *elem_map = (int *)calloc(num_elem, sizeof(int));
 
-  error = ex_get_map(exoid, elem_map);
-  printf("\nafter ex_get_map, error = %3d\n", error);
+  error = ex_get_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("\nafter ex_get_id_map, error = %3d\n", error);
 
   /* write element order map */
 
-  error = ex_put_map(exoid2, elem_map);
-  printf("after ex_put_map, error = %d\n", error);
+  error = ex_put_id_map(exoid2, EX_ELEM_MAP, elem_map);
+  printf("after ex_put_id_map, error = %d\n", error);
 
   free(elem_map);
 

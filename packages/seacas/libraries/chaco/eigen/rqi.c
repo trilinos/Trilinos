@@ -14,22 +14,22 @@
 /* Perform Rayleigh Quotient Iteration */
 
 void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
-         double **         yvecs, /* eigenvectors to be refined */
+         double          **yvecs, /* eigenvectors to be refined */
          int               index, /* index of vector in yvecs to be refined */
          int               n,     /* number of rows/columns in matrix */
          double *r1, double *r2, double *v, double *w, double *x, double *y,
-         double *         work,         /* work space for symmlq */
+         double          *work,         /* work space for symmlq */
          double           tol,          /* error tolerance in eigenpair */
          double           initshift,    /* initial shift */
-         double *         evalest,      /* returned eigenvalue */
-         double *         vwsqrt,       /* square roots of vertex weights */
+         double          *evalest,      /* returned eigenvalue */
+         double          *vwsqrt,       /* square roots of vertex weights */
          struct orthlink *orthlist,     /* lower evecs to orthogonalize against */
          int              cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
          int              nsets,        /* number of sets to divide into */
-         int *            assignment,   /* set number of each vtx (length n+1) */
-         int *            active,       /* space for nvtxs integers */
+         int             *assignment,   /* set number of each vtx (length n+1) */
+         int             *active,       /* space for nvtxs integers */
          int              mediantype,   /* which partitioning strategy to use */
-         double *         goal,         /* desired set sizes */
+         double          *goal,         /* desired set sizes */
          int              vwgt_max,     /* largest vertex weight */
          int              ndims         /* dimensionality of partition */
 )
@@ -58,18 +58,18 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
   double     factor;                /* ratio between previous res and new tol */
   double     minfactor;             /* minimum acceptable value of factor */
   int        converged;             /* has process converged yet? */
-  double *   u;                     /* name of vector being refined */
-  int *      old_assignment = NULL; /* previous assignment vector */
-  int *      assgn_pntr;            /* pntr to assignment vector */
-  int *      old_assgn_pntr;        /* pntr to previous assignment vector */
+  double    *u;                     /* name of vector being refined */
+  int       *old_assignment = NULL; /* previous assignment vector */
+  int       *assgn_pntr;            /* pntr to assignment vector */
+  int       *old_assgn_pntr;        /* pntr to previous assignment vector */
   int        assigndiff = 0;        /* discrepancies between old and new assignment */
   int        assigntol  = 0;        /* tolerance on convergence of assignment vector */
   int        first;                 /* is this the first RQI step? */
   int        i;                     /* loop index */
 
-  double dot(), ch_norm();
+  double dot(double *vec1, int beg, int end, double *vec2), ch_norm(double *vec, int beg, int end);
   int    symmlq();
-  void   splarax(), scadd(), vecscale(), doubleout(), assign(), x2y(), strout();
+  void   splarax(), scadd(), vecscale(), doubleout(), assign(), x2y(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering rqi>\n");

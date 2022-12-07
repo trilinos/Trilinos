@@ -54,7 +54,7 @@
 namespace MueLu {
   /*!
     @class SmootherBase
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Base class for smoothers
 
     This has the signature for the required Apply function and contains data that is generic across all

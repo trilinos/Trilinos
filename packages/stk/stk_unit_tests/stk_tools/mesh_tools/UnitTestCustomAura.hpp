@@ -40,53 +40,53 @@
 
 namespace aura_unit_tests {
 
-  class FourQuadShellsInSequenceFixture : public stk::unit_test_util::MeshFixture {
-    public:
-      FourQuadShellsInSequenceFixture() {
-        reset_mesh();
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        const std::vector<double> coordinates {
-          0.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            2.0, 0.0, 0.0,
-            3.0, 0.0, 0.0,
-            4.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            2.0, 1.0, 0.0,
-            3.0, 1.0, 0.0,
-            4.0, 1.0, 0.0
-        };
-        std::string mesh_description =
+class FourQuadShellsInSequenceFixture : public stk::unit_test_util::simple_fields::MeshFixture {
+public:
+  FourQuadShellsInSequenceFixture() {
+    reset_mesh();
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    const std::vector<double> coordinates {
+      0.0, 0.0, 0.0,
+      1.0, 0.0, 0.0,
+      2.0, 0.0, 0.0,
+      3.0, 0.0, 0.0,
+      4.0, 0.0, 0.0,
+      0.0, 1.0, 0.0,
+      1.0, 1.0, 0.0,
+      2.0, 1.0, 0.0,
+      3.0, 1.0, 0.0,
+      4.0, 1.0, 0.0
+    };
+    std::string mesh_description =
+        "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
+        "0,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
+        "0,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
+        "0,4,SHELL_QUAD_4,4,5,10,9,block_1";
+    if (this->get_parallel_size() == 2) {
+      mesh_description =
           "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
           "0,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
           "0,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
-          "0,4,SHELL_QUAD_4,4,5,10,9,block_1";
-        if (this->get_parallel_size() == 2) {
-          mesh_description =
-            "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
-            "0,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
-            "0,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
-            "1,4,SHELL_QUAD_4,4,5,10,9,block_1";
-        } else if (this->get_parallel_size() == 3) {
-          mesh_description =
-            "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
-            "0,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
-            "1,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
-            "2,4,SHELL_QUAD_4,4,5,10,9,block_1";
-        } else if (this->get_parallel_size() == 4) {
-          mesh_description =
-            "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
-            "1,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
-            "2,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
-            "3,4,SHELL_QUAD_4,4,5,10,9,block_1";
-        }
-        stk::unit_test_util::setup_text_mesh(
-            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(mesh_description, coordinates));
-      }
+          "1,4,SHELL_QUAD_4,4,5,10,9,block_1";
+    } else if (this->get_parallel_size() == 3) {
+      mesh_description =
+          "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
+          "0,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
+          "1,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
+          "2,4,SHELL_QUAD_4,4,5,10,9,block_1";
+    } else if (this->get_parallel_size() == 4) {
+      mesh_description =
+          "0,1,SHELL_QUAD_4,1,2,7,6,block_1\n"
+          "1,2,SHELL_QUAD_4,2,3,8,7,block_1\n"
+          "2,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
+          "3,4,SHELL_QUAD_4,4,5,10,9,block_1";
+    }
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(mesh_description, coordinates));
+  }
 
-      void print_local_node_comm(const int rank);
-  };
+  void print_local_node_comm(const int rank);
+};
 
 }
 

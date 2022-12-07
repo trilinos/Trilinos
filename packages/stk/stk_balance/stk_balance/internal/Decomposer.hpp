@@ -35,6 +35,7 @@
 #define DECOMPOSER_HPP
 
 #include <stk_mesh/base/Types.hpp>
+#include "stk_balance/internal/privateDeclarations.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace balance { class BalanceSettings; } }
@@ -49,7 +50,7 @@ public:
              const BalanceSettings & balanceSettings);
   virtual ~Decomposer() = default;
 
-  virtual stk::mesh::EntityProcVec get_partition() = 0;
+  virtual DecompositionChangeList get_partition() = 0;
   virtual std::vector<unsigned> map_new_subdomains_to_original_processors() = 0;
 
   unsigned num_required_subdomains_for_each_proc();
@@ -67,7 +68,7 @@ public:
                     const BalanceSettings & balanceSettings);
   virtual ~DefaultDecomposer() override = default;
 
-  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual DecompositionChangeList get_partition() override;
   virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
 };
 
@@ -79,7 +80,7 @@ public:
                    const stk::balance::BalanceSettings & balanceSettings);
   virtual ~NestedDecomposer() override = default;
 
-  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual DecompositionChangeList get_partition() override;
   virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
 
 private:

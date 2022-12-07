@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,9 +17,9 @@ void inertial(struct vtx_data **graph,        /* graph data structure */
               int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
               int               nsets,        /* number of sets to cut into */
               int               igeom,        /* 1, 2 or 3 dimensional geometry? */
-              float **          coords,       /* x, y and z coordinates of vertices */
-              int *             sets,         /* set each vertex gets assigned to */
-              double *          goal,         /* desired set sizes */
+              float           **coords,       /* x, y and z coordinates of vertices */
+              int              *sets,         /* set each vertex gets assigned to */
+              double           *goal,         /* desired set sizes */
               int               using_vwgts   /* are vertex weights being used? */
 )
 {
@@ -27,9 +27,9 @@ void inertial(struct vtx_data **graph,        /* graph data structure */
   extern int    PROJECTION_AXIS; /* axis to project out geometry */
   extern double inertial_time;   /* time spend in inertial calculations */
   double        time;            /* timing parameter */
-  float *       inert_coords[3]; /* coord arrays passed down */
+  float        *inert_coords[3]; /* coord arrays passed down */
   int           i, j;            /* loop counters */
-  double        seconds();
+  double        seconds(void);
   void          inertial1d(), inertial2d(), inertial3d();
 
   time = seconds();

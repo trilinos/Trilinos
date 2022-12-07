@@ -330,9 +330,16 @@ int main(int argc, char *argv[])
 
   // run tests for different scalar types
   double ltol = tol;
-  double ftime[3]; int fiter; bool fpass = runTest<float>(ltol,ftime,fiter,vmap);
+  double ftime[3] = {0,0,0}; int fiter=0; 
+  bool fpass = true, dpass = true;
+#ifdef HAVE_TPETRA_INST_FLOAT
+  fpass = runTest<float>(ltol,ftime,fiter,vmap);
+#endif
   ltol = (reduce_tol ? ltol*ltol : ltol);
-  double dtime[3]; int diter; bool dpass = runTest<double>(ltol,dtime,diter,vmap);
+  double dtime[3] = {0,0,0}; int diter=0;
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  dpass = runTest<double>(ltol,dtime,diter,vmap);
+#endif
 
   // done with the matrix data now; delete it
   if (mptestmypid == 0) {

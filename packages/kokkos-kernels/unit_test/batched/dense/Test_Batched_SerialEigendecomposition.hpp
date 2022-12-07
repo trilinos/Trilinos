@@ -17,13 +17,13 @@ namespace Test {
   template<typename DeviceType,
            typename ViewRank3Type,
            typename ViewRank2Type,
-	   typename WorkViewType>
+           typename WorkViewType>
   struct Functor_TestBatchedSerialEigendecomposition {
-    ViewRank3Type _A; 
+    ViewRank3Type _A;
     ViewRank2Type _Er, _Ei;
     ViewRank3Type _UL, _UR;
     WorkViewType  _W;
-    
+
     KOKKOS_INLINE_FUNCTION
     Functor_TestBatchedSerialEigendecomposition(const ViewRank3Type A,
                                                 const ViewRank2Type Er,
@@ -42,25 +42,25 @@ namespace Test {
       auto UL = Kokkos::subview(_UL, k, Kokkos::ALL(), Kokkos::ALL());
       auto UR = Kokkos::subview(_UR, k, Kokkos::ALL(), Kokkos::ALL());
       auto W  = Kokkos::subview(_W,  k, Kokkos::ALL());
-      SerialEigendecomposition::invoke(A, er, ei, UL, UR, W);        
+      SerialEigendecomposition::invoke(A, er, ei, UL, UR, W);
     }
-    
+
     inline
     void run() {
       typedef typename ViewRank3Type::value_type value_type;
       std::string name_region("KokkosBatched::Test::SerialEigendecomposition");
-      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
-                                      std::is_same<value_type,double>::value ? "::Double" :
-                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
-                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
-      std::string name = name_region + name_value_type;
-      Kokkos::Profiling::pushRegion( name.c_str() );
+      std::string name_value_type = ( std::is_same<value_type,float>::value ?
+"::Float" : std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float>
+>::value ? "::ComplexFloat" : std::is_same<value_type,Kokkos::complex<double>
+>::value ? "::ComplexDouble" : "::UnknownValueType" ); std::string name =
+name_region + name_value_type; Kokkos::Profiling::pushRegion( name.c_str() );
       Kokkos::RangePolicy<DeviceType> policy(0, _A.extent(0));
-      Kokkos::parallel_for(name.c_str(), policy, *this);            
+      Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion();
     }
   };
-    
+
   template<typename DeviceType,
            typename ValueType,
            typename LayoutType>
@@ -68,11 +68,12 @@ namespace Test {
     typedef ValueType value_type;
     typedef Kokkos::View<value_type***,LayoutType,DeviceType> ViewRank3Type;
     typedef Kokkos::View<value_type**,LayoutType,DeviceType> ViewRank2Type;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutRight,DeviceType> WorkViewType;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutRight,DeviceType>
+WorkViewType;
 
     /// input
     ViewRank3Type A("A", N, m, m);
-    WorkViewType  W("W", N, 2*m*m+m*5);    
+    WorkViewType  W("W", N, 2*m*m+m*5);
 
     /// output
     ViewRank2Type Er("Er", N, m);
@@ -80,36 +81,40 @@ namespace Test {
     ViewRank3Type UL("UL", N, m, m);
     ViewRank3Type UR("UR", N, m, m);
 
-    
-    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
-    Kokkos::fill_random(A, random, value_type(1.0));
-    Kokkos::fence();
+
+    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space>
+random(13718); Kokkos::fill_random(A, random, value_type(1.0)); Kokkos::fence();
 
     /// test body
     Functor_TestBatchedSerialEigendecomposition
-      <DeviceType,ViewRank3Type,ViewRank2Type,WorkViewType>(A, Er, Ei, UL, UR, W).run();
-    Kokkos::fence();
+      <DeviceType,ViewRank3Type,ViewRank2Type,WorkViewType>(A, Er, Ei, UL, UR,
+W).run(); Kokkos::fence();
   }
 }
 
-template<typename DeviceType, 
+template<typename DeviceType,
          typename ValueType>
 int test_batched_serial_eigendecomposition() {
-// #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
+// #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 //   {
-//     Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10, 10);
+//
+Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10,
+10);
 //     for (int i=0;i<10;++i)
-//       Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10, 1);
+//
+Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10,
+1);
 //   }
 // #endif
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10, 10);
-    for (int i=0;i<10;++i)
-      Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10, 1);
+    Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10,
+10); for (int i=0;i<10;++i)
+      Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10,
+1);
   }
 #endif
-  
+
   return 0;
 }
 */

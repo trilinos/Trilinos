@@ -10,13 +10,15 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/bcstrategy)
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
   
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  STK_ResponseLibraryTest2
-  SOURCES response_library2.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
-  )
+IF(PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    STK_ResponseLibraryTest2
+    SOURCES response_library2.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+    )
+ENDIF(PANZER_HAVE_EPETRA)
   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STK_VolumeSideResponse

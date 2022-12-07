@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioad_export.h"
+
 #include <map>
 #include <set>
 #include <string>
@@ -49,21 +51,21 @@ namespace Ioad {
     return new T(io_database, my_name, entity_type, entity_count);
   }
 
-  int find_field_in_mapset(const std::string &entity_type, const std::string &field_name,
+  IOAD_EXPORT int find_field_in_mapset(const std::string &entity_type, const std::string &field_name,
                            const std::map<std::string, std::set<std::string>> &mapset);
 
-  std::string              get_property_variable_name(const std::string &property_name);
-  std::vector<std::string> properties_to_save(const Ioss::GroupingEntity *const entity_block);
+  IOAD_EXPORT std::string              get_property_variable_name(const std::string &property_name);
+  IOAD_EXPORT std::vector<std::string> properties_to_save(const Ioss::GroupingEntity *const entity_block);
 
-  std::string stringify_side_block_names(const Ioss::SideBlockContainer &sblocks);
+  IOAD_EXPORT std::string stringify_side_block_names(const Ioss::SideBlockContainer &sblocks);
 
-  std::string encode_field_name(std::vector<std::string> names);
+  IOAD_EXPORT std::string encode_field_name(std::vector<std::string> names);
 
-  std::string encode_sideblock_name(const std::string &type_string, const std::string &name);
+  IOAD_EXPORT std::string encode_sideblock_name(const std::string &type_string, const std::string &name);
 
-  bool is_sideblock_name(const std::string &name);
+  IOAD_EXPORT bool is_sideblock_name(const std::string &name);
 
-  bool use_transformed_storage(const Ioss::Field &field, const std::string &entity_type,
+  IOAD_EXPORT bool use_transformed_storage(const Ioss::Field &field, const std::string &entity_type,
                                const std::string &field_name);
 
 } // namespace Ioad

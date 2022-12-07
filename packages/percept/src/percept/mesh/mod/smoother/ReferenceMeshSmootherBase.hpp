@@ -33,9 +33,7 @@ public:
 	typedef std::unordered_map<typename MeshType::MTNode , std::vector<double> > NodeMap;
 
 	ReferenceMeshSmootherBaseImpl(PerceptMesh *eMesh,
-//			typename MeshType::MTSelector *boundary_selector=0,
             STKMesh::MTSelector *stk_select=0,
-            StructuredGrid::MTSelector *sgrid_select=0,
 			typename MeshType::MTMeshGeometry *meshGeometry=0,
 			int inner_iterations = 100,
 			double grad_norm =1.e-8,

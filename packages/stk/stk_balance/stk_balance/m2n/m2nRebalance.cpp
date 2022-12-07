@@ -36,6 +36,7 @@
 #include <stk_balance/m2n/M2NOutputMesh.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include "stk_balance/internal/LogUtils.hpp"
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/FillMesh.hpp>
 #include "stk_util/environment/Env.hpp"
@@ -121,10 +122,10 @@ void rebalance_m2n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm c
   print_running_message(balanceSettings, comm);
   print_banner(sierra::Env::outputP0());
 
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
+  bulk->mesh_meta_data().use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
-  stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), *bulk);
 
   stk::balance::m2n::m2nRebalance(ioBroker, balanceSettings);
 }

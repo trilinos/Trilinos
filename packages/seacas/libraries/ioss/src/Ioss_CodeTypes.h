@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,7 +48,7 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
 #define PAR_UNUSED(x)
-using Ioss_MPI_Comm  = MPI_Comm;
+using Ioss_MPI_Comm = MPI_Comm;
 #else
 #define PAR_UNUSED(x)                                                                              \
   do {                                                                                             \
@@ -93,3 +93,15 @@ using Kokkos_Complex = Kokkos::complex<double>;
 #ifndef IOSS_DEBUG_OUTPUT
 #define IOSS_DEBUG_OUTPUT 0
 #endif
+
+// For use to create a no-op get or put_field_internal function...
+#define NOOP_GFI(type)                                                                             \
+  int64_t get_field_internal(const type *, const Ioss::Field &, void *, size_t) const override     \
+  {                                                                                                \
+    return -1;                                                                                     \
+  }
+#define NOOP_PFI(type)                                                                             \
+  int64_t put_field_internal(const type *, const Ioss::Field &, void *, size_t) const override     \
+  {                                                                                                \
+    return -1;                                                                                     \
+  }

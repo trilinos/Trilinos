@@ -39,6 +39,8 @@ namespace stk {
 namespace simd {
 
 struct Double {
+  using native_simd_t = SIMD_NAMESPACE::native_simd<double>;
+
   STK_MATH_FORCE_INLINE Double() {}
 
   template <typename T>
@@ -46,7 +48,7 @@ struct Double {
     : _data(static_cast<double>(x)) {
   }
 
-  STK_MATH_FORCE_INLINE Double(const SIMD_NAMESPACE::native_simd<double>& x)
+  STK_MATH_FORCE_INLINE Double(const native_simd_t& x)
     : _data(x.get()) {
   }
 
@@ -118,19 +120,13 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double operator-() const {
-    return (SIMD_NAMESPACE::native_simd<double>(0.0) - _data);
+    return - _data;
   }
 
   STK_MATH_FORCE_INLINE double& operator[](int i) {return (reinterpret_cast<double*>(&_data))[i];}
   STK_MATH_FORCE_INLINE const double& operator[](int i) const {return (reinterpret_cast<const double*>(&_data))[i];}
-    
-  STK_MATH_FORCE_INLINE int32_t& Int(int i) {return (reinterpret_cast<int32_t*>(&_data))[i];}
-  STK_MATH_FORCE_INLINE const int32_t& Int(int i) const {return (reinterpret_cast<const int32_t*>(&_data))[i];}
 
-  STK_MATH_FORCE_INLINE uint32_t& UInt(int i) {return (reinterpret_cast<uint32_t*>(&_data))[i];}
-  STK_MATH_FORCE_INLINE const uint32_t& UInt(int i) const {return (reinterpret_cast<const uint32_t*>(&_data))[i];}
-
-  SIMD_NAMESPACE::native_simd<double> _data; // the "_" means you should try not to use this directly
+  native_simd_t _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 
   // and/or so the compiler doesn't have to use up one of
   // inlining depths (usually max inlining depth ~5)

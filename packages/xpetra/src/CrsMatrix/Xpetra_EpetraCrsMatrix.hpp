@@ -50,7 +50,7 @@
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #endif
 #endif
 
@@ -240,12 +240,6 @@ public:
   RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  local_matrix_type getLocalMatrix () const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-  }
-#endif
 local_matrix_type getLocalMatrixDevice () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
@@ -264,12 +258,16 @@ local_matrix_type getLocalMatrixDevice () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
+
+  LocalOrdinal GetStorageBlockSize() const {return 1;}
+
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
 #endif
 #endif
+
 
   void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
@@ -1241,12 +1239,6 @@ public:
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Compatibility layer for accessing the matrix data through a Kokkos interface
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-local_matrix_type getLocalMatrix () const {
-  return getLocalMatrixDevice();
-}
-#endif
 
 local_matrix_type getLocalMatrixDevice () const {
 #if 0
@@ -1317,6 +1309,7 @@ typename local_matrix_type::HostMirror getLocalMatrixHost () const {
   }
 
 
+  LocalOrdinal GetStorageBlockSize() const {return 1;}
 
 private:
 #else
@@ -1326,6 +1319,8 @@ private:
 #endif
 #endif
   //@}
+
+
 
   void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
@@ -2360,6 +2355,8 @@ public:
 
   }
 
+
+  LocalOrdinal GetStorageBlockSize() const {return 1;}
  
 private:
 #else
@@ -2368,6 +2365,8 @@ private:
 #endif
 #endif
 #endif
+
+
   //@}
 
  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

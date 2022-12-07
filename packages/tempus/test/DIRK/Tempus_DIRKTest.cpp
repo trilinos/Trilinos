@@ -147,11 +147,14 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
         Teuchos::rcp_const_cast<Teuchos::ParameterList>(
           integrator->getStepper()->getValidParameters());
 
+      // Do not worry about "Description" as it is documentation.
+      defaultPL->remove("Description");
+
       bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
       if (!pass) {
-        std::cout << std::endl;
-        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+        out << std::endl;
+        out << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        out << "defaultPL -------------- \n" << *defaultPL << std::endl;
       }
       TEST_ASSERT(pass)
     }
@@ -165,6 +168,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       RCP<ParameterList> defaultPL =
         Teuchos::rcp_const_cast<Teuchos::ParameterList>(
           integrator->getStepper()->getValidParameters());
+
+      // Do not worry about "Description" as it is documentation.
+      defaultPL->remove("Description");
 
       // These Steppers have 'Initial Condition Consistency = Consistent'
       // set as the default, so the ParameterList has been modified by

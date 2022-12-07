@@ -75,6 +75,16 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
  *  \param[in] optional_value The value to return if the property does not exist.
  *  \returns The property object.
  */
+int Ioss::PropertyManager::get_optional(const std::string &property_name, int optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_int();
+}
+
 int64_t Ioss::PropertyManager::get_optional(const std::string &property_name,
                                             int64_t            optional_value) const
 {
@@ -84,6 +94,17 @@ int64_t Ioss::PropertyManager::get_optional(const std::string &property_name,
     return optional_value;
   }
   return (*iter).second.get_int();
+}
+
+double Ioss::PropertyManager::get_optional(const std::string &property_name,
+                                           double             optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_real();
 }
 
 std::string Ioss::PropertyManager::get_optional(const std::string &property_name,

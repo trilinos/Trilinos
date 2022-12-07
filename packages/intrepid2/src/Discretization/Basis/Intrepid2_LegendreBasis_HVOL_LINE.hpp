@@ -49,7 +49,6 @@
 #ifndef Intrepid2_LegendreBasis_HVOL_LINE_h
 #define Intrepid2_LegendreBasis_HVOL_LINE_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -225,11 +224,13 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       for (int i=0; i<this->basisCardinality_; i++)
       {
         // for H(vol) line, first basis member is constant, second is first-degree, etc.
-        this->fieldOrdinalPolynomialDegree_(i,0) = i;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = i;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = i+1; // H^1 degree is one greater
       }
       
       // initialize tags
@@ -313,7 +314,7 @@ namespace Intrepid2
 
       auto policy =
           Kokkos::TeamPolicy<ExecutionSpace>(numPoints, teamSize, vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_LINE_Functor");
+      Kokkos::parallel_for("Hierarchical_HVOL_LINE_Functor", policy , functor);
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

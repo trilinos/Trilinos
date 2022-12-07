@@ -49,7 +49,6 @@
 #ifndef Intrepid2_IntegratedLegendreBasis_HGRAD_TRI_h
 #define Intrepid2_IntegratedLegendreBasis_HGRAD_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -171,15 +170,20 @@ namespace Intrepid2
             // these functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const double jacobiScaling = 1.0; // s0 + s1 + s2
             
-            for (int i=2; i<polyOrder_; i++)
+            const int max_ij_sum = polyOrder_;
+            const int min_i = 2;
+            const int min_j = 1;
+            const int min_ij_sum = min_i + min_j;
+            for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
             {
-              const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
-              const auto & edgeValue = output_(edgeBasisOrdinal,pointOrdinal);
-              const double alpha = i*2.0;
-              
-              Polynomials::integratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
-              for (int j=1; i+j <= polyOrder_; j++)
+              for (int i=min_i; i<=ij_sum-min_j; i++)
               {
+                const int j = ij_sum - i;
+                const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
+                const auto & edgeValue = output_(edgeBasisOrdinal,pointOrdinal);
+                const double alpha = i*2.0;
+                
+                Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
                 const auto & jacobiValue = jacobi_values_at_point(j);
                 output_(fieldOrdinalOffset,pointOrdinal) = edgeValue * jacobiValue;
                 fieldOrdinalOffset++;
@@ -265,7 +269,7 @@ namespace Intrepid2
            and
              [R^{2i}_{j-1}(s0,s1)] = d/dt L^{2i}_j(s1,s0+s1)
            We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
-           and d/dt L^{alpha}_{j} as integratedJacobiValues_dt.
+           and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
            */
           // rename the scratch memory to match our usage here:
           auto & P_2i_j_minus_1 = edge_field_values_at_point;
@@ -276,29 +280,34 @@ namespace Intrepid2
             // face functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const double jacobiScaling = 1.0; // s0 + s1 + s2
 
-            for (int i=2; i<polyOrder_; i++)
+            const int max_ij_sum = polyOrder_;
+            const int min_i = 2;
+            const int min_j = 1;
+            const int min_ij_sum = min_i + min_j;
+            for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
             {
-              // the edge function here is for edge 01, in the first set of edge functions.
-              const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
-              const auto & grad_L_i_dx = output_(edgeBasisOrdinal,pointOrdinal,0);
-              const auto & grad_L_i_dy = output_(edgeBasisOrdinal,pointOrdinal,1);
-              
-              const double alpha = i*2.0;
-
-              Polynomials::shiftedScaledIntegratedLegendreValues(L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
-              Polynomials::integratedJacobiValues_dt(     L_2i_j_dt, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::integratedJacobiValues   (        L_2i_j, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
-              
-              const auto & s0_dx = lambda_dx[0];
-              const auto & s0_dy = lambda_dy[0];
-              const auto & s1_dx = lambda_dx[1];
-              const auto & s1_dy = lambda_dy[1];
-              const auto & s2_dx = lambda_dx[2];
-              const auto & s2_dy = lambda_dy[2];
-              
-              for (int j=1; i+j <= polyOrder_; j++)
+              for (int i=min_i; i<=ij_sum-min_j; i++)
               {
+                const int j = ij_sum - i;
+                // the edge function here is for edge 01, in the first set of edge functions.
+                const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
+                const auto & grad_L_i_dx = output_(edgeBasisOrdinal,pointOrdinal,0);
+                const auto & grad_L_i_dy = output_(edgeBasisOrdinal,pointOrdinal,1);
+                
+                const double alpha = i*2.0;
+
+                Polynomials::shiftedScaledIntegratedLegendreValues (L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
+                Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_, lambda[2], jacobiScaling);
+                Polynomials::shiftedScaledIntegratedJacobiValues   (   L_2i_j, alpha, polyOrder_, lambda[2], jacobiScaling);
+                Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
+                
+                const auto & s0_dx = lambda_dx[0];
+                const auto & s0_dy = lambda_dy[0];
+                const auto & s1_dx = lambda_dx[1];
+                const auto & s1_dy = lambda_dy[1];
+                const auto & s2_dx = lambda_dx[2];
+                const auto & s2_dy = lambda_dy[2];
+                
                 const OutputScalar basisValue_dx = L_2i_j(j) * grad_L_i_dx + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dx + L_2i_j_dt(j) * (s0_dx + s1_dx + s2_dx));
                 const OutputScalar basisValue_dy = L_2i_j(j) * grad_L_i_dy + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dy + L_2i_j_dt(j) * (s0_dy + s1_dy + s2_dy));
                 
@@ -344,10 +353,9 @@ namespace Intrepid2
   };
   
   /** \class  Intrepid2::IntegratedLegendreBasis_HGRAD_TRI
-      \brief  Basis defining integrated Legendre basis on the line, a polynomial subspace of H(grad) on the line.
+      \brief  Basis defining integrated Legendre basis on the line, a polynomial subspace of H(grad) on the line: extension to triangle using Jacobi blending functions.
 
-              This is used in the construction of hierarchical bases on higher-dimensional topologies.  For
-              mathematical details of the construction, see:
+              For mathematical details of the construction, see:
    
                Federico Fuentes, Brendan Keith, Leszek Demkowicz, Sriram Nagaraj.
                "Orientation embedded high order shape functions for the exact sequence elements of all shapes."
@@ -369,6 +377,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = IntegratedLegendreBasis_HGRAD_TRI<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar,defineVertexFunctions>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
@@ -409,6 +418,7 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
@@ -419,11 +429,13 @@ namespace Intrepid2
       {
         // for H(grad) on triangle, if defineVertexFunctions is false, first three basis members are linear
         // if not, then the only difference is that the first member is constant
-        this->fieldOrdinalPolynomialDegree_(i,0) = 1;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = 1;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = 1;
       }
       if (!defineVertexFunctions)
       {
-        this->fieldOrdinalPolynomialDegree_(0,0) = 0;
+        this->fieldOrdinalPolynomialDegree_  (0,0) = 0;
+        this->fieldOrdinalH1PolynomialDegree_(0,0) = 0;
       }
       fieldOrdinalOffset += numVertexFunctions;
       
@@ -434,18 +446,24 @@ namespace Intrepid2
       {
         for (int i=0; i<numFunctionsPerEdge; i++)
         {
-          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0)   = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalH1PolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
         }
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
       
       // **** face functions **** //
       const int max_ij_sum = polyOrder;
-      for (int i=2; i<max_ij_sum; i++)
+      const int min_i = 2;
+      const int min_j = 1;
+      const int min_ij_sum = min_i + min_j;
+      for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
       {
-        for (int j=1; i+j<=max_ij_sum; j++)
+        for (int i=min_i; i<=ij_sum-min_j; i++)
         {
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
+          const int j = ij_sum - i;
+          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0)   = i+j;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = i+j;
           fieldOrdinalOffset++;
         }
       }
@@ -577,7 +595,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HGRAD_TRI_Functor");
+      Kokkos::parallel_for("Hierarchical_HGRAD_TRI_Functor", policy, functor);
     }
 
     /** \brief returns the basis associated to a subCell.

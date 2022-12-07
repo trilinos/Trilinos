@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <cstddef> // for size_t
 #include <cstdint> // for int64_t
@@ -40,7 +42,7 @@ namespace Ioss {
   // using ReverseMapContainer = tsl::robin_pg_map<int64_t, int64_t>;
 #endif
 
-  class Map
+  class IOSS_EXPORT Map
   {
   public:
     Map() = default;
@@ -49,9 +51,11 @@ namespace Ioss {
           m_myProcessor(processor)
     {
     }
-    Map(const Map &from) = delete;
+    Map(const Map &from)            = delete;
     Map &operator=(const Map &from) = delete;
     ~Map()                          = default;
+
+    void   set_rank(int processor) {m_myProcessor = processor;}
 
     void   set_size(size_t entity_count);
     size_t size() const { return m_map.empty() ? 0 : m_map.size() - 1; }

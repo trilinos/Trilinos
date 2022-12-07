@@ -21,10 +21,10 @@
 void bucketsorts(struct vtx_data **graph,       /* graph data structure */
                  int               nvtxs,       /* number of vertices */
                  struct bilist ****buckets,     /* array of lists for bucket sort */
-                 struct bilist **  listspace,   /* list data structure for each vertex */
-                 int **            dvals,       /* d-values for each vertex for removing */
-                 int *             sets,        /* processor each vertex is assigned to */
-                 float *           term_wgts[], /* weights for terminal prapogation */
+                 struct bilist   **listspace,   /* list data structure for each vertex */
+                 int             **dvals,       /* d-values for each vertex for removing */
+                 int              *sets,        /* processor each vertex is assigned to */
+                 float            *term_wgts[], /* weights for terminal prapogation */
                  int               maxdval,     /* maximum possible dvalue for a vertex */
                  int               nsets,       /* number of sets being divided into */
                  int               parity,      /* work in forward or backward direction? */
@@ -39,10 +39,10 @@ void bucketsorts(struct vtx_data **graph,       /* graph data structure */
   extern int      KL_UNDO_LIST;    /* only sort vertices who have moved. */
   extern double   CUT_TO_HOP_COST; /* if term_prop, cut/hop importance */
   struct bilist **bptr  = NULL;    /* loops through set of buckets */
-  struct bilist * lptr  = NULL;    /* pointer to an element in listspace */
-  float *         ewptr = NULL;    /* loops through edge weights */
-  int *           bsptr = NULL;    /* loops through bspace */
-  int *           edges = NULL;    /* edge list for a vertex */
+  struct bilist  *lptr  = NULL;    /* pointer to an element in listspace */
+  float          *ewptr = NULL;    /* loops through edge weights */
+  int            *bsptr = NULL;    /* loops through bspace */
+  int            *edges = NULL;    /* edge list for a vertex */
   int             myset;           /* set that current vertex belongs to */
   int             newset;          /* set current vertex could move to */
   int             set;             /* set that neighboring vertex belongs to */
@@ -54,7 +54,7 @@ void bucketsorts(struct vtx_data **graph,       /* graph data structure */
   double          hop_cost;        /* relative hop/cut importance */
   int             myhop;           /* hops associated with current vertex */
   int             i, j, l;         /* loop counters */
-  void            randomize(), add2bilist();
+  void            randomize(int *array, int n), add2bilist();
 
   /* For each vertex, compute d-values for each possible transition. */
   /* Then store them in each appropriate bucket. */

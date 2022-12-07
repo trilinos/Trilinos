@@ -45,9 +45,11 @@
 
 namespace
 {
+
 TEST(StkIoHowTo, useTextMesh)
 {
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
 
   std::string textMeshDesc = "textmesh:0,1,HEX_8,1,2,3,4,5,6,7,8";
 
@@ -65,6 +67,7 @@ TEST(StkIoHowTo, useTextMesh)
 TEST(StkIoHowTo, useTextMesh_withAllOptions)
 {
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
 
   std::string textMeshDesc =
       "textmesh:"

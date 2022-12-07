@@ -45,8 +45,18 @@
 #include "Stokhos_StaticArrayTraits.hpp"
 #include "Stokhos_MemoryTraits.hpp"
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Cuda.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 #include "Sacado_Traits.hpp"
 #include "Stokhos_KokkosTraits.hpp"
@@ -512,22 +522,7 @@ namespace Stokhos {
 
 }
 
-namespace Sacado {
-  template <typename ordinal_t, typename value_t, int Num, typename device_t>
-  struct StringName< Stokhos::StaticFixedStorage<ordinal_t,
-                                                 value_t,
-                                                 Num,
-                                                 device_t> > {
-    static std::string eval() {
-      std::stringstream ss;
-      ss << "Stokhos::StaticFixedStorage<"
-         << StringName<ordinal_t>::eval() << ","
-         << StringName<value_t>::eval() << ","
-         << Num << ","
-         << StringName<device_t>::eval() << ">";
-      return ss.str();
-    }
-  };
-}
+#include "Stokhos_StorageHelpers.hpp"
+STOKHOS_STORAGE_HELPER_STRINGNAME_STATIC(StaticFixedStorage)
 
 #endif // STOKHOS_STATIC_FIXED_STORAGE_HPP

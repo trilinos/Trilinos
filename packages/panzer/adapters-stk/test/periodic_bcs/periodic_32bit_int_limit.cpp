@@ -40,7 +40,7 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
   setenv("IOSS_PROPERTIES", "DECOMPOSITION_METHOD=rib", 1);
 
   Teuchos::RCP<Teuchos::MpiComm<int>> Comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD) );
-  Kokkos::initialize();
+  Kokkos::ScopeGuard();
 
   using topo_RCP = Teuchos::RCP<const shards::CellTopology>;
   using basis_RCP = Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double>>;
@@ -61,6 +61,9 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
       pbc->set("Count",2);
       pbc->set("Periodic Condition 1","xz-all 1e-12,3D: top;bottom");
       pbc->set("Periodic Condition 2","yz-all 1e-12,3D: left;right");
+#ifdef PANZER_HAVE_STKSEARCH
+      pbc->set("Use BBox Search",true);
+#endif
       pl->sublist("Periodic BCs").setParameters( *pbc );
     }
 
@@ -181,6 +184,4 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
       }
     }
   }
-
-  Kokkos::finalize();
 }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,7 +31,7 @@ public:
   Exo_Entity(int file_id, size_t id);
   Exo_Entity(int file_id, size_t id, size_t nnodes);
   virtual ~Exo_Entity();
-  Exo_Entity(const Exo_Entity &) = delete;
+  Exo_Entity(const Exo_Entity &)                  = delete;
   const Exo_Entity &operator=(const Exo_Entity &) = delete;
 
   size_t Size() const { return numEntity; }
@@ -71,7 +71,7 @@ public:
   virtual EXOTYPE exodus_type() const = 0;
 
 protected:
-  std::string  name_;
+  std::string  name_{};
   int          fileId{-1};
   ex_entity_id id_{EX_INVALID_ID};
   size_t       index_{0};    // 0-offset index into Exodus nodeset list.
@@ -83,15 +83,15 @@ private:
 
   void get_truth_table() const;
 
-  mutable int *truth_{nullptr};      // Array; holds local truth table for this entity
-  int          currentStep{0};       // Time step number of the current results.
-  int          numVars{0};           // Total number of variables in the file.
-  double     **results_{nullptr};    // Array of pointers (length numVars)
-                                     // to arrays of results (length num_entity).
-  int                   numAttr{0};  // Total number of attributes in the file.
-  std::vector<double *> attributes_; // Array of pointers (length numAttr)
-                                     // to arrays of attributes (length num_entity).
-  std::vector<std::string> attributeNames;
+  mutable int *truth_{nullptr};        // Array; holds local truth table for this entity
+  int          currentStep{0};         // Time step number of the current results.
+  int          numVars{0};             // Total number of variables in the file.
+  double     **results_{nullptr};      // Array of pointers (length numVars)
+                                       // to arrays of results (length num_entity).
+  int                   numAttr{0};    // Total number of attributes in the file.
+  std::vector<double *> attributes_{}; // Array of pointers (length numAttr)
+                                       // to arrays of attributes (length num_entity).
+  std::vector<std::string> attributeNames{};
 
   template <typename INT> friend class ExoII_Read;
 };

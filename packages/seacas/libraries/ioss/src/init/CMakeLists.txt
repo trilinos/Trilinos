@@ -37,6 +37,9 @@ IF (TPL_ENABLE_Catalyst2)
   SET(CATALYST2LIB Iocatalyst)
 endif()
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/ionit_export.h")
+
 TRIBITS_ADD_LIBRARY(
 	Ionit
 	HEADERS	${HEADERS}
@@ -46,7 +49,11 @@ TRIBITS_ADD_LIBRARY(
           ${PAMGENLIB} ${CGNSLIB} ${VISLIB} ${FAODELLIB} ${ADIOS2LIB} ${CATALYST2LIB}
 )
 
+generate_export_header(Ionit)
+target_include_directories(Ionit
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
+
 IF (BUILD_TESTING)
   ENABLE_TESTING()
 ENDIF()
-

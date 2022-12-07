@@ -71,9 +71,9 @@ namespace KokkosSparse {
 /// Teuchos::OrdinalTraits<T>::invalid() because it is not marked as a
 /// Kokkos device function.  I also can't use std::numeric_limits for
 /// the same reason.  That's why this traits class needs to exist.
-template<class T>
+template <class T>
 struct OrdinalTraits {
-  static KOKKOS_INLINE_FUNCTION T invalid () { return -1; }
+  static KOKKOS_INLINE_FUNCTION T invalid() { return -1; }
 };
 
 // template<>
@@ -81,46 +81,50 @@ struct OrdinalTraits {
 //   static KOKKOS_INLINE_FUNCTION char invalid () { return CHAR_MAX; }
 // };
 
-template<>
+template <>
 struct OrdinalTraits<short int> {
-  static KOKKOS_INLINE_FUNCTION short int invalid () { return -1; }
+  static KOKKOS_INLINE_FUNCTION short int invalid() { return -1; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<unsigned short int> {
-  static KOKKOS_INLINE_FUNCTION unsigned short int invalid () { return USHRT_MAX; }
+  static KOKKOS_INLINE_FUNCTION unsigned short int invalid() {
+    return USHRT_MAX;
+  }
 };
 
-template<>
+template <>
 struct OrdinalTraits<int> {
-  static KOKKOS_INLINE_FUNCTION int invalid () { return -1; }
+  static KOKKOS_INLINE_FUNCTION int invalid() { return -1; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<unsigned int> {
-  static KOKKOS_INLINE_FUNCTION unsigned int invalid () { return UINT_MAX; }
+  static KOKKOS_INLINE_FUNCTION unsigned int invalid() { return UINT_MAX; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<long> {
-  static KOKKOS_INLINE_FUNCTION long invalid () { return -1; }
+  static KOKKOS_INLINE_FUNCTION long invalid() { return -1; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<unsigned long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long invalid () { return ULONG_MAX; }
+  static KOKKOS_INLINE_FUNCTION unsigned long invalid() { return ULONG_MAX; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<long long> {
-  static KOKKOS_INLINE_FUNCTION long long invalid () { return -1; }
+  static KOKKOS_INLINE_FUNCTION long long invalid() { return -1; }
 };
 
-template<>
+template <>
 struct OrdinalTraits<unsigned long long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long long invalid () { return ULLONG_MAX; }
+  static KOKKOS_INLINE_FUNCTION unsigned long long invalid() {
+    return ULLONG_MAX;
+  }
 };
 
-} // namespace KokkosSparse
+}  // namespace KokkosSparse
 
-#endif // KOKKOS_SPARSE_ORDINALTRAITS_HPP_
+#endif  // KOKKOS_SPARSE_ORDINALTRAITS_HPP_

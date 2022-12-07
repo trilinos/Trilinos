@@ -70,6 +70,9 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList &parlist,
   gamma2_ = trlist.get("Radius Growing Rate",                  static_cast<Real>(2.5));
   TRsafe_ = trlist.get("Safeguard Size",                       static_cast<Real>(100.0));
   eps_    = TRsafe_*ROL_EPSILON<Real>();
+  // Nonmonotone Information
+  NMstorage_ = trlist.get("Nonmonotone Storage Limit", 0);
+  useNM_     = (NMstorage_ <= 0 ? false : true);
   // Inexactness Information
   ParameterList &glist = parlist.sublist("General");
   useInexact_.clear();
@@ -187,6 +190,11 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
   Real ftrial(0), pRed(0), rho(0);
   Ptr<Vector<Real>> gvec = g.clone();
   initialize(x,g,*gvec,obj,outStream);
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -205,6 +213,11 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
     // Compute ratio of actual and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
@@ -228,6 +241,15 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
       state_->iterateVec->set(x);
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == NMstorage_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate

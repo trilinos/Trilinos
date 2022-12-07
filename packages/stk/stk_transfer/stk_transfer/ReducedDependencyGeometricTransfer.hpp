@@ -144,6 +144,7 @@ template <class Mesh>
 void get_unique_procs_from_entity_keys(const typename Mesh::EntityProcVec & vec, std::vector<int> & uniqueProcVec)
 {
   //recalculate uniqueProcs using masked values
+  uniqueProcVec.clear();
   uniqueProcVec.reserve(vec.size());
   std::transform(vec.begin(), vec.end(), std::back_inserter(uniqueProcVec),
       [](typename Mesh::EntityProc a) {return a.proc();});

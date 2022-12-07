@@ -10,12 +10,20 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/io_info_lib_export.h")
+
 TRIBITS_ADD_LIBRARY(
   io_info_lib
   HEADERS io_info.h info_interface.h
   SOURCES io_info.C volume.C info_interface.C
   DEPLIBS Ioss
   )
+
+generate_export_header(io_info_lib)
+target_include_directories(io_info_lib
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 ASSERT_DEFINED(TPL_ENABLE_CGNS)
 IF (TPL_ENABLE_CGNS)
@@ -518,6 +526,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_embedded_nodeblock_fields
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/structured_with_nodeblock_fields.cgns structured_with_nodeblock_fields_out.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(unstructured_2d_cgns
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )

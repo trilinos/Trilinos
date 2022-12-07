@@ -47,8 +47,10 @@
 
 #include "ROL_DaiFletcherProjection.hpp"
 #include "ROL_DykstraProjection.hpp"
+#include "ROL_DouglasRachfordProjection.hpp"
 #include "ROL_SemismoothNewtonProjection.hpp"
 #include "ROL_RiddersProjection.hpp"
+#include "ROL_BrentsProjection.hpp"
 
 namespace ROL {
 
@@ -63,20 +65,24 @@ namespace ROL {
 enum EPolyProjAlgo{
   PPA_DAIFLETCHER = 0,
   PPA_DYKSTRA,
+  PPA_DOUGLASRACHFORD,
   PPA_NEWTON,
   PPA_RIDDERS,
+  PPA_BRENTS,
   PPA_LAST
 };
 
 inline std::string EPolyProjAlgoToString(EPolyProjAlgo alg) {
   std::string retString;
   switch(alg) {
-    case PPA_DAIFLETCHER: retString = "Dai-Fletcher";      break;
-    case PPA_DYKSTRA:     retString = "Dysktra";           break;
-    case PPA_NEWTON:      retString = "Semismooth Newton"; break;
-    case PPA_RIDDERS:     retString = "Ridders";           break;
-    case PPA_LAST:        retString = "Last Type (Dummy)"; break;
-    default:              retString = "INVALID EPolyProjAlgo";
+    case PPA_DAIFLETCHER:     retString = "Dai-Fletcher";      break;
+    case PPA_DYKSTRA:         retString = "Dysktra";           break;
+    case PPA_DOUGLASRACHFORD: retString = "Douglas-Rachford";  break;
+    case PPA_NEWTON:          retString = "Semismooth Newton"; break;
+    case PPA_RIDDERS:         retString = "Ridders";           break;
+    case PPA_BRENTS:          retString = "Brents";            break;
+    case PPA_LAST:            retString = "Last Type (Dummy)"; break;
+    default:                  retString = "INVALID EPolyProjAlgo";
   }
   return retString;
 }
@@ -87,10 +93,12 @@ inline std::string EPolyProjAlgoToString(EPolyProjAlgo alg) {
     \return 1 if the argument is a valid PolyProjAlgo; 0 otherwise.
   */
 inline int isValidPolyProjAlgo(EPolyProjAlgo alg){
-  return( (alg == PPA_DAIFLETCHER) ||
-          (alg == PPA_DYKSTRA)     ||
-          (alg == PPA_NEWTON)      ||
-          (alg == PPA_RIDDERS)     ||
+  return( (alg == PPA_DAIFLETCHER)     ||
+          (alg == PPA_DYKSTRA)         ||
+          (alg == PPA_DOUGLASRACHFORD) ||
+          (alg == PPA_NEWTON)          ||
+          (alg == PPA_RIDDERS)         ||
+          (alg == PPA_BRENTS)          ||
           (alg == PPA_LAST)
         );
 }
@@ -135,11 +143,13 @@ inline Ptr<PolyhedralProjection<Real>> PolyhedralProjectionFactory(const Vector<
                                                                    ParameterList                    &list) {
   EPolyProjAlgo ealg = StringToEPolyProjAlgo(list.sublist("General").sublist("Polyhedral Projection").get("Type","Dykstra"));
   switch(ealg) {
-    case PPA_DAIFLETCHER: return makePtr<DaiFletcherProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);      break;
-    case PPA_DYKSTRA:     return makePtr<DykstraProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
-    case PPA_NEWTON:      return makePtr<SemismoothNewtonProjection<Real>>(xprim,xdual,bnd,con,mul,res,list); break;
-    case PPA_RIDDERS:     return makePtr<RiddersProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
-    default:              return nullPtr;
+    case PPA_DAIFLETCHER:     return makePtr<DaiFletcherProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);      break;
+    case PPA_DYKSTRA:         return makePtr<DykstraProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
+    case PPA_DOUGLASRACHFORD: return makePtr<DouglasRachfordProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);  break;
+    case PPA_NEWTON:          return makePtr<SemismoothNewtonProjection<Real>>(xprim,xdual,bnd,con,mul,res,list); break;
+    case PPA_RIDDERS:         return makePtr<RiddersProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
+    case PPA_BRENTS:          return makePtr<BrentsProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);           break;
+    default:                  return nullPtr;
   }
 }
 } // namespace ROL

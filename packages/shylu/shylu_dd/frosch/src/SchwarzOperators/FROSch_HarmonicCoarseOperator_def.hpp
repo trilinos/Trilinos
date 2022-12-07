@@ -61,13 +61,23 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::ConstXMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
         FROSCH_DETAILTIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
-        XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
-        ConstXMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
+        ConstXMapPtr repeatedMap;
+        ConstXMatrixPtr repeatedMatrix;
+        if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
+            ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
+                                                this->coarseSubdomainMatrix_,
+                                                this->coarseLocalSubdomainMatrix_);
+            repeatedMap = this->coarseSubdomainMatrix_->getRowMap();
+            repeatedMatrix = this->coarseLocalSubdomainMatrix_;
+        } else {
+            repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
+            repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst());
+        }
 
         // Remove coupling blocks
         if (this->ParameterList_->get("Extensions: Remove Coupling",false)) {
@@ -98,7 +108,7 @@ namespace FROSch {
         XMatrixPtr kGammaI;
         XMatrixPtr kGammaGamma;
 
-        BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
+        BuildSubmatrices(repeatedMatrix.getConst(),indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         //Detect linear dependencies
         if (!this->ParameterList_->get("Skip DetectLinearDependencies",false)) {
@@ -339,7 +349,6 @@ namespace FROSch {
         switch (dimension) {
             case 1:
                 return null;
-                break;
             case 2:
                 rotationsPerEntity = 1;
                 break;
@@ -348,7 +357,6 @@ namespace FROSch {
                 break;
             default:
                 FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator: The dimension is neither 2 nor 3!");
-                break;
         }
 
         XMultiVectorPtrVecPtr rotations(rotationsPerEntity);
@@ -465,7 +473,6 @@ namespace FROSch {
                     break;
                 default:
                     FROSCH_ASSERT(false,"FROSch::HarmonicCoarseOperator: The dimension is neither 1 nor 2 nor 3!");
-                    break;
             }
             // If necessary, discard additional rotations
             UN rotationsToDiscard = discardRotations - numZeroRotations;
@@ -515,16 +522,16 @@ namespace FROSch {
             for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); i++) {
                 GOVec indices;
                 SCVec values;
-                for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
-                    valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
-                    if (fabs(valueTmp)>tresholdDropping) {
-                        indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
-                        values.push_back(valueTmp*scale[j]);
-                    }
-                }
                 iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
-
                 if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                    for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
+                        valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
+                            values.push_back(valueTmp*scale[j]);
+                        }
+                    }
+
                     phiGamma->insertGlobalValues(iD,indices(),values());
                 }
             }
@@ -799,13 +806,27 @@ namespace FROSch {
                 GOIndView     indicesIDofsAllData ("indicesIDofsAllData", numIndices);
                 Kokkos::deep_copy(indicesIDofsAllData, indicesIDofsAllHostData);
 
+                using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
+                using TMVector     = Tpetra::MultiVector<SC,LO,GO,NO>;
+                using SCView       = typename TMVector::dual_view_type::t_dev;
+                using ConstSCView  = typename TMVector::dual_view_type::t_dev::const_type;
+                // Xpetra wrapper for Tpetra MV
+                auto mVPhiIXTpetraMVector = rcp_dynamic_cast<const xTMVector>(mVPhiI, true);
+                auto mVPhiXTpetraMVector = rcp_dynamic_cast<       xTMVector>(mVPhi, true);
+                // Tpetra MV
+                auto mVPhiITpetraMVector = mVPhiIXTpetraMVector->getTpetra_MultiVector();
+                auto mVPhiTpetraMVector = mVPhiXTpetraMVector->getTpetra_MultiVector();
+                // Kokkos-Kernels Views
+                auto mvPhiIView = mVPhiITpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto mvPhiView = mVPhiTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                auto mvPhiICols = Tpetra::getMultiVectorWhichVectors(*mVPhiITpetraMVector);
+                auto mvPhiCols = Tpetra::getMultiVectorWhichVectors(*mVPhiTpetraMVector);
                 for (UN j=0; j<numLocalBlockColumns[i]; j++) {
-                    auto mVPhiIData = mVPhiI->getData(itmp);
-                    auto mVPhiData  = mVPhi->getDataNonConst(itmp);
-
+                    int col_in = mVPhiITpetraMVector->isConstantStride() ? j : mvPhiICols[j];
+                    int col_out = mVPhiTpetraMVector->isConstantStride() ? j : mvPhiCols[j];
+                    CopyPhiViewFunctor<GOIndView, ConstSCView, SCView> functor(col_in, indicesIDofsAllData, mvPhiIView, col_out, mvPhiView);
                     for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                         Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);
-                        CopyPhiDataFunctor<GOIndView> functor(mVPhiData, mVPhiIData, indicesIDofsAllData);
                         Kokkos::parallel_for(
                             "FROSch_HarmonicCoarseOperator::fillPhiData", policy, functor);
                     }
@@ -1001,7 +1022,8 @@ namespace FROSch {
             }
         }
 
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > graphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > graphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),INVALID,1,0,this->K_->getMap()->getComm());
 
         //UN maxNumElements = -1;
         //get the maximum number of neighbors for a subdomain
@@ -1048,6 +1070,33 @@ namespace FROSch {
         }
         return 0;
     }
+
+    template <class SC,class LO,class GO,class NO>
+    void HarmonicCoarseOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic()
+    {
+        if (this->K_->getRowMap()->lib() == UseTpetra) {
+            FROSCH_DETAILTIMER_START_LEVELID(extractLocalSubdomainMatrix_SymbolicTime,"HarmonicCoarseOperatorCoarseOperator::extractLocalSubdomainMatrix_Symbolic");
+            XMapPtr repeatedMap = AssembleSubdomainMap(this->NumberOfBlocks_, this->DofsMaps_, this->DofsPerNode_);
+
+            // buid sudomain matrix
+            this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, repeatedMap, this->K_->getGlobalMaxNumRowEntries());
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
+            this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
+
+            // build local subdomain matrix
+            RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+            RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
+            this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
+
+            // fill in column indexes
+            ExtractLocalSubdomainMatrix_Symbolic(this->coarseSubdomainMatrix_, // input
+                                                 this->coarseLocalSubdomainMatrix_); // output
+
+            // turn flag on
+            this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+        }
+    }
+    
 }
 
 #endif

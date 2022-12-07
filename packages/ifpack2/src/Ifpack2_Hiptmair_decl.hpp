@@ -118,7 +118,8 @@ namespace Ifpack2 {
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
                        const Teuchos::RCP<const row_matrix_type>& PtAP,
-                       const Teuchos::RCP<const row_matrix_type>& P);
+                       const Teuchos::RCP<const row_matrix_type>& P,
+                       const Teuchos::RCP<const row_matrix_type>& Pt=Teuchos::null);
 
     //! Destructor
     virtual ~Hiptmair ();
@@ -179,6 +180,11 @@ namespace Ifpack2 {
                           typename MatrixType::local_ordinal_type,
                           typename MatrixType::global_ordinal_type,
                           typename MatrixType::node_type>& Y) const;
+
+    //! A service routine for updating the cached MultiVectors
+    void updateCachedMultiVectors(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map1,
+                                  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>>& map2,
+                                  size_t numVecs) const;
 
     //! Tpetra::Map representing the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
@@ -242,13 +248,16 @@ namespace Ifpack2 {
     //  A - matrix in primary space
     //  PtAP - matrix in auxiliary space
     //  P  - prolongator matrix
-    Teuchos::RCP<const row_matrix_type> A_, PtAP_, P_;
+    Teuchos::RCP<const row_matrix_type> A_, PtAP_, P_, Pt_;
 
     //! Preconditioner types
     std::string precType1_, precType2_, preOrPost_;
 
     //! If true, the starting solution is always the zero vector.
     bool ZeroStartingSolution_;
+
+    //! If false, explicitely apply Pt
+    bool ImplicitTranspose_;
 
     //! Preconditioner parameters.
     Teuchos::ParameterList precList1_, precList2_;
@@ -271,6 +280,11 @@ namespace Ifpack2 {
     mutable double ApplyTime_;
     //! preconditioners for the two spaces
     Teuchos::RCP<prec_type> ifpack2_prec1_, ifpack2_prec2_;
+    //! MultiVectors for caching purposes (so apply doesn't need to allocate them on each call)
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedResidual1_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedSolution1_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedResidual2_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedSolution2_;
   };
 
 } // namespace Ifpack2

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -47,7 +47,7 @@ C   --   ISCR - SCRATCH - size = NUMNPS
       INTEGER IXNPS(*)
       INTEGER NNX(*)
       INTEGER ISCR(*)
-      CHARACTER*(MXSTLN) NAMSCR(*)
+      CHARACTER*(maxnam) NAMSCR(*)
       CHARACTER*(maxnam) NAME(*)
 
       IF (NUMNPS .LE. 0) RETURN

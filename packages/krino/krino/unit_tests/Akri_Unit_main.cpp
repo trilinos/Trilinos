@@ -18,15 +18,17 @@
 #include <Kokkos_Core.hpp>
 
 int main(int argc, char **argv) {
-  Kokkos::ScopeGuard guard(argc, argv);
-
   sierra::Env::set_input_file_required(false);
 
   testing::InitGoogleTest(&argc, argv);
 
   krino::Startup startup__(argc, argv);
 
-  stk::unit_test_util::create_parallel_output(sierra::Env::parallel_rank());
+  std::unique_ptr<Kokkos::ScopeGuard> guard =
+    !Kokkos::is_initialized() && !Kokkos::is_finalized()?
+    std::make_unique<Kokkos::ScopeGuard>(argc,argv) : nullptr;
+    
+  stk::unit_test_util::simple_fields::create_parallel_output(sierra::Env::parallel_rank());
 
   return RUN_ALL_TESTS();
 }

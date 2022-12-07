@@ -53,13 +53,13 @@ enum SnipOption {
 
 struct DisconnectBlocksOption {
   DisconnectBlocksOption()
-   : disconnectOption(DISCONNECT_GLOBAL)
-   , snipOption(PRESERVE_INITIAL_HINGES)
+    : disconnectOption(DISCONNECT_GLOBAL),
+      snipOption(PRESERVE_INITIAL_HINGES)
   {}
 
   DisconnectBlocksOption(DisconnectOption disconnectOption_, SnipOption snipOption_)
-   : disconnectOption(disconnectOption_)
-   , snipOption(snipOption_)
+    : disconnectOption(disconnectOption_),
+      snipOption(snipOption_)
   {}
 
   DisconnectOption disconnectOption;

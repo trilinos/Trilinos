@@ -35,6 +35,7 @@
 
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 #include "SetupKeyholeMesh.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
@@ -47,41 +48,44 @@ namespace {
 
 using namespace stk::mesh::impl;
 using namespace stk::mesh;
+using stk::unit_test_util::build_mesh;
 
 TEST(ElementGraph, degenerate_mesh)
 {
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) <= 2)
+  if(stk::parallel_machine_size(comm) <= 2)
+  {
+    std::string fileName("degenerate.g");
     {
-        std::string fileName("degenerate.g");
-        {
-            stk::mesh::MetaData meta_data(3);
-            stk::mesh::fixtures::VectorFieldType & node_coord =
-                    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-            stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
+      std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+      stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+      stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+          meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
+      stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
 
-            stk::mesh::fixtures::degenerate_mesh_meta_data(meta_data, node_coord);
-            meta_data.commit();
+      stk::mesh::fixtures::simple_fields::degenerate_mesh_meta_data(meta_data, node_coord);
+      meta_data.commit();
 
-            stk::mesh::BulkData bulk_data(meta_data, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
-            stk::mesh::fixtures::degenerate_mesh_bulk_data(bulk_data, node_coord);
-            if(stk::parallel_machine_rank(comm) == 0)
-            {
-                stk::io::write_mesh(fileName, bulk_data);
-            }
-        }
-        stk::mesh::MetaData meta_data(3);
-        stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
-        stk::io::put_io_part_attribute(skin);
-        stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
-        unlink(fileName.c_str());
-        EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
-        std::vector<size_t> mesh_counts;
-        stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
-        EXPECT_EQ(10u, mesh_counts[meta_data.side_rank()]);
+      stk::mesh::BulkData& bulk_data = *bulkPtr;
+      stk::mesh::fixtures::simple_fields::degenerate_mesh_bulk_data(bulk_data, node_coord);
+      if(stk::parallel_machine_rank(comm) == 0)
+      {
+        stk::io::write_mesh(fileName, bulk_data);
+      }
     }
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk_data = *bulkPtr;
+    stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
+    stk::io::put_io_part_attribute(skin);
+    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+    unlink(fileName.c_str());
+    EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+    std::vector<size_t> mesh_counts;
+    stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
+    EXPECT_EQ(10u, mesh_counts[meta_data.side_rank()]);
+  }
 }
 
 }

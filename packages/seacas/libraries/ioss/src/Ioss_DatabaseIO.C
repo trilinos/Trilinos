@@ -73,7 +73,7 @@ namespace {
     unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
       const std::string &ge_name = ge->name();
-      fmt::print(Ioss::WARNING(),
+      fmt::print(Ioss::WarnOut(),
                  "[{}] Parallel inconsistency detected for {} field '{}' on entity '{}'. (Hash: {} "
                  "{} {})\n",
                  in_out == 0 ? "writing" : "reading", util.parallel_rank(), field_name, ge_name,
@@ -178,6 +178,11 @@ namespace Ioss {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
 
+    nodeMap.set_rank(myProcessor);
+    edgeMap.set_rank(myProcessor);
+    faceMap.set_rank(myProcessor);
+    elemMap.set_rank(myProcessor);
+
     // Some operations modify DBFilename and there is a need to get
     // back to the original filename...
     originalDBFilename = DBFilename;
@@ -187,6 +192,7 @@ namespace Ioss {
     util_.add_environment_properties(properties);
 
     Utils::check_set_bool_property(properties, "ENABLE_FIELD_RECOGNITION", enableFieldRecognition);
+    Utils::check_set_bool_property(properties, "IGNORE_REALN_FIELDS", m_ignoreRealnFields);
 
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
       std::string tmp         = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
@@ -200,6 +206,37 @@ namespace Ioss {
     // vz to be a 3-component field 'v'.
     Utils::check_set_bool_property(properties, "FIELD_STRIP_TRAILING_UNDERSCORE",
                                    fieldStripTrailing_);
+
+    if (properties.exists("SURFACE_SPLIT_TYPE")) {
+      Ioss::SurfaceSplitType split_type = Ioss::SPLIT_INVALID;
+      auto                   type       = properties.get("SURFACE_SPLIT_TYPE").get_type();
+      if (type == Ioss::Property::INTEGER) {
+        int split  = properties.get("SURFACE_SPLIT_TYPE").get_int();
+        split_type = Ioss::int_to_surface_split(split);
+      }
+      else if (type == Ioss::Property::STRING) {
+        std::string split = properties.get("SURFACE_SPLIT_TYPE").get_string();
+        if (Ioss::Utils::str_equal(split, "TOPOLOGY")) {
+          split_type = Ioss::SPLIT_BY_TOPOLOGIES;
+        }
+        else if (Ioss::Utils::str_equal(split, "BLOCK")) {
+          split_type = Ioss::SPLIT_BY_ELEMENT_BLOCK;
+        }
+        else if (Ioss::Utils::str_equal(split, "NO_SPLIT")) {
+          split_type = Ioss::SPLIT_BY_DONT_SPLIT;
+        }
+        else {
+          split_type = Ioss::SPLIT_INVALID;
+          fmt::print(Ioss::WarnOut(),
+                     "Invalid setting for SURFACE_SPLIT_TYPE Property ('{}').  Valid entries are "
+                     "TOPOLOGY, BLOCK, NO_SPLIT. Ignoring.\n",
+                     split);
+        }
+      }
+      if (split_type != Ioss::SPLIT_INVALID) {
+        set_surface_split_type(split_type);
+      }
+    }
 
     if (properties.exists("INTEGER_SIZE_API")) {
       int isize = properties.get("INTEGER_SIZE_API").get_int();
@@ -216,13 +253,8 @@ namespace Ioss {
       }
     }
 
-    if (properties.exists("CYCLE_COUNT")) {
-      cycleCount = properties.get("CYCLE_COUNT").get_int();
-    }
-
-    if (properties.exists("OVERLAY_COUNT")) {
-      overlayCount = properties.get("OVERLAY_COUNT").get_int();
-    }
+    cycleCount   = properties.get_optional("CYCLE_COUNT", cycleCount);
+    overlayCount = properties.get_optional("OVERLAY_COUNT", overlayCount);
 
     Utils::check_set_bool_property(properties, "ENABLE_TRACING", m_enableTracing);
     Utils::check_set_bool_property(properties, "TIME_STATE_INPUT_OUTPUT", m_timeStateInOut);
@@ -299,7 +331,7 @@ namespace Ioss {
   {
     // If the user has explicitly set the suffix separator for this database,
     // then use it for all fields.
-    // If it was not explicity set, then use whatever the field has defined,
+    // If it was not explicitly set, then use whatever the field has defined,
     // of if field also has nothing explicitly set, use '_'
     char suffix = fieldSeparatorSpecified ? get_field_separator() : 1;
     return field.get_component_name(component, in_out, suffix);
@@ -336,7 +368,7 @@ namespace Ioss {
         }
         else {
           if (myProcessor == 0) {
-            fmt::print(Ioss::WARNING(),
+            fmt::print(Ioss::WarnOut(),
                        "DataWarp enabled via Ioss property `ENABLE_DATAWARP`, but\n"
                        "         burst buffer path was not specified via `DW_JOB_STRIPED` or "
                        "`DW_JOB_PRIVATE`\n"
@@ -369,7 +401,7 @@ namespace Ioss {
 #if defined SEACAS_HAVE_DATAWARP
 #if IOSS_DEBUG_OUTPUT
         if (myProcessor == 0) {
-          fmt::print(Ioss::DEBUG(), "DW: dw_wait_file_stage({});\n", bb_file.filename());
+          fmt::print(Ioss::DebugOut(), "DW: dw_wait_file_stage({});\n", bb_file.filename());
         }
 #endif
         int dwret = dw_wait_file_stage(bb_file.filename().c_str());
@@ -381,7 +413,7 @@ namespace Ioss {
         }
 #else
         // Used to debug DataWarp logic on systems without DataWarp...
-        fmt::print(Ioss::DEBUG(), "DW: (FAKE) dw_wait_file_stage({});\n", bb_file.filename());
+        fmt::print(Ioss::DebugOut(), "DW: (FAKE) dw_wait_file_stage({});\n", bb_file.filename());
 #endif
       }
       set_dwname(bb_file.filename());
@@ -403,7 +435,8 @@ namespace Ioss {
         dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
 #if IOSS_DEBUG_OUTPUT
         auto initial = std::chrono::steady_clock::now();
-        fmt::print(Ioss::DEBUG(), "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+        fmt::print(Ioss::DebugOut(), "Query: {}, {}, {}, {}\n", complete, pending, deferred,
+                   failed);
 #endif
         if (pending > 0) {
           int dwret = dw_wait_file_stage(get_dwname().c_str());
@@ -415,12 +448,13 @@ namespace Ioss {
           }
 #if IOSS_DEBUG_OUTPUT
           dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
-          fmt::print(Ioss::DEBUG(), "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
+          fmt::print(Ioss::DebugOut(), "Query: {}, {}, {}, {}\n", complete, pending, deferred,
+                     failed);
 #endif
         }
 
 #if IOSS_DEBUG_OUTPUT
-        fmt::print(Ioss::DEBUG(), "\nDW: BEGIN dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
+        fmt::print(Ioss::DebugOut(), "\nDW: BEGIN dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
                    get_dwname(), get_pfsname());
 #endif
         int ret =
@@ -429,7 +463,7 @@ namespace Ioss {
 #if IOSS_DEBUG_OUTPUT
         auto                          time_now = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff     = time_now - initial;
-        fmt::print(Ioss::DEBUG(), "\nDW: END dw_stage_file_out({})\n", diff.count());
+        fmt::print(Ioss::DebugOut(), "\nDW: END dw_stage_file_out({})\n", diff.count());
 #endif
         if (ret < 0) {
           std::ostringstream errmsg;
@@ -438,8 +472,9 @@ namespace Ioss {
           IOSS_ERROR(errmsg);
         }
 #else
-        fmt::print(Ioss::DEBUG(), "\nDW: (FAKE) dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n",
-                   get_dwname(), get_pfsname());
+        fmt::print(Ioss::DebugOut(),
+                   "\nDW: (FAKE) dw_stage_file_out({}, {}, DW_STAGE_IMMEDIATE);\n", get_dwname(),
+                   get_pfsname());
 #endif
       }
       if (using_parallel_io()) {
@@ -499,6 +534,7 @@ namespace Ioss {
   bool DatabaseIO::begin_state(int state, double time)
   {
     IOSS_FUNC_ENTER(m_);
+    progress(__func__);
     if (m_timeStateInOut) {
       m_stateStart = std::chrono::steady_clock::now();
     }
@@ -512,6 +548,7 @@ namespace Ioss {
       auto finish = std::chrono::steady_clock::now();
       log_time(m_stateStart, finish, state, time, is_input(), singleProcOnly, util_);
     }
+    progress(__func__);
     return res;
   }
 
@@ -578,7 +615,7 @@ namespace Ioss {
   void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
                                 const std::vector<std::string> &group_spec, const T * /*set_type*/)
   {
-    fmt::print(Ioss::WARNING(),
+    fmt::print(Ioss::WarnOut(),
                "Grouping of {0} sets is not yet implemented.\n"
                "         Skipping the creation of {0} set '{1}'\n\n",
                type_name, group_spec[0]);
@@ -633,7 +670,7 @@ namespace Ioss {
         }
       }
       else {
-        fmt::print(Ioss::WARNING(),
+        fmt::print(Ioss::WarnOut(),
                    "While creating the grouped surface '{}', the surface '{}' does not exist. "
                    "This surface will skipped and not added to the group.\n\n",
                    group_spec[0], group_spec[i]);
@@ -722,6 +759,29 @@ namespace Ioss {
     }
   }
 
+  void DatabaseIO::set_assembly_omissions(const std::vector<std::string> &omissions,
+                                          const std::vector<std::string> &inclusions)
+  {
+    if (!omissions.empty() && !inclusions.empty()) {
+      // Only one can be non-empty
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: Only one of assembly omission or inclusion can be non-empty"
+                 "       [{}]\n",
+                 get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!omissions.empty()) {
+      assemblyOmissions.assign(omissions.cbegin(), omissions.cend());
+      Ioss::sort(assemblyOmissions.begin(), assemblyOmissions.end());
+    }
+    if (!inclusions.empty()) {
+      assemblyInclusions.assign(inclusions.cbegin(), inclusions.cend());
+      Ioss::sort(assemblyInclusions.begin(), assemblyInclusions.end());
+    }
+  }
+
   // Check topology of all sides (face/edges) in model...
   void DatabaseIO::check_side_topology() const
   {
@@ -749,7 +809,8 @@ namespace Ioss {
         const ElementTopology *elem_type = block->topology();
         const ElementTopology *side_type = elem_type->boundary_type();
         if (side_type == nullptr) {
-          // heterogeneous sides.  Iterate through...
+          // heterogeneous sides.  Iterate through... (or there is no
+          // defined `side` for this parent topology.
           int size = elem_type->number_boundaries();
           for (int i = 1; i <= size; i++) {
             side_type = elem_type->boundary_type(i);
@@ -1241,7 +1302,7 @@ namespace {
       if (util.parallel_size() > 1) {
         fmt::print(strm, "\tTot: {} (ms)\n", total);
       }
-      fmt::print(Ioss::DEBUG(), "{}", strm.str());
+      fmt::print(Ioss::DebugOut(), "{}", strm.str());
     }
   }
 
@@ -1262,7 +1323,7 @@ namespace {
         std::ostringstream            strm;
         auto                          now  = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff = now - initial_time;
-        fmt::print(strm, "{} [{:.3f}]\t", symbol, diff.count());
+        fmt::print(strm, "{} [{:.5f}]\t", symbol, diff.count());
 
         int64_t total = 0;
         for (auto &p_size : all_sizes) {
@@ -1283,7 +1344,7 @@ namespace {
           fmt::print(strm, " T:{:8d}", total);
         }
         fmt::print(strm, "\t{}/{}\n", name, field.get_name());
-        fmt::print(Ioss::DEBUG(), "{}", strm.str());
+        fmt::print(Ioss::DebugOut(), "{}", strm.str());
       }
     }
     else {
@@ -1293,7 +1354,7 @@ namespace {
       if (util.parallel_rank() == 0 || single_proc_only) {
         auto                          time_now = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff     = time_now - initial_time;
-        fmt::print("{} [{:.3f}]\n", symbol, diff.count());
+        fmt::print(Ioss::DebugOut(), "{} [{:.5f}]\n", symbol, diff.count());
       }
     }
   }

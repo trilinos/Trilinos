@@ -138,16 +138,17 @@ namespace MueLu {
     if(calculateRotations_) {
       Coords = Get< RCP<RealValuedMultiVector> >(currentLevel, "Coordinates");
 
-      xvals  = Coords->getData(0);
       cx     = Coords->getVector(0)->meanValue();
-      if (Coords->getNumVectors() > 1) {
-        yvals = Coords->getData(1);
+      if (Coords->getNumVectors() > 1)
         cy    = Coords->getVector(1)->meanValue();
-      }
-      if (Coords->getNumVectors() > 2) {
-        zvals = Coords->getData(2);
+      if (Coords->getNumVectors() > 2)
         cz    = Coords->getVector(2)->meanValue();
-      }
+
+      xvals  = Coords->getData(0);
+      if (Coords->getNumVectors() > 1)
+        yvals = Coords->getData(1);
+      if (Coords->getNumVectors() > 2)
+        zvals = Coords->getData(2);
     }
 
     if (currentLevel.GetLevelID() == 0) {
@@ -289,8 +290,8 @@ namespace MueLu {
          }
          /*
           // Scale columns to match what Galeri does. Not sure that this is necessary as the qr factorizatoin
-          // of the tentative prolongator also takes care of scaling issues. I'm leaving the code here 
-          // just in case. 
+          // of the tentative prolongator also takes care of scaling issues. I'm leaving the code here
+          // just in case.
           if ( (int) nullspaceDim > numPDEs ) {
             Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms2(nullspaceDim);
             nullspace->norm2(norms2);

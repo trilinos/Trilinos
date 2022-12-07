@@ -81,7 +81,6 @@ namespace FROSch {
         virtual int initialize()
         {
             FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
-            return 0;
         };
 
         int initialize(int overlap,
@@ -100,7 +99,9 @@ namespace FROSch {
                                      ConstXMapPtr repeatedMap);
 
         virtual int updateLocalOverlappingMatrices();
+        virtual int updateLocalOverlappingMatrices_Symbolic();
 
+        virtual void extractLocalSubdomainMatrix_Symbolic();
 
         AddingLayersStrategy AddingLayersStrategy_ = LayersFromGraph;
     };

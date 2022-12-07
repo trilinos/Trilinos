@@ -67,6 +67,7 @@ public:
    * \param[in] g_depends_on_p        Does response depends on parameters?
    * \param[in] f_depends_on_p        Does residual depends on parameters?
    * \param[in] ic_depends_on_p       Does the initial condition depends on parameters?
+   * @param adjoint_model ModelEvaluator for the adjoint problem. Optional. Default value is null.
    * \param[in] mass_matrix_is_identity Is the mass matrix an identity matrix?
    *
    * In addition to all of the regular integrator options, the supplied
@@ -115,7 +116,7 @@ public:
       const Teuchos::RCP<IntegratorBasic<Scalar> > &state_integrator,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjoint_model,
       const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_aux_model,
-      const Teuchos::RCP<IntegratorBasic<Scalar> > &ajoint_integrator,
+      const Teuchos::RCP<IntegratorBasic<Scalar> > &adjoint_integrator,
       const Teuchos::RCP<SolutionHistory<Scalar> > &solution_history,
       const int p_index,
       const int g_index,
@@ -147,13 +148,6 @@ public:
   virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Return a copy of the Tempus ParameterList
-  TEMPUS_DEPRECATED
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override;
-  TEMPUS_DEPRECATED
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
-#endif
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
   Teuchos::RCP<const SolutionHistory<Scalar> > getStateSolutionHistory() const;
@@ -259,7 +253,7 @@ protected:
  * @param pList         ParameterList defining the integrator options and options
  *                      defining the sensitivity analysis
  * @param model         ModelEvaluator for the problem
- * @param adjoing_model ModelEvaluator for the adjoint problem. Optional. Default value is null.
+ * @param adjoint_model ModelEvaluator for the adjoint problem. Optional. Default value is null.
  *                      When not provided, the adjoint_model will be constructed
  *                      from the forward physics model.
  *

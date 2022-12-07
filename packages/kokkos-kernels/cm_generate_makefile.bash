@@ -230,7 +230,7 @@ display_help_text() {
       echo "--with-openmptarget:                          Enable OpenMPTarget backend."
       echo "--with-sycl:                                  Enable Sycl backend."
       echo "--with-openmp:                                Enable OpenMP backend."
-      echo "--with-pthread:                               Enable Pthreads backend."
+      echo "--with-threads:                               Enable Threads backend."
       echo "--with-serial:                                Enable Serial backend."
       echo "--with-devices:                               Explicitly add a set of backends."
       echo ""
@@ -274,6 +274,8 @@ display_help_text() {
       echo "                 Pascal61        = NVIDIA Pascal generation CC 6.1"
       echo "                 Volta70         = NVIDIA Volta generation CC 7.0"
       echo "                 Volta72         = NVIDIA Volta generation CC 7.2"
+      echo "                 Ampere80        = NVIDIA Ampere generation CC 8.0"
+      echo "                 Ampere86        = NVIDIA Ampere generation CC 8.6"
       echo ""
       echo "--compiler=/Path/To/Compiler  Set the compiler."
       echo ""
@@ -291,6 +293,7 @@ display_help_text() {
       echo "--ldflags=[FLAGS]             Overwrite LDFLAGS for library build and test"
       echo "                                build. This will still set certain required"
       echo "                                flags (such as -fopenmp, -lpthread, etc.)."
+      echo "--shared:                     Build Kokkos and KokkosKernels as shared libraries (required for SYCL on Intel)"
       echo "--with-gtest=/Path/To/Gtest:  Set path to gtest.  (Used in unit and performance"
       echo "                                tests.)"
       echo "--with-hwloc=/Path/To/Hwloc:  Set path to hwloc library."
@@ -334,6 +337,7 @@ display_help_text() {
       echo "--kokkos-make-j=[NUM]:        Set -j parallel level for kokkos install"
       echo "                                Default: j == 4"
       echo "--enable-tests: build Kokkos Kernels unit and performance tests"
+      echo "--deprecated-code             Enable deprecated code (disabled by default)"
       echo "--enable-perfsuite: build Kokkos Kernels performance tests with
 RAJAPerf Suite"
 
@@ -348,6 +352,9 @@ KOKKOSKERNELS_DO_TESTS=ON
 KOKKOSKERNELS_DO_PERFSUITE=OFF
 KOKKOSKERNELS_DO_EXAMPLES=ON
 
+#Build static libraries by default
+BUILD_SHARED_LIBRARIES=OFF
+
 KOKKOS_MAKEINSTALL_J=4
 
 KERNELS_DEFAULT_ETI_OPTION=""
@@ -355,6 +362,8 @@ KERNELS_DEFAULT_ETI_OPTION=""
 # For tracking if Cuda and Hip devices are enabled simultaneously
 WITH_CUDA_BACKEND=OFF
 WITH_HIP_BACKEND=OFF
+
+KOKKOS_DEPRECATED_CODE=OFF
 
 while [[ $# > 0 ]]
 do
@@ -411,8 +420,8 @@ do
     --with-sycl)
       update_kokkos_devices Sycl
       ;;
-    --with-pthread)
-      update_kokkos_devices Pthread
+    --with-threads)
+      update_kokkos_devices Threads
       ;;
     --with-serial)
       update_kokkos_devices Serial
@@ -467,6 +476,9 @@ do
     --debug|-dbg)
       KOKKOSKERNELS_DEBUG=ON
       ;;
+    --shared)
+      BUILD_SHARED_LIBRARIES=ON
+      ;;
     --no-default-eti)
       KERNELS_DEFAULT_ETI_OPTION="-DKokkosKernels_ADD_DEFAULT_ETI=OFF"
       ;;
@@ -514,6 +526,9 @@ do
       ;;
     --disable-examples)
       KOKKOSKERNELS_DO_EXAMPLES=OFF
+      ;;
+    --deprecated-code)
+      KOKKOS_DEPRECATED_CODE=ON
       ;;
     --compiler*)
       COMPILER="${key#*=}"
@@ -731,9 +746,9 @@ cd ${KOKKOS_INSTALL_PATH}
 
 # Configure kokkos
 echo ""
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF ${KOKKOS_PATH}
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF -DKokkos_ENABLE_DEPRECATED_CODE_3=${KOKKOS_DEPRECATED_CODE} ${KOKKOS_PATH}
 echo ""
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF ${KOKKOS_PATH}
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES}${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF -DKokkos_ENABLE_DEPRECATED_CODE_3=${KOKKOS_DEPRECATED_CODE} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J
@@ -758,7 +773,7 @@ cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
 # Configure kokkos-kernels
 echo ""
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
 echo ""
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
 

@@ -69,7 +69,7 @@ class PhactoriPointSourceFromJsonList(PhactoriOperationSpecifics):
         myDebugPrint3AndException(errStr)
 
     return True
-      
+
   def ParseParametersFromJson(self, inJson):
     if 'filename' in inJson:
       self.JsonListFileName = inJson['filename']
@@ -128,4 +128,3 @@ class PhactoriPointSourceFromJsonList(PhactoriOperationSpecifics):
     return self.ParaviewPointSource
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

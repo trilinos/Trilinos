@@ -338,7 +338,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    PHX::View<PHX::View<const ScalarT**>* > kokkosFieldMults_;
+    PHX::View<PHX::UnmanagedView<const ScalarT**>* > kokkosFieldMults_;
 
       /**
        *  \brief The name of the basis we're using.

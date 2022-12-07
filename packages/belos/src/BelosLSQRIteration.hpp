@@ -105,21 +105,6 @@ namespace Belos {
   //! @name LSQRIteration Exceptions
   //@{ 
   
-  /** \brief LSQRIterationInitFailure is thrown when the LSQRIteration object is
-   * unable to generate an initial iterate in the initialize() routine. 
-   *
-   * This std::exception is thrown from the initialize() method, which is
-   * called by the user or from the iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown, 
-   * isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-class LSQRIterationInitFailure : public BelosError {public:
-      LSQRIterationInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   /** \brief LSQRIterateFailure is thrown when the LSQRIteration object is unable to
    * compute the next iterate in the iterate() routine. 
    *

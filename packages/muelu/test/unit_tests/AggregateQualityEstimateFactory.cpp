@@ -229,10 +229,10 @@ namespace MueLuTests {
 						    AGG18_NODES};
 
     const std::vector<MT> AGG_QUALITIES = {2002., 2.002, 2670.000811,
-					       2001.9998, 4003.999998, 4.004, 
+					       2001.9998, 4003.999998, 4.004,
 					       3003.666728, 4003.999198, 4003.998397,
 					       4003.999198, 2001.999599, 4003.999198,
-					       4004.666568, 2403.067729, 4886.458381, 
+					       4004.666568, 2403.067729, 4886.458381,
 					       4003.998397, 4005.666904, 4004.665757,
 					       4004.665841};
 
@@ -378,7 +378,7 @@ namespace MueLuTests {
 
       }
 
-    }    
+    }
 
   } // Anisotropic Diffusion 2D test
 
@@ -586,7 +586,7 @@ namespace MueLuTests {
 
       }
 
-    }    
+    }
 
   } // Convection Diffusion 2D test
 
@@ -596,7 +596,7 @@ namespace MueLuTests {
   //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
 
 
-  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,ConvectionDiffusion2D,Scalar,LO,GO,Node) 
+  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,ConvectionDiffusion2D,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

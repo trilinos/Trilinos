@@ -89,7 +89,7 @@ namespace MueLuTests {
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // construct matrices
-    const SC lambdaMax = 5;
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType lambdaMax = 5;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
     A->SetMaxEigenvalueEstimate(lambdaMax);
     RCP<Matrix> Ptent = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
@@ -259,7 +259,7 @@ namespace MueLuTests {
       Teuchos::ArrayView<const Scalar> vals;
       P->getLocalRowView((LocalOrdinal) j, indices, vals);
       size_t nnz = indices.size();
-      for (LO i = 0; i < (LO) nnz; i++)  { 
+      for (LO i = 0; i < (LO) nnz; i++)  {
         if (Teuchos::ScalarTraits<SC>::real(vals[i]) < Teuchos::ScalarTraits<SC>::real(zero)) lowerViolation = true;
         if (Teuchos::ScalarTraits<SC>::real(vals[i]) > Teuchos::ScalarTraits<SC>::real(one)) upperViolation = true;
       }

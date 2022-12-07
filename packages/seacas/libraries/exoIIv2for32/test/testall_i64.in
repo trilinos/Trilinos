@@ -32,13 +32,13 @@ echo "testwt ..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f32_testwt${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 echo "end testwt, status = $ret_status" >> test.output
 
 # testrdd - double precision read test with 64-bit integers
 echo "testrddi64 ..."
-${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[5]}))
 
 # testwtd - double precision write test
@@ -46,13 +46,13 @@ echo "testwtd ..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtd${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 echo "end testwtd, status = $ret_status" >> test.output
 
 # testrdd - double precision read test with 64-bit integers
 echo "testrddi64 ..."
-${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[5]}))
 
 # testwtdi64 - double precision write test with 64-bit integers
@@ -60,23 +60,23 @@ echo "testwtdi64 ..."
 echo "begin testwtdi64" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtdi64${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/testdi64.dmp | tee testwtd.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testdi64.dmp | tee testwtd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 echo "end testwtdi64, status = $ret_status" >> test.output
 
 # testrdd - double precision read test with 64-bit integers
 echo "testrddi64 ..."
-${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[5]}))
 
 # testrdd - double precision read test
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[5]}))
 
 # testrd - single precision read of double precision file
 echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v int64_status| grep -v _FillValue | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[5]}))
 
 echo "************************************************************************"

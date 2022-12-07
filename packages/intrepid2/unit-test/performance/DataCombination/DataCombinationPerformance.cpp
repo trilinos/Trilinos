@@ -300,14 +300,6 @@ int main( int argc, char* argv[] )
     {
       for (CaseChoice caseChoice2 : caseChoices)
       {
-//        {
-//          // DEBUGGING:
-//          if ((caseChoice1 != General) && (caseChoice2 == General))
-//          {
-//            cout << "Set breakpoint here.\n";
-//          }
-//        }
-        
         // since constant takes so little time (and measurement is therefore noisy), we do a bunch of measurements and use their average
         const bool bothConstant   = (caseChoice1 == Constant) && (caseChoice2 == Constant);
         const int numMeasurements = bothConstant ? 1000 : 1;

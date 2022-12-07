@@ -101,7 +101,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1) {
 				auto v0 = lclLWGraph.getNeighborVertices(0);
 				auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -177,7 +177,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1) {
 				auto v0 = lclLWGraph.getNeighborVertices(0);
 				auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -255,7 +255,7 @@ namespace MueLuTests {
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
     auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
-			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			    KOKKOS_LAMBDA(const LO i, int &correct) {
 			      if (comm_size == 1 && lclLWGraph.getNeighborVertices(0).length == 1) {
 				correct = true;
 			      } else {
@@ -444,7 +444,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     // unit test for block size 3 using a strided map
-    // lightweight wrap = true
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -480,7 +479,6 @@ namespace MueLuTests {
     RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
     fineLevel.Request("Graph", &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
 
@@ -546,7 +544,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     // unit test for block size 3 = (2,1). wrap block 0
-    // lightweight wrap = true
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -589,7 +586,6 @@ namespace MueLuTests {
     RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
     fineLevel.Request("Graph", &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
 
@@ -653,7 +649,6 @@ namespace MueLuTests {
   {
     // unit test for block size 9 = (2,3,4). wrap block 1.
     // drop small entries
-    // lightweight wrap = true
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
@@ -698,7 +693,6 @@ namespace MueLuTests {
     RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
     dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(0.3));
 
     fineLevel.Request("Graph", &dropFact);
@@ -774,7 +768,6 @@ namespace MueLuTests {
       CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
       RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
       dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
-      dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
       dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
       fineLevel.Request("Graph", &dropFact);
       fineLevel.Request("DofsPerNode", &dropFact);
@@ -802,7 +795,6 @@ namespace MueLuTests {
     //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
     //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
-    //   dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
     //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
     //   fineLevel.Request("Graph", &dropFact);
     //   fineLevel.Request("DofsPerNode", &dropFact);
@@ -828,7 +820,6 @@ namespace MueLuTests {
     //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
     //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
-    //   dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
     //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
     //   fineLevel.Request("Graph", &dropFact);
     //   fineLevel.Request("DofsPerNode", &dropFact);

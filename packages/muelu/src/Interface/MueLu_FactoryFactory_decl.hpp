@@ -102,6 +102,7 @@
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
+#include "MueLu_InverseApproximationFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
@@ -169,7 +170,9 @@
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_MatrixFreeTentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#include "MueLu_RegionRFactory_kokkos.hpp"
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
@@ -263,6 +266,7 @@ namespace MueLu {
       if (factoryName == "HybridAggregationFactory")              return Build2<HybridAggregationFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InterfaceAggregationFactory")           return Build2<InterfaceAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InterfaceMappingTransferFactory")       return Build2<InterfaceMappingTransferFactory>       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "InverseApproximationFactory")           return Build2<InverseApproximationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InitialBlockNumberFactory")              return Build2<InitialBlockNumberFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")                  return Build2<LineDetectionFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       // LocalOrdinalTransferFactory is a utility factory that can be used for multiple things, so there is no default
@@ -286,6 +290,7 @@ namespace MueLu {
       if (factoryName == "RebalanceTransferFactory")              return Build2<RebalanceTransferFactory>              (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "RegionRFactory")                        return Build2<RegionRFactory>                        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RegionRFactory_kokkos")                 return Build2<RegionRFactory_kokkos>                 (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "ReorderBlockAFactory")                  return Build2<ReorderBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RepartitionInterface")                  return Build2<RepartitionInterface>                  (paramList, factoryMapIn, factoryManagersIn);
@@ -318,6 +323,7 @@ namespace MueLu {
       if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory_kokkos")   return Build2<StructuredAggregationFactory_kokkos>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MatrixFreeTentativePFactory_kokkos")    return Build2<MatrixFreeTentativePFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
 #endif
 

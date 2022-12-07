@@ -11,17 +11,17 @@
     <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
     <ParameterList name="smoother: params">
       <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
-      <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>      
+      <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
       <ParameterList name="hiptmair: smoother list 1">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
         <Parameter name="relaxation: use l1" type="bool" value="true"/>
-      </ParameterList>    
+      </ParameterList>
       <ParameterList name="hiptmair: smoother list 2">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
         <Parameter name="relaxation: use l1" type="bool" value="true"/>
-      </ParameterList>    
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 

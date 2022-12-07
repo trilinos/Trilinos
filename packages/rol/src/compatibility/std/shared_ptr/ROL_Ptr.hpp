@@ -66,6 +66,12 @@ Ptr<T> makePtr( Args&&... args ) {
   return std::make_shared<T>(args...);
 }
 
+template<class T, class U>
+inline
+Ptr<T> makePtr( std::initializer_list<U>&& u )  {
+  return std::make_shared<T>(std::forward<std::initializer_list<U>>(u));
+}
+
 template<class T>
 inline
 Ptr<T> makePtrFromRef( T& obj ) {

@@ -83,9 +83,9 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   auto rowMap = graph->getRowMap();
   auto colMap = graph->getColMap();
 
-  size_t numLclRows = rowMap->getNodeNumElements();
+  size_t numLclRows = rowMap->getLocalNumElements();
   size_t numGblRows = rowMap->getGlobalNumElements();
-  size_t numLclCols = colMap->getNodeNumElements();
+  size_t numLclCols = colMap->getLocalNumElements();
 
   
   ordinal_view_t colLocalToGlobal(Kokkos::view_alloc("colLocalToGlobal", Kokkos::WithoutInitializing), numLclCols);
@@ -115,8 +115,8 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   auto comm = graph->getComm();
   Teuchos::reduceAll<int, PT> (*comm, Teuchos::REDUCE_SUM, numGblRows, localParts.data(), globalParts.data());
 
-  auto rowPtr = graph->getLocalGraph().row_map;
-  auto colInd = graph->getLocalGraph().entries;
+  auto rowPtr = graph->getLocalGraphHost().row_map;
+  auto colInd = graph->getLocalGraphHost().entries;
 
   
   size_t localtotalcut = 0, totalcut = 0;
@@ -252,8 +252,8 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
   auto comm = graph->getComm();
   Teuchos::reduceAll<int, PT> (*comm, Teuchos::REDUCE_SUM, numGblRows, localParts.data(), globalParts.data());
 
-  auto rowPtr = graph->getLocalGraph().row_map;
-  auto colInd = graph->getLocalGraph().entries;
+  auto rowPtr = graph->getLocalGraphHost().row_map;
+  auto colInd = graph->getLocalGraphHost().entries;
 
   
   size_t localtotalcut = 0, totalcut = 0;
@@ -431,6 +431,7 @@ int main(int narg, char *arg[])
     
     // Set the parameters
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+    Teuchos::RCP<Teuchos::ParameterList> sphynxParams(new Teuchos::ParameterList);
     params->set("num_global_parts", nparts);
 
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;  
@@ -449,14 +450,14 @@ int main(int narg, char *arg[])
 	      params->set("pulp_vert_imbalance", 1.01);
       }
 
-      using problem_type = Zoltan2::PartitioningProblem<adapter_type>;
+      using problem_type = Zoltan2::SphynxProblem<adapter_type>;
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
 	Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
 	{
 	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
-	  problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), Tpetra::getDefaultComm()));
+	  problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), sphynxParams, Tpetra::getDefaultComm()));
 	}
 	{
 	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
@@ -471,12 +472,12 @@ int main(int narg, char *arg[])
     }
     else {
    
-      params->set("sphynx_verbosity", verbosity);
-      params->set("sphynx_skip_preprocessing", true);
-      if (ptype != "") params->set("sphynx_problem_type", ptype);
-      if (init != "") params->set("sphynx_initial_guess", init);
-      if (prec != "") params->set("sphynx_preconditioner_type", prec);
-      if (tol != -1) params->set("sphynx_tolerance", tol);
+      sphynxParams->set("sphynx_verbosity", verbosity);
+      sphynxParams->set("sphynx_skip_preprocessing", true);
+      if (ptype != "") sphynxParams->set("sphynx_problem_type", ptype);
+      if (init != "") sphynxParams->set("sphynx_initial_guess", init);
+      if (prec != "") sphynxParams->set("sphynx_preconditioner_type", prec);
+      if (tol != -1) sphynxParams->set("sphynx_tolerance", tol);
       
       using problem_type = Zoltan2::SphynxProblem<adapter_type>; //We found sphynx
       Teuchos::RCP<problem_type> problem;
@@ -485,7 +486,7 @@ int main(int narg, char *arg[])
   	Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
 	{
 	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
-	  problem = Teuchos::rcp(new problem_type(adapter, params, Tpetra::getDefaultComm()));
+	  problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
 	}
   {
     Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));

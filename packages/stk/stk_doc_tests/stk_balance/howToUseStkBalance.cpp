@@ -18,14 +18,13 @@ public:
     virtual ~RcbSettings() {}
 
     virtual bool isIncrementalRebalance() const { return false; }
-    virtual bool areVertexWeightsProvidedViaFields() const { return false; }
     virtual std::string getDecompMethod() const { return std::string("rcb"); }
     virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
     virtual bool shouldPrintMetrics() const { return true; }
 };
 //ENDRcbSettings
 
-class StkBalanceHowTo : public stk::unit_test_util::MeshFixture
+class StkBalanceHowTo : public stk::unit_test_util::simple_fields::MeshFixture
 {};
 
 bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
@@ -220,33 +219,24 @@ class FieldVertexWeightSettings : public stk::balance::GraphCreationSettings
 public:
     FieldVertexWeightSettings(const stk::balance::DoubleFieldType &weightField,
                               const double defaultWeight = 0.0)
-      : m_weightField(weightField),
-        m_defaultWeight(defaultWeight) { }
+  {
+    setVertexWeightMethod(stk::balance::VertexWeightMethod::FIELD);
+    setVertexWeightFieldName(weightField.name());
+    setDefaultFieldWeight(defaultWeight);
+  }
+
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.0001; }
     virtual std::string getDecompMethod() const { return "rcb"; }
 
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-    {
-        const double *weight = stk::mesh::field_data(m_weightField, entity);
-        if(weight) return *weight;
-
-        return m_defaultWeight;
-    }
-
 protected:
     FieldVertexWeightSettings() = delete;
     FieldVertexWeightSettings(const FieldVertexWeightSettings&) = delete;
     FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
-
-    const stk::balance::DoubleFieldType &m_weightField;
-    const double m_defaultWeight;
 };
 
 //ENDRcbFieldSettings
@@ -270,9 +260,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field_on_mesh(weightField, get_meta().universal_part(), nullptr);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
@@ -287,9 +278,10 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field_on_mesh(weightField, get_meta().locally_owned_part(), nullptr);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
@@ -308,7 +300,6 @@ public:
     virtual ~MultipleCriteriaSelectorSettings() = default;
 
     virtual bool isMultiCriteriaRebalance() const { return true;}
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
 protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
@@ -353,9 +344,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithSelectors)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::Part &part1 = get_meta().declare_part("madeup_part_1", stk::topology::ELEM_RANK);
         stk::mesh::Part &part2 = get_meta().declare_part("part_2", stk::topology::ELEM_RANK);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
 
         put_elements_in_different_parts(get_bulk(), part1, part2);
 
@@ -375,37 +367,22 @@ class MultipleCriteriaFieldSettings : public ParmetisSettings
 public:
     MultipleCriteriaFieldSettings(const std::vector<stk::mesh::Field<double>*> critFields,
                                   const double default_weight = 0.0)
-      : m_critFields(critFields), m_defaultWeight(default_weight)
-    { }
-    virtual ~MultipleCriteriaFieldSettings() = default;
-
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-    virtual int getNumCriteria() const { return m_critFields.size(); }
-    virtual bool isMultiCriteriaRebalance() const { return true;}
-
-    using ParmetisSettings::getGraphVertexWeight;
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
     {
-        ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
-        const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
-        if(weight != nullptr)
-        {
-            ThrowRequireWithSierraHelpMsg(*weight >= 0);
-            return *weight;
-        }
-        else
-        {
-            return m_defaultWeight;
-        }
+      setNumCriteria(critFields.size());
+      setVertexWeightMethod(stk::balance::VertexWeightMethod::FIELD);
+      for (unsigned i = 0; i < critFields.size(); ++i) {
+        setVertexWeightFieldName(critFields[i]->name(), i);
+      }
+      setDefaultFieldWeight(default_weight);
     }
+    virtual ~MultipleCriteriaFieldSettings() override = default;
+
+    virtual bool isMultiCriteriaRebalance() const { return true;}
 
 protected:
     MultipleCriteriaFieldSettings() = delete;
     MultipleCriteriaFieldSettings(const MultipleCriteriaFieldSettings&) = delete;
     MultipleCriteriaFieldSettings& operator=(const MultipleCriteriaFieldSettings&) = delete;
-
-    const std::vector<stk::mesh::Field<double>*> m_critFields;
-    const double m_defaultWeight;
 };
 //ENDMultiCriteriaFieldSettings
 
@@ -462,13 +439,14 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights1");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField1 = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights1");
         stk::mesh::put_field_on_mesh(weightField1, get_meta().universal_part(), nullptr);
 
-        stk::mesh::Field<double> &weightField2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights2");
+        stk::mesh::Field<double> &weightField2 = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights2");
         stk::mesh::put_field_on_mesh(weightField2, get_meta().universal_part(), nullptr);
 
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
 
         set_vertex_weights_checkerboard(get_bulk(), get_meta().locally_owned_part(), weightField1, weightField2);
 

@@ -7,48 +7,45 @@
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/MeshFileFixture.hpp>
 #include <stk_unit_test_utils/meshCreationHelpers.hpp>
-
-
 #include <Ioss_SubSystem.h>
-
 
 namespace
 {
 
 void create_mesh_with_single_time_step(const std::string & filename, MPI_Comm communicator)
 {
-    stk::unit_test_util::create_mesh_with__field_1__field_2__field_3(filename, communicator);
+  stk::unit_test_util::simple_fields::create_mesh_with__field_1__field_2__field_3(filename, communicator);
 }
 
-class ExodusFileWithVariables : public stk::unit_test_util::MeshFileFixture { };
+class ExodusFileWithVariables : public stk::unit_test_util::simple_fields::MeshFileFixture { };
 
 //-BEGIN
 TEST_F(ExodusFileWithVariables, queryingFileWithSingleTimeStep_NumTimeStepsEqualsOne)
 {
-    create_mesh_with_single_time_step(filename, get_comm());
-    read_mesh(filename);
-    EXPECT_EQ(1, stkIo.get_num_time_steps());
+  create_mesh_with_single_time_step(filename, get_comm());
+  read_mesh(filename);
+  EXPECT_EQ(1, stkIo.get_num_time_steps());
 }
 
 TEST_F(ExodusFileWithVariables, queryingFileWithoutTimeSteps_NumTimeStepsEqualsZero)
 {
-    stk::unit_test_util::create_mesh_without_time_steps(filename, get_comm());
-    read_mesh(filename);
-    EXPECT_EQ(0, stkIo.get_num_time_steps());
+  stk::unit_test_util::simple_fields::create_mesh_without_time_steps(filename, get_comm());
+  read_mesh(filename);
+  EXPECT_EQ(0, stkIo.get_num_time_steps());
 }
 
 TEST_F(ExodusFileWithVariables, readDefinedInputFieldsFromInvalidTimeStep_throws)
 {
-    create_mesh_with_single_time_step(filename, get_comm());
-    read_mesh(filename);
-    EXPECT_THROW(stkIo.read_defined_input_fields(3), std::exception);
+  create_mesh_with_single_time_step(filename, get_comm());
+  read_mesh(filename);
+  EXPECT_THROW(stkIo.read_defined_input_fields(3), std::exception);
 }
 
 TEST_F(ExodusFileWithVariables, readDefinedInputFields_throws)
 {
-    stk::unit_test_util::create_mesh_without_time_steps(filename, get_comm());
-    read_mesh(filename);
-    EXPECT_THROW(stkIo.read_defined_input_fields(1), std::exception);
+  stk::unit_test_util::simple_fields::create_mesh_without_time_steps(filename, get_comm());
+  read_mesh(filename);
+  EXPECT_THROW(stkIo.read_defined_input_fields(1), std::exception);
 }
 //-END
 

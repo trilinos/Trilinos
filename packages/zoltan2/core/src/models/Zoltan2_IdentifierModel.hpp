@@ -67,7 +67,7 @@ namespace Zoltan2 {
 */
 
 template <typename Adapter>
-class IdentifierModel : public Model<Adapter> 
+class IdentifierModel : public Model<Adapter>
 {
 public:
 
@@ -75,6 +75,7 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
+  typedef typename Adapter::node_t    node_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 #endif
 
@@ -84,8 +85,8 @@ public:
        \param comm  the problem communicator
        \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
-  
-  IdentifierModel(const RCP<const Adapter> &ia, 
+
+  IdentifierModel(const RCP<const Adapter> &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm, modelFlag_t &modelFlags);
 
@@ -108,7 +109,7 @@ public:
        \return The number of ids in the Ids list.
    */
   inline size_t getIdentifierList(ArrayView<const gno_t> &Ids,
-                                  ArrayView<input_t> &wgts) const 
+                                  ArrayView<input_t> &wgts) const
   {
     Ids = ArrayView<const gno_t>();
     wgts = weights_.view(0, nUserWeights_);
@@ -118,6 +119,18 @@ public:
                       reinterpret_cast<const gno_t*>(gids_.getRawPtr()), n);
     }
     return n;
+  }
+
+  inline size_t getIdentifierListKokkos(
+      Kokkos::View<const gno_t *, typename node_t::device_type> &Ids,
+      Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const {
+    try {
+      adapter_->getIDsKokkosView(Ids);
+      adapter_->getWeightsKokkosView(wgts);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    return getLocalNumIdentifiers();
   }
 
   ////////////////////////////////////////////////////
@@ -133,19 +146,20 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gno_t> gids_;
+  const RCP<const Adapter> adapter_;
   int nUserWeights_;
   ArrayRCP<input_t> weights_;
 };
 
 ////////////////////////////////////////////////////
 template <typename Adapter>
-  IdentifierModel<Adapter>::IdentifierModel( 
+  IdentifierModel<Adapter>::IdentifierModel(
     const RCP<const Adapter> &ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &/* modelFlags */):
       numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), nUserWeights_(0), weights_()
+      gids_(), adapter_(ia), nUserWeights_(0), weights_()
 {
   // Get the local and global problem size
   size_t nLocalIds = ia->getLocalNumIDs();
@@ -160,7 +174,7 @@ template <typename Adapter>
       &tmp, &nUserWeights_);
 
   // Prepare to store views from input adapter
-  // TODO:  Do we have to store these views, or can we get them on an 
+  // TODO:  Do we have to store these views, or can we get them on an
   // TODO:  as-needed basis?
   Array<const scalar_t *> wgts(nUserWeights_, (const scalar_t *)NULL);
   Array<int> wgtStrides(nUserWeights_, 0);
@@ -171,7 +185,7 @@ template <typename Adapter>
   }
 
   const gno_t *gids=NULL;
-  
+
   // Get the input adapter's views
   try{
     ia->getIDsView(gids);

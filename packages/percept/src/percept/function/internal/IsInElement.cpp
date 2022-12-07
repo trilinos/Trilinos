@@ -68,7 +68,7 @@
 
       // FIXME consider caching the coords_field in FieldFunction
       const stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
-      CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      CoordinatesFieldType *coords_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
       const stk::mesh::Bucket & bucket = eMesh.bucket(element);
       const CellTopologyData * const bucket_cell_topo_data = m_eMesh.get_cell_topology(bucket);

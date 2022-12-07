@@ -70,8 +70,6 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "PointEvaluator.hpp"
 
 #include "user_app_EquationSetFactory.hpp"

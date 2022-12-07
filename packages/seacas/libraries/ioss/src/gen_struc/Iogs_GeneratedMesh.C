@@ -283,7 +283,7 @@ namespace Iogs {
         show_parameters();
       }
       else {
-        fmt::print(Ioss::WARNING(), "Unrecognized option '{}'.  It will be ignored.\n", option[0]);
+        fmt::print(Ioss::WarnOut(), "Unrecognized option '{}'.  It will be ignored.\n", option[0]);
       }
     }
   }
@@ -347,12 +347,14 @@ namespace Iogs {
   int64_t GeneratedMesh::element_count(int64_t block_number) const
   {
     assert(block_number <= structured_block_count());
+    IOSS_ASSERT_USED(block_number);
     return numX * numY * numZ;
   }
 
   int64_t GeneratedMesh::element_count_proc(int64_t block_number) const
   {
     assert(block_number <= structured_block_count());
+    IOSS_ASSERT_USED(block_number);
     return numX * numY * myNumZ;
   }
 
@@ -403,6 +405,7 @@ namespace Iogs {
   std::pair<std::string, int> GeneratedMesh::topology_type(int64_t block_number) const
   {
     assert(block_number <= structured_block_count() && block_number > 0);
+    IOSS_ASSERT_USED(block_number);
     return std::make_pair(std::string(Ioss::Hex8::name), 8);
   }
 
@@ -839,7 +842,7 @@ namespace Iogs {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
-      fmt::print(Ioss::WARNING(),
+      fmt::print(Ioss::WarnOut(),
                  "(Iogs::GeneratedMesh::set_variable_count)\n"
                  "       Unrecognized variable type '{}'. Valid types are:\n"
                  "       global, element, node, nodal, surface, sideset.\n",

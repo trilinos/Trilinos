@@ -25,11 +25,11 @@
 
 #if defined ADDC_
 #define KDRECTQUERY kdrectquery_
-#define KDKILLTREE kdkilltree_
+#define KDKILLTREE  kdkilltree_
 #define KDBUILDTREE kdbuildtree_
 #else
 #define KDRECTQUERY kdrectquery
-#define KDKILLTREE kdkilltree
+#define KDKILLTREE  kdkilltree
 #define KDBUILDTREE kdbuildtree
 #endif
 
@@ -59,9 +59,7 @@
   }
 
 static optkdNode *Root = NULL;
-static int *      perm = NULL; /* permutation array */
-
-extern double fabs();
+static int       *perm = NULL; /* permutation array */
 
 /***************************************************************************/
 /* Makes the perm partition the array Values along the element k.          */
@@ -69,7 +67,7 @@ extern double fabs();
 /***************************************************************************/
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
-#define sign(x) ((x) >= 0 ? 1 : -1)
+#define sign(x)   ((x) >= 0 ? 1 : -1)
 
 /*
  * Floyd and Rivest SELECT Algorithm (CACM Algorithm 489)
@@ -277,7 +275,7 @@ void KillOptTree(optkdNode *P)
   free(P);
 }
 
-void KDKILLTREE()
+void KDKILLTREE(void)
 {
   if (perm != NULL) {
     free(perm);

@@ -1,32 +1,8 @@
-.. Kokkos Kernels documentation master file, created by
-   sphinx-quickstart on Fri Sep 24 13:19:45 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to Kokkos Kernels's documentation!
+Kokkos Kernels documentation: Under Construction
 ==========================================
-
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-Docs
-====
-
-.. doxygennamespace:: Kokkos
-   :members:
-.. doxygennamespace:: KokkosBlas
-   :members:
-.. doxygennamespace:: KokkosSparse
-   :members:
-.. doxygennamespace:: KokkosBatched
-   :members:
+   KokkosKernels GitHub Homepage <https://github.com/kokkos/kokkos-kernels>
+   User Manual <https://github.com/kokkos/kokkos-kernels/wiki>
+   Developer Docs <developer/index.rst>

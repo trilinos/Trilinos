@@ -27,16 +27,16 @@
 //#define KOKKOSBATCHED_USE_UNBLOCKED_ALGO 1
 #define KOKKOSBATCHED_USE_BLOCKED_ALGO 1
 
-#if defined (KOKKOSBATCHED_USE_UNBLOCKED_ALGO)
-typedef KokkosBatched::Algo::LU::Unblocked   AlgoLU;
+#if defined(KOKKOSBATCHED_USE_UNBLOCKED_ALGO)
+typedef KokkosBatched::Algo::LU::Unblocked AlgoLU;
 typedef KokkosBatched::Algo::Trsm::Unblocked AlgoTrsm;
 typedef KokkosBatched::Algo::Gemm::Unblocked AlgoGemm;
 
 typedef KokkosBatched::Algo::Trsv::Unblocked AlgoTrsv;
 typedef KokkosBatched::Algo::Gemv::Unblocked AlgoGemv;
 #endif
-#if defined (KOKKOSBATCHED_USE_BLOCKED_ALGO)
-typedef KokkosBatched::Algo::LU::Blocked   AlgoLU;
+#if defined(KOKKOSBATCHED_USE_BLOCKED_ALGO)
+typedef KokkosBatched::Algo::LU::Blocked AlgoLU;
 typedef KokkosBatched::Algo::Trsm::Blocked AlgoTrsm;
 typedef KokkosBatched::Algo::Gemm::Blocked AlgoGemm;
 
@@ -48,8 +48,8 @@ typedef KokkosBatched::Algo::Gemv::Blocked AlgoGemv;
 
 using namespace KokkosBatched;
 
-int main (int argc, char *argv[]) {
-  Kokkos::initialize(argc, argv); 
+int main(int argc, char* argv[]) {
+  Kokkos::initialize(argc, argv);
 
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
@@ -57,53 +57,60 @@ int main (int argc, char *argv[]) {
 
   Kokkos::print_configuration(std::cout, detail);
 
-  enum : int { VectorLength = DefaultVectorLength<Test::scalar_type,typename HostSpaceType::memory_space>::value,
-               RangeTagOper = 0 };
+  enum : int {
+    VectorLength =
+        DefaultVectorLength<Test::scalar_type,
+                            typename HostSpaceType::memory_space>::value,
+    RangeTagOper = 0
+  };
 
   // vector type
-  typedef Vector<SIMD<Test::scalar_type>,VectorLength> VectorType;  
+  typedef Vector<SIMD<Test::scalar_type>, VectorLength> VectorType;
 
   // Unit tests
   bool profile = false;
-  for (int i=1;i<argc;++i) {
+  for (int i = 1; i < argc; ++i) {
     const std::string& token = argv[i];
     if (strncmp(token.c_str(), "-profile", 8) == 0) profile = true;
   }
 
-
   if (!profile) {
-    // including compact layer, it is not possible to test 
+    // including compact layer, it is not possible to test
     // scalar and vector in the same code without templating
     std::cout << " Unit Test::Range::Vector :: Begin\n";
     {
-      Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>( 3,  4,  2, 25, 2);
-      Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>(44, 63, 15,  4, 1);
-      Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>( 2,  2, 15,  3, 3);
-      
-      for (int nrhs=1;nrhs<=33;++nrhs) 
-        Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>(2, 2, 15, 3, nrhs);
+      Test::run<HostSpaceType, VectorType, VectorLength, RangeTagOper>(3, 4, 2,
+                                                                       25, 2);
+      Test::run<HostSpaceType, VectorType, VectorLength, RangeTagOper>(
+          44, 63, 15, 4, 1);
+      Test::run<HostSpaceType, VectorType, VectorLength, RangeTagOper>(2, 2, 15,
+                                                                       3, 3);
+
+      for (int nrhs = 1; nrhs <= 33; ++nrhs)
+        Test::run<HostSpaceType, VectorType, VectorLength, RangeTagOper>(
+            2, 2, 15, 3, nrhs);
     }
 
     std::cout << " Unit Test::Range::Vector :: End\n";
   }
-  
+
   // MKL
 #if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   std::cout << " Perf Test::CompactMKL Begin\n";
   {
     const bool test_mkl = true;
-    const Test::Input<HostSpaceType> input(argc, argv); 
-    Test::run<HostSpaceType,VectorType,VectorLength>(input, test_mkl);
-  } 
-  std::cout << " Perf Test::CompactMKL End\n";  
+    const Test::Input<HostSpaceType> input(argc, argv);
+    Test::run<HostSpaceType, VectorType, VectorLength>(input, test_mkl);
+  }
+  std::cout << " Perf Test::CompactMKL End\n";
 #endif
 
   // Performance tests
   std::cout << " Perf Test::Vector Begin\n";
   {
-    const Test::Input<HostSpaceType> input(argc, argv); 
-    Test::run<HostSpaceType,VectorType,VectorLength>(input);
-  } 
+    const Test::Input<HostSpaceType> input(argc, argv);
+    Test::run<HostSpaceType, VectorType, VectorLength>(input);
+  }
   std::cout << " Perf Test::Vector End\n";
 
 #endif

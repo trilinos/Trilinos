@@ -10,7 +10,6 @@
 #include <Compadre_GMLS.hpp>
 #include <Compadre_Evaluator.hpp>
 #include <Compadre_PointCloudSearch.hpp>
-#include <Compadre_KokkosParser.hpp>
 
 #include "GMLS_Tutorial.hpp"
 #include "CommandLineProcessor.hpp"
@@ -35,7 +34,7 @@ MPI_Init(&argc, &args);
 #endif
 
 // initializes Kokkos with command line arguments given
-auto kp = KokkosParser(argc, args, true);
+Kokkos::initialize(argc, args);
 
 // becomes false if the computed solution not within the failure_threshold of the actual solution
 bool all_passed = true;
@@ -288,7 +287,7 @@ bool all_passed = true;
     my_GMLS.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS.setWeightingPower(2);
+    my_GMLS.setWeightingParameter(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
     my_GMLS.generateAlphas(number_of_batches, keep_coefficients /* keep polynomial coefficients, only needed for a test later in this program */);
@@ -464,7 +463,7 @@ bool all_passed = true;
 // otherwise, Views may be deallocating when we call Kokkos finalize() later
 
 // finalize Kokkos and MPI (if available)
-kp.finalize();
+Kokkos::finalize();
 #ifdef COMPADRE_USE_MPI
 MPI_Finalize();
 #endif

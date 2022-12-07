@@ -52,12 +52,6 @@ namespace Tpetra {
 }
 
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
-#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 1
-#else
-  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 0
-#endif
-
 #ifdef HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   #define TPETRA_PRINTS_EFFICIENCY_WARNINGS 1
 #else
@@ -124,14 +118,6 @@ namespace Tpetra {
     IDNotPresent   /*!< At least one of the specified indices was not present in the Map */
   };
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  /*! Allocation profile for matrix/graph entries */
-  enum ProfileType {
-    StaticProfile
-  };
-
-#define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
-#endif
 
 /*! Optimize storage option */
   enum OptimizeOption {
@@ -249,11 +235,6 @@ namespace KokkosClassic {
   using ::Tpetra::ESweepDirection;
 }
 
-#if defined(HAVE_TPETRACORE_KOKKOSCORE) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)
-#define TPETRA_USE_KOKKOS_DISTOBJECT 1
-#else
-#define TPETRA_USE_KOKKOS_DISTOBJECT 0
-#endif
 
 #include <Kokkos_Complex.hpp>
 

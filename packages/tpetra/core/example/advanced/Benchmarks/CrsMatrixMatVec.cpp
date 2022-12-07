@@ -50,6 +50,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 #include "Kokkos_Random.hpp"
 
@@ -71,6 +72,8 @@ struct CmdLineOpts {
   int numEntPerRow;
   // Bool that determines if a warm up apply is performed before timing
   bool warmUp;
+  // String that points to a matrix market file to load the matrix
+  std::string matrixFile;
 };
 
 // Use a utility from the Teuchos package of Trilinos to set up
@@ -88,6 +91,7 @@ setCmdLineOpts (CmdLineOpts& opts,
   opts.lclNumRows = 10000;
   opts.numEntPerRow = 10;
   opts.warmUp = true;
+  opts.matrixFile = "";
 
   clp.setOption ("numTrials", &(opts.numTrials), "Number of trials per "
                  "timing loop (to increase timer precision).");
@@ -97,6 +101,8 @@ setCmdLineOpts (CmdLineOpts& opts,
                  "per row in the sparse graph.");
   clp.setOption ("warm-up", "no-warm-up", &(opts.warmUp), "Perform a first un-timed apply"
                  " before running numTrials applies.");
+  clp.setOption("matrixFile", &(opts.matrixFile), "Matrix market file containing matrix");
+
 }
 
 // Actually read the command-line options from the command line,
@@ -168,6 +174,7 @@ printCmdLineOpts (Teuchos::FancyOStream& out,
       << "lclNumRows: " << opts.lclNumRows << endl
       << "numEntPerRow: " << opts.numEntPerRow << endl
       << "warmUp: " << opts.warmUp << endl
+      << "matrixFile: " << opts.matrixFile << endl
       << endl;
 }
 
@@ -337,17 +344,26 @@ main (int argc, char* argv[])
     out << "Command-line options:" << endl;
     printCmdLineOpts (out, opts);
 
-    auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getGraph");
-    RCP<Tpetra::CrsGraph<> > G;
-    {
-      TimeMonitor timeMon (*timer);
-      G = getTpetraGraph (comm, opts);
-    }
-    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getCrsMatrix");
+    // Create or read in the matrix
     RCP<Tpetra::CrsMatrix<> > A;
-    {
-      TimeMonitor timeMon (*timer);
-      A = getTpetraCrsMatrix (out, G, opts);
+    if(opts.matrixFile.empty()) {
+      auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getGraph");
+      RCP<Tpetra::CrsGraph<> > G;
+      {
+        TimeMonitor timeMon (*timer);
+        G = getTpetraGraph (comm, opts);
+      }
+      timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: getCrsMatrix");
+      {
+        TimeMonitor timeMon (*timer);
+        A = getTpetraCrsMatrix (out, G, opts);
+      }
+    } else {
+      auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: readCrsMatrix");
+      {
+        TimeMonitor timeMon (*timer);
+        A = Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<> >::readSparseFile(opts.matrixFile, comm);
+      }
     }
     Tpetra::Vector<> X (A->getDomainMap ());
     Tpetra::Vector<> Y (A->getRangeMap ());
@@ -358,7 +374,7 @@ main (int argc, char* argv[])
     // (or even denorms) via traps.  This is very expensive, so if the
     // norms increase or decrease a lot, that might trigger the slow
     // case.
-    timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: create vectors");
+    auto timer = TimeMonitor::getNewCounter ("Tpetra CrsMatrix Benchmark: create vectors");
     {
       TimeMonitor timeMon (*timer);
       const SC X_val = static_cast<SC> (1.0) /

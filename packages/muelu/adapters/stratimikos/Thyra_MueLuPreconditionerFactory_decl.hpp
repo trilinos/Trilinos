@@ -103,7 +103,16 @@ namespace Thyra {
   using Teuchos::rcp;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
+  struct Converters {
+    static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
+  };
+
+#ifdef HAVE_MUELU_EPETRA
+  template <class GlobalOrdinal>
+  struct Converters<double, int, GlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode> {
+    static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
+  };
+#endif
 
   /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
       @ingroup MueLuAdapters

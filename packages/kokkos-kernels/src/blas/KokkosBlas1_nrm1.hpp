@@ -45,8 +45,9 @@
 #ifndef KOKKOSBLAS1_NRM1_HPP_
 #define KOKKOSBLAS1_NRM1_HPP_
 
-#include<KokkosBlas1_nrm1_spec.hpp>
-#include<KokkosKernels_helpers.hpp>
+#include <KokkosBlas1_nrm1_spec.hpp>
+#include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
@@ -57,31 +58,34 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The nrm1 product result; a single value.
-template<class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-nrm1 (const XVector& x)
-{
-  static_assert (Kokkos::Impl::is_view<XVector>::value,
-                 "KokkosBlas::nrm1: XVector must be a Kokkos::View.");
-  static_assert (XVector::rank == 1, "KokkosBlas::nrm1: "
-                 "Both Vector inputs must have rank 1.");
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type mag_type;
+template <class XVector>
+typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XVector::non_const_value_type>::mag_type
+nrm1(const XVector& x) {
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosBlas::nrm1: XVector must be a Kokkos::View.");
+  static_assert(XVector::rank == 1,
+                "KokkosBlas::nrm1: "
+                "Both Vector inputs must have rank 1.");
+  typedef typename Kokkos::Details::InnerProductSpaceTraits<
+      typename XVector::non_const_value_type>::mag_type mag_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-    typename XVector::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
+  typedef Kokkos::View<
+      typename XVector::const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XVector_Internal;
 
-  typedef Kokkos::View<mag_type,
-    typename XVector_Internal::array_layout,
-    Kokkos::HostSpace,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
+  typedef Kokkos::View<mag_type, typename XVector_Internal::array_layout,
+                       Kokkos::HostSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      RVector_Internal;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result);
   XVector_Internal X = x;
 
-  Impl::Nrm1<RVector_Internal,XVector_Internal>::nrm1 (R,X);
+  Impl::Nrm1<RVector_Internal, XVector_Internal>::nrm1(R, X);
   Kokkos::fence();
   return result;
 }
@@ -95,78 +99,76 @@ nrm1 (const XVector& x)
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
-template<class RV, class XMV>
-void
-nrm1 (const RV& R, const XMV& X,
-      typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0)
-{
-  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrm1: "
-                 "R is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm1: "
-                 "X is not a Kokkos::View.");
-  static_assert (std::is_same<typename RV::value_type,
-                 typename RV::non_const_value_type>::value,
-                 "KokkosBlas::nrm1: R is const.  "
-                 "It must be nonconst, because it is an output argument "
-                 "(we have to be able to write to its entries).");
-  static_assert (((RV::rank == 0) && (XMV::rank == 1)) ||
-                 ((RV::rank == 1) && (XMV::rank == 2)), "KokkosBlas::nrm1: "
-                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
+template <class RV, class XMV>
+void nrm1(const RV& R, const XMV& X,
+          typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
+                "KokkosBlas::nrm1: "
+                "R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<XMV>::value,
+                "KokkosBlas::nrm1: "
+                "X is not a Kokkos::View.");
+  static_assert(std::is_same<typename RV::value_type,
+                             typename RV::non_const_value_type>::value,
+                "KokkosBlas::nrm1: R is const.  "
+                "It must be nonconst, because it is an output argument "
+                "(we have to be able to write to its entries).");
+  static_assert(((RV::rank == 0) && (XMV::rank == 1)) ||
+                    ((RV::rank == 1) && (XMV::rank == 2)),
+                "KokkosBlas::nrm1: "
+                "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
-  static_assert (std::is_same<typename RV::value_type,
-                 mag_type>::value,
-                 "KokkosBlas::nrm1: R must have the magnitude type of"
-                 "the xvectors value_type it is an output argument "
-                 "(we have to be able to write to its entries).");
+  typedef typename Kokkos::Details::InnerProductSpaceTraits<
+      typename XMV::non_const_value_type>::mag_type mag_type;
+  static_assert(std::is_same<typename RV::value_type, mag_type>::value,
+                "KokkosBlas::nrm1: R must have the magnitude type of"
+                "the xvectors value_type it is an output argument "
+                "(we have to be able to write to its entries).");
 
   // Check compatibility of dimensions at run time.
   if (X.extent(1) != R.extent(0)) {
     std::ostringstream os;
     os << "KokkosBlas::nrm1 (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0)
-       << ", X: " << X.extent(0) << " x " << X.extent(1);
-    Kokkos::Impl::throw_runtime_exception (os.str ());
+       << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x "
+       << X.extent(1);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  using UnifiedXLayout = typename
-    KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
-  using UnifiedRVLayout = typename
-    KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedXLayout =
+      typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
+  using UnifiedRVLayout =
+      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+          RV, UnifiedXLayout>::array_layout;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
+  typedef Kokkos::View<typename std::conditional<
+                           RV::rank == 0, typename RV::non_const_value_type,
+                           typename RV::non_const_value_type*>::type,
+                       UnifiedRVLayout, typename RV::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      RV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      RV::rank == 0,
-      typename RV::non_const_value_type,
-      typename RV::non_const_value_type* >::type,
-    UnifiedRVLayout,
-    typename RV::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Internal;
-  typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      XMV::rank == 1,
-      typename XMV::const_value_type*,
-      typename XMV::const_value_type** >::type,
-    UnifiedXLayout,
-    typename XMV::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
+      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
+      UnifiedXLayout, typename XMV::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XMV_Internal;
 
-  RV_Internal R_internal = R;
+  RV_Internal R_internal  = R;
   XMV_Internal X_internal = X;
 
-  Impl::Nrm1<RV_Internal, XMV_Internal>::nrm1 (R_internal, X_internal);
+  Impl::Nrm1<RV_Internal, XMV_Internal>::nrm1(R_internal, X_internal);
 }
 
 /// \brief Return the nrm1 of the vector x via asum (the actual blas name).
-template<class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-asum (const XVector& x) {
+template <class XVector>
+typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XVector::non_const_value_type>::mag_type
+asum(const XVector& x) {
   return nrm1(x);
 }
 
-}
+}  // namespace KokkosBlas
 
-#endif // KOKKOSBLAS1_NRM1_HPP_
-
+#endif  // KOKKOSBLAS1_NRM1_HPP_

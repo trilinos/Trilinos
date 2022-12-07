@@ -136,6 +136,12 @@ class FieldRepository {
     MetaData & mesh_meta_data() { return m_meta; }
 
   private:
+    void verify_field_type(const FieldBase                   & arg_field,
+                           const DataTraits                  & arg_traits,
+                           unsigned                            arg_rank,
+                           const shards::ArrayDimTag * const * arg_dim_tags,
+                           unsigned                    arg_num_states) const;
+
     MetaData & m_meta;
     FieldVector m_fields;
 

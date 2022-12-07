@@ -808,10 +808,10 @@ namespace MueLuTests {
            Teuchos::Array<GO> new_indices(1);
            Teuchos::Array<SC> new_values(1);
            old_matrix->getLocalRowView(i,old_indices,old_values);
-           for(int ii=0; ii<blocksize; ii++) {           
+           for(int ii=0; ii<blocksize; ii++) {
              GO GRID = new_map->getGlobalElement(i*blocksize+ii);
              for(LO j=0; j<(LO)old_indices.size(); j++) {
-               for(int jj=0; jj<blocksize; jj++) {           
+               for(int jj=0; jj<blocksize; jj++) {
                 new_indices[0] = old_colmap->getGlobalElement(old_indices[j]) * blocksize + jj;
                 new_values[0]  = old_values[j] * (SC)( (ii == jj && i == old_indices[j] ) ? blocksize*blocksize : 1 );
                 new_matrix->insertGlobalValues(GRID,new_indices(),new_values);
@@ -821,7 +821,7 @@ namespace MueLuTests {
          }
          new_matrix->fillComplete();
          Op = rcp(new CrsMatrixWrap(new_matrix));
-         if(new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");         
+         if(new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");
          Op->SetFixedBlockSize(blocksize);
 
          return Op;
@@ -881,10 +881,24 @@ namespace MueLuTests {
          basematrix[4] = two;
          basematrix[7] = three;
          basematrix[8] = two;
+         Teuchos::Array<Scalar> offmatrix(blocksize*blocksize, zero);
+         offmatrix[0]=offmatrix[4]=offmatrix[8]=-1;
+
          Teuchos::Array<LocalOrdinal> lclColInds(1);
          for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
            lclColInds[0] = lclRowInd;
            bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+           
+           // Off diagonals
+           if(lclRowInd > meshRowMap.getMinLocalIndex ()) {
+             lclColInds[0] = lclRowInd - 1;
+             bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
+           }
+           if(lclRowInd < meshRowMap.getMaxLocalIndex ()) {
+             lclColInds[0] = lclRowInd + 1;
+             bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
+           }
+
          }
 
          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));

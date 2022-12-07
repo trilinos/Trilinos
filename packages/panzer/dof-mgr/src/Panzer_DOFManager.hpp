@@ -55,6 +55,7 @@
 #include "Panzer_NodeType.hpp"
 #include "Panzer_FieldType.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_KokkosViewOfViews.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -203,15 +204,24 @@ public:
   //! gets the number of fields
   int getNumFields() const;
 
-  /** gets the field pattern so you can find a particular
-    * field in the GIDs array.
-    */
+  /** Returns a std::vector of GID field offsets for a field in an element block.
+   *  @param[in] blockID - The element block id
+   *  @param[in] fieldNum - The field number
+   */
   const std::vector<int> & getGIDFieldOffsets(const std::string & blockID, int fieldNum) const;
 
-  /** gets the field pattern so you can find a particular
-    * field in the GIDs array.
-    */
+  /** Returns a device View of GID field offsets for a field in an element block.
+   *  @param[in] blockID - The element block id
+   *  @param[in] fieldNum - The field number
+   */
   const PHX::View<const int*> getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const;
+
+
+  /** Returns a View-of-Views of the GID field offsets for a vector of fields in an element block.
+   *  @param[in] blockID - The element block id
+   *  @param[in] fieldNum - A vector field numbers
+   */
+  const PHX::ViewOfViews3<1,PHX::View<const int*>> getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vector<int> & fieldNum) const;
 
   //! get associated GIDs for a given local element
   void getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal> & gids, const std::string & blockIdHint="") const;

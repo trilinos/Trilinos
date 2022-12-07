@@ -123,15 +123,6 @@ public:
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Return a copy of the Tempus ParameterList
-  TEMPUS_DEPRECATED
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
-    { return integrator_->getTempusParameterList(); }
-  TEMPUS_DEPRECATED
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
-    { integrator_->setTempusParameterList(pl); }
-#endif
   //@}
 
   /// \name Accessor methods
@@ -241,6 +232,11 @@ public:
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
 
+  /// Return response function g
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
+  /// Return forward sensitivity stored in Jacobian format
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
+
   /// Get current state
   virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
     {return integrator_->getCurrentState();}
@@ -260,12 +256,63 @@ public:
   SensitivityStepMode getStepMode() const;
 
 protected:
+
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> integrator_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar>> sens_stepper_;
   bool use_combined_method_;
 };
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorForwardSensitivity`
+ * construtor
+ *
+ * @param pList  ParameterList defining the integrator options and options
+ *               defining the sensitivity analysis
+ * @param model  ModelEvaluator for the problem
+ * @param sens_residual_model  Sensitivity residual model
+ * @param sens_solve_model     Sensitivity solve model
+ *
+ * @return Time integrator implementing forward sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
+createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_solve_model);
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorForwardSensitivity`
+ * construtor
+ *
+ * @param pList  ParameterList defining the integrator options and options
+ *               defining the sensitivity analysis
+ * @param model  ModelEvaluator for the problem
+ * @param sens_residual_model Model evaluator for sensitivity residual
+ *
+ * @return Time integrator implementing forward sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
+createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &sens_residual_model)
+{
+  return createIntegratorForwardSensitivity(
+    pList, model, sens_residual_model, sens_residual_model);
+}
 
 /// Nonmember constructor
 /**
@@ -285,7 +332,10 @@ template <class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
 createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList> pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model)
+{
+  return createIntegratorForwardSensitivity(pList, model, model, model);
+}
 
 /// Nonmember constructor
 /**

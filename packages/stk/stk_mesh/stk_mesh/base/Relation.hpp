@@ -184,11 +184,6 @@ private:
   //  enum RelationType {
   //    USES	= 0 ,
   //    USED_BY	= 1 ,
-  //    CHILD	= 2 ,
-  //    PARENT	= 3 ,
-  //    EMBEDDED	= 0x00ff , // 4
-  //    CONTACT	= 0x00ff , // 5
-  //    AUXILIARY   = 0x00ff ,
   //    INVALID     = 10
   //  };
 
@@ -276,19 +271,20 @@ inline
 RelationIdentifier Relation::relation_ordinal() const
 { return static_cast<unsigned>( m_raw_relation.value & id_mask ); }
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after October 2022
 //----------------------------------------------------------------------
 /** \brief  Query which mesh entities have a relation
  *          to all of the input mesh entities.
  */
-void get_entities_through_relations(
+STK_DEPRECATED void get_entities_through_relations(
   const BulkData& mesh,
   const std::vector<Entity> & entities ,
         std::vector<Entity> & entities_related );
+#endif
 
-/** \brief  Query which mesh entities have a relation
- *          to all of the input mesh entities of the given
- *          mesh rank.
+/** \brief  Fill a vector with mesh entities of the given rank,
+ *          that are related (connected) to all of
+ *          the input mesh entities.
  */
 void get_entities_through_relations(
   const BulkData& mesh,

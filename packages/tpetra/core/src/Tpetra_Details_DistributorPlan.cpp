@@ -40,6 +40,7 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include <numeric>
 
 namespace Tpetra {
@@ -51,19 +52,9 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   if (sendType == DISTRIBUTOR_ISEND) {
     return "Isend";
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  else if (sendType == DISTRIBUTOR_RSEND) {
-    return "Rsend";
-  }
-#endif
   else if (sendType == DISTRIBUTOR_SEND) {
     return "Send";
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  else if (sendType == DISTRIBUTOR_SSEND) {
-    return "Ssend";
-  }
-#endif
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
       "EDistributorSendType enum value " << sendType << ".");
@@ -96,10 +87,6 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
     sendType_(DISTRIBUTOR_SEND),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_(barrierBetween_default),
-#endif
-    useDistinctTags_(useDistinctTags_default),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -112,10 +99,6 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
     reversePlan_(otherPlan.reversePlan_),
     sendType_(otherPlan.sendType_),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
-#endif
-    useDistinctTags_(otherPlan.useDistinctTags_),
     sendMessageToSelf_(otherPlan.sendMessageToSelf_),
     numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
     procIdsToSendTo_(otherPlan.procIdsToSendTo_),
@@ -131,19 +114,17 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     indicesFrom_(otherPlan.indicesFrom_)
 { }
 
-int DistributorPlan::getTag(const int pathTag) const {
-  return useDistinctTags_ ? pathTag : comm_->getTag();
-}
-
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
   using std::endl;
+  const char rawPrefix[] = "Tpetra::DistributorPlan::createFromSends";
 
   const size_t numExports = exportProcIDs.size();
   const int myProcID = comm_->getRank();
   const int numProcs = comm_->getSize();
+  const bool debug = Details::Behavior::debug("Distributor");
 
   // exportProcIDs tells us the communication pattern for this
   // distributor.  It dictates the way that the export data will be
@@ -161,7 +142,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // However, if they do not provide an efficient pattern, we will
   // warn them if one of the following compile-time options has been
   // set:
-  //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   //
   // If the data are contiguous, then we can post the sends in situ
@@ -181,6 +161,27 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Check to see if values are grouped by procs without gaps
   // If so, indices_to -> 0.
 
+  if (debug) {
+    // Test whether any process in the communicator got an invalid
+    // process ID.  If badID != -1 on this process, then it equals
+    // this process' rank.  The max of all badID over all processes
+    // is the max rank which has an invalid process ID.
+    int badID = -1;
+    for (size_t i = 0; i < numExports; ++i) {
+      const int exportID = exportProcIDs[i];
+      if (exportID >= numProcs || exportID < 0) {
+        badID = myProcID;
+        break;
+      }
+    }
+    int gbl_badID;
+    reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
+        << gbl_badID << ", perhaps among other processes, got a bad "
+        "send process ID.");
+  }
+
   // Set up data structures for quick traversal of arrays.
   // This contains the number of sends for each process ID.
   //
@@ -198,7 +199,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // numActive is the number of sends that are not Null
   size_t numActive = 0;
   int needSendBuff = 0; // Boolean
-
+  
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
     if (exportID >= 0) {
@@ -223,13 +224,13 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     }
   }
 
-#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+#if defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
   {
     int global_needSendBuff;
     reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
         outArg (global_needSendBuff));
     TPETRA_EFFICIENCY_WARNING(
-        global_needSendBuff != 0, std::runtime_error,
+        global_needSendBuff != 0,
         "::createFromSends: Grouping export IDs together by process rank often "
         "improves performance.");
   }
@@ -269,7 +270,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -277,7 +278,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }
@@ -530,7 +530,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -538,7 +538,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }
@@ -602,9 +601,6 @@ void DistributorPlan::createReversePlan() const
   reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
   reversePlan_->sendType_ = sendType_;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  reversePlan_->barrierBetweenRecvSend_ = barrierBetweenRecvSend_;
-#endif
 
   // The total length of all the sends of this DistributorPlan.  We
   // calculate it because it's the total length of all the receives
@@ -639,7 +635,6 @@ void DistributorPlan::createReversePlan() const
   reversePlan_->procsFrom_ = procIdsToSendTo_;
   reversePlan_->startsFrom_ = startsTo_;
   reversePlan_->indicesFrom_ = indicesTo_;
-  reversePlan_->useDistinctTags_ = useDistinctTags_;
 }
 
 void DistributorPlan::computeReceives()
@@ -662,9 +657,7 @@ void DistributorPlan::computeReceives()
   const int myRank = comm_->getRank();
   const int numProcs = comm_->getSize();
 
-  // MPI tag for nonblocking receives and blocking sends in this method.
-  const int pathTag = 2;
-  const int tag = getTag(pathTag);
+  const int mpiTag = DEFAULT_MPI_TAG;
 
   // toProcsFromMe[i] == the number of messages sent by this process
   // to process i.  The data in numSendsToOtherProcs_, procIdsToSendTo_, and lengthsTo_
@@ -806,7 +799,7 @@ void DistributorPlan::computeReceives()
     lengthsFromBuffers[i].resize (1);
     lengthsFromBuffers[i][0] = as<size_t> (0);
     requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
-        tag, *comm_);
+        mpiTag, *comm_);
   }
 
   // Post the sends: Tell each process to which we are sending how
@@ -823,7 +816,7 @@ void DistributorPlan::computeReceives()
       // this communication pattern will send that process
       // lengthsTo_[i] blocks of packets.
       const size_t* const lengthsTo_i = &lengthsTo_[i];
-      send<int, size_t> (lengthsTo_i, 1, as<int> (procIdsToSendTo_[i]), tag, *comm_);
+      send<int, size_t> (lengthsTo_i, 1, as<int> (procIdsToSendTo_[i]), mpiTag, *comm_);
     }
     else {
       // We don't need a send in the self-message case.  If this
@@ -884,53 +877,11 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     RCP<const ParameterList> validParams = getValidParameters ();
     plist->validateParametersAndSetDefaults (*validParams);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    const bool barrierBetween =
-      plist->get<bool> ("Barrier between receives and sends");
-#endif
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
-    const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    {
-      // mfh 03 May 2016: We keep this option only for backwards
-      // compatibility, but it must always be true.  See discussion of
-      // Github Issue #227.
-      const bool enable_cuda_rdma =
-        plist->get<bool> ("Enable MPI CUDA RDMA support");
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
-         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
-         "support\" = false.  This is no longer valid.  You don't need to "
-         "specify this option any more; Tpetra assumes it is always true.  "
-         "This is a very light assumption on the MPI implementation, and in "
-         "fact does not actually involve hardware or system RDMA support.  "
-         "Tpetra just assumes that the MPI implementation can tell whether a "
-         "pointer points to host memory or CUDA device memory.");
-    }
-#endif
 
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (sendType_ == Details::DISTRIBUTOR_RSEND ||
-        sendType_ == Details::DISTRIBUTOR_SSEND) {
-      // User requested a deprecated send type; change it back to default
-#ifdef HAVE_TPETRA_DEBUG
-      if (comm_->getRank() == 0)
-        std::cout << "Tpetra send type " 
-                  << DistributorSendTypeEnumToString(sendType_)
-                  << " is deprecated; send type = Send will be used."
-                  << std::endl;
-#endif
-      sendType_ = Details::DISTRIBUTOR_SEND;
-    }
-#endif
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    barrierBetweenRecvSend_ = barrierBetween;
-#endif
-    useDistinctTags_ = useDistinctTags;
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -942,13 +893,7 @@ Teuchos::Array<std::string> distributorSendTypes()
 {
   Teuchos::Array<std::string> sendTypes;
   sendTypes.push_back ("Isend");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypes.push_back ("Rsend");
-#endif
   sendTypes.push_back ("Send");
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypes.push_back ("Ssend");
-#endif
   return sendTypes;
 }
 
@@ -961,50 +906,18 @@ DistributorPlan::getValidParameters() const
   using Teuchos::RCP;
   using Teuchos::setStringToIntegralParameter;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  const bool barrierBetween = Details::barrierBetween_default;
-#endif
-  const bool useDistinctTags = Details::useDistinctTags_default;
-
   Array<std::string> sendTypes = distributorSendTypes ();
   const std::string defaultSendType ("Send");
   Array<Details::EDistributorSendType> sendTypeEnums;
   sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
-#endif
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
-#endif
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  plist->set ("Barrier between receives and sends", barrierBetween,
-      "(DEPRECATED) Whether to execute a barrier between receives and sends in do"
-      "[Reverse]Posts().  "
-      "Required for correctness when \"Send type\""
-      "=\"Rsend\", otherwise "
-      "Correct but not recommended.");
-#endif
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
-  plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-      "MPI message tags for different code paths.  Highly recommended"
-      " to avoid message collisions.");
   plist->set ("Timer Label","","Label for Time Monitor output");
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  plist->set ("Enable MPI CUDA RDMA support", true, 
-      "(DEPRECATED) Assume that MPI can "
-      "tell whether a pointer points to host memory or CUDA device "
-      "memory.  You don't need to specify this option any more; "
-      "Tpetra assumes it is always true.  This is a very light "
-      "assumption on the MPI implementation, and in fact does not "
-      "actually involve hardware or system RDMA support.");
-#endif
 
   return Teuchos::rcp_const_cast<const ParameterList> (plist);
 }

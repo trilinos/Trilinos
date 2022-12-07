@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -60,6 +60,8 @@ C.
      &   'EXODUSII DATABASE TO TEXT FILE TRANSLATOR',
      &   ' ', ' ')
 
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
       CALL MDINIT (A)
       CALL MCINIT (C)
       CALL MDSTAT (NERR, MEM)
@@ -78,11 +80,17 @@ C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#exotxt')
         GOTO 140
       else if (narg .gt. 2) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC', 'Syntax is: "exotxt db_file text_file"')
+        CALL PRTERR ('CMDSPEC',
+     *    'Documentation: https://sandialabs.github.io' //
+     $       '/seacas-docs/sphinx/html/index.html#exotxt')
         GOTO 140
       end if
 
@@ -583,6 +591,8 @@ C     Delete dynamic memory
       CLOSE (NTXT, IOSTAT=K)
       if (ndb .ne. 11 .and. ndb .gt. 0) call exclos(ndb, ierr)
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
+      CALL PRTERR ('CMDSPEC',
+     $     'Please use ncdump/ncgen instead of exotxt/txtexo.')
       CALL WRAPUP (QAINFO(1))
 
       END

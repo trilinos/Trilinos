@@ -84,14 +84,11 @@ std::string Examples::get_long_examples()
   examples += tab + "To decompose for 512 processors and put the decomposition into a directory named 'temp1':\n";
   examples += tab + tab + "> mpirun -n 512 " + m_execName + " mesh.g temp1\n";
   examples += "\n";
-  examples += tab + "To decompose for 16 processors and use the default relative contact search tolerance:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.faceSearchRelTol) + "\n";
-  examples += "\n";
   examples += tab + "To decompose for 16 processors and use a relative contact search tolerance of 0.05:\n";
   examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.faceSearchRelTol) + "=0.05\n";
   examples += "\n";
-  examples += tab + "To decompose for 16 processors with the RCB decomposition method:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.decompMethod) + "=rcb\n";
+  examples += tab + "To decompose for 16 processors with the RIB decomposition method:\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.decompMethod) + "=rib\n";
   examples += "\n";
   examples += tab + "To rebalance a 16 processor mesh into 64 processors:\n";
   examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.rebalanceTo) + "=64\n";
@@ -116,9 +113,17 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_app_type_defaults(settings);
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
+  set_fix_spiders(settings);
+  set_fix_mechanisms(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
+  set_vertex_weight_method(settings);
+  set_vertex_weight_field_name(settings);
+  set_contact_search_edge_weight(settings);
+  set_contact_search_vertex_weight_multiplier(settings);
+  set_edge_weight_multiplier(settings);
   set_use_nested_decomp(settings);
+  set_print_diagnostics(settings);
   set_logfile(settings);
 }
 
@@ -137,6 +142,9 @@ void Parser::add_options_to_parser()
                            "Output directory for decomposition"};
   stk::CommandLineOption logfile{m_optionNames.logfile, "l",
                            "Output log file path, one of: 'cout', 'cerr', or a file path."};
+  stk::CommandLineOption printDiagnostics{m_optionNames.printDiagnostics, "d",
+                           "Gather and print diagnostic output for each processor to help "
+                           "evaluate the quality of the decomposition."};
   stk::CommandLineOption rebalanceTo{m_optionNames.rebalanceTo, "r",
                            "Rebalance the input mesh that is already decomposed for <inProcs> "
                            "processors into this number of processors.  The decomposition size "
@@ -146,17 +154,24 @@ void Parser::add_options_to_parser()
   smStream << "Use settings suitable for solving Solid Mechanics problems. "
            << "This flag implies:" << std::endl
            << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << DefaultSettings::faceSearchRelTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << DefaultSettings::smFaceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << DefaultSettings::smFaceSearchEdgeWeight;
+           << "    " << stk::dash_it(m_optionNames.fixSpiders) << "=" << ((DefaultSettings::smFixSpiders) ? "on" : "off") << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixMechanisms) << "=" << ((DefaultSettings::fixMechanisms) ? "on" : "off") << std::endl
+           << "    " << stk::dash_it(m_optionNames.vertexWeightMethod) << "=" << vertex_weight_method_name(DefaultSettings::smVertexWeightMethod) << std::endl
+           << "    " << stk::dash_it(m_optionNames.edgeWeightMultiplier) << "=" << DefaultSettings::smGraphEdgeWeightMultiplier << std::endl
+           << "    " << stk::dash_it(m_optionNames.contactSearchVertexWeightMultiplier) << "=" << DefaultSettings::smFaceSearchVertexMultiplier << std::endl
+           << "    " << stk::dash_it(m_optionNames.contactSearchEdgeWeight) << "=" << DefaultSettings::smFaceSearchEdgeWeight << std::endl;
   stk::CommandLineOption smDefaults{m_optionNames.smDefaults, "", smStream.str()};
 
   std::ostringstream sdStream;
   sdStream << "Use settings suitable for solving Structural Dynamics problems. "
            << "This flag implies:" << std::endl
-           << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << DefaultSettings::faceSearchAbsTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << DefaultSettings::faceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << DefaultSettings::faceSearchEdgeWeight << std::endl
-           << "    Handle spider elements (currently for non-rebalance use-cases only)";
+           << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << DefaultSettings::faceSearchRelTol << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixSpiders) << "=" << ((DefaultSettings::sdFixSpiders) ? "on" : "off") << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixMechanisms) << "=" << ((DefaultSettings::fixMechanisms) ? "on" : "off") << std::endl
+           << "    " << stk::dash_it(m_optionNames.vertexWeightMethod) << "=" << vertex_weight_method_name(DefaultSettings::sdVertexWeightMethod) << std::endl
+           << "    " << stk::dash_it(m_optionNames.edgeWeightMultiplier) << "=" << DefaultSettings::sdGraphEdgeWeightMultiplier << std::endl
+           << "    " << stk::dash_it(m_optionNames.contactSearchVertexWeightMultiplier) << "=" << DefaultSettings::sdFaceSearchVertexMultiplier << std::endl
+           << "    " << stk::dash_it(m_optionNames.contactSearchEdgeWeight) << "=" << DefaultSettings::sdFaceSearchEdgeWeight << std::endl;
   stk::CommandLineOption sdDefaults{m_optionNames.sdDefaults, "", sdStream.str()};
 
   stk::CommandLineOption faceSearchAbsTol{m_optionNames.faceSearchAbsTol, "",
@@ -164,10 +179,17 @@ void Parser::add_options_to_parser()
                            "Optionally provide a numeric tolerance value."};
   stk::CommandLineOption faceSearchRelTol{m_optionNames.faceSearchRelTol, "",
                            "Use a tolerance relative to the face size for face contact search. "
-                           "Optionally provide a numeric tolerance value."};
+                           "Optionally provide a numeric tolerance value.  This is the global "
+                           "default.  Values less than 0.5 are recommended."};
   stk::CommandLineOption contactSearch{m_optionNames.contactSearch, "",
                            "Use proximity search for contact [on|off]"};
-  stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "",
+  stk::CommandLineOption fixSpiders{m_optionNames.fixSpiders, "",
+                           "Correct the decomp to group spider legs (large collection of beam "
+                           "elements connected to a single node) onto fewer processors [on|off]"};
+  stk::CommandLineOption fixMechanisms{m_optionNames.fixMechanisms, "",
+                           "Remove mechanisms (partition components connected by a hinge) in "
+                           "the decomp by reassigning element ownership [on|off]"};
+  stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "m",
                            "Use this geometric decomposition method [rcb|rib|multijagged] "
                            "or graph-based decomposition method [parmetis|scotch]. "
                            "Note that geometric methods do not use contact search and "
@@ -182,19 +204,45 @@ void Parser::add_options_to_parser()
                            "within the boundaries of the input decomposition.  The new number "
                            "of processors must be an integer multiple of the input processors."};
 
+  stk::CommandLineOption vertexWeightMethod{m_optionNames.vertexWeightMethod, "",
+                           "Method used to calculate vertex weights given to the partitioner. "
+                           "[constant|topology|connectivity|field]"};
+  stk::CommandLineOption vertexWeightFieldName{m_optionNames.vertexWeightFieldName, "",
+                           "Field name for field vertex weights given to the partitioner. "
+                           "Using this option implies --vertex-weight-method=field."};
+  stk::CommandLineOption contactSearchEdgeWeight{m_optionNames.contactSearchEdgeWeight, "",
+                           "Graph edge weight to use between elements that are determined to be "
+                           "in contact."};
+  stk::CommandLineOption contactSearchVertexWeightMultiplier{m_optionNames.contactSearchVertexWeightMultiplier, "",
+                           "Scale factor to be applied to graph vertex weights for elements that "
+                           "are determined to be in contact."};
+  stk::CommandLineOption edgeWeightMultiplier{m_optionNames.edgeWeightMultiplier, "",
+                           "Scale factor to be applied to all graph edge weights.  This will be "
+                           "automatically set to 1.0 for constant vertex weights, 1.0 for topology "
+                           "vertex weights, and 10.0 for connectivity vertex weights."};
+
 
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_optional_positional<std::string>(outputDirectory, DefaultSettings::outputDirectory);
   m_commandLineParser.add_optional<std::string>(logfile, "<mesh>.<inProcs>_to_<outProcs>.log");
+  m_commandLineParser.add_flag(printDiagnostics);
   m_commandLineParser.add_optional<unsigned>(rebalanceTo);
   m_commandLineParser.add_flag(smDefaults);
   m_commandLineParser.add_flag(sdDefaults);
   m_commandLineParser.add_optional_implicit(faceSearchAbsTol, DefaultSettings::faceSearchAbsTol);
   m_commandLineParser.add_optional_implicit(faceSearchRelTol, DefaultSettings::faceSearchRelTol);
-  m_commandLineParser.add_optional(contactSearch, DefaultSettings::contactSearch);
+  m_commandLineParser.add_optional(contactSearch, (DefaultSettings::useContactSearch) ? "on" : "off");
+  m_commandLineParser.add_optional(fixSpiders, (DefaultSettings::fixSpiders) ? "on" : "off");
+  m_commandLineParser.add_optional(fixMechanisms, (DefaultSettings::fixMechanisms) ? "on" : "off");
   m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
   m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
   m_commandLineParser.add_flag(useNested);
+
+  m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
+  m_commandLineParser.add_optional<std::string>(vertexWeightFieldName);
+  m_commandLineParser.add_optional<double>(contactSearchEdgeWeight, DefaultSettings::faceSearchEdgeWeight);
+  m_commandLineParser.add_optional<double>(contactSearchVertexWeightMultiplier, DefaultSettings::faceSearchVertexMultiplier);
+  m_commandLineParser.add_optional<double>(edgeWeightMultiplier, DefaultSettings::graphEdgeWeightMultiplier);
 
   m_commandLineParser.disallow_unrecognized();
 }
@@ -259,15 +307,19 @@ void Parser::set_app_type_defaults(BalanceSettings& settings) const
   ThrowRequireMsg( !(useSM && useSD), "Can't set default settings for multiple apps at the same time");
 
   if (useSM) {
-    settings.setEdgeWeightForSearch(DefaultSettings::smFaceSearchEdgeWeight);
+    settings.setVertexWeightMethod(DefaultSettings::smVertexWeightMethod);
+    settings.setGraphEdgeWeightMultiplier(DefaultSettings::smGraphEdgeWeightMultiplier);
     settings.setVertexWeightMultiplierForVertexInSearch(DefaultSettings::smFaceSearchVertexMultiplier);
-    settings.setToleranceFunctionForFaceSearch(
-        std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(DefaultSettings::faceSearchRelTol)
-    );
+    settings.setEdgeWeightForSearch(DefaultSettings::smFaceSearchEdgeWeight);
+    settings.setShouldFixSpiders(DefaultSettings::smFixSpiders);
   }
 
   if (useSD) {
-    settings.setShouldFixSpiders(true);
+    settings.setVertexWeightMethod(DefaultSettings::sdVertexWeightMethod);
+    settings.setGraphEdgeWeightMultiplier(DefaultSettings::sdGraphEdgeWeightMultiplier);
+    settings.setVertexWeightMultiplierForVertexInSearch(DefaultSettings::sdFaceSearchVertexMultiplier);
+    settings.setEdgeWeightForSearch(DefaultSettings::sdFaceSearchEdgeWeight);
+    settings.setShouldFixSpiders(DefaultSettings::sdFixSpiders);
   }
 }
 
@@ -281,6 +333,32 @@ void Parser::set_contact_search(BalanceSettings& settings) const
         "Invalid contact search type (" + searchOption + ").  Must be one of: [on|off]");
 
     settings.setIncludeSearchResultsInGraph(searchOption == "on");
+  }
+}
+
+void Parser::set_fix_spiders(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.fixSpiders)) {
+    std::string fixSpiders = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixSpiders);
+    std::transform(fixSpiders.begin(), fixSpiders.end(), fixSpiders.begin(), ::tolower);
+
+    ThrowRequireMsg(fixSpiders == "on" || fixSpiders == "off",
+        "Invalid spider fixing argument (" + fixSpiders + ").  Must be one of: [on|off]");
+
+    settings.setShouldFixSpiders(fixSpiders == "on");
+  }
+}
+
+void Parser::set_fix_mechanisms(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.fixMechanisms)) {
+    std::string fixMechanisms = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixMechanisms);
+    std::transform(fixMechanisms.begin(), fixMechanisms.end(), fixMechanisms.begin(), ::tolower);
+
+    ThrowRequireMsg(fixMechanisms == "on" || fixMechanisms == "off",
+        "Invalid mechanism fixing argument (" + fixMechanisms + ").  Must be one of: [on|off]");
+
+    settings.setShouldFixMechanisms(fixMechanisms == "on");
   }
 }
 
@@ -340,8 +418,77 @@ void Parser::set_use_nested_decomp(BalanceSettings& settings) const
     const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
     ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
                     << "multiple of input processors (" << inputNumProcs << ") to use a nested decomposition.");
+   }
+ }
+
+void Parser::set_print_diagnostics(BalanceSettings &settings) const
+{
+  const bool printDiagnostics = m_commandLineParser.is_option_provided(m_optionNames.printDiagnostics);
+
+  if (printDiagnostics) {
+    settings.setShouldPrintDiagnostics(true);
   }
 }
 
+void Parser::set_vertex_weight_method(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightMethod)) {
+    const std::string vertexWeightMethodName = m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightMethod);
+    // FIXME: case-insensitive comparison?  Need this for decomp method too?
+    if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::CONSTANT)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::CONSTANT);
+      settings.setGraphEdgeWeightMultiplier(1.0);
+    }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::TOPOLOGY)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::TOPOLOGY);
+      settings.setGraphEdgeWeightMultiplier(1.0);
+    }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::CONNECTIVITY)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::CONNECTIVITY);
+      settings.setGraphEdgeWeightMultiplier(10.0);
+    }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::FIELD)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
+    }
+    else {
+      ThrowErrorMsg("Unrecognized vertex weight method: " << vertexWeightMethodName);
+    }
+  }
 }
+
+void Parser::set_vertex_weight_field_name(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightFieldName)) {
+    settings.setVertexWeightMethod(VertexWeightMethod::FIELD);
+    settings.setGraphEdgeWeightMultiplier(1.0);
+    const std::string vertexWeightFieldName = m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightFieldName);
+    settings.setVertexWeightFieldName(vertexWeightFieldName);
+  }
 }
+
+void Parser::set_contact_search_edge_weight(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.contactSearchEdgeWeight)) {
+    const double edgeWeight = m_commandLineParser.get_option_value<double>(m_optionNames.contactSearchEdgeWeight);
+    settings.setEdgeWeightForSearch(edgeWeight);
+  }
+}
+
+void Parser::set_contact_search_vertex_weight_multiplier(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.contactSearchVertexWeightMultiplier)) {
+    const double multiplier = m_commandLineParser.get_option_value<double>(m_optionNames.contactSearchVertexWeightMultiplier);
+    settings.setVertexWeightMultiplierForVertexInSearch(multiplier);
+  }
+}
+
+void Parser::set_edge_weight_multiplier(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.edgeWeightMultiplier)) {
+    const double edgeWeightMultiplier = m_commandLineParser.get_option_value<double>(m_optionNames.edgeWeightMultiplier);
+    settings.setGraphEdgeWeightMultiplier(edgeWeightMultiplier);
+  }
+}
+
+}  // namespace balance
+}  // namespace stk

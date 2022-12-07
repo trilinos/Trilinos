@@ -42,13 +42,12 @@
 #include <vector>                                    // for vector, etc
 #include "mpi.h"                                     // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
+#include <stk_unit_test_utils/BuildMesh.hpp>
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
-
-
-
 namespace {
+using stk::unit_test_util::build_mesh;
 
 TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
 {
@@ -57,8 +56,9 @@ TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
   stk::ParallelMachine pm(MPI_COMM_WORLD);
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( spatial_dimension );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk_data = *bulkPtr;
 
   meta_data.commit();
 

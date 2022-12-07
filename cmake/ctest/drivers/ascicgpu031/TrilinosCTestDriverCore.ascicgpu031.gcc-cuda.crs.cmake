@@ -89,7 +89,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
 
   # Select test disables
-  set (KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON CACHE BOOL "Not to be run in nightly testing")
+  set (KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON CACHE BOOL "Not to be run in nightly testing" FORCE)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"

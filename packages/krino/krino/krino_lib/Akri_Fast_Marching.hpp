@@ -90,8 +90,6 @@ private:
   LevelSet & my_ls;
   stk::mesh::Selector my_selector;
   stk::diag::Timer my_timer;
-  stk::diag::Timer my_tri_timer;
-  stk::diag::Timer my_tet_timer;
   std::vector<Fast_Marching_Node> fm_nodes;
   Fast_Marching_Node_Less my_fm_node_less;
   std::set<Fast_Marching_Node*, Fast_Marching_Node_Less> trial_nodes; //set sorted by distance, then by id to break "ties"

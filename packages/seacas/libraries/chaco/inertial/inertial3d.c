@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,7 +16,7 @@ void inertial3d(struct vtx_data **graph,        /* graph data structure */
                 int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
                 int               nsets,        /* number of sets to divide into */
                 float *x, float *y, float *z,   /* x, y and z coordinates of vertices */
-                int *   sets,                   /* set each vertex gets assigned to */
+                int    *sets,                   /* set each vertex gets assigned to */
                 double *goal,                   /* desired set sizes */
                 int     using_vwgts             /* are vertex weights being used? */
 )
@@ -26,7 +26,7 @@ void inertial3d(struct vtx_data **graph,        /* graph data structure */
   extern double median_time;        /* time spent finding medians */
   double        tensor[3][3];       /* inertia tensor */
   double        evec[3];            /* eigenvector */
-  double *      value;              /* values along selected direction to sort */
+  double       *value;              /* values along selected direction to sort */
   double        xcm, ycm, zcm;      /* center of mass in each direction */
   double        xx, yy, zz;         /* elements of inertial tensor */
   double        xy, xz, yz;         /* elements of inertial tensor */
@@ -35,9 +35,9 @@ void inertial3d(struct vtx_data **graph,        /* graph data structure */
   double        eval, res;          /* eigenvalue and error in eval calculation */
   double        vwgt_sum;           /* sum of all the vertex weights */
   double        time;               /* timing parameter */
-  int *         space;              /* space required by median routine */
+  int          *space;              /* space required by median routine */
   int           i;                  /* loop counter */
-  double        seconds();
+  double        seconds(void);
 
   void ch_eigenvec3(), ch_evals3(), rec_median_1();
 

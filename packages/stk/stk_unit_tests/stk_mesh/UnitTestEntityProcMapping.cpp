@@ -31,8 +31,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-
-
 #include <gtest/gtest.h>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -40,43 +38,23 @@
 #include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 #include <stk_io/FillMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 #include <vector>
 #include <set>
 
-TEST(EntityAndProcs, find_proc)
-{
-  stk::mesh::Entity entity(1);
-  int proc = 0;
-  stk::mesh::EntityAndProcs entityAndProcs(entity, proc);
-  EXPECT_TRUE(entityAndProcs.find_proc(proc));
-  EXPECT_FALSE(entityAndProcs.find_proc(proc+1));
-}
-
-TEST(EntityAndProcs, find_proc_multiple)
-{
-  stk::mesh::Entity entity(1);
-  int proc = 0;
-  stk::mesh::EntityAndProcs entityAndProcs(entity, proc);
-  entityAndProcs.proc = -1;
-  entityAndProcs.procs.push_back(0);
-  entityAndProcs.procs.push_back(1);
-
-  EXPECT_TRUE(entityAndProcs.find_proc(proc));
-  EXPECT_TRUE(entityAndProcs.find_proc(proc+1));
-  EXPECT_FALSE(entityAndProcs.find_proc(proc+2));
-}
+using stk::unit_test_util::build_mesh;
 
 TEST(EntityProcMapping, basic)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 3) {
     return;
   }
 
   const unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::io::fill_mesh("generated:4x4x4",bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::io::fill_mesh("generated:1x2x3",bulk);
 
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) != 0) {
     return;
@@ -124,5 +102,68 @@ TEST(EntityProcMapping, basic)
 
   entProcMapping.fill_vec(entityProcVec);
   EXPECT_EQ(3u, entityProcVec.size());
+}
+
+void test_add_two_remove_one_then_other_still_found(stk::mesh::EntityProcMapping& mapping, stk::mesh::Entity entity)
+{
+  mapping.addEntityProc(entity, 0);
+  mapping.addEntityProc(entity, 2);
+  EXPECT_TRUE(mapping.find(entity,0));
+  EXPECT_TRUE(mapping.find(entity,2));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
+  EXPECT_FALSE(mapping.find(entity,2));
+}
+
+TEST(EntityProcMapping, add_two_remove_one_then_other_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  test_add_two_remove_one_then_other_still_found(mapping, entity);
+}
+
+TEST(EntityProcMapping, add_two_remove_one_then_other_still_found_with_reset)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  test_add_two_remove_one_then_other_still_found(mapping, entity);
+
+  const unsigned largerMaxNumEntities = 128;
+  mapping.reset(largerMaxNumEntities);
+  EXPECT_FALSE(mapping.find(entity,0));
+  EXPECT_FALSE(mapping.find(entity,2));
+  EXPECT_FALSE(mapping.find(entity));
+
+  test_add_two_remove_one_then_other_still_found(mapping, entity);
+}
+
+TEST(EntityProcMapping, erase_nonexisting_then_previous_proc_still_found)
+{
+  stk::mesh::Entity entity(1);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity, 0);
+  EXPECT_TRUE(mapping.find(entity,0));
+
+  mapping.eraseEntityProc(entity,2);
+  EXPECT_TRUE(mapping.find(entity,0));
+}
+
+TEST(EntityProcMapping, visitEntityProcs)
+{
+  stk::mesh::Entity entity1(1), entity2(2);
+  const unsigned arbitraryMaxNumEntities = 10;
+  stk::mesh::EntityProcMapping mapping(arbitraryMaxNumEntities);
+  mapping.addEntityProc(entity1, 2);
+  mapping.addEntityProc(entity2, 1);
+  mapping.addEntityProc(entity2, 3);
+
+  std::vector<stk::mesh::EntityProc> gold = {stk::mesh::EntityProc(entity1,2),stk::mesh::EntityProc(entity2,1),stk::mesh::EntityProc(entity2,3)};
+  std::vector<stk::mesh::EntityProc> entityProcs;
+  mapping.visit_entity_procs([&](stk::mesh::Entity entity, int proc){entityProcs.push_back(stk::mesh::EntityProc(entity,proc));});
+  EXPECT_EQ(gold, entityProcs);
 }
 

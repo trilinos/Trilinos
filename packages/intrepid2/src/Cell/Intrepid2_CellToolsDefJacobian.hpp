@@ -461,6 +461,16 @@ namespace Intrepid2 {
 
   template<typename DeviceType>
   template<class PointScalar>
+  void CellTools<DeviceType>::setJacobianDetInv( Data<PointScalar,DeviceType> &jacobianDetInv, const Data<PointScalar,DeviceType> & jacobian )
+  {
+    setJacobianDet(jacobianDetInv, jacobian);
+    
+    auto unitData = jacobianDetInv.allocateConstantData(1.0);
+    jacobianDetInv.storeInPlaceQuotient(unitData, jacobianDetInv);
+  }
+
+  template<typename DeviceType>
+  template<class PointScalar>
   void CellTools<DeviceType>::setJacobianInv( Data<PointScalar,DeviceType> &jacobianInv, const Data<PointScalar,DeviceType> & jacobian )
   {
     auto variationTypes  = jacobian.getVariationTypes();

@@ -25,7 +25,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
   const int myRank = pComm->getRank ();
   const int rootRank = 0;
 
-  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getNodeElementList();
+  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getLocalElementList();
   const size_t myNumRows = myRows.size();
   
   myNumEntriesPerRow = Teuchos::ArrayRCP<size_t> (myNumRows);
@@ -274,7 +274,7 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
   
   Teuchos::RCP<const map_type> pDomainMap = pRangeMap;
 
-  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getLocalElementList ();
   const size_t myNumRows = myRows.size ();
 
   Teuchos::ArrayRCP<size_t> myNumEntriesPerRow(myNumRows);
@@ -294,7 +294,7 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     std::cout << std::endl;
   }
   
-  Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesPerRow(), Tpetra::StaticProfile));
+  Teuchos::RCP<crs_matrix_type> pMatrix = Teuchos::rcp (new crs_matrix_type (pRowMap, myNumEntriesPerRow()));
   
 
   const global_ordinal_type indexBase = pRowMap->getIndexBase ();
@@ -415,7 +415,7 @@ readBinaryFileFast(std::string filename, const Teuchos::RCP<const Teuchos::Comm<
   
   Teuchos::RCP<const map_type> pDomainMap = pRangeMap;
 
-  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const global_ordinal_type> myRows = pRowMap->getLocalElementList ();
   const size_t myNumRows = myRows.size ();
 
   Teuchos::ArrayRCP<size_t> myNumEntriesPerRow(myNumRows);

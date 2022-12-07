@@ -61,18 +61,18 @@
 inline
 void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
 {
-    ThrowRequire(bulk.parallel_size() == 4);
-//
-//     id/proc
-//     11/0--12/0--13/1--14/2--15/3
-//       |     |     |     |     |
-//       | 5/0 | 6/1 | 7/2 | 8/3 |
-//       |     |     |     |     |
-//      6/0---7/0---8/1---9/2--10/3
-//       |     |     |     |     |
-//       | 1/0 | 2/1 | 3/2 | 4/3 |
-//       |     |     |     |     |
-//      1/0---2/0---3/1---4/2---5/3
+  ThrowRequire(bulk.parallel_size() == 4);
+  //
+  //     id/proc
+  //     11/0--12/0--13/1--14/2--15/3
+  //       |     |     |     |     |
+  //       | 5/0 | 6/1 | 7/2 | 8/3 |
+  //       |     |     |     |     |
+  //      6/0---7/0---8/1---9/2--10/3
+  //       |     |     |     |     |
+  //       | 1/0 | 2/1 | 3/2 | 4/3 |
+  //       |     |     |     |     |
+  //      1/0---2/0---3/1---4/2---5/3
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
@@ -98,10 +98,10 @@ void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
 
   //list of triples: (owner-proc, shared-nodeID, sharing-proc)
   int shared_nodeIDs_and_procs[][3] = {
-  {0, 2, 1}, {0, 7, 1}, {0, 12, 1},                                   //proc 0
-  {1, 2, 0}, {1, 7, 0}, {1, 12, 0}, {1, 3, 2}, {1, 8, 2}, {1, 13, 2}, //proc 1
-  {2, 3, 1}, {2, 8, 1}, {2, 13, 1}, {2, 4, 3}, {2, 9, 3}, {2, 14, 3}, //proc 2
-  {3, 4, 2}, {3, 9, 2}, {3, 14, 2}                                    //proc 3
+    {0, 2, 1}, {0, 7, 1}, {0, 12, 1},                                   //proc 0
+    {1, 2, 0}, {1, 7, 0}, {1, 12, 0}, {1, 3, 2}, {1, 8, 2}, {1, 13, 2}, //proc 1
+    {2, 3, 1}, {2, 8, 1}, {2, 13, 1}, {2, 4, 3}, {2, 9, 3}, {2, 14, 3}, //proc 2
+    {3, 4, 2}, {3, 9, 2}, {3, 14, 2}                                    //proc 3
   };
 
   stk::mesh::EntityId elemID = proc_elemIDs[bulk.parallel_rank()][0];
@@ -115,12 +115,12 @@ void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
   int numSharedNodeTriples = 18;
 
   for(int i=0; i<numSharedNodeTriples; ++i) {
-     if (bulk.parallel_rank() == shared_nodeIDs_and_procs[i][0]) {
-         int nodeID = shared_nodeIDs_and_procs[i][1];
-         int sharingProc = shared_nodeIDs_and_procs[i][2];
-         stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeID);
-         bulk.add_node_sharing(node, sharingProc);
-     }
+    if (bulk.parallel_rank() == shared_nodeIDs_and_procs[i][0]) {
+      int nodeID = shared_nodeIDs_and_procs[i][1];
+      int sharingProc = shared_nodeIDs_and_procs[i][2];
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeID);
+      bulk.add_node_sharing(node, sharingProc);
+    }
   }
 
   bulk.modification_end();

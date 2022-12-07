@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -437,7 +437,7 @@ int ex__get_names(int exoid, int varid, size_t num_names, char **names, ex_entit
   int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
   int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
 
-  for (int i = 0; i < num_names; i++) {
+  for (size_t i = 0; i < num_names; i++) {
     int status = ex__get_name(exoid, varid, i, names[i], name_size, obj_type, routine);
     if (status != NC_NOERR) {
       return (status);
@@ -1579,14 +1579,14 @@ static void ex_int_iisort64(int64_t v[], int64_t iv[], int64_t N)
  *       representable as 'int'.
  * \internal
  */
-void ex__iqsort(int v[], int iv[], int N)
+void ex__iqsort(int v[], int iv[], size_t N)
 {
   /* Thread-safe, reentrant */
   ex_int_iqsort(v, iv, 0, N - 1);
   ex_int_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of %d values\n", N + 1);
+  fprintf(stderr, "Checking sort of %zu values\n", N + 1);
   int i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -1741,8 +1741,12 @@ void ex__compress_variable(int exoid, int varid, int type)
            for details on SZIP library and parameters.
         */
 
-        /* const int NC_SZIP_EC = 4; */ /* Selects entropy coding method for szip. */
-        const int NC_SZIP_NN = 32;      /* Selects nearest neighbor coding method for szip. */
+#if !defined(NC_SZIP_EC)
+        const int NC_SZIP_EC = 4; /* Selects entropy coding method for szip. */
+#endif
+#if !defined(NC_SZIP_NN)
+        const int NC_SZIP_NN = 32; /* Selects nearest neighbor coding method for szip. */
+#endif
         /* Even and between 4 and 32; typical values are 8, 10, 16, 32 */
         const int SZIP_PIXELS_PER_BLOCK =
             file->compression_level == 0 ? 32 : file->compression_level;

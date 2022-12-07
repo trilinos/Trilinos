@@ -78,45 +78,56 @@ namespace Intrepid2 {
       ArrayTools<DeviceType>::cloneFields(output, input);
   }
 
+  template<typename DeviceType>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHGradDataFromPhysToRef(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
+    if(output.rank() == input.rank()) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      for (size_type i=0;i< input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( (input.extent(i) != output.extent(i)), std::invalid_argument,
+                                        ">>> ERROR (FunctionSpaceTools::mapHGradDataFromPhysToRef): Dimensions of input and output fields containers do not match.");
+      }
+    }
+#endif
+      RealSpaceTools<DeviceType>::clone(output, input);
+    }
+    else
+      ArrayTools<DeviceType>::cloneFields(output, input);
+  }
+
+  template<typename DeviceType>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHGradDataFromPhysSideToRefSide(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
+    if(output.rank() == input.rank()) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      for (size_type i=0;i< input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( (input.extent(i) != output.extent(i)), std::invalid_argument,
+                                        ">>> ERROR (FunctionSpaceTools::mapHGradDataSideFromPhysToRefSide): Dimensions of input and output fields containers do not match.");
+      }
+    }
+#endif
+      RealSpaceTools<DeviceType>::clone(output, input);
+    }
+    else
+      ArrayTools<DeviceType>::cloneFields(output, input);
+  }
+
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {
    /**
        \brief Functor for calculation HGRADtransformGRAD, see Intrepid2::FunctionSpaceTools for more
    */
-    template <typename OutputViewType,
-              typename jacInverseViewType,
-              typename inputViewType,
-              ordinal_type spaceDim>
-    struct F_HGRADtransformGRAD {
-            OutputViewType     _output;
-      const jacInverseViewType  _jacInverse;
-      const inputViewType _input;
-
-      // output CPDD, left CPDD or PDD, right FPD
-      KOKKOS_INLINE_FUNCTION
-      F_HGRADtransformGRAD(OutputViewType     output_,
-                           jacInverseViewType  jacInverse_,
-                           inputViewType input_)
-        : _output(output_), 
-          _jacInverse(jacInverse_), 
-          _input(input_) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type bf,
-                      const ordinal_type pt) const {
-        /* */ auto y = Kokkos::subview(_output,     cl, bf, pt, Kokkos::ALL());
-        const auto A = Kokkos::subview(_jacInverse, cl,     pt, Kokkos::ALL(), Kokkos::ALL());
-        const auto x = Kokkos::subview(_input,      bf,     pt, Kokkos::ALL());
-        
-        if (spaceDim == 2) {
-          Kernels::Serial::matvec_trans_product_d2( y, A, x );
-        } else {
-          Kernels::Serial::matvec_trans_product_d3( y, A, x );
-        }
-      }
-    };
   }
   
   template<typename DeviceType>
@@ -129,42 +140,6 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
     return HCURLtransformVALUE(outputVals, jacobianInverse, inputVals);
-
-    // this modification is for 2d and 3d (not 1d)
-    // this is an attempt to measure the overhead of subview of dynrankview. 
-
-    // typedef       Kokkos::DynRankView<outputValValueType,outputValProperties...> OutputViewType;
-    // typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
-    // typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
-
-    // const ordinal_type 
-    //   C = outputVals.extent(0),
-    //   F = outputVals.extent(1),
-    //   P = outputVals.extent(2);
-
-    // using range_policy_type = Kokkos::MDRangePolicy
-    //   < DeviceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    // range_policy_type policy( { 0, 0, 0 },
-    //                           { C, F, P } );
-
-    // const ordinal_type spaceDim = inputVals.extent(2);
-    // switch (spaceDim) {
-    // case 2: {
-    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<OutputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
-    //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-    //   break;
-    // }
-    // case 3: {
-    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<OutputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
-    //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-    //   break;
-    // }
-    // default: {
-    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-    //                                 ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): spaceDim is not 2 or 3.");
-    //   break;
-    // }
-    // }
   }
   
   // ------------------------------------------------------------------------------------
@@ -179,6 +154,113 @@ namespace Intrepid2 {
                        const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
     ArrayTools<DeviceType>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
+  }
+
+  template<typename DeviceType>
+  template<typename outputValValueType,       class ...outputValProperties,
+           typename jacobianValueType,        class ...jacobianProperties,
+           typename inputValValueType,        class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHCurlDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
+                              const Kokkos::DynRankView<jacobianValueType,       jacobianProperties...>        jacobian,
+                              const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
+    ArrayTools<DeviceType>::matvecProductDataData(outputVals, jacobian, inputVals, 'T');
+  }
+
+
+  namespace FunctorFunctionSpaceTools {
+
+  template<typename outViewType,
+  typename inputViewType,
+  typename metricViewType
+  >
+  struct F_negativeWeighted2dInputCrossK {
+    outViewType output_;
+    const inputViewType input_;
+    const metricViewType metricTensorDet_;
+
+    KOKKOS_INLINE_FUNCTION
+    F_negativeWeighted2dInputCrossK( outViewType output,
+        const inputViewType input,
+        const metricViewType metricTensorDet)
+    : output_(output), input_(input), metricTensorDet_(metricTensorDet){};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_type ic) const {
+      for (size_t pt=0; pt < input_.extent(1); pt++) {
+        auto measure = std::sqrt(metricTensorDet_(ic,pt));
+        output_(ic,pt,0) = - measure*input_(ic,pt,1);
+        output_(ic,pt,1) = measure*input_(ic,pt,0);
+      }
+    }
+  };
+  }
+
+  template<typename DeviceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename tangentsValueType,    class ...tangentsProperties,
+           typename metricTensorInvValueType,    class ...metricTensorInvProperties,
+           typename metricTensorDetValueType, class ...metricTensorDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHCurlDataCrossNormalFromPhysSideToRefSide(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                      const Kokkos::DynRankView<tangentsValueType,   tangentsProperties...>    tangents,
+                      const Kokkos::DynRankView<metricTensorInvValueType,metricTensorInvProperties...> metricTensorInv,
+                      const Kokkos::DynRankView<metricTensorDetValueType,metricTensorDetProperties...> metricTensorDet,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    auto work = Kokkos::DynRankView<outputValValueType,  outputValProperties...>("work", outputVals.extent(0), outputVals.extent(1),outputVals.extent(2));
+    ArrayTools<DeviceType>::matvecProductDataData(outputVals, tangents, inputVals, 'T');
+    typename DeviceType::execution_space().fence();
+    ArrayTools<DeviceType>::matvecProductDataData(work, metricTensorInv, outputVals);
+    typename DeviceType::execution_space().fence();
+    using FunctorType = FunctorFunctionSpaceTools::F_negativeWeighted2dInputCrossK<decltype(outputVals),decltype(work),decltype(metricTensorDet)>;
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,outputVals.extent(0)), FunctorType(outputVals, work, metricTensorDet) );
+  }
+
+
+  namespace FunctorFunctionSpaceTools {
+
+  template<typename outViewType,
+  typename inputViewType,
+  typename metricViewType
+  >
+  struct F_weighedInput {
+    outViewType output_;
+    const inputViewType input_;
+    const metricViewType metricTensorDet_;
+    const double scaling_;
+
+    KOKKOS_INLINE_FUNCTION
+    F_weighedInput( outViewType output,
+        const inputViewType input,
+        const metricViewType metricTensorDet,
+        const double scaling)
+    : output_(output), input_(input), metricTensorDet_(metricTensorDet), scaling_(scaling){};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_type ic) const {
+      for (size_t pt=0; pt < input_.extent(1); pt++) {
+        auto measure = std::sqrt(metricTensorDet_(ic,pt));
+        output_.access(ic,pt) = scaling_ * measure * input_.access(ic,pt);
+      }
+    }
+  };
+  }
+
+  template<typename DeviceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHCurlDataCrossNormalFromPhysSideToRefSide(
+            Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+      const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> metricTensorDet,
+      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+      using FunctorType = FunctorFunctionSpaceTools::F_weighedInput<decltype(outputVals),decltype(inputVals),decltype(metricTensorDet)>;
+      Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,outputVals.extent(0)), FunctorType(outputVals, inputVals, metricTensorDet, -1.0) );
   }
 
   // ------------------------------------------------------------------------------------
@@ -259,6 +341,38 @@ namespace Intrepid2 {
     ArrayTools<DeviceType>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
   }
 
+  template<typename DeviceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianInverseValueType,    class ...jacobianInverseProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHDivDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                      const Kokkos::DynRankView<jacobianInverseValueType,   jacobianInverseProperties...>    jacobianInv,
+                      const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<DeviceType>::matvecProductDataData(outputVals, jacobianInv, inputVals, 'N');
+    typename DeviceType::execution_space().fence();
+    ArrayTools<DeviceType>::scalarMultiplyDataData(outputVals, jacobianDet, outputVals, false);
+  }
+
+
+
+  template<typename DeviceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHDivDataDotNormalFromPhysSideToRefSide(
+            Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+      const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> metricTensorDet,
+      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    using FunctorType = FunctorFunctionSpaceTools::F_weighedInput<decltype(outputVals),decltype(inputVals),decltype(metricTensorDet)>;
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,outputVals.extent(0)), FunctorType(outputVals, inputVals, metricTensorDet, 1.0) );
+  }
+
   // ------------------------------------------------------------------------------------
 
   template<typename DeviceType>
@@ -287,6 +401,20 @@ namespace Intrepid2 {
     ArrayTools<DeviceType>::scalarMultiplyDataField(outputVals, jacobianDet, inputVals, true);
   }
   
+  template<typename DeviceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<DeviceType>::
+  mapHVolDataFromPhysToRef(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                            const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
+                            const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<DeviceType>::scalarMultiplyDataData(outputVals, jacobianDet, inputVals, false);
+  }
+
+
+
   // ------------------------------------------------------------------------------------
 
   template<typename DeviceType>

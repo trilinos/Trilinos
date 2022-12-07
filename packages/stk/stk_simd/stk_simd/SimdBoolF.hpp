@@ -84,9 +84,6 @@ class Boolf {
 
 };
 
-const Boolf TRUE_VALf(true);
-const Boolf FALSE_VALf(false);
-
 } // namespace simd
 } // namespace stk
 

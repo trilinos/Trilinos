@@ -45,10 +45,10 @@
 // @HEADER
 #include "MueLu_AvatarInterface.hpp"
 
-#include <string> 
-#include <fstream> 
-#include <sstream> 
-#include <vector> 
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <vector>
 #include "Teuchos_Array.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -130,7 +130,7 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
 
    // Which drop tol choice heuristic to use
-  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heuristic we want to use");  
+  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heuristic we want to use");
 
   // Bounds file for extrapolation risk
   validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
@@ -246,7 +246,7 @@ void AvatarInterface::UnpackMueLuMapping() {
   const Teuchos::ParameterList & mapping = params_.get<Teuchos::ParameterList>("avatar: muelu parameter mapping");
   // Each MueLu/Avatar parameter pair gets its own sublist.  These must be numerically ordered with no gap
 
-  bool done=false; 
+  bool done=false;
   int idx=0;
   int numParams = mapping.numParams();
 
@@ -256,7 +256,7 @@ void AvatarInterface::UnpackMueLuMapping() {
   avatarParameterValues_.resize(numParams);
 
   while(!done) {
-    std::stringstream ss; 
+    std::stringstream ss;
     ss << "param" << idx;
     if(mapping.isSublist(ss.str())) {
       const Teuchos::ParameterList & sublist = mapping.sublist(ss.str());
@@ -268,7 +268,7 @@ void AvatarInterface::UnpackMueLuMapping() {
       // Get the values
       //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are doubles
       mueluParameterValues_[idx]  = sublist.get<Teuchos::Array<double> >("muelu values");
-      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<double> >("avatar values");            
+      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<double> >("avatar values");
 
       idx++;
     }
@@ -277,7 +277,7 @@ void AvatarInterface::UnpackMueLuMapping() {
     }
   }
 
-  if(idx!=numParams) 
+  if(idx!=numParams)
     throw std::runtime_error("MueLu::AvatarInterface::UnpackMueLuMapping(): 'avatar: muelu parameter mapping' has unknown fields");
 }
 // ***********************************************************************
@@ -376,41 +376,41 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       const int test_data_is_a_string = 1;
       avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions.data(),probabilities.data());
 
-    // Look at the list of acceptable combinations of options 
+    // Look at the list of acceptable combinations of options
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
-    for(int i=0; i<num_combos; i++) {    
-      if(predictions[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
+    for(int i=0; i<num_combos; i++) {
+      if(predictions[i] == avatarGoodClass_) acceptableCombos.push_back(i);
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
     // Did we have any good combos at all?
     int chosen_option_id = 0;
-    if(acceptableCombos.size() == 0) { 
+    if(acceptableCombos.size() == 0) {
       GetOStream(Runtime0) << "WARNING: MueLu::AvatarInterface: found *no* combinations of options which it believes will perform well on this problem" <<std::endl
-                           << "         An arbitrary set of options will be chosen instead"<<std::endl;    
+                           << "         An arbitrary set of options will be chosen instead"<<std::endl;
     }
     else {
-      // If there is only one acceptable combination, use it; 
+      // If there is only one acceptable combination, use it;
       // otherwise, find the parameter choice with the highest
       // probability of success
       if(acceptableCombos.size() == 1){
 	chosen_option_id = acceptableCombos[0];
-      } 
+      }
       else {
 	switch (heuristicToUse_){
-	  case 1: 
+	  case 1:
 		chosen_option_id = hybrid(probabilities.data(), acceptableCombos);
 		break;
-	  case 2: 
+	  case 2:
 		chosen_option_id = highProb(probabilities.data(), acceptableCombos);
 		break;
-	  case 3: 
+	  case 3:
 		// Choose the first option in the list of acceptable
-		// combinations; the lowest drop tolerance among the 
+		// combinations; the lowest drop tolerance among the
 		// acceptable combinations
 		chosen_option_id = acceptableCombos[0];
 		break;
-	  case 4: 
+	  case 4:
 		chosen_option_id = lowCrash(probabilities.data(), acceptableCombos);
 		break;
 	  case 5:
@@ -429,7 +429,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
     } else {
       GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
     }
-  } 
+  }
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
@@ -440,7 +440,7 @@ int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std:
   std::stringstream ss(trialString);
   std::vector<double> vect;
 
-  double b; 
+  double b;
   while (ss >> b)  {
     vect.push_back(b);
     if (ss.peek() == ',') ss.ignore();
@@ -450,14 +450,14 @@ int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std:
   std::vector<double> boundsVect;
 
   while (ssBounds >> b) {
-    boundsVect.push_back(b);    
+    boundsVect.push_back(b);
     if (ssBounds.peek() == ',') ssBounds.ignore();
   }
 
   int min_idx = (int) std::min(vect.size(),boundsVect.size()/2);
 
   bool inbounds=true;
-  for(int i=0; inbounds && i<min_idx; i++) 
+  for(int i=0; inbounds && i<min_idx; i++)
     inbounds =  boundsVect[2*i] <= vect[i] && vect[i] <= boundsVect[2*i+1];
 
   return (int) inbounds;
@@ -473,16 +473,16 @@ int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCo
     this_combo = acceptableCombos[x] * 3;
     diff = probabilities[this_combo] - low_crash;
      // If this parameter combination has a crash
-     // probability .2 lower than the current "best", we 
+     // probability .2 lower than the current "best", we
      // will use this drop tolerance
     if(diff < -.2){
       low_crash =  probabilities[this_combo];
       best_prob = probabilities[this_combo + 2];
       chosen_option_id = acceptableCombos[x];
-    } 
+    }
     // If this parameter combination has the same
     // or slightly lower crash probability than the
-    // current best, we compare their "GOOD" probabilities 
+    // current best, we compare their "GOOD" probabilities
     else if(diff <= 0 && probabilities[this_combo + 2] > best_prob){
       low_crash =  probabilities[this_combo];
       best_prob = probabilities[this_combo + 2];
@@ -498,11 +498,11 @@ int AvatarInterface::highProb(float * probabilities, std::vector<int> acceptable
   int chosen_option_id = acceptableCombos[0];
   for(int x=0; x<(int)acceptableCombos.size(); x++){
     this_combo = acceptableCombos[x] * 3;
-    // If this parameter combination has a higher "GOOD" 
+    // If this parameter combination has a higher "GOOD"
     // probability, use this combination
     if(probabilities[this_combo + 2] > high_prob){
       high_prob = probabilities[this_combo + 2];
-      chosen_option_id = acceptableCombos[x]; 
+      chosen_option_id = acceptableCombos[x];
     }
   }
   return chosen_option_id;
@@ -518,7 +518,7 @@ int AvatarInterface::lowCrash(float * probabilities, std::vector<int> acceptable
     // probability, use this combination
     if(probabilities[this_combo] < low_crash){
       low_crash = probabilities[this_combo];
-      chosen_option_id = acceptableCombos[x]; 
+      chosen_option_id = acceptableCombos[x];
     }
   }
   return chosen_option_id;
@@ -534,16 +534,16 @@ int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptable
     this_combo = acceptableCombos[x] * 3;
     diff = probabilities[this_combo] - low_crash;
      // If this parameter combination has a crash
-     // probability .2 lower than the current "best", we 
+     // probability .2 lower than the current "best", we
      // will use this drop tolerance
     if(diff < -.2){
       low_crash =  probabilities[this_combo];
       best_prob = probabilities[this_combo + 2];
       chosen_option_id = acceptableCombos[x];
-    } 
+    }
     // If this parameter combination is within .1
     // or has a slightly lower crash probability than the
-    // current best, we compare their "GOOD" probabilities 
+    // current best, we compare their "GOOD" probabilities
     else if(diff <= .1 && probabilities[this_combo + 2] > best_prob){
       low_crash =  probabilities[this_combo];
       best_prob = probabilities[this_combo + 2];

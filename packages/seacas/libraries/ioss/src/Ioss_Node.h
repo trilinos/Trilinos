@@ -6,13 +6,15 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
 
 // STL Includes
 
 namespace Ioss {
-  class Node : public Ioss::ElementTopology
+  class IOSS_EXPORT Node : public Ioss::ElementTopology
   {
 
   public:
@@ -25,6 +27,7 @@ namespace Ioss {
     ElementShape shape() const override { return ElementShape::POINT; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;
+    bool         is_shell() const override { return false; }
     int          order() const override;
 
     int number_corner_nodes() const override;
@@ -45,8 +48,6 @@ namespace Ioss {
 
   protected:
     Node();
-
-  private:
-    static Node instance_;
+    bool validate_permutation_nodes() const override { return false; }
   };
 } // namespace Ioss

@@ -29,9 +29,9 @@
 
 namespace percept {
 
-  int ReferenceMeshSmootherAlgebraic::find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, CoordinatesFieldType *coord_field_orig)
+  int ReferenceMeshSmootherAlgebraic::find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase *coord_field_orig)
   {
-    CoordinatesFieldType_type *coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, node);
+    CoordinatesFieldType_type *coord = static_cast<double*>(stk::mesh::field_data(*coord_field_orig, node));
     int valNew = valOld;
     typedef std::set<stk::mesh::Entity> EntitySet;
     EntitySet neighbors;
@@ -40,7 +40,7 @@ namespace percept {
     for (EntitySet::iterator it = neighbors.begin(); it != neighbors.end(); ++it)
       {
         stk::mesh::Entity nnode = *it;
-        CoordinatesFieldType_type *ncoord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, nnode);
+        CoordinatesFieldType_type *ncoord = static_cast<double*>(stk::mesh::field_data(*coord_field_orig, nnode));
         WallDistanceFieldType_type *valn = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, nnode);
         double d = 0.0;
         for (int jc=0; jc < m_eMesh->get_spatial_dim(); ++jc)
@@ -69,8 +69,8 @@ namespace percept {
     stk::mesh::FieldBase *cg_edge_length_field    = eMesh->get_field(stk::topology::NODE_RANK, "cg_edge_length");
 
     WallDistanceFieldType *wall_distance_field = eMesh->m_wall_distance_field;
-    CoordinatesFieldType *coord_field_orig   = static_cast<CoordinatesFieldType*>(m_coord_field_original);
-    CoordinatesFieldType *coord_field   = static_cast<CoordinatesFieldType*>(m_eMesh->get_coordinates_field());
+    stk::mesh::FieldBase *coord_field_orig   = m_coord_field_original;
+    stk::mesh::FieldBase *coord_field   = m_eMesh->get_coordinates_field();
 
     stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
     stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -97,8 +97,8 @@ namespace percept {
                 WallDistanceFieldType_type *val = stk::mesh::field_data<WallDistanceFieldType>(*wall_distance_field, node);
                 val[0] = 0;
 
-                double *current_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field, node);
-                double *orig_coord = stk::mesh::field_data<CoordinatesFieldType>(*coord_field_orig, node);
+                double *current_coord = static_cast<double*>(stk::mesh::field_data(*coord_field, node));
+                double *orig_coord = static_cast<double*>(stk::mesh::field_data(*coord_field_orig, node));
                 double d = 0.0;
                 for (int jc = 0; jc < m_eMesh->get_spatial_dim(); ++jc)
                   {

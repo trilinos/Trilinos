@@ -10,17 +10,13 @@
 #endif
 
 class cuda : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory cuda
 #define TestExecSpace Kokkos::Cuda
 
-#endif // TEST_CUDA_HPP
+#endif  // TEST_CUDA_HPP

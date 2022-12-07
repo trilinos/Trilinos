@@ -256,8 +256,8 @@ int main(int argc, char **argv)
     elem_map[i - 1] = i;
   }
 
-  error = ex_put_map(exoid, elem_map);
-  printf("after ex_put_map, error = %d\n", error);
+  error = ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("after ex_put_id_map, error = %d\n", error);
 
   free(elem_map);
 
@@ -268,8 +268,8 @@ int main(int argc, char **argv)
   }
 
   for (n = 0; n < nexofiles; n++) {
-    error = ex_put_map(exoidm[n], elem_map2);
-    printf("after ex_put_map (%d), error = %d\n", n, error);
+    error = ex_put_id_map(exoidm[n], EX_ELEM_MAP, elem_map2);
+    printf("after ex_put_id_map (%d), error = %d\n", n, error);
   }
 
   free(elem_map2);

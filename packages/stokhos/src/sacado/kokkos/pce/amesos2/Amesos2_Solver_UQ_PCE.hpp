@@ -49,7 +49,6 @@
 
 namespace Amesos2 {
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   template <class S, class LO, class GO, class D>
   typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
@@ -114,13 +113,15 @@ namespace Amesos2 {
       const Teuchos::RCP<const Vector>& B_) :
       A(A_), X(X_), B(B_) {
       cijk = get_pce_cijk(A, X, B);
+      const size_t pce_size =
+        Kokkos::dimension_scalar(A->getLocalMatrixDevice().values);
       flat_graph =
         Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
                                        cijk,
                                        flat_X_map,
                                        flat_B_map,
                                        cijk_graph,
-                                       Kokkos::dimension_scalar(A->getLocalMatrixDevice().values));
+                                       pce_size);
       if (A != Teuchos::null)
         flat_A = Stokhos::create_flat_matrix(*A, flat_graph, cijk_graph, cijk);
       if (X != Teuchos::null)
@@ -551,7 +552,6 @@ namespace Amesos2 {
                                                   BaseScalar> >::type::value;
   };
 
-#endif
 
 } // namespace Amesos2
 

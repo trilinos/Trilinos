@@ -92,4 +92,3 @@ C   --Sidesets on front surface of shell mesh - faces 4 nodes
 
       RETURN
       END
-

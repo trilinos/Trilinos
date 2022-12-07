@@ -1,7 +1,10 @@
 ADD_DEFINITIONS(-DBuild64)
 
-IF ("${FC_FN_UNDERSCORE}" STREQUAL "UNDER")
-  ADD_DEFINITIONS(-DADDC_)
+IF (${PROJECT_NAME}_ENABLE_Fortran)
+  include(FortranCInterface)
+  if ("${FortranCInterface_GLOBAL_SUFFIX}" STREQUAL "_")
+    ADD_DEFINITIONS(-DADDC_)
+  ENDIF()
 ENDIF()
 
 IF ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")

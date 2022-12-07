@@ -51,105 +51,105 @@ namespace {
 
 void reduce_max(std::vector<size_t> &localVector, stk::ParallelMachine comm)
 {
-    std::vector<size_t> globalVector(localVector.size());
-    stk::all_reduce_max(comm, localVector.data(), globalVector.data(), globalVector.size());
-    localVector.swap(globalVector);
+  std::vector<size_t> globalVector(localVector.size());
+  stk::all_reduce_max(comm, localVector.data(), globalVector.data(), globalVector.size());
+  localVector.swap(globalVector);
 }
 
 class TestListener : public stk::mesh::ModificationObserver {
 public:
-    TestListener(stk::ParallelMachine comm)
-        : m_comm(comm),
-          m_local_entities_created_or_deleted(5, 0),
-          m_entity_comm_info_changed(5, 0),
-          m_buckets_changed(5, 0)
-    {}
+  TestListener(stk::ParallelMachine comm)
+    : m_comm(comm),
+      m_local_entities_created_or_deleted(5, 0),
+      m_entity_comm_info_changed(5, 0),
+      m_buckets_changed(5, 0)
+  {}
 
-    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
-    {
-        ThrowRequireMsg(m_local_entities_created_or_deleted.size() > static_cast<unsigned>(rank), "TestListener::local_entities_created_or_deleted ERROR, rank ("<<rank<<") out of range.");
-        m_local_entities_created_or_deleted[rank]++;
-    }
+  virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
+  {
+    ThrowRequireMsg(m_local_entities_created_or_deleted.size() > static_cast<unsigned>(rank), "TestListener::local_entities_created_or_deleted ERROR, rank ("<<rank<<") out of range.");
+    m_local_entities_created_or_deleted[rank]++;
+  }
 
-    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
-    {
-        ThrowRequireMsg(m_entity_comm_info_changed.size() > static_cast<unsigned>(rank), "TestListener::global_entity_comm_info_changed ERROR, rank ("<<rank<<") out of range.");
-        m_entity_comm_info_changed[rank]++;
-    }
+  virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
+  {
+    ThrowRequireMsg(m_entity_comm_info_changed.size() > static_cast<unsigned>(rank), "TestListener::global_entity_comm_info_changed ERROR, rank ("<<rank<<") out of range.");
+    m_entity_comm_info_changed[rank]++;
+  }
 
-    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
-    {
-        ThrowRequireMsg(m_buckets_changed.size() > static_cast<unsigned>(rank), "TestListener::global_buckets_changed ERROR, rank ("<<rank<<") out of range.");
-        m_buckets_changed[rank]++;
-    }
+  virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
+  {
+    ThrowRequireMsg(m_buckets_changed.size() > static_cast<unsigned>(rank), "TestListener::global_buckets_changed ERROR, rank ("<<rank<<") out of range.");
+    m_buckets_changed[rank]++;
+  }
 
-    virtual void finished_modification_end_notification()
-    {
-        reduce_max(m_local_entities_created_or_deleted, m_comm);
-        reduce_max(m_entity_comm_info_changed, m_comm);
-        reduce_max(m_buckets_changed, m_comm);
-    }
+  virtual void finished_modification_end_notification()
+  {
+    reduce_max(m_local_entities_created_or_deleted, m_comm);
+    reduce_max(m_entity_comm_info_changed, m_comm);
+    reduce_max(m_buckets_changed, m_comm);
+  }
 
 
-    size_t get_local_entities_created_or_deleted(stk::mesh::EntityRank rank) const
-    {
-        return m_local_entities_created_or_deleted[rank];
-    }
+  size_t get_local_entities_created_or_deleted(stk::mesh::EntityRank rank) const
+  {
+    return m_local_entities_created_or_deleted[rank];
+  }
 
-    size_t get_global_entity_comm_info_changed(stk::mesh::EntityRank rank) const
-    {
-        return m_entity_comm_info_changed[rank];
-    }
+  size_t get_global_entity_comm_info_changed(stk::mesh::EntityRank rank) const
+  {
+    return m_entity_comm_info_changed[rank];
+  }
 
-    size_t get_global_buckets_changed(stk::mesh::EntityRank rank) const
-    {
-        return m_buckets_changed[rank];
-    }
+  size_t get_global_buckets_changed(stk::mesh::EntityRank rank) const
+  {
+    return m_buckets_changed[rank];
+  }
 
 private:
-    stk::ParallelMachine m_comm;
-    std::vector<size_t> m_local_entities_created_or_deleted;
-    std::vector<size_t> m_entity_comm_info_changed;
-    std::vector<size_t> m_buckets_changed;
+  stk::ParallelMachine m_comm;
+  std::vector<size_t> m_local_entities_created_or_deleted;
+  std::vector<size_t> m_entity_comm_info_changed;
+  std::vector<size_t> m_buckets_changed;
 };
 
 }
 
 TEST(MeshModNotifier, testLocalEvents)
 {
-    std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(MPI_COMM_WORLD);
-    stk::mesh::ModificationNotifier notifier;
-    notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
+  std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(MPI_COMM_WORLD);
+  stk::mesh::ModificationNotifier notifier;
+  notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
 
-    EXPECT_EQ(0u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
+  EXPECT_EQ(0u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 
-    notifier.notify_local_entities_created_or_deleted(stk::topology::NODE_RANK);
+  notifier.notify_local_entities_created_or_deleted(stk::topology::NODE_RANK);
 
-    EXPECT_EQ(1u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
+  EXPECT_EQ(1u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 }
 
 TEST(MeshModNotifier, testGlobalEvents)
 {
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(comm) == 2)
-    {
-        int procId = stk::parallel_machine_rank(comm);
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) == 2)
+  {
+    int procId = stk::parallel_machine_rank(comm);
 
-        std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
-        stk::mesh::ModificationNotifier notifier;
-        notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
+    std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
+    stk::mesh::ModificationNotifier notifier;
+    notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
 
-        EXPECT_EQ(0u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
-        EXPECT_EQ(0u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
+    EXPECT_EQ(0u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
+    EXPECT_EQ(0u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
 
-        if (procId == 0) {
-            notifier.notify_local_entity_comm_info_changed(stk::topology::NODE_RANK);
-            notifier.notify_local_buckets_changed(stk::topology::NODE_RANK);
-        }
-        notifier.notify_finished_modification_end(comm);
-
-        EXPECT_EQ(1u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
-        EXPECT_EQ(1u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
+    if (procId == 0) {
+      notifier.notify_local_entity_comm_info_changed(stk::topology::NODE_RANK);
+      notifier.notify_local_buckets_changed(stk::topology::NODE_RANK);
     }
+    notifier.notify_finished_modification_end(comm);
+
+    EXPECT_EQ(1u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
+    EXPECT_EQ(1u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));
+  }
 }
 

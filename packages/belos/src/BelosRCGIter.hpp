@@ -55,6 +55,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosCGIteration.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -139,47 +140,6 @@ namespace Belos {
   };
 
   //@}
-
-  //! @name RCGIter Exceptions
-  //@{
-
-  /** \brief RCGIterInitFailure is thrown when the RCGIter object is unable to
-   * generate an initial iterate in the RCGIter::initialize() routine.
-   *
-   * This std::exception is thrown from the RCGIter::initialize() method, which is
-   * called by the user or from the RCGIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown,
-   * RCGIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class RCGIterInitFailure : public BelosError {public:
-    RCGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief RCGIterFailure is thrown when the RCGIter object is unable to
-   * compute the next iterate in the RCGIter::iterate() routine.
-   *
-   * This std::exception is thrown from the RCGIter::iterate() method.
-   *
-   */
-  class RCGIterFailure : public BelosError {public:
-    RCGIterFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief RCGIterLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This std::exception is thrown from the RCGIter::iterate() method.
-   *
-   */
-  class RCGIterLAPACKFailure : public BelosError {public:
-    RCGIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  //@}
-
 
   template<class ScalarType, class MV, class OP>
   class RCGIter : virtual public Iteration<ScalarType,MV,OP> {
@@ -529,7 +489,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void RCGIter<ScalarType,MV,OP>::iterate()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, RCGIterFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, CGIterateFailure,
                         "Belos::RCGIter::iterate(): RCGIter class not initialized." );
 
     // We'll need LAPACK
@@ -547,7 +507,7 @@ namespace Belos {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution std::vector only has one column.
-    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, RCGIterFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
                         "Belos::RCGIter::iterate(): current linear system has more than one std::vector!" );
 
     // Compute the current search dimension.
@@ -579,7 +539,8 @@ namespace Belos {
       (*Alpha_)(i_,0) = (*rTz_old_)(0,0) / pAp(0,0);
 
       // Check that alpha is a positive number
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, RCGIterFailure, "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, CGPositiveDefiniteFailure,
+                                  "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // x = x + (alpha * p);
       MVT::MvAddMv( one, *cur_soln_vec, (*Alpha_)(i_,0), *p_, *cur_soln_vec );
@@ -624,7 +585,7 @@ namespace Belos {
         char TRANS = 'N';
         int info;
         lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGIterLAPACKFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, CGIterationLAPACKFailure,
                            "Belos::RCGIter::solve(): LAPACK GETRS failed to compute a solution.");
         // p = -(U*mu) + (beta*p) + z (in two steps)
         // p = (beta*p) + z;

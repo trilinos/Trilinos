@@ -2216,14 +2216,13 @@ printf( " col_count:: view \n" );
   {
     if(option == 0)
     {
-      Int t_nnz = 0;
-      Int temp = 0;
+      const Int Int_MAX = std::numeric_limits<Int>::max();
 
+      Int t_nnz = 0;
       for(Int i = 0; i < M.ncol; i++)
       {
-        temp = t_nnz + ST.col_counts[i];
-        if (temp > t_nnz) {
-          t_nnz = temp;
+        if (t_nnz <= Int_MAX - ST.col_counts[i]) {
+          t_nnz += ST.col_counts[i];
         } else {
           // let's just hope it is enough, if overflow
           break;
@@ -2235,7 +2234,7 @@ printf( " col_count:: view \n" );
 
       //double nnz_shoulder = 1.05;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
-      temp = fill_factor*t_nnz;
+      Int temp = fill_factor*t_nnz;
       if (temp > t_nnz) {
         M.nnz = temp;
       } else {
@@ -2247,10 +2246,9 @@ printf( " col_count:: view \n" );
       t_nnz = 0;
       #endif
 
-      temp = global_nnz + t_nnz;
-      if (temp > global_nnz) {
+      if (global_nnz <= Int_MAX-t_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz = temp;
+        global_nnz += t_nnz;
       }
       if(Options.verbose == BASKER_TRUE)
       {
@@ -2273,13 +2271,13 @@ printf( " col_count:: view \n" );
   {
     if(option == 0)
     {
+      const Int Int_MAX = std::numeric_limits<Int>::max();
+
       Int t_nnz = 0; 
-      Int temp = 0;
       for(Int i = 0; i < M.ncol; i++)
       {
-        temp = t_nnz + ST.U_col_counts[i];
-        if (temp > t_nnz) {
-          t_nnz = temp;
+        if (t_nnz <= Int_MAX-ST.U_col_counts[i]) {
+          t_nnz += ST.U_col_counts[i];
         } else {
           // let's just hope it is enough, if overflow
           break;
@@ -2291,16 +2289,15 @@ printf( " col_count:: view \n" );
       #endif
 
       //double fill_factor = 1.05;
-      temp = fill_factor*t_nnz;
+      Int temp = fill_factor*t_nnz;
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
         M.nnz = t_nnz;
       }
-      temp = global_nnz + t_nnz;
-      if (temp > global_nnz) {
+      if (global_nnz <= Int_MAX-t_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz = temp;
+        global_nnz += t_nnz;
       }
       #if 0
       printf( " debug: set U.nnz = 0 to force realloc\n" );
@@ -2328,14 +2325,13 @@ printf( " col_count:: view \n" );
   {
     if(option == 0)
     {
-      Int t_nnz = 0; 
-      Int temp = 0;
+      const Int Int_MAX = std::numeric_limits<Int>::max();
 
+      Int t_nnz = 0; 
       for(Int i = 0; i < M.nrow; i++)
       {
-        temp = t_nnz + ST.L_row_counts[i];
-        if (temp > t_nnz) {
-          t_nnz = temp;
+        if (t_nnz <= Int_MAX-ST.L_row_counts[i]) {
+          t_nnz += ST.L_row_counts[i];
         } else {
           // let's just hope it is enough, if overflow
           break;
@@ -2348,7 +2344,7 @@ printf( " col_count:: view \n" );
 
       // double fill_factor = 2.05;
       double old_nnz = M.nnz;
-      temp = fill_factor*t_nnz;
+      Int temp = fill_factor*t_nnz;
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
@@ -2359,10 +2355,9 @@ printf( " col_count:: view \n" );
       M.nnz = 0;
       t_nnz = 0;
       #endif
-      temp = global_nnz + t_nnz;
-      if (temp > global_nnz) {
+      if (global_nnz <= Int_MAX-t_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz = temp;
+        global_nnz += t_nnz;
       }
       if(Options.verbose == BASKER_TRUE)
       {
@@ -2389,17 +2384,16 @@ printf( " col_count:: view \n" );
       printf("S_assign_nnz: %ld  \n", M.nnz);
       #endif
 
-      Int temp = global_nnz + M.nnz;
-      if (temp > global_nnz) {
+      const Int Int_MAX = std::numeric_limits<Int>::max();
+      if (global_nnz <= Int_MAX-M.nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz = temp;
+        global_nnz += M.nnz;
       }
       if(Options.verbose == BASKER_TRUE)
       {
         printf("S_assign elbow global_nnz = %ld, M.nnz = %ld + 2\n", (long)global_nnz, (long)M.nnz);
       }
-      temp = M.nnz + 2;
-      if (temp > M.nnz) {
+      if (M.nnz <= Int_MAX - 2) {
         M.nnz += 2;
       }
     }

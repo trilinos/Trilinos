@@ -145,6 +145,7 @@ lclDot (const RV& dotsOut,
 
   if (lclNumRows == 0) {
     const dot_type zero = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy (theDots, zero);
   }
   else { // lclNumRows != 0
@@ -152,6 +153,7 @@ lclDot (const RV& dotsOut,
       if (X.extent (1) == 1) {
         typename RV::non_const_value_type result =
           KokkosBlas::dot (subview (X, ALL (), 0), subview (Y, ALL (), 0));
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (theDots, result);
       }
       else {

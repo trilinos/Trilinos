@@ -13,7 +13,8 @@ include ../Makefile.common_generated_files
 EXTRA_FILES = \
   Makefile \
   $(BASE_NAME).rst \
-  TribitsSystemMacroFunctionDoc.rst
+  TribitsSystemMacroFunctionDoc.rst \
+  ../../../core/package_arch/TribitsSystemDataStructuresMacrosFunctions.rst
 
 all: $(BASE_NAME).html
 

@@ -51,9 +51,6 @@
 #define _ZOLTAN2_PROBLEM_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_IdentifierModel.hpp>
-#include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_TimerManager.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
@@ -80,27 +77,24 @@ class ProblemRoot {
 };
 
 ////////////////////////////////////////////////////////////////////////
-//! \brief Problem base class from which other classes (PartitioningProblem, 
+//! \brief Problem base class from which other classes (PartitioningProblem,
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-     
+
 template<typename Adapter>
 class Problem : public ProblemRoot {
 public:
 
   /*! \brief Constructor where Teuchos communicator is specified
    */
-  Problem(const Adapter *input, ParameterList *params, 
+  Problem(const Adapter *input, ParameterList *params,
           const RCP<const Comm<int> > &comm):
     inputAdapter_(rcp(input,false)),
     baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input), false)),
-    graphModel_(),
-    identifierModel_(),
-    baseModel_(),
     algorithm_(),
     params_(),
     comm_(),
     env_(rcp(new Environment(*params, comm))),
-    envConst_(rcp_const_cast<const Environment>(env_)), 
+    envConst_(rcp_const_cast<const Environment>(env_)),
     timer_()
   {
     comm_ = comm->duplicate();
@@ -189,25 +183,15 @@ public:
 protected:
 
   // The Problem is templated on the input adapter.  We interact
-  // with the input adapter through the base class interface.  
-  // The Model objects are also templated on the input adapter and 
-  // are explicitly instantiated for each base input type (vector, 
+  // with the input adapter through the base class interface.
+  // The Model objects are also templated on the input adapter and
+  // are explicitly instantiated for each base input type (vector,
   // graph, matrix, mesh, identifier list, and coordinate list).
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   RCP<const Adapter> inputAdapter_;
   RCP<const base_adapter_t> baseInputAdapter_;
-
-  RCP<GraphModel<base_adapter_t> > graphModel_;
-  RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
-  RCP<CoordinateModel<base_adapter_t> > coordinateModel_;  
-
-  // Algorithms are passed a base model class, and query
-  // the model through the base class interface (graph, hypergraph,
-  // identifiers, or coordinates).
-
-  RCP<const Model<base_adapter_t> > baseModel_;  
 
   // Every problem needs an algorithm, right?
   RCP<Algorithm<Adapter> > algorithm_;
@@ -298,7 +282,7 @@ template <typename Adapter>
 
   if (haveType || haveStream || haveFile)
     env_->setTimer(timer_);
-  
+
 #endif
 
 }

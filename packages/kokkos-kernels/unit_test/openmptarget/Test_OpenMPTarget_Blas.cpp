@@ -4,4 +4,4 @@
 #include "Test_OpenMPTarget.hpp"
 #include "Test_Blas.hpp"
 
-#endif // TEST_OPENMPTARGET_BLAS_CPP
+#endif  // TEST_OPENMPTARGET_BLAS_CPP

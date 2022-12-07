@@ -40,12 +40,13 @@ namespace IOShell {
     std::string              decomp_method;
     std::string              decomp_extra{"processor_id"};
     std::string              compose_output{"default"};
+    std::string              customField{""};
     double                   maximum_time{std::numeric_limits<double>::max()};
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};
     double                   timestep_delay{0.0};
     int                      append_step{std::numeric_limits<int>::max()};
-    int                      surface_split_type{1};
+    int                      surface_split_type{-1};
     int                      data_storage_type{0};
     int                      compression_level{0};
     int                      serialize_io_size{0};

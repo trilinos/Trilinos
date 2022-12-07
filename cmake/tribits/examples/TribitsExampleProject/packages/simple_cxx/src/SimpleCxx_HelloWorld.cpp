@@ -8,7 +8,12 @@
 
 std::string SimpleCxx::deps()
 {
-  return "no_deps";
+  std::string deps;
+#ifdef HAVE_SIMPLECXX_SIMPLETPL
+  deps = SimpleTpl::itsme();
+#endif
+  deps += (deps.length() ? " " : "") + HeaderOnlyTpl::itsme();
+  return deps;
 }
 
 

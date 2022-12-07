@@ -63,7 +63,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat
     CATEGORIES BASIC PERFORMANCE
    )
 
@@ -281,6 +281,42 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "GeneralBlockSmoothing"
+    ARGS "--linAlgebra=Tpetra --xml=generalBlkSmoothing.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --its=2 --userBlks=Gblks.dat --notimings --tol=.976"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "SerialGeneralBlockSmoothing"
+    ARGS "--linAlgebra=Tpetra --xml=generalBlkSmoothing.xml --belosType=\"Fixed\ Point\" --matrix=GblkAmat.dat --rhs=GblkRhs.dat --its=2 --userBlks=Gblks.dat --notimings --tol=.976"
+    NUM_MPI_PROCS 1
+    COMM mpi # HAVE_MPI required
+    RUN_SERIAL
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "BlockSmoothingWithAverages"
+    ARGS "--linAlgebra=Tpetra --xml=blkSmooEquivOlapSchwarz.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1 --userBlks=regularOverLap.dat"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "SchwarzSmoothingWithAverages"
+    ARGS "--linAlgebra=Tpetra --xml=oLapSchwarzEquivBlkSmoo.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
@@ -431,7 +467,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "CalcRotations"
-      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType='gmres' --tol=1.0e-8  --muelu-computed-nullspace"
+      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType=gmres --tol=1.0e-8  --muelu-computed-nullspace"
       NUM_MPI_PROCS 4
       COMM serial mpi
       )

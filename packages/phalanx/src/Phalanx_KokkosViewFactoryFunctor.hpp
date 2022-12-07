@@ -1,5 +1,5 @@
-#ifndef KOKKOS_VIEW_FACTORY_FUNCTOR_HPP
-#define KOKKOS_VIEW_FACTORY_FUNCTOR_HPP
+#ifndef PHALANX_KOKKOS_VIEW_FACTORY_FUNCTOR_HPP
+#define PHALANX_KOKKOS_VIEW_FACTORY_FUNCTOR_HPP
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"

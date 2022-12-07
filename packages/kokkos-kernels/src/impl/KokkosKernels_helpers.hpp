@@ -65,7 +65,8 @@ struct GetUnifiedLayoutPreferring {
 template <class ViewType>
 struct GetUnifiedLayout {
   using array_layout =
-      typename GetUnifiedLayoutPreferring<ViewType, default_layout>::array_layout;
+      typename GetUnifiedLayoutPreferring<ViewType,
+                                          default_layout>::array_layout;
 };
 
 template <class T, class TX, bool do_const,
@@ -76,21 +77,24 @@ struct GetUnifiedScalarViewType {
 
 template <class T, class TX>
 struct GetUnifiedScalarViewType<T, TX, false, true> {
-  typedef Kokkos::View<
-      typename T::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<T, typename TX::array_layout>::array_layout,
-      typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
-};
-
-template<class T, class TX>
-struct GetUnifiedScalarViewType<T,TX,true,true> {
-  typedef Kokkos::View<typename T::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<T, typename TX::array_layout>::array_layout,
+  typedef Kokkos::View<typename T::non_const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           T, typename TX::array_layout>::array_layout,
                        typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      type;
 };
 
-}
-}
+template <class T, class TX>
+struct GetUnifiedScalarViewType<T, TX, true, true> {
+  typedef Kokkos::View<typename T::const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           T, typename TX::array_layout>::array_layout,
+                       typename T::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      type;
+};
+
+}  // namespace Impl
+}  // namespace KokkosKernels
 #endif

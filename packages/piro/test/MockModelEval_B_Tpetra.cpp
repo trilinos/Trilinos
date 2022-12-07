@@ -47,8 +47,8 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm)
-{
+MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool /*adjoint*/) //problem is self-adjoint
+ {
     comm = appComm;
 
     //set up map and initial guess for solution vector

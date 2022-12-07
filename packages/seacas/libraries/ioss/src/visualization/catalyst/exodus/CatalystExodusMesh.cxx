@@ -226,7 +226,7 @@ void CatalystExodusMesh::InitializeElementBlocks(
     this->nsidmap.clear();
     this->ssmap.clear();
     this->ssidmap.clear();
-  
+
     vtkMultiBlockDataSet *eb = vtkMultiBlockDataSet::New();
     this->multiBlock->SetBlock(ELEMENT_BLOCK_MBDS_ID, eb);
     this->multiBlock->GetMetaData(ELEMENT_BLOCK_MBDS_ID)->\
@@ -988,7 +988,7 @@ void CatalystExodusMesh::CreateNodalVariableInternal(
                 if (displace_nodes) {
                     if (mit != point_map[iter->first].end()) {
                         vtkPoints *points = ug->GetPoints();
-                        double x[3]; 
+                        double x[3];
                         this->global_points->GetPoint(i, x);
                         for (int c = 0; c < number_data_components; c++) {
                             x[c] += (*it)->GetComponent(\
@@ -1026,7 +1026,7 @@ void CatalystExodusMesh::ReleaseMemory() {
     this->catManager->WriteToLogFile(catalystPipelineInfo);
 }
 
-void CatalystExodusMesh::ReleaseMemoryInternal(vtkMultiBlockDataSet *eb) {     
+void CatalystExodusMesh::ReleaseMemoryInternal(vtkMultiBlockDataSet *eb) {
 
     vtkCompositeDataIterator *iter = eb->NewIterator();
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal();
@@ -1050,12 +1050,12 @@ void CatalystExodusMesh::ReleaseMemoryInternal(vtkMultiBlockDataSet *eb) {
             }
             data->RemoveArray(data->GetArray(0)->GetName());
         }
-    
+
         if (global_element_ids) {
             data->AddArray(global_element_ids);
             global_element_ids->Delete();
         }
-      
+
         if (object_id) {
             data->AddArray(object_id);
             object_id->Delete();
@@ -1070,7 +1070,7 @@ void CatalystExodusMesh::ReleaseMemoryInternal(vtkMultiBlockDataSet *eb) {
             }
             data->RemoveArray(data->GetArray(0)->GetName());
         }
-      
+
         if (global_node_ids) {
             data->AddArray(global_node_ids);
             global_node_ids->Delete();

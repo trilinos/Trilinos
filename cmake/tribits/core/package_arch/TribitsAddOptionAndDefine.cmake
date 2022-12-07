@@ -37,13 +37,13 @@
 # ************************************************************************
 # @HEADER
 
+include(TribitsPkgExportCacheVars)
 include(GlobalSet)
 
 
-#
 # @MACRO: tribits_add_option_and_define()
 #
-# Add an option and a define variable in one shot.
+# Add an option and an optional macro define variable in one shot.
 #
 # Usage::
 #
@@ -59,17 +59,33 @@ include(GlobalSet)
 #
 #   #cmakedefine <macroDefineName>
 #
+# NOTE: This also calls `tribits_pkg_export_cache_var()`_ to export the
+# variables ``<userOptionName>`` and ``<macroDefineName>``.  This also
+# requires that local variables with the same names of these cache variables
+# not be assigned with a different value from these cache variables.  If they
+# are, then an error will occur later when these variables are read.
+#
+# NOTE: The define var name ``<macroDefineName>`` can be empty "" in which
+# case all logic related to ``<macroDefineName>`` is skipped.  (But in this
+# case, it would be better to just call::
+#
+#   set(<userOptionName> <defaultValue> CACHE BOOL "<docStr>")
+#
 macro(tribits_add_option_and_define  USER_OPTION_NAME  MACRO_DEFINE_NAME
   DOCSTRING  DEFAULT_VALUE
   )
   #message("TRIBITS_ADD_OPTION_AND_DEFINE: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
   set( ${USER_OPTION_NAME} "${DEFAULT_VALUE}" CACHE BOOL "${DOCSTRING}" )
-  if(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
+  if(NOT "${MACRO_DEFINE_NAME}" STREQUAL "")
     if(${USER_OPTION_NAME})
       global_set(${MACRO_DEFINE_NAME} ON)
     else()
       global_set(${MACRO_DEFINE_NAME} OFF)
     endif()
+  endif()
+  tribits_pkg_export_cache_var(${USER_OPTION_NAME})
+  if(NOT "${MACRO_DEFINE_NAME}" STREQUAL "")
+    tribits_pkg_export_cache_var(${MACRO_DEFINE_NAME})
   endif()
 endmacro()
 

@@ -39,6 +39,7 @@ void EigenVerify::process_options()
 void EigenVerify::create_mesh_data(stk::io::StkMeshIoBroker * mesh_data,
 				   const std::string &filename)
 {
+  mesh_data->use_simple_fields();
   mesh_data->property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ""));
   mesh_data->add_mesh_database(filename, "exodus", stk::io::READ_MESH);
   mesh_data->create_input_mesh();
@@ -71,27 +72,26 @@ void EigenVerify::create_fields(const int num_time_steps)
   for (int m=0; m<num_meshes; m++) {
 
     // allocate data for the eigenvectors (sending)
-    fieldAll[m] = & (mesh_data[m]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, field_name_all));
+    fieldAll[m] = & (mesh_data[m]->meta_data().declare_field<double>(stk::topology::NODE_RANK, field_name_all));
 
-    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
     stk::mesh::put_field_on_mesh( *fieldAll[m],
 			  mesh_data[m]->meta_data().universal_part(),
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
-			  init_np);
+        nullptr);
+    stk::io::set_field_output_type(*fieldAll[m], stk::io::FieldOutputType::VECTOR_3D);
 
     // allocate data for the eigenvectors (receiving)
-    xferFieldAll[m] = & (mesh_data[m]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, xfer_field_name_all));
+    xferFieldAll[m] = & (mesh_data[m]->meta_data().declare_field<double>(stk::topology::NODE_RANK, xfer_field_name_all));
 
-    stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np2 = nullptr; // gcc 4.8 hack
     stk::mesh::put_field_on_mesh( *xferFieldAll[m],
 			  mesh_data[m]->meta_data().universal_part(),
 			  mesh_data[m]->meta_data().spatial_dimension(),
 			  num_time_steps,
-			  init_np2);
+        nullptr);
 
     // get eigenvector field
-    inputField[m] = mesh_data[m]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, field_name);
+    inputField[m] = mesh_data[m]->meta_data().get_field<double>(stk::topology::NODE_RANK, field_name);
 
     if (NULL==inputField[m]) {
       std::cout << "Error: unknown displacement field: " << field_name 
@@ -102,9 +102,9 @@ void EigenVerify::create_fields(const int num_time_steps)
 
   // create fields to store nodal errors
   std::string error_field_name = "error." + field_name;
-  errorField = & ( mesh_data[1]->meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, error_field_name) );
-  stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-  stk::mesh::put_field_on_mesh( *errorField, mesh_data[1]->meta_data().universal_part() , init_np);
+  errorField = & ( mesh_data[1]->meta_data().declare_field<double>(stk::topology::NODE_RANK, error_field_name) );
+  stk::mesh::put_field_on_mesh( *errorField, mesh_data[1]->meta_data().universal_part(), mesh_data[1]->meta_data().spatial_dimension(), nullptr);
+  stk::io::set_field_output_type(*errorField, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 void EigenVerify::load_field_data(const int m)
@@ -135,11 +135,11 @@ int EigenVerify::get_num_time_steps()
 void compute_field_error(
   const stk::mesh::BulkData &bulkdata,
   const int m,
-  stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> * field,
+  stk::mesh::Field<double> * field,
   const int index_m,
   const double sign_factor,
-  stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> * xferField,
-  stk::mesh::Field<double, stk::mesh::Cartesian> * errorField)
+  stk::mesh::Field<double> * xferField,
+  stk::mesh::Field<double> * errorField)
 {
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
 
@@ -258,10 +258,8 @@ void EigenVerify::run(int argc, char** argv)
   mesh_data.back()->add_field(result_output_index, *errorField);
 
   // build transfer: 0 => 1
-  stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_from =
-    mesh_data[0]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_to =
-    mesh_data[1]->meta_data().get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+  stk::mesh::Field<double> * coordinates_from = mesh_data[0]->meta_data().get_field<double>(stk::topology::NODE_RANK, "coordinates");
+  stk::mesh::Field<double> * coordinates_to = mesh_data[1]->meta_data().get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
   std::shared_ptr<STKMeshTransfer> mesh_transfer_01 =
     buildSTKMeshTransfer<STKMeshTransfer>(mesh_data[0]->bulk_data(),

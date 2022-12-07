@@ -543,7 +543,11 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
                 }
                 else {
                     std::ostringstream os;
-                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side {"<<elemSidePairs[is*2]<<","<<(elemSidePairs[is*2+1]-1)<<"} not valid."<<std::endl;
+                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side "
+                      <<elemSidePairs[is*2]<<" on element "<<(elemSidePairs[is*2+1]-1)
+                      <<" in sideset: " << sset->name()
+                      <<" does not have a corresponding face entity in the current mesh database"
+                      <<" (possibly referenced by a reduced restart file)."<<std::endl;
                     std::cerr<<os.str();
                 }
             }
@@ -790,7 +794,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
                 std::string distributionFactorsPerNodesetFieldName = "distribution_factors_" + part->name();
 
                 stk::mesh::Field<double> *df_field_per_nodeset =
-                        meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, distributionFactorsPerNodesetFieldName);
+                        meta.get_field<double>(stk::topology::NODE_RANK, distributionFactorsPerNodesetFieldName);
 
                 if (df_field_per_nodeset != nullptr) {
                     stk::io::field_data_from_ioss(bulk, df_field_per_nodeset, nodes, entity, "distribution_factors");

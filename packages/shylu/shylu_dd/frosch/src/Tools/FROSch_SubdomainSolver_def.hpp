@@ -196,9 +196,9 @@ namespace FROSch {
             const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
             RCP<const Thyra::LinearOpBase<SC> > thyraOp = ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp.getCrsMatrix());
 
-            Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+            Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
-            linearSolverBuilder.setPreconditioningStrategyFactory(abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,Thyra::Ifpack2PreconditionerFactory<TCrsMatrix> >(),"Ifpack2");
+            linearSolverBuilder.setPreconditioningStrategyFactory(abstractFactoryStd<Thyra::PreconditionerFactoryBase<SC>,Thyra::Ifpack2PreconditionerFactory<TCrsMatrix> >(),"Ifpack2");
 #endif
 
             ParameterListPtr parameterList = sublist(ParameterList_,"Thyra");
@@ -580,7 +580,7 @@ namespace FROSch {
             YTmp_ = rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(yTmpTpMultVec));
             TEUCHOS_TEST_FOR_EXCEPT(is_null(YTmp_));
 
-            Thyra::SolveStatus<double> status = Thyra::solve<double>(*LOWS_, Thyra::NOTRANS, *thyraX, ThyraYTmp_.ptr());
+            Thyra::SolveStatus<SC> status = Thyra::solve<SC>(*LOWS_, Thyra::NOTRANS, *thyraX, ThyraYTmp_.ptr());
             y = *YTmp_;
 
             /*

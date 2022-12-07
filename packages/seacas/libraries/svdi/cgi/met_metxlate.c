@@ -435,13 +435,13 @@ static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
-void cdrofs();
-void cdrof3();
-void cdroff();
-void cdrrfs();
-void cdrwfs();
-void cdrcfs();
-void cdroab();
+void cdrofs(int *);
+void cdrof3(int *, int *);
+void cdroff(int *, int *, int *, int *);
+void cdrrfs(int *, int *, char *, int *);
+void cdrwfs(int *, int *, char *, int *);
+void cdrcfs(int *, int *);
+void cdroab(int *, int *);
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -5417,7 +5417,7 @@ void cdroab(int *ifilcd, int *frame)
 
   cdrofs(ifilcd);
 }
-void nmtbuf();
+
 /*
   Metafile buffering routine. (device dependent )
   Metafile driver passes OUTARY as an integer array, always with

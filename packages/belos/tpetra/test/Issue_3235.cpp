@@ -13,8 +13,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  using SC = double;
+  using SC = Tpetra::MultiVector<>::scalar_type;
   using crs_matrix_type = Tpetra::CrsMatrix<SC>;
   using map_type = Tpetra::Map<>;
   using OP = Tpetra::Operator<SC>;

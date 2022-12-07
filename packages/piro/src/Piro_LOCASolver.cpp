@@ -52,6 +52,7 @@ template class LOCASolver<double>;
 template Teuchos::RCP<LOCASolver<double> > observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> > &adjointModel,
     const Teuchos::RCP<Piro::ObserverBase<double> > &observer);
 
 } // namespace Piro

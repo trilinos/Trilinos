@@ -356,7 +356,7 @@ namespace Iovs_exodus {
           // Not applicable to viz output.
         }
         else {
-          Ioss::WARNING() << " ElementBlock " << eb->name() << ". Unknown field "
+          Ioss::WarnOut() << " ElementBlock " << eb->name() << ". Unknown field "
                           << field.get_name();
           num_to_get = 0;
         }
@@ -639,7 +639,7 @@ namespace Iovs_exodus {
   int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
                     const std::string &inout)
   {
-    Ioss::WARNING() << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
+    Ioss::WarnOut() << ge->type() << " '" << ge->name() << "'. Unknown " << inout << " field '"
                     << field.get_name() << "'";
     return -4;
   }
@@ -874,8 +874,7 @@ namespace {
 
   int64_t extract_id(const std::string &name_id)
   {
-    std::vector<std::string> tokens = Ioss::tokenize(name_id, "_");
-
+    auto tokens = Ioss::tokenize(name_id, "_");
     if (tokens.size() == 1) {
       return 0;
     }

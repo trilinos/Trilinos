@@ -131,7 +131,7 @@ IF (Sacado_ENABLE_TeuchosCore)
         )
     ENDIF ()
 
-    IF (Kokkos_ENABLE_PTHREAD)
+    IF (Kokkos_ENABLE_THREADS)
       IF (Sacado_ENABLE_TeuchosKokkosComm)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
           Fad_Kokkos_CommTests_Threads

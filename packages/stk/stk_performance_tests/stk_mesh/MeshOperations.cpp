@@ -30,30 +30,27 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
+
+#include <gtest/gtest.h>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <gtest/gtest.h>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/perf_util.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/SkinMesh.hpp>
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/timer.hpp>
+#include <stk_util/environment/perf_util.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <string>
 
-// Globals for command-line arguments
-extern int gl_argc;
-extern char** gl_argv;
-
-class MeshOperations : public stk::unit_test_util::MeshFixture {
+class MeshOperations : public stk::unit_test_util::simple_fields::MeshFixture {
 public:
   MeshOperations()
     : p_rank(get_parallel_rank()),
       PHASE_NAMES(NUM_PHASES+1),
-      timings(NUM_PHASES + 1, 0.0),
       input_base_filename("mesh_operations.g"),
       output_base_filename("mesh_operations.e")
   {
@@ -69,8 +66,11 @@ protected:
   void parse_filename_args() {
     const std::string input_flag  = "--heavy-test:input-file=";
     const std::string output_flag = "--heavy-test:output-file=";
-    for (int argitr = 1; argitr < gl_argc; ++argitr) {
-      std::string argv(gl_argv[argitr]);
+
+    stk::unit_test_util::GlobalCommandLineArguments& args = stk::unit_test_util::GlobalCommandLineArguments::self();
+
+    for (int argitr = 1; argitr < args.get_argc(); ++argitr) {
+      std::string argv(args.get_argv()[argitr]);
       if (argv.find(input_flag) == 0) {
         input_base_filename = argv.replace(0, input_flag.size(), "");
       }
@@ -81,42 +81,26 @@ protected:
   }
 
   void initialize_meta(stk::io::StkMeshIoBroker& broker) {
-    double start_time = stk::wall_time();
     broker.add_mesh_database(input_base_filename, stk::io::READ_MESH);
     broker.create_input_mesh();
-    timings[INIT_META_DATA_PHASE_ID] += stk::wall_dtime(start_time);
   }
 
   void initialize_bulk(stk::io::StkMeshIoBroker& broker) {
-    double start_time = stk::wall_time();
     broker.populate_bulk_data();
-    timings[INIT_BULK_DATA_PHASE_ID] += stk::wall_dtime(start_time);
   }
 
   void skin_bulk(stk::io::StkMeshIoBroker& broker) {
-    double start_time = stk::wall_time();
     stk::mesh::skin_mesh(broker.bulk_data());
-    timings[SKIN_MESH_PHASE_ID] += stk::wall_dtime(start_time);
   }
 
   size_t create_exodus_file(stk::io::StkMeshIoBroker& broker) {
-    double start_time = stk::wall_time();
     size_t index = broker.create_output_mesh( output_base_filename, stk::io::WRITE_RESULTS);
-    timings[EXODUS_CREATE_PHASE_ID] += stk::wall_dtime(start_time);
     return index;
   }
 
   void process_output(stk::io::StkMeshIoBroker& broker, size_t index) {
     double time_step = 0;
-    double start_time = stk::wall_time();
     broker.process_output_request(index, time_step);
-    timings[PROCESS_OUTPUT_PHASE_ID] += stk::wall_dtime(start_time);
-  }
-
-  void sum_timings() {
-    for (unsigned i = 0; i < NUM_PHASES; ++i) {
-      timings[NUM_PHASES] += timings[i];
-    }
   }
 
   void print_mesh_stats(stk::mesh::BulkData& bulk) {
@@ -132,16 +116,6 @@ protected:
     }
   }
 
-  void print_timings() {
-    stk::all_reduce(get_comm(), stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
-
-    if (p_rank == 0) {
-      stk::print_timers_and_memory(&PHASE_NAMES[0], &timings[0], NUM_PHASES + 1);
-    }
-
-    stk::parallel_print_time_for_performance_compare(get_comm(), timings[NUM_PHASES]);
-  }
-
 private:
   const size_t p_rank;
 
@@ -154,7 +128,6 @@ private:
   const unsigned PROCESS_OUTPUT_PHASE_ID = 4;
 
   std::vector<std::string> PHASE_NAMES;
-  std::vector<double> timings;
 
   std::string input_base_filename;
   std::string output_base_filename;
@@ -162,14 +135,20 @@ private:
 
 TEST_F( MeshOperations, PerformanceTimings )
 {
-  const unsigned NUM_RUNS = 30;
+  const unsigned NUM_RUNS = 5;
 
   stk::parallel_machine_barrier(get_comm());
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
 
   parse_filename_args();
 
+  batchTimer.initialize_batch_timer();
   for (unsigned run=0; run<NUM_RUNS; run++) {
+    stk::parallel_machine_barrier(get_comm());
+    batchTimer.start_batch_timer();
+
     stk::io::StkMeshIoBroker broker(get_comm());
+    broker.use_simple_fields();
 
     initialize_meta(broker);
     initialize_bulk(broker);
@@ -178,9 +157,12 @@ TEST_F( MeshOperations, PerformanceTimings )
     process_output(broker, index);
 
     if (run == NUM_RUNS-1) {
-      sum_timings();
-      print_timings();
       print_mesh_stats(broker.bulk_data());
     }
+
+    batchTimer.stop_batch_timer();
   }
+
+  batchTimer.print_batch_timing(NUM_RUNS);
 }
+

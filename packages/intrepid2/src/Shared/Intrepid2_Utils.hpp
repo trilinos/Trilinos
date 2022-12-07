@@ -383,6 +383,45 @@ namespace Intrepid2 {
       return ViewTypeWithLayout(label,dims...,derivative_dimension);
     }
   }
+
+  using std::enable_if_t;
+
+  /**
+    \brief Tests whether a class has a member rank.  Used in getFixedRank() method below, which in turn is used in the supports_rank_n helpers.
+  */
+  template <typename T, typename = void>
+  struct has_rank_member : std::false_type{};
+
+  /**
+    \brief Tests whether a class has a member rank.  Used in getFixedRank() method below, which in turn is used in the supports_rank_n helpers.
+  */
+  template <typename T>
+  struct has_rank_member<T, decltype((void)T::rank, void())> : std::true_type {};
+
+  static_assert(! has_rank_member<Kokkos::DynRankView<double> >::value, "DynRankView does not have a member rank, so this assert should pass -- if not, something may be wrong with has_rank_member.");
+  static_assert(  has_rank_member<Kokkos::View<double*> >::value,        "View has a member rank -- if this assert fails, something may be wrong with has_rank_member.");
+
+  /**
+    \brief \return functor.rank if the functor has a static rank member; returns specified default_value otherwise.
+  */
+  template<class Functor, ordinal_type default_value>
+  constexpr
+  enable_if_t<has_rank_member<Functor>::value, ordinal_type>
+  getFixedRank()
+  {
+    return Functor::rank;
+  }
+
+  /**
+    \brief \return functor.rank if the functor has a static rank member; returns specified default_value otherwise.
+  */
+  template<class Functor, ordinal_type default_value>
+  constexpr
+  enable_if_t<!has_rank_member<Functor>::value, ordinal_type>
+  getFixedRank()
+  {
+    return default_value;
+  }
  
   /**
     \brief SFINAE helper to detect whether a type supports a 1-integral-argument operator().
@@ -397,7 +436,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,1>() == 1)  };
   };
 
   /**
@@ -413,7 +452,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,2>() == 2)  };
   };
 
   /**
@@ -429,7 +468,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = (sizeof(test<T>(0)) == sizeof(char)) && (getFixedRank<T,3>() == 3) };
   };
 
   /**
@@ -445,7 +484,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,4>() == 4)  };
   };
 
   /**
@@ -461,7 +500,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,5>() == 5) };
   };
 
   /**
@@ -477,7 +516,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,6>() == 6)  };
   };
 
   /**
@@ -493,7 +532,7 @@ namespace Intrepid2 {
       template <typename C> static two test(...);
 
   public:
-      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+      enum { value = sizeof(test<T>(0)) == sizeof(char) && (getFixedRank<T,7>() == 7) };
   };
 
   /**
@@ -646,17 +685,67 @@ namespace Intrepid2 {
     using value_type = Scalar*******;
   };
 
-//  static_assert(supports_rank_4< Kokkos::DynRankView<double> >::value, "rank 4 check of supports_rank");
-//
-//  static_assert(supports_rank<Kokkos::DynRankView<double>, 1>::value, "rank 1 check of supports_rank");
-//
-//  static_assert(supports_rank<Kokkos::View<double*>,       1>::value, "rank 1 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double**>,      2>::value, "rank 2 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double***>,     3>::value, "rank 3 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double****>,    4>::value, "rank 4 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double*****>,   5>::value, "rank 5 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double******>,  6>::value, "rank 6 check of supports_rank");
-//  static_assert(supports_rank<Kokkos::View<double*******>, 7>::value, "rank 7 check of supports_rank");
+  // positive checks of supports_rank for Kokkos::DynRankView:
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 1>::value, "rank 1 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 2>::value, "rank 2 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 3>::value, "rank 3 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 4>::value, "rank 4 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 5>::value, "rank 5 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 6>::value, "rank 6 check of supports_rank for DynRankView");
+  static_assert(supports_rank<Kokkos::DynRankView<double>, 7>::value, "rank 7 check of supports_rank for DynRankView");
+
+  // positive checks of supports_rank for Kokkos::View:
+  static_assert(supports_rank<Kokkos::View<double*>,       1>::value, "rank 1 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double**>,      2>::value, "rank 2 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double***>,     3>::value, "rank 3 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double****>,    4>::value, "rank 4 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double*****>,   5>::value, "rank 5 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double******>,  6>::value, "rank 6 check of supports_rank");
+  static_assert(supports_rank<Kokkos::View<double*******>, 7>::value, "rank 7 check of supports_rank");
+
+  // negative checks of supports_rank for Kokkos::View:
+  static_assert(!supports_rank<Kokkos::View<double*>,       2>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*>,       3>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*>,       4>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*>,       5>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*>,       6>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*>,       7>::value, "rank 1 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      1>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      3>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      4>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      5>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      6>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double**>,      7>::value, "rank 2 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     1>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     2>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     4>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     5>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     6>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double***>,     7>::value, "rank 3 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    1>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    2>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    3>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    5>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    6>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double****>,    7>::value, "rank 4 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   1>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   2>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   3>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   4>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   6>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*****>,   7>::value, "rank 5 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  1>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  2>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  3>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  4>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  5>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double******>,  7>::value, "rank 6 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 1>::value, "rank 7 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 2>::value, "rank 7 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 3>::value, "rank 7 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 4>::value, "rank 7 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 5>::value, "rank 7 check of supports_rank");
+  static_assert(!supports_rank<Kokkos::View<double*******>, 6>::value, "rank 7 check of supports_rank");
 
   /**
     \brief Tests whether a class implements rank().  Used in getFunctorRank() method below; allows us to do one thing for View and another for DynRankView and our custom Functor types.
@@ -676,9 +765,6 @@ namespace Intrepid2 {
 
   static_assert(  has_rank_method<Kokkos::DynRankView<double> >::value, "DynRankView implements rank(), so this assert should pass -- if not, something may be wrong with has_rank_method.");
   static_assert(! has_rank_method<Kokkos::View<double> >::value,        "View does not implement rank() -- if this assert fails, something may be wrong with has_rank_method.");
-
-  template< bool B, class T >
-  using enable_if_t = typename std::enable_if<B,T>::type;
 
   /**
     \brief \return functor.rank() if the functor implements rank(); functor.rank otherwise.

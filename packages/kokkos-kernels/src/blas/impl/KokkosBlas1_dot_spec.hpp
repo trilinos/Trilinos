@@ -377,6 +377,20 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false,
 
   typedef typename YV::size_type size_type;
 
+  // Helper to get the first column of a rank-1 or rank-2 view.
+  // This makes it easier to add a path for single-column dot.
+  template <typename V>
+  static auto getFirstColumn(
+      const V& v, typename std::enable_if<V::rank == 2>::type* = nullptr) {
+    return Kokkos::subview(v, Kokkos::ALL(), 0);
+  }
+
+  template <typename V>
+  static V getFirstColumn(
+      const V& v, typename std::enable_if<V::rank == 1>::type* = nullptr) {
+    return v;
+  }
+
   static void dot(const RV& R, const XV& X, const YV& Y) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
                                       ? "KokkosBlas::dot[ETI]"
@@ -392,14 +406,31 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false,
 #endif
 
     const size_type numRows = X.extent(0);
-    const size_type numCols = X.extent(1);
-    if (numRows < static_cast<size_type>(INT_MAX) &&
-        numRows * numCols < static_cast<size_type>(INT_MAX)) {
-      typedef int index_type;
-      MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
+    const size_type numDots = std::max(X.extent(1), Y.extent(1));
+    if (numDots == Kokkos::ArithTraits<size_type>::one()) {
+      auto R0 = Kokkos::subview(R, 0);
+      auto X0 = getFirstColumn(X);
+      auto Y0 = getFirstColumn(Y);
+      if (numRows < static_cast<size_type>(INT_MAX)) {
+        typedef int index_type;
+        DotFunctor<decltype(R0), decltype(X0), decltype(Y0), index_type> f(X0,
+                                                                           Y0);
+        f.run("KokkosBlas::dot<1D>", R0);
+      } else {
+        typedef int64_t index_type;
+        DotFunctor<decltype(R0), decltype(X0), decltype(Y0), index_type> f(X0,
+                                                                           Y0);
+        f.run("KokkosBlas::dot<1D>", R0);
+      }
     } else {
-      typedef std::int64_t index_type;
-      MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
+      if (numRows < static_cast<size_type>(INT_MAX) &&
+          numRows * numDots < static_cast<size_type>(INT_MAX)) {
+        typedef int index_type;
+        MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
+      } else {
+        typedef std::int64_t index_type;
+        MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
+      }
     }
     Kokkos::Profiling::popRegion();
   }

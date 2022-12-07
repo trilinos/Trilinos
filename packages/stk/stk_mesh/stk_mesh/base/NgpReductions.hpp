@@ -39,7 +39,6 @@
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/ngp/NgpSpaces.hpp>
-#include "Kokkos_Parallel_Reduce.hpp"
 
 namespace stk {
 namespace mesh {
@@ -52,65 +51,10 @@ struct identity {
   }
 };
 
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-T reduction_value_type_from_field_value(const T& i, const int, const T&) 
-{
-  return i;
-}
-
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const unsigned, const Kokkos::MinMaxScalar<T>&)
-{
-  return {i,i};
-}
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::ValLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::ValLocScalar<T, stk::mesh::EntityId>&)
-{
-  return {i,index};
-}
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId>&)
-{
-  return {i,i,index,index};
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(T & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(Kokkos::ValLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-  t.loc = mesh.identifier(bucket[t.loc]);
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-  t.min_loc = mesh.identifier(bucket[t.min_loc]);
-  t.max_loc = mesh.identifier(bucket[t.max_loc]);
-}
-
 template<typename Mesh, typename Field, typename ReductionOp, typename Modifier = identity<typename Field::value_type>>
 struct FieldAccessFunctor{
   using value_type = typename ReductionOp::value_type;
   using reduction_op = ReductionOp;
-  STK_DEPRECATED KOKKOS_FUNCTION
-  FieldAccessFunctor(Field f, ReductionOp r, const int comp = -1) :
-    field(f), bucket_id(0), reduction(r), fm(Modifier()), component(comp) {}
   KOKKOS_FUNCTION
   value_type operator()(const unsigned i, const unsigned j) const
   {
@@ -140,57 +84,6 @@ struct FieldAccessFunctor{
   Modifier fm;
   const int component;
 };
-
-template <typename Mesh, typename Accessor>
-struct ReductionTeamFunctor
-{
-  using ReductionOp = typename Accessor::reduction_op;
-  using value_type = typename ReductionOp::value_type;
-  STK_DEPRECATED KOKKOS_FUNCTION
-  ReductionTeamFunctor(const Mesh m, stk::NgpVector<unsigned> b, Accessor a)
-    : mesh(m), bucketIds(b), accessor(a) {}
-
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
-  KOKKOS_FUNCTION
-  void join(value_type& dest, const value_type& src) const {
-    accessor.reduction.join(dest,src);
-  }
-  KOKKOS_FUNCTION
-  void join(volatile value_type& dest, volatile const value_type& src) const {
-    accessor.reduction.join(dest,src);
-  }
-
-  KOKKOS_FUNCTION
-  void operator()(const TeamHandleType& team, value_type& update) const
-  {
-    const int bucketIndex = bucketIds.device_get(team.league_rank());
-    const typename Mesh::BucketType &bucket = mesh.get_bucket(accessor.get_rank(), bucketIndex);
-    unsigned numElements = bucket.size();
-    value_type my_value;
-    accessor.reduction.init(my_value);
-    ReductionOp reduction(my_value);
-    Accessor thread_local_accessor(accessor, bucket.bucket_id(), reduction);
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
-                            [&](unsigned i, value_type& reduce){
-      const unsigned nc = thread_local_accessor.num_components(i);
-      for(unsigned j = 0; j < nc; ++j){
-        value_type input = thread_local_accessor(i,j);
-        accessor.reduction.join(reduce,input);
-      }
-    },
-    reduction);
-    Kokkos::single(Kokkos::PerTeam(team), [&](){
-      replace_loc_with_entity_id(my_value, mesh, bucket);
-      accessor.reduction.join(update, my_value);
-    });
-  }
-private:
-  const Mesh mesh;
-  stk::NgpVector<unsigned> bucketIds;
-  Accessor accessor;
-};
-#endif
-
 
 template<typename T>
 KOKKOS_FUNCTION
@@ -273,18 +166,6 @@ private:
   ReductionOp reduction;
   const AlgorithmPerEntity functor;
 };
-
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
-template <typename Mesh, typename Accessor>
-void get_field_reduction(Mesh &mesh, const stk::mesh::Selector &selector, Accessor& accessor)
-{
-  stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(accessor.get_rank(), selector);
-  const unsigned numBuckets = bucketIds.size();
-  ReductionTeamFunctor<Mesh,Accessor> teamFunctor(mesh, bucketIds, accessor);
-  Kokkos::parallel_reduce(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, accessor.reduction);
-}
-#endif
 
 template <typename Mesh, typename ReductionOp, typename AlgorithmPerEntity>
 void for_each_entity_reduce(Mesh& mesh,

@@ -40,7 +40,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/perf_util.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -50,7 +50,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
@@ -385,7 +384,7 @@ TEST( skinning_large_cube, skinning_large_cube)
     //create the mesh
 
     start_time = stk::wall_time();
-    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
     const EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -553,7 +552,7 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
   double skinningTime = 0.0;
 
   for (unsigned testRun = 0; testRun < numRuns; ++testRun) {
-    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;
 
@@ -577,11 +576,16 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
 
 TEST(skinning_large_cube_perf_test, skinning_large_cube)
 {
-  unsigned numRuns = 100;
   std::vector<size_t> dims = {50, 50, 50};
-  double edgeTime = run_skinning_large_cube_test(true, numRuns, dims);
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    run_skinning_large_cube_test(true, NUM_ITERS, dims);
+    batchTimer.stop_batch_timer();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
 
-  double maxTime = stk::get_max_time_across_procs(edgeTime, MPI_COMM_WORLD);
-  size_t maxHwm = stk::get_max_hwm_across_procs(MPI_COMM_WORLD);
-  stk::print_stats_for_performance_compare(std::cout, maxTime, maxHwm, numRuns, MPI_COMM_WORLD);
 }

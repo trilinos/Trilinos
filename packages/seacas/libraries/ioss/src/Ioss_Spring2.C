@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_CodeTypes.h"           // for IntVector
+#include "Ioss_ElementPermutation.h"  // for ElementPermutation
 #include "Ioss_ElementTopology.h"     // for ElementTopology
 #include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_Spring2.h>
@@ -60,6 +61,7 @@ int Ioss::Spring2::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
+  IOSS_ASSERT_USED(face);
   return Constants::nfacenode;
 }
 
@@ -67,6 +69,7 @@ int Ioss::Spring2::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
+  IOSS_ASSERT_USED(face);
   return Constants::nfaceedge;
 }
 

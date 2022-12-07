@@ -1,6 +1,5 @@
-#Kokkos requires at least 3.10
-#but really you should use 3.12
-cmake_minimum_required (VERSION 3.10)
+#Kokkos requires at least 3.16
+cmake_minimum_required (VERSION 3.16)
 
 project (MyProgram)
 

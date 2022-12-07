@@ -273,8 +273,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
       Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(matrix);
 
   // transform Thyra operator 2 Xpetra::CrsMatrix
-  Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
+  Teuchos::RCP<const Xpetra::Matrix<Scalar, LO, GO, Node> > xMat =
       Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(thyraOp);
+  Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
+    Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> >(xMat)->getCrsMatrix();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xCrsMat));
 
   TEST_EQUALITY(xCrsMat->getFrobeniusNorm()   ,matrix->getFrobeniusNorm());

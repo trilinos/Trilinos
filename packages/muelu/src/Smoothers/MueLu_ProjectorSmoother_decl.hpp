@@ -59,7 +59,7 @@ namespace MueLu {
 
   /*!
     @class ProjectorSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief This class enables the elimination of the nullspace component of the solution through the use of projection
 
     The solution of the coarsest level system may have a significant nullspace component. We can try to eliminate it through the use of nullspaces.

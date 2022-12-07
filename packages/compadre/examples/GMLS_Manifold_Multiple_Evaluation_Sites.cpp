@@ -317,13 +317,13 @@ Kokkos::initialize(argc, args);
     my_GMLS_scalar.setCurvatureWeightingType(WeightingFunctionType::Power);
     
     // power to use in the weighting kernel function for curvature coefficients
-    my_GMLS_scalar.setCurvatureWeightingPower(2);
+    my_GMLS_scalar.setCurvatureWeightingParameter(2);
     
     // sets the weighting kernel function from WeightingFunctionType
     my_GMLS_scalar.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS_scalar.setWeightingPower(2);
+    my_GMLS_scalar.setWeightingParameter(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
     my_GMLS_scalar.generateAlphas();
@@ -345,9 +345,9 @@ Kokkos::initialize(argc, args);
     //lro_vector[1] = DivergenceOfVectorPointEvaluation;
     my_GMLS_vector.addTargets(lro_vector);
     my_GMLS_vector.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector.setCurvatureWeightingPower(2);
+    my_GMLS_vector.setCurvatureWeightingParameter(2);
     my_GMLS_vector.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector.setWeightingPower(2);
+    my_GMLS_vector.setWeightingParameter(2);
     my_GMLS_vector.generateAlphas();
     Kokkos::Profiling::popRegion();
 
@@ -386,9 +386,9 @@ Kokkos::initialize(argc, args);
     //lro_vector_of_scalar_clones[1] = DivergenceOfVectorPointEvaluation;
     my_GMLS_vector_of_scalar_clones.addTargets(lro_vector_of_scalar_clones);
     my_GMLS_vector_of_scalar_clones.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_of_scalar_clones.setCurvatureWeightingPower(2);
+    my_GMLS_vector_of_scalar_clones.setCurvatureWeightingParameter(2);
     my_GMLS_vector_of_scalar_clones.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_of_scalar_clones.setWeightingPower(2);
+    my_GMLS_vector_of_scalar_clones.setWeightingParameter(2);
     my_GMLS_vector_of_scalar_clones.generateAlphas();
     Kokkos::Profiling::popRegion();
 
@@ -518,7 +518,7 @@ Kokkos::initialize(argc, args);
     Kokkos::deep_copy(prestencil_weights, d_prestencil_weights);
 
     // tangent vector at target sites are stored here
-    auto d_tangent_directions = my_GMLS_vector_of_scalar_clones.getTangentDirections();
+    auto d_tangent_directions = *(my_GMLS_vector_of_scalar_clones.getTangentDirections());
     auto tangent_directions = Kokkos::create_mirror_view(d_tangent_directions);
     Kokkos::deep_copy(tangent_directions, d_tangent_directions);
 

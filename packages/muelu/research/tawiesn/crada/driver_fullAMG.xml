@@ -39,8 +39,8 @@
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
     </ParameterList>
 
-    <!-- We have to use Nullspace1 here. If "Nullspace1" is not set the 
-         Factory creates the default null space containing of constant 
+    <!-- We have to use Nullspace1 here. If "Nullspace1" is not set the
+         Factory creates the default null space containing of constant
          vectors -->
     <ParameterList name="myNspFact1">
       <Parameter name="factory" type="string" value="NullspaceFactory"/>
@@ -108,8 +108,8 @@
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
     </ParameterList>
 
-    <!-- We have to use Nullspace2 here. If "Nullspace2" is not set the 
-         Factory creates the default null space containing of constant 
+    <!-- We have to use Nullspace2 here. If "Nullspace2" is not set the
+         Factory creates the default null space containing of constant
          vectors (here only one constant vector) -->
     <ParameterList name="myNspFact2">
       <Parameter name="factory" type="string" value="NullspaceFactory"/>
@@ -245,8 +245,8 @@
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
         <!-- <Parameter name="group" type="string" value="myFirstGroup"/> -->
-        <!-- It's enough to just provide the sub block matrix A_{00} needed 
-             as input for the smoother "mySmooFact1" as well as the smoother 
+        <!-- It's enough to just provide the sub block matrix A_{00} needed
+             as input for the smoother "mySmooFact1" as well as the smoother
              itself. Alternatively, one could add below strings to the
              factory group "myFirstGroup" and use it here instead of below lines -->
         <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
@@ -255,8 +255,8 @@
       <!-- factory manager for block 2 -->
       <ParameterList name="block2">
         <!-- The second equation in the SIMPLE smoother is the Schur complement
-             equation that has to be solved. Therefore, provide the Schur complement 
-             operator together with the smoother. The smoother object takes the 
+             equation that has to be solved. Therefore, provide the Schur complement
+             operator together with the smoother. The smoother object takes the
              Schur complement operator as operator "A" for the internal smoothing process. -->
         <!--<Parameter name="A" type="string" value="mySchurCompFact"/>-->
         <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
@@ -276,8 +276,8 @@
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
         <!-- <Parameter name="group" type="string" value="myFirstGroup"/> -->
-        <!-- It's enough to just provide the sub block matrix A_{00} needed 
-             as input for the smoother "mySmooFact1" as well as the smoother 
+        <!-- It's enough to just provide the sub block matrix A_{00} needed
+             as input for the smoother "mySmooFact1" as well as the smoother
              itself. Alternatively, one could add below strings to the
              factory group "myFirstGroup" and use it here instead of below lines -->
         <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
@@ -286,8 +286,8 @@
       <!-- factory manager for block 2 -->
       <ParameterList name="block2">
         <!-- The second equation in the SIMPLE smoother is the Schur complement
-             equation that has to be solved. Therefore, provide the Schur complement 
-             operator together with the smoother. The smoother object takes the 
+             equation that has to be solved. Therefore, provide the Schur complement
+             operator together with the smoother. The smoother object takes the
              Schur complement operator as operator "A" for the internal smoothing process. -->
         <!--<Parameter name="A" type="string" value="mySchurCompFact"/>-->
         <Parameter name="A" type="string" value="mySubBlockAFactory2"/>

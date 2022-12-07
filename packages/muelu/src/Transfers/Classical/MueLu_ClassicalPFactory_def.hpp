@@ -74,7 +74,7 @@
 //#define CMS_DEBUG
 //#define CMS_DUMP
 
-namespace { 
+namespace {
 
 template<class SC>
 int Sign(SC val) {
@@ -125,7 +125,7 @@ namespace MueLu {
   void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Graph");
-    Input(fineLevel, "DofsPerNode");    
+    Input(fineLevel, "DofsPerNode");
     //    Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
     Input(fineLevel, "FC Splitting");
@@ -146,13 +146,13 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    using STS = Teuchos::ScalarTraits<SC>;
+    // using STS = Teuchos::ScalarTraits<SC>;
 
     // We start by assuming that someone did a reasonable strength of connection
     // algorithm before we start to get our Graph, DofsPerNode and UnAmalgamationInfo
 
     // We begin by getting a MIS (from a graph coloring) and then at that point we need
-    // to start generating entries for the prolongator.   
+    // to start generating entries for the prolongator.
     RCP<const Matrix>      A        = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<const Map> ownedCoarseMap   = Get<RCP<const Map> >(fineLevel,"CoarseMap");
     RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
@@ -179,11 +179,11 @@ namespace MueLu {
     // Do we need ghosts rows of A and myPointType?
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
     bool need_ghost_rows =false;
-    if(scheme == "ext+i") 
+    if(scheme == "ext+i")
       need_ghost_rows=true;
     else if(scheme == "direct")
       need_ghost_rows=false;
-    else if(scheme == "classical modified") 
+    else if(scheme == "classical modified")
       need_ghost_rows=true;
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -202,7 +202,7 @@ namespace MueLu {
       fc_splitting_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
       fc_splitting = fc_splitting_nonconst;
     }
-    myPointType = fc_splitting->getData(0);      
+    myPointType = fc_splitting->getData(0);
 
 
     /* Ghost A (if needed) */
@@ -210,7 +210,7 @@ namespace MueLu {
     RCP<const LocalOrdinalVector> fc_splitting_ghost;
     ArrayRCP<const LO> myPointType_ghost;
     RCP<const Import> remoteOnlyImporter;
-    if(need_ghost_rows && !Importer.is_null()){      
+    if(need_ghost_rows && !Importer.is_null()){
       ArrayView<const LO> remoteLIDs = Importer->getRemoteLIDs();
       size_t numRemote = Importer->getNumRemoteIDs();
       Array<GO> remoteRows(numRemote);
@@ -235,14 +235,14 @@ namespace MueLu {
       // }
     }
 
-    /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
+    /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/
     RCP<const Map> coarseMap;
-    if(Importer.is_null())  
+    if(Importer.is_null())
       coarseMap = ownedCoarseMap;
     else {
       // Generate a domain vector with the coarse ID's as entries for C points
       GhostCoarseMap(*A,*Importer,myPointType,ownedCoarseMap,coarseMap);
-    }  
+    }
 
     /* Get the block number, if we need it (and ghost it) */
     RCP<LocalOrdinalVector>  BlockNumber;
@@ -250,7 +250,7 @@ namespace MueLu {
     if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") {
       RCP<LocalOrdinalVector> OwnedBlockNumber;
       OwnedBlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
-      if(Importer.is_null()) 
+      if(Importer.is_null())
         BlockNumber = OwnedBlockNumber;
       else{
         BlockNumber = LocalOrdinalVectorFactory::Build(A->getColMap());
@@ -281,7 +281,7 @@ namespace MueLu {
       ArrayRCP<real_type> mv_data= mv->getDataNonConst(0);
 
       // FC Splitting
-      ArrayRCP<const LO> fc_data= fc_splitting->getData(0);      
+      ArrayRCP<const LO> fc_data= fc_splitting->getData(0);
       for(LO i=0; i<(LO)fc_data.size(); i++)
         mv_data[i] = Teuchos::as<real_type>(fc_data[i]);
       Xpetra::IO<real_type,LO,GO,NO>::Write(out_fc,*mv);
@@ -290,7 +290,7 @@ namespace MueLu {
       if(!BlockNumber.is_null()) {
         RCP<RealValuedMultiVector> mv2 = RealValuedMultiVectorFactory::Build(BlockNumber->getMap(),1);
         ArrayRCP<real_type> mv_data2= mv2->getDataNonConst(0);
-        ArrayRCP<const LO> b_data= BlockNumber->getData(0);      
+        ArrayRCP<const LO> b_data= BlockNumber->getData(0);
         for(LO i=0; i<(LO)b_data.size(); i++) {
           mv_data2[i] = Teuchos::as<real_type>(b_data[i]);
         }
@@ -309,7 +309,7 @@ namespace MueLu {
     // pcol2cpoint - Takes a LCID for P and turns in into an LCID for A.
     // cpoint2pcol - Takes a LCID for A --- if it is a C Point --- and turns in into an LCID for P.
     Array<LO> cpoint2pcol(myPointType.size(),LO_INVALID);
-    Array<LO> pcol2cpoint(coarseMap->getLocalNumElements(),LO_INVALID);   
+    Array<LO> pcol2cpoint(coarseMap->getLocalNumElements(),LO_INVALID);
     LO num_c_points = 0;
     LO num_f_points =0;
     for(LO i=0; i<(LO) myPointType.size(); i++) {
@@ -380,7 +380,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
     /* interpolation for parallel algebraic multigrid", NLAA 2008    */
     /* 15:115-139                                                    */
-    /* ============================================================= */    
+    /* ============================================================= */
     /* Definitions:                                                        */
     /* F = F-points                                                        */
     /* C = C-points                                                        */
@@ -406,10 +406,10 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 
     /* Rewritten Equation (9) on p. 120                                    */
     /* \tilde{a}_ii =  (a_ij + \sum_{k\in{N_i^w \cup F_i^s\star}} a_ik     */
-    /*                                                                     */ 
-    /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */ 
-    /*                                                                     */ 
-    /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
+    /*                                                                     */
+    /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */
+    /*                                                                     */
+    /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */
   
     //    const point_type F_PT = ClassicalMapFactory::F_PT;
     const point_type C_PT = ClassicalMapFactory::C_PT;
@@ -423,8 +423,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 #endif
 
     // Get the block number if we have it.
-    ArrayRCP<const LO> block_id; 
-    if(!BlockNumber.is_null()) 
+    ArrayRCP<const LO> block_id;
+    if(!BlockNumber.is_null())
       block_id = BlockNumber->getData(0);
 
     // Initial (estimated) allocation
@@ -441,8 +441,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     Array<LO> tmp_colind(nnz_est);
 
     // Algorithm (count+realloc)
-    // For each row, i, 
-    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]   
+    // For each row, i,
+    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]
     size_t ct=0;
     for(LO row=0; row < (LO) Nrows; row++) {
       size_t row_start = eis_rowptr[row];
@@ -459,12 +459,12 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
       else {
         // F-Points have a more complicated interpolation
 
-        // C-neighbors of row 
+        // C-neighbors of row
         A.getLocalRowView(row, indices, vals);
         for(LO j=0; j<indices.size(); j++)
           if(myPointType[indices[j]] == C_PT && edgeIsStrong[row_start + j])
             C_hat.insert(cpoint2pcol[indices[j]]);
-      }// end else 
+      }// end else
       
       // Realloc if needed
       if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
@@ -527,7 +527,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     ArrayRCP<LO> Pghostcol_to_Pcol;
     if(!Pghost.is_null()) {
       Pghostcol_to_Pcol.resize(Pghost->getColMap()->getLocalNumElements(),LO_INVALID);
-      for(LO i=0; i<(LO) Pghost->getColMap()->getLocalNumElements(); i++) 
+      for(LO i=0; i<(LO) Pghost->getColMap()->getLocalNumElements(); i++)
         Pghostcol_to_Pcol[i] = Pgraph->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
     }//end Pghost
 
@@ -535,31 +535,31 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     ArrayRCP<LO> Aghostcol_to_Acol;
     if(!Aghost.is_null()) {
       Aghostcol_to_Acol.resize(Aghost->getColMap()->getLocalNumElements(),LO_INVALID);
-      for(LO i=0; i<(LO)Aghost->getColMap()->getLocalNumElements(); i++) 
+      for(LO i=0; i<(LO)Aghost->getColMap()->getLocalNumElements(); i++)
         Aghostcol_to_Acol[i] = A.getColMap()->getLocalElement(Aghost->getColMap()->getGlobalElement(i));
     }//end Aghost
 
 
-    // Algorithm (numeric)    
+    // Algorithm (numeric)
     for(LO i=0; i < (LO)Nrows; i++) {
       if(myPointType[i] == DIRICHLET_PT) {
         // Dirichlet points get ignored completely
-#ifdef CMS_DEBUG        
+#ifdef CMS_DEBUG
         // DEBUG
         printf("[%d] ** A(%d,:) is a Dirichlet-Point.\n",rank,i);
 #endif
       }
       else if (myPointType[i] == C_PT) {
         // C Points get a single 1 in their row
-        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
-#ifdef CMS_DEBUG        
+        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();
+#ifdef CMS_DEBUG
         // DEBUG
         printf("[%d] ** A(%d,:) is a C-Point.\n",rank,i);
 #endif
       }
       else {
         // F Points get all of the fancy stuff
-#ifdef CMS_DEBUG        
+#ifdef CMS_DEBUG
         // DEBUG
         printf("[%d] ** A(%d,:) is a F-Point.\n",rank,i);
 #endif
@@ -579,7 +579,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 
         // Stash the hash:  Flag any strong C-points with their index into P_colind
         // NOTE:  We'll consider any points that are LO_INVALID or less than P_rowptr[i] as not strong C-points
-        for(LO j=0; j<(LO)P_indices_i.size(); j++)  { 
+        for(LO j=0; j<(LO)P_indices_i.size(); j++)  {
           Acol_to_Pcol[pcol2cpoint[P_indices_i[j]]] = P_rowptr[i] + j;
         }
 
@@ -590,10 +590,10 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 #endif
         for(LO k0=0; k0<(LO)A_indices_i.size(); k0++) {
           LO k      = A_indices_i[k0];
-          SC a_ik   = A_vals_i[k0]; 
+          SC a_ik   = A_vals_i[k0];
           LO pcol_k = Acol_to_Pcol[k];
 
-          if(k == i) { 
+          if(k == i) {
             // Case A: Diagonal value (add to first denominator)
             // FIXME:  Add BlockNumber matching here
             first_denominator += a_ik;
@@ -637,19 +637,19 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
             printf("- A(%d,%d) is a strong F-Point\n",i,k);
 #endif
 
-            SC a_kk = SC_ZERO;              
+            SC a_kk = SC_ZERO;
             SC second_denominator = SC_ZERO;
             int sign_akk = 0;
             
             if(k < (LO)Nrows) {
-              // Grab the diagonal a_kk 
+              // Grab the diagonal a_kk
               A.getLocalRowView(k, A_indices_k, A_vals_k);
               for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
                 LO m    = A_indices_k[m0];
                 if(k == m) {
                   a_kk = A_vals_k[m0];
                   break;
-                }               
+                }
               }//end for A_indices_k
               
               // Compute the second denominator term
@@ -662,11 +662,11 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 }
               }//end for A_indices_k
 
-              // Now we have the second denominator, for this particular strong F point.  
-              // So we can now add the sum to the w_ij components for the P values 
+              // Now we have the second denominator, for this particular strong F point.
+              // So we can now add the sum to the w_ij components for the P values
               if(second_denominator != SC_ZERO) {
                 for(LO j0=0; j0<(LO)A_indices_k.size(); j0++) {
-                  LO j    = A_indices_k[j0];            
+                  LO j    = A_indices_k[j0];
                   // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
                   //                  printf("Acol_to_Pcol[%d] = %d P_values.size() = %d\n",j,Acol_to_Pcol[j],(int)P_values.size());
                   if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
@@ -676,7 +676,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 #ifdef CMS_DEBUG
                     printf("- - Unscaled P(%d,A-%d) += %6.4e = %5.4e\n",i,j,a_ik * sign_akj_val / second_denominator,P_values[Acol_to_Pcol[j]]);
 #endif
-                  }                 
+                  }
                 }//end for A_indices_k
               }//end if second_denominator != 0
               else {
@@ -694,7 +694,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
               // NOTE: ColMap is not locally fitted to the RowMap
               // so we need to check GIDs here
               Aghost->getLocalRowView(kless, A_indices_k, A_vals_k);
-              GO k_g = Aghost->getRowMap()->getGlobalElement(kless);                
+              GO k_g = Aghost->getRowMap()->getGlobalElement(kless);
               for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
                 GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
                 if(k_g == m_g) {
@@ -716,8 +716,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
               }//end for A_indices_k
               
               
-              // Now we have the second denominator, for this particular strong F point.  
-              // So we can now add the sum to the w_ij components for the P values 
+              // Now we have the second denominator, for this particular strong F point.
+              // So we can now add the sum to the w_ij components for the P values
               if(second_denominator != SC_ZERO) {
                 for(LO j0=0; j0<(LO)A_indices_k.size(); j0++){
                   LO jghost = A_indices_k[j0];//Aghost LCID
@@ -738,9 +738,9 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 #ifdef CMS_DEBUG
                 printf("- - A(%d,%d) second denominator is zero\n",i,k);
 #endif
-                if(block_id.size() == 0 || block_id[i] == block_id[k]) 
+                if(block_id.size() == 0 || block_id[i] == block_id[k])
                   first_denominator += a_ik;
-              }//end else second_denominator != 0                           
+              }//end else second_denominator != 0
             }//end else k < Nrows
           }//end else Case A,...,E
                            
@@ -748,7 +748,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 
         // Now, downscale by the first_denominator
         if(first_denominator != SC_ZERO) {
-          for(LO j0=0; j0<(LO)P_indices_i.size(); j0++)  { 
+          for(LO j0=0; j0<(LO)P_indices_i.size(); j0++)  {
 #ifdef CMS_DEBUG
             SC old_pij = P_vals_i[j0];
             P_vals_i[j0] /= -first_denominator;
@@ -782,7 +782,7 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     /* here.  Instead we follow:                                     */
     /* Trottenberg, Oosterlee and Schueller, Multigrid, 2001.        */
     /* with some modifications inspirted by PyAMG                    */
-    /* ============================================================= */    
+    /* ============================================================= */
     /* Definitions:                                                        */
     /* F = F-points                                                        */
     /* C = C-points                                                        */
@@ -792,11 +792,11 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     /* C_i^s = C \cap S_i [strong C-neighbors of i]                        */
     /* P_i = Set of interpolatory variables for row i [here = C_i^s]       */
 
-    /* (A.2.17) from p. 426                                                */ 
-    /* a_ij^- = {  a_ij,  if a_ij < 0                                      */ 
-    /*          {     0,  otherwise                                        */ 
-    /* a_ij^+ = {  a_ij,  if a_ij > 0                                      */ 
-    /*          {     0,  otherwise                                        */ 
+    /* (A.2.17) from p. 426                                                */
+    /* a_ij^- = {  a_ij,  if a_ij < 0                                      */
+    /*          {     0,  otherwise                                        */
+    /* a_ij^+ = {  a_ij,  if a_ij > 0                                      */
+    /*          {     0,  otherwise                                        */
     /* P_i^- =  P_i \cap {k | a_ij^- != 0 and a_ij^- = a_ij}               */
     /*          [strong C-neighbors with negative edges]                   */
     /* P_i^+ =  P_i \cap {k | a_ij^+ != 0 and a_ij^+ = a_ij}               */
@@ -811,7 +811,7 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     /* alpha_i = \frac{ \sum_{j\in N_i} a_ij^- }{ \sum_{k\in P_i} a_ik^- }                   */
     /* beta_i  = \frac{ \sum_{j\in N_i} a_ij^+ }{ \sum_{k\in P_i} a_ik^+ }                   */
     /* w_ik    = { - alpha_i (a_ik / a_ii),   if k\in P_i^-                                  */
-    /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */  
+    /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */
     /* NOTE: The text says to modify, if  P_i^+ is zero but it isn't entirely clear how that */
     /* works.  We'll follow the PyAMG implementation in a few important ways.                */
      
@@ -837,8 +837,8 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     Array<LO> tmp_colind(nnz_est);
 
     // Algorithm (count+realloc)
-    // For each row, i, 
-    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]   
+    // For each row, i,
+    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]
     size_t ct=0;
     for(LO row=0; row < (LO) Nrows; row++) {
       size_t row_start = eis_rowptr[row];
@@ -855,12 +855,12 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
       else {
         // F-Points have a more complicated interpolation
 
-        // C-neighbors of row 
+        // C-neighbors of row
         A.getLocalRowView(row, indices, vals);
         for(LO j=0; j<indices.size(); j++)
           if(myPointType[indices[j]] == C_PT && edgeIsStrong[row_start + j])
             C_hat.insert(cpoint2pcol[indices[j]]);
-      }// end else 
+      }// end else
       
       // Realloc if needed
       if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
@@ -873,7 +873,7 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
       tmp_rowptr[row+1] = tmp_rowptr[row] + C_hat.size();
     }
     // Resize down
-    tmp_colind.resize(tmp_rowptr[Nrows]);  
+    tmp_colind.resize(tmp_rowptr[Nrows]);
 
     // Allocate memory & copy
     P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
@@ -899,15 +899,15 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     for(LO i=0; i < (LO)Nrows; i++) {
       if(myPointType[i] == DIRICHLET_PT) {
         // Dirichlet points get ignored completely
-#ifdef CMS_DEBUG        
+#ifdef CMS_DEBUG
         // DEBUG
         printf("** A(%d,:) is a Dirichlet-Point.\n",i);
 #endif
       }
       else if (myPointType[i] == C_PT) {
         // C Points get a single 1 in their row
-        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
-#ifdef CMS_DEBUG        
+        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();
+#ifdef CMS_DEBUG
         // DEBUG
         printf("** A(%d,:) is a C-Point.\n",i);
 #endif
@@ -917,7 +917,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         /* alpha_i = \frac{ \sum_{j\in N_i} a_ij^- }{ \sum_{k\in P_i} a_ik^- }                   */
         /* beta_i  = \frac{ \sum_{j\in N_i} a_ij^+ }{ \sum_{k\in P_i} a_ik^+ }                   */
         /* w_ik    = { - alpha_i (a_ik / a_ii),   if k\in P_i^-                                  */
-        /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */  
+        /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */
         ArrayView<const LO> A_indices_i, A_incides_k;
         ArrayView<const SC> A_vals_i, A_indices_k;
         A.getLocalRowView(i, A_indices_i, A_vals_i);
@@ -926,51 +926,51 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         
-#ifdef CMS_DEBUG          
+#ifdef CMS_DEBUG
         // DEBUG
         {
           char mylabel[5]="FUCD";
           char sw[3]="ws";
           printf("** A(%d,:) = ",i);
-          for(LO j=0; j<(LO)A_indices_i.size(); j++){  
+          for(LO j=0; j<(LO)A_indices_i.size(); j++){
             printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[1+myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
           }
           printf("\n");
         }
-#endif        
+#endif
                       
         SC a_ii            = SC_ZERO;
         SC pos_numerator   = SC_ZERO, neg_numerator   = SC_ZERO;
         SC pos_denominator = SC_ZERO, neg_denominator = SC_ZERO;
         // Find the diagonal and compute the sum ratio
         for(LO j=0; j<(LO)A_indices_i.size(); j++) {
-          SC a_ik = A_vals_i[j]; 
+          SC a_ik = A_vals_i[j];
           LO k = A_indices_i[j];
           
           // Diagonal
-          if(i == k) { 
+          if(i == k) {
             a_ii = a_ik;
-          }          
+          }
           // Only strong C-neighbors are in the denomintor
           if(myPointType[k] == C_PT && edgeIsStrong[row_start + j]) {
             if(STS::real(a_ik) > MT_ZERO) pos_denominator += a_ik;
             else neg_denominator += a_ik;
-          }  
+          }
           
           // All neighbors are in the numerator
           // NOTE: As per PyAMG, this does not include the diagonal
           if(i != k) {
             if(STS::real(a_ik) > MT_ZERO) pos_numerator += a_ik;
             else neg_numerator += a_ik;
-          }   
+          }
         }
         SC alpha = (neg_denominator == MT_ZERO) ? SC_ZERO : (neg_numerator / neg_denominator);
         SC beta  = (pos_denominator == MT_ZERO) ? SC_ZERO : (pos_numerator / pos_denominator);
-        alpha /= -a_ii;        
+        alpha /= -a_ii;
         beta  /= -a_ii;
 
         // Loop over the entries
-        for(LO p_j=0; p_j<(LO)P_indices_i.size(); p_j++){  
+        for(LO p_j=0; p_j<(LO)P_indices_i.size(); p_j++){
           LO P_col = pcol2cpoint[P_indices_i[p_j]];
           SC a_ij = SC_ZERO;
           
@@ -987,7 +987,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           SC alpha_or_beta = (STS::real(a_ij) < 0 ) ? alpha : beta;
           printf("P(%d,%d/%d) =  - %6.4e  * %6.4e  = %6.4e\n",i,P_indices_i[p_j],pcol2cpoint[P_indices_i[p_j]],alpha_or_beta,a_ij,w_ij);
 #endif
-          P_vals_i[p_j] = w_ij;          
+          P_vals_i[p_j] = w_ij;
         }//end for A_indices_i
       }//end else C_PT
     }//end for Numrows
@@ -1008,7 +1008,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
     /* interpolation for parallel algebraic multigrid", NLAA 2008    */
     /* 15:115-139                                                    */
-    /* ============================================================= */    
+    /* ============================================================= */
     /* Definitions:                                                        */
     /* F = F-points                                                        */
     /* C = C-points                                                        */
@@ -1036,7 +1036,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
     /*         for j in \hat{C}_i                                          */
     
     /* Rewritten Equation (20) on p. 124 [for the lumped diagonal]                                  */
-    /* g_ik = \frac{\bar{a}_ki}{\sum{l\in \hat{C}_i\cup {i}} \bar{a}_kl                             */    
+    /* g_ik = \frac{\bar{a}_ki}{\sum{l\in \hat{C}_i\cup {i}} \bar{a}_kl                             */
     /* \tilde{a}_ii = a_ii + \sum_{n\inN_i^w\setminus \hat{C}_i} a_in + \sum_{k\inF_i^s} a_ik g_ik  */
     TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"ClassicalPFactory: Ext+i not implemented");
 
@@ -1088,7 +1088,7 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
       LO col = G_indices[g_idx];
       while (A_indices[a_idx] != col && a_idx < A_size) a_idx++;
       if(a_idx == A_size) {is_ok=false;break;}
-      edgeIsStrong[rowstart+a_idx] = true;      
+      edgeIsStrong[rowstart+a_idx] = true;
     }
 
     eis_rowptr[i+1] = eis_rowptr[i] + A_size;
@@ -1099,7 +1099,7 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO> myPointType, const RCP<const Map> & coarseMap, RCP<const Map> & coarseColMap) const {  
+GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO> myPointType, const RCP<const Map> & coarseMap, RCP<const Map> & coarseColMap) const {
   const point_type C_PT = ClassicalMapFactory::C_PT;
   const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
   RCP<GlobalOrdinalVector> d_coarseIds = GlobalOrdinalVectorFactory::Build(A.getRowMap());
@@ -1120,7 +1120,7 @@ GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO
   c_coarseIds->doImport(*d_coarseIds,Importer,Xpetra::INSERT);
   
   // If we assume that A is in Aztec ordering, then any subset of A's unknowns will
-  // be in Aztec ordering as well, which means we can just condense these guys down        
+  // be in Aztec ordering as well, which means we can just condense these guys down
   // Overallocate, count and view
   ArrayRCP<GO> c_data = c_coarseIds->getDataNonConst(0);
   
@@ -1144,7 +1144,7 @@ GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO
                                           coarseMap->getIndexBase(),
                                           stridingInfo_,
                                           coarseMap->getComm(),
-                                          domainGIDOffset);        
+                                          domainGIDOffset);
   
 }
 

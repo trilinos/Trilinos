@@ -931,7 +931,7 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
 
   if ( !pList->isParameter("Time Step Control Strategy") ) {
 
-    tsc->setTimeStepControlStrategy();  // i.e, set default Constant timestep strategy.
+    tsc->setTimeStepControlStrategy();  // i.e., set default Constant timestep strategy.
 
   } else {
 

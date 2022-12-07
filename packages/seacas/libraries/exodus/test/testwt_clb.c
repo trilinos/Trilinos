@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -229,7 +229,7 @@ int main(int argc, char **argv)
     elem_map[i - 1] = i;
   }
 
-  EXCHECK(ex_put_map(exoid, elem_map));
+  EXCHECK(ex_put_id_map(exoid, EX_ELEM_MAP, elem_map));
 
   free(elem_map);
 
@@ -344,11 +344,10 @@ int main(int argc, char **argv)
   EXCHECK(ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[6], attrib));
 
   /* write individual node sets */
-
   int nsids[]             = {20, 21};
   int num_nodes_per_set[] = {5, 3};
-  int num_df_per_set[]    = {5, 3};
   {
+    int                 num_df_per_set[] = {5, 3};
     struct ex_set_specs set_specs;
 
     set_specs.sets_ids            = nsids;

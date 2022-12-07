@@ -27,6 +27,8 @@ namespace mini_em {
 
   void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op,Teuchos::RCP<Teuchos::FancyOStream> out);
 
+  void describeAndWriteMatrix(const std::string & s, const Thyra::LinearOpBase<double> & op, Teuchos::RCP<Teuchos::FancyOStream> out, const bool doWrite);
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node=Tpetra::Map<>::node_type>
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > get_Tpetra_CrsMatrix(const Thyra::LinearOpBase<double> & op);
 
@@ -34,5 +36,10 @@ namespace mini_em {
 
   Teuchos::RCP<const Epetra_CrsMatrix> get_Epetra_CrsMatrix(const Thyra::DiagonalLinearOpBase<double> & op, const Epetra_Comm& comm);
 
+  Teko::LinearOp getIdentityMatrix(const Teko::LinearOp& op, double scaling);
+
+  bool isMatrixFreeOperator(const Teko::LinearOp& op);
+
+  Teko::LinearOp getLumpedInverseDiagonal(const Teko::LinearOp& op);
 }
 #endif

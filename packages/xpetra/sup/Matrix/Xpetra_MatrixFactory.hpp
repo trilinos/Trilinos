@@ -55,7 +55,9 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix_fwd.hpp"
 #include "Xpetra_Map.hpp"
+#include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_Vector.hpp"
+#include "Xpetra_BlockedVector.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -285,18 +287,39 @@ namespace Xpetra {
 
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
-      Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);
-      LocalOrdinal                            NumMyElements    = diagonal->getMap()->getLocalNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getLocalElementList();
 
-      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
+      RCP<const BlockedVector> bdiagonal = Teuchos::rcp_dynamic_cast<const BlockedVector>(diagonal);
+      Teuchos::RCP<Matrix> mtx = Teuchos::null;
 
-      for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
-          mtx->insertGlobalValues(MyGlobalElements[i],
-                                  Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-                                  Teuchos::tuple<Scalar>(vals[i]) );
+      if(bdiagonal == Teuchos::null)
+      {
+        Teuchos::ArrayRCP<const Scalar> vals = diagonal->getData(0);
+        LocalOrdinal numMyElements = diagonal->getMap()->getLocalNumElements();
+        Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = diagonal->getMap()->getLocalElementList();
+
+        mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
+
+        for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+          mtx->insertGlobalValues(myGlobalElements[i],
+                                  Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i]),
+                                  Teuchos::tuple<Scalar>(vals[i]));
+        }
+        mtx->fillComplete();
       }
-      mtx->fillComplete();
+      else
+      {
+        RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(bdiagonal->getBlockedMap(), bdiagonal->getBlockedMap(), 1));
+
+        for (size_t r = 0; r < bdiagonal->getBlockedMap()->getNumMaps(); ++r) {
+          if (!bdiagonal->getMultiVector(r).is_null()) {
+            const RCP<MultiVector> subvec = bdiagonal->getMultiVector(r);
+            bop->setMatrix(r, r, Build(subvec->getVector(0)));
+          }
+        }
+        bop->fillComplete();
+        mtx = BuildCopy(bop);
+      }
+
       return mtx;
     }
 

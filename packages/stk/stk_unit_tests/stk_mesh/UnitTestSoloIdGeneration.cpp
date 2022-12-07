@@ -42,65 +42,65 @@
 class SoloSideIdGeneratorTester : public stk::mesh::impl::SoloSideIdGenerator
 {
 public:
-    SoloSideIdGeneratorTester(int numProcs, int proc, uint64_t maxSideId)
-      : SoloSideIdGenerator(numProcs, proc, maxSideId)
-    {}
+  SoloSideIdGeneratorTester(int numProcs, int proc, uint64_t maxSideId)
+    : SoloSideIdGenerator(numProcs, proc, maxSideId)
+  {}
 
-    stk::mesh::EntityId test_get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)
-    {
-        return get_solo_side_id_using_formula(elementId, sideOrdinal);
-    }
+  stk::mesh::EntityId test_get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)
+  {
+    return get_solo_side_id_using_formula(elementId, sideOrdinal);
+  }
 };
 
 TEST( SoloSideIdGenerator, get_solo_side_id_using_formula )
 {
-    const int numProcs = 1;
-    const int myProcId = 0;
-    const uint64_t maxSideId = 100;
-    SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId,  maxSideId);
+  const int numProcs = 1;
+  const int myProcId = 0;
+  const uint64_t maxSideId = 100;
+  SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId,  maxSideId);
 
-    const unsigned maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
-    EXPECT_EQ(17u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 6));
-    EXPECT_EQ(18u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 7));
-    EXPECT_EQ(19u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 8));
-    EXPECT_EQ(20u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 9));
-    EXPECT_EQ(27u, soloSideIdGenerator.test_get_solo_side_id_using_formula(2, 6));
-    EXPECT_NO_THROW(soloSideIdGenerator.test_get_solo_side_id_using_formula(maxPseudoElement,   9));
-    EXPECT_THROW(   soloSideIdGenerator.test_get_solo_side_id_using_formula(maxPseudoElement+1, 6), std::exception);
+  const unsigned maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
+  EXPECT_EQ(17u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 6));
+  EXPECT_EQ(18u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 7));
+  EXPECT_EQ(19u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 8));
+  EXPECT_EQ(20u, soloSideIdGenerator.test_get_solo_side_id_using_formula(1, 9));
+  EXPECT_EQ(27u, soloSideIdGenerator.test_get_solo_side_id_using_formula(2, 6));
+  EXPECT_NO_THROW(soloSideIdGenerator.test_get_solo_side_id_using_formula(maxPseudoElement,   9));
+  EXPECT_THROW(   soloSideIdGenerator.test_get_solo_side_id_using_formula(maxPseudoElement+1, 6), std::exception);
 }
 
 TEST( SoloSideIdGenerator, get_solo_side_id )
 {
-    const int numProcs = 1;
-    const int myProcId = 0;
-    const uint64_t maxSideId = 100;
-    SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId,  maxSideId);
+  const int numProcs = 1;
+  const int myProcId = 0;
+  const uint64_t maxSideId = 100;
+  SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId,  maxSideId);
 
-    EXPECT_EQ(17u, soloSideIdGenerator.get_solo_side_id());
-    EXPECT_EQ(18u, soloSideIdGenerator.get_solo_side_id());
-    EXPECT_EQ(19u, soloSideIdGenerator.get_solo_side_id());
-    EXPECT_EQ(20u, soloSideIdGenerator.get_solo_side_id());
-    EXPECT_EQ(27u, soloSideIdGenerator.get_solo_side_id());
+  EXPECT_EQ(17u, soloSideIdGenerator.get_solo_side_id());
+  EXPECT_EQ(18u, soloSideIdGenerator.get_solo_side_id());
+  EXPECT_EQ(19u, soloSideIdGenerator.get_solo_side_id());
+  EXPECT_EQ(20u, soloSideIdGenerator.get_solo_side_id());
+  EXPECT_EQ(27u, soloSideIdGenerator.get_solo_side_id());
 }
 
 TEST( SoloSideIdGenerator, test_id_space_per_proc )
 {
-    int myProcId = -1;
-    int numProcs = -1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myProcId);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+  int myProcId = -1;
+  int numProcs = -1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myProcId);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    const uint64_t maxSideId = 1000000;
-    SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId, maxSideId);
-    uint64_t maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
+  const uint64_t maxSideId = 1000000;
+  SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId, maxSideId);
+  uint64_t maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
 
-    for(size_t elementIndex = myProcId+1; elementIndex <= maxPseudoElement; elementIndex+=numProcs)
+  for(size_t elementIndex = myProcId+1; elementIndex <= maxPseudoElement; elementIndex+=numProcs)
+  {
+    for(size_t ordinal = 6; ordinal < 10; ordinal++)
     {
-        for(size_t ordinal = 6; ordinal < 10; ordinal++)
-        {
-            EXPECT_EQ(soloSideIdGenerator.get_solo_side_id(), soloSideIdGenerator.test_get_solo_side_id_using_formula(elementIndex, ordinal));
-        }
+      EXPECT_EQ(soloSideIdGenerator.get_solo_side_id(), soloSideIdGenerator.test_get_solo_side_id_using_formula(elementIndex, ordinal));
     }
+  }
 
-    EXPECT_THROW(soloSideIdGenerator.get_solo_side_id(), std::exception);
+  EXPECT_THROW(soloSideIdGenerator.get_solo_side_id(), std::exception);
 }

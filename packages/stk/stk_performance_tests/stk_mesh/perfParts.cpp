@@ -7,50 +7,50 @@
 namespace
 {
 
-class GetPartsByNamePerformance : public stk::unit_test_util::PerformanceTester
+class GetPartsByNamePerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    GetPartsByNamePerformance(stk::mesh::BulkData &bulk) :
-            stk::unit_test_util::PerformanceTester(bulk.parallel()),
-            bulkData(bulk)
-    {
-    }
+  GetPartsByNamePerformance(stk::mesh::BulkData &bulk)
+    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      bulkData(bulk)
+  {
+  }
 
 protected:
-    virtual void run_algorithm_to_time()
+  virtual void run_algorithm_to_time()
+  {
+    const unsigned numParts = 1e6;
+    for(unsigned i=0; i<numParts; i++)
     {
-        const unsigned numParts = 1e6;
-        for(unsigned i=0; i<numParts; i++)
-        {
-            const std::string name = "part_" + sierra::to_string(i);
-            bulkData.mesh_meta_data().declare_part(name);
-            const stk::mesh::Part *part = bulkData.mesh_meta_data().get_part(name);
-            EXPECT_TRUE(part != nullptr);
-        }
+      const std::string name = "part_" + sierra::to_string(i);
+      bulkData.mesh_meta_data().declare_part(name);
+      const stk::mesh::Part *part = bulkData.mesh_meta_data().get_part(name);
+      EXPECT_TRUE(part != nullptr);
     }
-    virtual size_t get_value_to_output_as_iteration_count()
-    {
-        return bulkData.mesh_meta_data().get_parts().size();
-    }
+  }
+  virtual size_t get_value_to_output_as_iteration_count()
+  {
+    return bulkData.mesh_meta_data().get_parts().size();
+  }
 
-    stk::mesh::BulkData &bulkData;
+  stk::mesh::BulkData &bulkData;
 };
 
-class GetPartsByName : public stk::unit_test_util::MeshFixture
+class GetPartsByName : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-    void run_get_parts_perf_test()
-    {
-        GetPartsByNamePerformance perfTester(get_bulk());
-        perfTester.run_performance_test();
-    }
+  void run_get_parts_perf_test()
+  {
+    GetPartsByNamePerformance perfTester(get_bulk());
+    perfTester.run_performance_test();
+  }
 };
 
 TEST_F(GetPartsByName, test_get_parts)
 {
 
-    setup_mesh("generated:1x1x16", stk::mesh::BulkData::AUTO_AURA);
-    run_get_parts_perf_test();
+  setup_mesh("generated:1x1x16", stk::mesh::BulkData::AUTO_AURA);
+  run_get_parts_perf_test();
 }
 
 }

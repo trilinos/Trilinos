@@ -639,10 +639,10 @@ namespace {
     } else if(rank == 1) {
       //TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(6,6));
       //TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(6,6));
-      ArrayView<ADAPT::scalar_t>          nzvals_array (&(nzvals(6)), 6);
-      ArrayView<ADAPT::global_ordinal_t>  colind_array (&(colind(6)), 6);
-      TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(0,6));
-      TEST_COMPARE_ARRAYS(colind_array, colind_test.view(0,6));
+      ArrayView<ADAPT::scalar_t>          nzvals_array (&(nzvals(0)), 6);
+      ArrayView<ADAPT::global_ordinal_t>  colind_array (&(colind(0)), 6);
+      TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(6,6));
+      TEST_COMPARE_ARRAYS(colind_array, colind_test.view(6,6));
       for(int i = 0; i < 4; i++) {
         TEST_EQUALITY_CONST(rowptr(i), rowptr_test[3 + i] - rowptr_test[3]);
       }

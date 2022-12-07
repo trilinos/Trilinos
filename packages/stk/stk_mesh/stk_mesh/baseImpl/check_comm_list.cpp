@@ -41,21 +41,26 @@ void pack_key_and_ghost_id(EntityKey key, unsigned ghost_id, int proc, stk::Comm
     buf.pack<unsigned>(ghost_id);
 }
 
-void pack_key_and_ghost_ids(EntityKey key, bool locally_owned, const EntityCommInfoVector& commvec, stk::CommSparse& comm)
+void pack_key_and_ghost_ids(EntityKey key, bool locally_owned, PairIterEntityComm commInfo,
+                            stk::CommSparse& comm)
 {
-    for(const EntityCommInfo& ec : commvec) {
-        const bool needToSend = locally_owned || (ec.ghost_id == 0);
+    for(; !commInfo.empty(); ++commInfo) {
+        const bool needToSend = locally_owned || (commInfo->ghost_id == 0);
         if (needToSend) {
-            pack_key_and_ghost_id(key, ec.ghost_id, ec.proc, comm);
+            pack_key_and_ghost_id(key, commInfo->ghost_id, commInfo->proc, comm);
         }
     }
 }
 
 void pack_send_data(const stk::mesh::BulkData& mesh, int local_proc,
+                    const EntityCommDatabase& commDB,
                     const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        pack_key_and_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==local_proc, commInfo.entity_comm->comm_map, comm);
+        ThrowAssert(commInfo.entity_comm != -1);
+        ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
+        pack_key_and_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==local_proc,
+                               commDB.comm(commInfo.entity_comm), comm);
     }
 }
 
@@ -65,20 +70,29 @@ void push_back_key_proc_ghost_id(EntityKey key, int proc, unsigned ghost_id, std
     data_vec.push_back(data);
 }
 
-void push_back_key_procs_ghost_ids(EntityKey key, bool locally_owned, const EntityCommInfoVector& commvec, std::vector<KeyProcGhostId>& key_proc_ghostid_vec)
+void push_back_key_procs_ghost_ids(EntityKey key, bool locally_owned,
+                                   PairIterEntityComm commInfo,
+                                   std::vector<KeyProcGhostId>& key_proc_ghostid_vec)
 {
-    for(const EntityCommInfo& ec : commvec) {
-        const bool expectToRecv = !locally_owned || (ec.ghost_id == 0);
+    for(; !commInfo.empty(); ++commInfo) {
+        const bool expectToRecv = !locally_owned || (commInfo->ghost_id == 0);
         if (expectToRecv) {
-            push_back_key_proc_ghost_id(key, ec.proc, ec.ghost_id, key_proc_ghostid_vec);
+            push_back_key_proc_ghost_id(key, commInfo->proc, commInfo->ghost_id, key_proc_ghostid_vec);
         }
     }
 }
 
-void fill_expected_recv_data(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::vector<KeyProcGhostId>& recv_data)
+void fill_expected_recv_data(const stk::mesh::BulkData& mesh,
+                             const EntityCommDatabase& commDB,
+                             const EntityCommListInfoVector& comm_list,
+                             std::vector<KeyProcGhostId>& recv_data)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        push_back_key_procs_ghost_ids(commInfo.key, mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(), commInfo.entity_comm->comm_map, recv_data);
+        ThrowAssert(commInfo.entity_comm != -1);
+        ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
+        push_back_key_procs_ghost_ids(commInfo.key,
+                                      mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(),
+                                      commDB.comm(commInfo.entity_comm), recv_data);
     }
     stk::util::sort_and_unique(recv_data);
 }
@@ -113,10 +127,11 @@ void check_for_expected_recv_data_that_failed_to_arrive(const std::vector<KeyPro
 }
 
 void pack_and_send_comm_list_data(const stk::mesh::BulkData& mesh,
+                                  const EntityCommDatabase& commDB,
                                   const EntityCommListInfoVector& comm_list, stk::CommSparse& comm)
 {
     for(int phase=0; phase<2; ++phase) {
-        pack_send_data(mesh, mesh.parallel_rank(), comm_list, comm);
+        pack_send_data(mesh, mesh.parallel_rank(), commDB, comm_list, comm);
 
         if (phase==0) {
             comm.allocate_buffers();
@@ -139,10 +154,12 @@ void unpack_and_check_recvd_data(stk::CommSparse& comm, int local_proc, int num_
     }
 }
 
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list)
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
+                                      const EntityCommDatabase& commDB,
+                                      const EntityCommListInfoVector& comm_list)
 {
     std::ostringstream os;
-    bool result = is_comm_list_globally_consistent(mesh, comm_list, os);
+    bool result = is_comm_list_globally_consistent(mesh, commDB, comm_list, os);
 
     std::string str = os.str();
     if (!str.empty()) {
@@ -152,16 +169,19 @@ bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const Ent
     return result;
 }
 
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const EntityCommListInfoVector& comm_list, std::ostream& error_msg)
+bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
+                                      const EntityCommDatabase& commDB,
+                                      const EntityCommListInfoVector& comm_list,
+                                      std::ostream& error_msg)
 {
     int local_proc = mesh.parallel_rank();
     int num_procs = mesh.parallel_size();
 
     std::vector<KeyProcGhostId> expected_recv_data;
-    fill_expected_recv_data(mesh, comm_list, expected_recv_data);
-  
+    fill_expected_recv_data(mesh, commDB, comm_list, expected_recv_data);
+
     stk::CommSparse comm(mesh.parallel());
-    pack_and_send_comm_list_data(mesh, comm_list, comm);
+    pack_and_send_comm_list_data(mesh, commDB, comm_list, comm);
 
     std::ostringstream os;
     unpack_and_check_recvd_data(comm, local_proc, num_procs, expected_recv_data, os);

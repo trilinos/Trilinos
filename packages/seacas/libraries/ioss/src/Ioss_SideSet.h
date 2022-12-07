@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include "Ioss_EntityType.h"     // for EntityType, etc
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
@@ -23,7 +25,7 @@ namespace Ioss {
 
   /** \brief A collection of element sides.
    */
-  class SideSet : public GroupingEntity
+  class IOSS_EXPORT SideSet : public GroupingEntity
   {
   public:
     SideSet(DatabaseIO *io_database, const std::string &my_name);

@@ -538,7 +538,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 
   // this class comes from Mini-PIC and Matt B
   RCP<panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal> > faceToElement = rcp(new panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal>());
-  faceToElement->initialize(conn);
+  faceToElement->initialize(conn, comm);
   auto elems_by_face = faceToElement->getFaceToElementsMap();
   auto face_to_lidx  = faceToElement->getFaceToCellLocalIdxMap();
 

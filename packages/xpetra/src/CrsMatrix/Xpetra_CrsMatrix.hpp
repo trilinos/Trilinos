@@ -326,12 +326,6 @@ namespace Xpetra {
     using local_matrix_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
 						      typename local_graph_type::size_type>;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Access the underlying local KokkosSparse::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const {
-      return getLocalMatrixDevice();
-    }
-#endif
     virtual local_matrix_type getLocalMatrixDevice () const = 0;
     virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 
@@ -358,32 +352,14 @@ namespace Xpetra {
     //! Does this have an underlying matrix
     virtual bool hasMatrix() const = 0;
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    virtual LocalOrdinal GetStorageBlockSize() const = 0;
+
     //! Compute a residual R = B - (*this) * X
     virtual void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                           const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                           MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const = 0;
 
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumCols() const {
-      return getLocalNumCols();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-#endif
 
   }; // CrsMatrix class
 

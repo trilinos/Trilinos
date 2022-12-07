@@ -73,7 +73,7 @@ class SideFinder
 {
 public:
   SideFinder(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
-   : m_bulk(bulkData), m_elem(element)
+    : m_bulk(bulkData), m_elem(element)
   {
     const unsigned numNodes = m_bulk.num_nodes(m_elem);
     if (numNodes > MAX_NUM_NODES) {
@@ -123,8 +123,8 @@ private:
 };
 
 std::pair<stk::mesh::EntityVector,bool> get_pairwise_common_nodes(const stk::mesh::BulkData& bulk,
-                                         stk::mesh::Entity elem1,
-                                         stk::mesh::Entity elem2)
+                                                                  stk::mesh::Entity elem1,
+                                                                  stk::mesh::Entity elem2)
 {
   std::pair<stk::mesh::EntityVector,bool> result;
   stk::mesh::EntityVector& commonNodes = result.first;
@@ -157,15 +157,15 @@ std::pair<stk::mesh::EntityVector,bool> get_pairwise_common_nodes(const stk::mes
 
 stk::mesh::EntityVector get_common_elements(const stk::mesh::BulkData& bulk, stk::mesh::Entity node1, stk::mesh::Entity node2)
 {
-    stk::mesh::EntityVector commonElements;
-    stk::mesh::EntityVector node1Elems(bulk.begin_elements(node1), bulk.begin_elements(node1)+bulk.num_elements(node1));
-    stk::mesh::EntityVector node2Elems(bulk.begin_elements(node2), bulk.begin_elements(node2)+bulk.num_elements(node2));
+  stk::mesh::EntityVector commonElements;
+  stk::mesh::EntityVector node1Elems(bulk.begin_elements(node1), bulk.begin_elements(node1)+bulk.num_elements(node1));
+  stk::mesh::EntityVector node2Elems(bulk.begin_elements(node2), bulk.begin_elements(node2)+bulk.num_elements(node2));
 
-    std::sort(node1Elems.begin(), node1Elems.end());
-    std::sort(node2Elems.begin(), node2Elems.end());
-    std::set_intersection(node1Elems.begin(), node1Elems.end(),
-                          node2Elems.begin(), node2Elems.end(),
-                          std::back_inserter(commonElements));
+  std::sort(node1Elems.begin(), node1Elems.end());
+  std::sort(node2Elems.begin(), node2Elems.end());
+  std::set_intersection(node1Elems.begin(), node1Elems.end(),
+                        node2Elems.begin(), node2Elems.end(),
+                        std::back_inserter(commonElements));
 
   return commonElements;
 }
@@ -174,11 +174,11 @@ stk::mesh::EntityVector get_common_elements(const stk::mesh::BulkData& bulk, stk
 void populate_pairwise_side_info(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem1,
                                  stk::mesh::Entity elem2, PairwiseSideInfoVector& infoVec)
 {
-    infoVec.emplace_back(bulk, elem1, elem2);
+  infoVec.emplace_back(bulk, elem1, elem2);
 
-    if(infoVec.back().get_common_nodes().empty()) {
-      infoVec.pop_back();
-    }
+  if(infoVec.back().get_common_nodes().empty()) {
+    infoVec.pop_back();
+  }
 }
 
 void fill_common_nodes_for_connected_elems(const stk::mesh::BulkData& bulk, stk::mesh::Entity node,
@@ -301,10 +301,47 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
   return hingeNodes;
 }
 
+stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocks)
+{
+  stk::mesh::EntityVector nodes;
+  stk::mesh::Selector selector;
+
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::PartVector parts;
+  for(const auto& block : blocks) {
+    stk::mesh::Part* part = meta.get_part(block);
+    if(nullptr != part &&
+       part->primary_entity_rank() == stk::topology::ELEM_RANK &&
+       part->id() != stk::mesh::Part::INVALID_ID) {
+      parts.push_back(part);
+    }
+
+    selector = stk::mesh::selectUnion(parts);
+  }
+
+  if(parts.empty()) {
+    selector = meta.universal_part();
+  }
+
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes);
+
+  return nodes;
+}
+
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
 {
   stk::mesh::EntityVector nodes;
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
+
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
+
+  return hingeNodes;
+}
+
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect)
+{
+  stk::mesh::EntityVector nodes = get_mesh_nodes(bulk, blocksToDetect);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
@@ -399,9 +436,26 @@ void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNo
   }
 }
 
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
+{
+  std::vector<std::string> blocksToDetect;
+  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes);
+}
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes)
+{
+  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
+}
+
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
 {
-  hingeNodes = get_hinge_nodes(bulk);
+  std::vector<std::string> blocksToDetect;
+  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes, hingeEdges);
+}
+
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
+{
+  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
 
   if(hingeNodes.size() != 0) {
     hingeEdges = get_hinge_edges(bulk, hingeNodes);
@@ -451,7 +505,7 @@ std::pair<unsigned, unsigned> get_hinge_count(const stk::mesh::BulkData& bulk)
   }
   for(const HingeEdge& edge : hingeEdges) {
     if(hinge_edge_is_locally_owned(bulk, edge)) {
-       localHingeCount[1]++;
+      localHingeCount[1]++;
     }
   }
 
@@ -612,8 +666,8 @@ void print_pairwise_side_info(const stk::mesh::BulkData& bulk, const PairwiseSid
 {
   for(const PairwiseSideInfo& info : infoVec) {
     os << indent(indentLevel)
-        << "Element pair: {" << bulk.identifier(info.get_element1()) << ", " << bulk.identifier(info.get_element2()) << "}  "
-        << "Is adjacent: " << info.is_adjacent() << std::endl;
+       << "Element pair: {" << bulk.identifier(info.get_element1()) << ", " << bulk.identifier(info.get_element2()) << "}  "
+       << "Is adjacent: " << info.is_adjacent() << std::endl;
   }
 }
 
@@ -759,14 +813,14 @@ void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh:
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
   // prune_cyclic_hinge_nodes(bulk, hingeNodes);
   prune_hinge_nodes(bulk, hingeNodes, preservedHingeNodes);
-  snip_all_hinges(bulk, hingeNodes); 
+  snip_all_hinges(bulk, hingeNodes);
 }
 
 void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk)
 {
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk);
   // prune_cyclic_hinge_nodes(bulk, hingeNodes);
-  snip_all_hinges(bulk, hingeNodes); 
+  snip_all_hinges(bulk, hingeNodes);
 }
 
 } } }

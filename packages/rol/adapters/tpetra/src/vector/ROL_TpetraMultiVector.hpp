@@ -139,7 +139,7 @@ namespace TPMultiVector {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void join(volatile Real &globalVal, const volatile Real &localVal) const {
+    void join(Real &globalVal, const Real &localVal) const {
       r_->reduce(localVal,globalVal);
     }
 

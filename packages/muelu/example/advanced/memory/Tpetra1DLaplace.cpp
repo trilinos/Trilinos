@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   bool success = false;
   bool verbose = true;
   try {
-    typedef double                                  Scalar;
+    typedef Tpetra::CrsMatrix<>::scalar_type        Scalar;
     typedef Tpetra::Map<>::local_ordinal_type       LO;
 #if defined(HAVE_TPETRA_INST_INT_INT)
     // mfh 07 Aug 2015: Prefer GO = int, for consistency with Epetra,

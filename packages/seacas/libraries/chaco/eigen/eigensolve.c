@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,17 +19,17 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
                 int               nedges,       /* number of edges in graph */
                 double            maxdeg,       /* largest (weighted) degree of a vertex */
                 int               vwgt_max,     /* largest vertex weight */
-                double *          vwsqrt,       /* sqrt of vertex weights (length nvtxs+1) */
+                double           *vwsqrt,       /* sqrt of vertex weights (length nvtxs+1) */
                 int               using_vwgts,  /* are vertex weights being used? */
                 int               using_ewgts,  /* are edge weights being used? */
-                float *           term_wgts[],  /* terminal propagation weight vector */
+                float            *term_wgts[],  /* terminal propagation weight vector */
                 int               igeom,        /* geometric dimensionality if given coords */
-                float **          coords,       /* coordinates of vertices */
-                double **         yvecs,        /* space for pointing to eigenvectors */
-                double *          evals,        /* eigenvalues associated with eigenvectors */
+                float           **coords,       /* coordinates of vertices */
+                double          **yvecs,        /* space for pointing to eigenvectors */
+                double           *evals,        /* eigenvalues associated with eigenvectors */
                 int               architecture, /* 0 => hypercube, d => d-dimensional mesh */
-                int *             assignment,   /* set number of each vtx (length n+1) */
-                double *          goal,         /* desired set sizes */
+                int              *assignment,   /* set number of each vtx (length n+1) */
+                double           *goal,         /* desired set sizes */
                 int               solver_flag,  /* flag indicating which solver to use */
                 int               rqi_flag,     /* use multi-level techniques? */
                 int               vmax,         /* if so, how many vtxs to coarsen down to? */
@@ -55,15 +55,15 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
   extern int    EXPERT;                   /* user type */
   double        bound[MAXDIMS + 1];       /* ritz approx bounds to eigenpairs */
   double        time;                     /* time marker */
-  float *       dummy_twgt[2];            /* turns off terminal propagation */
-  float *       twptr;                    /* terminal propagation weight vector */
-  int *         active;                   /* space for nvtxs values */
+  float        *dummy_twgt[2];            /* turns off terminal propagation */
+  float        *twptr;                    /* terminal propagation weight vector */
+  int          *active;                   /* space for nvtxs values */
   int           step;                     /* current step in RQI counting */
   int           nstep;                    /* number of uncoarsening levels between RQIs */
   int           version;                  /* which version of sel. orth. to use */
   int           nsets = 0;                /* number of sets to divide into */
-  double *      g;                        /* rhs n-vector in the extended eigenproblem */
-  double *      ptr;                      /* loops through yvec */
+  double       *g;                        /* rhs n-vector in the extended eigenproblem */
+  double       *ptr;                      /* loops through yvec */
   double        w1, w2;                   /* desired weights of two sets */
   double        term_tot;                 /* sum of terminal weights */
   double        sigma;                    /* norm constraint on extended eigenvector */
@@ -74,9 +74,9 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
   int           autoset_srestol;          /* set SRESTOL automatically? */
   double        prev_srestol = 0;         /* SRESTOL value above this routine */
 
-  double seconds();
+  double seconds(void);
   void   coarsen(), lanczos_FO(), lanczos_SO(), vecout(), vecnorm();
-  void   lanczos_SO_float(), strout();
+  void   lanczos_SO_float(), strout(char *msg);
   void   perturb_init(), perturb_clear(), x2y(), y2x();
   int    lanczos_ext(), lanczos_ext_float();
 

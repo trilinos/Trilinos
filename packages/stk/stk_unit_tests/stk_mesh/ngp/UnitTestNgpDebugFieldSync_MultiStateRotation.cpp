@@ -43,7 +43,7 @@ public:
   template <typename T>
   stk::mesh::Field<T>& get_initialized_field_state(const std::string& fieldName, const stk::mesh::FieldState& state)
   {
-    stk::mesh::Field<T>& stkMultiStateField = *static_cast<stk::mesh::Field<T>*>(get_meta().get_field(stk::topology::ELEM_RANK, fieldName));
+    stk::mesh::Field<T>& stkMultiStateField = *get_meta().get_field<T>(stk::topology::ELEM_RANK, fieldName);
     stk::mesh::Field<T>& stkField = stkMultiStateField.field_of_state(state);
     fill_initial_field<T>(stkField);
     initialize_ngp_field<T>(stkField);
@@ -65,6 +65,7 @@ public:
 TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_HappyPath)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -90,6 +91,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_HappyPath)
 TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_noSync_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -115,6 +117,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_noSync_Warning)
 TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_SyncStateOld_WarningForStateNew)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -140,6 +143,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_SyncStateOld_WarningFo
 TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_noSyncToHostMarkModified_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -167,6 +171,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_noSyncToHostMarkModifi
 TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_MeshMod_HappyPath)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -195,6 +200,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, HostToDevice_MeshMod_HappyPath)
 TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_HappyPath)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -220,6 +226,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_HappyPath)
 TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_noModifyOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -247,6 +254,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_noModifyOnDevice_Warni
 TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_ModifyOnDeviceStateNew_WarnForStateOld)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});
@@ -272,6 +280,7 @@ TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_ModifyOnDeviceStateNew
 TEST_F(NgpDebugFieldSync_MultiStateRotation, DeviceToHost_noSyncToHostMarkModified_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   unsigned numStates = 2;
   declare_scalar_field<double>("doubleScalarField", {"Part1"}, numStates);
   build_mesh({{"Part1", 2}});

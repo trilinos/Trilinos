@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -25,7 +25,7 @@ public:
   int Check_State() const;
 
 private:
-  Face_Block(const Face_Block &) = delete;                  // Not written.
+  Face_Block(const Face_Block &)                  = delete; // Not written.
   const Face_Block &operator=(const Face_Block &) = delete; // Not written.
 
   void entity_load_params() override;
@@ -34,7 +34,7 @@ private:
   const char *label() const override { return "Faceblock"; }
   const char *short_label() const override { return "faceblock"; }
 
-  std::string elmt_type;
+  std::string elmt_type{};
   int         num_faces_per_elmt{-1};
 
   friend class ExoII_Read<INT>;

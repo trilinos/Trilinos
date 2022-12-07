@@ -62,7 +62,8 @@ InputMesh::InputMesh(stk::io::StkMeshIoBroker& ioBroker,
   : m_ioBroker(ioBroker),
     m_bulk(ioBroker.bulk_data()),
     m_meta(ioBroker.bulk_data().mesh_meta_data()),
-    m_balanceSettings(balanceSettings)
+    m_balanceSettings(balanceSettings),
+    m_decomp(ioBroker.bulk_data())
 {
   m_decomposer = make_decomposer(m_bulk, balanceSettings);
 
@@ -110,14 +111,74 @@ InputMesh::compute_owner_for_each_output_subdomain()
   m_ownerForEachFinalSubdomain = m_decomposer->map_new_subdomains_to_original_processors();
 }
 
+bool
+InputMesh::is_connected_to_element(stk::mesh::Entity entity)
+{
+  unsigned numElements = m_bulk.num_elements(entity);
+  const stk::mesh::Entity *elems = m_bulk.begin_elements(entity);
+  for (unsigned i = 0; i < numElements; ++i) {
+    if (m_bulk.bucket(elems[i]).owned()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+stk::mesh::EntityVector
+InputMesh::get_all_orphans()
+{
+  stk::mesh::EntityVector orphanedEntities;
+
+  for (stk::mesh::EntityRank rank : {stk::topology::FACE_RANK, stk::topology::EDGE_RANK, stk::topology::NODE_RANK}) {
+    for (const stk::mesh::Bucket* bucket : m_bulk.buckets(rank)) {
+      if (bucket->owned()) {
+        for (stk::mesh::Entity entity : *bucket) {
+          if (not is_connected_to_element(entity)) {
+            orphanedEntities.push_back(entity);
+          }
+        }
+      }
+    }
+  }
+
+  return orphanedEntities;
+}
+
 void
 InputMesh::move_elements_into_output_subdomain_parts()
 {
-  m_bulk.modification_begin();
-  for (const stk::mesh::EntityProc & entityProc : m_decomp) {
-    m_bulk.change_entity_parts(entityProc.first, stk::mesh::PartVector{m_subdomainParts[entityProc.second]});
+  std::map<stk::mesh::Entity, int> finalOwner;
+
+  const stk::mesh::BucketVector & ownedElementBuckets = m_bulk.get_buckets(stk::topology::ELEM_RANK,
+                                                                           m_bulk.mesh_meta_data().locally_owned_part());
+  for (const stk::mesh::Bucket * bucket : ownedElementBuckets) {
+    for (const stk::mesh::Entity & elem : *bucket) {
+      finalOwner[elem] = m_bulk.parallel_owner_rank(elem);
+    }
   }
-  m_bulk.modification_end();
+
+  const stk::mesh::EntityProcVec newDecomp = m_decomp.get_decomposition();
+  for (const stk::mesh::EntityProc & entityProc : newDecomp) {
+    finalOwner[entityProc.first] = entityProc.second;
+  }
+
+  const stk::mesh::EntityVector orphanedEntities = get_all_orphans();
+  for (const stk::mesh::Entity & entity : orphanedEntities) {
+    finalOwner[entity] = 0;
+  }
+
+  stk::mesh::EntityVector entities(finalOwner.size());
+  std::vector<stk::mesh::PartVector> addParts(finalOwner.size(), stk::mesh::PartVector{nullptr});
+  std::vector<stk::mesh::PartVector> removeParts(finalOwner.size());
+
+  unsigned entityIdx = 0;
+  for (const auto & entityProc : finalOwner) {
+    entities[entityIdx] = entityProc.first;
+    addParts[entityIdx][0] = m_subdomainParts[entityProc.second];
+    ++entityIdx;
+  }
+
+  m_bulk.batch_change_entity_parts(entities, addParts, removeParts);
 }
 
 void

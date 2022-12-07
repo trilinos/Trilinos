@@ -47,34 +47,35 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //-BEGIN
-  TEST(StkMeshHowTo, CreateFacesHex)
-  {
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkIo(communicator);
+TEST(StkMeshHowTo, CreateFacesHex)
+{
+  // ============================================================
+  // INITIALIZATION
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
 
-    const std::string generatedFileName = "generated:8x8x8";
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
+  const std::string generatedFileName = "generated:8x8x8";
+  stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
 
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the faces..
-    stk::mesh::create_faces(stkIo.bulk_data());
+  // ============================================================
+  //+ EXAMPLE
+  //+ Create the faces..
+  stk::mesh::create_faces(stkIo.bulk_data());
 
-    // ==================================================
-    // VERIFICATION
-    stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
-    EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
+  // ==================================================
+  // VERIFICATION
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
+  EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
 
-    // Edges are not generated, only faces.
-    EXPECT_EQ(0u,   entityCounts[stk::topology::EDGE_RANK]);
-  }
+  // Edges are not generated, only faces.
+  EXPECT_EQ(0u,   entityCounts[stk::topology::EDGE_RANK]);
+}
 //-END
 }

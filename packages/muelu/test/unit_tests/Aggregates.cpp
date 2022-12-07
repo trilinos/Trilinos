@@ -1368,7 +1368,7 @@ public:
 
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(false));
-    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     level.Request("Graph",dropFact.get());
@@ -1402,7 +1402,7 @@ public:
     amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(true));
-    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     level.Request("Graph",dropFact.get());
 

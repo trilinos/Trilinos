@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,11 +14,11 @@ static void reflect_params();
 void reflect_input(int    nvtxs,         /* number of vertices in graph */
                    int    nedges,        /* number of edges in graph */
                    int    igeom,         /* geometric dimension for inertial method */
-                   char * graphname,     /* name of graph input file */
-                   char * geomname,      /* name of geometry input file */
-                   char * inassignname,  /* name of assignment input file */
-                   char * outassignname, /* name of assignment output file */
-                   char * outfilename,   /* name of information output file */
+                   char  *graphname,     /* name of graph input file */
+                   char  *geomname,      /* name of geometry input file */
+                   char  *inassignname,  /* name of assignment input file */
+                   char  *outassignname, /* name of assignment output file */
+                   char  *outfilename,   /* name of information output file */
                    int    architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
                    int    ndims_tot,     /* total number of cuts to make */
                    int    mesh_dims[3],  /* size of mesh */
@@ -29,14 +29,14 @@ void reflect_input(int    nvtxs,         /* number of vertices in graph */
                    int    ndims,         /* partitioning level */
                    double eigtol,        /* tolerance on eigenvectors */
                    long   seed,          /* random number seed */
-                   FILE * outfile)        /* file to write output to */
+                   FILE  *outfile)        /* file to write output to */
 {
   extern int DEBUG_TRACE;    /* trace main execution path? */
   extern int ECHO;           /* copy input parameters back to screen? */
   extern int OUT_ASSIGN_INV; /* assignment output in inverted format? */
   extern int IN_ASSIGN_INV;  /* assignment input in inverted format? */
   extern int PRINT_HEADERS;  /* print section headers for output */
-  FILE *     tempfile;       /* file or stdout */
+  FILE      *tempfile;       /* file or stdout */
   int        i;              /* loop counter */
 
   if (DEBUG_TRACE > 0) {
@@ -262,7 +262,7 @@ static void reflect_params(FILE *tempfile,      /* file or stdout */
 
   extern int EXPERT; /* Expert user? */
 
-  char *true_or_false();
+  char *true_or_false(int flag);
 
   fprintf(tempfile, "Active Parameters:\n");
 

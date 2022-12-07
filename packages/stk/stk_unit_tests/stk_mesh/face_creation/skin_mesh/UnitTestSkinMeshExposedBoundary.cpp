@@ -4,6 +4,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
 #include "UnitTestSkinMeshUseCaseUtils.hpp"  // for get_skin_parts, etc
@@ -11,39 +12,32 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 
-
-
-
-
-
-
-
-
-
 namespace {
 
 using namespace stk::mesh::impl;
 using namespace stk::mesh;
 
-
 TEST(ElementGraph, skin_exposed_boundary)
 {
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-     if(stk::parallel_machine_size(comm) <= 2)
-     {
-         unsigned spatialDim = 3;
+  if(stk::parallel_machine_size(comm) <= 2)
+  {
+    unsigned spatialDim = 3;
 
-         stk::mesh::MetaData meta(spatialDim);
-         stk::mesh::BulkData bulkData(meta, comm);
-         make_2_hex_mesh_with_element1_inactive(bulkData);
-         stk::mesh::PartVector skin_parts = get_skin_parts(meta);
-         ElemGraphTestUtils::skin_boundary(bulkData, *meta.get_part("active"), skin_parts);
-         ElemGraphTestUtils::test_num_faces_per_element(bulkData, {5u, 0u});
-         std::vector<size_t> global_mesh_counts;
-         stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
-         EXPECT_EQ(5u, global_mesh_counts[meta.side_rank()]);
-     }
+    stk::mesh::MeshBuilder builder(comm);
+    builder.set_spatial_dimension(spatialDim);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    make_2_hex_mesh_with_element1_inactive(*bulkPtr);
+    stk::mesh::PartVector skin_parts = get_skin_parts(meta);
+    ElemGraphTestUtils::skin_boundary(*bulkPtr, *meta.get_part("active"), skin_parts);
+    ElemGraphTestUtils::test_num_faces_per_element(*bulkPtr, {5u, 0u});
+    std::vector<size_t> global_mesh_counts;
+    stk::mesh::comm_mesh_counts(*bulkPtr, global_mesh_counts);
+    EXPECT_EQ(5u, global_mesh_counts[meta.side_rank()]);
+  }
 }
 
 

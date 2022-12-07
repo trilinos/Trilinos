@@ -30,7 +30,7 @@ std::string ImagesetOperationThreshold2 = R"(
       begin imageset fooImageset
         camera = singletestcamera
         threshold = vector magnitude displ keep between 0.003 0.008
-        image size = 800 450 
+        image size = 800 450
       end imageset
     end
     )";
@@ -43,7 +43,7 @@ std::string ImagesetOperationThreshold3 = R"(
       begin imageset fooImageset
         camera = singletestcamera
         threshold = vector component displ_x keep between 0.003 0.008
-        image size = 800 450 
+        image size = 800 450
       end imageset
     end
     )";
@@ -55,7 +55,7 @@ std::string ImagesetOperationThreshold4 = R"(
       end
       begin imageset fooImageset
         camera = singletestcamera
-        threshold = tensor component stress_xy keep between 1.0 1.7 
+        threshold = tensor component stress_xy keep between 1.0 1.7
         image size = 800 450
       end imageset
     end
@@ -94,7 +94,7 @@ std::string ImagesetOperationBoxClip1 = R"(
       end
       begin imageset fooImageset
         camera = singletestcamera
-        boxclip = center 4 1 -0.61 extents 6 1.5 2 keep inside 
+        boxclip = center 4 1 -0.61 extents 6 1.5 2 keep inside
         image size = 800 450
       end imageset
     end

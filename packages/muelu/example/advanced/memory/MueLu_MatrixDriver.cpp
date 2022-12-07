@@ -63,6 +63,8 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
+#include <MueLu_Details_DefaultTypes.hpp>
+
 #ifdef _MSC_VER
 #define NOMINMAX
 #include <windows.h> // for Sleep
@@ -83,7 +85,7 @@ int main(int argc, char** argv)
 
   typedef typename Tpetra::Map<>::local_ordinal_type    LO; // LocalOrdinal
   typedef typename Tpetra::Map<>::global_ordinal_type   GO; // GlobalOrdinal
-  typedef double                                        SC;
+  typedef MueLu::DefaultScalar                                 SC;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

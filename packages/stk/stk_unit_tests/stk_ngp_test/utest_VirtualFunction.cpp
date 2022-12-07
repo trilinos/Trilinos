@@ -110,6 +110,7 @@ void testSimpleFunction()
   Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
+  Kokkos::kokkos_free(devicePointer);
 }
 
 TEST(PlacementNew, simple)
@@ -127,6 +128,7 @@ void testVirtualFunction()
   Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
+  Kokkos::kokkos_free(devicePointer);
 }
 
 TEST(PlacementNew, Virtual)
@@ -148,6 +150,7 @@ void testVirtualFunctionWithCopyConstructor()
   Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
+  Kokkos::kokkos_free(devicePointer);
 }
 
 TEST(PlacementNew, VirtualCopy)

@@ -2,10 +2,8 @@
 #define UNITTESTUTILS_OPTIONS_PARSING
 
 #include <sstream>
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <string>
-
-extern int gl_argc;
-extern char** gl_argv;
 
 namespace stk
 {
@@ -14,38 +12,33 @@ namespace unit_test_util
 
 inline bool has_option(const std::string& option)
 {
-    if ( gl_argv != 0 )
-    {
-        for (int i=0;i<gl_argc;i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if ( option == input_argv )
-            {
-              return true;
-            }
-        }
+  stk::unit_test_util::GlobalCommandLineArguments& args = stk::unit_test_util::GlobalCommandLineArguments::self();
+  if (args.get_argv() != nullptr) {
+    for (int i = 0; i < args.get_argc(); i++) {
+      std::string input_argv(args.get_argv()[i]);
+      if (option == input_argv) {
+        return true;
+      }
     }
+  }
     return false;
 }
 
 inline std::string get_option(const std::string& option, const std::string defaultString="no")
 {
-    std::string returnValue = defaultString;
-    if ( gl_argv != 0 )
-    {
-        for (int i=0;i<gl_argc;i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if ( option == input_argv )
-            {
-                if ( (i+1) < gl_argc )
-                {
-                    returnValue = std::string(gl_argv[i+1]);
-                }
-                break;
-            }
+  stk::unit_test_util::GlobalCommandLineArguments& args = stk::unit_test_util::GlobalCommandLineArguments::self();
+  std::string returnValue = defaultString;
+  if (args.get_argv() != nullptr) {
+    for (int i = 0; i < args.get_argc(); i++) {
+      std::string input_argv(args.get_argv()[i]);
+      if (option == input_argv) {
+        if ((i + 1) < args.get_argc()) {
+          returnValue = std::string(args.get_argv()[i + 1]);
         }
+        break;
+      }
     }
+  }
     return returnValue;
 }
 
@@ -60,6 +53,25 @@ T get_command_line_option(const std::string &option, const T &defaultValue)
     ss >> val;
     return val;
 }
+
+namespace simple_fields {
+
+inline
+bool has_option(const std::string& option) {
+  return stk::unit_test_util::has_option(option);
+}
+
+inline
+std::string get_option(const std::string& option, const std::string defaultString="no") {
+  return stk::unit_test_util::get_option(option, defaultString);
+}
+
+template <typename T>
+T get_command_line_option(const std::string &option, const T &defaultValue) {
+  return stk::unit_test_util::get_command_line_option(option, defaultValue);
+}
+
+} // namespace simple_fields
 
 }
 }

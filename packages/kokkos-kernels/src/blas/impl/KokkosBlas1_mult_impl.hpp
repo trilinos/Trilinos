@@ -62,11 +62,9 @@ namespace Impl {
 ///
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
-template<class CMV, class AV, class BMV,
-         int scalar_ab, int scalar_c,
-         class SizeType = typename CMV::size_type>
-struct MV_MultFunctor
-{
+template <class CMV, class AV, class BMV, int scalar_ab, int scalar_c,
+          class SizeType = typename CMV::size_type>
+struct MV_MultFunctor {
   typedef typename CMV::execution_space execution_space;
   typedef SizeType size_type;
   typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATS;
@@ -78,52 +76,43 @@ struct MV_MultFunctor
   AV m_A;
   BMV m_B;
 
-  MV_MultFunctor (typename CMV::const_value_type& c,
-                  const CMV& C,
-                  typename AV::const_value_type& ab,
-                  const AV& A,
-                  const BMV& B) :
-    m_n (C.extent(1)),
-    m_c (c), m_C (C), m_ab (ab), m_A (A), m_B (B)
-  {}
+  MV_MultFunctor(typename CMV::const_value_type& c, const CMV& C,
+                 typename AV::const_value_type& ab, const AV& A, const BMV& B)
+      : m_n(C.extent(1)), m_c(c), m_C(C), m_ab(ab), m_A(A), m_B(B) {}
 
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i) const
-  {
+  KOKKOS_INLINE_FUNCTION void operator()(const size_type& i) const {
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
-          m_C(i,j) = ATS::zero ();
+          m_C(i, j) = ATS::zero();
         }
-      }
-      else { // ab != 0, c == 0
+      } else {  // ab != 0, c == 0
         typename AV::const_value_type Ai = m_A(i);
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
-          m_C(i,j) = m_ab * Ai * m_B(i,j);
+          m_C(i, j) = m_ab * Ai * m_B(i, j);
         }
       }
-    } else { // c != 0
+    } else {  // c != 0
       if (scalar_ab == 0) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
-          m_C(i,j) = m_c * m_C(i,j);
+          m_C(i, j) = m_c * m_C(i, j);
         }
-      }
-      else { // m_ab != 0, and m_c != 0
+      } else {  // m_ab != 0, and m_c != 0
         typename AV::const_value_type Ai = m_A(i);
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
-          m_C(i,j) = m_c * m_C(i,j) + m_ab * Ai * m_B(i,j);
+          m_C(i, j) = m_c * m_C(i, j) + m_ab * Ai * m_B(i, j);
         }
       }
     }
@@ -141,11 +130,9 @@ struct MV_MultFunctor
 ///
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual
 /// BLAS update rules.
-template<class CV, class AV, class BV,
-         int scalar_ab, int scalar_c,
-         class SizeType = typename CV::size_type>
-struct V_MultFunctor
-{
+template <class CV, class AV, class BV, int scalar_ab, int scalar_c,
+          class SizeType = typename CV::size_type>
+struct V_MultFunctor {
   typedef typename CV::execution_space execution_space;
   typedef SizeType size_type;
   typedef Kokkos::Details::ArithTraits<typename CV::non_const_value_type> ATS;
@@ -156,29 +143,21 @@ struct V_MultFunctor
   AV m_A;
   BV m_B;
 
-  V_MultFunctor (typename CV::const_value_type& c,
-                 const CV& C,
-                 typename AV::const_value_type& ab,
-                 const AV& A,
-                 const BV& B) :
-    m_c (c), m_C (C), m_ab (ab), m_A (A), m_B (B)
-  {}
+  V_MultFunctor(typename CV::const_value_type& c, const CV& C,
+                typename AV::const_value_type& ab, const AV& A, const BV& B)
+      : m_c(c), m_C(C), m_ab(ab), m_A(A), m_B(B) {}
 
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i) const
-  {
+  KOKKOS_INLINE_FUNCTION void operator()(const size_type& i) const {
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
-        m_C(i) = ATS::zero ();
-      }
-      else { // ab != 0, c == 0
+        m_C(i) = ATS::zero();
+      } else {  // ab != 0, c == 0
         m_C(i) = m_ab * m_A(i) * m_B(i);
       }
-    } else { // c != 0
+    } else {  // c != 0
       if (scalar_ab == 0) {
         m_C(i) = m_c * m_C(i);
-      }
-      else { // m_ab != 0, and m_c != 0
+      } else {  // m_ab != 0, and m_c != 0
         m_C(i) = m_c * m_C(i) + m_ab * m_A(i) * m_B(i);
       }
     }
@@ -195,14 +174,10 @@ struct V_MultFunctor
 ///
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual BLAS
 /// update rules.
-template<class CV, class AV, class BV, class SizeType>
-void
-V_Mult_Generic (typename CV::const_value_type& c,
-                const CV& C,
-                typename AV::const_value_type& ab,
-                const AV& A,
-                const BV& B)
-{
+template <class CV, class AV, class BV, class SizeType>
+void V_Mult_Generic(typename CV::const_value_type& c, const CV& C,
+                    typename AV::const_value_type& ab, const AV& A,
+                    const BV& B) {
   using Kokkos::ALL;
   using Kokkos::subview;
   typedef Kokkos::Details::ArithTraits<typename AV::non_const_value_type> ATA;
@@ -210,30 +185,27 @@ V_Mult_Generic (typename CV::const_value_type& c,
   typedef typename CV::execution_space execution_space;
 
   const SizeType numRows = C.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
 
-  if (c == ATC::zero ()) {
-    if (ab == ATA::zero ()) {
+  if (c == ATC::zero()) {
+    if (ab == ATA::zero()) {
       typedef V_MultFunctor<CV, AV, BV, 0, 0, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S0", policy, op);
-    }
-    else {
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S0", policy, op);
+    } else {
       typedef V_MultFunctor<CV, AV, BV, 2, 0, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S1", policy, op);
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S1", policy, op);
     }
-  }
-  else { // c != 0
-    if (ab == ATA::zero ()) {
+  } else {  // c != 0
+    if (ab == ATA::zero()) {
       typedef V_MultFunctor<CV, AV, BV, 0, 2, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S2", policy, op);
-    }
-    else {
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S2", policy, op);
+    } else {
       typedef V_MultFunctor<CV, AV, BV, 2, 2, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S3", policy, op);
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S3", policy, op);
     }
   }
 }
@@ -249,59 +221,51 @@ V_Mult_Generic (typename CV::const_value_type& c,
 ///
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
-template<class CMV, class AV, class BMV, class SizeType>
-void
-MV_Mult_Generic (typename CMV::const_value_type& c,
-                 const CMV& C,
-                 typename AV::const_value_type& ab,
-                 const AV& A,
-                 const BMV& B)
-{
+template <class CMV, class AV, class BMV, class SizeType>
+void MV_Mult_Generic(typename CMV::const_value_type& c, const CMV& C,
+                     typename AV::const_value_type& ab, const AV& A,
+                     const BMV& B) {
   typedef Kokkos::Details::ArithTraits<typename AV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATC;
   typedef typename CMV::execution_space execution_space;
 
   if (C.extent(1) == 1) {
-    auto C_0 = Kokkos::subview (C, Kokkos::ALL (), 0);
-    auto B_0 = Kokkos::subview (B, Kokkos::ALL (), 0);
-    typedef decltype (C_0) CV;
-    typedef decltype (B_0) BV;
+    auto C_0 = Kokkos::subview(C, Kokkos::ALL(), 0);
+    auto B_0 = Kokkos::subview(B, Kokkos::ALL(), 0);
+    typedef decltype(C_0) CV;
+    typedef decltype(B_0) BV;
 
-    V_Mult_Generic<CV, AV, BV, SizeType> (c, C_0, ab, A, B_0);
+    V_Mult_Generic<CV, AV, BV, SizeType>(c, C_0, ab, A, B_0);
     return;
   }
 
   const SizeType numRows = C.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
 
-  if (c == ATC::zero ()) {
-    if (ab == ATA::zero ()) {
+  if (c == ATC::zero()) {
+    if (ab == ATA::zero()) {
       typedef MV_MultFunctor<CMV, AV, BMV, 0, 0, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S4", policy, op);
-    }
-    else {
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S4", policy, op);
+    } else {
       typedef MV_MultFunctor<CMV, AV, BMV, 2, 0, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S5", policy, op);
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S5", policy, op);
     }
-  }
-  else { // c != 0
-    if (ab == ATA::zero ()) {
+  } else {  // c != 0
+    if (ab == ATA::zero()) {
       typedef MV_MultFunctor<CMV, AV, BMV, 0, 2, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S6", policy, op);
-    }
-    else {
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S6", policy, op);
+    } else {
       typedef MV_MultFunctor<CMV, AV, BMV, 2, 2, SizeType> functor_type;
-      functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for ("KokkosBlas::Mult::S7", policy, op);
+      functor_type op(c, C, ab, A, B);
+      Kokkos::parallel_for("KokkosBlas::Mult::S7", policy, op);
     }
   }
 }
 
+}  // namespace Impl
+}  // namespace KokkosBlas
 
-} // namespace Impl
-} // namespace KokkosBlas
-
-#endif // KOKKOSBLAS1_MULT_IMPL_HPP_
+#endif  // KOKKOSBLAS1_MULT_IMPL_HPP_

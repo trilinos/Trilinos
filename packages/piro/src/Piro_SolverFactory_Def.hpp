@@ -71,6 +71,7 @@ template <typename Scalar>
 Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::createSolverAdaptive(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel,
     const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer)
 {
@@ -80,7 +81,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 
 #ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
-    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
+    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, adjointModel, observer));
   } else
   if (solverType == "Velocity Verlet") {
     result = Teuchos::rcp(new VelocityVerletSolver<Scalar>(
@@ -92,9 +93,9 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
   } else
   if (solverType == "LOCA") {
     if(Teuchos::nonnull(solMgr))
-      result = observedLocaSolver(piroParams, model, solMgr, observer);
+      result = observedLocaSolver(piroParams, model, adjointModel, solMgr, observer);
     else
-      result = observedLocaSolver(piroParams, model, observer);
+      result = observedLocaSolver(piroParams, model, adjointModel, observer);
   } else
 #endif /* HAVE_PIRO_NOX */
 #ifdef HAVE_PIRO_RYTHMOS
@@ -104,7 +105,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #endif /* HAVE_PIRO_RYTHMOS */
 #ifdef HAVE_PIRO_TEMPUS
   if (solverType == "Tempus") {
-    result = tempusSolver<Scalar>(piroParams, model, Teuchos::null, observer);
+    result = tempusSolver<Scalar>(piroParams, model, adjointModel, observer);
   } else
 #endif /* HAVE_PIRO_TEMPUS */
   {
@@ -135,7 +136,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 
 #ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
-    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
+    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, adjointModel, observer));
   } else
   if (solverType == "Velocity Verlet") {
     result = Teuchos::rcp(new VelocityVerletSolver<Scalar>( 
@@ -146,7 +147,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
         piroParams, model, Teuchos::null, observer));
   } else
   if (solverType == "LOCA") {
-    result = observedLocaSolver(piroParams, model, observer);
+    result = observedLocaSolver(piroParams, model, adjointModel, observer);
   } else
 #endif /* HAVE_PIRO_NOX */
 #ifdef HAVE_PIRO_RYTHMOS

@@ -179,6 +179,9 @@ namespace Amesos2 {
     /// Return pointer to vector when number of vectors == 1 and single MPI process
     Scalar * getMVPointer_impl() const;
 
+
+    Teuchos::RCP<multivec_t> clone() const;
+
     /**
      * \brief Copies the multivector's data into the user-provided vector.
      *

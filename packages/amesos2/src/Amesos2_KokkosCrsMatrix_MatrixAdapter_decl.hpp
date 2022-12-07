@@ -85,11 +85,6 @@ namespace Amesos2 {
     typedef typename MatrixTraits<matrix_t>::global_ordinal_t global_ordinal_t;
     typedef typename MatrixTraits<matrix_t>::node_t                     node_t;
     typedef typename MatrixTraits<matrix_t>::global_size_t       global_size_t;
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    typedef typename MatrixTraits<matrix_t>::sparse_ptr_type       spmtx_ptr_t;
-    typedef typename MatrixTraits<matrix_t>::sparse_idx_type       spmtx_idx_t;
-    typedef typename MatrixTraits<matrix_t>::sparse_values_type   spmtx_vals_t;
-    #endif
     typedef no_special_impl                                       get_crs_spec;
     typedef no_special_impl                                       get_ccs_spec;
     typedef ConcreteMatrixAdapter<matrix_t>                               type;
@@ -103,11 +98,6 @@ namespace Amesos2 {
     global_size_t getGlobalNumRows_impl() const;
     global_size_t getGlobalNumCols_impl() const;
     global_size_t getGlobalNNZ_impl() const;
-    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    spmtx_ptr_t  getSparseRowPtr() const;
-    spmtx_idx_t  getSparseColInd() const;
-    spmtx_vals_t getSparseValues() const;
-    #endif
 
     template<class KV>
     void getSparseRowPtr_kokkos_view(KV & view) const {

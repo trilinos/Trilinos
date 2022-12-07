@@ -126,7 +126,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
                                                    side_effect=mock_subprocess_check_output)
         self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
 
-        self.patch_modulehelper_module = patch('LoadEnv.setenvironment.ModuleHelper.module',
+        self.patch_modulehelper_module = patch('setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
 
@@ -236,7 +236,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         - Change args to enable dry_run mode.
         """
         args = self.dummy_args()
-        args.pullrequest_build_name = "python-3"
+        args.pullrequest_build_name = "Trilinos_PR_python3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step

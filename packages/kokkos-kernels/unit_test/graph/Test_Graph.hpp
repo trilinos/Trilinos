@@ -7,4 +7,4 @@
 #include "Test_Graph_mis2.hpp"
 #include "Test_Graph_rcm.hpp"
 
-#endif // TEST_GRAPH_HPP
+#endif  // TEST_GRAPH_HPP

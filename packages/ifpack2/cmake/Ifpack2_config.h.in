@@ -102,6 +102,9 @@
 /* Define if building with the Lemon library */
 #cmakedefine HAVE_IFPACK2_LEMON
 
+/* Define if building with METIS */
+#cmakedefine HAVE_IFPACK2_METIS
+
 /* Define if building with MPI (the Message-Passing Interface) */
 #cmakedefine HAVE_IFPACK2_MPI
 

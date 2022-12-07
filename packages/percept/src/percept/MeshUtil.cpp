@@ -55,9 +55,9 @@
       double b[3]={0,0,0};
       double c[3]={0,0,0};
 
-      double *fdata0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[0]);
-      double *fdata1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[1]);
-      double *fdata2 = stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[2]);
+      double *fdata0 = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[0]));
+      double *fdata1 = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[1]));
+      double *fdata2 = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , side_nodes[2]));
       for (int idim=0; idim < 3; idim++)
         {
           a[idim] = fdata1[idim] - fdata0[idim];

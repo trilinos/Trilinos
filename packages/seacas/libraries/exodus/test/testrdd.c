@@ -167,8 +167,8 @@ int main(int argc, char **argv)
 
   int *elem_map = (int *)my_calloc(num_elem, sizeof(int));
 
-  error = ex_get_map(exoid, elem_map);
-  printf("\nafter ex_get_map, error = %3d\n", error);
+  error = ex_get_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("\nafter ex_get_id_map, error = %3d\n", error);
 
   for (i = 0; i < num_elem; i++) {
     printf("elem_map(%d) = %d \n", i, elem_map[i]);

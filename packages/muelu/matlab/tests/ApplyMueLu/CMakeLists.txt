@@ -6,7 +6,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Apply_Tests_cp
 
 TRIBITS_ADD_ADVANCED_TEST(
   Matlab_ApplyMueLu
-  TEST_0 CMND ${MATLAB_ROOT}/bin/matlab ARGS -nodesktop -nosplash -r ApplyUnitTest
+  TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/../../bin/matlab ARGS -r ApplyUnitTest
   PASS_REGULAR_EXPRESSION "passed"
   CATEGORIES BASIC NIGHTLY
   COMM serial

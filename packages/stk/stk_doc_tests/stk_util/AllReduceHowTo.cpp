@@ -39,38 +39,38 @@
 //BEGINAllReduce
 TEST(AllReduce, combinedOps)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(comm) != 2) { return; }
+  MPI_Comm comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) != 2) { return; }
 
-    int myRank = stk::parallel_machine_rank(comm);
+  int myRank = stk::parallel_machine_rank(comm);
 
-    constexpr int NumMin = 2;
-    constexpr int NumMax = 3;
-    constexpr int NumSum = 4;
+  constexpr int NumMin = 2;
+  constexpr int NumMax = 3;
+  constexpr int NumSum = 4;
 
-    std::vector<int> ints(NumMin, myRank);
-    std::vector<float> floats(NumMax, 1.0*myRank);
-    std::vector<float> doubles(NumSum, 1.0*(myRank+1));
+  std::vector<int> ints(NumMin, myRank);
+  std::vector<float> floats(NumMax, 1.0*myRank);
+  std::vector<float> doubles(NumSum, 1.0*(myRank+1));
 
-    stk::all_reduce(comm, stk::ReduceMin<NumMin>(ints.data())
-                        & stk::ReduceMax<NumMax>(floats.data())
-                        & stk::ReduceSum<NumSum>(doubles.data()));
+  stk::all_reduce(comm, stk::ReduceMin<NumMin>(ints.data())
+                  & stk::ReduceMax<NumMax>(floats.data())
+                  & stk::ReduceSum<NumSum>(doubles.data()));
 
-    const int expectedMin = 0;
-    const float expectedMax = 1.0;
-    const double expectedSum = 3.0;
+  const int expectedMin = 0;
+  const float expectedMax = 1.0;
+  const double expectedSum = 3.0;
 
-    for(int thisInt : ints) {
-      EXPECT_EQ(expectedMin, thisInt);
-    }
+  for(int thisInt : ints) {
+    EXPECT_EQ(expectedMin, thisInt);
+  }
 
-    for(float thisFloat : floats) {
-      EXPECT_EQ(expectedMax, thisFloat);
-    }
+  for(float thisFloat : floats) {
+    EXPECT_EQ(expectedMax, thisFloat);
+  }
 
-    for(double thisDouble : doubles) {
-      EXPECT_EQ(expectedSum, thisDouble);
-    }
+  for(double thisDouble : doubles) {
+    EXPECT_EQ(expectedSum, thisDouble);
+  }
 }
 //ENDAllReduce
 

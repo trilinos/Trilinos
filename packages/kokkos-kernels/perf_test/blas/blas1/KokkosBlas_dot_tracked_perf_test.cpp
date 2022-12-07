@@ -77,7 +77,7 @@ test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params)
         return std::make_tuple(
             setup_test<Kokkos::DefaultExecutionSpace>(m, repeat));
       },
-      [&](const int , const int , auto& data) {
+      [&](const int, const int, auto& data) {
         KokkosBlas::dot(data.x, data.y);
       }));
 

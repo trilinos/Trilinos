@@ -724,6 +724,7 @@ One_LS_Per_Phase_Cutter::build_cut_edges(const InterfaceID & interface,
     const std::vector<bool> & parentEdgeIsOrientedSameAsElementEdge)
 {
   std::vector<Edge_Crossing> cutEdges;
+  const bool isOneLSPerPhase = true;
 
   for(unsigned i=0; i < parentEdges.size(); ++i)
   {
@@ -733,7 +734,7 @@ One_LS_Per_Phase_Cutter::build_cut_edges(const InterfaceID & interface,
       double crossing_pos;
       int crossing_sign;
       bool is_fake;
-      std::tie(crossing_pos, crossing_sign, is_fake) = parent_edge->get_crossing_position_and_sign(interface);
+      std::tie(crossing_pos, crossing_sign, is_fake) = parent_edge->get_crossing_position_and_sign(isOneLSPerPhase, interface);
 
       if( crossing_pos >= 0. )
       {

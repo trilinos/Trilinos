@@ -482,9 +482,6 @@ namespace Tpetra {
     //! The part of the sparse matrix's graph on each MPI process.
     using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
     using local_graph_host_type = typename crs_graph_type::local_graph_host_type;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    using local_graph_type = local_graph_device_type;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
@@ -497,9 +494,6 @@ namespace Tpetra {
     using local_matrix_host_type = 
           typename local_matrix_device_type::HostMirror;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    using local_matrix_type = local_matrix_device_type;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
     using local_multiply_op_type =
@@ -565,21 +559,10 @@ namespace Tpetra {
     ///   entries per row.  This is a strict upper bound.  It may
     ///   differ on different processes.
     ///
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \param pftype [in] If you specify this, then this must always
-    ///   be StaticProfile.  No other values exist or are permitted.
-#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const size_t maxNumEntriesPerRow,
-               const ProfileType pftype,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const size_t maxNumEntriesPerRow,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -592,21 +575,10 @@ namespace Tpetra {
     ///   entries to allocate for each row.  This is a strict upper
     ///   bound.  It may differ on different processes.
     ///
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \param pftype [in] If you specify this, then this must always
-    ///   be StaticProfile.  No other values exist or are permitted.
-#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -626,22 +598,10 @@ namespace Tpetra {
     ///   per row.  This is a strict upper bound.  It may differ on
     ///   different processes.
     ///
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \param pftype [in] If you specify this, then this must always
-    ///   be StaticProfile.  No other values exist or are permitted.
-#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::RCP<const map_type>& colMap,
-               const size_t maxNumEntPerRow,
-               const ProfileType pftype,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const size_t maxNumEntPerRow,
@@ -661,22 +621,10 @@ namespace Tpetra {
     ///   entries to allocate for each row.  This is a strict upper
     ///   bound.  It may differ on different processes.
     ///
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \param pftype [in] If you specify this, then this must always
-    ///   be StaticProfile.  No other values exist or are permitted.
-#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::RCP<const map_type>& colMap,
-               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-#endif
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
@@ -1923,14 +1871,6 @@ namespace Tpetra {
                   const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                   const Teuchos::ArrayRCP<Scalar>& val);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    void
-    getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,
-                  Teuchos::ArrayRCP<const LocalOrdinal>& columnIndices,
-                  Teuchos::ArrayRCP<const Scalar>& values) const;
-#endif
-
     /// \brief Get a host view of the CRS packed row pointers
     row_ptrs_host_view_type getLocalRowPtrsHost () const
     { return getCrsGraph()->getLocalRowPtrsHost(); }
@@ -1946,17 +1886,6 @@ namespace Tpetra {
     /// \brief Get a device_view of the CRS packed column indicies
     local_inds_device_view_type getLocalIndicesDevice () const
     { return getCrsGraph()->getLocalIndicesDevice(); }
-
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// Gets just the values array.  This *will* be a shallow copy
-    /// of the array (at least on the host memory space.  This
-    /// is not a const function, since the user can change these
-    /// values.
-    ///
-    /// \param values [out] Array of values. 
-    TPETRA_DEPRECATED void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
-#endif
 
     //@}
     //! @name Transformational methods
@@ -2356,10 +2285,6 @@ namespace Tpetra {
     ///   least once.  This method will do no error checking, so you
     ///   are responsible for knowing when it is safe to call this
     ///   method.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    local_matrix_type getLocalMatrix () const;
-#endif
     local_matrix_device_type getLocalMatrixDevice () const;
     local_matrix_host_type getLocalMatrixHost () const;
 
@@ -2405,19 +2330,11 @@ namespace Tpetra {
     /// global number of rows in the matrix, if the row Map is
     /// overlapping.
     size_t getLocalNumRows() const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    size_t getNodeNumRows() const override;
-#endif
 
     /// \brief The number of columns connected to the locally owned rows of this matrix.
     ///
     /// Throws std::runtime_error if <tt>! hasColMap ()</tt>.
     size_t getLocalNumCols() const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    size_t getNodeNumCols() const override;
-#endif
 
     //! The index base for global indices for this matrix.
     GlobalOrdinal getIndexBase() const override;
@@ -2427,10 +2344,6 @@ namespace Tpetra {
 
     //! The local number of entries in this matrix.
     size_t getLocalNumEntries() const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    size_t getNodeNumEntries() const override;
-#endif
 
     /// \brief Number of entries in the sparse matrix in the given
     ///   global row, on the calling (MPI) process.
@@ -2465,10 +2378,6 @@ namespace Tpetra {
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
     size_t getLocalMaxNumRowEntries () const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries () const override;
-#endif
 
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
@@ -2575,11 +2484,6 @@ namespace Tpetra {
     */
     bool isStorageOptimized () const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Returns \c true if the matrix was allocated with static data structures.
-    TPETRA_DEPRECATED ProfileType getProfileType () const;
-#endif
-
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph () const;
 
@@ -2669,13 +2573,6 @@ public:
                       nonconst_global_inds_host_view_type &Indices,
                       nonconst_values_host_view_type &Values,
                       size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      const Teuchos::ArrayView<GlobalOrdinal>& Indices,
-                      const Teuchos::ArrayView<Scalar>& Values,
-                      size_t& NumEntries) const override;
-#endif
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using local column
     ///   indices.
@@ -2696,14 +2593,7 @@ public:
                      nonconst_local_inds_host_view_type &Indices,
                      nonconst_values_host_view_type &Values,
                      size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    void
-    getLocalRowCopy (LocalOrdinal localRow,
-                     const Teuchos::ArrayView<LocalOrdinal>& colInds,
-                     const Teuchos::ArrayView<Scalar>& vals,
-                     size_t& NumEntries) const override;
-#endif
+
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using global row and column indices.
     ///
@@ -2716,12 +2606,7 @@ public:
     ///
     /// If \c GlobalRow is not a valid global row index on the calling
     /// process, then \c indices is set to null.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                      Teuchos::ArrayView<const Scalar>& values) const override;
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
+
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       global_inds_host_view_type &indices,
@@ -2739,83 +2624,10 @@ public:
     ///
     /// If \c LocalRow is not a valid local row index on the calling
     /// process, then \c indices is set to null.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED
-    void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     Teuchos::ArrayView<const Scalar>& values) const override;
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
-
     void
     getLocalRowView(LocalOrdinal LocalRow,
                     local_inds_host_view_type &indices,
                     values_host_view_type &values) const override;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Get a constant, nonpersisting, locally indexed view of
-    ///   the given row of the matrix, using "raw" pointers instead of
-    ///   Teuchos::ArrayView.
-    ///
-    /// The returned views of the column indices and values are not
-    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
-    /// Furthermore, any changes to the indices or values, or any
-    /// intervening calls to fillComplete() or resumeFill(), may
-    /// invalidate the returned views.
-    ///
-    /// This method only gets the entries in the given row that are
-    /// stored on the calling process.  Note that if the matrix has an
-    /// overlapping row Map, it is possible that the calling process
-    /// does not store all the entries in that row.
-    ///
-    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
-    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
-    ///
-    /// \param lclRow     [in]  Local index of the row.
-    /// \param numEnt     [out] Number of entries in the row that are stored on the calling process.
-    /// \param lclColInds [out] Local indices of the columns corresponding to values.
-    /// \param vals       [out] Matrix values.
-    ///
-    /// \return Error code; zero on no error.
-    TPETRA_DEPRECATED
-    LocalOrdinal
-    getLocalRowViewRaw (const LocalOrdinal lclRow,
-                        LocalOrdinal& numEnt,
-                        const LocalOrdinal*& lclColInds,
-                        const Scalar*& vals) const override;
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Get a constant, nonpersisting view of a row of this
-    ///   matrix, using local row and column indices, with raw
-    ///   pointers.
-    ///
-    /// The order of arguments exactly matches those of
-    /// Epetra_CrsMatrix::ExtractMyRowView.
-    ///
-    /// \param lclRow [in]  Local index of the row to view.
-    /// \param numEnt [out] On output: Number of entries in the row.
-    /// \param val    [out] On successful output: View of the values in the row. Output value is undefined if not successful.
-    /// \param ind    [out] On successful output: View of the local column indices in the row.
-    ///                     Output value is undefined if not successful.
-    ///
-    /// \return Zero if successful, else a nonzero error code.
-    ///
-    /// \pre <tt>isGloballyIndexed () == false</tt>
-    /// \post <tt>numEnt == this->getNumEntriesInLocalRow(lclRow)</tt>
-    ///
-    /// The output number of entries in the row \c numEnt is safe to
-    /// be \c LocalOrdinal, because as long as the row does not
-    /// contain too many duplicate entries, the number of column
-    /// indices can always fit in \c LocalOrdinal.  Otherwise, the
-    /// column Map would be incorrect.
-    TPETRA_DEPRECATED
-    LocalOrdinal
-    getLocalRowView (const LocalOrdinal lclRow,
-                     LocalOrdinal& numEnt,
-                     const impl_scalar_type*& val,
-                     const LocalOrdinal*& ind) const;
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
@@ -2824,25 +2636,6 @@ public:
     /// This overload exists only if Scalar differs from
     /// impl_scalar_type.  In that case, this overload takes a Scalar
     /// pointer.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template<class OutputScalarType>
-    TPETRA_DEPRECATED
-    typename std::enable_if<! std::is_same<OutputScalarType, impl_scalar_type>::value &&
-                            std::is_convertible<impl_scalar_type, OutputScalarType>::value,
-                            LocalOrdinal>::type
-    getLocalRowView (const LocalOrdinal lclRow,
-                     LocalOrdinal& numEnt,
-                     const OutputScalarType*& val,
-                     const LocalOrdinal*& ind) const
-    {
-      const impl_scalar_type* valTmp = NULL;
-      const LocalOrdinal err = this->getLocalRowView (lclRow, numEnt, valTmp, ind);
-      // Cast is legitimate because impl_scalar_type is convertible to
-      // OutputScalarType.
-      val = reinterpret_cast<const OutputScalarType*> (valTmp);
-      return err;
-    }
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a copy of the diagonal entries of the matrix.
     ///
@@ -3461,14 +3254,6 @@ public:
     //@}
 
   public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get the Kokkos local values
-    typename local_matrix_device_type::values_type getLocalValuesView () const {
-      // TODO:  UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
-      return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
-    }
-#endif
-
     //! Get the Kokkos local values on host, read only
     typename local_matrix_host_type::values_type::const_type
     getLocalValuesHost (Access::ReadOnlyStruct s) const
@@ -3969,9 +3754,6 @@ public:
                                   const bool merged);
 
   public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED void computeGlobalConstants() {};
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
@@ -4090,21 +3872,6 @@ public:
     typename values_dualv_type::t_dev
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Constant view of all entries (including extra space) in
-    ///   the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    ///
-    /// Deprecated but protected; 
-    /// not emitting warnings prevents Tpetra from emitting deprecation warnings
-    /// TPETRA_DEPRECATED
-    Teuchos::ArrayView<const impl_scalar_type> 
-    getView (RowInfo rowinfo) const;
-#endif
 
   protected:
 

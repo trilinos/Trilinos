@@ -236,7 +236,7 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(Ioss::DEBUG(), "{} File Open Time = {}\n", is_input() ? "Input" : "Output",
+          fmt::print(Ioss::DebugOut(), "{} File Open Time = {}\n", is_input() ? "Input" : "Output",
                      duration);
         }
       }
@@ -293,7 +293,7 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(Ioss::DEBUG(), "{} Base File Close Time = {}\n",
+          fmt::print(Ioss::DebugOut(), "{} Base File Close Time = {}\n",
                      is_input() ? "Input" : "Output", duration);
         }
       }
@@ -313,7 +313,7 @@ namespace Iocgns {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
         if (myProcessor == 0) {
-          fmt::print(Ioss::DEBUG(), "{} File Close Time = {}\n", is_input() ? "Input" : "Output",
+          fmt::print(Ioss::DebugOut(), "{} File Close Time = {}\n", is_input() ? "Input" : "Output",
                      duration);
         }
       }
@@ -397,12 +397,10 @@ namespace Iocgns {
     properties.add(Ioss::Property("RETAIN_FREE_NODES", "NO"));
 
     if (int_byte_size_api() == 8) {
-      decomp = std::unique_ptr<DecompositionDataBase>(
-          new DecompositionData<int64_t>(properties, util().communicator()));
+      decomp = std::make_unique<DecompositionData<int64_t>>(properties, util().communicator());
     }
     else {
-      decomp = std::unique_ptr<DecompositionDataBase>(
-          new DecompositionData<int>(properties, util().communicator()));
+      decomp = std::make_unique<DecompositionData<int>>(properties, util().communicator());
     }
     assert(decomp != nullptr);
     decomp->decompose_model(get_file_pointer(), m_meshType);
@@ -463,7 +461,7 @@ namespace Iocgns {
       eblock->property_add(Ioss::Property("original_block_order", i++));
       get_region()->add(eblock);
 #if IOSS_DEBUG_OUTPUT
-      fmt::print(Ioss::DEBUG(), "Added block {}, IOSS topology = '{}' with {} element.\n",
+      fmt::print(Ioss::DebugOut(), "Added block {}, IOSS topology = '{}' with {} element.\n",
                  block.name(), element_topo, block.ioss_count());
 #endif
       // See if this zone/block is a member of any assemblies...
@@ -481,7 +479,7 @@ namespace Iocgns {
         std::string block_name = fmt::format("{}/{}", zone.m_name, sset.name());
         std::string face_topo  = sset.topologyType;
 #if IOSS_DEBUG_OUTPUT
-        fmt::print(Ioss::DEBUG(),
+        fmt::print(Ioss::DebugOut(),
                    "Processor {}: Added sideblock '{}' of topo {} with {} faces to sset '{}'\n",
                    myProcessor, block_name, face_topo, sset.ioss_count(), ioss_sset->name());
 #endif
@@ -616,7 +614,7 @@ namespace Iocgns {
         Utils::add_to_assembly(get_file_pointer(), get_region(), block, base, zone->m_adam->m_zone);
 
 #if IOSS_DEBUG_OUTPUT
-        fmt::print(Ioss::DEBUG(), "Added block {}, Structured with ID = {}, GUID = {}\n",
+        fmt::print(Ioss::DebugOut(), "Added block {}, Structured with ID = {}, GUID = {}\n",
                    block_name, zone->m_adam->m_zone, guid);
 #endif
       }
@@ -879,17 +877,17 @@ namespace Iocgns {
             common = intersect(I_nodes, J_nodes);
 
 #if IOSS_DEBUG_OUTPUT
-            fmt::print(Ioss::DEBUG(), "Zone {}: {}, Donor Zone {}: {} Common: {}\n\t", zone,
+            fmt::print(Ioss::DebugOut(), "Zone {}: {}, Donor Zone {}: {} Common: {}\n\t", zone,
                        I_nodes.size(), dzone, J_nodes.size(), common.size());
 
             for (const auto &p : common) {
-              fmt::print(Ioss::DEBUG(), "{}, ", p.first);
+              fmt::print(Ioss::DebugOut(), "{}, ", p.first);
             }
-            fmt::print(Ioss::DEBUG(), "\n\t");
+            fmt::print(Ioss::DebugOut(), "\n\t");
             for (const auto &p : common) {
-              fmt::print(Ioss::DEBUG(), "{}, ", p.second);
+              fmt::print(Ioss::DebugOut(), "{}, ", p.second);
             }
-            fmt::print(Ioss::DEBUG(), "\n");
+            fmt::print(Ioss::DebugOut(), "\n");
 #endif
           }
 
@@ -2066,8 +2064,10 @@ namespace Iocgns {
 
         if (size[1] > 0) {
           CGNS_ENUMT(ElementType_t) type = Utils::map_topology_to_cgns(eb->topology()->name());
-          int sect                       = 0;
-          CGCHECKM(cgp_section_write(get_file_pointer(), base, zone, "HexElements", type, 1,
+          int         sect               = 0;
+          std::string element_type =
+              fmt::format("{}Elements", Ioss::Utils::shape_to_string(eb->topology()->shape()));
+          CGCHECKM(cgp_section_write(get_file_pointer(), base, zone, element_type.c_str(), type, 1,
                                      size[1], 0, &sect));
 
           int64_t start = 0;
@@ -2432,8 +2432,10 @@ namespace Iocgns {
         CGCHECKM(
             cg_goto(get_file_pointer(), base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", sect, "end"));
         CGCHECKM(cg_famname_write(name.c_str()));
-        CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect,
-                                            CGNS_ENUMV(FaceCenter)));
+
+        int  phys_dimension = get_region()->get_property("spatial_dimension").get_int();
+        auto location       = phys_dimension == 2 ? CGNS_ENUMV(EdgeCenter) : CGNS_ENUMV(FaceCenter);
+        CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect, location));
 
         CGCHECKM(cgp_section_write(get_file_pointer(), base, zone, sb_name.c_str(), type, cg_start,
                                    cg_end, 0, &sect));
@@ -2480,7 +2482,7 @@ namespace Iocgns {
         static bool warning_output = false;
         if (!warning_output) {
           if (myProcessor == 0) {
-            fmt::print(Ioss::WARNING(),
+            fmt::print(Ioss::WarnOut(),
                        "For CGNS output, the sideset distribution factors are not output.\n");
           }
           warning_output = true;

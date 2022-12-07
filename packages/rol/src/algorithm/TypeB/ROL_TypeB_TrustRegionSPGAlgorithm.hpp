@@ -89,7 +89,7 @@ private:
 
   // ALGORITHM SPECIFIC PARAMETERS
   bool useNM_;
-  int  maxNM_;
+  int  storageNM_;
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
   Real spexp_;     ///< Relative tolerance exponent for subproblem solve (default: 1, range: [1,2])
   int  redlim_;    ///< Maximum number of Cauchy point reduction steps (default: 10)
@@ -105,6 +105,7 @@ private:
   int maxSize_;
   bool useMin_;
   bool useNMSP_;
+  bool useSimpleSPG_;
 
   // Inexactness Parameters
   std::vector<bool> useInexact_;
@@ -189,6 +190,10 @@ private:
                const Real del, TrustRegionModel_U<Real> &model,
                Vector<Real> &dwa, Vector<Real> &dwa1,
                std::ostream &outStream = std::cout);
+
+  void dpsg_simple(Vector<Real> &y, Real &q, Vector<Real> &gmod, const Vector<Real> &x,
+                   Real del, TrustRegionModel_U<Real> &model, Vector<Real> &pwa,
+                   Vector<Real> &pwa1, Vector<Real> &dwa, std::ostream &outStream = std::cout);
 
   void dpsg(Vector<Real> &y, Real &q, Vector<Real> &gmod, const Vector<Real> &x,
             Real del, TrustRegionModel_U<Real> &model, Vector<Real> &ymin,

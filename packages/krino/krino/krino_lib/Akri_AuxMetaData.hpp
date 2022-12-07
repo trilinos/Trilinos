@@ -11,11 +11,11 @@
 
 #include <functional>
 #include <string>                       // for operator<<, basic_string, etc
+
+#include "Akri_FieldRef.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Entity.hpp"   // for Entity
-
-namespace krino { class FieldRef; }
 
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ == 9)) || (__GNUC__ == 5)
 // Looks like there is an issue with these compilers
@@ -141,6 +141,8 @@ public:
       const std::function<stk::topology( const stk::mesh::FieldBase & field, const stk::mesh::Bucket & bucket )> & in_inducer_get_nodal_field_topology,
       const std::function<stk::mesh::Selector( const stk::mesh::FieldBase & field, const stk::mesh::EntityRank target_rank )> & in_inducer_selectField);
   void set_is_cell_edge_function(const std::function<bool(stk::mesh::Entity node0, stk::mesh::Entity node1)> & in_is_cell_edge) { fn_is_cell_edge = in_is_cell_edge; }
+  FieldRef get_current_coordinates() const;
+  void set_current_coordinates(FieldRef current_coords) { my_current_coordinates = current_coords; }
 
 private:
   explicit AuxMetaData(stk::mesh::MetaData & stk_meta);
@@ -173,6 +175,7 @@ private:
   std::function<stk::mesh::Selector( const stk::mesh::FieldBase & field, const stk::mesh::EntityRank target_rank )> fn_selectField;
   std::function<bool(stk::mesh::Entity node0, stk::mesh::Entity node1)> fn_is_cell_edge;
   std::vector<stk::mesh::Part *> myRestartOnlyIOParts;
+  mutable FieldRef my_current_coordinates;
 };
 
 } // namespace krino

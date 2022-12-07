@@ -11,12 +11,12 @@
 namespace
 {
 
-class EntitySortingPerformance : public stk::unit_test_util::PerformanceTester
+class EntitySortingPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    EntitySortingPerformance(stk::unit_test_util::BulkDataTester &bulk) :
-            stk::unit_test_util::PerformanceTester(bulk.parallel()),
-            bulkData(bulk)
+    EntitySortingPerformance(stk::unit_test_util::BulkDataTester &bulk)
+      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+        bulkData(bulk)
     {
     }
 
@@ -58,6 +58,7 @@ protected:
 TEST_F(SortEntitiesCustomLess, test_entity_sorting_performance)
 {
     stk::mesh::MetaData meta;
+    meta.use_simple_fields();
     stk::unit_test_util::BulkDataTester bulk(meta, MPI_COMM_WORLD);
     stk::io::fill_mesh("generated:100x100x100",bulk);
     run_entity_sort_performance_test(bulk);

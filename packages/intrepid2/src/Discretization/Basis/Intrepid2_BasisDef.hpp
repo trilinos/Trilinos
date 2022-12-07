@@ -242,23 +242,9 @@ namespace Intrepid2 {
                                 const ordinal_type zMult) {
     switch(spaceDim) {
 
-      case 1:
-        return 0;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
-
-      case 2:
-        return yMult;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
-
-      case 3:
-        return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
+      case 1: return 0;
+      case 2: return yMult;
+      case 3: return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
 
       default: {
         INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
@@ -411,9 +397,10 @@ namespace Intrepid2 {
                                 const ordinal_type spaceDim) {
 
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 8) ),
                                     ">>> ERROR (Intrepid2::getDkcardinality): Invalid space dimension");
     switch (operatorType) {
+        case OPERATOR_VALUE:
         case OPERATOR_GRAD:
         case OPERATOR_D1:
         case OPERATOR_D2:
@@ -434,8 +421,12 @@ namespace Intrepid2 {
     
     ordinal_type n = Intrepid2::getOperatorOrder(operatorType);
     return (spaceDim==1) ? 1 :
-           (spaceDim==2) ? n+1 :
-                          (n + 1) * (n + 2) / 2;
+           (spaceDim==2) ?  n + 1 :
+           (spaceDim==3) ? (n + 1) * (n + 2) / 2 :
+           (spaceDim==4) ? (n + 1) * (n + 2) * (n + 3) / 6 :
+           (spaceDim==5) ? (n + 1) * (n + 2) * (n + 3) * (n + 4) / 24 :
+           (spaceDim==6) ? (n + 1) * (n + 2) * (n + 3) * (n + 4) * (n + 5) / 120 :
+                           (n + 1) * (n + 2) * (n + 3) * (n + 4) * (n + 5) * (n + 6) / 720;
   }
 
   template<EOperator operatorType, ordinal_type spaceDim>
@@ -873,7 +864,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
     
     const int numFields = this->getCardinality();
-    const int spaceDim  = basisCellTopology_.getDimension();
+    const int spaceDim  = basisCellTopology_.getDimension() + this->getNumTensorialExtrusions();
     
     using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,DeviceType>;
     
@@ -950,7 +941,7 @@ namespace Intrepid2 {
           OutputViewAllocatable dataView("BasisValues HVOL VALUE data", numFields, numPoints);
           return dataView;
         }
-        else if (operatorIsDk)
+        else if (operatorIsDk || (operatorType == OPERATOR_GRAD))
         {
           ordinal_type dkCardinality = getDkCardinality(operatorType, spaceDim);
           OutputViewAllocatable dataView("BasisValues HVOL Dk data", numFields, numPoints, dkCardinality);

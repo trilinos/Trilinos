@@ -60,6 +60,7 @@
 #include <MueLu_SimpleSmoother.hpp>
 #include <MueLu_UzawaSmoother.hpp>
 #include <MueLu_IndefBlockedDiagonalSmoother.hpp>
+#include <MueLu_InverseApproximationFactory.hpp>
 #include <MueLu_Utilities.hpp>
 
 
@@ -375,8 +376,9 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with zero initial guess, and unreliable nonzeroed vector X" << std::endl;
       X->randomize();
@@ -390,8 +392,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -405,8 +407,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm3[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] == residualNorm2[0], true);
@@ -517,8 +519,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with zero initial guess, and unreliable nonzeroed vector X" << std::endl;
       X->randomize();
@@ -532,8 +536,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -547,8 +551,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm3[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] == residualNorm2[0], true);
@@ -654,7 +658,9 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
 
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
@@ -810,7 +816,9 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
 
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
@@ -1233,7 +1241,9 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 1e-7, out, success);
+      magnitude_type tol = 10*std::sqrt(Teuchos::ScalarTraits<Scalar>::eps());
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
     } // end Tpetra
   }
 
@@ -1344,7 +1354,9 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
 
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
@@ -1512,7 +1524,6 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1580,8 +1591,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -1595,8 +1608,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
@@ -1690,10 +1703,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
       smoProtoCorrect->SetFactory("A", SFact);
@@ -1787,8 +1803,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -1853,10 +1871,13 @@ namespace MueLuTests {
         // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
         // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
         // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+        RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+        AinvFact->SetFactory("A",rAFact);
+
         RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
         SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-        SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
         SFact->SetFactory("A",rAFact);
+        SFact->SetFactory("Ainv", AinvFact);
 
         // create a 2x2 SIMPLE for the prediction eq.
         RCP<SimpleSmoother> smoProtoPredict = Teuchos::rcp( new SimpleSmoother() );
@@ -1971,8 +1992,10 @@ namespace MueLuTests {
         out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
         out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-        TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-        TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+        magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+        TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+        TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
       }// end useTpetra
     }
 
@@ -2061,10 +2084,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
       smoProtoCorrect->SetFactory("A", SFact);
@@ -2157,8 +2183,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -2223,10 +2251,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
       RCP<SimpleSmoother> smoProtoPredict = Teuchos::rcp( new SimpleSmoother() );
@@ -2341,8 +2372,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -2428,10 +2461,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: sweeps", Teuchos::as<LocalOrdinal>(30));
@@ -2572,10 +2608,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 Simple for the prediction eq.
       RCP<SimpleSmoother> smoProtoCorrect = Teuchos::rcp( new SimpleSmoother() );
@@ -2700,7 +2739,6 @@ namespace MueLuTests {
       RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2712,7 +2750,6 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2779,8 +2816,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -2794,8 +2833,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
@@ -2835,7 +2874,6 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2845,10 +2883,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
       smoProtoCorrect->SetFactory("A", SFact);
@@ -2940,8 +2981,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -2975,7 +3018,6 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2985,10 +3027,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
       smoProtoCorrect->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
@@ -3097,8 +3142,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -3133,7 +3180,6 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3143,10 +3189,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
       smoProtoCorrect->SetFactory("A", SFact);
@@ -3238,8 +3287,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -3273,7 +3324,6 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3283,10 +3333,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<SimpleSmoother> smoProtoCorrect = Teuchos::rcp( new SimpleSmoother() );
       smoProtoCorrect->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
@@ -3398,8 +3451,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -3434,7 +3489,6 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3444,10 +3498,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
       smoProtoCorrect->SetParameter("Sweeps", Teuchos::ParameterEntry(1));
@@ -3555,8 +3612,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -3599,10 +3658,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: sweeps", Teuchos::as<LocalOrdinal>(30));
@@ -3720,10 +3782,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 Simple for the prediction eq.
       std::string strInfo = std::string("{ 1 }");
@@ -3922,8 +3987,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -3937,8 +4004,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
@@ -4008,10 +4075,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+  
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
       RCP<UzawaSmoother> smoProtoPredict = Teuchos::rcp( new UzawaSmoother() );
@@ -4124,8 +4194,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -4189,10 +4261,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
       RCP<UzawaSmoother> smoProtoPredict = Teuchos::rcp( new UzawaSmoother() );
@@ -4305,8 +4380,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -4390,10 +4467,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: sweeps", Teuchos::as<LocalOrdinal>(30));
@@ -4533,10 +4613,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 Simple for the prediction eq.
       RCP<UzawaSmoother> smoProtoCorrect = Teuchos::rcp( new UzawaSmoother() );
@@ -4734,8 +4817,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       out << "solve with random initial guess" << std::endl;
       X->randomize();
@@ -4749,8 +4834,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
 
       if (comm->getSize() == 1) {
         TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
@@ -4820,10 +4905,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 block smoother for the prediction eq.
       RCP<IndefBlockedDiagonalSmoother> smoProtoPredict = Teuchos::rcp( new IndefBlockedDiagonalSmoother() );
@@ -4936,8 +5024,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -5001,10 +5091,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
       RCP<IndefBlockedDiagonalSmoother> smoProtoPredict = Teuchos::rcp( new IndefBlockedDiagonalSmoother() );
@@ -5117,8 +5210,10 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
-      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+      magnitude_type tol = 50.*Teuchos::ScalarTraits<Scalar>::eps();
+
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
     }// end useTpetra
   }
 
@@ -5202,10 +5297,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: sweeps", Teuchos::as<LocalOrdinal>(30));
@@ -5345,10 +5443,13 @@ namespace MueLuTests {
       // SchurComp gets a RCP to AFact_ which has to be the 2x2 blocked operator
       // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
+      RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+      AinvFact->SetFactory("A",rAFact);
+
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
+      SFact->SetFactory("Ainv", AinvFact);
 
       // create a 2x2 Simple for the prediction eq.
       RCP<IndefBlockedDiagonalSmoother> smoProtoCorrect = Teuchos::rcp( new IndefBlockedDiagonalSmoother() );

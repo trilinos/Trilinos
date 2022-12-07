@@ -46,6 +46,7 @@
 #include <string>                           // for string, operator<, basic_...
 #include <utility>                          // for pair
 #include <vector>                           // for vector
+#include <functional>
 #include "Ioss_EntityType.h"                // for EntityType, SIDEBLOCK
 #include "Ioss_GroupingEntity.h"            // for GroupingEntity
 #include "SidesetTranslator.hpp"            // for fill_element_and_side_ids
@@ -95,6 +96,8 @@ namespace stk {
  */
 namespace io {
 
+using TopologyErrorHandler = std::function<void(stk::mesh::Part &part)>;
+
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta);
 
@@ -108,12 +111,12 @@ struct GlobalAnyVariable {
   stk::util::ParameterType::Type m_type;
 };
 
-static const std::string s_internal_selector_name("_stk_io_internal_selector");
-static const std::string s_ignore_disconnected_nodes("ignore_disconnected_nodes");
-static const std::string s_process_all_input_nodes("process_all_input_nodes");
-static const std::string s_sort_stk_parts("sort_stk_parts");
-static const std::string s_entity_nodes_suffix("_n");
-static const std::string s_distribution_factors("distribution_factors");
+static const std::string s_internalSelectorName("_stk_io_internal_selector");
+static const std::string s_ignoreDisconnectedNodes("ignore_disconnected_nodes");
+static const std::string s_processAllInputNodes("process_all_input_nodes");
+static const std::string s_sortStkParts("sort_stk_parts");
+static const std::string s_entityNodesSuffix("_n");
+static const std::string s_distributionFactors("distribution_factors");
 
 typedef std::pair<stk::mesh::EntityId, int> EntityIdToProcPair;
 typedef std::vector<EntityIdToProcPair> EntitySharingInfo;
@@ -136,7 +139,7 @@ typedef std::vector<FieldNameToPart> FieldNameToPartVector;
 
 stk::mesh::Part *getPart(const stk::mesh::MetaData& meta_data, const std::string& name);
 
-bool is_valid_for_output(const stk::mesh::Part &part, const stk::mesh::Selector *output_selector = nullptr);
+bool is_valid_for_output(stk::io::OutputParams &params, const stk::mesh::Part &part);
 void get_selected_nodes(OutputParams &params,
                         const stk::mesh::Selector &selector,
                         stk::mesh::EntityVector &nodes);
@@ -157,9 +160,9 @@ bool node_is_connected_to_local_element(const stk::mesh::BulkData &bulk, stk::me
  */
 bool include_entity(const Ioss::GroupingEntity *entity);
 
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
 /** This is the primary function used by an application to define
  *	the stk::mesh which corresponds to the Ioss mesh read from the
@@ -172,11 +175,22 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  *	results or restart file.
  */
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, meta);
+    internal_part_processing(entity, meta, handler);
+  }
+}
+
+template <typename T>
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
+{
+  TopologyErrorHandler handler = [](stk::mesh::Part &part) { };
+
+  for(size_t i=0; i < entities.size(); i++) {
+    T* entity = entities[i];
+    internal_part_processing(entity, meta, handler);
   }
 }
 
@@ -463,11 +477,11 @@ bool is_part_element_block_io_part(const stk::mesh::Part &part);
 
 bool is_part_surface_io_part(const stk::mesh::Part &part);
 
-Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
+Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, const stk::mesh::Part& part);
 
 std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank);
 
-std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
+std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::Part& part);
 
 std::string getPartName(const stk::mesh::Part& part);
 
@@ -518,6 +532,39 @@ void put_edge_block_io_part_attribute( stk::mesh::Part &part);
 
 void put_assembly_io_part_attribute( stk::mesh::Part &part);
 
+void create_named_suffix_field_output_type(const std::string & typeName, const std::vector<std::string> & suffices);
+void set_named_suffix_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName);
+
+enum class FieldOutputType {
+  //                  Output Subscripts:
+  SCALAR,           //  []
+  VECTOR_2D,        //  [x, y]
+  VECTOR_3D,        //  [x, y, z]
+  FULL_TENSOR_36,   //  [xx, yy, zz, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_32,   //  [xx, yy, zz, xy, yx]
+  FULL_TENSOR_22,   //  [xx, yy, xy, yx]
+  FULL_TENSOR_16,   //  [xx, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_12,   //  [xx, xy, yx]
+  SYM_TENSOR_33,    //  [xx, yy, zz, xy, yz, zx]
+  SYM_TENSOR_31,    //  [xx, yy, zz, xy]
+  SYM_TENSOR_21,    //  [xx, yy, xy]
+  SYM_TENSOR_13,    //  [xx, xy, yz, zx]
+  SYM_TENSOR_11,    //  [xx, xy]
+  SYM_TENSOR_10,    //  [xx]
+  ASYM_TENSOR_03,   //  [xy, yz, zx]
+  ASYM_TENSOR_02,   //  [xy, yz]
+  ASYM_TENSOR_01,   //  [xy]
+  MATRIX_22,        //  [xx, xy, yx, yy]
+  MATRIX_33,        //  [xx, xy, xz, yx, yy, yz, zx, zy, zz]
+  QUATERNION_2D,    //  [s, q]
+  QUATERNION_3D     //  [x, y, z, q]
+};
+
+void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
+
+bool has_field_output_type(const stk::mesh::FieldBase & field);
+const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field);
+
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
 
 std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);
@@ -539,15 +586,14 @@ void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension
 
 Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename, int index_subdomain, int num_subdomains);
 
-void add_properties_for_subdomain(stk::mesh::BulkData& bulkData, Ioss::Region &out_region, int index_subdomain,
+void add_properties_for_subdomain(stk::io::OutputParams& params, int index_subdomain,
                                   int num_subdomains, int global_num_nodes, int global_num_elems);
 
-void write_mesh_data_for_subdomain(Ioss::Region& out_region, stk::mesh::BulkData& bulkData, const EntitySharingInfo& nodeSharingInfo);
+void write_mesh_data_for_subdomain(stk::io::OutputParams& params, const EntitySharingInfo& nodeSharingInfo);
 
-int write_transient_data_for_subdomain(Ioss::Region &out_region, stk::mesh::BulkData& bulkData, double timeStep);
+int write_transient_data_for_subdomain(stk::io::OutputParams& params, double timeStep);
 
-void write_file_for_subdomain(Ioss::Region &out_region,
-                              stk::mesh::BulkData& bulkData,
+void write_file_for_subdomain(stk::io::OutputParams& params,
                               const EntitySharingInfo &nodeSharingInfo,
                               int numSteps = -1,
                               double timeStep = 0.0);
@@ -557,7 +603,7 @@ void write_file_for_subdomain(const std::string &baseFilename,
                               int num_subdomains,
                               int global_num_nodes,
                               int global_num_elems,
-                              stk::mesh::BulkData& bulkData,
+                              stk::io::OutputParams& params,
                               const EntitySharingInfo &nodeSharingInfo,
                               int numSteps = -1,
                               double timeStep = 0.0);

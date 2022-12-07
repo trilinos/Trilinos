@@ -100,7 +100,7 @@ FromMesh<F>::bounding_boxes(std::vector<FromMesh<F>::BoundingBox> &v_box) const
       for ( int ni = 0; ni < num_entity_nodes; ++ni ) {
         stk::mesh::Entity node = entity_node_rels[ni];
 
-        double * coords = stk::mesh::field_data(*fromcoordinates_, node);
+        double * coords = static_cast<double*>(stk::mesh::field_data(*fromcoordinates_, node));
         for ( unsigned j=0; j < nDim; ++j ) {
           min_corner[j] = std::min(min_corner[j], coords[j]);
           max_corner[j] = std::max(max_corner[j], coords[j]);

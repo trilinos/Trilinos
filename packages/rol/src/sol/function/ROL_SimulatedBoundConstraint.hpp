@@ -72,7 +72,7 @@ private:
     }
   }
 
-  Vector<Real>& getVector(Vector<Real> &x, int k) {
+  Vector<Real>& getVector(Vector<Real> &x, int k) const {
     try {
       return *(dynamic_cast<SimulatedVector<Real>&>(x).get(k));
     }
@@ -80,7 +80,7 @@ private:
       return x;
     }
   }
- 
+
 public:
   ~SimulatedBoundConstraint() {}
 
@@ -130,7 +130,7 @@ public:
       }
     }
   }
- 
+
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
    if( bnd_->isActivated() ) {
      for( int k=0; k<sampler_->numMySamples(); ++k ) {
@@ -146,7 +146,7 @@ public:
       }
     }
   }
- 
+
   const Ptr<const Vector<Real>> getLowerBound( void ) const {
     return l_;
   }
@@ -155,7 +155,7 @@ public:
     return u_;
   }
 
-  bool isFeasible( const Vector<Real> &v ) { 
+  bool isFeasible( const Vector<Real> &v ) {
     bool feasible = true;
     if(bnd_->isActivated()) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
@@ -163,6 +163,22 @@ public:
       }
     }
     return feasible;
+  }
+
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+    if( bnd_->isActivated() ) {
+      for( int k=0; k<sampler_->numMySamples(); ++k ) {
+        bnd_->applyInverseScalingFunction(getVector(dv,k),getVector(v,k),getVector(x,k),getVector(g,k));
+      }
+    }
+  }
+
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+    if( bnd_->isActivated() ) {
+      for( int k=0; k<sampler_->numMySamples(); ++k ) {
+        bnd_->applyScalingFunctionJacobian(getVector(dv,k),getVector(v,k),getVector(x,k),getVector(g,k));
+      }
+    }
   }
 }; // class SimulatedBoundConstraint
 } // namespace ROL

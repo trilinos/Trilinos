@@ -30,19 +30,19 @@ else
 fi
 
 if [ -d "kokkos" ]; then
-    ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Tpetra --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Tpetra --kokkos-threads=1
-    ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Tpetra --heavytests --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Tpetra --heavytests --kokkos-threads=1
-    ./MueLu_CreateOperator.exe --kokkosRefactor --linAlgebra=Tpetra --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_CreateOperator.exe --kokkosRefactor --linAlgebra=Tpetra --kokkos-threads=1
+    ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Tpetra --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Tpetra --kokkos-num-threads=1
+    ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Tpetra --heavytests --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Tpetra --heavytests --kokkos-num-threads=1
+    ./MueLu_CreateOperator.exe --useKokkosRefactor --linAlgebra=Tpetra --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_CreateOperator.exe --useKokkosRefactor --linAlgebra=Tpetra --kokkos-num-threads=1
 
-    ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Epetra --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Epetra --kokkos-threads=1
-    ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Epetra --heavytests --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --kokkosRefactor --linAlgebra=Epetra --heavytests --kokkos-threads=1
-    ./MueLu_CreateOperator.exe --kokkosRefactor --linAlgebra=Epetra --kokkos-threads=1
-    mpiexec -n 4 ./MueLu_CreateOperator.exe --kokkosRefactor --linAlgebra=Epetra --kokkos-threads=1
+    ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Epetra --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Epetra --kokkos-num-threads=1
+    ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Epetra --heavytests --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --useKokkosRefactor --linAlgebra=Epetra --heavytests --kokkos-num-threads=1
+    ./MueLu_CreateOperator.exe --useKokkosRefactor --linAlgebra=Epetra --kokkos-num-threads=1
+    mpiexec -n 4 ./MueLu_CreateOperator.exe --useKokkosRefactor --linAlgebra=Epetra --kokkos-num-threads=1
 
     pushd kokkos/Output/
     source $1/kokkos/Output/rebase.sh

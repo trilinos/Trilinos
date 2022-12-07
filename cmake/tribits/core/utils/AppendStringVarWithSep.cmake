@@ -39,7 +39,7 @@
 
 include(ConcatStrings)
 
-#
+
 # @FUNCTION: append_string_var_with_sep()
 #
 # Append strings to a given string variable, joining them using a separator

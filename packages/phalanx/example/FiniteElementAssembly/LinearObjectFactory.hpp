@@ -4,8 +4,6 @@
 #include <utility>
 #include "Mesh.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Kokkos_Pair.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -165,7 +163,7 @@ namespace phx_example {
     { update = 0 ; }
     
     KOKKOS_INLINE_FUNCTION
-    void join(const TagFillNodeSet& , volatile unsigned& update, volatile const unsigned& input ) const
+    void join(const TagFillNodeSet& , unsigned& update, const unsigned& input ) const
     { update += input ; }  
     
     // ****************************************************
@@ -197,8 +195,8 @@ namespace phx_example {
     
     KOKKOS_INLINE_FUNCTION
     void join(const TagComputeRowOffsets&,
-              volatile unsigned& update,
-              volatile const unsigned & input) const
+              unsigned& update,
+              const unsigned & input) const
     { update += input ; }
 
     // ****************************************************

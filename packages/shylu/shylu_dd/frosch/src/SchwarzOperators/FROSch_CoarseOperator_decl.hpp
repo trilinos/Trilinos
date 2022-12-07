@@ -143,7 +143,7 @@ namespace FROSch {
 
         virtual int compute();
 
-        virtual XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
+        virtual ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
 
         virtual int clearCoarseSpace();
 
@@ -187,6 +187,7 @@ namespace FROSch {
 
         int buildCoarseSolveMap(ConstXMapPtr coarseMapUnique);
 
+        virtual void extractLocalSubdomainMatrix_Symbolic() = 0;
 
         CommPtr CoarseSolveComm_;
 
@@ -198,6 +199,11 @@ namespace FROSch {
 
         XMatrixPtr Phi_;
         XMatrixPtr CoarseMatrix_;
+
+        // result of ExtractLocalSubdomainMatrix_Symbolic
+        bool coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
+        XMatrixPtr coarseSubdomainMatrix_;
+        XMatrixPtr coarseLocalSubdomainMatrix_;
 
         // Temp Vectors for apply()
         mutable XMultiVectorPtr XTmp_;

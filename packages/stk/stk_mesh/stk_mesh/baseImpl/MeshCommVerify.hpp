@@ -72,6 +72,7 @@ bool verify_parallel_attributes_for_bucket(const Bucket& bucket,
                                            std::ostream& error_log);
 
 void pack_owned_verify(const BulkData& mesh,
+                       const EntityCommDatabase& commDB,
                        const EntityCommListInfoVector& commList,
                        CommSparse& commSparse);
 

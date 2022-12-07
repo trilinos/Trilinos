@@ -41,6 +41,7 @@
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/MetaData.hpp"       // for Part
+#include "stk_util/util/SortedIntersect.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
 
@@ -89,6 +90,26 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
       out << "NOTHING";
     }
     break;
+  case SelectorNodeType::PART_UNION:
+  {
+    ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
+    out << "(";
+    for(unsigned i=0; i<root->m_partOrds.size(); ++i) {
+      out << meta->get_part(root->m_partOrds[i]).name();
+      if (i != root->m_partOrds.size()-1) out << " | ";
+    }
+    out << ")";
+  } break;
+  case SelectorNodeType::PART_INTERSECTION:
+  {
+    ThrowRequireMsg(meta != nullptr, "Can't print Selector with null MetaData.");
+    out << "(";
+    for(unsigned i=0; i<root->m_partOrds.size(); ++i) {
+      out << meta->get_part(root->m_partOrds[i]).name();
+      if (i != root->m_partOrds.size()-1) out << " & ";
+    }
+    out << ")";
+  } break;
   case SelectorNodeType::FIELD:
     if (root->field() != NULL) {
       out << root->field()->name();
@@ -99,90 +120,6 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
     break;
   };
   return out;
-}
-
-inline
-bool bucket_ranked_member_any_impl(Bucket const& bucket, const PartVector & parts )
-{
-  const PartVector::const_iterator ip_end = parts.end();
-        PartVector::const_iterator ip     = parts.begin() ;
-
-  bool result_none = true ;
-
-  for ( ; result_none && ip_end != ip ; ++ip ) {
-    if((*ip)->primary_entity_rank() != stk::topology::INVALID_RANK) {
-      const unsigned ord = (*ip)->mesh_meta_data_ordinal();
-      result_none = !bucket.member(ord);
-    }
-  }
-  return ! result_none ;
-}
-
-inline
-bool select_bucket_part_grouping_impl(Bucket const& bucket, PartOrdinal ord)
-{
-  const BulkData& bulk = bucket.mesh();
-  const MetaData& meta = bulk.mesh_meta_data();
-
-  if (meta.is_valid_part_ordinal(ord)) {
-    const stk::mesh::Part& part = meta.get_part(ord);
-    return (part.primary_entity_rank() == stk::topology::INVALID_RANK) && bucket_ranked_member_any_impl(bucket, part.subsets());
-  }
-
-  return false;
-}
-
-bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
-{
-  switch(root->m_type) {
-  case SelectorNodeType::UNION:
-    return select_bucket_impl(bucket, root->rhs()) || select_bucket_impl(bucket, root->lhs());
-  case SelectorNodeType::INTERSECTION:
-    return select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
-  case SelectorNodeType::DIFFERENCE:
-    return !select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
-  case SelectorNodeType::COMPLEMENT:
-    return !select_bucket_impl(bucket, root->unary());
-  case SelectorNodeType::PART: {
-    if (bucket.member(root->part())) {
-      return true;
-    }
-
-    return select_bucket_part_grouping_impl(bucket, root->part());
-  } break;
-  case SelectorNodeType::FIELD:
-    if(root->field() == NULL) {
-      return false;
-    }
-    if(&bucket.mesh() != &root->field()->get_mesh()) return false;
-    //
-    //  Bucket data check is very fast, but can be off in a few circumstances:
-    //    1) Invalid in a modification cycle, field size pointers my be an intermediate and non correct state
-    //    2) Field size is ill-defined when bucket and field are not the same rank.  The
-    //       exhastive part selector search is used in this case.  Note, this means that when for example
-    //       a field selector based on an element field is used to select node buckets the selector will
-    //       pick up any node attached to elements that would have been selected.  This is the backwards
-    //       compatible behavior that has come to be relied upon by applications (fuego and aero as of 2/27/16)
-    //    3) Field meta-data-vector is not long enough (when bucket is new and
-    //       field-data-manager.allocate_field_data_for_bucket hasn't been called yet.
-    //
-    if(bucket.mesh().in_synchronized_state() &&
-       bucket.entity_rank() == root->field()->entity_rank() &&
-       root->field()->get_meta_data_for_field().size() > bucket.bucket_id())
-    {
-      return field_is_allocated_for_bucket(*root->field(), bucket);
-    } else {
-      const FieldRestrictionVector& sel_rvec = root->field()->restrictions();
-      for(size_t irestrict=0; irestrict<sel_rvec.size(); ++irestrict) {
-        if(sel_rvec[irestrict].selector()(bucket)) {
-          return true;
-        }
-      }
-      return false;
-    }
-  default:
-    return false;
-  };
 }
 
 bool select_part_impl(Part const& part, SelectorNode const* root)
@@ -199,6 +136,28 @@ bool select_part_impl(Part const& part, SelectorNode const* root)
     return !select_part_impl(part, root->unary());
   case SelectorNodeType::PART:
     return (root->part() != InvalidPartOrdinal) ? meta.get_part(root->part()).contains(part) : false;
+  case SelectorNodeType::PART_UNION:
+    {
+      for(Ordinal ord : root->m_partOrds) {
+        if (ord != InvalidPartOrdinal) {
+          if (meta.get_part(ord).contains(part)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  case SelectorNodeType::PART_INTERSECTION:
+    {
+      for(Ordinal ord : root->m_partOrds) {
+        if (ord != InvalidPartOrdinal) {
+          if (!meta.get_part(ord).contains(part)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
   case SelectorNodeType::FIELD:
     if(root->field() == NULL) {
       return false;
@@ -227,6 +186,10 @@ bool is_all_union_impl(const impl::SelectorNode* root)
     return false;
   case SelectorNodeType::PART:
     return root->part() != InvalidPartOrdinal;
+  case SelectorNodeType::PART_UNION:
+    return true;
+  case SelectorNodeType::PART_INTERSECTION:
+    return false;
   case SelectorNodeType::FIELD:
     return root->field() != NULL;
   default:
@@ -263,6 +226,27 @@ void gather_parts_impl(PartVector& parts, const MetaData* meta, SelectorNode con
     break;
   case SelectorNodeType::PART:
     if (root->part() != InvalidPartOrdinal) parts.push_back(&meta->get_part(root->part()));
+    break;
+  case SelectorNodeType::PART_UNION:
+    for(Ordinal ord : root->m_partOrds) parts.push_back(&meta->get_part(ord));
+    break;
+  case SelectorNodeType::PART_INTERSECTION:
+    if (root->m_partOrds.size() == 2u) {
+      if (meta->get_part(root->m_partOrds[0]).primary_entity_rank() == stk::topology::INVALID_RANK) {
+        parts.push_back(&meta->get_part(root->m_partOrds[1]));
+      }
+      else {
+        parts.push_back(&meta->get_part(root->m_partOrds[0]));
+      }
+    }
+    else {
+      for(Ordinal ord : root->m_partOrds) {
+        if (meta->is_valid_part_ordinal(ord) && meta->get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK) {
+          parts.push_back(&meta->get_part(ord));
+        }
+      }
+    }
+    break;
   };
 }
 
@@ -303,13 +287,163 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
       }
       return false;
     }
+  case SelectorNodeType::PART_UNION:
+  {
+    for(Ordinal ord : root->m_partOrds) {
+      if (ord != InvalidPartOrdinal) {
+        for(const Part* part : parts) {
+          if (ord == part->mesh_meta_data_ordinal()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+  case SelectorNodeType::PART_INTERSECTION:
+  {
+    for(Ordinal ord : root->m_partOrds) {
+      if (ord != InvalidPartOrdinal) {
+        bool found = false;
+        for(const Part* part : parts) {
+          if (ord == part->mesh_meta_data_ordinal()) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
   default:
     return false;
   };
 }
 
+inline
+bool bucket_ranked_member_any_impl(Bucket const& bucket, const PartVector & parts )
+{
+  const PartVector::const_iterator ip_end = parts.end();
+        PartVector::const_iterator ip     = parts.begin() ;
+  bool result_none = true ;
+
+  for ( ; result_none && ip_end != ip ; ++ip ) {
+    if((*ip)->primary_entity_rank() != stk::topology::INVALID_RANK) {
+      const unsigned ord = (*ip)->mesh_meta_data_ordinal();
+      result_none = !bucket.member(ord);
+    }
+  }
+  return ! result_none ;
+}
+
+inline
+bool bucket_ranked_member_any_subsets_impl(Bucket const& bucket, const OrdinalVector & partOrds )
+{
+  const MetaData& meta = bucket.mesh().mesh_meta_data();
+
+  for (Ordinal ord : partOrds) {
+    if (!meta.is_valid_part_ordinal(ord)) {
+      continue;
+    }
+    if (meta.get_part(ord).primary_entity_rank() == stk::topology::INVALID_RANK &&
+        bucket_ranked_member_any_impl(bucket, meta.get_part(ord).subsets())) {
+      return true;
+    }
+  }
+  return false ;
+}
+
+inline
+bool bucket_ranked_member_all_impl(Bucket const& bucket, const OrdinalVector & partOrds )
+{
+  const MetaData& meta = bucket.mesh().mesh_meta_data();
+
+  for (Ordinal ord : partOrds) {
+    if (!meta.is_valid_part_ordinal(ord)) {
+      return false;
+    }
+    const bool isMember = bucket.member(ord);
+    if (isMember) {
+      continue;
+    }
+    bool partNotRankedAndBucketNotInSubsets = (meta.get_part(ord).primary_entity_rank() == stk::topology::INVALID_RANK &&
+                                               !bucket_ranked_member_any_impl(bucket, meta.get_part(ord).subsets()));
+    if (partNotRankedAndBucketNotInSubsets) {
+      return false;
+    }
+    bool partRankedAndBucketNotMember = (meta.get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK && !isMember);
+    if (partRankedAndBucketNotMember) {
+      return false;
+    }
+  }
+  return true ;
+}
+
 } // namespace
 
+bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root) const
+{
+  switch(root->m_type) {
+  case SelectorNodeType::PART: {
+    const bool isMember = bucket.member(root->part());
+    return (isMember || root->part_is_ranked()) ?
+            isMember : (!root->part_is_ranked() && m_meta->is_valid_part_ordinal(root->part())
+                        && bucket_ranked_member_any_impl(bucket, m_meta->get_part(root->part()).subsets()));
+  } break;
+  case SelectorNodeType::PART_UNION: {
+    const auto bucketOrds = bucket.superset_part_ordinals();
+    const bool isMember = stk::util::sorted_intersect_any(bucketOrds.first, bucketOrds.second, root->m_partOrds.data(), root->m_partOrds.data()+root->m_partOrds.size());
+    return (isMember ? isMember : bucket_ranked_member_any_subsets_impl(bucket, root->m_partOrds));
+  } break;
+  case SelectorNodeType::PART_INTERSECTION: {
+    const bool isMember = bucket.member_all(root->m_partOrds);
+    return (isMember ? isMember : bucket_ranked_member_all_impl(bucket, root->m_partOrds));
+  } break;
+  case SelectorNodeType::UNION:
+    return select_bucket_impl(bucket, root->rhs()) || select_bucket_impl(bucket, root->lhs());
+  case SelectorNodeType::INTERSECTION:
+    return select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
+  case SelectorNodeType::DIFFERENCE:
+    return !select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
+  case SelectorNodeType::COMPLEMENT:
+    return !select_bucket_impl(bucket, root->unary());
+  case SelectorNodeType::FIELD:
+    if(root->field() == NULL) {
+      return false;
+    }
+    if(&bucket.mesh() != &root->field()->get_mesh()) return false;
+    //
+    //  Bucket data check is very fast, but can be off in a few circumstances:
+    //    1) Invalid in a modification cycle, field size pointers my be an intermediate and non correct state
+    //    2) Field size is ill-defined when bucket and field are not the same rank.  The
+    //       exhastive part selector search is used in this case.  Note, this means that when for example
+    //       a field selector based on an element field is used to select node buckets the selector will
+    //       pick up any node attached to elements that would have been selected.  This is the backwards
+    //       compatible behavior that has come to be relied upon by applications (fuego and aero as of 2/27/16)
+    //    3) Field meta-data-vector is not long enough (when bucket is new and
+    //       field-data-manager.allocate_field_data_for_bucket hasn't been called yet.
+    //
+    if(bucket.mesh().in_synchronized_state() &&
+       bucket.entity_rank() == root->field()->entity_rank() &&
+       root->field()->get_meta_data_for_field().size() > bucket.bucket_id())
+    {
+      return field_is_allocated_for_bucket(*root->field(), bucket);
+    } else {
+      const FieldRestrictionVector& sel_rvec = root->field()->restrictions();
+      for(size_t irestrict=0; irestrict<sel_rvec.size(); ++irestrict) {
+        if(sel_rvec[irestrict].selector()(bucket)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  default:
+    return false;
+  };
+}
 
 
 std::ostream & operator<<( std::ostream & out, const Selector & selector)
@@ -318,32 +452,31 @@ std::ostream & operator<<( std::ostream & out, const Selector & selector)
 }
 
 bool SelectorNode::operator==(SelectorNode const& arg_rhs) const
-  {
-    if (m_type != arg_rhs.m_type) {
-      return false;
-    }
-    else if (m_type == SelectorNodeType::COMPLEMENT) {
-      // there's no rhs for a SelectorNode of type Complement
-      return true;
-    }
-    else if (m_type == SelectorNodeType::PART) {
-      return m_value.part_ord == arg_rhs.m_value.part_ord;
-    }
-    else if (m_type == SelectorNodeType::FIELD) {
-      if(m_value.field_ptr == arg_rhs.m_value.field_ptr) return true;
-      if(m_value.field_ptr == NULL || arg_rhs.m_value.field_ptr == NULL) return false;
-      const FieldRestrictionVector& sel_rvec1 = field()->restrictions();
-      const FieldRestrictionVector& sel_rvec2 = arg_rhs.field()->restrictions();
-      return (sel_rvec1 == sel_rvec2);      
-      //return m_value.field_ptr == arg_rhs.m_value.field_ptr;
-    }
-    else {
-      return m_value.right_offset == arg_rhs.m_value.right_offset;
-    }
+{
+  if (m_type != arg_rhs.m_type) {
+    return false;
   }
-
-
-
+  else if (m_type == SelectorNodeType::COMPLEMENT) {
+    // there's no rhs for a SelectorNode of type Complement
+    return true;
+  }
+  else if (m_type == SelectorNodeType::PART) {
+    return part() == arg_rhs.part();
+  }
+  else if (m_type == SelectorNodeType::PART_INTERSECTION || m_type == SelectorNodeType::PART_UNION) {
+    return m_partOrds == arg_rhs.m_partOrds;
+  }
+  else if (m_type == SelectorNodeType::FIELD) {
+    if(m_field_ptr == arg_rhs.m_field_ptr) return true;
+    if(m_field_ptr == NULL || arg_rhs.m_field_ptr == NULL) return false;
+    const FieldRestrictionVector& sel_rvec1 = field()->restrictions();
+    const FieldRestrictionVector& sel_rvec2 = arg_rhs.field()->restrictions();
+    return (sel_rvec1 == sel_rvec2);      
+  }
+  else {
+    return right_offset == arg_rhs.right_offset;
+  }
+}
 
 Selector::Selector(const FieldBase & field)
  : m_expr(1, impl::SelectorNode(&field))
@@ -362,11 +495,17 @@ bool Selector::operator()( const Part * part ) const
 
 bool Selector::operator()( const Bucket & bucket ) const
 {
+  if (m_meta == nullptr) {
+    m_meta = &bucket.mesh().mesh_meta_data();
+  }
   return select_bucket_impl(bucket, &m_expr.back());
 }
 
 bool Selector::operator()( const Bucket * bucket ) const
 {
+  if (m_meta == nullptr && bucket != nullptr) {
+    m_meta = &bucket->mesh().mesh_meta_data();
+  }
   return select_bucket_impl(*bucket, &m_expr.back());
 }
 
@@ -394,6 +533,10 @@ bool Selector::operator<(const Selector& rhs) const
         m_expr[i].part() != rhs.m_expr[i].part()) {
       return m_expr[i].part() < rhs.m_expr[i].part();
     }
+    if ((m_expr[i].m_type == SelectorNodeType::PART_UNION || m_expr[i].m_type == SelectorNodeType::PART_INTERSECTION)
+        && (m_expr[i].m_partOrds != rhs.m_expr[i].m_partOrds)) {
+      return m_expr[i].m_partOrds < rhs.m_expr[i].m_partOrds;
+    }
     if (m_expr[i].m_type == SelectorNodeType::FIELD &&
         m_expr[i].field() != rhs.m_expr[i].field()) {
       return m_expr[i].field()->mesh_meta_data_ordinal() < rhs.m_expr[i].field()->mesh_meta_data_ordinal();
@@ -418,17 +561,17 @@ stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData
     {
         if(selectorNode.m_type == SelectorNodeType::PART)
         {
-            const std::string& oldPartName = oldMeta.get_part(selectorNode.m_value.part_ord).name();
+            const std::string& oldPartName = oldMeta.get_part(selectorNode.part()).name();
             Part* differentPart = differentMeta.get_part(oldPartName);
             ThrowRequireMsg(differentPart != nullptr, "Attempting to clone selector into mesh with different parts");
-            selectorNode.m_value.part_ord = differentPart->mesh_meta_data_ordinal();
+            selectorNode.m_partOrd = differentPart->mesh_meta_data_ordinal();
         }
         else if(selectorNode.m_type == SelectorNodeType::FIELD)
         {
-            unsigned ord = selectorNode.m_value.field_ptr->mesh_meta_data_ordinal();
-            ThrowRequireMsg(selectorNode.m_value.field_ptr->name() == differentMeta.get_fields()[ord]->name(),
+            unsigned ord = selectorNode.m_field_ptr->mesh_meta_data_ordinal();
+            ThrowRequireMsg(selectorNode.m_field_ptr->name() == differentMeta.get_fields()[ord]->name(),
                             "Attepting to clone selector into mesh with different parts");
-            selectorNode.m_value.field_ptr = differentMeta.get_fields()[ord];
+            selectorNode.m_field_ptr = differentMeta.get_fields()[ord];
         }
     }
     return newSelector;

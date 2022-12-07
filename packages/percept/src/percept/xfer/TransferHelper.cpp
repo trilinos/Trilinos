@@ -76,7 +76,7 @@ parametricDistanceToEntity(const double*                 p,
 }
 
 void
-compute_element_centroid(const stk::mesh::Field<double, stk::mesh::Cartesian> & coordinates,
+compute_element_centroid(const stk::mesh::FieldBase & coordinates,
                          const stk::mesh::Entity & entity, 
                          double * coords) {
 
@@ -92,7 +92,7 @@ compute_element_centroid(const stk::mesh::Field<double, stk::mesh::Cartesian> & 
   for (unsigned inode=0; inode < num_nodes; inode++) {
     stk::mesh::Entity node = elem_nodes[inode];
 
-    double * const node_data = stk::mesh::field_data(coordinates, node);
+    double * const node_data = static_cast<double*>(stk::mesh::field_data(coordinates, node));
     for (unsigned i=0; i<nDim; i++) {
       coords[i] += node_data[i] / (double) num_nodes;
     }
@@ -100,12 +100,12 @@ compute_element_centroid(const stk::mesh::Field<double, stk::mesh::Cartesian> & 
 }
 
 void
-compute_nodal_coords(const stk::mesh::Field<double, stk::mesh::Cartesian> & coordinates,
+compute_nodal_coords(const stk::mesh::FieldBase & coordinates,
                      const stk::mesh::Entity & entity, 
                      double * coords) {
   stk::mesh::MetaData& meta = coordinates.get_mesh().mesh_meta_data();
   stk::mesh::FieldBase *ucf = meta.get_field(stk::topology::NODE_RANK, "unprojected_coordinates");
-  double * coord = stk::mesh::field_data(coordinates, entity);
+  double * coord = static_cast<double*>(stk::mesh::field_data(coordinates, entity));
   if (ucf) coord = (double *)stk::mesh::field_data(*ucf, entity);
   const unsigned nDim = coordinates.get_mesh().mesh_meta_data().spatial_dimension();
   for (unsigned i=0; i<nDim; i++) {

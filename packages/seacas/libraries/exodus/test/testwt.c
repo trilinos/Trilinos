@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,9 +26,9 @@
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
-    int error = (funcall);                                                                         \
-    printf("after %s, error = %d\n", TOSTRING(funcall), error);                                    \
-    if (error != EX_NOERR && error != EX_WARN) {                                                   \
+    int f_error = (funcall);                                                                       \
+    printf("after %s, error = %d\n", TOSTRING(funcall), f_error);                                  \
+    if (f_error != EX_NOERR && f_error != EX_WARN) {                                               \
       fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                    \
       ex_close(exoid);                                                                             \
       exit(-1);                                                                                    \
@@ -130,14 +130,13 @@ int main(int argc, char **argv)
     EXCHECK(ex_put_attr_names(exoid, EX_NODAL, 0, attrib_names));
   }
 
-  /* write element order map */
-
+  /* write element id map */
   int *elem_map = (int *)calloc(num_elem, sizeof(int));
   for (int i = 1; i <= num_elem; i++) {
-    elem_map[i - 1] = i;
+    elem_map[i - 1] = i * 10;
   }
 
-  EXCHECK(ex_put_map(exoid, elem_map));
+  EXCHECK(ex_put_id_map(exoid, EX_ELEM_MAP, elem_map));
 
   free(elem_map);
 
@@ -464,10 +463,12 @@ int main(int argc, char **argv)
   /* write element variable truth table */
   int *truth_tab = (int *)calloc((num_elem_blk * num_ele_vars), sizeof(int));
 
-  int k = 0;
-  for (int i = 0; i < num_elem_blk; i++) {
-    for (int j = 0; j < num_ele_vars; j++) {
-      truth_tab[k++] = 1;
+  {
+    int k = 0;
+    for (int i = 0; i < num_elem_blk; i++) {
+      for (int j = 0; j < num_ele_vars; j++) {
+        truth_tab[k++] = 1;
+      }
     }
   }
 

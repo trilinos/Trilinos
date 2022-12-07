@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -252,10 +252,16 @@ void IOShell::Interface::enroll_options()
                   "\t\tKeep all fields on database as scalars",
                   nullptr);
 
+  options_.enroll("custom_field", Ioss::GetLongOption::MandatoryValue,
+                  "A comma-separated list of field suffices defining a custom field that should be "
+                  "recognized.\n"
+                  "\t\tPrimarily used for testing",
+                  nullptr);
+
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
-                  "TOPOLOGY");
+                  nullptr);
 
   options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
                   "Do not lowercase variable names and replace spaces with underscores.\n"
@@ -339,6 +345,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     if (my_processor == 0) {
       options_.usage(std::cerr);
       fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
+      fmt::print(stderr, "\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-shell\n\n");
       fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
                  options_.program_name());
     }
@@ -512,6 +519,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   compose_output = options_.get_option_value("compose", compose_output);
 #endif
 
+  {
+    const char *temp = options_.retrieve("custom_field");
+    if (temp != nullptr) {
+      customField = temp;
+    }
+  }
+
   groupName = options_.get_option_value("extract_group", groupName);
 
   {
@@ -598,34 +612,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   if (options_.retrieve("copyright") != nullptr) {
     if (my_processor == 0) {
-      fmt::print(stderr,
-                 "\n"
-                 "Copyright(C) 1999-2021 National Technology & Engineering Solutions\n"
-                 "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-                 "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-                 "Redistribution and use in source and binary forms, with or without\n"
-                 "modification, are permitted provided that the following conditions are\n"
-                 "met:\n\n "
-                 "    * Redistributions of source code must retain the above copyright\n"
-                 "      notice, this list of conditions and the following disclaimer.\n\n"
-                 "    * Redistributions in binary form must reproduce the above\n"
-                 "      copyright notice, this list of conditions and the following\n"
-                 "      disclaimer in the documentation and/or other materials provided\n"
-                 "      with the distribution.\n\n"
-                 "    * Neither the name of NTESS nor the names of its\n"
-                 "      contributors may be used to endorse or promote products derived\n"
-                 "      from this software without specific prior written permission.\n\n"
-                 "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                 "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                 "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                 "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                 "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                 "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                 "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                 "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                 "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                 "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                 "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
+      Ioss::Utils::copyright(std::cerr, "1999-2022");
     }
     exit(EXIT_SUCCESS);
   }

@@ -50,15 +50,10 @@
 
 namespace KokkosBatched {
 
-  template<typename ArgUplo,
-           typename ArgDiag,
-           typename ArgAlgo>
-  struct SerialTrtri {
-    template<typename ScalarType,
-             typename AViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int
-    invoke(const AViewType &A);
-  };
-} // namespace KokkosBatched
-#endif // __KOKKOSBATCHED_TRTRI_DECL_HPP__
+template <typename ArgUplo, typename ArgDiag, typename ArgAlgo>
+struct SerialTrtri {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A);
+};
+}  // namespace KokkosBatched
+#endif  // __KOKKOSBATCHED_TRTRI_DECL_HPP__

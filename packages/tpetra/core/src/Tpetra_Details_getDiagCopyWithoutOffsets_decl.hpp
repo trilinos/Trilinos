@@ -188,7 +188,7 @@ getDiagCopyWithoutOffsets (const DiagType& D,
                  "DiagType must be a Kokkos::View.");
   static_assert (static_cast<int> (DiagType::rank) == 1,
                  "DiagType must be a 1-D Kokkos::View.");
-  static_assert (std::is_same<DiagType, typename DiagType::non_const_type>::value,
+  static_assert (std::is_same<typename DiagType::value_type, typename DiagType::non_const_value_type>::value,
                  "DiagType must be a nonconst Kokkos::View.");
   typedef typename LocalMapType::local_ordinal_type LO;
   typedef typename CrsMatrixType::device_type device_type;

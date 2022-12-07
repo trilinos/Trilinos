@@ -103,7 +103,7 @@ function(tribits_dump_deps_xml_file)
     "<PackageDependencies project=\"${PROJECT_NAME}\" baseDirName=\"${PROJECT_BASE_DIR_NAME}\">\n"
      )
 
-  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES})
 
     #message("")
     #print_var(TRIBITS_PACKAGE)

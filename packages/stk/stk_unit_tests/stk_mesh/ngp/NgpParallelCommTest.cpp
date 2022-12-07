@@ -5,6 +5,7 @@
 #include <Kokkos_StaticCrsGraph.hpp>
 #include "stk_mesh/base/NgpParallelComm.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
+#include "stk_util/parallel/DeviceAwareMPI.hpp"
 
 namespace  {
 
@@ -105,10 +106,10 @@ private:
 void check_device_values(int pRank, ValueViewType & deviceValues)
 {
   Kokkos::parallel_for(deviceValues.size(), KOKKOS_LAMBDA(size_t i)
-  {
-    //printf("[p%i] deviceValue(%lu) = %f\n", pRank, i, deviceValues(i));
-    NGP_EXPECT_NEAR(1.0, deviceValues(i), 1.e-12);
-  });
+                       {
+                         //printf("[p%i] deviceValue(%lu) = %f\n", pRank, i, deviceValues(i));
+                         NGP_EXPECT_NEAR(1.0, deviceValues(i), 1.e-12);
+                       });
 }
 
 void get_domain_shape(const int size, int & nx, int & ny)
@@ -175,7 +176,7 @@ std::vector<std::vector<int>> get_neighbors(int pSize, int pRank)
   std::vector<std::vector<int>> neighbors(8);
   for (int n = 0; n < 4; ++n) {
     if (neighbor[n] >= 0) {
-        neighbors[n].push_back(neighbor[n]);
+      neighbors[n].push_back(neighbor[n]);
     }
   }
 
@@ -199,6 +200,8 @@ std::vector<std::vector<int>> get_neighbors(int pSize, int pRank)
 
 NGP_TEST_F(NgpParallelComm, symmetricPackUnpack)
 {
+  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
+
   const int pSize = stk::parallel_machine_size(MPI_COMM_WORLD);
   const int pRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
@@ -232,3 +235,4 @@ NGP_TEST_F(NgpParallelComm, symmetricPackUnpack)
 }
 
 }
+

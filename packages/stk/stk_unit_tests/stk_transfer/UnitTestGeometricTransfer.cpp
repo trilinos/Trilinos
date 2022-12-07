@@ -99,6 +99,24 @@ public:
 
 };
 
+TEST(GeomXferImpl, clear_unique_procs_for_each_call)
+{
+  using Mesh = MockMeshA_Common;
+  Mesh::EntityProcVec entityProcs = {{1,0}, {1,1}, {1,1}, {1,2}};
+  std::vector<int> uniqueProcs;
+
+  size_t expectedSize = 3;
+
+  stk::transfer::impl::get_unique_procs_from_entity_keys<Mesh>(entityProcs, uniqueProcs);
+  EXPECT_EQ(expectedSize, uniqueProcs.size());
+
+  entityProcs = {{1,3}};
+  expectedSize = 1;
+
+  stk::transfer::impl::get_unique_procs_from_entity_keys<Mesh>(entityProcs, uniqueProcs);
+  EXPECT_EQ(expectedSize, uniqueProcs.size());
+}
+
 class MockMeshB_Common
 {
 public:

@@ -85,9 +85,9 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
   base_->getGhostedIndices(baseGhosted);
 
   RCP<const Map> ownedMap 
-      = Tpetra::createNonContigMap<LO,GO>(baseOwned,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(baseOwned,getComm());
   RCP<const Map> ghostedMap 
-      = Tpetra::createNonContigMap<LO,GO>(baseGhosted,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(baseGhosted,getComm());
 
   Vector ownedFiltered(ownedMap);
   Vector ghostedFiltered(ghostedMap);
@@ -165,9 +165,9 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
   getOwnedAndGhostedIndices(ghostedIndices);
 
   RCP<const Map> ownedMap 
-      = Tpetra::createNonContigMap<LO,GO>(ownedIndices,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(ownedIndices,getComm());
   RCP<const Map> ghostedMap 
-      = Tpetra::createNonContigMap<LO,GO>(ghostedIndices,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(ghostedIndices,getComm());
 
   // allocate the owned vector, mark those GIDs as unfiltered
   // (they are by definition)

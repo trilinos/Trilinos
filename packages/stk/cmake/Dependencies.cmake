@@ -1,6 +1,7 @@
+# the order of the packages below is important.  Stk packages can
+# depend on packages listed above them, and not below them.
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Util            stk_util             PT  OPTIONAL
-  Emend           stk_emend            PT  OPTIONAL
   Coupling        stk_coupling         PT  OPTIONAL
   Math            stk_math             PT  OPTIONAL
   Simd            stk_simd             PT  OPTIONAL
@@ -17,6 +18,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Unit_tests      stk_unit_tests       PT  OPTIONAL
   Doc_tests       stk_doc_tests        PT  OPTIONAL
   ExprEval        stk_expreval         PT  OPTIONAL
+  Emend           stk_emend            PT  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

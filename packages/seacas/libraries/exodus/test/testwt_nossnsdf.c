@@ -220,7 +220,7 @@ int main(int argc, char **argv)
   }
 
   error = ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
-  printf("after ex_put_elem_num_map, error = %d\n", error);
+  printf("after ex_put_id_map, error = %d\n", error);
 
   free(elem_map);
 

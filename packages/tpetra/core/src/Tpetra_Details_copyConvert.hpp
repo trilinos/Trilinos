@@ -276,11 +276,15 @@ namespace { // (anonymous)
         // it's cheaper to allocate.  Hopefully users aren't doing
         // aliased copies in a tight loop.
         auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (src_copy, src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (dst, src_copy);
       }
       else { // no aliasing
-        Kokkos::deep_copy (dst, src);
+        // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+        using execution_space = typename OutputViewType::execution_space;
+        Kokkos::deep_copy (execution_space(), dst, src);
       }
     }
   };
@@ -323,9 +327,11 @@ namespace { // (anonymous)
          const InputViewType& src)
     {
       using output_memory_space = typename OutputViewType::memory_space;
+      using output_execution_space = typename OutputViewType::execution_space;
       auto src_outputSpaceCopy =
         Kokkos::create_mirror_view (output_memory_space (), src);
-      Kokkos::deep_copy (src_outputSpaceCopy, src);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (output_execution_space(), src_outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.

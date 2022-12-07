@@ -240,6 +240,9 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
    * This can be accomplished by setting the options.Fact flag to
    * DOFACT, as well as setting our own internal flag to false.
    */
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+#endif
   same_symbolic_ = false;
   data_.options.Fact = SLU::DOFACT;
 

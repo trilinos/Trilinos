@@ -29,7 +29,7 @@ static void ex__get_entity_count(int exoid, ex_init_params *info)
   int ndims;
   nc_inq(exoid, &ndims, NULL, NULL, NULL);
   for (int dimid = 0; dimid < ndims; dimid++) {
-    char   dim_nm[NC_MAX_NAME + 1];
+    char   dim_nm[NC_MAX_NAME + 1] = {'\0'};
     size_t dim_sz;
     nc_inq_dim(exoid, dimid, dim_nm, &dim_sz);
     /* For assemblies, we check for a dim starting with "num_entity_assembly" */

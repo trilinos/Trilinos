@@ -52,14 +52,23 @@ struct OptionNames
   const std::string outputDirectory = "output-directory";
   const std::string rebalanceTo = "rebalance-to";
   const std::string logfile = "logfile";
+  const std::string printDiagnostics = "print-diagnostics";
   const std::string smDefaults = "sm";
   const std::string sdDefaults = "sd";
   const std::string faceSearchAbsTol = "face-search-abs-tol";
   const std::string faceSearchRelTol = "face-search-rel-tol";
   const std::string contactSearch = "contact-search";
+  const std::string fixSpiders = "fix-spiders";
+  const std::string fixMechanisms = "fix-mechanisms";
   const std::string decompMethod = "decomp-method";
   const std::string vertexWeightBlockMultiplier = "block-weights";
   const std::string useNestedDecomp = "use-nested-decomp";
+
+  const std::string vertexWeightMethod = "vertex-weight-method";
+  const std::string contactSearchEdgeWeight = "contact-search-edge-weight";
+  const std::string contactSearchVertexWeightMultiplier = "contact-search-vertex-weight-mult";
+  const std::string edgeWeightMultiplier = "edge-weight-mult";
+  const std::string vertexWeightFieldName = "vertex-weight-field-name";
 };
 
 class Examples
@@ -95,9 +104,18 @@ private:
   void set_use_nested_decomp(BalanceSettings& settings) const;
   void set_app_type_defaults(BalanceSettings& settings) const;
   void set_contact_search(BalanceSettings& settings) const;
+  void set_fix_spiders(BalanceSettings& settings) const;
+  void set_fix_mechanisms(BalanceSettings& settings) const;
   void set_contact_search_tolerance(BalanceSettings& settings) const;
   void set_decomp_method(BalanceSettings& settings) const;
   void set_vertex_weight_block_multiplier(BalanceSettings& settings) const;
+  void set_print_diagnostics(BalanceSettings& settings) const;
+
+  void set_vertex_weight_method(BalanceSettings& settings) const;
+  void set_vertex_weight_field_name(BalanceSettings& settings) const;
+  void set_contact_search_edge_weight(BalanceSettings& settings) const;
+  void set_contact_search_vertex_weight_multiplier(BalanceSettings& settings) const;
+  void set_edge_weight_multiplier(BalanceSettings& settings) const;
 
   const MPI_Comm m_comm;
   const OptionNames m_optionNames;

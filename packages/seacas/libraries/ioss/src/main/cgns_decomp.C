@@ -225,8 +225,6 @@ namespace {
   std::string codename;
   std::string version = "0.97";
 
-  int term_width();
-
   void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones)
   {
     for (auto &zone : zones) {
@@ -428,7 +426,7 @@ namespace {
 
         int pw = Ioss::Utils::number_width(proc_count, false);
         // Two tabs at beginning ~16 spaces.  Each entry is "[pw->pw]  " which is 6+2pw
-        int npl  = (term_width() - 16) / (6 + 2 * pw);
+        int npl  = (Ioss::Utils::term_width() - 16) / (6 + 2 * pw);
         npl      = npl < 1 ? 1 : npl;
         int line = 0;
 
@@ -758,6 +756,13 @@ int main(int argc, char *argv[])
   if (in_type == "cgns") {
     Iocgns::Utils::set_line_decomposition(dbi->get_file_pointer(), interFace.line_decomposition,
                                           zones, 0, interFace.verbose);
+    for (const auto &z : zones) {
+      if (z->m_lineOrdinal == 7) {
+        fmt::print(
+            "WARNING: Zone {} with work {} will not be decomposed due to line ordinal setting.\n",
+            z->m_name, fmt::group_digits(z->work()));
+      }
+    }
   }
 
   region.output_summary(std::cout, false);
@@ -795,29 +800,3 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 }
-
-#if defined(_MSC_VER)
-#include <io.h>
-#define isatty _isatty
-#endif
-
-namespace {
-  int term_width()
-  {
-    int cols = 100;
-    if (isatty(fileno(stdout))) {
-#ifdef TIOCGSIZE
-      struct ttysize ts
-      {
-      };
-      ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
-      cols = ts.ts_cols;
-#elif defined(TIOCGWINSZ)
-      struct winsize ts;
-      ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
-      cols = ts.ws_col;
-#endif /* TIOCGSIZE */
-    }
-    return cols;
-  }
-} // namespace

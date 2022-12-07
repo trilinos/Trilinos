@@ -183,7 +183,7 @@
       if (!eMesh.m_refine_level_field_set)
         {
           eMesh.m_refine_level_field_set = true;
-          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
+          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (eMesh.m_refine_level_field)
@@ -644,18 +644,13 @@
 
     void addDistributionFactorToNewPart(stk::mesh::MetaData & meta, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
     {
-      const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*old_part);
+      stk::mesh::FieldBase *df_field = const_cast<stk::mesh::FieldBase*>(stk::io::get_distribution_factor_field(*old_part));
       if (df_field) {
-    	  const std::string field_name = df_field->name();
-          stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field =
-            &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(new_part->primary_entity_rank(), field_name);
-          stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
-          stk::io::set_distribution_factor_field(*new_part, *distribution_factors_field);
+          stk::io::set_field_role(*df_field, Ioss::Field::MESH);
+          stk::io::set_distribution_factor_field(*new_part, *df_field);
           int side_node_count = new_part->topology().num_nodes();
-          stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-          stk::mesh::put_field_on_mesh(*distribution_factors_field,
-                               *new_part, side_node_count, init_np);
-        }
+          stk::mesh::put_field_on_mesh(*df_field, *new_part, side_node_count, nullptr);
+      }
     }
 
     void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)

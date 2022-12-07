@@ -43,9 +43,6 @@
 /* Define if want to build tpetra-print_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_WARNINGS
 
-/* Define if want to build tpetra-throw_efficiency_warnings */
-#cmakedefine HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-
 /* Define if want to build tpetra-print_efficiency_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 
@@ -116,14 +113,11 @@
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
 
-/* Define when enabling Tpetra for refactoring to new KokkosCore interface */
-#cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
-
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-/* Define when Tpetra assumes that the MPI implementation is CUDA aware */
-#cmakedefine TPETRA_ASSUME_CUDA_AWARE_MPI
+/* Define when Tpetra assumes that the MPI implementation is GPU aware */
+#cmakedefine TPETRA_ASSUME_GPU_AWARE_MPI
 
 /* List of enabled (LocalOrdinal, GlobalOrdinal) pairs */
 #cmakedefine HAVE_TPETRA_INST_INT_INT

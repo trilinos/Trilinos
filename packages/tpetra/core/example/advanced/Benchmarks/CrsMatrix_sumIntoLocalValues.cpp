@@ -66,6 +66,7 @@ using crs_matrix_type = Tpetra::CrsMatrix<>;
 using map_type = Tpetra::Map<>;
 using LO = map_type::local_ordinal_type;
 using GO = map_type::global_ordinal_type;
+using SC = crs_matrix_type::scalar_type;
 
 RCP<const map_type>
 createRowAndColMap (RCP<const Teuchos::Comm<int> > comm,
@@ -105,7 +106,7 @@ void
 populateCrsMatrix (crs_matrix_type& A,
                    const LO numToInsert,
                    const LO lclColInds[],
-                   const double vals[])
+                   const SC vals[])
 {
   //TM mon (*TM::getNewCounter ("CrsMatrix::insertLocalValues loop"));
 
@@ -145,7 +146,7 @@ doSumIntoLocalValues (const std::string& label,
                       crs_matrix_type& A,
                       const LO numToInsert,
                       const LO lclColInds[],
-                      const double vals[],
+                      const SC vals[],
                       const int numTrials)
 {
   TM mon (*TM::getNewCounter (label));
@@ -171,7 +172,7 @@ doKokkosSumIntoLocalValues (const std::string& label,
                             crs_matrix_type& A,
                             const LO numToInsert,
                             const LO lclColInds[],
-                            const double vals[],
+                            const SC vals[],
                             const int numTrials)
 {
   TM mon (*TM::getNewCounter (label));
@@ -213,7 +214,7 @@ benchmarkCrsMatrixSumIntoLocalValues (const CmdLineArgs args)
 
 
   std::vector<LO> lclColInds (size_t (args.numToInsert));
-  std::vector<double> vals (size_t (args.numToInsert), 0.0);
+  std::vector<SC> vals (size_t (args.numToInsert), 0.0);
   // Skip 0, so that search isn't completely trivial.
   std::iota (lclColInds.begin (), lclColInds.end (), LO (1));
 

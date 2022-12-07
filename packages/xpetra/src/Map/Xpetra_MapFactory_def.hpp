@@ -59,17 +59,6 @@
 
 namespace Xpetra {
 
-#if 0
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
-MapFactory()
-{
-}
-#endif
-
-
-
-
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -353,7 +342,42 @@ createContigMapWithNode(UnderlyingLib                                 lib,
 }
 
 
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
+copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
+                   const Teuchos::RCP<const Teuchos::Comm<int>>& newComm) {
+    XPETRA_MONITOR("MapFactory::Build");
+    using XMF = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>;
+    global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+    size_t Nlocal  = oldmap->getLocalNumElements();
+    global_size_t Nglobal = oldmap->getGlobalNumElements();
+
+    // Sanity check -- if there's no comm, we can't keep elements on the map  (vice versa is OK)
+    TEUCHOS_TEST_FOR_EXCEPTION( Nlocal && newComm.is_null(),
+                                std::logic_error, "MapFactory::copyMapWithNewComm needs the comm to match the map.");
+
+    // We'll return null if we don't have a Comm on this rank
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > newMap;
+    if(!newComm.is_null()) {
+      if(oldmap->isContiguous()) {
+        newMap = XMF::Build(oldmap->lib(),INVALID,Nlocal,oldmap->getIndexBase(),newComm);
+      }
+      else {
+        newMap = XMF::Build(oldmap->lib(),Nglobal,oldmap->getLocalElementList(),oldmap->getIndexBase(),newComm);
+      }
+    }
+
+    return newMap;
+    XPETRA_FACTORY_END;
+}
+
+
 }   // namespace Xpetra
+
+
 
 
 #endif  // XPETRA_MAPFACTORY_DEF_HPP

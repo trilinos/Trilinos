@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_CodeTypes.h"           // for IntVector
+#include "Ioss_ElementPermutation.h"  // for ElementPermutation
 #include "Ioss_ElementTopology.h"     // for ElementTopology
 #include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_Sphere.h>
@@ -56,6 +57,12 @@ Ioss::Sphere::Sphere() : Ioss::ElementTopology(Ioss::Sphere::name, "Particle")
   Ioss::ElementTopology::alias(Ioss::Sphere::name, "point1");
 }
 
+const std::string &Ioss::Sphere::base_topology_permutation_name() const
+{
+  static std::string permutationName(Ioss::SpherePermutation::name);
+  return permutationName;
+}
+
 int Ioss::Sphere::parametric_dimension() const { return 0; }
 int Ioss::Sphere::spatial_dimension() const { return 3; }
 int Ioss::Sphere::order() const { return 1; }
@@ -71,6 +78,7 @@ int Ioss::Sphere::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
+  IOSS_ASSERT_USED(face);
   return Constants::nfacenode;
 }
 
@@ -78,6 +86,7 @@ int Ioss::Sphere::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
+  IOSS_ASSERT_USED(face);
   return Constants::nfaceedge;
 }
 
@@ -90,6 +99,7 @@ Ioss::IntVector Ioss::Sphere::edge_connectivity(int /* edge_number */) const
 Ioss::IntVector Ioss::Sphere::face_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= number_faces());
+  IOSS_ASSERT_USED(face_number);
   Ioss::IntVector connectivity;
   return connectivity;
 }
@@ -110,6 +120,7 @@ Ioss::ElementTopology *Ioss::Sphere::face_type(int face_number) const
   // face_number is 1-based.
 
   assert(face_number >= 0 && face_number <= number_faces());
+  IOSS_ASSERT_USED(face_number);
   return (Ioss::ElementTopology *)nullptr;
 }
 
@@ -120,5 +131,6 @@ Ioss::ElementTopology *Ioss::Sphere::edge_type(int edge_number) const
   // edge_number is 1-based.
 
   assert(edge_number >= 0 && edge_number <= number_edges());
+  IOSS_ASSERT_USED(edge_number);
   return nullptr;
 }

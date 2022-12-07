@@ -67,6 +67,16 @@ namespace Amesos2 {
   {}
 
   template <typename Scalar, typename ExecutionSpace >
+  Teuchos::RCP< Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >
+   MultiVecAdapter<
+    Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::clone() const
+  {
+    using MV = Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace>;
+    MV Y("clonedY", mv_->extent(0), mv_->extent(1));
+    return Teuchos::rcp( &Y );
+  }
+
+  template <typename Scalar, typename ExecutionSpace >
   Scalar *
   MultiVecAdapter<
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::getMVPointer_impl() const

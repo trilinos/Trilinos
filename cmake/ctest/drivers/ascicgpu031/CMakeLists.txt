@@ -16,9 +16,18 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 420
   )
 
+
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  DEBUG_CUDA_UVM_DEPRECATED_DEV
-  ctest_linux_nightly_mpi_debug_uvm_deprecated_ascicgpu031_crs.cmake
+  UVM_DEPRECATION_REMOVAL
+  ctest_linux_nightly_mpi_uvm_debug_deprecation_removal.cmake
+  CTEST_INSTALLER_TYPE debug
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  NOUVM_DEPRECATION_REMOVAL
+  ctest_linux_nightly_mpi_nouvm_debug_deprecation_removal.cmake
   CTEST_INSTALLER_TYPE debug
   RUN_SERIAL
   TIMEOUT_MINUTES 420

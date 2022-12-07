@@ -64,7 +64,7 @@ int main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  typedef double                           ST;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
@@ -151,8 +151,8 @@ int main (int argc, char *argv[])
     //
     // Construct a preconditioned linear problem
     //
-    RCP<Belos::LinearProblem<double,MV,OP> > problem
-      = rcp (new Belos::LinearProblem<double,MV,OP> (A, X, B));
+    RCP<Belos::LinearProblem<ST,MV,OP> > problem
+      = rcp (new Belos::LinearProblem<ST,MV,OP> (A, X, B));
     bool set = problem->setProblem ();
     if (! set) {
       if (proc_verbose) {
@@ -162,8 +162,8 @@ int main (int argc, char *argv[])
     }
 
     // Create a Belos solver.
-    RCP<Belos::SolverManager<double,MV,OP> > solver
-      = rcp (new Belos::BiCGStabSolMgr<double,MV,OP> (problem, belosList));
+    RCP<Belos::SolverManager<ST,MV,OP> > solver
+      = rcp (new Belos::BiCGStabSolMgr<ST,MV,OP> (problem, belosList));
 
     if (proc_verbose) {
       cout << endl << endl;

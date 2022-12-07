@@ -43,7 +43,7 @@
 #include <vector>
 #include <unistd.h>
 
-class MeshFixtureDecomposer : public stk::unit_test_util::MeshFixture
+class MeshFixtureDecomposer : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   MeshFixtureDecomposer()
@@ -95,11 +95,11 @@ protected:
 
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    const stk::mesh::EntityProcVec & decomp = m_decomposer->get_partition();
+    stk::balance::DecompositionChangeList decomp = m_decomposer->get_partition();
     stk::EnvData::instance().m_outputP0 = &std::cout;
 
     bool isNested = true;
-    for (const stk::mesh::EntityProc & entityProc : decomp) {
+    for (const auto & entityProc : decomp) {
       const unsigned targetProc = static_cast<unsigned>(entityProc.second);
       if (myNestedSubdomains.find(targetProc) == myNestedSubdomains.end()) {
         isNested = false;

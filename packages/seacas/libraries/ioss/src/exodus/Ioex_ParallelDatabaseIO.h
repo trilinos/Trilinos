@@ -7,6 +7,8 @@
 // -*- Mode: c++ -*-
 #pragma once
 
+#include "ioex_export.h"
+
 #include <exodusII.h>
 #if defined PARALLEL_AWARE_EXODUS
 #include <Ioss_CodeTypes.h>
@@ -59,13 +61,13 @@ namespace Ioss {
  *  parallel exodus database format.
  */
 namespace Ioex {
-  class ParallelDatabaseIO : public Ioex::BaseDatabaseIO
+  class IOEX_EXPORT ParallelDatabaseIO : public Ioex::BaseDatabaseIO
   {
   public:
     ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
                        Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                        const Ioss::PropertyManager &properties);
-    ParallelDatabaseIO(const ParallelDatabaseIO &from) = delete;
+    ParallelDatabaseIO(const ParallelDatabaseIO &from)            = delete;
     ParallelDatabaseIO &operator=(const ParallelDatabaseIO &from) = delete;
     ~ParallelDatabaseIO()                                         = default;
 
@@ -155,10 +157,10 @@ namespace Ioex {
       return -1;
     }
 
-    int64_t put_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
-                                    const Ioss::Field &field, void *data, size_t data_size) const;
-    int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
-                                    const Ioss::Field &field, void *data, size_t data_size) const;
+    int64_t put_Xset_field_internal(const Ioss::EntitySet *ns, const Ioss::Field &field, void *data,
+                                    size_t data_size) const;
+    int64_t get_Xset_field_internal(const Ioss::EntitySet *ns, const Ioss::Field &field, void *data,
+                                    size_t data_size) const;
 
     int free_file_pointer() const override;
 
@@ -171,28 +173,25 @@ namespace Ioex {
     // Metadata-related functions.
     void read_meta_data__() override;
 
-    int64_t read_transient_field(ex_entity_type type, const Ioex::VariableNameMap &variables,
-                                 const Ioss::Field &field, const Ioss::GroupingEntity *ge,
-                                 void *data) const;
-
-    int64_t read_attribute_field(ex_entity_type type, const Ioss::Field &field,
+    int64_t read_transient_field(const Ioex::VariableNameMap &variables, const Ioss::Field &field,
                                  const Ioss::GroupingEntity *ge, void *data) const;
 
-    int64_t write_attribute_field(ex_entity_type type, const Ioss::Field &field,
-                                  const Ioss::GroupingEntity *ge, void *data) const;
+    int64_t read_attribute_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
+                                 void *data) const;
+
+    int64_t write_attribute_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
+                                  void *data) const;
 
     // Handles subsetting of side blocks.
     int64_t read_ss_transient_field(const Ioss::Field &field, int64_t id, void *variables,
                                     std::vector<int> &is_valid_side) const;
 
     // Should be made more generic again so can rejoin with write_element_transient field
-    void write_nodal_transient_field(ex_entity_type type, const Ioss::Field &field,
-                                     const Ioss::NodeBlock *nb, int64_t count,
-                                     void *variables) const;
+    void write_nodal_transient_field(const Ioss::Field &field, const Ioss::NodeBlock *nb,
+                                     int64_t count, void *variables) const;
     // Should be made more generic again so can rejoin with write_nodal_transient field
-    void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
-                                      const Ioss::GroupingEntity *ge, int64_t count,
-                                      void *variables) const;
+    void write_entity_transient_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
+                                      int64_t count, void *variables) const;
     void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) override;
 
     // Read related metadata and store it in the region...

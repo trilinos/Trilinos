@@ -11,6 +11,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_LevelSet.hpp>
+#include <Akri_Surface_Manager.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -28,18 +29,16 @@ void IC_Binder::compute_signed_distance(const LevelSet &ls) const
 
   const stk::mesh::Selector selector = stk::mesh::selectField(distRef);
 
-  const LevelSetManager & region_ls = LevelSetManager::get(meta);
-  const unsigned num_ls = region_ls.numberLevelSets();
+  const krino::Surface_Manager & surfaceManager = krino::Surface_Manager::get(meta);
 
   std::vector<FieldRef> otherDistRefs;
-  for (unsigned i=0; i<num_ls; ++i)
+  for (auto && otherLS : surfaceManager.get_levelsets())
   {
-    const LevelSet & other_ls = region_ls.levelSet(i);
-    if(ls.get_identifier() == other_ls.get_identifier())
+    if(ls.get_identifier() == otherLS->get_identifier())
     {
       break;
     }
-    otherDistRefs.push_back(other_ls.get_distance_field());
+    otherDistRefs.push_back(otherLS->get_distance_field());
   }
 
   const unsigned num_other_dist = otherDistRefs.size();

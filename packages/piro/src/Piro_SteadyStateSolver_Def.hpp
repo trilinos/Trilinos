@@ -81,7 +81,7 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "Piro_Reduced_Objective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
@@ -92,8 +92,10 @@
 
 template <typename Scalar>
 Piro::SteadyStateSolver<Scalar>::
-SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model) :
+SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel) :
   model_(model),
+  adjointModel_(adjointModel),
   num_p_(model->Np()),
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
@@ -103,8 +105,10 @@ template <typename Scalar>
 Piro::SteadyStateSolver<Scalar>::
 SteadyStateSolver(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &adjointModel,
     int numParameters) :
   model_(model),
+  adjointModel_(adjointModel),
   num_p_(numParameters),
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
@@ -428,16 +432,28 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     ROL::Ptr<ROL::Vector<Scalar> > rol_x_ptr = ROL::makePtrFromRef(rol_x);
     ROL::Ptr<ROL::Vector<Scalar> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
 
-    for (int i=0; i<num_g_; ++i) {
-      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, appParams, Teuchos::VERB_NONE);
-      Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, i, p_indices, appParams, Teuchos::VERB_NONE);
+
+    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+    auto  stateStore = ROL::makePtr<ROL::VectorController<Scalar>>();
+      
+    for (int i=0; i<num_g_; ++i) {      
+
+      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, i, p_indices, appParams, Teuchos::VERB_NONE);
 
       ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
 
-      Piro::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
+      //create the ROL reduce objective initializing it with the current state and parameter
+      ROL::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,stateStore,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
+      reduced_obj.update(rol_p,ROL::UpdateType::Temp);
+      stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
 
-      reduced_obj.set_precomputed_state(rol_x,rol_p);
+      //reduced_obj.set_precomputed_state(rol_x,rol_p);
+      if(i>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
+        constr.computeJacobian1_ = false;
+        constr.computeAdjointJacobian1_ = false;
+      }
+
       Scalar tmp = reduced_obj.value(rol_p,tol);
       reduced_obj.gradient(rol_current_g, rol_p, tol);
 
@@ -1233,16 +1249,25 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
     Thyra::copy(*lambda_init, lambda_vec.ptr());
   }
 
+
+  Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(model_, adjointModel_, p_indices, appParams, Teuchos::VERB_NONE);
+  auto stateStore = ROL::makePtr<ROL::VectorController<Scalar>>(); 
+  
   for (int g_index=0; g_index<num_g_; ++g_index) {
-    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
-    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
-
-    ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
+    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
+    
     ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
+    ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);    
 
-    Piro::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
+    //create the ROL reduce objective initializing it with the current state and parameter
+    ROL::Reduced_Objective_SimOpt<Scalar> reduced_obj(obj_ptr,constr_ptr,stateStore,rol_x_ptr,rol_p_ptr,rol_lambda_ptr);
+    reduced_obj.update(rol_p,ROL::UpdateType::Temp);
+    stateStore->set(*rol_x_ptr, std::vector<Scalar>());  //second argument not meaningful for deterministic problems 
 
-    reduced_obj.set_precomputed_state(rol_x,rol_p);
+    if(g_index>0) { //a bit hacky, but the jacobian and, if needed, its adjoint have been computed at iteration 0
+      constr.computeJacobian1_ = false;
+      constr.computeAdjointJacobian1_ = false;
+    }
 
     for (auto j = 0; j < n_directions; ++j) {
       for (int p_index=0; p_index<num_p_; ++p_index) {

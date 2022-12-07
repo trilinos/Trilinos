@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2021/10/27                      '
-      QAINFO(3) = ' 1.38                           '
+      QAINFO(2) = '2022/02/02                      '
+      QAINFO(3) = ' 1.39                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -75,3 +75,4 @@ c - call mdfree()
 c - add basic support for named entities.
 c - don't mclong if adding zero bytes
 c - remove warning about expxyz material matching routine
+c - fix name length issues

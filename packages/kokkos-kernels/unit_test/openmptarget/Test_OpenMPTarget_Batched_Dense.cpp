@@ -4,4 +4,4 @@
 #include "Test_OpenMPTarget.hpp"
 #include "Test_Batched_Dense.hpp"
 
-#endif // TEST_OPENMPTARGET_BATCHED_DENSE_CPP
+#endif  // TEST_OPENMPTARGET_BATCHED_DENSE_CPP

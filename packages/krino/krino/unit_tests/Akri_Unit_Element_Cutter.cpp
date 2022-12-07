@@ -36,7 +36,8 @@ build_always_false_diagonal_picker()
   return diagonalPicker;
 }
 
-static void build_simple_parent_edges(const stk::topology topology,
+static void build_simple_parent_edges(const bool oneLSPerPhase,
+    const stk::topology topology,
     const std::vector<stk::mesh::EntityId> & nodeIds,
     const std::vector<std::vector<double>> & nodalIsovars,
     ParentEdgeMap & parentEdges,
@@ -55,7 +56,7 @@ static void build_simple_parent_edges(const stk::topology topology,
     CDFEM_Parent_Edge & parentEdge = parentEdges[edge_key];
 
     if(!parentEdge.valid())
-      parentEdge = CDFEM_Parent_Edge({nodalIsovars[i0], nodalIsovars[i1]});
+      parentEdge = CDFEM_Parent_Edge(oneLSPerPhase, {nodalIsovars[i0], nodalIsovars[i1]});
 
     elementParentEdges.push_back(&parentEdge);
   }
@@ -72,15 +73,15 @@ struct ElementWithCutter : public ::testing::Test
       const std::vector<stk::mesh::EntityId> & nodeIds,
       const std::vector<std::vector<double> > & nodalIsovars)
   {
-    Phase_Support::set_one_levelset_per_phase(true);
     const auto diagonalPicker = build_always_false_diagonal_picker();
 
     const MasterElement & masterElem = MasterElementDeterminer::getMasterElement(topology);
+    const bool oneLSPerPhase = true;
 
     std::vector<const CDFEM_Parent_Edge *> elementParentEdges;
     std::vector<bool> areParentEdgesAreOrientedSameAsElementEdges;
 
-    build_simple_parent_edges(topology, nodeIds, nodalIsovars, parentEdges, elementParentEdges, areParentEdgesAreOrientedSameAsElementEdges);
+    build_simple_parent_edges(oneLSPerPhase, topology, nodeIds, nodalIsovars, parentEdges, elementParentEdges, areParentEdgesAreOrientedSameAsElementEdges);
 
     cutter.reset( new One_LS_Per_Phase_Cutter(masterElem, elementParentEdges, areParentEdgesAreOrientedSameAsElementEdges, diagonalPicker) );
   }

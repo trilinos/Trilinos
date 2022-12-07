@@ -56,7 +56,6 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 
 
@@ -119,6 +118,18 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
+inline
+std::ostream& operator<<(std::ostream& os, EntityState state)
+{
+  switch(state) {
+  case Unchanged: os<<"Unchanged"; break;
+  case Created: os<<"Created"; break;
+  case Modified: os<<"Modified"; break;
+  case Deleted: os<<"Deleted"; break;
+  default: break;
+  };
+  return os;
+}
 
 template< class FieldType > struct FieldTraits ;
 
@@ -189,8 +200,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    CONTACT   = 0x00ff , // 5
-    AUXILIARY = 0x00ff ,
     INVALID   = 10
   };
 
@@ -229,11 +238,16 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
 
 NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 
+inline bool operator>=(const EntityCommInfo& lhs, const EntityCommInfo& rhs)
+{
+  return lhs.ghost_id >= rhs.ghost_id && lhs.proc >= rhs.proc;
+}
+
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
  */
 typedef std::vector<EntityCommInfo> EntityCommInfoVector;
-typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
+typedef PairIter<const EntityCommInfo*>  PairIterEntityComm ;
 
 #endif
 /** \} */

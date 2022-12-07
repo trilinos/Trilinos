@@ -163,6 +163,15 @@ setParameters (Teuchos::ParameterList& List)
   OverlappingLevel_ = List.get("partitioner: overlap", OverlappingLevel_);
   verbose_          = List.get("partitioner: print level", verbose_);
   maintainSparsity_ = List.get("partitioner: maintain sparsity", false);
+  typedef Teuchos::RCP<   Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> const >  map_type;
+  typedef Teuchos::RCP<Tpetra::Import<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> const >  import_type;
+
+  // when using overlapping schwarz wth combineMode ADD, we need import and
+  // overlap row map to adjust weights for ith dof. Specifically, we sum 
+  // all blocks (including off processor ones) that contain i.
+  import_type theImport = Graph_->getImporter();
+  if (theImport != Teuchos::null)   List.set< import_type >("theImport",theImport);
+  List.set< map_type >("OverlapRowMap",Graph_->getRowMap());
 
   if (NumLocalParts_ < 0) {
     NumLocalParts_ = Graph_->getLocalNumRows() / (-NumLocalParts_);

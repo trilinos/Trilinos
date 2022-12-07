@@ -14,7 +14,7 @@ namespace { // (anonymous)
 
 struct CommandLineOptions {
   std::string solverName {"TPETRA GMRES"};
-  double offDiagDiff = 1.0 / 8.0;
+  Tpetra::MultiVector<>::scalar_type offDiagDiff = 1.0 / 8.0;
   // mfh 14 Aug 2018: GMRES takes 20 iterations on this problem (with
   // offDiagDiff = 1/8).  We add 10 iterations to allow for rounding
   // error and differences in the algorithm.

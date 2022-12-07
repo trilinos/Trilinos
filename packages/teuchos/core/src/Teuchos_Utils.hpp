@@ -60,9 +60,6 @@ namespace Teuchos
     {
     public:
 
-      /** \brief print a description of the current build. */
-      static void aboutBuild();
-
       /** \brief Set a number to zero if it is less than
        * <tt>getChopVal()</tt>. */
       static double chop(const double& x);

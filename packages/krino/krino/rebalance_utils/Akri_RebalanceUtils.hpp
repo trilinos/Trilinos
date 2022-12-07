@@ -14,6 +14,7 @@
 #include <vector>
 
 namespace krino { class CDMesh; }
+namespace krino { class RefinementInterface; }
 
 namespace krino {
 namespace rebalance_utils {
@@ -25,19 +26,23 @@ namespace rebalance_utils {
 // such that the parent elements are weighted with the sum of their child
 // weights, and the child weights are 0 for both CDFEM and adaptivity parents/children.
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
     const std::vector<stk::mesh::Selector> & selections_to_rebalance_separately,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method = "parmetis",
     const double imbalance_threshold = 1.05);
 
 // This version handles multiple criteria rebalancing with different weights for each
 // criterion.
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method = "parmetis",
     const double imbalance_threshold = 1.05);
 }

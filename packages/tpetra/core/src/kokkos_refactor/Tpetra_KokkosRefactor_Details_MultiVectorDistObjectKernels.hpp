@@ -217,8 +217,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -245,6 +245,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // array.  Performance doesn't matter since we are already in
         // an error state, so we can do this sequentially, on host.
         auto idx_h = Kokkos::create_mirror_view (idx);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
@@ -394,8 +396,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -421,6 +423,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // array.  Performance doesn't matter since we are already in
         // an error state, so we can do this sequentially, on host.
         auto idx_h = Kokkos::create_mirror_view (idx);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
@@ -586,8 +590,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -623,6 +627,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // row indices.  Performance doesn't matter since we are already
         // in an error state, so we can do this sequentially, on host.
         auto idx_h = Kokkos::create_mirror_view (idx);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<row_index_type> badRows;
@@ -657,6 +663,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // Go back and find any out-of-bounds entries in the array
         // of column indices.
         auto col_h = Kokkos::create_mirror_view (col);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (col_h, col);
 
         std::vector<col_index_type> badCols;
@@ -977,8 +985,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     template<class TagType>
     KOKKOS_INLINE_FUNCTION void
     join (TagType,
-          volatile size_t& dstErrorCount,
-          const volatile size_t& srcErrorCount) const
+          size_t& dstErrorCount,
+          const size_t& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -1021,6 +1029,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // array.  Performance doesn't matter since we are already in
         // an error state, so we can do this sequentially, on host.
         auto idx_h = Kokkos::create_mirror_view (idx);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
@@ -1296,8 +1306,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
 
     KOKKOS_INLINE_FUNCTION void
-    join (volatile value_type& dstErrorCount,
-          const volatile value_type& srcErrorCount) const
+    join (value_type& dstErrorCount,
+          const value_type& srcErrorCount) const
     {
       dstErrorCount += srcErrorCount;
     }
@@ -1350,6 +1360,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // already in an error state, so we can do this sequentially,
         // on host.
         auto idx_h = Kokkos::create_mirror_view (idx);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (idx_h, idx);
 
         std::vector<row_index_type> badRows;
@@ -1385,6 +1397,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         // Go back and find any out-of-bounds entries in the array
         // of column indices.
         auto col_h = Kokkos::create_mirror_view (col);
+
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (col_h, col);
 
         std::vector<col_index_type> badCols;

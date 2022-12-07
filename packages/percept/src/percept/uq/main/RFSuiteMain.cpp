@@ -56,6 +56,8 @@ int main(int argc,  char **argv)
 {
   stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
 
+  Kokkos::initialize(argc, argv);
+
   int proc_rank = stk::parallel_machine_rank(comm);
 
   std::string input_mesh = "";
@@ -142,14 +144,13 @@ int main(int argc,  char **argv)
   }
 
   stk::io::StkMeshIoBroker mesh_data(comm);
+  mesh_data.use_simple_fields();
 
   mesh_data.add_mesh_database(input_mesh, "exodus", stk::io::READ_MESH);
   mesh_data.create_input_mesh();
 
-  stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi = 
-    mesh_data.meta_data().declare_field<stk::mesh::Field<double,stk::mesh::SimpleArrayTag> >(stk::topology::ELEMENT_RANK, "phi");
-  stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-  stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, init_np);
+  stk::mesh::Field<double> & phi =  mesh_data.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, "phi");
+  stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, nullptr);
 
   mesh_data.populate_bulk_data();
   
@@ -194,6 +195,7 @@ int main(int argc,  char **argv)
   }
   mesh_data.end_output_step(result_output_index);
 
+  Kokkos::finalize();
   stk::parallel_machine_finalize();
 
   return 0;

@@ -51,14 +51,13 @@
 
 namespace Stokhos {
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   // Build a CRS graph from a sparse Cijk tensor
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
             typename CijkType>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
-  create_cijk_crs_graph(const CijkType& cijk,
+  create_cijk_crs_graph(const CijkType& cijk_dev,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
@@ -67,6 +66,11 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
+
+    // Code below accesses cijk entries on the host, so make sure it is
+    // accessible there
+    auto cijk = create_mirror_view(cijk_dev);
+    deep_copy(cijk, cijk_dev);
 
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
@@ -170,14 +174,15 @@ namespace Stokhos {
     // Loop over outer rows
     typename Graph::local_inds_host_view_type outer_cols;
     typename Graph::local_inds_host_view_type inner_cols;
-    size_t max_num_row_entries = graph.getNodeMaxNumRowEntries()*block_size;
+    size_t max_num_row_entries = graph.getLocalMaxNumRowEntries()*block_size;
     Array<LocalOrdinal> flat_col_indices;
     flat_col_indices.reserve(max_num_row_entries);
     RCP<Graph> flat_graph = rcp(new Graph(flat_row_map, flat_col_map, max_num_row_entries));
-    const LocalOrdinal num_outer_rows = graph.getNodeNumRows();
+    const LocalOrdinal num_outer_rows = graph.getLocalNumRows();
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 
       // Get outer columns for this outer row
+      Kokkos::fence();
       graph.getLocalRowView(outer_row, outer_cols);
       const LocalOrdinal num_outer_cols = outer_cols.size();
 
@@ -188,6 +193,7 @@ namespace Stokhos {
         const LocalOrdinal flat_row = outer_row*block_size + inner_row;
 
         // Get inner columns for this inner row
+        Kokkos::fence();
         cijk_graph->getLocalRowView(inner_row, inner_cols);
         const LocalOrdinal num_inner_cols = inner_cols.size();
 
@@ -241,7 +247,7 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Have to do a nasty const-cast because getLocalViewDevice(ReadWrite) is a
     // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
@@ -251,13 +257,7 @@ namespace Stokhos {
     mv_type& vec_nc = const_cast<mv_type&>(vec);
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite), vec_nc.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -284,16 +284,10 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(Tpetra::Access::ReadWrite), vec.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -447,7 +441,7 @@ namespace Stokhos {
                             LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& mat,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_graph,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
-    const CijkType& cijk) {
+    const CijkType& cijk_dev) {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -458,6 +452,11 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatMatrix;
+
+    // Code below accesses cijk entries on the host, so make sure it is
+    // accessible there
+    auto cijk = create_mirror_view(cijk_dev);
+    deep_copy(cijk, cijk_dev);
 
     const LocalOrdinal block_size = cijk.dimension();
     const LocalOrdinal matrix_pce_size =
@@ -472,8 +471,8 @@ namespace Stokhos {
     typename Matrix::local_inds_host_view_type inner_cols;
     typename Matrix::local_inds_host_view_type flat_cols;
     Array<BaseScalar> flat_values;
-    flat_values.reserve(flat_graph->getNodeMaxNumRowEntries());
-    const LocalOrdinal num_outer_rows = mat.getNodeNumRows();
+    flat_values.reserve(flat_graph->getLocalMaxNumRowEntries());
+    const LocalOrdinal num_outer_rows = mat.getLocalNumRows();
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 
       // Get outer columns and values for this outer row
@@ -559,7 +558,6 @@ namespace Stokhos {
     return flat_mat;
   }
 
-#endif
 
 } // namespace Stokhos
 

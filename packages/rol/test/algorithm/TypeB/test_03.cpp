@@ -54,6 +54,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+#include <unordered_map>
 //#include <fenv.h>
 
 typedef double RealT;
@@ -86,6 +87,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
+    std::unordered_map<ROL::ETestOptProblem, int, std::hash<int>> iters;
+
+    int totProb = 0;
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       // Get Objective Function
       ROL::Ptr<ROL::Vector<RealT>> x0;
@@ -93,6 +97,7 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
       if (problem->getProblemType() == ROL::TYPE_B) {
+        totProb++;
         if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
           parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
           parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
@@ -132,8 +137,30 @@ int main(int argc, char *argv[]) {
           err = std::min(err,e->norm());
         }
         *outStream << std::endl << "Norm of Error: " << err << std::endl;
+        iters.insert({prob,algo.getState()->iter});
       }
     }
+    *outStream << std::endl << std::string(80,'=') << std::endl;
+    *outStream << "Performance Summary" << std::endl;
+    *outStream << "  "
+               << std::setw(45) << std::left << "Problem"
+               << std::setw(20) << std::left << "Iteration Count"
+               << std::endl; 
+    *outStream << std::string(80,'-') << std::endl;
+    int totIter = 0;
+    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
+      if (iters.count(prob)>0) {
+        *outStream << "  "
+                   << std::setw(45) << std::left << ROL::ETestOptProblemToString(prob)
+                   << std::setw(20) << std::left << iters[prob]
+                   << std::endl;
+        totIter += iters[prob];
+      }
+    }
+    *outStream << std::string(80,'-') << std::endl;
+    *outStream << "  Total Iterations:    " << totIter << std::endl;
+    *outStream << "  Average Iterations:  " << static_cast<RealT>(totIter)/static_cast<RealT>(totProb) << std::endl;
+    *outStream << std::string(80,'=') << std::endl << std::endl;
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;

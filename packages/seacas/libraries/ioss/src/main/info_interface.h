@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "io_info_lib_export.h"
+
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <iosfwd>            // for ostream
 #include <string>            // for string
@@ -14,7 +16,7 @@
 /** \brief A special namespace for the io_info demonstration program interFace.
  */
 namespace Info {
-  class Interface
+  class IO_INFO_LIB_EXPORT Interface
   {
   public:
     Interface();
@@ -39,6 +41,7 @@ namespace Info {
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
     std::string groupname() const { return groupname_; }
+    std::string custom_field() const { return customField_; }
 
     //! Dumps representation of data in this class to cerr
 
@@ -50,6 +53,7 @@ namespace Info {
     std::string         filename_{};
     std::string         groupname_{};
     std::string         decompMethod_{};
+    std::string         customField_{};
 
     bool checkNodeStatus_{false};
     bool computeVolume_{false};
@@ -64,6 +68,6 @@ namespace Info {
 
     char fieldSuffixSeparator_{'_'};
 
-    int surfaceSplitScheme_{1};
+    int surfaceSplitScheme_{-1};
   };
 } // namespace Info

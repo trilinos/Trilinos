@@ -45,8 +45,11 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <string>                       // for operator<<, char_traits
 namespace stk { namespace mesh { class Part; } }
+
+using stk::unit_test_util::build_mesh;
 
 TEST(UnitTestKeyhole, NodeParts_case1)
 {
@@ -58,8 +61,9 @@ TEST(UnitTestKeyhole, NodeParts_case1)
   }
 
   const unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
@@ -114,8 +118,9 @@ TEST(UnitTestKeyhole, NodeParts_case2)
   }
 
   const unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 
@@ -135,7 +140,7 @@ TEST(UnitTestKeyhole, NodeParts_case2)
       bool in_both_blocks = bucket.member_all(blocks);
       EXPECT_TRUE(in_both_blocks);
     }
-  
+
     const unsigned expected_num_aura_nodes = 2;
     EXPECT_EQ(expected_num_aura_nodes, num_aura_nodes);
   }
@@ -151,8 +156,9 @@ TEST(UnitTestKeyhole, EdgeParts_case1)
   }
 
   const unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
@@ -215,8 +221,9 @@ TEST(UnitTestKeyhole, EdgeParts_case2)
   }
 
   const unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
   bulk.initialize_face_adjacent_element_graph();
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);

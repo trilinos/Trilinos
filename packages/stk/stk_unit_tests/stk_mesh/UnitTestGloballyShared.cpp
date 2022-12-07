@@ -47,13 +47,11 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
 using stk::mesh::EntityId;
-
 
 TEST( UnitTestGloballyShared, DISABLED_keyhole_3x1 )
 {
@@ -86,7 +84,7 @@ TEST( UnitTestGloballyShared, DISABLED_keyhole_3x1 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::QuadFixture qf(MPI_COMM_WORLD,NX,NY);
+  stk::mesh::fixtures::simple_fields::QuadFixture qf(MPI_COMM_WORLD,NX,NY);
   qf.m_meta.commit();
   if (p_rank <= 1) {
     qf.generate_mesh(parallel_distribution[p_rank]);

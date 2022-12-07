@@ -185,7 +185,12 @@ class MapFactory
                             size_t                                        localNumElements,
                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
-
+    //! Create a copy of the map, only using the new Comm object *if* the Comm would be valid
+    // for this map.
+    static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
+                       const Teuchos::RCP<const Teuchos::Comm<int>>& newComm);
+  
 };      // class MapFactory
 
 
@@ -307,6 +312,11 @@ class MapFactory
                             size_t localNumElements,
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
+    static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
+                       const Teuchos::RCP<const Teuchos::Comm<int>>& newComm);
+
+
   };    // class MapFactory<int, int ... > specialization
 
 
@@ -414,6 +424,11 @@ class MapFactory
                             global_size_t numElements,
                             size_t localNumElements,
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+    static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
+                       const Teuchos::RCP<const Teuchos::Comm<int>>& newComm);
+
 
   };    // class MapFactory<int, long long, EpetraNode> specialization
 

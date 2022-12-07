@@ -37,11 +37,21 @@
 
 #if defined(HAVE_SACADO_KOKKOSCONTAINERS)
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Layout.hpp"
 //#include "Kokkos_DynRankView.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 namespace Kokkos {
 
@@ -112,6 +122,20 @@ create_mirror(
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type * = 0 );
+
+}
 
 } // namespace Kokkos
 
@@ -350,12 +374,12 @@ namespace Impl {
 template <unsigned> struct AssignDim7 {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {}
+  static void eval(Dst& dst, const size_t src_dim) {}
 };
 template <> struct AssignDim7<0u> {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {
+  static void eval(Dst& dst, const size_t src_dim) {
     dst.N7 = src_dim;
   }
 };
@@ -606,7 +630,7 @@ public:
   template< class MemoryTraits >
   struct apply {
 
-    static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
+    static_assert( Kokkos::is_memory_traits< MemoryTraits >::value , "" );
 
     typedef Kokkos::ViewTraits
       < data_type
@@ -1255,6 +1279,36 @@ create_mirror(const Space& , const Kokkos::DynRankView<T,P...> & src
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
   return typename Impl::MirrorDRVType<Space,T,P ...>::view_type(
     src.label(),Impl::reconstructLayout(layout, src.rank()+1));
+}
+
+namespace Impl {
+
+template <unsigned N, typename T, typename... Args>
+KOKKOS_FUNCTION auto as_view_of_rank_n(
+  DynRankView<T, Args...> v,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,Args...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,Args...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+    >::type*)
+{
+  if (v.rank() != N) {
+    KOKKOS_IF_ON_HOST(
+        const std::string message =
+            "Converting DynRankView of rank " + std::to_string(v.rank()) +
+            " to a View of mis-matched rank " + std::to_string(N) + "!";
+        Kokkos::abort(message.c_str());)
+    KOKKOS_IF_ON_DEVICE(
+        Kokkos::abort("Converting DynRankView to a View of mis-matched rank!");)
+  }
+
+  auto layout = v.impl_map().layout();
+  layout.dimension[v.rank()] = Kokkos::dimension_scalar(v);
+  return View<typename RankDataType<T, N>::type, Args...>(
+      v.data(), Impl::reconstructLayout(layout, v.rank()+1));
+}
+
 }
 
 } // end Kokkos

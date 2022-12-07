@@ -18,17 +18,17 @@ namespace stk { namespace diag { class Timer; } }
 
 namespace krino {
 
+class PerceptRefinement;
+class RefinementInterface;
+
+PerceptRefinement & create_percept_refinement(stk::mesh::MetaData & meta, stk::diag::Timer & parentTimer);
+RefinementInterface & create_refinement(stk::mesh::MetaData & meta, const bool usePercept, stk::diag::Timer & parentTimer);
+
 namespace HAdapt
 {
   void setup(stk::mesh::MetaData & meta, stk::mesh::Part & active_part, stk::diag::Timer & root_timer);
   void do_adaptive_refinement(stk::mesh::MetaData & meta, const std::string & marker_field_name);
   void do_uniform_refinement(stk::mesh::MetaData & meta, const int num_levels);
-  void mark_based_on_indicator_field(const stk::mesh::BulkData & bulk,
-    const std::string & marker_field_name,
-    const std::string & indicator_field_name,
-    const int max_refinement_level,
-    const int current_refinement_level,
-    const uint64_t target_elem_count);
 }
 
 } // namespace krino

@@ -1,4 +1,3 @@
-add_subdirectory(interface_geometry_interface)
 add_subdirectory(master_element)
 add_subdirectory(krino_lib)
 add_subdirectory(adaptivity_interface)

@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.05 (2022/01/10)";
+  const char *version_string = "6.11 (2022/10/18)";
 
   void output_copyright();
 
@@ -533,7 +533,7 @@ namespace SEAMS {
       std::cerr
           << "\nAprepro version " << version() << "\n"
           << "\nUsage: aprepro [options] [-I path] [-c char] [var=val] [filein] [fileout]\n"
-          << "          --debug or -d: Dump all variables, debug loops/if/endif\n"
+          << "  --debug or -d: Dump all variables, debug loops/if/endif and keep temporary files\n"
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
           << "  --dumpvars_json or -J: Dump all variables at end of run in json format\n"
           << "        --version or -v: Print version number to stderr          \n"
@@ -566,6 +566,8 @@ namespace SEAMS {
           << "\tEnter {DUMP()} for list of user-defined variables\n"
           << "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
           << "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
+          << "\tDocumentation: "
+             "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#aprepro\n\n"
           << "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n";
       exit(EXIT_SUCCESS);
     }
@@ -719,9 +721,7 @@ namespace SEAMS {
     (*infoStream) << "\n{\n";
     bool first = true;
 
-    for (const auto &sym : sym_table->get()) {
-      const auto &ptr = sym.second;
-
+    for (const auto &ptr : get_sorted_sym_table()) {
       if (!ptr->isInternal) {
         if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
           (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": " << std::setprecision(10)
@@ -755,9 +755,8 @@ namespace SEAMS {
       (*infoStream) << "\n" << comment << "   Variable    = Value" << '\n';
 
       int width = 10; // controls spacing/padding for the variable names
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (doInternal == ptr->isInternal) {
             if (ptr->type == Parser::token::VAR) {
               (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
@@ -804,9 +803,8 @@ namespace SEAMS {
              type == Parser::token::AFNCT) {
       int fwidth = 20; // controls spacing/padding for the function names
       (*infoStream) << trmclr::blue << "\nFunctions returning double:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::FNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -816,9 +814,8 @@ namespace SEAMS {
 
       (*infoStream) << trmclr::blue << trmclr::blue
                     << "\nFunctions returning string:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::SFNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -827,9 +824,8 @@ namespace SEAMS {
       }
 
       (*infoStream) << trmclr::blue << "\nFunctions returning array:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::AFNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -871,6 +867,22 @@ namespace SEAMS {
       history.clear();
     }
   }
+
+  std::vector<SEAMS::symrec *> Aprepro::get_sorted_sym_table() const
+  {
+    // We want the output to be sorted, so move all symbol pointers to a vector...
+    // Could pre-filter the vector, but for now, just copy all and filter afterwards...
+    std::vector<SEAMS::symrec *> vsym_table;
+    vsym_table.reserve(sym_table->get().size());
+    for (const auto &sym : sym_table->get()) {
+      vsym_table.push_back(sym.second);
+    }
+    std::sort(vsym_table.begin(), vsym_table.end(),
+              [](const auto &a, const auto &b) { return a->name < b->name; });
+
+    return vsym_table;
+  }
+
 } // namespace SEAMS
 
 namespace {

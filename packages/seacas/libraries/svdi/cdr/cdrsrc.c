@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,7 +29,7 @@
 #define cdrcom_ cdrcom
 #define cdrcm2_ cdrcm2
 #define cdrunx_ cdrunx
-#define vcjob_ vcjob
+#define vcjob_  vcjob
 #define vconod_ vconod
 #define cdr1ch_ cdr1ch
 #define cdr1pk_ cdr1pk
@@ -69,7 +69,7 @@
 #define cdrcom_ CDRCOM
 #define cdrcm2_ CDRCM2
 #define cdrunx_ CDRUNX
-#define vcjob_ VCJOB
+#define vcjob_  VCJOB
 #define vconod_ VCONOD
 #define cdr1ch_ CDR1CH
 #define cdr1pk_ CDR1PK
@@ -284,8 +284,7 @@ extern struct onode
 
 */
 
-void      cdr1ch_(n, string, nuchar) int *n;
-unsigned *string, *nuchar;
+void cdr1ch_(int *n, unsigned *string, unsigned *nuchar)
 {
   if (*n > cdrcom_.KCPW) {
     return;
@@ -307,8 +306,7 @@ unsigned *string, *nuchar;
 
 */
 
-void      cdr1pk_(n, inchar, buffer) int *n;
-unsigned *inchar, *buffer;
+void cdr1pk_(int *n, unsigned *inchar, unsigned *buffer)
 {
   int      i;
   unsigned temp, mask;
@@ -330,10 +328,7 @@ unsigned *inchar, *buffer;
 
 */
 
-void cdr2cm_(in, iout) int *in, *iout;
-{
-  *iout = ~(*in) + 1;
-}
+void cdr2cm_(int *in, int *iout) { *iout = ~(*in) + 1; }
 
 /*  *** CDRPAK ***
 
@@ -350,8 +345,7 @@ void cdr2cm_(in, iout) int *in, *iout;
 
 */
 
-void      cdrpak_(next, iwidth, iword, ibitlc, ibuf) int *iwidth, *iword, *ibitlc;
-unsigned *next, ibuf[];
+void cdrpak_(unsigned *next, int *iwidth, int *iword, int *ibitlc, unsigned *ibuf)
 {
   int      idx, i;
   unsigned temp, mask;
@@ -405,11 +399,7 @@ unsigned *next, ibuf[];
 
 */
 
-void  cdra2c_(asci, charac) int *asci;
-char *charac;
-{
-  charac[0] = (char)*asci;
-}
+void cdra2c_(int *asci, char *charac) { charac[0] = (char)*asci; }
 /*  *** CDRBIT ***
 
   This is a dummy routine to satisfy externals. See CDRPAK
@@ -423,8 +413,7 @@ char *charac;
 
 */
 
-void      cdrbit_(next, iwidth, iword, ibitlc, ibuf) int *iwidth, *iword, *ibitlc;
-unsigned *next, ibuf[];
+void cdrbit_(unsigned *next, int *iwidth, int *iword, int *ibitlc, unsigned *ibuf)
 {
   cdrpak_(next, iwidth, iword, ibitlc, ibuf);
 }
@@ -444,8 +433,7 @@ unsigned *next, ibuf[];
 
 */
 
-void     cdrupk_(ibuf, iword, ibitlc, iwidth, next) int *iword, *ibitlc, *iwidth;
-unsigned ibuf[], *next;
+void cdrupk_(unsigned *ibuf, int *iword, int *ibitlc, int *iwidth, unsigned *next)
 {
   int      idx, i;
   unsigned temp, mask;
@@ -537,8 +525,7 @@ unsigned ibuf[], *next;
 
 */
 
-void     cdrbtr_(ibuf, iword, ibitlc, iwidth, next) int *iword, *ibitlc, *iwidth;
-unsigned ibuf[], *next;
+void cdrbtr_(unsigned ibuf[], int *iword, int *ibitlc, int *iwidth, unsigned *next)
 {
   cdrupk_(ibuf, iword, ibitlc, iwidth, next);
 }
@@ -552,11 +539,7 @@ unsigned ibuf[], *next;
 
 */
 
-void cdrc2a_(charac, asci) char *charac;
-int *asci;
-{
-  *asci = (int)charac[0];
-}
+void cdrc2a_(char *charac, int *asci) { *asci = (int)charac[0]; }
 
 /*  *** CDRC2H ***
 
@@ -576,8 +559,7 @@ int *asci;
 
 */
 
-void cdrc2h_(title, length, ititle) unsigned *title, *ititle;
-int *length;
+void cdrc2h_(unsigned *title, int *length, unsigned *ititle)
 {
   int i, ilen;
 
@@ -604,7 +586,7 @@ int *length;
 
 */
 
-void cdrcfs_(ifilcd, eof) int *ifilcd, *eof;
+void cdrcfs_(int *ifilcd, int *eof)
 {
   /* translate fortran unit number to file descriptor */
   int fd = cdrunx_.KUNTFD[*ifilcd];
@@ -635,10 +617,7 @@ void cdrcfs_(ifilcd, eof) int *ifilcd, *eof;
 
 */
 
-void cdrcvt_(in, iout) int *in, *iout;
-{
-  *iout = *in;
-}
+void cdrcvt_(int *in, int *iout) { *iout = *in; }
 /*  *** CDRELA ***
 
   Collect CPU time.  This is a dummy routine to satisfy calls from
@@ -648,9 +627,7 @@ void cdrcvt_(in, iout) int *in, *iout;
     icode - IN - 0 = initialize timer, 1 = save timer
 
 */
-void cdrela_(icode) int *icode;
-{
-}
+void cdrela_(int *icode) {}
 
 /*  *** CDRGNM ***
 
@@ -665,8 +642,7 @@ void cdrela_(icode) int *icode;
     glen - IN - length of file name
 */
 
-void cdrgnm_(gname, glen) char gname[];
-int *glen;
+void cdrgnm_(char gname[], int *glen)
 {
   /* make sure name hasn't already been set */
   char blank = ' ';
@@ -697,8 +673,7 @@ int *glen;
 
 */
 
-void cdri2c_(intp, ndigit, string) int *intp, *ndigit;
-char string[];
+void cdri2c_(int *intp, int *ndigit, char string[])
 {
   int inbr = *intp;
 
@@ -722,8 +697,7 @@ char string[];
 
 */
 
-void cdrinp_(icount, ibuffer, iprompt) int *icount;
-int *ibuffer, *iprompt;
+void cdrinp_(int *icount, int *ibuffer, int *iprompt)
 {
   char buffer[CDR_MAXLEN];
   int  istat, actcnt = 0;
@@ -794,7 +768,7 @@ machine - max 12 chars
 length of machine
 */
 
-void cdrjob_() {}
+void cdrjob_(void) {}
 
 /*  *** CDRLWR ***
 
@@ -810,8 +784,7 @@ inlen - IN - length of character string in
 
 */
 
-void cdrlwr_(in, iout, inlen) char in[], iout[];
-int *inlen;
+void cdrlwr_(char in[], char iout[], int *inlen)
 {
   for (int i = 0; i <= *inlen - 1; i++) {
     if (isupper(in[i])) {
@@ -834,9 +807,7 @@ mpage - IN -
 
 */
 
-void cdrmon_(mdev, mpkg, mpages) int *mdev, *mpkg, *mpages;
-{
-}
+void cdrmon_(int *mdev, int *mpkg, int *mpages) {}
 
 /*  *** CDROFS ***
 
@@ -852,7 +823,7 @@ ifilcd - IN - the FORTRAN unit number of the file to open
 
 */
 
-void cdrofs_(ifilcd) int *ifilcd;
+void cdrofs_(int *ifilcd)
 {
   /* check for graphics output file. file name is stored in KGNAME
      from external (common) cdrcm2. if file hasn't been named, or
@@ -901,8 +872,7 @@ Open file for the Abekas
 
 */
 
-void cdroab_(ifilcd, frame) int *ifilcd;
-int *frame;
+void cdroab_(int *ifilcd, int *frame)
 {
   char ic[5];
   int  len;
@@ -931,11 +901,7 @@ idum - IN - originally used for record length
 
 */
 
-void cdrof3_(ifilcd, idum) int *ifilcd;
-int *idum;
-{
-  cdrofs_(ifilcd);
-}
+void cdrof3_(int *ifilcd, int *idum) { cdrofs_(ifilcd); }
 /*  *** CDROFF ***
 
 Open a file for sequential access, fixed length, formatted
@@ -949,10 +915,7 @@ ifilcd - IN - the FORTRAN unit number of the file to open
 
 */
 
-void cdroff_(ifilcd) int *ifilcd;
-{
-  cdrofs_(ifilcd);
-}
+void cdroff_(int *ifilcd) { cdrofs_(ifilcd); }
 
 /*  *** CDRONO ***
 
@@ -963,10 +926,7 @@ setono - IN - logical value
 
 */
 
-void cdrono_(setono) int *setono;
-{
-  vconod_.ONODE = *setono;
-}
+void cdrono_(int *setono) { vconod_.ONODE = *setono; }
 #define MAXBUFFER 512
 
 /*  *** CDROUT ***
@@ -979,8 +939,7 @@ BUFFER - IN - integer array containing the characters
 
 */
 
-void cdrout_(icount, buffer) int *icount;
-int *buffer;
+void cdrout_(int *icount, int *buffer)
 {
   int count = *icount;
   int j     = 0;
@@ -1022,8 +981,7 @@ istat - OUT - status indicator: 0 = end of file;
 
 */
 
-void  cdrrfs_(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrrfs_(int *ifilcd, int *length, char *buffer, int *istat)
 {
   /* translate fortran unit number to file descriptor */
   int fd = cdrunx_.KUNTFD[*ifilcd];
@@ -1053,10 +1011,7 @@ iout - OUT - character converted to internal format
 
 */
 
-void cdrrvt_(in, iout) int *in, *iout;
-{
-  *in = *iout;
-}
+void cdrrvt_(int *in, int *iout) { *in = *iout; }
 
 /*  *** CDRSTD ***
 
@@ -1070,8 +1025,7 @@ nuchar - OUT - word in which to put the n characters
 
 */
 
-void      cdrstd_(n, string, nuchar) int *n;
-unsigned *string, *nuchar;
+void cdrstd_(int *n, unsigned *string, unsigned *nuchar)
 {
   if (*n > cdrcom_.KCPW) {
     return;
@@ -1082,7 +1036,7 @@ unsigned *string, *nuchar;
     Generate a traceback.  This is a dummy routine to satisfy
     externals calls.
 */
-void cdrtbk_() {}
+void cdrtbk_(void) {}
 
 /*  *** CDRTIM ***
     Pause TIM seconds. (dummy)
@@ -1090,7 +1044,7 @@ void cdrtbk_() {}
 
 void cdrtim_(float *tim) {}
 
-void cdrtod_()
+void cdrtod_(void)
 {
   sprintf((char *)vcjob_.KJTIME, "%02d:%02d:%02d\\", 11, 11, 11);
   sprintf((char *)vcjob_.KJDATE, "%02d-%02d-%02d\\", 5, 5, 5);
@@ -1107,8 +1061,7 @@ inlen - IN - length of character string in
 
 */
 
-void cdrupr_(in, iout, inlen) char in[], iout[];
-int *inlen;
+void cdrupr_(char in[], char iout[], int *inlen)
 {
   for (int i = 0; i <= *inlen; i++) {
     if (islower(in[i])) {
@@ -1129,8 +1082,7 @@ istat - OUT - status indicator. 0 = no error; 1 = error
 
 */
 
-void  cdrwfs_(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrwfs_(int *ifilcd, int *length, char *buffer, int *istat)
 {
   /* translate fortran unit number to file descriptor */
   int fd = cdrunx_.KUNTFD[*ifilcd];

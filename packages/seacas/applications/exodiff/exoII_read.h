@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -49,6 +49,11 @@ public:
   int         Open() const { return (file_id >= 0); }
   int         IO_Word_Size() const { return io_word_size; }
 
+  void modify_time_values(double scale, double offset)
+  {
+    time_scale  = scale;
+    time_offset = offset;
+  }
   // Global data:
 
   const std::string &Title() const { return title; }
@@ -184,13 +189,13 @@ public:
   std::pair<int, size_t> Global_to_Block_Local(size_t global_elmt_num) const;
 
 protected:
-  std::string file_name;
+  std::string file_name{};
   int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
   // GENESIS info:
 
-  std::string              title;
-  std::vector<std::string> coord_names;
+  std::string              title{};
+  std::vector<std::string> coord_names{};
   size_t                   num_nodes{0};
   int                      dimension{0};
   size_t                   num_elmts{0};
@@ -220,16 +225,19 @@ protected:
 
   // RESULTS info:
 
-  std::vector<std::string> global_vars;
-  std::vector<std::string> nodal_vars;
-  std::vector<std::string> elmt_vars;
-  std::vector<std::string> elmt_atts;
-  std::vector<std::string> ns_vars;
-  std::vector<std::string> ss_vars;
-  std::vector<std::string> eb_vars;
-  std::vector<std::string> fb_vars;
+  std::vector<std::string> global_vars{};
+  std::vector<std::string> nodal_vars{};
+  std::vector<std::string> elmt_vars{};
+  std::vector<std::string> elmt_atts{};
+  std::vector<std::string> ns_vars{};
+  std::vector<std::string> ss_vars{};
+  std::vector<std::string> eb_vars{};
+  std::vector<std::string> fb_vars{};
 
-  int     num_times{0};
+  int    num_times{0};
+  double time_scale{1.0};
+  double time_offset{0.0};
+
   double *times{nullptr};
 
   int      cur_time{0};          // Current timestep number of the results (0 means none).

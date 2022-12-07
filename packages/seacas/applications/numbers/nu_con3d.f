@@ -453,4 +453,3 @@ C ... Determine mins, maxs, averages, and std. dev. for selected block/elem
   140    CONTINUE
       END IF
       END
-

@@ -49,7 +49,6 @@
 #ifndef Intrepid2_IntegratedLegendreBasis_HGRAD_LINE_h
 #define Intrepid2_IntegratedLegendreBasis_HGRAD_LINE_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -281,16 +280,19 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
       
       for (int i=0; i<this->basisCardinality_; i++)
       {
         // for H(grad) line, if defineVertexFunctions is false, first basis member is constant, second is first-degree, etc.
         // if defineVertexFunctions is true, then the only difference is that the entry is also degree 1
-        this->fieldOrdinalPolynomialDegree_(i,0) = i;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = i;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = i;
       }
       if (defineVertexFunctions)
       {
-        this->fieldOrdinalPolynomialDegree_(0,0) = 1;
+        this->fieldOrdinalPolynomialDegree_  (0,0) = 1;
+        this->fieldOrdinalH1PolynomialDegree_(0,0) = 1;
       }
       
       // initialize tags
@@ -402,7 +404,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy, functor, "Hierarchical_HGRAD_LINE_Functor");
+      Kokkos::parallel_for("Hierarchical_HGRAD_LINE_Functor", policy, functor);
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

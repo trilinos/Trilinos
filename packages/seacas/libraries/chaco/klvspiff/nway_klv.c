@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
   extern int    KL_NTRIES_BAD;  /* number of unhelpful passes before quitting */
   extern int    KL_MAX_PASS;    /* maximum # outer KL loops */
 
-  double seconds(), drandom();
+  double seconds(), drandom(void);
   int    make_sep_list();
   void   bucketsortsv(), clear_dvals(), p1bucket();
   void   removebilist(), movebilist(), add2bilist();

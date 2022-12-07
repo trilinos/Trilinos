@@ -50,9 +50,21 @@
 #include <Kokkos_DefaultNode.hpp>
 #include "MueLu_config.hpp"
 
+#ifdef HAVE_MUELU_TPETRA
+#include <Tpetra_Details_DefaultTypes.hpp>
+#endif
+
 namespace MueLu
 {
-  typedef double DefaultScalar;
+
+#ifdef HAVE_MUELU_TPETRA
+    typedef Tpetra::Details::DefaultTypes::scalar_type DefaultScalar;
+#else
+    typedef double DefaultScalar;
+#endif
+
+
+
   typedef int DefaultLocalOrdinal;
 
   #if defined HAVE_MUELU_DEFAULT_GO_LONG

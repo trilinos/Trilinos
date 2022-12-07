@@ -453,6 +453,9 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
+
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector & X,
                   const MultiVector & B,
@@ -860,6 +863,9 @@ namespace Xpetra {
 #endif
 #endif
 
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
+
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                   const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
@@ -1257,11 +1263,23 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
+    /// \brief Access the local Kokkos::CrsMatrix data
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type::HostMirror());
+    }
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrixDevice () const {
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
+    }
+
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                        const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
+
+    //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+    LocalOrdinal GetStorageBlockSize() const {return 1;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

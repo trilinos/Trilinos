@@ -212,7 +212,7 @@ namespace Galeri {
       Teuchos::ParameterList list = this->list_;
       GlobalOrdinal nx = -1;
       GlobalOrdinal ny = -1;
-
+      using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
       if (list.isParameter("nx")) {
         if (list.isType<int>("nx"))
           nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
@@ -226,9 +226,12 @@ namespace Galeri {
           ny = list.get<GlobalOrdinal>("ny");
       }
 
-      Scalar  one = 1.0;
-      Scalar  zero = 0.0;
+      Scalar zero = 0.0;
+      Scalar one = 1.0;
       Scalar two = one+one;
+
+      MT one_MT  = 1.0;
+      MT two_MT = one_MT+one_MT;
 
       if (nx == -1 || ny == -1) {
         GlobalOrdinal n = this->Map_->getGlobalNumElements();
@@ -238,7 +241,7 @@ namespace Galeri {
       }
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      Scalar dtInv  = one / (Scalar) this->list_.get("dt", one);
+      MT   dtInv  = one_MT / this->list_.get("dt", one_MT);
       Scalar Kxx = (Scalar) this->list_.get("Kxx", one);
       Scalar Kxy = (Scalar) this->list_.get("Kxy", zero);
       Scalar Kyy = (Scalar) this->list_.get("Kyy", one);
@@ -252,8 +255,9 @@ namespace Galeri {
       //  z1  d  z2
 
       if (meshType == "tri") {
-        Scalar massDiag = one/two/((Scalar) ((nx+1)*(ny+1)));
-        Scalar massOffDiag = massDiag/6.0;
+        MT massDiag_MT = one_MT/two_MT/(Teuchos::as<MT>((nx+1)*(ny+1)));
+        Scalar massDiag = massDiag_MT;
+        Scalar massOffDiag = massDiag_MT/6.0;
 
         c  = -Kxx + Kxy + dtInv * massOffDiag;
         b  = -Kxx + Kxy + dtInv * massOffDiag;
@@ -266,11 +270,11 @@ namespace Galeri {
         z4 = -Kxy       + dtInv * massOffDiag;
       } else if (meshType == "quad") {
         Scalar mass = one/((Scalar) ((nx+1)*(ny+1))) / (Scalar) 36.0;
-        Scalar four_thirds = (Scalar) 4.0/3.0;
-        Scalar third       = (Scalar) 1.0/3.0;
-        Scalar two_thirds  = (Scalar) 2.0/3.0;
-        Scalar half        = (Scalar) 1.0/2.0;
-        Scalar sixth       = (Scalar) 1.0/6.0;
+        Scalar four_thirds = (Scalar) (4.0/3.0);
+        Scalar third       = (Scalar) (1.0/3.0);
+        Scalar two_thirds  = (Scalar) (2.0/3.0);
+        Scalar half        = (Scalar) (1.0/2.0);
+        Scalar sixth       = (Scalar) (1.0/6.0);
 
         a = four_thirds*Kxx  + four_thirds*Kyy             + dtInv * mass * (Scalar) 16.0;
 

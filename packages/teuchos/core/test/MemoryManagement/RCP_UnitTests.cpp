@@ -333,6 +333,26 @@ TEUCHOS_UNIT_TEST( RCP, rcpFromUndefRef )
   TEST_ASSERT(nonnull(a_rcp));
 }
 
+/**
+ * @test Test @ref Teuchos::make_rcp without constructor argument.
+ */
+TEUCHOS_UNIT_TEST( RCP, make_rcp_no_constructor_arg )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>();
+  TEST_ASSERT(Teuchos::nonnull(a_rcp));
+}
+
+/**
+ * @test Test @ref Teuchos::make_rcp with constructor arguments.
+ */
+TEUCHOS_UNIT_TEST( RCP, make_rcp )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>(1,2);
+  TEST_ASSERT(Teuchos::nonnull(a_rcp));
+  TEST_EQUALITY(a_rcp->A_g(),1);
+  TEST_EQUALITY(a_rcp->A_f(),2);
+}
+
 
 //
 // Test rcpCloneNode(...)
@@ -1093,6 +1113,23 @@ TEUCHOS_UNIT_TEST( RCP, Fix_createRCPWithBadDealloc )
   a.release();
   set_extra_data( DeallocArrayDeleteExtraData<A>::create(a.getRawPtr()), "dealloc",
     inOutArg(a));
+}
+
+
+/**
+ * @test Test the aliasing constructor.
+ */
+TEUCHOS_UNIT_TEST( RCP, aliasing_constructor )
+{
+  Teuchos::RCP<A> a_rcp = Teuchos::make_rcp<A>(1,2);
+  Teuchos::RCP<A> b_rcp = Teuchos::make_rcp<A>(2,3);
+  Teuchos::RCP<A> c_rcp(a_rcp, b_rcp.get());
+
+  TEST_ASSERT(Teuchos::nonnull(c_rcp));
+  TEST_EQUALITY_CONST(c_rcp.get(), b_rcp.get());
+  TEST_EQUALITY(c_rcp->A_g(), b_rcp->A_g());
+  TEST_EQUALITY(c_rcp->A_f(), b_rcp->A_f());
+  TEST_ASSERT( c_rcp.shares_resource(a_rcp) );
 }
 
 

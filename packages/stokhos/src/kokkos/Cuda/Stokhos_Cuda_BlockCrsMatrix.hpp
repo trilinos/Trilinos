@@ -119,7 +119,7 @@ public:
     const size_type row_count = A.graph.row_map.extent(0) - 1 ;
 
     const dim3 grid(
-      std::min( row_count , Kokkos::Impl::cuda_internal_maximum_grid_count() ) , 1 , 1 );
+      std::min( row_count , Kokkos::Impl::cuda_internal_maximum_grid_count()[0] ) , 1 , 1 );
     const dim3 block = BlockMultiply<BlockSpec>::thread_block( A.block );
 
     const size_type shmem =

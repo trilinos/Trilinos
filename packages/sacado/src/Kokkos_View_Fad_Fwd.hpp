@@ -33,10 +33,20 @@
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_View.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 namespace Kokkos {
 
@@ -70,8 +80,19 @@ typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
                        >::type
 view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
 
+template<class ExecutionSpace,
+         class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const ExecutionSpace& space,
+          const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
+
 template<class Space, class T, class ... P>
 struct MirrorType;
+template<class Space, class T, class ... P>
+struct MirrorViewType;
 
 } // namespace Impl
 
@@ -80,41 +101,127 @@ struct MirrorType;
 
 template< class T , class ... P >
 inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
-      std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+typename std::enable_if<
+  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-        Kokkos::LayoutStride >::value >::type * = 0);
-
+      Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(const Kokkos::View<T,P...> & src);
 
 template< class T , class ... P >
 inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
-      std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
-    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value >::type * = 0);
-
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type
-create_mirror(
-  const Space&,
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
+typename std::enable_if<
+  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(const Kokkos::View<T,P...> & src);
+
+template<class Space, class T, class ... P,
+         typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value,
+  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+create_mirror(const Space&, const Kokkos::View<T,P...> & src);
+
+template< class T , class ... P >
+inline
+typename std::enable_if<
+  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Kokkos::View<T,P...> & src);
+
+template< class T , class ... P >
+inline
+typename std::enable_if<
+  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+     std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Kokkos::View<T,P...> & src);
+
+template<class Space, class T, class ... P,
+          typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
+typename std::enable_if<
+  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+     std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ),
+  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Space&, const Kokkos::View<T,P...> & src);
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name = "",
+    typename std::enable_if<
+        ( std::is_same<typename ViewTraits<T, P...>::specialize,
+              Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+          std::is_same< typename ViewTraits<T,P...>::specialize ,
+              Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+        Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
+        nullptr);
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name = "",
+    typename std::enable_if<
+        ( std::is_same<typename ViewTraits<T, P...>::specialize,
+              Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+          std::is_same< typename ViewTraits<T,P...>::specialize ,
+              Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+        !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
+        nullptr);
+
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::Rank &&
+    (std::is_same<typename ViewTraits<Args...>::specialize,
+                  Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+     std::is_same<typename ViewTraits<Args...>::specialize,
+                  Kokkos::Impl::ViewSpecializeSacadoFadContiguous>::value),
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v);
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::Rank &&
+        (std::is_same<typename ViewTraits<T, Args...>::specialize,
+                      Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+         std::is_same<typename ViewTraits<T, Args...>::specialize,
+                      Kokkos::Impl::ViewSpecializeSacadoFadContiguous>::value),
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>);
+
+}
 
 } // namespace Kokkos
 

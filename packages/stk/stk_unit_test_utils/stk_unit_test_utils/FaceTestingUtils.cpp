@@ -34,6 +34,7 @@
 
 #include "FaceTestingUtils.hpp"
 #include "ioUtils.hpp"
+#include "BuildMesh.hpp"
 #include <set>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -48,6 +49,8 @@
 #include <string>
 #include <vector>
 
+using stk::unit_test_util::build_mesh;
+
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 {
     std::vector<size_t> countVec;
@@ -57,27 +60,17 @@ unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 
 unsigned read_file_create_faces_count_sides(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
-    return count_sides_in_mesh(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_sides_in_mesh(*mesh);
 }
 
 unsigned read_file_count_sides(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    return count_sides_in_mesh(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_sides_in_mesh(*mesh);
 }
 
 bool is_face_fully_connected(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
@@ -102,27 +95,17 @@ bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 
 unsigned read_file_create_faces_fully_connected_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
-    return fully_connected_elements_to_faces(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return fully_connected_elements_to_faces(*mesh);
 }
 
 unsigned read_file_fully_connected_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    return fully_connected_elements_to_faces(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return fully_connected_elements_to_faces(*mesh);
 }
 
 bool is_face_shared_between_different_elements(const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
@@ -150,27 +133,17 @@ unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData
 
 unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
-    return count_shared_faces_between_different_elements(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_shared_faces_between_different_elements(*mesh);
 }
 
 unsigned read_file_shared_faces_different_elements_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    return count_shared_faces_between_different_elements(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_shared_faces_between_different_elements(*mesh);
 }
 
 bool is_face_shared_between_same_element(const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
@@ -198,27 +171,17 @@ unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk
 
 unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
-    return count_shared_faces_between_same_element(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_shared_faces_between_same_element(*mesh);
 }
 
 unsigned read_file_shared_faces_same_elements_stk(std::string filename)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    return count_shared_faces_between_same_element(mesh);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_shared_faces_between_same_element(*mesh);
 }
 
 bool is_node_not_at_x_equal_half(const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
@@ -275,30 +238,158 @@ bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::se
 
 bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
-    return check_face_elem_connectivity(mesh, counts);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return check_face_elem_connectivity(*mesh, counts);
 
 }
 
 bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr);
-    stk::io::fill_mesh(filename, mesh);
-    return check_face_elem_connectivity(mesh, counts);
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return check_face_elem_connectivity(*mesh, counts);
 
 }
+
+
+namespace simple_fields {
+
+unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
+{
+    std::vector<size_t> countVec;
+    stk::mesh::count_entities(mesh.mesh_meta_data().universal_part(), mesh, countVec);
+    return countVec[mesh.mesh_meta_data().side_rank()];
+}
+
+unsigned read_file_create_faces_count_sides(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_sides_in_mesh(*mesh);
+}
+
+unsigned read_file_count_sides(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_sides_in_mesh(*mesh);
+}
+
+bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
+{
+    bool fully_connected = true;
+    stk::mesh::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
+        [&fully_connected](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
+        {
+          fully_connected &= is_face_fully_connected(mesh, elem);
+        }
+    );
+    return fully_connected;
+}
+
+unsigned read_file_create_faces_fully_connected_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return fully_connected_elements_to_faces(*mesh);
+}
+
+unsigned read_file_fully_connected_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return fully_connected_elements_to_faces(*mesh);
+}
+
+unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData& bulk)
+{
+    unsigned shared_face_count = 0;
+    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+        [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
+        {
+          if (is_face_shared_between_different_elements(mesh, face))
+              ++shared_face_count;
+        }
+    );
+    return shared_face_count;
+}
+
+unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_shared_faces_between_different_elements(*mesh);
+}
+
+unsigned read_file_shared_faces_different_elements_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_shared_faces_between_different_elements(*mesh);
+}
+
+unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk)
+{
+    unsigned shared_face_count = 0;
+    stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
+      [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
+      {
+        if (is_face_shared_between_same_element(mesh,face))
+            ++shared_face_count;
+      }
+    );
+    return shared_face_count;
+}
+
+unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return count_shared_faces_between_same_element(*mesh);
+}
+
+unsigned read_file_shared_faces_same_elements_stk(std::string filename)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return count_shared_faces_between_same_element(*mesh);
+}
+
+bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::set<unsigned>& gold_faces)
+{
+    std::set<unsigned> current_faces = get_face_connectivity_at_x_equal_half(mesh);
+    if (current_faces == gold_faces) {
+        return true;
+    }
+    std::cout << "gold_faces = " << gold_faces << ", current_faces = " << current_faces << std::endl;
+    return false;
+}
+
+bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    stk::mesh::create_all_sides(*mesh, mesh->mesh_meta_data().universal_part(), {}, false);
+    return check_face_elem_connectivity(*mesh, counts);
+
+}
+
+bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts)
+{
+    std::shared_ptr<stk::mesh::BulkData> mesh = build_mesh(MPI_COMM_WORLD);
+    stk::io::fill_mesh(filename, *mesh);
+    return check_face_elem_connectivity(*mesh, counts);
+
+}
+
+} // namespace simple_fields
+
 
 namespace stk
 {
@@ -368,5 +459,32 @@ stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int i
 
     return nullptr;
 }
+
+namespace simple_fields {
+
+stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
+                                                  stk::mesh::Entity elem,
+                                                  const stk::mesh::EntityVector &nodes,
+                                                  stk::mesh::EntityId globalId,
+                                                  stk::mesh::Part &part)
+{
+  return stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, nodes, globalId, part);
+}
+
+stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh,
+                                                     stk::mesh::Entity elem,
+                                                     const stk::mesh::EntityVector &sub_topology_nodes,
+                                                     stk::mesh::EntityId global_sub_topology_id,
+                                                     stk::mesh::Part &part)
+{
+  return stk::unit_test_util::declare_element_to_edge_with_nodes(mesh, elem, sub_topology_nodes, global_sub_topology_id, part);
+}
+
+stk::mesh::Part *get_surface_part_with_id(const stk::mesh::MetaData &meta, int id)
+{
+  return stk::unit_test_util::get_surface_part_with_id(meta, id);
+}
+
+} // namespace simple_fields
 
 }}

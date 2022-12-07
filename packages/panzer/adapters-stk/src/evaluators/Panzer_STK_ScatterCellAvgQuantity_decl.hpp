@@ -96,6 +96,12 @@ class ScatterCellAvgQuantity
   typedef panzer_stk::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
 
   std::size_t numValues_;
+
+  // map of variable-name to scale-factors to be applied upon output. if
+  // this is empty then no variable scaling will be performed. this
+  // should be passed in as an object via the teuchos parameter list in
+  // the ctor with the parameter name "Variable Scale Factors Map".
+  Teuchos::RCP<std::map<std::string,double>> varScaleFactors_;
  
   std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;

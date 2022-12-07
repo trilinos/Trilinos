@@ -41,7 +41,6 @@
 include(CMakeParseArguments)
 
 
-#
 # @FUNCTION: tribits_install_headers()
 #
 # Function used to (optionally) install header files using ``install()``

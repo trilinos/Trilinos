@@ -3,10 +3,10 @@ from ctypes import *
 import os
 
 """
-exodus.py v 1.16 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.17 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 2 Version)
 
-Copyright(C) 1999-2020 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -15,10 +15,10 @@ See packages/seacas/LICENSE for details
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.16 (seacas-py2)"
+EXODUS_PY_VERSION = "1.17 (seacas-py2)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.16 (seacas-py2), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.17 (seacas-py2), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -60,7 +60,7 @@ def getExodusVersion():
     version_major = 0
     version_minor = 0
     ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
-    for line in open(ACCESS + "/include/exodusII.h"):
+    for line in open(ACCESS + "/@SEACAS_INCLUDEDIR@/exodusII.h"):
         fields = line.split()
         if (len(fields) == 3 and
                 fields[0] == '#define' and
@@ -76,9 +76,9 @@ def getExodusVersion():
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
-    EXODUS_SO = ACCESS + "/lib/libexodus.dylib"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
-    EXODUS_SO = ACCESS + "/lib/libexodus.so"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.so"
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
@@ -208,7 +208,7 @@ def ex_inquiry(inquiry):
         # inquire size of MAX_NAME_LENGTH dimension on database
         'EX_INQ_DB_MAX_USED_NAME_LENGTH': 49,
         # inquire client-specified max size of returned names
-        'EX_INQ_MWAX_READ_NAME_LENGTH': 50,
+        'EX_INQ_MAX_READ_NAME_LENGTH': 50,
         # inquire size of floating-point values stored on database
         'EX_INQ_DB_FLOAT_SIZE': 51
     }

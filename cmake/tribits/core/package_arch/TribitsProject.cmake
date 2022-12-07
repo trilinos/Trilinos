@@ -66,11 +66,10 @@ if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
 endif()
 
 # Overrides that we have for CMake functions
-include(TribitsCMakePolicies)
+include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 include(TribitsProjectImpl)
 
 
-#
 # @MACRO: tribits_project()
 #
 # Processes a `TriBITS Project`_'s files and configures its software which is

@@ -57,6 +57,7 @@ void checkRecvData(MPI_Comm comm, std::vector<std::vector<DType>>& recv_bufs)
 
 void doCommunication(MPI_Comm comm)
 {
+  MPI_Barrier(comm);
   int comm_size, comm_rank, tag=7;
   MPI_Comm_size(comm, &comm_size);
   MPI_Comm_rank(comm, &comm_rank);

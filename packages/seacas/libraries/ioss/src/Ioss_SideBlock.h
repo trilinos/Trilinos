@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_ElementBlock.h>
 #include <Ioss_EntityBlock.h> // for EntityBlock
 #include <Ioss_EntityType.h>  // for EntityType, etc
@@ -29,7 +31,7 @@ namespace Ioss {
 
   /** \brief A collection of element sides having the same topology.
    */
-  class SideBlock : public EntityBlock
+  class IOSS_EXPORT SideBlock : public EntityBlock
   {
   public:
     friend class SideSet;

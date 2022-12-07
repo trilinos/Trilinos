@@ -444,13 +444,13 @@ static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
-void cdrofs();
-void cdrof3();
-void cdroff();
-void cdrrfs();
-void cdrwfs();
-void cdrcfs();
-void cdroab();
+void cdrofs(int *);
+void cdrof3(int *, int *);
+void cdroff(int *, int *, int *, int *);
+void cdrrfs(int *, int *, char *, int *);
+void cdrwfs(int *, int *, char *, int *);
+void cdrcfs(int *, int *);
+void cdroab(int *, int *);
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -488,9 +488,7 @@ static int   varray[MAX_ARRAY];
 /* >> CGI/SVDI DEVICE DRIVER ROUTINES                          */
 /*-------------------------------------------------------------*/
 
-void      cgixxx(params, num_surfaces, surf_list) anything *params[];
-int       num_surfaces;
-anything *surf_list[];
+void cgixxx(anything *params[], int num_surfaces, anything *surf_list[])
 {
   /* Main entry point */
   switch (*(short *)params[0]) {
@@ -5432,15 +5430,14 @@ int *frame;
 
   cdrofs(ifilcd);
 }
-void pstbuf();
+
 /*
  * Postscript buffering routine. (device dependent, computer dependent)
  *   PST driver passes OUTARY as a character string of input data
  *   to this buffering routine, and a count of characters.
  */
 
-void  pstbuf(numwds, outary) int *numwds; /* number of chars in OUTARY, 0 = buffer flush */
-char *outary;                             /* data to be buffered */
+void pstbuf(int *numwds, char *outary)
 {
   int i;     /* loop variable */
   int istat; /* error reporting */

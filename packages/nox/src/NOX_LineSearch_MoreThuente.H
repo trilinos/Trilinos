@@ -138,11 +138,11 @@ namespace LineSearch {
   <B> Implementation </B> <br>
   This line search can be called via NOX::LineSearch::Manager.
 
-  This line search is used if "More'-Thuente2" is the "Method" in the
+  This line search is used if "More'-Thuente" is the "Method" in the
   "Line Search" sublist. (See NOX::LineSearch::Manager for details.)
 
   The following parameters can be specified for this line search in
-  the "More'-Thuente2" sublist of the "Line Search" sublist:
+  the "More'-Thuente" sublist of the "Line Search" sublist:
 
   - "Sufficient Decrease Condition" - Choice to use for the sufficient decrease condition. Options are "Ared/Pred" or "Armijo-Goldstein" (defaults to "Armijo-Goldstein").<br>
   1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
