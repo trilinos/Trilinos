@@ -66,6 +66,8 @@ public:
  
   virtual ~BasisCoordsGenerator() = default;
 
+  // TODO BWR need to check on the functions below
+
   virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const override
   {
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 

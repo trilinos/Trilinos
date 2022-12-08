@@ -251,9 +251,14 @@ namespace panzer {
                                "\", basis_order=\"" << basis_order << "\", and cell_type=\"" << cell_type << "\"!\n");
 
     // TODO BWR playing around... FIX
-    //TEUCHOS_TEST_FOR_EXCEPTION(cell_topology!=basis->getBaseCellTopology(),
-    //                           std::runtime_error,
-    //                           "Failed to create basis.  Intrepid2 basis topology does not match mesh cell topology!");
+    // TODO BWR changed this in two respects...
+    // TODO BWR first, we compare that the base topologies are the same
+    // TODO BWR second, we do so using the NAME. This avoids the ugly task of getting the
+    // TODO BWR cell topology data and constructing a new cell topology object since you cant
+    // TODO BWR just get the baseCellTopology directly from a shards cell topology 
+    TEUCHOS_TEST_FOR_EXCEPTION(cell_topology.getBaseName()!=basis->getBaseCellTopology().getName(),
+                               std::runtime_error,
+                               "Failed to create basis.  Intrepid2 basis base topology does not match mesh cell base topology!");
 
     return basis;
   }
@@ -262,6 +267,7 @@ namespace panzer {
 
       \param[in] basis_type The name of the basis.
       \param[in] basis_order The order of the polynomial used to construct the basis.
+      // TODO BWR Is the cell_topology documentation below correct?
       \param[in] cell_topology Cell topology for the basis.  Taken from shards::CellTopology::getName() after
                                trimming the extended basis suffix.
 

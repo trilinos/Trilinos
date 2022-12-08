@@ -973,6 +973,7 @@ getJacobian(const bool cache,
   auto s_jac        = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
 
   // TODO BWR here
+  // TODO This seems to get the "correct" mesh cell topology, at least when running main_driver
   cell_tools.setJacobian(s_jac, s_ref_coord, s_node_coord,*(int_rule->topology));
 
   PHX::Device::execution_space().fence();

@@ -282,8 +282,15 @@ namespace panzer {
     PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_inverse_;
     PHX::MDField<const Scalar,Cell,IP>          cubature_weights_;
 
-    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_vertex_coordinates_; ///// TO BE DEPRICATED...
+    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_vertex_coordinates_; ///// TO BE DEPRECATED...
+    // TODO BWR Change the name to refer to mesh
     PHX::MDField<const Scalar,Cell,NODE,Dim> cell_node_coordinates_;
+
+    // Cell topology from the mesh
+    // TODO BWR Not sure we can get this...
+    // TODO BWR change the name to refer to mesh
+    // TODO BWR mesh topo object??
+    Teuchos::RCP<const shards::CellTopology> cell_topology_;
 
     // Number of cells to apply orientations to (required in situations where virtual cells exist)
     int num_orientations_cells_;

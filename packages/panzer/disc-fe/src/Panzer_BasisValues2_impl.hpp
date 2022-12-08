@@ -453,7 +453,8 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   int card     = basisDesc->cardinality();
   int numcells = basisDesc->numCells();
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
-  Teuchos::RCP<const shards::CellTopology> cellTopo = basisDesc->getCellTopology();
+  cell_topology_ = basisDesc->getCellTopology();
+  std::cout << " MY CELL TOPO IN BV2 " << *(cell_topology_) << std::endl;
 
   intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
 
@@ -609,6 +610,7 @@ setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
 {
   basis_layout = basis;
   intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
+  cell_topology_ = basis->getCellTopologyInfo()->getCellTopology();
   num_cells_ = basis_layout->numCells();
   num_evaluate_cells_ = num_evaluated_cells >= 0 ? num_evaluated_cells : num_cells_;
   build_weighted = false;
@@ -636,6 +638,7 @@ setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
 {
   basis_layout = basis;
   intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
+  cell_topology_ = basis->getCellTopologyInfo()->getCellTopology();
   num_cells_ = basis_layout->numCells();
   num_evaluate_cells_ = num_evaluated_cells >= 0 ? num_evaluated_cells : num_cells_;
   cubature_points_uniform_ref_ = reference_points;
@@ -1033,8 +1036,10 @@ getBasisCoordinates(const bool cache,
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   // TODO BWR Here... do we need to access the actual basis? Probably b/c the number of nodes must match.
-  // It's not that simple -- we may need to subselect nodes?
-  cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, intrepid_basis->getBaseCellTopology());
+  // No... these should be mesh nodes... so we need the mesh cell topology
+  //cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, intrepid_basis->getBaseCellTopology());
+  // TODO BWR WANT TO DO THIS
+  cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, *cell_topology_);
   PHX::Device().fence();
 
   // Store for later if cache is enabled

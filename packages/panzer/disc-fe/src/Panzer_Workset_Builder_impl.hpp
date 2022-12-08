@@ -102,6 +102,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
 
        RCP<panzer::IntegrationValues2<double> > iv2 =
 	 rcp(new panzer::IntegrationValues2<double>("",true));
+       // TODO BWR Does this int_rules have the correct mesh topology?
        iv2->setupArrays(needs.int_rules[j]);
 
        ir_degrees->push_back(needs.int_rules[j]->cubature_degree);
@@ -510,6 +511,7 @@ panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
 
       RCP<panzer::IntegrationValues2<double> > iv2 =
          rcp(new panzer::IntegrationValues2<double>("",true));
+       // TODO BWR Does this int_rules have the correct mesh topology?
        iv2->setupArrays(needs_a.int_rules[j]);
 
        ir_degrees->push_back(needs_a.int_rules[j]->cubature_degree);

@@ -142,6 +142,7 @@ namespace panzer_stk {
       mesh->getElementNodesNoResize(elementEntities,elementBlockName,node_view);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
+      // TODO BWR Is this the correct topo supplied here?
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
 
       panzer::IntegrationValues2<double> iv("",true);
