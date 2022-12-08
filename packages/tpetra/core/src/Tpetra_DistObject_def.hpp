@@ -53,6 +53,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_Spaces.hpp"
 #include "Tpetra_Util.hpp" // Details::createPrefix
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -60,8 +61,6 @@
 #include <memory>
 #include <sstream>
 
-#include "Tpetra_Details_Spaces.hpp"
-#include <execinfo.h> // DELETEME debug only
 
 namespace Tpetra {
 
