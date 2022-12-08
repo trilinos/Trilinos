@@ -1,23 +1,29 @@
-#!/usr/bin/env python
 import json
 import os
 import subprocess
-from argparse import ArgumentParser
 from shutil import which
 
 
 def has_nvidia_gpus():
-    gpu_ids = []
+    return bool(list_nvidia_gpus())
+
+
+def _nvidia_smi():
     if which('nvidia-smi'):
-        try:
-            with open(os.devnull) as errout:
-                gpu_ids = [str(x) for x in range(0, len(subprocess.check_output('nvidia-smi --list-gpus', stderr=errout, shell=True).splitlines()))]
-        except Exception as e:
-            raise RuntimeError("Failed to acquire list of gpus: {0}".format(str(e)))
-    return gpu_ids != []
+        with open(os.devnull) as errout:
+            return subprocess.check_output('nvidia-smi --list-gpus', stderr=errout, shell=True)
 
 
-def write_ctest_gpu_resource_file(filename, gpu_indices, slots_per_gpu=1):
+def list_nvidia_gpus():
+    gpu_ids = []
+    try:
+        gpu_ids = [x for x in range(0, len(_nvidia_smi.splitlines()))]
+    except Exception as e:
+        raise RuntimeError("Failed to acquire list of gpus: {0}".format(str(e)))
+    return gpu_ids
+
+
+def write_ctest_gpu_resource_file(filename, gpu_indices=list_nvidia_gpus(), slots_per_gpu=1):
     content = {
         "version": {
             "major": 1,
@@ -25,7 +31,7 @@ def write_ctest_gpu_resource_file(filename, gpu_indices, slots_per_gpu=1):
         },
         "local": [
             {
-                "gpus": [{"id": x, "slots": 1} for x in gpu_indices]
+                "gpus": [{"id": x, "slots": slots_per_gpu} for x in gpu_indices]
             }
         ]
     }
