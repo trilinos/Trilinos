@@ -41,7 +41,6 @@
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "Tpetra_Details_debug_cwp.hpp"
 
 namespace Sacado {
 namespace UQ {
@@ -405,7 +404,7 @@ operator*=(const PCE<Storage>& x)
 #if !defined(__CUDA_ARCH__)
   TEUCHOS_TEST_FOR_EXCEPTION(
     cijk_.is_empty() && csz != 1, std::logic_error,
-    "Sacado::UQ::PCE::operator*=(): empty cijk but expansion size > 1");
+    "Sacado::UQ::PCE::operator*(): empty cijk but expansion size > 1");
 #endif
 
   if (csz > sz)
@@ -662,10 +661,6 @@ operator*(const PCE<Storage>& a, const PCE<Storage>& b)
   TEUCHOS_TEST_FOR_EXCEPTION(
     asz != bsz && asz != 1 && bsz != 1, std::logic_error,
     "Sacado::UQ::PCE::operator*(): input sizes do not match");
-#else
-  if(asz != bsz && asz != 1 && bsz != 1) {
-    CWP_PRINTF("%s::%d Sacado::UQ::PCE::operator*(): input sizes do not match\n", __FILE__, __LINE__);
-  }
 #endif
 
   my_cijk_type c_cijk = a.cijk().is_empty() ? b.cijk() : a.cijk();
@@ -674,10 +669,6 @@ operator*(const PCE<Storage>& a, const PCE<Storage>& b)
   TEUCHOS_TEST_FOR_EXCEPTION(
     c_cijk.is_empty() && csz != 1, std::logic_error,
     "Sacado::UQ::PCE::operator*(): empty cijk but expansion size > 1");
-#else
-  if(c_cijk.is_empty() && csz != 1) {
-    CWP_PRINTF("%s::%d Sacado::UQ::PCE::operator*(): empty cijk but expansion size > 1\n", __FILE__, __LINE__);
-  }
 #endif
 
   PCE<Storage> c(c_cijk, csz);

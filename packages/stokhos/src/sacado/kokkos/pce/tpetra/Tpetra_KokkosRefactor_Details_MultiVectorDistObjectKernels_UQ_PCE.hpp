@@ -65,8 +65,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    using execution_space = typename DstView::execution_space;
-    using size_type = typename execution_space::size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     static const unsigned BlockSize = 32;
 
@@ -109,8 +109,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    using execution_space = typename DstView::execution_space;
-    using size_type = typename execution_space::size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     static const unsigned BlockSize = 32;
 
@@ -161,8 +161,8 @@ namespace Details {
     typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
                              Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    using execution_space = typename DstView::execution_space;
-    using size_type = typename execution_space::size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     static const unsigned BlockSize = 32;
 

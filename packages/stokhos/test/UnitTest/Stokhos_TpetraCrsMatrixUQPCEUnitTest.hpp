@@ -56,7 +56,6 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Stokhos_Tpetra_CG.hpp"
-#include "Tpetra_Details_debug_cwp.hpp"
 
 // Belos solver
 #ifdef HAVE_STOKHOS_BELOS
@@ -673,15 +672,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-// #define USE_DOUBLE
-
   typedef typename Storage::value_type BaseScalar;
-#ifdef USE_DOUBLE
-  using Scalar = double;
-#else
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
-#endif
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
@@ -693,12 +686,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   if ( !Kokkos::is_initialized() )
     Kokkos::initialize();
 
-#ifndef USE_DOUBLE
   // Cijk
   Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
   setGlobalCijkTensor(cijk);
   LocalOrdinal pce_size = cijk.dimension();
-#endif
 
   // Build banded matrix
   GlobalOrdinal nrow = 13;
@@ -726,26 +717,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Set values in matrix
   Array<Scalar> vals(2);
-#ifdef USE_DOUBLE
-  Scalar val;
-#else
   Scalar val(cijk);
-#endif
   for (size_t local_row=0; local_row<num_my_row; ++local_row) {
     const GlobalOrdinal row = myGIDs[local_row];
     const size_t num_col = row == nrow - 1 ? 1 : 2;
     for (size_t local_col=0; local_col<num_col; ++local_col) {
       const GlobalOrdinal col = row + local_col;
       columnIndices[local_col] = col;
-#ifdef USE_DOUBLE
-      val = generate_matrix_coefficient<BaseScalar,size_t>(
-        nrow, 1, row, col, 0);
-#else
       for (LocalOrdinal k=0; k<pce_size; ++k)
         val.fastAccessCoeff(k) =
           generate_matrix_coefficient<BaseScalar,size_t>(
             nrow, pce_size, row, col, k);
-#endif
       vals[local_col] = val;
     }
     matrix->replaceGlobalValues(row, columnIndices(0,num_col), vals(0,num_col));
@@ -757,14 +739,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   for (size_t local_row=0; local_row<num_my_row; ++local_row) {
     const GlobalOrdinal row = myGIDs[local_row];
-#ifdef USE_DOUBLE
-      val = generate_vector_coefficient<BaseScalar,size_t>(
-        nrow, 1, row, 0);
-#else
     for (LocalOrdinal j=0; j<pce_size; ++j)
       val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
         nrow, pce_size, row, j);
-#endif
     x_view[local_row] = val;
   }
   x_view = Teuchos::null;
@@ -777,14 +754,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Multiply
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
-  CWP_CERR(__FILE__ << "::" <<__LINE__ << " apply()...\n");
   matrix->apply(*x, *y);
-  CWP_CERR(__FILE__ << "::" <<__LINE__ << " apply done\n");
 
   // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
   //             Teuchos::VERB_EXTREME);
 
-#ifndef USE_DOUBLE
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
   BaseScalar tol = 1.0e-14;
@@ -827,12 +801,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       TEST_FLOATING_EQUALITY( y_view[local_row].fastAccessCoeff(i),
                               val.fastAccessCoeff(i), tol );
   }
-#endif
 
-#ifndef USE_DOUBLE
   // Clear global tensor
   Kokkos::setGlobalCijkTensor(Cijk());
-#endif
 }
 
 //
