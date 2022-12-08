@@ -10,6 +10,8 @@ import subprocess
 from . import TrilinosPRConfigurationBase
 from gen_config import GenConfig
 from pathlib import Path
+from .sysinfo import gpu_utils
+from .jenkinsenv import TrilinosJenkinsEnv
 
 
 class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
@@ -74,6 +76,21 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}",
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
              ]
+
+        if gpu_utils.has_nvidia_gpus():
+            print("REMARK: I see that I am running on a machine that has NVidia GPUs; I will attempt to write a GPU resource file for use by ctest")
+            resource_spec_file = os.path.join(self.arg_build_dir, "ctest_resources.json")
+            jobname = TrilinosJenkinsEnv.job_base_name
+            if jobname.startswith("Trilinos_autotester_driver_inst"):
+                my_autotester_id = jobname.split("_")[-1]
+                try:
+                    my_autotester_id = int(my_autotester_id)
+                except Exception:
+                    print(f"WARNING: Could not identify an index from last job base name field {my_autotester_id}")
+                gpu_utils.write_ctest_gpu_resource_file(filename=resource_spec_file, gpu_indices=[my_autotester_id], slots_per_gpu=2)
+                cmd.append(f"-DCTEST_RESOURCE_SPEC_FILE:FILEPATH={resource_spec_file}")
+            else:
+                print(f"REMARK: I am only capable of assigning GPU resources from a very specific autotester job (titled 'Trilinos_autotester_driver_inst_X'), and this job was named '{jobname}', so I will not create a resource file")
 
         self.message( "--- ctest version:")
         if not self.args.dry_run:
