@@ -271,7 +271,7 @@ public:
     objectiveStr_.isGradient2Valid_ = true;
   }
 
-  void hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
+  void block_diagonal_hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
                   const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z,
                   const int g_idx) {
@@ -312,7 +312,7 @@ public:
 
         Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model_->create_hess_g_pp(g_idx, p_indices_[i], p_indices_[i]);
         outArgs.set_hess_g_pp(g_idx, p_indices_[i], p_indices_[i], hess_g_pp);
-        H->setBlock(p_indices_[i], p_indices_[i], hess_g_pp);
+        H->setBlock(i, i, hess_g_pp);
       }
       H->endBlockFill();
 
