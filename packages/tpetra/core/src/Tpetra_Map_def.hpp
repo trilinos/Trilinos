@@ -183,21 +183,6 @@ namespace Tpetra {
                 outArg(minNumGlobalElements));
       reduceAll(*comm, REDUCE_MAX, numGlobalElements,
                 outArg(maxNumGlobalElements));
-
-      // std::cerr << __FILE__ << ":"<<__LINE__ << ":"
-      //           << " rank=" << comm_->getRank()
-      //           << " size=" << comm_->getSize()
-      //           << "\n";
-
-      comm_->barrier();
-
-      std::cerr << __FILE__ << ":"<<__LINE__ << ":"
-                << " rank=" << comm_->getRank()
-                << " numGlobalElements=" << numGlobalElements
-                << " minNumGlobalElements=" << minNumGlobalElements
-                << " maxNumGlobalElements=" << maxNumGlobalElements 
-                << "\n";
-
       TEUCHOS_TEST_FOR_EXCEPTION
         (minNumGlobalElements != maxNumGlobalElements ||
          numGlobalElements != minNumGlobalElements,
