@@ -133,6 +133,8 @@ namespace panzer {
   Intrepid2FieldPattern::
   getCellTopology() const
   {
+    // TODO BWR Probably should change the name of this call...
+    // TODO BWR We DO rely on the intrepid2 fp using the base topo downstream so need to be careful here
     return intrepidBasis_->getBaseCellTopology();
   }
 
@@ -242,7 +244,8 @@ namespace panzer {
   void 
   Intrepid2FieldPattern::
   getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellNodes,
-                              Kokkos::DynRankView<double,PHX::Device> & coords) const
+                              Kokkos::DynRankView<double,PHX::Device> & coords,
+                              Teuchos::RCP<const shards::CellTopology> meshCellTopology) const
   {
     TEUCHOS_ASSERT(cellNodes.rank()==3);
 
@@ -257,9 +260,13 @@ namespace panzer {
 
     if(numCells>0) {
       Intrepid2::CellTools<PHX::Device> cellTools;
-      // TODO BWR Can we actually grab the (not base) topology here?
-      cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,intrepidBasis_->getBaseCellTopology());
-      // meshNodes, meshTopology TODO here
+      // For backwards compatability, allow the FE basis to supply the mesh cell topology (via the FEM base cell topo)
+      // If provided, use the mesh topology directly
+      if (meshCellTopology==Teuchos::null) {
+        cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,intrepidBasis_->getBaseCellTopology());
+      } else {
+        cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,*meshCellTopology);
+      }
     }
   }
 

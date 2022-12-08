@@ -418,7 +418,9 @@ void STKConnManager::getDofCoords(const std::string & blockId,
 
    // setup output array
    points = Kokkos::DynRankView<double,PHX::Device>("points",localCellIds.size(),numIds,dim);
-   coordProvider.getInterpolatoryCoordinates(nodes,points);
+   // TODO BWR changed here, needs testing
+   // TODO BWR not covered with main_driver
+   coordProvider.getInterpolatoryCoordinates(nodes,points,stkMeshDB_->getCellTopology(blockId));
 }
 
 bool STKConnManager::hasAssociatedNeighbors() const

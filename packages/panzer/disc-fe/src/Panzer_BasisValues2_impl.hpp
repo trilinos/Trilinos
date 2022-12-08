@@ -1035,10 +1035,6 @@ getBasisCoordinates(const bool cache,
   auto bcr = PHX::getNonConstDynRankViewFromConstMDField(const_bcr);
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
-  // TODO BWR Here... do we need to access the actual basis? Probably b/c the number of nodes must match.
-  // No... these should be mesh nodes... so we need the mesh cell topology
-  //cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, intrepid_basis->getBaseCellTopology());
-  // TODO BWR WANT TO DO THIS
   cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, *cell_topology_);
   PHX::Device().fence();
 

@@ -131,9 +131,14 @@ namespace panzer {
      *
      * \param[in] cellNodes   Coordinates of the cell nodes.
      * \param[in,out] coords   Coordinates associated with this field type.
+     * \param[in] meshCellTopology Mesh cell topology
+     * 
+     * \note If no cell topology is supplied, it will be inferred from the intrepid basis.
+     * This will result in incorrect behavior for second order or higher meshes.
      */
     void getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellNodes,
-                                     Kokkos::DynRankView<double,PHX::Device> & coords) const;
+                                     Kokkos::DynRankView<double,PHX::Device> & coords,
+                                     Teuchos::RCP<const shards::CellTopology> meshCellTopology=Teuchos::null) const;
 
     /// Returns the underlying Intrepid2::Basis object
     Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > getIntrepidBasis() const;
