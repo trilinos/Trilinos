@@ -81,7 +81,6 @@ evaluateFields(
   auto coords = this->wda(d).cell_node_coordinates.get_static_view();
   auto coordinate_v = coordinate.get_static_view();
   auto l_dimension = dimension;
-  // const Kokkos::DynRankView<double,PHX::Device> & coords = this->wda(d).cell_vertex_coordinates;
 
   // copy coordinates directly into the field
   Kokkos::parallel_for(d.num_cells, KOKKOS_LAMBDA (int i) {
