@@ -132,11 +132,12 @@ namespace panzer {
      std::size_t numcells = workset.num_cells;
      int l_nodes = nodes;
      auto xcoord_v = PHX::as_view(xcoord);
-     auto cvc = PHX::as_view(this->wda(workset).cell_vertex_coordinates);
+     // TODO BWR another example here of where the data structure needs to be updated...
+     auto cnc = PHX::as_view(this->wda(workset).cell_node_coordinates);
 
      Kokkos::parallel_for(numcells, KOKKOS_LAMBDA (int n) {
         for(int v=0;v<l_nodes;v++) {
-	  xcoord_v(n,v) = cvc(n,v,0);
+	  xcoord_v(n,v) = cnc(n,v,0);
         }
        });
      Kokkos::fence();
