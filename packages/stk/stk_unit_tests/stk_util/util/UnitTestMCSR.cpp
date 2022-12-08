@@ -208,6 +208,11 @@ TEST(MCSR, removeTheOnlyConnectivity)
 
   EXPECT_EQ(0u, mcsr.size(row0));
   ASSERT_EQ(0u, std::distance(mcsr.begin(row0), mcsr.end(row0)));
+  EXPECT_EQ(1u, mcsr.num_unused_entries());
+  std::vector<int> testItems;
+  mcsr.clear(0, testItems);
+  EXPECT_EQ(1u, std::count_if(testItems.begin(), testItems.end(),
+          [&](const int& item){return item == invalidItem;}));
 }
 
 TEST(MCSR, addItemsInWeirdOrder)
@@ -250,6 +255,7 @@ TEST(MCSR, addAndRemoveMultipleItems)
   EXPECT_TRUE(mcsr.add_item(row1, entity11));
   EXPECT_TRUE(mcsr.add_item(row0, entity2));
   EXPECT_TRUE(mcsr.add_item(row1, entity12));
+  EXPECT_EQ(2u, mcsr.num_unused_entries());
 
   EXPECT_TRUE(mcsr.remove_item(row0, entity2));
   EXPECT_EQ(1u, mcsr.size(row0));
@@ -266,6 +272,12 @@ TEST(MCSR, addAndRemoveMultipleItems)
   EXPECT_FALSE(mcsr.remove_item(row0, entity2));
   EXPECT_EQ(1u, mcsr.size(row0));
   EXPECT_EQ(entity1, mcsr.begin(row0)[0]);
+
+  EXPECT_EQ(5u, mcsr.num_unused_entries());
+  std::vector<int> testItems;
+  mcsr.clear(0, testItems);
+  EXPECT_EQ(5u, std::count_if(testItems.begin(), testItems.end(),
+          [&](const int& item){return item == invalidItem;}));
 }
 
 TEST(MCSR, removeAllItemsForRow)

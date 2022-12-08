@@ -18,7 +18,7 @@ INCLUDE_DIRECTORIES(
 
 SET(SOURCES
 	ext_lib/exmemy.c      ext_lib/extime.c      ext_lib/ixlchr.c
-	ext_lib/README        ext_lib/exname.c      ext_lib/exupcs.c  ext_lib/ixlnum.c
+	ext_lib/exname.c      ext_lib/exupcs.c      ext_lib/ixlnum.c
 	ext_lib/excpus.c      ext_lib/exparm.c      ext_lib/getline_int.c
 	ext_lib/exdate.c      ext_lib/exread.c
 	fre_fld/ffistr.f      fre_fld/frefld.f      fre_fld/getinp.f  fre_fld/gsupev.f

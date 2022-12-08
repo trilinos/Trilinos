@@ -112,12 +112,12 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
     int *n_node_sets = num_node_sets;
     int *n_side_sets = num_side_sets;
 
-    *n_dim       = info.num_dim;
-    *n_nodes     = info.num_nodes;
-    *n_elem      = info.num_elem;
-    *n_elem_blk  = info.num_elem_blk;
-    *n_node_sets = info.num_node_sets;
-    *n_side_sets = info.num_side_sets;
+    *n_dim       = (int)info.num_dim;
+    *n_nodes     = (int)info.num_nodes;
+    *n_elem      = (int)info.num_elem;
+    *n_elem_blk  = (int)info.num_elem_blk;
+    *n_node_sets = (int)info.num_node_sets;
+    *n_side_sets = (int)info.num_side_sets;
   }
   ex_copy_string(title, info.title, MAX_LINE_LENGTH + 1);
 

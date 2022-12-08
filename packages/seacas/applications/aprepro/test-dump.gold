@@ -1,4 +1,4 @@
 
 $   Variable    = Value
-$  {var       	= 42} (immutable)
 $  {svar      	= "String"} (immutable)
+$  {var       	= 42} (immutable)

@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "iocgns_export.h"
+
 #include <cgnsconfig.h>
 #if CG_BUILD_PARALLEL
 
@@ -53,7 +55,7 @@ namespace Ioss {
 
 namespace Iocgns {
 
-  class ZoneData
+  class IOCGNS_EXPORT ZoneData
   {
   public:
     std::string m_name;
@@ -62,7 +64,7 @@ namespace Iocgns {
     size_t      m_elementOffset;
   };
 
-  class DecompositionDataBase
+  class IOCGNS_EXPORT DecompositionDataBase
   {
   public:
     DecompositionDataBase() = default;

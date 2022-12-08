@@ -37,7 +37,7 @@ int main(int /* argc */, char *argv[])
   // Make sure Ioss::NullEntity works.  Not used in IOSS itself,
   // but some clients use it, so need to make sure it compiles
   // correctly.
-  std::unique_ptr<Ioss::NullEntity> entity{new Ioss::NullEntity()};
+  auto entity = std::make_unique<Ioss::NullEntity>();
   fmt::print(stderr, "\nThe null entity type is '{}' and it contains '{}'\n", entity->type_string(),
              entity->contains_string());
 
@@ -151,7 +151,7 @@ bool test_element(const std::string &type)
   }
   else {
     if (element->name() != "node") {
-      if ((int)perm->num_permutation_nodes() != (int)element->number_corner_nodes()) {
+      if (static_cast<int>(perm->num_permutation_nodes()) != element->number_corner_nodes()) {
         fmt::print(stderr, "\n\tPermutation node count {} does not match corner node count {}\n.",
                    perm->num_permutation_nodes(), element->number_corner_nodes());
         result = false;

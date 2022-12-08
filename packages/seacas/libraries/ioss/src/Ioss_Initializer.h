@@ -5,11 +5,14 @@
 // See packages/seacas/LICENSE for details
 #pragma once
 
+#include "ioss_export.h"
+
 namespace Ioss {
-  class Initializer
+  class IOSS_EXPORT Initializer
   {
   public:
     Initializer();
+    ~Initializer();
     // Assignment operator
     // Copy constructor
   };

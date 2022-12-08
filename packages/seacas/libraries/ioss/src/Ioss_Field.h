@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <cstddef> // for size_t
 #include <string>  // for string
@@ -17,7 +19,7 @@ namespace Ioss {
 
   /** \brief Holds metadata for bulk data associated with a GroupingEntity.
    */
-  class Field
+  class IOSS_EXPORT Field
   {
   public:
     /** \brief The basic data type held in the field.

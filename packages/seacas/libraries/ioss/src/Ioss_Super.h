@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include "Ioss_Super.h"
 #include <Ioss_CodeTypes.h>          // for IntVector
 #include <Ioss_ElementPermutation.h> // for ElementPermutation
@@ -18,7 +20,7 @@ namespace Ioss {
 
 namespace Ioss {
 
-  class Super : public Ioss::ElementTopology
+  class IOSS_EXPORT Super : public Ioss::ElementTopology
   {
 
   public:

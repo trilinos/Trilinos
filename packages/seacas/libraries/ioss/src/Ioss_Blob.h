@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Property.h"   // for Property
 #include <Ioss_GroupingEntity.h>
@@ -23,7 +25,7 @@ namespace Ioss {
 
   /** \brief A homogeneous collection of other GroupingEntities.
    */
-  class Blob : public GroupingEntity
+  class IOSS_EXPORT Blob : public GroupingEntity
   {
   public:
     Blob()                  = default; // Used for template typing only

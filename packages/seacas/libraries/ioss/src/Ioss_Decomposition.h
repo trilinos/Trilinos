@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Map.h>
 #include <Ioss_ParallelUtils.h>
@@ -36,7 +38,7 @@
 namespace Ioss {
   const std::vector<std::string> &valid_decomp_methods();
 
-  class BlockDecompositionData
+  class IOSS_EXPORT BlockDecompositionData
   {
   public:
     BlockDecompositionData() = default;
@@ -83,7 +85,7 @@ namespace Ioss {
     std::vector<int> importIndex;
   };
 
-  class SetDecompositionData
+  class IOSS_EXPORT SetDecompositionData
   {
   public:
     SetDecompositionData()                             = default;

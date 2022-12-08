@@ -46,47 +46,42 @@ namespace stk {
 namespace mesh {
 
 constexpr unsigned s_initialCapacity = 128;
-constexpr int s_invalidProc = -1;
 
 class EntityProcMapping
 {
 public:
   EntityProcMapping(unsigned sizeOfEntityIndexSpace = 1024)
   : entityOffsets(sizeOfEntityIndexSpace, -1),
-    entities(),
-    entityProcs(0, s_invalidProc)
+    invalidEntityProc(Entity(), -1),
+    entityProcs(0, invalidEntityProc)
   {}
 
   void reset(unsigned sizeOfEntityIndexSpace)
   {
     std::fill(entityOffsets.begin(), entityOffsets.end(), -1);
     entityOffsets.resize(sizeOfEntityIndexSpace, -1);
-    entities.clear();
-    entityProcs.clear(s_initialCapacity);
+    EntityProcVec tmpEntityProcs;
+    entityProcs.clear(s_initialCapacity, tmpEntityProcs);
   }
  
   void deallocate()
   {
     std::vector<int> tmpInts;
     entityOffsets.swap(tmpInts);
-    EntityVector tmpEntities;
-    entities.swap(tmpEntities);
-    entityProcs.clear(0);
+    EntityProcVec tmpEntityProcs;
+    entityProcs.clear(0, tmpEntityProcs);
   }
 
   void addEntityProc(Entity entity, int proc)
   {
     const int offset = entityOffsets[entity.local_offset()];
     if (offset < 0) {
-      unsigned newOffset = entityProcs.num_rows();
+      unsigned newOffset = entityProcs.add_row();
       entityOffsets[entity.local_offset()] = newOffset;
-      entities.push_back(entity);
-      ThrowAssert(entities.size() == newOffset+1);
-      entityProcs.add_row();
-      entityProcs.add_item(newOffset, proc);
+      entityProcs.add_item(newOffset, EntityProc(entity,proc));
     }
     else {
-      entityProcs.add_item(offset, proc);
+      entityProcs.add_item(offset, EntityProc(entity,proc));
     }
   }
 
@@ -102,7 +97,7 @@ public:
       return;
     }
     else {
-      entityProcs.remove_item(offset, proc);
+      entityProcs.remove_item(offset, EntityProc(entity,proc));
     }
   }
 
@@ -117,9 +112,9 @@ public:
   {
     const int offset = entityOffsets[entity.local_offset()];
     if (offset >= 0) {
-      const int* beg = entityProcs.begin(offset);
-      const int* end = entityProcs.end(offset);
-      return std::find(beg, end, proc) != end;
+      const EntityProc* beg = entityProcs.begin(offset);
+      const EntityProc* end = entityProcs.end(offset);
+      return std::find(beg, end, EntityProc(entity,proc)) != end;
     }
     return false;
   }
@@ -146,12 +141,11 @@ public:
   template<class Alg>
   void visit_entity_procs(const Alg& alg)
   {
-    ThrowAssert(entities.size() == entityProcs.num_rows());
-    for(unsigned i=0; i<entities.size(); ++i) {
-      const unsigned numProcs = entityProcs.size(i);
-      const int* procs = entityProcs.begin(i);
-      for(unsigned p=0; p<numProcs; ++p) {
-        alg(entities[i], procs[p]);
+    unsigned n = entityProcs.num_rows();
+    for(unsigned i=0; i<n; ++i) {
+      PairIter<const EntityProc*> rowItems = entityProcs.items(i);
+      for(; !rowItems.empty(); ++rowItems) {
+        alg(rowItems->first, rowItems->second);
       }
     }
   }
@@ -163,18 +157,26 @@ public:
     visit_entity_procs([&entityProcSet](Entity ent, int proc){entityProcSet.insert(EntityProc(ent,proc));});
   }
 
-  template<typename VecType>
-  void fill_vec(VecType& entityProcVec)
+  void fill_vec(EntityProcVec& entityProcVec)
   {
     entityProcVec.reserve(entityProcs.total_num_items());
     entityProcVec.clear();
     visit_entity_procs([&entityProcVec](Entity ent, int proc){entityProcVec.push_back(EntityProc(ent,proc));});
   }
 
+  void swap_vec(EntityProcVec& entityProcVec)
+  {
+    entityProcs.clear(128, entityProcVec);
+    EntityProc& localInvalidEntityProc = invalidEntityProc;
+    entityProcVec.erase(std::remove_if(entityProcVec.begin(), entityProcVec.end(),
+                        [&](const EntityProc& entityProc){return entityProc == localInvalidEntityProc;}),
+                        entityProcVec.end());
+  }
+
 private:
   std::vector<int> entityOffsets;
-  stk::mesh::EntityVector entities;
-  stk::util::MCSR<int> entityProcs;
+  EntityProc invalidEntityProc;
+  stk::util::MCSR<EntityProc> entityProcs;
 };
 
 }

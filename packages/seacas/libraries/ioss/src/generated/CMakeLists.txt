@@ -11,12 +11,20 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/iogn_export.h")
+
 TRIBITS_ADD_LIBRARY(
 	Iogn
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS Ioss
 )
+
+generate_export_header(Iogn)
+target_include_directories(Iogn
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 IF (BUILD_TESTING)
   ENABLE_TESTING()

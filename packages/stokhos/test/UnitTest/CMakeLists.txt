@@ -525,7 +525,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Threads.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -537,7 +537,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Serial.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             )
         ENDIF()
 
@@ -548,7 +548,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_OpenMP.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -560,7 +560,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixUQPCEUnitTest_Cuda.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -756,7 +756,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -768,7 +768,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             )
         ENDIF()
 
@@ -779,7 +779,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_OpenMP.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -791,7 +791,7 @@ IF(Stokhos_ENABLE_Sacado)
                     Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
-            NUM_MPI_PROCS 4
+            #NUM_MPI_PROCS 4
             RUN_SERIAL
             )
         ENDIF()
@@ -868,7 +868,7 @@ IF (Stokhos_ENABLE_Tpetra)
     SOURCES tpetra_mat_vec.cpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 4
+    #NUM_MPI_PROCS 4
     RUN_SERIAL
     )
 ENDIF()

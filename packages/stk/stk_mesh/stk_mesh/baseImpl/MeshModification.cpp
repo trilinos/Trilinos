@@ -301,17 +301,7 @@ void MeshModification::internal_resolve_shared_modify_delete(
 
         if(!locally_destroyed)
         {
-            const bool am_i_old_local_owner = m_bulkData.parallel_rank() == owner;
-
-            if(remote_owner_destroyed) {
-                internal_establish_new_owner(entity);
-            }
-
-            const bool am_i_new_local_owner = m_bulkData.parallel_rank() == m_bulkData.parallel_owner_rank(entity);
-            const bool did_i_just_become_owner = (!am_i_old_local_owner && am_i_new_local_owner );
-
-            const bool is_entity_shared = !m_bulkData.internal_entity_comm_map_shared(key).empty();
-            internal_update_parts_for_shared_entity(entity, is_entity_shared, did_i_just_become_owner);
+            process_changed_ownership_and_sharing(remote_owner_destroyed, entity);
         }
     } // remote mod loop
 
@@ -329,19 +319,48 @@ void MeshModification::internal_resolve_shared_modify_delete(
     internal_resolve_formerly_shared_entities(entitiesNoLongerShared);
 }
 
+void MeshModification::process_changed_ownership_and_sharing(bool remoteOwnerDestroyed,
+                                                             Entity entity,
+                                                             bool shouldRemoveAuraPart)
+{
+  const bool am_i_old_local_owner = m_bulkData.parallel_rank() == m_bulkData.parallel_owner_rank(entity);
+
+  if(remoteOwnerDestroyed) {
+      internal_establish_new_owner(entity);
+  }
+
+  const bool am_i_new_local_owner = m_bulkData.parallel_rank() == m_bulkData.parallel_owner_rank(entity);
+  const bool did_i_just_become_owner = (!am_i_old_local_owner && am_i_new_local_owner );
+  const bool is_entity_shared = !m_bulkData.internal_entity_comm_map_shared(m_bulkData.entity_key(entity)).empty();
+  internal_update_parts_for_shared_entity(entity, is_entity_shared, did_i_just_become_owner, shouldRemoveAuraPart);
+}
+
 void MeshModification::internal_establish_new_owner(stk::mesh::Entity entity)
 {
   const int new_owner = m_bulkData.determine_new_owner(entity);
   m_bulkData.internal_set_owner(entity, new_owner);
 }
 
-void MeshModification::internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner)
+void MeshModification::internal_update_parts_for_shared_entity(Entity entity,
+                                                               const bool is_entity_shared,
+                                                               const bool did_i_just_become_owner,
+                                                               const bool should_remove_aura_part)
 {
   OrdinalVector parts_to_add_entity_to , parts_to_remove_entity_from, scratchOrdinalVec, scratchSpace;
 
-  if ( !is_entity_shared ) {
+  if (is_entity_shared) {
+    const bool notPreviouslyShared = !m_bulkData.bucket(entity).shared();
+    if (notPreviouslyShared) {
+      parts_to_add_entity_to.push_back(m_bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
+    }
+  }
+  else {
     parts_to_remove_entity_from.push_back(m_bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
   }    
+
+  if (should_remove_aura_part) {
+    parts_to_remove_entity_from.push_back(m_bulkData.mesh_meta_data().aura_part().mesh_meta_data_ordinal());
+  }
 
   if ( did_i_just_become_owner ) {
     parts_to_add_entity_to.push_back(m_bulkData.mesh_meta_data().locally_owned_part().mesh_meta_data_ordinal());
@@ -433,6 +452,17 @@ void MeshModification::delete_shared_entities_which_are_no_longer_in_owned_closu
   }
 }
 
+bool MeshModification::remote_owner_destroyed(EntityKey key,
+                                              const std::vector<EntityParallelState>& pllStates) const
+{
+  std::vector<EntityParallelState>::const_iterator iter = std::lower_bound(pllStates.begin(), pllStates.end(), key);
+  if (iter != pllStates.end() && iter->comm_info.key == key) {
+    return iter->from_proc == m_bulkData.parallel_owner_rank(iter->comm_info.entity)
+         && iter->state == Deleted;
+  }
+  return false;
+}
+
 //----------------------------------------------------------------------
 // Resolve modifications for ghosted entities:
 // If a ghosted entity is modified or destroyed on the owning
@@ -505,7 +535,9 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
 
       if ( isAuraGhost ) {
         if (!isAlreadyDestroyed && hasBeenPromotedToSharedOrOwned) {
-          m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(BulkData::SHARED, remote_proc));
+          if (!remotely_destroyed) {
+            m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(BulkData::SHARED, remote_proc));
+          }
           promotingToShared.push_back(entity);
         }
         m_bulkData.entity_comm_map_erase(key, m_bulkData.aura_ghosting());
@@ -556,11 +588,10 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
   }
 
   if (!promotingToShared.empty()) {
-    OrdinalVector sharedPart, auraPart, scratchOrdinalVec, scratchSpace;
-    sharedPart.push_back(m_bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
-    auraPart.push_back(m_bulkData.mesh_meta_data().aura_part().mesh_meta_data_ordinal());
+    const bool shouldRemoveAuraPart = true;
     for(Entity entity : promotingToShared) {
-      m_bulkData.internal_change_entity_parts(entity, sharedPart /*add*/, auraPart /*remove*/, scratchOrdinalVec, scratchSpace);
+      const bool remoteOwnerDestroyed = remote_owner_destroyed(m_bulkData.entity_key(entity), remotely_modified_ghosted_entities);
+      process_changed_ownership_and_sharing(remoteOwnerDestroyed, entity, shouldRemoveAuraPart);
     }
     m_bulkData.add_comm_list_entries_for_entities(promotingToShared);
   }

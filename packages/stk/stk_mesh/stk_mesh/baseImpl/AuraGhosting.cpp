@@ -218,12 +218,15 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
     }
   }
   EntityLess entityLess(bulkData);
-  sendAuraEntityProcs.fill_vec(sendAuraGhosts);
+  {
+    EntityProcVec().swap(sendAuraGhosts);
+  }
+  sendAuraEntityProcs.swap_vec(sendAuraGhosts);
   sendAuraEntityProcs.deallocate();
   stk::util::sort_and_unique(sendAuraGhosts, entityLess);
 
   const bool isFullRegen = true;
-  bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), sendAuraGhosts, isFullRegen, removedSendGhosts);
+  bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), std::move(sendAuraGhosts), isFullRegen, removedSendGhosts);
 }
 
 }}} // end namepsace stk mesh impl

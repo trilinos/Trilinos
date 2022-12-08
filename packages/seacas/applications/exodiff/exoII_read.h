@@ -49,6 +49,11 @@ public:
   int         Open() const { return (file_id >= 0); }
   int         IO_Word_Size() const { return io_word_size; }
 
+  void modify_time_values(double scale, double offset)
+  {
+    time_scale  = scale;
+    time_offset = offset;
+  }
   // Global data:
 
   const std::string &Title() const { return title; }
@@ -229,7 +234,10 @@ protected:
   std::vector<std::string> eb_vars{};
   std::vector<std::string> fb_vars{};
 
-  int     num_times{0};
+  int    num_times{0};
+  double time_scale{1.0};
+  double time_offset{0.0};
+
   double *times{nullptr};
 
   int      cur_time{0};          // Current timestep number of the results (0 means none).

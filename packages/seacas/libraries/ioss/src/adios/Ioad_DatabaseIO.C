@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1084,9 +1084,9 @@ namespace Ioad {
   std::string DatabaseIO::get_optional_string_variable(const std::string &field_name,
                                                        const std::string &string_variable) const
   {
-    std::vector<std::string> tokens = Ioss::tokenize(field_name, Name_separator);
-    std::string              entity = encode_field_name({tokens[0], tokens[1]});
-    auto                     v      = adios_wrapper.InquireVariable<std::string>(
+    auto        tokens = Ioss::tokenize(field_name, Name_separator);
+    std::string entity = encode_field_name({tokens[0], tokens[1]});
+    auto        v      = adios_wrapper.InquireVariable<std::string>(
         adios_wrapper.EncodeMetaVariable(string_variable, entity));
     if (v) {
       return adios_wrapper.GetMetaVariable<std::string>(string_variable, entity);
@@ -1248,9 +1248,9 @@ namespace Ioad {
     const std::map<std::string, std::map<std::string, std::string>> variables =
         adios_wrapper.AvailableVariables();
     for (const auto &vpair : variables) {
-      const std::string       &name           = vpair.first;
-      auto                     name_type_pair = std::make_pair(name, vpair.second.at("Type"));
-      std::vector<std::string> tokens         = Ioss::tokenize(name, Name_separator);
+      const std::string &name           = vpair.first;
+      auto               name_type_pair = std::make_pair(name, vpair.second.at("Type"));
+      auto               tokens         = Ioss::tokenize(name, Name_separator);
       switch (tokens.size()) {
       case 1: globals_map[tokens[0]] = name_type_pair; break;
       case 2: {

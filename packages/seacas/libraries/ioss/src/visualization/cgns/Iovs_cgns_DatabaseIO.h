@@ -7,12 +7,14 @@
 #ifndef Iovs_cgns_DatabaseIO_h
 #define Iovs_cgns_DatabaseIO_h
 
+#include "iovs_export.h"
+
 #include <Ioss_DatabaseIO.h>
 
 namespace Iovs_cgns {
   class CatalystCGNSMeshBase;
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOVS_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

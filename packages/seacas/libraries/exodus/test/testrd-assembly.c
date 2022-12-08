@@ -232,7 +232,7 @@ int main(int argc, char **argv)
       for (int j = 0; j < att_count; j++) {
         printf("\tName: '%s', Type = %d, Value Count = %d\n\t", attr[j].name, attr[j].type,
                (int)attr[j].value_count);
-        for (int k = 0; k < attr[j].value_count; k++) {
+        for (size_t k = 0; k < attr[j].value_count; k++) {
           if (attr[j].type == EX_INTEGER) {
             int *vals = attr[j].values;
             printf("\t%d", vals[k]);

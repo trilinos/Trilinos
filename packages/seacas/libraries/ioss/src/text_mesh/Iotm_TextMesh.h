@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
 
@@ -37,7 +39,7 @@ namespace Iotm {
   using SplitType      = text_mesh::SplitType;
   using AssemblyType   = text_mesh::AssemblyType;
 
-  struct BlockPartition
+  struct IOTM_EXPORT BlockPartition
   {
     size_t            offset;
     std::string       name;
@@ -51,7 +53,7 @@ namespace Iotm {
     }
   };
 
-  class TextMesh
+  class IOTM_EXPORT TextMesh
   {
   public:
     explicit TextMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
@@ -309,7 +311,6 @@ namespace Iotm {
 
     std::set<std::string> get_blocks_touched_by_sideset(const SidesetData *sideset) const;
 
-    size_t m_processorCount{0};
     size_t m_myProcessor{0};
 
     size_t                             m_timestepCount{0};

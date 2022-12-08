@@ -42,6 +42,10 @@ public:
   int time_step_stop{-1};     // Last step to compare
   int time_step_increment{1}; // Step increment
 
+  // Offset/Scale time values on input database -- Time_mod = Scale * Time_db + Offset
+  double time_value_offset{0.0}; // Add offset to time values on first database
+  double time_value_scale{1.0};  // Scale time values on first database
+
   std::pair<int, int> explicit_steps{}; // Only compare these two steps (db1:db2) if nonzero.
 
   int max_warnings{100};

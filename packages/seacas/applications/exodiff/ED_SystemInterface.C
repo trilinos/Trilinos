@@ -367,8 +367,15 @@ void SystemInterface::enroll_options()
                   "Interpolate times on file2 to match times on file1.", nullptr);
   options_.enroll(
       "final_time_tolerance", GetLongOption::MandatoryValue,
-      "Tolerance on matching of final times on database when interpolate option specified\n."
+      "Tolerance on matching of final times on database when interpolate option specified.\n"
       "\t\tIf final times do not match within this tolerance, files are different.",
+      nullptr, nullptr, true);
+
+  options_.enroll("time_scale", GetLongOption::MandatoryValue,
+                  "Scale the time values on the input database by the specified value.", nullptr);
+  options_.enroll(
+      "time_offset", GetLongOption::MandatoryValue,
+      "Offset the (possibly scaled) time values on the input database by the specified value.",
       nullptr, nullptr, true);
 
   options_.enroll("map", GetLongOption::NoValue,
@@ -512,7 +519,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
         tolerance_help();
       }
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
-      fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
+      fmt::print("\n\t\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
       fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
@@ -521,7 +529,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("Help") != nullptr) {
     options_.usage();
     fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
-    fmt::print("\n\t\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
+    fmt::print("\n\t\tDocumentation: "
+               "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
     fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
@@ -603,6 +612,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
   coord_tol.value      = options_.get_option_value("coordinate_tolerance", coord_tol.value);
   default_tol.floor    = options_.get_option_value("Floor", default_tol.floor);
   final_time_tol.value = options_.get_option_value("final_time_tolerance", final_time_tol.value);
+
+  time_value_offset = options_.get_option_value("time_offset", time_value_offset);
+  time_value_scale  = options_.get_option_value("time_scale", time_value_scale);
 
   {
     const char *temp = options_.retrieve("TimeStepOffset");

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <cstdlib>
 #include <iostream>
 
@@ -18,7 +20,7 @@ namespace Ioss {
    *
    *  A collection of long command line option names for a program that uses the Ioss library.
    */
-  class GetLongOption
+  class IOSS_EXPORT GetLongOption
   {
   public:
     enum OptType { NoValue, OptionalValue, MandatoryValue };

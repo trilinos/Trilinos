@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CoordinateFrame.h> // for CoordinateFrame
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
 #include <Ioss_EntityType.h>      // for EntityType, etc
@@ -73,7 +75,7 @@ namespace Ioss {
    * GroupingEntities is through the Region class; clients of the IO subsystem have no direct
    * access to the underlying GroupingEntities (other than the Region).
    */
-  class Region : public GroupingEntity
+  class IOSS_EXPORT Region : public GroupingEntity
   {
   public:
     explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = "");

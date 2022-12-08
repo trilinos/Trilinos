@@ -3213,7 +3213,7 @@ void BulkData::internal_verify_inputs_and_change_ghosting(
 //----------------------------------------------------------------------
 
 void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
-                                         const std::vector<EntityProc>& sendGhosts,
+                                         EntityProcVec&& sendGhosts,
                                          bool isFullRegen,
                                          const std::vector<EntityProc>& removedSendGhosts)
 {
@@ -3269,6 +3269,10 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting,
         const bool deallocateSendBuffers = true;
         commSparse.communicate(deallocateSendBuffers);
       }
+    }
+
+    {
+      std::vector<EntityProc>().swap(sendGhosts);
     }
 
     std::ostringstream error_msg ;
@@ -3503,7 +3507,7 @@ void BulkData::internal_add_to_ghosting(
     stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(*this, entitiesToGhostOntoOtherProcessors);
 
     stk::util::sort_and_unique(entitiesToGhostOntoOtherProcessors, EntityLess(*this));
-    ghost_entities_and_fields(ghosting, entitiesToGhostOntoOtherProcessors);
+    ghost_entities_and_fields(ghosting, std::move(entitiesToGhostOntoOtherProcessors));
 }
 
 void BulkData::filter_ghosting_remove_receives(const stk::mesh::Ghosting &ghosting,
@@ -3625,7 +3629,7 @@ void BulkData::internal_change_ghosting(
 
   if (!add_send_is_globally_empty) {
     stk::util::sort_and_unique(newSendGhosts, EntityLess(*this));
-    ghost_entities_and_fields(ghosting, newSendGhosts, false);
+    ghost_entities_and_fields(ghosting, std::move(newSendGhosts), false);
   }
   else {
     ThrowRequireMsg(newSendGhosts.empty(), "internal_change_ghosting: add_send_is_globally_empty but newSendGhosts not empty");
@@ -4480,7 +4484,7 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
     find_upward_connected_entities_to_ghost_onto_other_processors(sendGhosts, entity_rank, selectedToSkin, connectFacesToPreexistingGhosts);
 
     stk::util::sort_and_unique(sendGhosts, EntityLess(*this));
-    ghost_entities_and_fields(aura_ghosting(), sendGhosts);
+    ghost_entities_and_fields(aura_ghosting(), std::move(sendGhosts));
 }
 
 bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, ModEndOptimizationFlag opt )

@@ -135,9 +135,10 @@ public:
 
   }
 
-  void print_batch_timing(unsigned iterationCount)
+  void print_batch_timing(unsigned iterationCount, size_t userProvidedHwm = 0)
   {
-    stk::print_stats_for_performance_compare(std::cout, minBatchTime, maxBatchHwm, iterationCount, communicator);
+    size_t hwmToPrint = userProvidedHwm > 0 ? userProvidedHwm : maxBatchHwm;
+    stk::print_stats_for_performance_compare(std::cout, minBatchTime, hwmToPrint, iterationCount, communicator);
   }
 
   double get_min_batch_time() { return minBatchTime; }

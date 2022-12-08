@@ -8,6 +8,8 @@
 #ifndef IOSS_Iovs_exodus_DatabaseIO_h
 #define IOSS_Iovs_exodus_DatabaseIO_h
 
+#include "iovs_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -31,7 +33,7 @@ namespace Iovs_exodus {
 
   typedef std::set<std::pair<int64_t, int64_t>> EntityIdSet;
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOVS_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,

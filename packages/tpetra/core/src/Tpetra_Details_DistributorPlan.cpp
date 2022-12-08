@@ -270,7 +270,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -278,7 +278,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }
@@ -531,7 +530,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     // in interpreting this code, remember that we are assuming contiguity
     // that is why index skips through the ranks
     {
-      size_t index = 0, procIndex = 0;
+      size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
           ++procIndex; // skip all negative proc IDs
@@ -539,7 +538,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
         startsTo_[i] = procIndex;
         int procID = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
-        index     += starts[procID];
         procIndex += starts[procID];
       }
     }

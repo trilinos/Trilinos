@@ -177,7 +177,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   bulk.modification_begin();
 
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting("custom ghost unit test");
-  bulk.my_ghost_entities_and_fields(ghosting, entitiesWithClosure);
+  bulk.my_ghost_entities_and_fields(ghosting, std::move(entitiesWithClosure));
   bulk.my_internal_modification_end_for_change_ghosting();
 
   if (procId == 0)

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ionit_export.h"
+
 namespace Ioss {
   /** \brief A special namespace for a class used to initialize Ioss.
    */
@@ -15,7 +17,7 @@ namespace Ioss {
      *  An object of this type must be created before using any other
      *  functions or methods in the Ioss library.
      */
-    class Initializer
+    class IONIT_EXPORT Initializer
     {
     public:
       Initializer();

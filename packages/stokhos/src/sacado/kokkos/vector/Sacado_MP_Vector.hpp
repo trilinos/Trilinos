@@ -262,9 +262,27 @@ namespace Sacado {
 
       //! Intialize from initializer_list
       /*!
-       * No KOKKOS_INLINE_FUNCTION as it is not callable from the device
+       * When static fixed storage is used:
+       *    * passing an empty initializer list initializes all samples in the ensemble to zero;
+       *    * passing an initializer list of length 1 initializes all samples in the ensemble to the passed value;
+       *    * all other mismatches in size between the initializer list and the ensemble produce an abort.
        */
-      Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {}
+      KOKKOS_INLINE_FUNCTION
+      Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {
+        if constexpr (Storage::is_static) {
+          const auto         lsz = static_cast<ordinal_type>(l.size());
+          const ordinal_type  sz = this->size();
+          if (lsz < sz) {
+            if (lsz > 1) {
+                Kokkos::abort("Size mismatch in list initialization of MP Vector with static fixed storage.");
+            } 
+            else {
+              const value_type v = lsz > 0 ? *l.begin() : value_type(0);
+              s.init(v);
+            }
+          }
+        }
+      }
 
       //! Destructor
       KOKKOS_DEFAULTED_FUNCTION

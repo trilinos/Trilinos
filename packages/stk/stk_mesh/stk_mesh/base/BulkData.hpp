@@ -944,7 +944,7 @@ protected: //functions
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
   void ghost_entities_and_fields(Ghosting & ghosting,
-                                 const EntityProcVec& new_send,
+                                 EntityProcVec&& new_send,
                                  bool isFullRegen = false,
                                  const std::vector<EntityProc>& removedSendGhosts = std::vector<EntityProc>());
 
