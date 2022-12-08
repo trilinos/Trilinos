@@ -1125,11 +1125,11 @@ const Teuchos::ETransp &mode, const RowOffsetView &offRankOffsets) {
   UY uY(Y);
   UR uOffRankOffsets(offRankOffsets);
 
-  std::cerr << __FILE__ << ":" << __LINE__
-            << " "   << Y.extent(0) << "," << Y.extent(1)
-            << " = " << A.numRows() << "," << A.numCols()
-            << " x " << X.extent(0) << "," << X.extent(1)
-            << "\n";
+  CWP_CERR(__FILE__ << ":" << __LINE__
+           << " "   << Y.extent(0) << "," << Y.extent(1)
+           << " = " << A.numRows() << "," << A.numCols()
+           << " x " << X.extent(0) << "," << X.extent(1)
+           << "\n");
 
   // TEUCHOS_TEST_FOR_EXCEPTION(Y.extent(1) != X.extent(1), std::logic_error, 
   // "Y cols " << Y.extent(1) << " != " << " X cols " << X.extent(1));
