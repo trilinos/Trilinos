@@ -4896,6 +4896,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     bool overlap = Details::Behavior::overlapSpmvCommunicationAndComputation();
 
+    /* Overlap fails for Sacado::UQ::PCE for unknown reasons.
+       This also catches Kokkos::complex in for Kokkos < 4.0
+    */
+    overlap &= std::is_trivially_copyable<Scalar>::value;
+
     // Graph must be sorted for the off-rank offsets to be meaningful
     if (overlap && !getCrsGraph()->isSorted()) {
       overlap = false;
