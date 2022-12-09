@@ -1,18 +1,19 @@
 #!/bin/bash
 module load PrgEnv-cray
 module load craype-accel-amd-gfx90a
-module load cray-libsci
+module load craype-x86-trento
+#module load cray-libsci  #loaded by PrgEnv-cray
 module load rocm/5.2.0
 module load cmake/3.22.1
 module load ninja
 
 module load cray-hdf5-parallel/1.12.1.1 cray-netcdf-hdf5parallel
 module load parallel-netcdf/1.12.2
-module load boost/1.78.0
+module load boost/1.79.0
 module load zlib/1.2.11
-module load parmetis/4.0.3
-module load metis/5.1.0
-module load yaml-cpp/0.7.0
+#module load parmetis/4.0.3
+#module load metis/5.1.0
+#module load yaml-cpp/0.7.0
 module load zlib/1.2.11
 module load superlu/5.3.0
 
