@@ -163,6 +163,7 @@ class RandomizedSolMgr : public SolverManager<ScalarType,MV,OP> {
   int blockSize_;
   int maxIters_;
   int numIters_;
+  bool trackResNorms_;
 };
 
 
@@ -179,7 +180,8 @@ RandomizedSolMgr<ScalarType,MV,OP>::RandomizedSolMgr(
   ortho_("SVQB"),
   blockSize_(0),
   maxIters_(5),
-  numIters_(0)
+  numIters_(0),
+  trackResNorms_(true)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
@@ -225,6 +227,7 @@ RandomizedSolMgr<ScalarType,MV,OP>::RandomizedSolMgr(
                      "RandomizedSolMgr: \"Block Size\" parameter must be strictly positive.");
 
   maxIters_ = pl.get("Maximum Iterations",maxIters_);
+  trackResNorms_ = pl.get("Track Residuals",true);
 }
 
 

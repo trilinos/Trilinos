@@ -66,7 +66,8 @@
 //             and L = A - D)
 //
 // Step2: Sphynx calls the LOBPCG algorithm provided in Anasazi to obtain
-//        logK+1 eigenvectors.
+//        logK+1 eigenvectors. 
+//        (Alternately, uses the experimental Randomized eigensolver.)
 // Step3: Sphynx calls the MJ algorithm provided in Zoltan2Core to compute the
 //        partition.
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,6 +81,7 @@
 #include "Zoltan2_AlgMultiJagged.hpp"
 
 #include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziRandomizedSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziTpetraAdapter.hpp"
 
@@ -177,7 +179,7 @@ namespace Zoltan2 {
     void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
 
-    int LOBPCGwrapper(const int numEigenVectors);
+    int AnasaziWrapper(const int numEigenVectors);
 
     template<typename problem_t>
     void setPreconditioner(Teuchos::RCP<problem_t> &problem);
@@ -531,7 +533,8 @@ namespace Zoltan2 {
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute a partition using the Laplacian matrix (and possibly the degree
-  // matrix as well). First call LOBPCG to compute logK+1 eigenvectors, then
+  // matrix as well). First call LOBPCG (or Randomized solver) 
+  // to compute logK+1 eigenvectors, then
   // transform the eigenvectors to coordinates, and finally call MJ to compute
   // a partition on the coordinates.
   template <typename Adapter>
@@ -552,9 +555,11 @@ namespace Zoltan2 {
     int numEigenVectors = (int) log2(numGlobalParts_)+1;
 
     // Compute the eigenvectors using LOBPCG
-    int computedNumEv = Sphynx::LOBPCGwrapper(numEigenVectors);
+    // or Randomized eigensolver
+    std::string solverType = sphynxParams_->get("sphynx_eigensolver", "LOBPCG");
+    int computedNumEv = Sphynx::AnasaziWrapper(numEigenVectors);
 
-    if(computedNumEv <= 1) {
+    if(computedNumEv <= 1 && solverType == "LOBPCG") { 
       throw
 	std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
 			   "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
@@ -580,11 +585,12 @@ namespace Zoltan2 {
 
   ///////////////////////////////////////////////////////////////////////////
   // Call LOBPCG on the Laplacian matrix.
+  // Or use the randomized eigensolver.
   template <typename Adapter>
-  int Sphynx<Adapter>::LOBPCGwrapper(const int numEigenVectors)
+  int Sphynx<Adapter>::AnasaziWrapper(const int numEigenVectors)
   {
 
-    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::LOBPCG"));
+    Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Sphynx::Anasazi"));
 
     // Set defaults for the parameters
     std::string which = "SR";
@@ -595,6 +601,9 @@ namespace Zoltan2 {
     bool relLockTol = false;
     bool lock = false;
     bool useFullOrtho = true;
+    std::string solverType = sphynxParams_->get("sphynx_eigensolver","LOBPCG");
+    TEUCHOS_TEST_FOR_EXCEPTION(solverType == "LOBPCG" || solverType == "randomized", 
+      std::invalid_argument, "Sphynx: sphynx_eigenxolver must be set to LOBPCG or randomized.");
 
     // Information to output in a verbose run
     int numfailed = 0;
@@ -676,12 +685,14 @@ namespace Zoltan2 {
     problem->setHermitian(isHermitian);
     problem->setNEV(numEigenVectors);
 
+    if(solverType == "LOBPCG"){
 
     // Set preconditioner
     Sphynx::setPreconditioner(problem);
 
     if(problemType_ == Sphynx::GENERALIZED)
       problem->setM(degMatrix_);
+    }
 
     // Inform the eigenproblem that you are finished passing it information
     bool boolret = problem->setProblem();
@@ -689,24 +700,30 @@ namespace Zoltan2 {
       throw std::runtime_error("\nAnasazi::BasicEigenproblem::setProblem() returned with error.\n");
     }
 
-    // Set LOBPCG
-    using solver_t = Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>;
-    solver_t solver(problem, anasaziParams);
+    // Set Eigensolver
+    Teuchos::RCP<Anasazi::SolverManager<scalar_t, mvector_t, op_t>> solver;
+
+    if(solverType == "LOBPCG"){
+      solver = Teuchos::rcp(new Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+    }
+    else{
+      solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+    }
 
     if (verbosity_ > 0 && comm_->getRank() == 0)
       anasaziParams.print(std::cout);
 
     // Solve the problem
     if (verbosity_ > 0 && comm_->getRank() == 0)
-      std::cout << "Beginning the LOBPCG solve..." << std::endl;
-    Anasazi::ReturnType returnCode = solver.solve();
+      std::cout << "Beginning the Anasazi solve..." << std::endl;
+    Anasazi::ReturnType returnCode = solver->solve();
 
     // Check convergence, niters, and solvetime
     if (returnCode != Anasazi::Converged) {
       ++numfailed;
     }
-    iter = solver.getNumIters();
-    solvetime = (solver.getTimers()[0])->totalElapsedTime();
+    iter = solver->getNumIters();
+    solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
 
     // Retrieve the solution
@@ -718,7 +735,7 @@ namespace Zoltan2 {
     // Summarize iteration counts and solve time
     if (verbosity_ > 0 && comm_->getRank() == 0) {
       std::cout << std::endl;
-      std::cout << "LOBPCG SUMMARY" << std::endl;
+      std::cout << "ANASAZI SUMMARY" << std::endl;
       std::cout << "Failed to converge:    " << numfailed << std::endl;
       std::cout << "No of iterations :     " << iter << std::endl;
       std::cout << "Solve time:            " << solvetime << std::endl;

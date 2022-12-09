@@ -83,6 +83,11 @@ static void getSphynxValidParameters(ParameterList & pl)
 
   pl.set("sphynx_initial_guess", "random", "Sphynx initial guess", sphynx_initial_guess_method_Validator);
 
+  RCP<Teuchos::StringValidator> sphynx_eigensolver_Validator =
+    Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "LOBPCG", "randomized")));
+
+  pl.set("sphynx_eigensolver", "LOBPCG", "Sphynx eigensolver", sphynx_eigensolver_Validator);
+
   RCP<Teuchos::StringValidator> sphynx_problem_type_method_Validator =
     Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "combinatorial", "normalized", "generalized")));
 
