@@ -135,6 +135,11 @@ static void setSphynxValidatorsInList(
 
     using part_t = typename Adapter::part_t;
     using weight_t = typename Adapter::scalar_t;
+    using scalar_t = double; // Sphynx with scalar_t=double obtains better cutsize
+    using lno_t = typename Adapter::lno_t;
+    using gno_t = typename Adapter::gno_t;
+    using node_t = typename Adapter::node_t;
+    using mvector_t = Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>;  
     typedef typename Adapter::base_adapter_t base_adapter_t; // CHeck to Remove
 
     ///////////////////////////////////////////////////////////////////////////
@@ -192,6 +197,10 @@ static void setSphynxValidatorsInList(
     ///////////////////// FORWARD DECLARATIONS  ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
+    using PartitioningProblem<Adapter>::solve; 
+    //^^ Required so can call base class solve() and not two-parameter 
+    // version defined here. 
+    void solve(Teuchos::RCP<mvector_t> &userEigenVects);
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
                          Environment &env, bool& removeSelfEdges, bool& isGraphType, bool& needConsecutiveGlobalIds) override;
@@ -210,6 +219,11 @@ static void setSphynxValidatorsInList(
     ///////////////////////////////////////////////////////////////////////////
 
   private:
+    Teuchos::RCP<Adapter> inputAdapter_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
+    Teuchos::RCP<const Teuchos::Comm<int>> comm_;
+    //Teuchos::RCP<Algorithm<Adapter> > algorithm_;
+    Teuchos::RCP<Sphynx<Adapter> > algorithm_;
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
     RCP<ParameterList> sphynxParams_;
 
@@ -227,6 +241,33 @@ static void setSphynxValidatorsInList(
       bool &isGraphType, bool &needConsecutiveGlobalIds)
   {
     this->algName_ = std::string("sphynx");
+  }
+
+  template <typename Adapter>
+  void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
+  {
+    // Create the algorithm
+    try {
+      this->createAlgorithm();
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    PartitioningSolution<Adapter> *soln = NULL;
+
+    try{
+    
+      soln = new PartitioningSolution<Adapter>(this->envConst_, this->comm_, this->numberOfWeights_,
+					       this->partIds_.view(0, this->numberOfCriteria_),
+					       this->partSizes_.view(0, this->numberOfCriteria_), this->algorithm_);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+    this->solution_ = Teuchos::rcp(soln);
+
+    // Call the algorithm
+    try {
+      this->algorithm_->partition(this->solution_, userEigenVects);
+    }
+    Z2_FORWARD_EXCEPTIONS;
   }
 
   template <typename Adapter>

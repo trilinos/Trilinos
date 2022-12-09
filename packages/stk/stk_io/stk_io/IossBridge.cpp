@@ -832,6 +832,11 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     stk::mesh::Part *getPart(const stk::mesh::MetaData& metaData, const std::string& name)
     {
+      stk::mesh::Part *part = metaData.get_part(name);
+      if(nullptr != part) {
+        return part;
+      }
+
       const mesh::PartVector & parts = metaData.get_parts();
       for (unsigned ii=0; ii < parts.size(); ++ii)
         {
@@ -1098,35 +1103,45 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                       "  stk::io::create_named_suffix_field_output_type()");
       }
 
-      impl::set_field_output_type(field, variableType);
+      for (unsigned i = 0; i < field.number_of_states(); ++i) {
+        stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(i);
+        stk::mesh::FieldBase * fieldOfState = field.field_state(state);
+
+        impl::set_field_output_type(*fieldOfState, variableType);
+      }
     }
 
     void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType)
     {
-      switch (fieldOutputType) {
-        case (FieldOutputType::SCALAR)         : impl::set_field_output_type(field, "Scalar"); break;
-        case (FieldOutputType::VECTOR_2D)      : impl::set_field_output_type(field, "Vector_2D"); break;
-        case (FieldOutputType::VECTOR_3D)      : impl::set_field_output_type(field, "Vector_3D"); break;
-        case (FieldOutputType::FULL_TENSOR_36) : impl::set_field_output_type(field, "Full_Tensor_36"); break;
-        case (FieldOutputType::FULL_TENSOR_32) : impl::set_field_output_type(field, "Full_Tensor_32"); break;
-        case (FieldOutputType::FULL_TENSOR_22) : impl::set_field_output_type(field, "Full_Tensor_22"); break;
-        case (FieldOutputType::FULL_TENSOR_16) : impl::set_field_output_type(field, "Full_Tensor_16"); break;
-        case (FieldOutputType::FULL_TENSOR_12) : impl::set_field_output_type(field, "Full_Tensor_12"); break;
-        case (FieldOutputType::SYM_TENSOR_33)  : impl::set_field_output_type(field, "Sym_Tensor_33"); break;
-        case (FieldOutputType::SYM_TENSOR_31)  : impl::set_field_output_type(field, "Sym_Tensor_31"); break;
-        case (FieldOutputType::SYM_TENSOR_21)  : impl::set_field_output_type(field, "Sym_Tensor_21"); break;
-        case (FieldOutputType::SYM_TENSOR_13)  : impl::set_field_output_type(field, "Sym_Tensor_13"); break;
-        case (FieldOutputType::SYM_TENSOR_11)  : impl::set_field_output_type(field, "Sym_Tensor_11"); break;
-        case (FieldOutputType::SYM_TENSOR_10)  : impl::set_field_output_type(field, "Sym_Tensor_10"); break;
-        case (FieldOutputType::ASYM_TENSOR_03) : impl::set_field_output_type(field, "Asym_Tensor_03"); break;
-        case (FieldOutputType::ASYM_TENSOR_02) : impl::set_field_output_type(field, "Asym_Tensor_02"); break;
-        case (FieldOutputType::ASYM_TENSOR_01) : impl::set_field_output_type(field, "Asym_Tensor_01"); break;
-        case (FieldOutputType::MATRIX_22)      : impl::set_field_output_type(field, "Matrix_22"); break;
-        case (FieldOutputType::MATRIX_33)      : impl::set_field_output_type(field, "Matrix_33"); break;
-        case (FieldOutputType::QUATERNION_2D)  : impl::set_field_output_type(field, "Quaternion_2D"); break;
-        case (FieldOutputType::QUATERNION_3D)  : impl::set_field_output_type(field, "Quaternion_3D"); break;
-        default:
-          ThrowErrorMsg("Unsupported FieldOutputType: " << static_cast<int>(fieldOutputType));
+      for (unsigned i = 0; i < field.number_of_states(); ++i) {
+        stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(i);
+        stk::mesh::FieldBase * fieldOfState = field.field_state(state);
+
+        switch (fieldOutputType) {
+          case (FieldOutputType::SCALAR)         : impl::set_field_output_type(*fieldOfState, "Scalar"); break;
+          case (FieldOutputType::VECTOR_2D)      : impl::set_field_output_type(*fieldOfState, "Vector_2D"); break;
+          case (FieldOutputType::VECTOR_3D)      : impl::set_field_output_type(*fieldOfState, "Vector_3D"); break;
+          case (FieldOutputType::FULL_TENSOR_36) : impl::set_field_output_type(*fieldOfState, "Full_Tensor_36"); break;
+          case (FieldOutputType::FULL_TENSOR_32) : impl::set_field_output_type(*fieldOfState, "Full_Tensor_32"); break;
+          case (FieldOutputType::FULL_TENSOR_22) : impl::set_field_output_type(*fieldOfState, "Full_Tensor_22"); break;
+          case (FieldOutputType::FULL_TENSOR_16) : impl::set_field_output_type(*fieldOfState, "Full_Tensor_16"); break;
+          case (FieldOutputType::FULL_TENSOR_12) : impl::set_field_output_type(*fieldOfState, "Full_Tensor_12"); break;
+          case (FieldOutputType::SYM_TENSOR_33)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_33"); break;
+          case (FieldOutputType::SYM_TENSOR_31)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_31"); break;
+          case (FieldOutputType::SYM_TENSOR_21)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_21"); break;
+          case (FieldOutputType::SYM_TENSOR_13)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_13"); break;
+          case (FieldOutputType::SYM_TENSOR_11)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_11"); break;
+          case (FieldOutputType::SYM_TENSOR_10)  : impl::set_field_output_type(*fieldOfState, "Sym_Tensor_10"); break;
+          case (FieldOutputType::ASYM_TENSOR_03) : impl::set_field_output_type(*fieldOfState, "Asym_Tensor_03"); break;
+          case (FieldOutputType::ASYM_TENSOR_02) : impl::set_field_output_type(*fieldOfState, "Asym_Tensor_02"); break;
+          case (FieldOutputType::ASYM_TENSOR_01) : impl::set_field_output_type(*fieldOfState, "Asym_Tensor_01"); break;
+          case (FieldOutputType::MATRIX_22)      : impl::set_field_output_type(*fieldOfState, "Matrix_22"); break;
+          case (FieldOutputType::MATRIX_33)      : impl::set_field_output_type(*fieldOfState, "Matrix_33"); break;
+          case (FieldOutputType::QUATERNION_2D)  : impl::set_field_output_type(*fieldOfState, "Quaternion_2D"); break;
+          case (FieldOutputType::QUATERNION_3D)  : impl::set_field_output_type(*fieldOfState, "Quaternion_3D"); break;
+          default:
+            ThrowErrorMsg("Unsupported FieldOutputType: " << static_cast<int>(fieldOutputType));
+        }
       }
     }
 
