@@ -48,7 +48,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
     if (m > 0) {
       int *devInfo = (int *)W.data();
       value_type *workspace = W.data() + 1;
-      int lwork = (W.span() - 1) * sizeof(work_value_type);
+      int lwork = W.span() - 1;
       r_val = Lapack<value_type>::potrf(handle, ArgUplo::cublas_param, m, A.data(), A.stride_1(), workspace, lwork,
                                         devInfo);
     }
@@ -107,7 +107,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
       if (W.span() == 0) {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
-        r_val = (lwork + sizeof(value_type_w)) / sizeof(value_type_w) + 1;
+        r_val = lwork + 1;
       } else
         r_val = cusolver_invoke(member, A, W);
     }
