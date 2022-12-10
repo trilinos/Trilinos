@@ -165,15 +165,14 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
-      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    shards::CellTopology sub_topologies[hdivCardinality];
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
         dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
-        sub_topologies(iface) = sub_topology;
+        sub_topologies[iface] = sub_topology;
       }
     }
 
@@ -217,7 +216,7 @@ void addDiscreteCurlToRequestHandler(
         if(dim==3){
           elemOrts(0).getFaceOrientation(fOrt.data(),hdivCardinality);
           for(int iface = 0; iface < hdivCardinality; iface++){
-            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
+            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies[iface], fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
               dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
@@ -384,15 +383,14 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
-      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    shards::CellTopology sub_topologies[hdivCardinality];
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
         dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
-        sub_topologies(iface) = sub_topology;
+        sub_topologies[iface] = sub_topology;
       }
     }
 
@@ -424,7 +422,7 @@ void addDiscreteCurlToRequestHandler(
         if(dim==3){
           elemOrts(0).getFaceOrientation(fOrt.data(),hdivCardinality);
           for(int iface = 0; iface < hdivCardinality; iface++){
-            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
+            Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies[iface], fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
               dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
