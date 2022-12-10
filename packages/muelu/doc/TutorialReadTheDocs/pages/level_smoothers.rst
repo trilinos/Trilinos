@@ -125,7 +125,8 @@ show the multigrid effect of different number of Jacobi smoothers on all multigr
 
         3 levels with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
-One has even more fine-grained control over pre- and post-smoothing:
+One has even more fine-grained control over pre- and post-smoothing as shown in the following example,
+where we use different damping parameters for pre- and post-smoothing (and a direct solver on the coarse grid):
 
 .. literalinclude:: ../../../test/tutorial/s1_easy_jacobi2.xml
   :language: xml
