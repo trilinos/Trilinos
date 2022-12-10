@@ -42,31 +42,12 @@ The following XML file shows how to use a Jacobi smoother both for level smoothi
 The corresponding multigrid hierarchy is
 
 
-Figures :ref:`level_smoothers/figure_1vcycles` and :ref:`level_smoothers/figure_5vcycles`
+:numref:`level_smoothers/figure_1vcycles` and :numref:`level_smoothers/figure_5vcycles`
 show the multigrid effect of different number of Jacobi smoothers on all multigrid levels.
-
-One has even more fine-grained control over pre- and post-smoothing:
-
-.. literalinclude:: ../../../test/tutorial/s1_easy_jacobi2.xml
-  :language: xml
-
-This produces the following multigrid hierarchy
-
-.. warning::
-
-    Insert missing output
-
-.. note::
-
-    Note that the relaxation-based methods provided by the Ifpack/Ifpack2 package are embedded in an outer additive Schwarz method.
-
-
-Of course, there exist other smoother methods such as polynomial smoothers (Chebyshev) and ILU-based methods.
-A detailed overview of the different available smoothers can be found in the MueLu User's Guide ([1]_).
 
 .. _level_smoothers/figure_1vcycles:
 
-.. list-table:: Aggregates with settings from **../../../test/tutorial/s4a.xml**
+.. list-table:: 2D Laplace equation on 50 x 50 mesh after 1 V-cycle with an AMG multigrid solver and Jacobi smoothers on all multigrid levels (2 processors)
 
   * - .. figure:: pics/1level_1jac09.png
 
@@ -80,7 +61,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
         1 level with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
-    - .. figure:: pics/2level_1jac09.png
+  * - .. figure:: pics/2level_1jac09.png
 
         2 levels with 1 Jacobi sweep (:math:`\omega=0.9`)
 
@@ -92,7 +73,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
         2 levels with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
-    - .. figure:: pics/3level_1jac09.png
+  * - .. figure:: pics/3level_1jac09.png
 
         3 levels with 1 Jacobi sweep (:math:`\omega=0.9`)
 
@@ -120,7 +101,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
         1 level with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
-    - .. figure:: pics/5sweeps_2level_1jac09.png
+  * - .. figure:: pics/5sweeps_2level_1jac09.png
 
         2 levels with 1 Jacobi sweep (:math:`\omega=0.9`)
 
@@ -132,7 +113,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
         2 levels with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
-    - .. figure:: pics/5sweeps_3level_1jac09.png
+  * - .. figure:: pics/5sweeps_3level_1jac09.png
 
         3 levels with 1 Jacobi sweep (:math:`\omega=0.9`)
 
@@ -144,6 +125,24 @@ A detailed overview of the different available smoothers can be found in the Mue
 
         3 levels with 100 Jacobi sweeps (:math:`\omega=0.9`)
 
+One has even more fine-grained control over pre- and post-smoothing:
+
+.. literalinclude:: ../../../test/tutorial/s1_easy_jacobi2.xml
+  :language: xml
+
+This produces the following multigrid hierarchy
+
+.. warning::
+
+    Insert missing output
+
+.. note::
+
+    Note that the relaxation-based methods provided by the Ifpack/Ifpack2 package are embedded in an outer additive Schwarz method.
+
+
+Of course, there exist other smoother methods such as polynomial smoothers (Chebyshev) and ILU-based methods.
+A detailed overview of the different available smoothers can be found in the MueLu User's Guide ([1]_).
 
 .. admonition:: Exercise 1
 
