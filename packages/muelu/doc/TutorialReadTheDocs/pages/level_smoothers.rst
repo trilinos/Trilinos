@@ -50,7 +50,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
 .. _level_smoothers/figure_1vcycles:
 
-.. list-table:: Aggregates with settings from **../../../test/tutorial/s4a.xml** 
+.. list-table:: Aggregates with settings from **../../../test/tutorial/s4a.xml**
 
   * - .. figure:: pics/1level_1jac09.png
 
@@ -58,7 +58,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
     - .. figure:: pics/1level_10jac09.png
 
-        1 level with 10 Jacobi sweeps (:math:`\omega=0.9`) 
+        1 level with 10 Jacobi sweeps (:math:`\omega=0.9`)
 
     - .. figure:: pics/1level_100jac09.png
 
@@ -90,7 +90,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
 .. _level_smoothers/figure_5vcycles:
 
-.. list-table:: 2D Laplace equation on 50 x 50 mesh after 5 V-cycle with an AMG multigrid solver and Jacobi smoothers on all multigrid levels. (2 processors) 
+.. list-table:: 2D Laplace equation on 50 x 50 mesh after 5 V-cycle with an AMG multigrid solver and Jacobi smoothers on all multigrid levels. (2 processors)
 
   * - .. figure:: pics/5sweeps_1level_1jac09.png
 
@@ -98,7 +98,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
     - .. figure:: pics/5sweeps_1level_10jac09.png
 
-        1 level with 10 Jacobi sweeps (:math:`\omega=0.9`) 
+        1 level with 10 Jacobi sweeps (:math:`\omega=0.9`)
 
     - .. figure:: pics/5sweeps_1level_100jac09.png
 
@@ -135,14 +135,14 @@ A detailed overview of the different available smoothers can be found in the Mue
 
 .. admonition:: Exercise 2
 
-    Use the following parameters to solve the :math:`50\times 50` Laplace 2D problem on 2 processors 
+    Use the following parameters to solve the :math:`50\times 50` Laplace 2D problem on 2 processors
 
     .. literalinclude:: ../../../test/tutorial/s1_easy_exercise.xml
         :language: xml
-  
+
   That is, we change to smoothed aggregation AMG. You can find the xml file also in **../../../test/tutorial/s1_easy_exercise.xml**. Run the example on 2 processors and check the number of linear iterations and the solver timings in the screen output. Can you find smoother parameters which reduce the number of iterations? Can you find smoother parameters which reduce the iteration timings?
 
 
 Footnotes
 =========
-.. [1] A. Prokopenko, J.J. Hu, T.A. Wiesner, C.M. Siefert and R.S. Tuminaro **MueLu User’sGuide 1.0 (Trilinos Version 11.12)**, SAND2014-18874, 2014
+.. [1] L. Berger-Vergiat, C. A. Glusa, J. J. Hu, M. Mayr, A. Prokopenko, C. M. Siefert, R. S. Tuminaro, and T. A. Wiesner. MueLu User’s Guide. Technical Report SAND2019-0537, Sandia National Laboratories, Albuquerque, NM (USA) 87185, 2019.

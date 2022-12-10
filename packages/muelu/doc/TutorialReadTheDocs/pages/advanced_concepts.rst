@@ -249,4 +249,4 @@ All the other parameters in the parameter sublist correspond to the usual parame
 Footnotes
 =========
 
-.. [1] A. Prokopenko, J.J. Hu, T.A. Wiesner, C.M. Siefert and R.S. Tuminaro **MueLu User’sGuide 1.0 (Trilinos Version 11.12)**, SAND2014-18874, 2014
+.. [1] L. Berger-Vergiat, C. A. Glusa, J. J. Hu, M. Mayr, A. Prokopenko, C. M. Siefert, R. S. Tuminaro, and T. A. Wiesner. MueLu User’s Guide. Technical Report SAND2019-0537, Sandia National Laboratories, Albuquerque, NM (USA) 87185, 2019.

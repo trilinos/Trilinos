@@ -35,7 +35,7 @@ Instead of defining the ML parameters by hand in the ParameterList you can also 
   :language: cpp
   :start-after: GetParametersFromXMLFile begin
   :end-before: GetParametersFromXMLFile end
-  
+
 Next, you create a MLParameterListInterpreter object using the parameters and create a new **MueLu::Hierarchy** from it.
 
 .. literalinclude:: ../../../test/tutorial/MLParameterList.cpp
@@ -77,16 +77,16 @@ Once we have the multigrid hierarchy set up we can use it the same way as descri
 
 		**./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1**
 		**--xml=xml/ml_ParameterList.xml --linAlgebra=Epetra**
-	
+
 
 .. admonition:: Exercise 2
 
 	Play around with the parameters from **MueLu_tutorial_MLParameterList.exe**. Change, e.g., the problem type to a 2D Laplace problem (**--matrixType=Laplace2D**) and adapt the **--nx** and **--ny** parameters accordingly.
-	
+
 	Try to run both ML and MueLu and compare the results. Do you find significant differences?
 
 
 Footnotes
 =========
 .. [1] M.W. Gee, C.M. Siefert, J.J. Hu, R.S. Tuminaro and M.G. Sala, ML 5.0 Smoothed Aggre-gation User’s Guide, Sandia National Laboratories, 2006, SAND2006-2649
-.. [2] A. Prokopenko, J.J. Hu, T.A. Wiesner, C.M. Siefert and R.S. Tuminaro **MueLu User’sGuide 1.0 (Trilinos Version 11.12)**, SAND2014-18874, 2014
+.. [2] L. Berger-Vergiat, C. A. Glusa, J. J. Hu, M. Mayr, A. Prokopenko, C. M. Siefert, R. S. Tuminaro, and T. A. Wiesner. MueLu User’s Guide. Technical Report SAND2019-0537, Sandia National Laboratories, Albuquerque, NM (USA) 87185, 2019.
