@@ -487,6 +487,15 @@ struct UnitTestSetup {
                                                                 \
   SAXPY_UNIT_TEST(VEC, SCALAR_T)                                        \
                                                                 \
+  TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, initializer_list_constructor ) { \
+    UTS setup;                                                          \
+    UTS::vec_type u{ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };          \
+    UTS::vec_type v(setup.sz, 0.0);                                     \
+    for (int i=0; i<setup.sz; i++)                                      \
+      v.fastAccessCoeff(i) = i+1;                                       \
+    success = compareVecs(u, "u", v, "v",                               \
+                          setup.rtol, setup.atol, out);                 \
+  }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, initializer_list_copy ) {        \
     UTS setup;                                                          \
     UTS::vec_type u = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };       \
@@ -515,6 +524,24 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }
 
+  /**
+   * Default series of tests to perform for SFS for any value type.
+   */
+  #define VECTOR_UNIT_TESTS_SFS_ANY_VALUE_TYPE(SCALAR_T)                                     \
+  TEUCHOS_UNIT_TEST( StaticFixedVector##_##SCALAR_T, initializer_list_constructor_partial ) {\
+    UTS setup;                                                                               \
+    UTS::vec_type u{ 1.0};                                                                   \
+    UTS::vec_type v(setup.sz, 1.0);                                                          \
+    success = compareVecs(u, "u", v, "v",                                                    \
+                          setup.rtol, setup.atol, out);                                      \
+  }                                                                                          \
+  TEUCHOS_UNIT_TEST( StaticFixedVector##_##SCALAR_T, initializer_list_constructor_empty  ) { \
+    UTS setup;                                                                               \
+    UTS::vec_type u{ std::initializer_list<typename UTS::value_type>()};                     \
+    UTS::vec_type v(setup.sz, 0.0);                                                          \
+    success = compareVecs(u, "u", v, "v",                                                    \
+                          setup.rtol, setup.atol, out);                                      \
+  }
 /**
  * Series of tests to run for complex type.
  * It will run the series of tests for any type.
@@ -576,17 +603,25 @@ namespace StaticVecTest
   TEST_STATIC_STORAGE(StaticStorage, StaticVector, double, double, 8, VECTOR_UNIT_TESTS_REAL_TYPE)
 }
 
+/**
+ * Common test structure for static fixed storage.
+ */
+#define TEST_STATIC_FIXED_STORAGE(__storage_type__,__vec_type__,__scalar_type__,__scalar_type_name__,__storage_size__,__macro_for_tests__) \
+    TEST_STATIC_STORAGE(__storage_type__,__vec_type__,__scalar_type__,__scalar_type_name__,__storage_size__,__macro_for_tests__)           \
+    VECTOR_UNIT_TESTS_SFS_ANY_VALUE_TYPE(__scalar_type_name__)
+
+
 namespace StaticFixedVecTest
 {
-  namespace Double        {TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector,                   double ,                double, 8, VECTOR_UNIT_TESTS_REAL_TYPE   )}
+  namespace Double        {TEST_STATIC_FIXED_STORAGE(StaticFixedStorage, StaticFixedVector,                   double ,                double, 8, VECTOR_UNIT_TESTS_REAL_TYPE   )}
 
 // Skip std::complex when compiling with CUDA, because std::complex isn't supported in that case.
 // Note that even though the tests aren't run on the device, nvcc still complains that __device__ code functions are called
 // from __host__ code (or vice versa).
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-  namespace Complex_std   {TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector,   std   ::complex<double>,    std_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
+  namespace Complex_std   {TEST_STATIC_FIXED_STORAGE(StaticFixedStorage, StaticFixedVector,   std   ::complex<double>,    std_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
 #endif
 
   // Always test for Kokkos::complex because it is always shipped as part of Kokkos, whatever the space.
-  namespace Complex_Kokkos{TEST_STATIC_STORAGE(StaticFixedStorage, StaticFixedVector, ::Kokkos::complex<double>, kokkos_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
+  namespace Complex_Kokkos{TEST_STATIC_FIXED_STORAGE(StaticFixedStorage, StaticFixedVector, ::Kokkos::complex<double>, kokkos_complex_double, 8, VECTOR_UNIT_TESTS_COMPLEX_TYPE)}
 }

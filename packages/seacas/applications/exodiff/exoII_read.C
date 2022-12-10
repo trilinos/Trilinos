@@ -1255,6 +1255,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     times = new double[num_times];
     SMART_ASSERT(times != nullptr);
     err = ex_get_all_times(file_id, times);
+    if (time_scale != 1.0 || time_offset != 0.0) {
+      for (int i = 0; i < num_times; i++) {
+        times[i] = time_scale * times[i] + time_offset;
+      }
+    }
   }
 
   if (num_nodal_vars != 0) {

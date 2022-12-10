@@ -373,12 +373,12 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
 #endif
 }
 
-template int Ioss::ParallelUtils::global_minmax(int, Ioss::ParallelUtils::MinMax which) const;
-template unsigned int Ioss::ParallelUtils::global_minmax(unsigned int,
+template IOSS_EXPORT int Ioss::ParallelUtils::global_minmax(int, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT unsigned int Ioss::ParallelUtils::global_minmax(unsigned int,
                                                          Ioss::ParallelUtils::MinMax which) const;
-template int64_t      Ioss::ParallelUtils::global_minmax(int64_t,
+template IOSS_EXPORT int64_t      Ioss::ParallelUtils::global_minmax(int64_t,
                                                          Ioss::ParallelUtils::MinMax which) const;
-template double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) const;
+template IOSS_EXPORT double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) const;
 
 template <typename T>
 T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax which) const
@@ -413,14 +413,16 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
 }
 
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(double &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(double &value, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(int &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int &value, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(int64_t &value, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int64_t &value, int) const;
 
 template <> void Ioss::ParallelUtils::broadcast(std::string &my_str, int root) const
 {
+  PAR_UNUSED(my_str);
+  PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
@@ -436,6 +438,8 @@ template <> void Ioss::ParallelUtils::broadcast(std::string &my_str, int root) c
 
 template <typename T> void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
 {
+  PAR_UNUSED(my_value);
+  PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Bcast((void *)&my_value, 1, mpi_type(T()), root, communicator_);
@@ -449,19 +453,21 @@ template <typename T> void Ioss::ParallelUtils::broadcast(T &my_value, int root)
 }
 
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(std::vector<double> &, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<double> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(std::vector<int> &, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<int> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(std::vector<long> &, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<long> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(std::vector<long long> &, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<long long> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template void Ioss::ParallelUtils::broadcast(std::vector<char> &, int) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<char> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
 template <>
-void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value, int root) const
+IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value, int root) const
 {
+  PAR_UNUSED(my_value);
+  PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
@@ -477,6 +483,8 @@ void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value, 
 
 template <typename T> void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value, int root) const
 {
+  PAR_UNUSED(my_value);
+  PAR_UNUSED(root);
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success =
@@ -491,19 +499,19 @@ template <typename T> void Ioss::ParallelUtils::broadcast(std::vector<T> &my_val
 }
 
 /// \relates Ioss::ParallelUtils::gather
-template void Ioss::ParallelUtils::gather(double, std::vector<double> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::gather(double, std::vector<double> &) const;
 /// \relates Ioss::ParallelUtils::gather
-template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
 /// \relates Ioss::ParallelUtils::gather
-template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
 /// \relates Ioss::ParallelUtils::all_gather
-template void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &, std::vector<int64_t> &) const;
+template IOSS_EXPORT void Ioss::ParallelUtils::all_gather(std::vector<int64_t> &, std::vector<int64_t> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
 {
@@ -588,10 +596,10 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
 }
 
 /// \relates Ioss::ParallelUtils::gather
-template void Ioss::ParallelUtils::gather(std::vector<int> &my_values,
+template IOSS_EXPORT void Ioss::ParallelUtils::gather(std::vector<int> &my_values,
                                           std::vector<int> &result) const;
 /// \relates Ioss::ParallelUtils::gather
-template void Ioss::ParallelUtils::gather(std::vector<int64_t> &my_values,
+template IOSS_EXPORT void Ioss::ParallelUtils::gather(std::vector<int64_t> &my_values,
                                           std::vector<int64_t> &result) const;
 template <typename T>
 void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &result) const
@@ -619,11 +627,11 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
 }
 
 /// \relates Ioss::ParallelUtils::gather
-template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
+template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<int> &my_values,
                                          std::vector<int> &result) const;
 /// \relates Ioss::ParallelUtils::gather
-template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
+template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<char> &my_values,
                                          std::vector<char> &result) const;
 template <typename T>

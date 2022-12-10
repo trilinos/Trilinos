@@ -13,6 +13,8 @@ IF (Piro_ENABLE_NOX)
     Main_ThyraSolver_Tpetra.cpp
     MockModelEval_A_Tpetra.cpp
     MockModelEval_A_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -32,6 +34,8 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A_Tpetra.hpp
     MockModelEval_B_Tpetra.cpp
     MockModelEval_B_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"

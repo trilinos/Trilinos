@@ -174,7 +174,7 @@ namespace SEAMS {
        "Translates all uppercase characters in svar to "
        "lowercase. It modifies svar and returns the "
        "resulting string.  "},
-      {"to_upper", do_toupper, "toupper(svar)",
+      {"to_upper", do_toupper, "to_upper(svar)",
        "Translates all lowercase character in svar to "
        "uppercase. It modifies svar and returns the "
        "resulting string. "},

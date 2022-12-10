@@ -7,12 +7,14 @@
 #ifndef __CATALYST_EXODUS_MESH_BASE_H
 #define __CATALYST_EXODUS_MESH_BASE_H
 
+#include "iovs_export.h"
+
 #include <string>
 #include <vector>
 
 namespace Iovs_exodus {
 
-  class CatalystExodusMeshBase
+  class IOVS_EXPORT CatalystExodusMeshBase
   {
 
   public:

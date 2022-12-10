@@ -118,8 +118,8 @@ namespace Iotm {
           reset_text_mesh_data();
 
           for (auto iter = BaseClass::begin(); iter != BaseClass::end(); iter++) {
-            size_t                   elemIndex       = iter->first;
-            const auto& faceConnections = iter->second;
+            size_t      elemIndex       = iter->first;
+            const auto &faceConnections = iter->second;
 
             std::vector<bool> hasConnection(faceConnections.numSides, false);
             for (const auto &connection : faceConnections.connections) {

@@ -6,7 +6,7 @@
 #ifndef ED_Version_h
 #define ED_Version_h
 
-static std::string version("3.22");
-static std::string verdate("2022-09-27");
+static std::string version("3.23");
+static std::string verdate("2022-11-01");
 
 #endif // ED_Version_h

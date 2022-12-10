@@ -21,12 +21,20 @@ if (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   ENDIF ()
 endif()
 
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/iovs_export.h")
+
 TRIBITS_ADD_LIBRARY(
 	Iovs
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS Ioss
 )
+
+generate_export_header(Iovs)
+target_include_directories(Iovs
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 IF (BUILD_TESTING)
   ENABLE_TESTING()

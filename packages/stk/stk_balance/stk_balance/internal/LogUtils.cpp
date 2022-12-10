@@ -127,7 +127,7 @@ void print_banner(std::ostream & outputStream)
 
 #ifdef KOKKOS_ENABLE_OPENMP
   banner_environment << justify(stk::PrintTable::Cell::RIGHT) << "Accelerator:" << end_col
-                     << justify(stk::PrintTable::Cell::LEFT) << "Using " << Kokkos::DefaultExecutionSpace::concurrency()
+                     << justify(stk::PrintTable::Cell::LEFT) << "Using " << Kokkos::DefaultExecutionSpace().concurrency()
                         << " OpenMP Threads" << end_col << end_row;
 //                     << justify(stk::PrintTable::Cell::LEFT) << "Using " << omp_get_max_threads() << " OpenMP Threads" << end_col << end_row;
 #endif

@@ -228,7 +228,8 @@ protected:
     void create_parallel_graph_edge(const impl::ParallelElementData &elementData,
                                     const stk::mesh::impl::ParallelElementData &remoteElementData,
                                     impl::ElemSideProcVector & elementSidesToSend,
-                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
+                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
+                                    impl::ParallelGraphInfo& newParallelGraphInfo);
 
     void communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend,
                                   impl::ParallelElementDataVector& elementSidesReceived);
@@ -285,7 +286,9 @@ protected:
 
     void delete_remote_connections(const std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
 
-    void delete_remote_connection(stk::mesh::Entity connected_elem, stk::mesh::EntityId deleted_elem_global_id);
+    void delete_remote_connection(stk::mesh::Entity connected_elem,
+                                  stk::mesh::EntityId deleted_elem_global_id,
+                                  std::vector<GraphEdge>& pllEdgesToDelete);
 
     void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList);
 

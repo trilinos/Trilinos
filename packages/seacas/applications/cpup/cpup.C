@@ -20,6 +20,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
+#include <Ioss_Utils.h>
 
 #include <cgns/Iocgns_Utils.h>
 
@@ -155,6 +156,7 @@ int main(int argc, char *argv[])
   catch (std::exception &e) {
     fmt::print(stderr, "ERROR: Standard exception: {}\n", e.what());
   }
+  exit(EXIT_SUCCESS);
 }
 
 template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*/)
@@ -163,8 +165,25 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
   PartVector part_mesh(interFace.processor_count());
   for (int p = 0; p < interFace.processor_count(); p++) {
-    std::string inp_file = interFace.basename() + "." + interFace.cgns_suffix();
-    auto        filename = Ioss::Utils::decode_filename(inp_file, p, interFace.processor_count());
+    std::string root_dir = interFace.root_dir();
+    std::string sub_dir  = interFace.sub_dir();
+    std::string prepend;
+
+    if (!root_dir.empty()) {
+      prepend = root_dir + "/";
+    }
+    else if (Ioss::Utils::is_path_absolute(prepend)) {
+      prepend = "";
+    }
+    else {
+      prepend = "./";
+    }
+    if (!sub_dir.empty()) {
+      prepend += sub_dir + "/";
+    }
+
+    prepend += interFace.basename() + "." + interFace.cgns_suffix();
+    auto filename = Ioss::Utils::decode_filename(prepend, p, interFace.processor_count());
 
     if (debug_level & 1) {
       fmt::print(stderr, "{} Processor rank {:{}}, file {}\n", time_stamp(tsFormat), p, width,
@@ -180,7 +199,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
     // NOTE: region owns database pointer at this time...
     std::string name = "CPUP_" + std::to_string(p + 1);
-    part_mesh[p]     = std::unique_ptr<Ioss::Region>(new Ioss::Region(dbi, name));
+    part_mesh[p]     = std::make_unique<Ioss::Region>(dbi, name);
 
     if (part_mesh[p]->mesh_type() != Ioss::MeshType::STRUCTURED) {
       part_mesh[p]->output_summary(std::cerr);
@@ -344,7 +363,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
             pnb.field_describe(Ioss::Field::TRANSIENT, &fields);
             for (const auto &field_name : fields) {
               if (is_field_valid(variable_list, field_name)) {
-                Ioss::Field field = pblock->get_field(field_name);
+                Ioss::Field field = pnb.get_field(field_name);
                 if (!onb.field_exists(field_name)) {
                   field.reset_count(num_node);
                   // If the field does not already exist, add it to the output block...

@@ -86,12 +86,12 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
       }
     }
     else { /* default: status is true */
-      for (int i = 0; i < num_sets; i++) {
+      for (size_t i = 0; i < num_sets; i++) {
         stat_vals[i] = 1;
       }
     }
 
-    for (int i = 0; i < num_sets; i++) {
+    for (size_t i = 0; i < num_sets; i++) {
       if (stat_vals[i] == 0) { /* is this object null? */
         continue;
       }

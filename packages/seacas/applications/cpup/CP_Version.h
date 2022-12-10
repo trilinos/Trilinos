@@ -10,8 +10,8 @@
 
 static char const *qainfo[] = {
     "cpup",
-    "0.93 beta",
-    "2022/02/18",
+    "0.94 beta",
+    "2022/10/31",
 };
 
 #endif // SEACAS_Version_h

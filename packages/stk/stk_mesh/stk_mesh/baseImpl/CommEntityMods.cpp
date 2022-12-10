@@ -133,6 +133,26 @@ void CommEntityMods::pack_entity_mods()
   }
 }
 
+void make_unique(std::vector<EntityParallelState>& pllStates)
+{
+  unsigned idx = 0;
+  for(unsigned i=1; i<pllStates.size(); ++i) {
+    if (pllStates[idx].comm_info.key == pllStates[i].comm_info.key &&
+        pllStates[idx].from_proc == pllStates[i].from_proc)
+    {
+      pllStates[idx].state = std::max(pllStates[idx].state, pllStates[i].state);
+      pllStates[idx].remote_owned_closure = (pllStates[idx].remote_owned_closure || pllStates[i].remote_owned_closure);
+      pllStates[i].comm_info.key = EntityKey();
+    }
+    else {
+      idx = i;
+    }
+  }
+
+  pllStates.erase(std::remove_if(pllStates.begin(), pllStates.end(), [&](const EntityParallelState& pllState) { return pllState.comm_info.key == EntityKey(); }),
+                  pllStates.end());
+}
+
 void CommEntityMods::unpack()
 {
   for ( int procNumber = 0 ; procNumber < m_commSparse.parallel_size() ; ++procNumber ) { 
@@ -164,6 +184,7 @@ void CommEntityMods::unpack()
 
   std::sort(m_sharedMods.begin(), m_sharedMods.end());
   std::sort(m_ghostedMods.begin(), m_ghostedMods.end());
+  make_unique(m_ghostedMods);
 }
 
 }}} // end namepsace stk mesh impl

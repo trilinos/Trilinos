@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 ## Enhancement
-@trilinos/\<PackageName\>
+Trilinos organization members, please @ mention the correct package team.  
+If you are not a member, please refer to https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners to mention the correct parties (because non-members cannot mention Github teams).
 
 What feature/addition is needed?  How does this differ from what we currently
 have?  Are there any alternative solutions you've considered?  Do you have

@@ -130,12 +130,12 @@ int ex_put_cmap_params(int exoid, const void_int *node_cmap_ids,
     /* Add dimensions for all of the nodal communication maps */
     int ncnt_cmap = 0;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      for (int icm = 0; icm < num_n_comm_maps; icm++) {
+      for (size_t icm = 0; icm < num_n_comm_maps; icm++) {
         ncnt_cmap += ((int64_t *)node_cmap_node_cnts)[icm];
       }
     }
     else {
-      for (int icm = 0; icm < num_n_comm_maps; icm++) {
+      for (size_t icm = 0; icm < num_n_comm_maps; icm++) {
         ncnt_cmap += ((int *)node_cmap_node_cnts)[icm];
       }
     }
@@ -213,12 +213,12 @@ int ex_put_cmap_params(int exoid, const void_int *node_cmap_ids,
     /* Add dimensions for each of the nodal communication maps */
     int ecnt_cmap = 0;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      for (int icm = 0; icm < num_e_comm_maps; icm++) {
+      for (size_t icm = 0; icm < num_e_comm_maps; icm++) {
         ecnt_cmap += ((int64_t *)elem_cmap_elem_cnts)[icm];
       }
     }
     else {
-      for (int icm = 0; icm < num_e_comm_maps; icm++) {
+      for (size_t icm = 0; icm < num_e_comm_maps; icm++) {
         ecnt_cmap += ((int *)elem_cmap_elem_cnts)[icm];
       }
     }
@@ -284,7 +284,7 @@ int ex_put_cmap_params(int exoid, const void_int *node_cmap_ids,
     }
 
     int64_t nl_ncnt_cmap = 0; /* reset this for index */
-    for (int icm = 0; icm < num_n_comm_maps; icm++) {
+    for (size_t icm = 0; icm < num_n_comm_maps; icm++) {
 
       size_t ncnc;
       if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -352,7 +352,7 @@ int ex_put_cmap_params(int exoid, const void_int *node_cmap_ids,
     }
 
     int64_t nl_ecnt_cmap = 0; /* reset this for index */
-    for (int icm = 0; icm < num_e_comm_maps; icm++) {
+    for (size_t icm = 0; icm < num_e_comm_maps; icm++) {
       size_t ecec;
       if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
         ecec = ((int64_t *)elem_cmap_elem_cnts)[icm];

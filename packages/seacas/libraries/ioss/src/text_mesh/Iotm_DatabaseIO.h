@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iotm_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
@@ -48,7 +50,7 @@ namespace Ioss {
 /** \brief A namespace for the generated database format.
  */
 namespace Iotm {
-  class IOFactory : public Ioss::IOFactory
+  class IOTM_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -60,7 +62,7 @@ namespace Iotm {
                               const Ioss::PropertyManager &props) const override;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOTM_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
@@ -107,83 +109,42 @@ namespace Iotm {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::StructuredBlock * /* sb */,
-                               const Ioss::Field & /* field */, void * /* data */,
-                               size_t /* data_size */) const override
-    {
-      return -1;
-    }
     int64_t get_field_internal(const Ioss::SideBlock *ef_blk, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-
-    int64_t get_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::Assembly *assem, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
-    int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
-                               void * /*data*/, size_t /*data_size*/) const override
-    {
-      return 0;
-    }
+    NOOP_GFI(Ioss::EdgeBlock)
+    NOOP_GFI(Ioss::FaceBlock)
+    NOOP_GFI(Ioss::StructuredBlock)
+    NOOP_GFI(Ioss::EdgeSet)
+    NOOP_GFI(Ioss::FaceSet)
+    NOOP_GFI(Ioss::ElementSet)
+    NOOP_GFI(Ioss::SideSet)
+    NOOP_GFI(Ioss::Blob)
 
-    int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::StructuredBlock * /* sb */,
-                               const Ioss::Field & /* field */, void * /* data */,
-                               size_t /* data_size */) const override
-    {
-      return -1;
-    }
-    int64_t put_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
-                               void * /*data*/, size_t /*data_size*/) const override
-    {
-      return 0;
-    }
-
-    int64_t put_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
-                               void * /*data*/, size_t /*data_size*/) const override
-    {
-      return 0;
-    }
+    // Input only database -- these will never be called...
+    NOOP_PFI(Ioss::Region)
+    NOOP_PFI(Ioss::NodeBlock)
+    NOOP_PFI(Ioss::EdgeBlock)
+    NOOP_PFI(Ioss::FaceBlock)
+    NOOP_PFI(Ioss::ElementBlock)
+    NOOP_PFI(Ioss::StructuredBlock)
+    NOOP_PFI(Ioss::SideBlock)
+    NOOP_PFI(Ioss::NodeSet)
+    NOOP_PFI(Ioss::EdgeSet)
+    NOOP_PFI(Ioss::FaceSet)
+    NOOP_PFI(Ioss::ElementSet)
+    NOOP_PFI(Ioss::SideSet)
+    NOOP_PFI(Ioss::CommSet)
+    NOOP_PFI(Ioss::Assembly)
+    NOOP_PFI(Ioss::Blob)
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 

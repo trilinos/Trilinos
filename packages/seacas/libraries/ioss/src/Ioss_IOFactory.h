@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <string>
 
@@ -29,7 +31,7 @@ namespace Ioss {
 
   /** \brief The main public user interface for creating Ioss::DatabaseIO objects.
    */
-  class IOFactory
+  class IOSS_EXPORT IOFactory
   {
   public:
     virtual ~IOFactory() = default;

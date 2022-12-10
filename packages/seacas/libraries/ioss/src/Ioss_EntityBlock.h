@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
 #include <cstddef>               // for size_t
@@ -31,7 +33,7 @@ namespace Ioss {
    *                      attributes, ...)
    *      0d, 1d, 2d, 3d topology possible -- e.g., sphere, bar, quad, hex
    */
-  class EntityBlock : public GroupingEntity
+  class IOSS_EXPORT EntityBlock : public GroupingEntity
   {
   public:
     EntityBlock &operator=(const EntityBlock &) = delete;

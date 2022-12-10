@@ -69,6 +69,10 @@ public:
 
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
+    bool operator==(const RemoteElementData& rhs) const {
+        return m_other_proc == rhs.m_other_proc;
+    }
+
     bool operator!=(const RemoteElementData& rhs) const {
         return m_other_proc != rhs.m_other_proc;
     }
@@ -107,6 +111,8 @@ public:
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
+    ParallelInfo() :
+        m_permutation(INVALID_PERMUTATION), m_remote_element_topology(stk::topology::INVALID_TOPOLOGY), remoteElementData(-1) {}
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -114,6 +120,12 @@ public:
 
     int m_permutation;
     stk::topology m_remote_element_topology;
+
+    bool operator==(const ParallelInfo& rhs) const {
+        return m_permutation == rhs.m_permutation && 
+                m_remote_element_topology == rhs.m_remote_element_topology &&
+                remoteElementData == rhs.remoteElementData;
+    }
 
     bool operator!=(const ParallelInfo& rhs) const {
         return m_permutation != rhs.m_permutation ||
@@ -425,12 +437,31 @@ struct GraphEdgeLessByElem2 {
             return a.side1() < b.side1();
         }
     }
+
+    bool operator()(const std::pair<GraphEdge,impl::ParallelInfo>& a, const GraphEdge& b) const
+    {
+        return operator()(a.first, b);
+    }
+    bool operator()(const GraphEdge& a, const std::pair<GraphEdge,impl::ParallelInfo>& b) const
+    {
+        return operator()(a, b.first);
+    }
+    bool operator()(const std::pair<GraphEdge,impl::ParallelInfo>& a, const std::pair<GraphEdge,impl::ParallelInfo>& b) const
+    {
+        return operator()(a.first, b.first);
+    }
 };
 
 inline
 bool operator==(const GraphEdge& a, const GraphEdge& b)
 {
     return  a.vertex1 == b.vertex1 && a.vertex2 == b.vertex2;
+}
+
+inline
+bool operator!=(const GraphEdge& a, const GraphEdge& b)
+{
+    return  !(a == b);
 }
 
 inline
@@ -445,7 +476,7 @@ std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
 namespace impl {
 
 typedef std::pair<LocalId,int> ElementSidePair;
-typedef std::map<GraphEdge, ParallelInfo, GraphEdgeLessByElem2> ParallelGraphInfo;
+typedef std::vector<std::pair<GraphEdge,ParallelInfo>> ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ParallelElementData> ParallelElementDataVector;

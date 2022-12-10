@@ -1,9 +1,15 @@
-#!/bin/bash -f
+#! /usr/bin/env bash
 # Copyright(C) 1999-2022 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
 # See packages/seacas/LICENSE for details
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 function usage {
 USAGE="Usage: fastq [-help] [-options option] [--] filename [device]"
@@ -18,8 +24,7 @@ USAGE="Usage: fastq [-help] [-options option] [--] filename [device]"
    echo "    -help           (Prints this message)"
    echo "    "
    echo "  Contact: gdsjaar@sandia.gov"
-   echo "  Information: http://www.jal.sandia.gov/SEACAS/SEACAS.html (IRN)"
-   echo "               file://${ACCESS}/doc/index.html  (local)"
+   echo "  Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#fastq"
    echo "  "
     show_device
 exit 1

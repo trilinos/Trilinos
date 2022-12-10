@@ -568,7 +568,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_div)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;    
 
-    scalar a2 = {0.,2.};
+    scalar a2 = {0.,2.,2.,2.,2.,2.,2.,2.};
     std::cout << a2 << std::endl;
 
     scalar a = (scalar) 1.;

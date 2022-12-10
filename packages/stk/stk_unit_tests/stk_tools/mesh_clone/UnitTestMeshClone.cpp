@@ -452,7 +452,7 @@ TEST(MetaDataSize, sizeChanges_needToUpdateCopyMesh)
 {
   stk::mesh::MetaData meta;
   meta.use_simple_fields();
-  EXPECT_GE(552u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
+  EXPECT_GE(632u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
 }
 #endif
 

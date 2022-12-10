@@ -1,9 +1,15 @@
-#!/bin/bash -f
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+#! /usr/bin/env bash
+# Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
 # See packages/seacas/LICENSE for details
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 function usage {
 USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
@@ -24,6 +30,7 @@ USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo "    --help           (Prints this message)"
    echo "    "
    echo "  Contact: gdsjaar@sandia.gov"
+   echo "  Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#blot"
    echo "  "
     show_device
 exit 1
@@ -68,6 +75,7 @@ function abspath() {
             FOR011=`echo "$(pwd)/$1"`
         fi
     fi
+    return 0
 }
 
 codename=blot
@@ -104,6 +112,10 @@ export EXT04=NO
 TEMP=`getopt -o aoidhbps -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,aprepro,help,show_filename -n 'blot' -- "$@"`
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
+
+ps_option=${ps_option:-""}
+nomap_option=${nomap_option:-""}
+caption=${caption:-""}
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
@@ -168,13 +180,10 @@ if [ $# -gt 0 ] ; then
   device="$1"
 fi
 
-if test -z "$filename"
-then
- filename=${FOR011%.*}
-fi
 
 export FOR090="Blot.90.$$"
 
+filename=${filename:-${FOR011%.*}}
 if [ "${device}" == "dual" ]
 then
     export DUAL_FILENAME="${filename}.met"

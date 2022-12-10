@@ -52,6 +52,8 @@
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
+#include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 
 namespace stk {
 namespace mesh {
@@ -330,8 +332,17 @@ FieldBase const* MetaData::coordinate_field() const
 Part * MetaData::get_part( const std::string & p_name ,
                            const char * required_by ) const
 {
-  Part *part = m_part_repo.get_part_by_name(p_name);
-  ThrowErrorMsgIf( required_by && NULL == part,
+  Part *part = nullptr;
+
+  const auto iter = m_partAlias.find(p_name);
+
+  if(iter != m_partAlias.end()) {
+    part = & get_part((*iter).second);
+  } else {
+    part = m_part_repo.get_part_by_name(p_name);
+  }
+
+  ThrowErrorMsgIf( required_by && nullptr == part,
                    "Failed to find part with name " << p_name <<
                    " for method " << required_by );
   return part;
@@ -654,6 +665,95 @@ stk::topology MetaData::get_topology(const Part & part) const
   return stk::topology::INVALID_TOPOLOGY;
 }
 
+void MetaData::add_part_alias(Part& part, const std::string& alias)
+{
+  const auto aliasIter = m_partAlias.find(alias);
+  const unsigned partOrdinal = part.mesh_meta_data_ordinal();
+
+  if(aliasIter == m_partAlias.end()) {
+    m_partAlias[alias] = partOrdinal;
+  } else {
+    ThrowRequireMsg((*aliasIter).second == partOrdinal, "Part alias '" << alias << "' must be assigned to unique part");
+  }
+
+  std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
+  if(reverseAliasIter == m_partReverseAlias.end()) {
+    std::vector<std::string> entry{alias};
+    m_partReverseAlias[partOrdinal] = entry;
+  }
+  else {
+    stk::util::insert_keep_sorted_and_unique(alias, (*reverseAliasIter).second);
+  }
+}
+
+bool MetaData::delete_part_alias(Part& part, const std::string& alias)
+{
+  bool deleted = false;
+  unsigned partOrdinal = stk::mesh::InvalidOrdinal;
+  auto iter = m_partAlias.find(alias);
+
+  if(iter != m_partAlias.end()) {
+    partOrdinal = iter->second;
+    m_partAlias.erase(iter);
+
+    std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
+    ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
+
+    std::vector<std::string>& aliases = reverseAliasIter->second;
+    auto result = std::lower_bound(aliases.begin(), aliases.end(), alias );
+    ThrowRequireMsg((result != aliases.end()) && (*result == alias),
+                    "Could not find alias: '" << alias << "' for part: " << part.name() << " in reverse alias map");
+
+    aliases.erase(result);
+    deleted = true;
+  }
+
+  return deleted;
+}
+
+bool MetaData::delete_part_alias_case_insensitive(Part& part, const std::string& alias)
+{
+  bool deleted = false;
+  unsigned partOrdinal = stk::mesh::InvalidOrdinal;
+  for(auto iter = m_partAlias.begin(); iter != m_partAlias.end(); ) {
+    if(stk::equal_case(iter->first, alias)) {
+      ThrowRequireMsg((partOrdinal == stk::mesh::InvalidOrdinal) || (partOrdinal == iter->second),
+                      "Part alias '" << alias << "' not  uniquely assigned");
+      partOrdinal = iter->second;
+      iter = m_partAlias.erase(iter);
+      deleted = true;
+    } else {
+      iter++;
+    }
+  }
+
+  if(partOrdinal != stk::mesh::InvalidOrdinal) {
+    std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
+    ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
+
+    std::vector<std::string>& aliases = reverseAliasIter->second;
+    for(auto iter = aliases.begin(); iter != aliases.end(); ) {
+      if(stk::equal_case(*iter, alias)) {
+        iter = aliases.erase(iter);
+        deleted = true;
+      } else {
+        iter++;
+      }
+    }
+  }
+
+  return deleted;
+}
+
+std::vector<std::string> MetaData::get_part_aliases(const Part& part) const
+{
+  auto iter = m_partReverseAlias.find(part.mesh_meta_data_ordinal());
+
+  if(iter != m_partReverseAlias.end())
+    return (*iter).second;
+
+  return std::vector<std::string>();
+}
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Verify parallel consistency of fields and parts

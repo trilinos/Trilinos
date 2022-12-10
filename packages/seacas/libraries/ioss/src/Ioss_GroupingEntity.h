@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>       // for Complex
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
 #include <Ioss_EntityType.h>      // for EntityType
@@ -63,7 +65,7 @@ namespace Ioss {
    *
    *  -- Data items
    */
-  class GroupingEntity
+  class IOSS_EXPORT GroupingEntity
   {
   public:
     friend class Property;

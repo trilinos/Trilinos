@@ -7,11 +7,14 @@
  */
 #pragma once
 
+#include "ioss_export.h"
+
 /*
   Scopeguard, by Andrei Alexandrescu and Petru Marginean, December 2000.
   Modified by Joshua Lehrer, FactSet Research Systems, November 2005.
 */
 
+namespace Ioss {
 template <class T> class RefHolder
 {
   T &ref_;
@@ -24,7 +27,7 @@ public:
 
 template <class T> inline RefHolder<T> ByRef(T &t) { return RefHolder<T>(t); }
 
-class ScopeGuardImplBase
+class IOSS_EXPORT ScopeGuardImplBase
 {
   ScopeGuardImplBase &operator=(const ScopeGuardImplBase &) = delete;
 
@@ -266,5 +269,6 @@ MakeGuard(Ret (Obj2::*memFun)(P1a, P2a), Obj1 *obj, P1b p1, P2b p2)
 #define CONCATENATE(s1, s2)        CONCATENATE_DIRECT(s1, s2)
 #define ANONYMOUS_VARIABLE(str)    CONCATENATE(str, __LINE__)
 
-#define ON_BLOCK_EXIT     ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = MakeGuard
-#define ON_BLOCK_EXIT_OBJ ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = MakeObjGuard
+#define ON_BLOCK_EXIT     ::Ioss::ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = ::Ioss::MakeGuard
+#define ON_BLOCK_EXIT_OBJ ::Ioss::ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = ::Ioss::MakeObjGuard
+} // namespace Ioss

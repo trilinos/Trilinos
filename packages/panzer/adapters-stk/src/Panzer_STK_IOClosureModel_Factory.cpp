@@ -81,6 +81,13 @@ buildClosureModels(const std::string& model_id,
 
      int worksetsize = ir->dl_scalar->extent(0);
 
+     // see if there's a scaling parameter object
+     Teuchos::RCP<std::map<std::string,double>> varScaleFactors;
+     if (user_data.isParameter("Variable Scale Factors Map"))
+     {
+       varScaleFactors = user_data.get<Teuchos::RCP<std::map<std::string,double>>>("Variable Scale Factors Map");
+     }
+
      // if a requested field is found then add in cell avg quantity evaluator
      BlockIdToFields::const_iterator cellAvgItr = blockIdToCellAvgFields_.find(block_id);
      if(cellAvgItr!=blockIdToCellAvgFields_.end() ) {
@@ -92,6 +99,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("IR",ir);
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Fields");
+        pl.set("Variable Scale Factors Map", varScaleFactors);
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
@@ -113,6 +121,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("IR",ir);
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Vectors");
+        pl.set("Variable Scale Factors Map", varScaleFactors);
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);

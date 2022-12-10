@@ -48,7 +48,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList)
 {
     comm = appComm;
     adjointModel = adjoint;
@@ -122,6 +122,8 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     nominalValues.set_p(0, Thyra::createVector(p_init, p_space));
     lowerBounds.set_p(0, Thyra::createVector(p_lo, p_space));
     upperBounds.set_p(0, Thyra::createVector(p_up, p_space));
+
+    probList_ = problemList;
 }
 
 MockModelEval_A_Tpetra::~MockModelEval_A_Tpetra()
@@ -163,7 +165,7 @@ MockModelEval_A_Tpetra::get_g_space(int l) const
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  MockModelEval_A_Tpetra::get_g_space() only " <<
-                     " supports 1 parameter vector.  Supplied index l = " <<
+                     " supports 1 response.  Supplied index l = " <<
                      l << std::endl);
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> g_space =
         Thyra::createVectorSpace<double>(g_map);
@@ -217,7 +219,7 @@ MockModelEval_A_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
 {
   const Teuchos::RCP<Tpetra_Operator> H =
       Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph));
-  return Thyra::createLinearOp(H);
+  return Teuchos::rcp(new MatrixBased_LOWS(Thyra::createLinearOp(H)));
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
@@ -474,14 +476,14 @@ void MockModelEval_A_Tpetra::evalModelImpl(
       }
     }
     
-    const Teuchos::RCP<Tpetra_Operator> H_pp_out =
+    const Teuchos::RCP<MatrixBased_LOWS> H_pp_out =
       Teuchos::nonnull(outArgs.get_hess_g_pp(0,0,0)) ?
-      ConverterT::getTpetraOperator(outArgs.get_hess_g_pp(0,0,0)) :
-      Teuchos::null;
+        Teuchos::rcp_dynamic_cast<MatrixBased_LOWS>(outArgs.get_hess_g_pp(0,0,0)):
+        Teuchos::null;
     
-    if (H_pp_out != Teuchos::null) {
+    if (Teuchos::nonnull(H_pp_out)) {
       Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
-        Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(H_pp_out, true);
+        Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(ConverterT::getTpetraOperator(H_pp_out->getMatrix()), true);
       H_pp_out_crs->resumeFill();
       H_pp_out_crs->setAllToScalar(0.0);
       
@@ -493,6 +495,11 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         H_pp_out_crs->replaceGlobalValues(1, 2, &vals[0], &indices[0]);
       }
       H_pp_out_crs->fillComplete();
+
+      if(probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").isSublist("H_pp Solver")) {
+        auto pl = probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").sublist("H_pp Solver");
+        H_pp_out->initializeSolver(Teuchos::rcpFromRef(pl));
+      }
     }
     
     if (Teuchos::nonnull(dfdp_out)) {

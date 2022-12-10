@@ -1,0 +1,58 @@
+<ParameterList>
+  <Parameter name="Matrix File" type="string" value="bcsstk12.mtx"/> 
+  <ParameterList name="Linear Solver Builder">
+
+  <!-- ================================================== -->
+  <!-- KRYLOV SOLVER CONFIGURATION                        -->
+  <!-- ================================================== -->
+
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="Fixed Point"/>
+
+        <ParameterList name="Solver Types">
+          <ParameterList name="Fixed Point">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-06"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Output Frequency" type="int" value="1"/>
+            <Parameter name="Output Style" type="int" value="1"/>
+            <Parameter name="Verbosity" type="int" value="33"/>
+          </ParameterList>
+        </ParameterList>
+
+
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+
+      </ParameterList>
+    </ParameterList>
+
+  <!-- ================================================== -->
+  <!-- PRECONDITIONER CONFIGURATION                       -->
+  <!-- ================================================== -->
+    <Parameter name="Preconditioner Type" type="string" value="BelosPrecTpetra"/>
+    <ParameterList name="Preconditioner Types">
+
+      <ParameterList name="BelosPrecTpetra">
+      <Parameter name="half precision" type="bool" value="true"/>
+        <Parameter name="BelosPrec Solver Type" type="string" value="Pseudo Block GMRES"/>
+        <ParameterList name="BelosPrec Solver Params">
+          <Parameter name="Num Blocks" type="int" value="65"/>
+          <Parameter name="Maximum Iterations" type="int" value="65"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-06"/>
+          <Parameter name="Verbosity" type="int" value="3"/>
+          <Parameter name="Output Frequency" type="int" value="65"/>
+          <Parameter name="Output Style" type="int" value="2"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+
+    </ParameterList>
+
+  <!-- ================================================== -->
+  </ParameterList>
+</ParameterList>

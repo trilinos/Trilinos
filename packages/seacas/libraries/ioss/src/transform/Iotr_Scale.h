@@ -6,16 +6,21 @@
 
 #pragma once
 
-#include "Ioss_VariableType.h" // for VariableType
-#include <Ioss_Transform.h>    // for Transform, Factory
-#include <string>              // for string
+#include "iotr_export.h"
+
+#include <Ioss_Transform.h>
+#include <Ioss_VariableType.h>
+#include <transform/Iotr_Factory.h>
+
+#include <string>
+
 namespace Ioss {
   class Field;
 } // namespace Ioss
 
 namespace Iotr {
 
-  class Scale_Factory : public Factory
+  class IOTR_EXPORT Scale_Factory : public Factory
   {
   public:
     static const Scale_Factory *factory();
@@ -25,7 +30,7 @@ namespace Iotr {
     Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
-  class Scale : public Ioss::Transform
+  class IOTR_EXPORT Scale : public Ioss::Transform
   {
     friend class Scale_Factory;
 

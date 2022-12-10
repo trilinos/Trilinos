@@ -621,6 +621,11 @@ public:
 
   stk::mesh::impl::FieldRepository & get_field_repository();
 
+  void add_part_alias(Part& part, const std::string& alias);
+  bool delete_part_alias(Part& part, const std::string& alias);
+  bool delete_part_alias_case_insensitive(Part& part, const std::string& alias);
+  std::vector<std::string> get_part_aliases(const Part& part) const;
+
 protected:
 
   Part & declare_internal_part( const std::string & p_name);
@@ -669,6 +674,9 @@ private:
   TopologyPartMap m_topologyPartMap;
   /// Fast-lookup vector that maps part ordinals to Cell Topologies.
   PartTopologyVector m_partTopologyVector;
+
+  std::map<std::string, unsigned, std::less<std::string> > m_partAlias;
+  std::map<unsigned, std::vector<std::string>> m_partReverseAlias;
 
   /** \name  Invariants/preconditions for MetaData.
    * \{

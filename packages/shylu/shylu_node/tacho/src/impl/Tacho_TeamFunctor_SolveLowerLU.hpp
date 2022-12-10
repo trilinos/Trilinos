@@ -245,6 +245,7 @@ public:
           UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
           ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
           Copy<Algo::Internal>::invoke(member, bT, tT);
+          member.team_barrier();
           ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, perm, tT);
           member.team_barrier();
         }
@@ -268,6 +269,7 @@ public:
                                const ordinal_type i = k % m, j = k / m;
                                tT(i, j) = b(i, j);
                              });
+        member.team_barrier();
 
         if (n_m > 0) {
           // update
