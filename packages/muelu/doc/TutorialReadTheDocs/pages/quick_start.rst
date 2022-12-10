@@ -32,7 +32,7 @@ First one has to choose a problem. For this tutorial the right choice is the opt
 
 Next one has to choose a xml file with the multigrid parameters. Choose option 2 and put in **s1_easy.xml** as filename for the xml file containing the xml parameters that are used for the multigrid method.
 
-.. note:
+.. note::
 
   Please make sure that you enter a filename that actually exists on your hard disk!
 
@@ -56,23 +56,23 @@ After pressing a key we are ready for a first analysis as it is stated by the gr
 .. image:: pics/tut1_4.png
   :width: 10cm
 
-.. note: 
+.. note::
 
   If the results are not up to date always choose option 0 first to recalculate the results.
 
 To check the output select option 1. This should produce the following output on screen.
 
-.. warning:
+.. warning::
 
   Insert output
 
-.. note:
+.. note::
 
   Depending on the number of lines in your terminal you may have to scroll up to the top of the file
 
 These lines give you some information about the setup process with some details on the aggregation process and the transfer operators. Note that for this example three levels are built: Level 0 for the finest level, level 1 as intermediate level and level 2 for the coarsest level. Then an overview of the different multigrid levels is given by
 
-.. warning:
+.. warning::
 
   Insert screen output
 
@@ -80,7 +80,7 @@ One can see that a three level multigrid method is used with a direct solver on 
 
 In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver from the AztecOO package in Trilinos. The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
 
-.. warning:
+.. warning::
 
   Insert screen output
 
@@ -91,7 +91,7 @@ Selecting option 6 gives you four plots.
 
 The lower left plot shows the exact solution of the linear system (using a direct solver from the Amesos package). The lower right plot shows the multigrid solution when 1 sweep with a V-cycle of the multigrid method as defined in the xml parameter file is applied to the linear system as a standalone multigrid solver. As one can see, the multigrid solution with a random initial guess is far away from the exact solution. The upper left plot shows the difference between the multigrid solution and the exact solution. Finally, the upper right plot shows the distribution of the fine level mesh nodes over the processors (in our example we use 2 processors).
 
-.. note:
+.. note::
 
   The plots do not show the solution of the preconditioned CG method! The solution of the CG method is always exact up to a given tolerance as long as the multigrid preconditioner is sufficient. This can be checked by the screen output under option 1.
 
@@ -100,7 +100,7 @@ As a first experiment we change the number of multigrid sweeps for the stand alo
 .. image:: pics/tut1_7.png
   :width: 10cm
 
-Then, do not forget to rerun the examples to update the results. That is, choose option 0 and wait for the simulation to finish. Then plot again the results using menu option 6 and you should obtain 
+Then, do not forget to rerun the examples to update the results. That is, choose option 0 and wait for the simulation to finish. Then plot again the results using menu option 6 and you should obtain
 
 .. image:: pics/tut1_8.png
   :width: 10cm
@@ -124,7 +124,7 @@ As one can see is the multigrid solution rather close to the exact solution. In 
 
 The XML input deck - multigrid parameters
 -----------------------------------------
-After we have learned the basics of the driver program for our experiments we now perform some experiments with our multigrid methods. We again use the simple 2D Laplace problem. First, we create a copy of the solver parameters using 
+After we have learned the basics of the driver program for our experiments we now perform some experiments with our multigrid methods. We again use the simple 2D Laplace problem. First, we create a copy of the solver parameters using
 
 **cp s1_easy.xml mysolver.xml**
 
@@ -140,11 +140,11 @@ Once that is done it is time for some first experiments. Open your **mysolver.xm
 
 Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml file, that is, change the value of the parameter **max levels** from 3 to 10. Do not forget to save the file and rerun the example by choosing option 0 in the driver program. The screen output should be the following
 
-.. warning:
+.. warning::
 
   Insert missing output
 
-.. note:
+.. note::
 
   Even though we allow for at maximum 10 multigrid levels the coarsening process stops after level 4. The reason is that the linear operator on multigrid level 4 has only 4 lines and therefore is smaller than the coarse: max size parameter in the xml parameter list which defines the maximum size of the linear operator on the coarsest level.
 
@@ -158,17 +158,17 @@ Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml
 
 The option sa for **smoothed aggregation** in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite (SPD) problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
 
-.. warning:
+.. warning::
 
   Insert missing output
 
 Compared with the smoothed aggregation method (multigrid algorithm = sa) which uses some smoothed transfer operator basis functions within the multigrid method, the unsmoothed multigrid algorithm needs a significantly higher number of iterations. The same method with smoothed transfer operator basis functions gives
- 
-.. warning:
+
+.. warning::
 
   Insert missing output
 
-.. note:
+.. note::
 
   You can find the corresponding xml files also in **../../../test/tutorial/s1_easy_3levels_smoothed.xml**
 
@@ -188,5 +188,5 @@ Compared with the smoothed aggregation method (multigrid algorithm = sa) which u
 
   Which one belongs to the unsmoothed multigrid method?
 
-  
+
 

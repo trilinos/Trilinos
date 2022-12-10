@@ -21,7 +21,7 @@ whereas they cannot reduce low frequency error components very well.
 These low frequency error components are then transferred to a coarse level,
 where they can be seen as high frequency error component for a level smoother on the coarse level.
 
-.. warning:
+.. warning::
 
   Display an image of a sine wave  appearing oscillatory on a coarse grid
 
