@@ -45,79 +45,73 @@
 // @HEADER
 #include <iostream>
 
-#include <Xpetra_MultiVectorFactory.hpp>
+#include <Amesos2.hpp>
+#include <Amesos2_config.h>
+// #include <Amesos2_Meta.hpp>
+// #include <Amesos2_Version.hpp>
+
+#include <BelosBlockCGSolMgr.hpp>
+#include <BelosMueLuAdapter.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosStatusTestCombo.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include <BelosXpetraStatusTestGenResSubNorm.hpp>
+
+#include <Galeri_XpetraMaps.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraUtils.hpp>
+
+#include <MueLu_ConfigDefs.hpp>
+#include <MueLu.hpp>
+#include <MueLu_BaseClass.hpp>
+#include <MueLu_Level.hpp>
+#include <MueLu_MutuallyExclusiveTime.hpp>
+#include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_Utilities.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <Epetra_RowMatrix.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_Map.h>
-#include <Epetra_Comm.h>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Vector.hpp>
 
-// EpetraExt
-#include <EpetraExt_MatrixMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
-#include <EpetraExt_MultiVectorOut.h>
-#include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraExt_MultiVectorIn.h>
-#include <EpetraExt_BlockMapIn.h>
-#include <Xpetra_EpetraUtils.hpp>
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <EpetraExt_BlockMapOut.h>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
-// Galeri
-#include <Galeri_Maps.h>
-#include <Galeri_CrsMatrices.h>
-#include <Galeri_Utils.h>
-
-#include <MueLu.hpp>
-#include <MueLu_Level.hpp>
-#include <MueLu_BaseClass.hpp>
-#include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
-
-#include <MueLu_Utilities.hpp>
-
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
-#include <Epetra_LinearProblem.h>
-#include <AztecOO.h>
-#include <Amesos.h>
-#include <Amesos_BaseSolver.h>
-
-#if defined(HAVE_MUELU_EPETRA)
-#include <MueLu_EpetraOperator.hpp>
-
-// prescribe types
-// run plain Epetra
-typedef double Scalar;
-typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
-typedef Xpetra::EpetraNode Node;
-#endif
-
-int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
+{
 #include <MueLu_UseShortNames.hpp>
 
-  using Teuchos::RCP; // reference count pointers
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
+  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  using MV = Tpetra_MultiVector;
+  using OP = Belos::OperatorT<Tpetra_MultiVector>;
+
+
   //! [CommunicatorObject begin]
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  // Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int MyPID   = comm->getRank();
+    RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+    int MyPID = comm->getRank();
     int NumProc = comm->getSize();
-
-    const Teuchos::RCP<Epetra_Comm> epComm = Teuchos::rcp_const_cast<Epetra_Comm>(Xpetra::toEpetra(comm));
 
     //! [CommunicatorObject end]
     // ================================
     // Convenient definitions
     // ================================
+    using STS = Teuchos::ScalarTraits<SC>;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using real_type = typename STS::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
     const SC zero = Teuchos::ScalarTraits<SC>::zero();
     const SC one = Teuchos::ScalarTraits<SC>::one();
 
@@ -136,7 +130,6 @@ int main(int argc, char *argv[]) {
     int mgridSweeps          = 1;     clp.setOption("mgridSweeps",     &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
     std::string printTimings = "no";  clp.setOption("timings",        &printTimings, "print timings to screen [yes/no]");
     double tol               = 1e-12; clp.setOption("tol",                     &tol, "solver convergence tolerance");
-    int importOldData        = 0;     clp.setOption("importOldData", &importOldData, "import map and matrix from previous run (highly experimental).");
 
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -154,303 +147,80 @@ int main(int argc, char *argv[]) {
     // ================================
     // Problem construction
     // ================================
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
 
-    comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    galeriList.set("mx", comm->getSize());
+    galeriList.set("my", 1);
+    // galeriList.set("lx", 1.0); // length of x-axis
+    // galeriList.set("ly", 1.0); // length of y-axis
 
-    Teuchos::ParameterList GaleriList;
-    GaleriList.set("nx", nx);
-    GaleriList.set("ny", ny);
-    GaleriList.set("mx", comm->getSize());
-    GaleriList.set("my", 1);
-    GaleriList.set("lx", 1.0); // length of x-axis
-    GaleriList.set("ly", 1.0); // length of y-axis
+    //! [2DLaplacianOperator begin]
+    // Create node map (equals dof map, since one dof per node)
+    RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+    RCP<Map> dofMap = nodeMap;
 
-    Teuchos::RCP<Epetra_Map> epMap = Teuchos::null;
-    Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::null;
-    Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::null;
+    // Create coordinates
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-    if(importOldData==0) {
-      //! [2DLaplacianOperator begin]
-      // create map
-      epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
+    // Create the matrix
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > galeriProblem =
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", dofMap, galeriList);
+    RCP<Matrix> matrix = galeriProblem->BuildMatrix();
+    matrix->SetFixedBlockSize(1);
+    //! [2DLaplacianOperator end]
 
-      // create coordinates
-      epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
+    // Some safety checks to see, if Galeri delived valid output
+    TEUCHOS_ASSERT(!nodeMap.is_null());
+    TEUCHOS_ASSERT(!dofMap.is_null());
+    TEUCHOS_ASSERT(!coordinates.is_null());
+    TEUCHOS_ASSERT(!matrix.is_null());
 
-      // create matrix
-      epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Laplace2D", epMap.get(), GaleriList));
+    //! [RhsAndSolutionVector begin]
+    // Create right-hand side (with all ones)
+    RCP<MultiVector> B = MultiVectorFactory::Build(dofMap, 1, true);
+    B->putScalar(one);
 
-      double hx = 1./(nx-1);
-      double hy = 1./(ny-1);
-      epA->Scale(1./(hx*hy));
-      //! [2DLaplacianOperator end]
-    } else {
-      std::cout << "Import old data" << std::endl;
-      Epetra_Map* myEpMap;
-      EpetraExt::MatrixMarketFileToMap("ARowMap.mat", *(Xpetra::toEpetra(comm)), myEpMap);
-      epMap = Teuchos::rcp(myEpMap);
-      comm->barrier();
-      Epetra_MultiVector* myEpVector;
-      EpetraExt::MatrixMarketFileToMultiVector("ACoordVector.mat", *epMap, myEpVector);
-      epCoord = Teuchos::rcp(myEpVector);
-      comm->barrier();
-      Epetra_CrsMatrix* myEpMatrix;
-      EpetraExt::MatrixMarketFileToCrsMatrix("A.mat",*(Xpetra::toEpetra(comm)), myEpMatrix);
-      epA = Teuchos::rcp(myEpMatrix);
-      comm->barrier();
-    }
+    // Initilize solution vector with random values
+    RCP<MultiVector> X = MultiVectorFactory::Build(dofMap, 1);
+    X->setSeed(100);
+    X->randomize();
+    //! [RhsAndSolutionVector end]
 
-    //! [EpetraToXpetra begin]
-    // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
-    Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
-
-    RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
-    A->SetFixedBlockSize(1);
-
-    //! [EpetraToXpetra end]
-    //! [SetRhsAndSolutionVector begin]
-    // set rhs and solution vector
-    RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(*epMap, true));
-    RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(*epMap, true));
-    B->PutScalar(one);
-    X->PutScalar(zero);
-
-    // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
-    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epCoord));
-
-    xX->setSeed(100);
-    xX->randomize();
-    //! [SetRhsAndSolutionVector end]
     //! [BuildNullSpaceVector begin]
-    // build null space vector
-    RCP<const Map> map = A->getRowMap();
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
+    // Build null space vector for a scalar problem, i.e. vector with all ones
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(dofMap, 1);
     nullspace->putScalar(one);
-
     //! [BuildNullSpaceVector end]
-    comm->barrier();
-    tm = Teuchos::null;
-
-    fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
 
     // ================================
     // Preconditioner construction
     // ================================
-    comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-    // TUTORIALSPLIT ===========================================================
+
     ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
-    // TUTORIALSPLIT ===========================================================
-    comm->barrier();
-    tm = Teuchos::null;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
-
-    // TUTORIALSPLIT ===========================================================
     RCP<Hierarchy> hierarchy = mueLuFactory.CreateHierarchy();
     hierarchy->IsPreconditioner(true);
-    hierarchy->GetLevel(0)->Set("A", A);
+    hierarchy->GetLevel(0)->Set("A", matrix);
     hierarchy->GetLevel(0)->Set("Nullspace", nullspace);
-    // hierarchy->GetLevel(0)->Set("Coordinates", coords);
+    // hierarchy->GetLevel(0)->Set("Coordinates", coordinates);
 
     mueLuFactory.SetupHierarchy(*hierarchy);
 
-    // TUTORIALSPLIT ===========================================================
-    comm->barrier();
-    tm = Teuchos::null;
-
-    // ================================
-    // System solution (Ax = b)
-    // ================================
-
-    //
-    // generate exact solution using a direct solver
-    //
-    //! [EpetraSolutionVector begin]
-    RCP<Epetra_Vector> exactLsgVec = rcp(new Epetra_Vector(X->Map()));
+    // Generate exact solution using a direct solver
+    //! [ExactSolutionVector begin]
+    RCP<Vector> exactSolution = VectorFactory::Build(dofMap, true);
     //! [EpetraSolutionVector end]
     {
-      fancyout << "========================================================\nCalculate exact solution." << std::endl;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - direct solve")));
-      exactLsgVec->PutScalar(0.0);
-      exactLsgVec->Update(1.0,*X,1.0);
-      Epetra_LinearProblem epetraProblem(epA.get(), exactLsgVec.get(), B.get());
+      exactSolution->update(1.0, *X, 1.0);
 
-      Amesos amesosFactory;
-      RCP<Amesos_BaseSolver> rcp_directSolver = Teuchos::rcp(amesosFactory.Create("Amesos_Klu", epetraProblem));
-      rcp_directSolver->SymbolicFactorization();
-      rcp_directSolver->NumericFactorization();
-      rcp_directSolver->Solve();
+      RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(matrix);
+      RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*X);
+      RCP<Tpetra_MultiVector> tB = Utilities::MV2NonConstTpetraMV2(*B);
 
-      comm->barrier();
-      tm = Teuchos::null;
-    }
-
-    //
-    // Solve Ax = b using AMG as a preconditioner in AztecOO
-    //
-    // TUTORIALSPLIT ===========================================================
-    RCP<Epetra_Vector> precLsgVec = rcp(new Epetra_Vector(X->Map()));
-    // TUTORIALSPLIT ===========================================================
-    {
-      fancyout << "========================================================\nUse multigrid hierarchy as preconditioner within CG." << std::endl;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
-
-      //! [MueLuHierarchyAsPreconditionerWithinAztecOO begin]
-      precLsgVec->PutScalar(0.0);
-      precLsgVec->Update(1.0,*X,1.0);
-      Epetra_LinearProblem epetraProblem(epA.get(), precLsgVec.get(), B.get());
-
-      AztecOO aztecSolver(epetraProblem);
-      aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
-
-      MueLu::EpetraOperator aztecPrec(hierarchy);
-      aztecSolver.SetPrecOperator(&aztecPrec);
-
-      int maxIts = 50;
-
-      aztecSolver.Iterate(maxIts, tol);
-      //! [MueLuHierarchyAsPreconditionerWithinAztecOO end]
-      comm->barrier();
-      tm = Teuchos::null;
-    }
-
-    //////////////////
-    //! [UseMultigridHierarchyAsSolver begin]
-    // use multigrid hierarchy as solver
-    RCP<Vector> mgridLsgVec = VectorFactory::Build(map);
-    mgridLsgVec->putScalar(0.0);
-    {
-      fancyout << "========================================================\nUse multigrid hierarchy as solver." << std::endl;
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
-      mgridLsgVec->update(1.0,*xX,1.0);
-      hierarchy->IsPreconditioner(false);
-      hierarchy->Iterate(*xB, *mgridLsgVec, mgridSweeps);
-      comm->barrier();
-      tm = Teuchos::null;
-    }
-    //! [UseMultigridHierarchyAsSolver end]
-    //////////////////
-
-    fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
-    std::ofstream myfile;
-    std::stringstream ss; ss << "example" << MyPID << ".txt";
-    myfile.open (ss.str().c_str());
-
-    //////////////////
-
-    // loop over all procs
-    for (int iproc=0; iproc < NumProc; iproc++) {
-      if (MyPID==iproc) {
-        int NumVectors1 = 2;
-        int NumMyElements1 = epCoord->Map(). NumMyElements();
-        int MaxElementSize1 = epCoord->Map().MaxElementSize();
-        int * FirstPointInElementList1 = NULL;
-        if (MaxElementSize1!=1) FirstPointInElementList1 = epCoord->Map().FirstPointInElementList();
-        double ** A_Pointers = epCoord->Pointers();
-
-        if (MyPID==0) {
-          myfile.width(8);
-          myfile <<  "#     MyPID"; myfile << "    ";
-          myfile.width(12);
-          if (MaxElementSize1==1)
-            myfile <<  "GID  ";
-          else
-            myfile <<  "     GID/Point";
-          for (int j = 0; j < NumVectors1 ; j++)
-          {
-            myfile.width(20);
-            myfile <<  "Value  ";
-          }
-          myfile << std::endl;
-        }
-        for (int i=0; i < NumMyElements1; i++) {
-          for (int ii=0; ii< epCoord->Map().ElementSize(i); ii++) {
-            int iii;
-            myfile.width(10);
-            myfile <<  MyPID; myfile << "    ";
-            myfile.width(10);
-            if (MaxElementSize1==1) {
-              if(epCoord->Map().GlobalIndicesInt())
-              {
-                int * MyGlobalElements1 = epCoord->Map().MyGlobalElements();
-                myfile << MyGlobalElements1[i] << "    ";
-              }
-
-              iii = i;
-            }
-            else {
-              if(epCoord->Map().GlobalIndicesInt())
-              {
-
-                int * MyGlobalElements1 = epCoord->Map().MyGlobalElements();
-                myfile <<  MyGlobalElements1[i]<< "/" << ii << "    ";
-              }
-
-              iii = FirstPointInElementList1[i]+ii;
-            }
-            for (int j = 0; j < NumVectors1 ; j++)
-            {
-              myfile.width(20);
-              myfile <<  A_Pointers[j][iii];
-            }
-
-            myfile.precision(18); // set high precision for output
-
-            // add solution vector entry
-            myfile.width(25);
-            myfile << (*exactLsgVec)[iii];
-
-            // add preconditioned solution vector entry
-            myfile.width(25);
-            myfile << (*precLsgVec)[iii];
-
-            myfile.width(25);
-            Teuchos::ArrayRCP<SC> mgridLsgVecData = mgridLsgVec->getDataNonConst(0);
-            myfile << mgridLsgVecData[iii];
-
-            myfile.precision(6); // set default precision
-            myfile << std::endl;
-          }
-        } // end loop over all lines on current proc
-        myfile << std::flush;
-
-        // syncronize procs
-        comm->barrier();
-        comm->barrier();
-        comm->barrier();
-
-      } // end myProc
-    }
-
-    // export map
-    RCP<const Map> Amap = A->getRowMap();
-    RCP<const Xpetra::EpetraMapT<int,Node> > epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int,Node> >(Amap);
-
-    //Epetra_Map* eMap;
-    //int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
-    EpetraExt::BlockMapToMatrixMarketFile( "ARowMap.mat", epAmap->getEpetra_BlockMap(),
-        "ARowMap",
-        "Row map of matrix A",
-        true);
-
-    EpetraExt::MultiVectorToMatrixMarketFile("ACoordVector.mat", *epCoord, "Coordinate multi vector", "Multi vector with mesh coordinates", true);
-    EpetraExt::RowMatrixToMatrixMarketFile("A.mat", *epA, "A matrix", "Matrix A", true);
-
-    ////////////
-    myfile.close();
-
-    comm->barrier();
-    tm = Teuchos::null;
-    globalTimeMonitor = Teuchos::null;
-
-    if (printTimings == "yes") {
-      TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
+      RCP<Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector>> directSolver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>("KLU2", tA, tX, tB);
+      directSolver->solve();
     }
 
     success = true;
@@ -458,7 +228,12 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-#else
-  return EXIT_SUCCESS;
-#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
-} //main
+} // main_
+
+//-----------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
+}
