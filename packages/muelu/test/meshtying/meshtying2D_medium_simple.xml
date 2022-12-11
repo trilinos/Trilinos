@@ -125,7 +125,7 @@
       <Parameter name="factory" type="string" value="BlockedPFactory"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
-         <Parameter name="group" type="string" value="myFirstGroup"/>
+        <Parameter name="group" type="string" value="myFirstGroup"/>
       </ParameterList>
       <!-- factory manager for block 2 -->
       <ParameterList name="block2">
