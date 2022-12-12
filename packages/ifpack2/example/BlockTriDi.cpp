@@ -85,9 +85,9 @@ static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > BuildMatrix(Teuchos::Parameter
   
   GO nx,ny,nz;
   nx = ny = nz = 5;
-  nx = (GO) matrixList.get("nx",(int) nx);
-  ny = (GO) matrixList.get("ny",(int) ny);
-  nz = (GO) matrixList.get("nz",(int) nz);
+  nx = matrixList.get("nx", nx);
+  ny = matrixList.get("ny", ny);
+  nz = matrixList.get("nz", nz);
   
   std::string matrixType = matrixList.get("matrixType","Laplace1D");
   GO numGlobalElements; //global_size_t
@@ -267,7 +267,7 @@ main (int argc, char* argv[])
     // matrix
     Teuchos::ParameterList plist;
     plist.set("matrixType","Laplace1D");    
-    plist.set("nx", args.nx*comm->getSize());
+    plist.set("nx", (GO)args.nx*comm->getSize());
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
 
     //rhs 
