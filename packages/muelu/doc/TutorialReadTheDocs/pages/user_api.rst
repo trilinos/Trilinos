@@ -4,7 +4,8 @@ Using MueLu in User Applications
 
 This tutorial demonstrates how to use MueLu from within user applications in **C++**.
 In [[2]_, Section 3.3] it is explained how to use MueLu through the **MueLu::CreateE/T/XpetraPreconditioner** interface.
-This interface is designed for beginners which want to try MueLu through standard Trilinos interfaces.
+This interface is designed for beginners,
+who want to try MueLu through standard Trilinos interfaces.
 
 .. note::
    There is also support for Stratimikos.
@@ -17,41 +18,36 @@ Most of them are borrowed form the **laplace2d.cpp** file in the tutorial.
 
 Preparations
 ============
-First of all, we have to define a communicator object.
+First of all, we need to grab a communicator object.
+Therefore, it is easy to use some utilities from the Teuchos package:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
   :start-after: CommunicatorObject begin
   :end-before: CommunicatorObject end
 
-For the multigrid method we need a linear operator :math:`A`.
-For demonstration purposes, here we just generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`).
-In this example we use Epetra for the underlying linear algebra framework,
-but it shall be mentioned that it works for Tpetra in a similar way (refer to the code examples in the MueLu examples folder).
+For the multigrid method, we need a linear operator :math:`A`.
+For demonstration purposes,
+here we just generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`).
+In this example, we use Tpetra (throught the Xpetra wrappers) for the underlying linear algebra framework.
+For convenience, we ask the Galeri package to create a matrix of a Laplace2D problem:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
   :start-after: 2DLaplacianOperator begin
   :end-before: 2DLaplacianOperator end
 
-MueLu is based on Xpetra which provides a common interface both for Epetra and Tpetra.
-Therefore we have to encapsulate our Epetra objects into Xpetra wrapper objects.
-This is done using the following code.
+For the linear system :math:`Ax=b`,
+we create a right-hand side vector (with all ones) and initialize the solution vector with random values:
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp
-  :start-after: EpetraToXpetra begin
-  :end-before: EpetraToXpetra end
+  :start-after: RhsAndSolutionVector begin
+  :end-before: RhsAndSolutionVector end
 
-.. note::
-	The MueLu setup routines require a **Xpetra::Matrix** object.
-
-The wrapper class **Xpetra::CrsMatrixWrap** is just a wrapper derived from **Xpetra::Matrix**
-which manages a **Xpetra::CrsMatrix** object which is the common base class for both Epetra and Tpetra CRS matrix classes.
-The details are not really important as long as one understands that one needs a **Xpetra::Matrix** object for MueLu in the end.
-With the **SetFixedBlockSizeroutine** we state that there is only one degree of freedom per node (pure Laplace problem).
-For aggregation-based algebraic multigrid methods one has to provide a valid set of near null space vectors to produce transfer operators.
-In case of a Laplace problem we just use a constant vector.
+For aggregation-based algebraic multigrid methods,
+one has to provide a valid set of near null space vectors to produce transfer operators.
+In case of a Laplace problem, we just use a constant vector.
 
 .. literalinclude:: ../../../test/tutorial/laplace2d.cpp
   :language: cpp

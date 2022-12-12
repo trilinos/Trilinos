@@ -95,16 +95,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using OP = Belos::OperatorT<MV>;
 
 
-  //! [CommunicatorObject begin]
-  // Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-
   bool success = false;
   try {
+    //! [CommunicatorObject begin]
     RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
     int MyPID = comm->getRank();
     int NumProc = comm->getSize();
-
     //! [CommunicatorObject end]
+
     // ================================
     // Convenient definitions
     // ================================
