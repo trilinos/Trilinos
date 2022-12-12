@@ -85,9 +85,9 @@ static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > BuildMatrix(Teuchos::Parameter
   
   GO nx,ny,nz;
   nx = ny = nz = 5;
-  nx = matrixList.get("nx",nx);
-  ny = matrixList.get("ny",ny);
-  nz = matrixList.get("nz",nz);
+  nx = (GO) matrixList.get("nx",(int) nx);
+  ny = (GO) matrixList.get("ny",(int) ny);
+  nz = (GO) matrixList.get("nz",(int) nz);
   
   std::string matrixType = matrixList.get("matrixType","Laplace1D");
   GO numGlobalElements; //global_size_t
