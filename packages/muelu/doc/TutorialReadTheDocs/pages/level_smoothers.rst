@@ -38,6 +38,7 @@ The following XML file shows how to use a Jacobi smoother both for level smoothi
 
 .. literalinclude:: ../../../test/tutorial/s1_easy_jacobi.xml
   :language: xml
+  :caption:
 
 The corresponding multigrid hierarchy is
 
@@ -130,6 +131,7 @@ where we use different damping parameters for pre- and post-smoothing (and a dir
 
 .. literalinclude:: ../../../test/tutorial/s1_easy_jacobi2.xml
   :language: xml
+  :caption:
 
 This produces the following multigrid hierarchy
 
@@ -158,6 +160,7 @@ A detailed overview of the different available smoothers can be found in the Mue
 
     .. literalinclude:: ../../../test/tutorial/s1_easy_exercise.xml
         :language: xml
+        :caption:
 
   That is, we change to smoothed aggregation AMG (SA-AMG).
   You can find the xml file also in **../../../test/tutorial/s1_easy_exercise.xml**.

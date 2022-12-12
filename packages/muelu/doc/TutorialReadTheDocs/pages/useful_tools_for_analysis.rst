@@ -66,11 +66,11 @@ Figure :ref:`useful_tools_for_analysis/figure_aggsSymm` shows the aggregates for
 Figure :ref:`useful_tools_for_analysis/figure_aggsNonSymm` shows the aggregates for the Recirc2D problem. When building the matrix graph, entries with values smaller than :math:`0.01` were dropped. Obviously the shape of the aggregates follows the direction of convection of the example. Using an uncoupled aggregation method (i.e., **aggregation: type = uncoupled**) as default the aggregates do not cross processor boundaries.
 
 
-.. _useful_tools_for_analysis/figure_aggsNonSymm: 
+.. _useful_tools_for_analysis/figure_aggsNonSymm:
 
 .. figure:: pics/aggsNonSymm.png
     :width: 0.7
-    
+
     Aggregates for Recirc2D example on :math:`50\times 50` mesh with dropping.
 
 Note on coupled aggregation strategy:
@@ -78,7 +78,7 @@ Note on coupled aggregation strategy:
 
 Comparing Figures :ref:`useful_tools_for_analysis/figure_aggsSymm` and :ref:`useful_tools_for_analysis/figure_aggsSymmCoupled` one finds the difference between the *uncoupled* and the *coupled* aggregation method **aggregation: type**). For the *coupled* aggregation strategy the aggregates can overlap processor boundaries.
 
-.. _useful_tools_for_analysis/figure_aggsSymmCoupled: 
+.. _useful_tools_for_analysis/figure_aggsSymmCoupled:
 
 .. figure:: pics/aggsSymmCoupled.png
     :width: 0.7
@@ -88,14 +88,14 @@ Comparing Figures :ref:`useful_tools_for_analysis/figure_aggsSymm` and :ref:`use
 .. note::
 
     Using the *coupled* aggregation in general is not recommended, since
-   
+
     - the aggregation routine itself needs some global communication,
     - building the tentative prolongation operator from the aggregates needs some global communication,
     - prolongator smoothing is more expensive due to a higher overlap.
-    
+
     The implementation of a *coupled* aggregation method is much more complicated and therefore error-prone and less robust.
-    
-.. _useful_tools_for_analysis/export_data: 
+
+.. _useful_tools_for_analysis/export_data:
 
 Export data
 ===========
@@ -106,6 +106,7 @@ The following xml file writes the fine level operator and the coarse level opera
 
 .. literalinclude:: ../../../test/tutorial/n2_easy_export.xml
   :language: xml
+  :caption:
 
 .. note::
 

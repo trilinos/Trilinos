@@ -13,6 +13,7 @@ By setting the maximum number of multigrid levels to 1 and using a Jacobi smooth
 
 .. literalinclude:: ../../../test/tutorial/s2_adv_a.xml
   :language: xml
+  :caption:
 
 The advanced XML format is more hierarchical in the structure.
 Each XML file in the advanced format consists of two major blocks.
@@ -230,7 +231,7 @@ Take a look at the following example XML parameter list
 
 .. literalinclude:: ../../../test/tutorial/s2_adv_b.xml
   :language: xml
-
+  :caption:
 
 You can find the parameters in **../../../test/tutorial/s2_adv_b.xml**.
 We have one building block **BackwardGaussSeidel** representing the level smoother that we want to use in our multigrid hierarchy.

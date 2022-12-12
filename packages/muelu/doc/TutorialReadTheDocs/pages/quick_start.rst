@@ -43,6 +43,7 @@ The s1_easy.xml file has the following content
 
 .. literalinclude:: ../../../test/tutorial/s1_easy.xml
   :language: xml
+  :caption:
 
 As one can easily find from the xml parameters, a multigrid method with not more than 3 levels and a damped Jacobi method for level smoothing shall be used.
 Next, choose option 0 and run the example. That is, the linear system is created and iteratively solved both by a preconditioned CG method (from the AztecOO package) with a MueLu multigrid preconditioner and a standalone multigrid solver (again using MueLu) with the given multigrid parameters.

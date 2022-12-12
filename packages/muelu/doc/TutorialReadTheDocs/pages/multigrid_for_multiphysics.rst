@@ -49,7 +49,7 @@ in the :math:`n\times n` block matrix.
 
 
 .. code-block:: xml
-  
+
    <!-- sub block factories -->
     <!-- BLOCK 1 (for submatrix A_{00}) -->
     <ParameterList name="mySubBlockAFactory1">
@@ -89,7 +89,7 @@ in the :math:`n\times n` block matrix.
       <Parameter name="Nullspace1" type="string" value="myTentativePFact1"/>
     </ParameterList>
 
-.. note:: 
+.. note::
 
    Please note, that the ordering of the factories is important in the sense
    that factories have to be defined before they are used as input for other following factories.
@@ -131,13 +131,13 @@ The meaning of the factories is the following:
   This information is not really needed in this place as we later define a **FactoryManager** for the :math:`i`-th block,
   but often makes it easier to understand the dependencies.
   That is, the short version would just be
-  
+
   .. code-block:: xml
-  
+
       <ParameterList name="myTentativePFact1">
         <Parameter name="factory" type="string" value="TentativePFactory"/>
       </ParameterList>
-  
+
 - **NullspaceFactory**:
   For defining multigrid methods for multiphysics problems, the **NullspaceFactory** is very important.
   In general, the **TentativePFactory** uses the provided fine level near null space vectors
@@ -167,11 +167,11 @@ Factory manager
 ---------------
 
 Once the necessary factories for building :math:`P_i` are defined in the **FactoryList** section of the xml file,
-we can group them together. 
+we can group them together.
 Right after the factories, we can add a **FactoryManager** block in the **FactoryList** section.
 
 .. code-block:: xml
-   
+
     <!-- Multigrid setup for velocity block (A_{00}) -->
     <ParameterList name="myFirstGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
@@ -279,7 +279,7 @@ It uses the blocks :math:`P_i` to generate the corresponding blocks :math:`R_i` 
 If PG-AMG is used for some or all blocks :math:`P_i` this is automatically considered when generating :math:`R_i`.
 
 .. note::
-   
+
    Please note, that you cannot use **TransPFactory** as it has no support for block operators.
    However, this is not a problem, since the **TransPFactory** might be used locally for single blocks wherever possible.
 
@@ -565,6 +565,7 @@ Complete XML input deck
 
 .. literalinclude:: ../../../test/tutorial/blocked_rebalancing.xml
   :language: xml
+  :caption:
 
 Note, that we are using a coordinate-based rebalancing method from the Zoltan package.
 The **myInputCoordsFact** provides the **Coordinates** variable to the **ZoltanInterface**.

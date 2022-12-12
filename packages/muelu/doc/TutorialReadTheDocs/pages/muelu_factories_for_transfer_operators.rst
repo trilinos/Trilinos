@@ -7,7 +7,7 @@ For this example we reuse the **Recirc2D** example as introduced in :ref:`multig
 Multigrid setup phase - algorithmic design
 ==========================================
 
-Smoothed aggregation based algebraic multigrid methods originally have not been designed for non-symmetric linear systems. Inappropriately smoothed transfer operators may significantly deteriorate the convergence rate or even break convergence completely. 
+Smoothed aggregation based algebraic multigrid methods originally have not been designed for non-symmetric linear systems. Inappropriately smoothed transfer operators may significantly deteriorate the convergence rate or even break convergence completely.
 
 Unsmoothed transfer operators
 -----------------------------
@@ -15,7 +15,7 @@ Unsmoothed transfer operators
 .. warning::
 
 	Insert and link missing figures
-	
+
 Before we introduce smoothed aggregation methods for non-symmetric linear systems we first go back one step and demonstrate how to use non-smoothed transfer operators which are eligible for non-symmetric linear systems. Figure :ref:`muelu_factories_for_transfer_operators/figure_simpledesignnonsmoothed` gives a simplified example how to build the coarse level matrix :math:`A_c` using the fine level matrix :math:`A` only. First, we "somehow" build aggregates using the information of the fine level matrix :math:`A`. The aggregates are then used to build the tentative non-smoothed prolongation operator. The restrictor is just the transpose of the (tentative) prolongator and finally the coarse level matrix :math:`A_c` is calculated by the triple product :math:`A_c=RAP`.
 
 In Figure :ref:`muelu_factories_for_transfer_operators/figure_simpledesignaamg` the **SaPFactory** has been added after the **TentativePFactory**. Therein the non-smoothed transfer operator from the **TentativePFactory** is smoothed using information of the fine level matrix :math:`A`. This transfer operator design is used per default when the user does not specify its own transfer operator design. The default settings are optimal for symmetric positive definite systems. However for our non-symmetric problem they might be problematic.
@@ -60,7 +60,8 @@ To construct a multigrid hierarchy with unsmoothed transfer operators one can us
 
 .. literalinclude:: ../../../test/tutorial/s3a.xml
   :language: xml
-  
+	:caption:
+
 Beside the **TentiativePFactory** which is responsible to generate the unsmoothed transfer operators we also introduce the **UncoupledAggregationFactory` with this example. In the **Factories** section of the XML file you find both an entry for the aggregation factory and the prolongation operator factory with its parameters. In the **Hierarchy** section the defined factories are just put in into the multigrid setup algorithm. That is, the factory with the name **UncoupledAggregationFact** is used to generate the **Aggregates** and the **myTentativePFact** is responsible for generating both the (unsmoothed) prolongation operator P and the (coarse) near null space vectors **Nullspace**.
 
 .. note::
@@ -100,6 +101,7 @@ Next, let's try smoothed transfer operators for the non-symmetric linear system 
 
 .. literalinclude:: ../../../test/tutorial/s3b.xml
   :language: xml
+	:caption:
 
 The interesting part is the **Factories** section where several different factories for the restriction operator are defined
 

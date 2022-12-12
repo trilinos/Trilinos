@@ -23,6 +23,7 @@ To write out the dependencies you just have to put in the **dependencyOutputLeve
 
 .. literalinclude:: ../../../test/tutorial/s6_dep.xml
   :language: xml
+  :caption:
 
 After running the example you should find a file named **dep_graph.dot** in the current folder which you can transform into a graph using the **dot** utility from the graphviz package.
 Run, e.g. the commands
