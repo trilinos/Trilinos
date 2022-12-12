@@ -1,0 +1,33 @@
+name: Automatically at mention package teams if the package name is in the title
+# Because evidently github won't let non-members do this.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: read
+  issues: write
+  
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Mention MueLu
+      uses: peter-evans/create-or-update-comment@v2
+      if: contains(github.event.label.name, 'MueLu') || contains(github.event.issue.title, 'MueLu')  
+      with:
+        issue-number: ${{ github.event.issue.number }}  
+        body: |
+          Automatic mention of the @trilinos/muelu team
+    - name: Mention Ifpack2
+      uses: peter-evans/create-or-update-comment@v2
+      if: contains(github.event.label.name, 'Ifpack2') || contains(github.event.issue.title, 'Ifpack2')  
+      with:
+        issue-number: ${{ github.event.issue.number }}  
+        body: |
+          Automatic mention of the @trilinos/ifpack2 team

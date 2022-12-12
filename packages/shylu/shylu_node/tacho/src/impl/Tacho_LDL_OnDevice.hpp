@@ -38,12 +38,13 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   inline static int cusolver_invoke(cusolverDnHandle_t &handle, const ViewTypeA &A, const ViewTypeP &P,
                                     const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
+    typedef typename ViewTypeW::non_const_value_type work_value_type;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);
     if (m > 0) {
       int *devInfo = (int *)W.data();
-      value_type *workspace = W.data() + 1;
+      work_value_type *workspace = W.data() + 1;
       int lwork = (W.span() - 1);
       r_val = Lapack<value_type>::sytrf(handle, CUBLAS_FILL_MODE_LOWER, m, A.data(), A.stride_1(), P.data(), workspace,
                                         lwork, devInfo);
@@ -109,7 +110,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
       if (W.span() == 0) {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
-        r_val = sizeof(value_type_w) * ((lwork + sizeof(value_type_w) - 1) / sizeof(value_type_w) + 1);
+        r_val = lwork + 1;
       } else
         r_val = cusolver_invoke(member, A, P, W);
     }

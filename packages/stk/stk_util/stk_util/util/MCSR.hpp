@@ -64,9 +64,11 @@ public:
 
   unsigned num_rows() const { return m_offsets.size(); }
 
-  void add_row()
+  unsigned add_row()
   {
+    unsigned newRow = m_offsets.size();
     m_offsets.push_back(IndexRange(0, 0));
+    return newRow;
   }
 
   unsigned size(unsigned row) const
@@ -216,14 +218,14 @@ public:
     m_numUnusedEntries = 0;
   }
 
-  void clear(unsigned initialCapacity)
+  void clear(unsigned initialCapacity, std::vector<T>& itemsToSwap)
   {
     std::vector<IndexRange> m_newOffsets;
     m_newOffsets.reserve(initialCapacity);
-    std::vector<T> m_newItems;
-    m_newItems.reserve(initialCapacity);
+    itemsToSwap.clear();
+    itemsToSwap.reserve(initialCapacity);
     m_offsets.swap(m_newOffsets);
-    m_items.swap(m_newItems);
+    m_items.swap(itemsToSwap);
     m_numUnusedEntries = 0;
   }
 
@@ -319,6 +321,7 @@ private:
 
     for(unsigned i=indices.first; i<indices.second; ++i) {
       m_items.push_back(m_items[i]);
+      m_items[i] = m_invalidItem;
     }
 
     m_numUnusedEntries += indices.second - indices.first;

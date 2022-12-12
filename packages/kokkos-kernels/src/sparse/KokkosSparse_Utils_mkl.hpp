@@ -131,7 +131,7 @@ class MKLSparseMatrix {
                          MKL_INT *xadj, MKL_INT *adj, value_type *values) {
     throw std::runtime_error(
         "Scalar type used in MKLSparseMatrix<value_type> is NOT "
-                "supported by MKL");
+        "supported by MKL");
   }
 
   // Allows using MKLSparseMatrix directly in MKL calls
@@ -143,7 +143,7 @@ class MKLSparseMatrix {
                           value_type *&values) {
     throw std::runtime_error(
         "Scalar type used in MKLSparseMatrix<value_type> is NOT "
-                "supported by MKL");
+        "supported by MKL");
   }
 
   inline void destroy() {

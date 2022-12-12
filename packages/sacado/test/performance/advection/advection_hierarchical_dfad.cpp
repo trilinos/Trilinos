@@ -145,7 +145,7 @@ double time_dfad_hierarchical_team(int ncells, int num_basis, int num_points,
   // Include a fudge factor of 1.2 since memory pool treats a block as full
   // once it reaches 80% capacity
   const size_t block_size = N*sizeof(double);
-  size_t nkernels = ExecSpace::concurrency()*2;
+  size_t nkernels = ExecSpace().concurrency()*2;
   if (is_cuda_space<ExecSpace>::value)
     nkernels /= 32;
   const size_t mem_pool_size = static_cast<size_t>(1.2*nkernels*block_size);

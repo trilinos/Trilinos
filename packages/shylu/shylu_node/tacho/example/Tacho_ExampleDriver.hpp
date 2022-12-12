@@ -41,6 +41,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int device_solve_thres = 128;
   int variant = 0;
   int nstreams = 8;
+  int nfacts = 2;
+  int nsolves = 10;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
@@ -59,6 +61,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse)
@@ -182,12 +185,16 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
 
     /// create numeric tools and levelset tools
+    Kokkos::Timer timer;
     solver.initialize();
+    double initi_time = timer.seconds();
 
     /// symbolic structure can be reused
-    for (int i = 0; i < 2; ++i) {
+    timer.reset();
+    for (int i = 0; i < nfacts; ++i) {
       solver.factorize(values_on_device);
     }
+    double facto_time = timer.seconds();
 
     DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
         x("x", A.NumRows(), nrhs),                  // solution multivector
@@ -199,14 +206,22 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
 
     std::cout << std::endl;
-    for (int i = 0; i < 3; ++i) {
+    double solve_time = 0.0;
+    for (int i = 0; i < nsolves; ++i) {
+      timer.reset();
       solver.solve(x, b, t);
+      solve_time += timer.seconds();
       const double res = solver.computeRelativeResidual(values_on_device, x, b);
       std::cout << "TachoSolver: residual = " << res << "\n";
     }
     std::cout << std::endl;
     solver.release();
 
+    std::cout << std::endl;
+    std::cout << " Initi Time " << initi_time << std::endl;
+    std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
+    std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
+    std::cout << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   }

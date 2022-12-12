@@ -259,6 +259,42 @@ template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           int tile_m, int tile_n, int tile_k>
 class BatchedDblBufGemm;
 
+//////////////////////////////// tile_m //////////////////////////////////
+template <typename ExecutionSpace>
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_m() {
+  return 32;
+}
+//////////////////////////////// tile_n //////////////////////////////////
+template <typename ExecutionSpace>
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_n() {
+  return 32;
+}
+//////////////////////////////// tile_k //////////////////////////////////
+template <typename ExecutionSpace>
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_k() {
+  return 8;
+}
+
+// On MI100, batched_scalar_batched_gemm_nt_nt_dcomplex_dcomplex_right fails
+// without this. See https://github.com/kokkos/kokkos-kernels/issues/1547.
+// This reduces the register allocations (REG_M and REG_N) in the double
+// buffering algorithm by a factor of 2.
+#if defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ARCH_VEGA908)
+template <>
+constexpr KOKKOS_INLINE_FUNCTION int
+kk_gemm_dlb_buf_tile_k<Kokkos::Experimental::HIP>() {
+  return 16;
+}
+#endif
+////////////////////////// alpha_in_fma_thresh ////////////////////////////
+constexpr KOKKOS_INLINE_FUNCTION size_t kk_gemm_dbl_buf_alpha_in_fma_thresh() {
+#ifdef __CUDACC_RDC__
+  return 24;
+#else
+  return 64;
+#endif  // __CUDAACC_RDC__
+}
+
 // clang-format off
 /// \brief Blocking solve of general matrix multiply on a batch of uniform matrices.
 ///
@@ -458,19 +494,19 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
   using layout_type        = typename CViewType::array_layout;
+  using exec_space         = typename CViewType::execution_space;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
-  constexpr bool on_gpu    = KokkosKernels::Impl::kk_is_gpu_exec_space<
-      typename CViewType::execution_space>();
+  constexpr bool on_gpu =
+      KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>();
   constexpr bool on_x86_64 = KokkosKernels::Impl::kk_is_x86_64_mem_space<
-      typename CViewType::execution_space::memory_space>();
+      typename exec_space::memory_space>();
   constexpr bool on_a64fx = KokkosKernels::Impl::kk_is_a64fx_mem_space<
-      typename CViewType::execution_space::memory_space>();
+      typename exec_space::memory_space>();
 
   if (handle->enableDebug) {
     std::cout << "view_scalar_type:" << typeid(view_scalar_type).name()
               << std::endl
-              << "execution_space:"
-              << typeid(typename CViewType::execution_space).name() << std::endl
+              << "execution_space:" << typeid(exec_space).name() << std::endl
               << std::endl
               << "is_vector:" << is_vector << std::endl
               << "on_gpu:" << on_gpu << std::endl
@@ -521,12 +557,11 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                          ? (c_m >= 16)
                          : (c_m >= 24 && c_m <= 32) || c_m >= 40)) {
         handle->teamSz = handle->vecLen = 8;
-        constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
-#ifdef __CUDACC_RDC__
-        constexpr size_t alpha_in_fma_thresh = 24;
-#else
-        constexpr size_t alpha_in_fma_thresh = 64;
-#endif  // __CUDAACC_RDC__
+        constexpr int tile_m = Impl::kk_gemm_dlb_buf_tile_m<exec_space>();
+        constexpr int tile_n = Impl::kk_gemm_dlb_buf_tile_n<exec_space>();
+        constexpr int tile_k = Impl::kk_gemm_dlb_buf_tile_k<exec_space>();
+        constexpr size_t alpha_in_fma_thresh =
+            Impl::kk_gemm_dbl_buf_alpha_in_fma_thresh();
 
         if (c_m % 32 == 0) {                 // No bounds checking
           if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
