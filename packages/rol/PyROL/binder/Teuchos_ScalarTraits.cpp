@@ -1,12 +1,9 @@
-#include <Teuchos_BLAS.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_LAPACK.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
-#include <complex>
 #include <cwchar>
 #include <ios>
 #include <iterator>

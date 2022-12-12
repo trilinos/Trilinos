@@ -10,13 +10,11 @@
 #include <ROL_SlacklessObjective.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
-#include <ROL_VectorController.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_RCPDecl.hpp>
 #include <Teuchos_RCPNode.hpp>
 #include <Teuchos_any.hpp>
 #include <cwchar>
-#include <functional>
 #include <ios>
 #include <iterator>
 #include <memory>
@@ -24,8 +22,6 @@
 #include <sstream> // __str__
 #include <streambuf>
 #include <string>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include <functional>

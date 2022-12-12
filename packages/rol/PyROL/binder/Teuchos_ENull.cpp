@@ -11,7 +11,6 @@
 #include <ROL_BrentsProjection.hpp>
 #include <ROL_BrentsScalarMinimization.hpp>
 #include <ROL_BundleStatusTest.hpp>
-#include <ROL_Bundle_U.hpp>
 #include <ROL_Bundle_U_AS.hpp>
 #include <ROL_Bundle_U_TT.hpp>
 #include <ROL_CauchyPoint.hpp>
@@ -46,10 +45,8 @@
 #include <ROL_LinMore.hpp>
 #include <ROL_LinMoreModel.hpp>
 #include <ROL_LineSearch_U.hpp>
-#include <ROL_LineSearch_U_Types.hpp>
 #include <ROL_LinearConstraint.hpp>
 #include <ROL_LinearOperator.hpp>
-#include <ROL_MINRES.hpp>
 #include <ROL_NewtonKrylov_U.hpp>
 #include <ROL_Newton_U.hpp>
 #include <ROL_NonlinearCG.hpp>
@@ -76,15 +73,10 @@
 #include <ROL_SingletonVector.hpp>
 #include <ROL_SlacklessObjective.hpp>
 #include <ROL_StatusTest.hpp>
-#include <ROL_Step.hpp>
-#include <ROL_Stream.hpp>
 #include <ROL_TruncatedCG.hpp>
 #include <ROL_TruncatedCG_U.hpp>
-#include <ROL_TrustRegion.hpp>
 #include <ROL_TrustRegionModel.hpp>
 #include <ROL_TrustRegionModel_U.hpp>
-#include <ROL_TrustRegionTypes.hpp>
-#include <ROL_TrustRegion_U.hpp>
 #include <ROL_TrustRegion_U_Types.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
 #include <ROL_TypeB_ColemanLiAlgorithm.hpp>
@@ -123,8 +115,6 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_DataAccess.hpp>
-#include <Teuchos_Dependency.hpp>
-#include <Teuchos_DependencySheet.hpp>
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_Exceptions.hpp>
 #include <Teuchos_FancyOStream.hpp>
@@ -156,8 +146,6 @@
 #include <map>
 #include <memory>
 #include <ostream>
-#include <random>
-#include <set>
 #include <sstream>
 #include <sstream> // __str__
 #include <stdexcept>

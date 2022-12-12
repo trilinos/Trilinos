@@ -47,7 +47,6 @@
 #include <ROL_LineSearch_U.hpp>
 #include <ROL_LinearConstraint.hpp>
 #include <ROL_LinearOperator.hpp>
-#include <ROL_MINRES.hpp>
 #include <ROL_NewtonKrylov_U.hpp>
 #include <ROL_Newton_U.hpp>
 #include <ROL_NonlinearCG.hpp>
@@ -74,7 +73,6 @@
 #include <ROL_SingletonVector.hpp>
 #include <ROL_SlacklessObjective.hpp>
 #include <ROL_StatusTest.hpp>
-#include <ROL_Stream.hpp>
 #include <ROL_TruncatedCG.hpp>
 #include <ROL_TruncatedCG_U.hpp>
 #include <ROL_TrustRegionModel.hpp>
@@ -135,7 +133,6 @@
 #include <deque>
 #include <ios>
 #include <iterator>
-#include <locale>
 #include <memory>
 #include <ostream>
 #include <streambuf>

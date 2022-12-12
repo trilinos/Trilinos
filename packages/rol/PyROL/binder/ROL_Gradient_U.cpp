@@ -13,7 +13,6 @@
 #include <ROL_Objective.hpp>
 #include <ROL_QuasiNewton_U.hpp>
 #include <ROL_Secant.hpp>
-#include <ROL_SecantFactory.hpp>
 #include <ROL_TrustRegionModel_U.hpp>
 #include <ROL_TrustRegion_U.hpp>
 #include <ROL_TrustRegion_U_Types.hpp>

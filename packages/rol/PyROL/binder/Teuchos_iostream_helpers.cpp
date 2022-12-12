@@ -1,4 +1,3 @@
-#include <Teuchos_ArrayRCPDecl.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 #include <Teuchos_ENull.hpp>

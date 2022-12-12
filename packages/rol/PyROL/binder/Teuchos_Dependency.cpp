@@ -20,7 +20,6 @@
 #include <deque>
 #include <ios>
 #include <iterator>
-#include <locale>
 #include <map>
 #include <memory>
 #include <ostream>
